@@ -1,4 +1,6 @@
-// src/app/global-error.ts
+"use client";
+// src/app/global-error.tsx
+import React from 'react';
 import * as Sentry from '@sentry/nextjs';
 
 export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
