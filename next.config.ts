@@ -5,17 +5,25 @@ import { withSentryConfig } from '@sentry/nextjs';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  productionBrowserSourceMaps: false,
   serverExternalPackages: [
     '@prisma/client',
     '.prisma/client',
     'better-sqlite3',
+    'pino',
+    'pino-pretty',
   ],
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       'sharp$': false,
       'onnxruntime-node$': false,
     };
+    // Keep these heavy server-only modules out of the client bundle
+    if (!isServer) {
+      config.resolve.alias['@prisma/client'] = false;
+    }
     return config;
   },
   experimental: {
@@ -53,4 +61,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(withNextIntl(nextConfig));
+export default withSentryConfig(withNextIntl(nextConfig), {
+  // Suppress auth token warnings during build (no Sentry org set up yet)
+  silent: true,
+  disableLogger: true,
+  telemetry: false,
+});
