@@ -1,0 +1,54 @@
+import { NextResponse } from 'next/server'
+import { requireAdmin } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import { translateAndSave } from '@/lib/translate'
+
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+
+    const { id } = await params
+    const body = await req.json()
+
+    const castingCall = await prisma.castingCall.update({
+        where: { id },
+        data: {
+            ...(body.projectId !== undefined && { projectId: body.projectId }),
+            ...(body.roleName !== undefined && { roleName: body.roleName }),
+            ...(body.roleType !== undefined && { roleType: body.roleType }),
+            ...(body.roleDescription !== undefined && { roleDescription: body.roleDescription }),
+            ...(body.ageRange !== undefined && { ageRange: body.ageRange || null }),
+            ...(body.gender !== undefined && { gender: body.gender || null }),
+            ...(body.ethnicity !== undefined && { ethnicity: body.ethnicity || null }),
+            ...(body.requirements !== undefined && { requirements: body.requirements }),
+            ...(body.compensation !== undefined && { compensation: body.compensation || null }),
+            ...(body.deadline !== undefined && { deadline: body.deadline || null }),
+            ...(body.status !== undefined && { status: body.status }),
+        },
+        include: {
+            project: { select: { id: true, title: true, slug: true, genre: true, year: true, coverImage: true } },
+            _count: { select: { applications: true } },
+        },
+    })
+
+    // Re-translate if text content changed
+    if (body.roleName !== undefined || body.roleDescription !== undefined) {
+        translateAndSave(
+            { roleName: castingCall.roleName, roleDescription: castingCall.roleDescription },
+            async (translations) => {
+                await prisma.castingCall.update({ where: { id }, data: { translations } as any })
+            }
+        )
+    }
+
+    return NextResponse.json(castingCall)
+}
+
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+
+    const { id } = await params
+
+    await prisma.castingCall.delete({ where: { id } })
+
+    return NextResponse.json({ success: true })
+}

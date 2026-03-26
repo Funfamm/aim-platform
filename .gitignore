@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/src/generated/prisma
+
+# Local database & secrets
+dev.db
+*.db
+client_secret_*.json
+prisma.config.ts.bak
+
+# Logs
+logs/
+*.log
+
+# Uploaded / local video files (large binaries — use R2 instead)
+public/videos/
+public/uploads/

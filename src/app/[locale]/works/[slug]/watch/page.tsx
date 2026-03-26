@@ -1,0 +1,82 @@
+import { redirect, notFound } from 'next/navigation'
+import { getUserSession } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import Footer from '@/components/Footer'
+import WatchPlayer from '@/components/WatchPlayer'
+
+export const revalidate = 60
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params
+    const project = await prisma.project.findUnique({ where: { slug } })
+    if (!project) return { title: 'Not Found' }
+    return {
+        title: `Watch ${project.title} | AIM Studio`,
+        description: `Watch ${project.title}, exclusive member access on AIM Studio.`,
+    }
+}
+
+export default async function WatchPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params
+
+    // Auth gate — must be logged in
+    const session = await getUserSession()
+    if (!session?.userId) {
+        redirect(`/login?redirect=/works/${slug}/watch`)
+    }
+
+    // Fetch project
+    const project = await prisma.project.findUnique({
+        where: { slug },
+        select: {
+            id: true,
+            title: true,
+            slug: true,
+            tagline: true,
+            description: true,
+            genre: true,
+            year: true,
+            duration: true,
+            coverImage: true,
+            filmUrl: true,
+            trailerUrl: true,
+            projectType: true,
+            status: true,
+            episodes: {
+                orderBy: [{ season: 'asc' }, { number: 'asc' }],
+            },
+        },
+    })
+
+    if (!project) notFound()
+
+    // Record watch history
+    try {
+        await prisma.watchHistory.create({
+            data: {
+                userId: session.userId,
+                projectId: project.id,
+            },
+        })
+    } catch { /* ignore duplicates or errors */ }
+
+    // If no film URL, redirect back to project page
+    if (!project.filmUrl && project.episodes.length === 0) {
+        redirect(`/works/${slug}`)
+    }
+
+    const serializedProject = {
+        ...project,
+        episodes: project.episodes.map(e => ({
+            ...e,
+            createdAt: e.createdAt.toISOString(),
+        })),
+    }
+
+    return (
+        <>
+<WatchPlayer project={serializedProject} />
+            <Footer />
+        </>
+    )
+}

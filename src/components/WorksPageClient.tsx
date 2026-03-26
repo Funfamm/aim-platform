@@ -1,0 +1,614 @@
+'use client'
+
+import { useState, useEffect, useRef, useCallback } from 'react'
+import Link from 'next/link'
+import Scene3D from '@/components/Scene3D'
+import ScrollReveal3D from '@/components/ScrollReveal3D'
+import TiltCard3D from '@/components/TiltCard3D'
+import { useTranslations } from 'next-intl'
+
+interface Project {
+    id: string
+    title: string
+    slug: string
+    genre: string | null
+    tagline: string | null
+    status: string
+    projectType: string
+    year: string | null
+    duration: string | null
+    coverImage: string | null
+    trailerUrl: string | null
+    filmUrl: string | null
+    episodeCount: number
+}
+
+interface HeroVideo {
+    id: string
+    url: string
+    duration: number
+}
+
+interface WorksPageClientProps {
+    projects: Project[]
+    completedCount: number
+    inProdCount: number
+}
+
+export default function WorksPageClient({ projects, completedCount, inProdCount }: WorksPageClientProps) {
+    const t = useTranslations('works')
+    const [videos, setVideos] = useState<HeroVideo[]>([])
+    const [currentIdx, setCurrentIdx] = useState(0)
+    const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
+    const [mounted, setMounted] = useState(false)
+    const videoARef = useRef<HTMLVideoElement>(null)
+    const videoBRef = useRef<HTMLVideoElement>(null)
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // Page-entry fade-in
+    useEffect(() => { setMounted(true) }, [])
+
+    // Fetch videos from admin-controlled API
+    useEffect(() => {
+        fetch('/api/admin/media?type=hero-video&page=works')
+            .then(r => r.json())
+            .then((data: HeroVideo[]) => {
+                if (data.length > 0) setVideos(data)
+            })
+            .catch(() => { })
+    }, [])
+
+    // Start the first video once loaded
+    useEffect(() => {
+        if (videos.length === 0) return
+        const videoA = videoARef.current
+        if (!videoA) return
+
+        videoA.src = videos[0].url
+        videoA.load()
+        videoA.play().catch(() => { })
+        setActiveSlot('A')
+
+        // Schedule the first transition
+        const durationMs = (videos[0].duration || 10) * 1000
+        timerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
+
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [videos])
+
+    // Crossfade: preload next video in the inactive slot, then swap
+    const crossfadeToNext = useCallback((prevIdx: number) => {
+        if (videos.length <= 1) return
+
+        const nextIdx = (prevIdx + 1) % videos.length
+        setCurrentIdx(nextIdx)
+
+        setActiveSlot(prev => {
+            const nextSlot = prev === 'A' ? 'B' : 'A'
+            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
+            if (nextVideo) {
+                nextVideo.src = videos[nextIdx].url
+                nextVideo.load()
+                nextVideo.play().catch(() => { })
+            }
+            return nextSlot
+        })
+
+        // Schedule next crossfade
+        const durationMs = (videos[nextIdx].duration || 10) * 1000
+        if (timerRef.current) clearTimeout(timerRef.current)
+        timerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
+    }, [videos])
+
+    // Manual dot click
+    const jumpToVideo = useCallback((idx: number) => {
+        if (idx === currentIdx) return
+        setCurrentIdx(idx)
+
+        setActiveSlot(prev => {
+            const nextSlot = prev === 'A' ? 'B' : 'A'
+            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
+            if (nextVideo) {
+                nextVideo.src = videos[idx].url
+                nextVideo.load()
+                nextVideo.play().catch(() => { })
+            }
+            return nextSlot
+        })
+
+        const durationMs = (videos[idx].duration || 10) * 1000
+        if (timerRef.current) clearTimeout(timerRef.current)
+        timerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
+    }, [currentIdx, videos, crossfadeToNext])
+
+    return (
+        <div style={{
+            overflowX: 'hidden', width: '100%',
+            opacity: mounted ? 1 : 0,
+            transition: 'opacity 0.4s ease',
+        }}>
+            {/* 3D Particle Background */}
+            <Scene3D />
+
+            {/* ═══ FIXED VIDEO BACKGROUND — always rendered dark base + crossfading video slots ═══ */}
+            <div style={{
+                position: 'fixed',
+                top: 0, left: 0,
+                width: '100%', height: '100vh',
+                zIndex: 0,
+                background: '#0d0f14',
+            }}>
+                {/* Static poster shown until first video loads */}
+                <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage: 'url(/images/works-bg.png)',
+                    backgroundSize: 'cover', backgroundPosition: 'center',
+                    opacity: videos.length === 0 ? 0.3 : 0,
+                    transition: 'opacity 0.8s ease',
+                }} />
+                <video
+                    ref={videoARef}
+                    autoPlay muted playsInline
+                    controlsList="nodownload"
+                    onContextMenu={(e) => e.preventDefault()}
+                    poster="/images/works-bg.png"
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: videos.length > 0 && activeSlot === 'A' ? 1 : 0,
+                        transition: 'opacity 1.2s ease-in-out',
+                        zIndex: activeSlot === 'A' ? 1 : 0,
+                    }}
+                />
+                <video
+                    ref={videoBRef}
+                    autoPlay muted playsInline
+                    controlsList="nodownload"
+                    onContextMenu={(e) => e.preventDefault()}
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: videos.length > 0 && activeSlot === 'B' ? 1 : 0,
+                        transition: 'opacity 1.2s ease-in-out',
+                        zIndex: activeSlot === 'B' ? 1 : 0,
+                    }}
+                />
+            </div>
+
+            {/* ═══ SINGLE FIXED GRADIENT OVERLAY — covers the entire viewport over the video ═══ */}
+            <div style={{
+                position: 'fixed',
+                top: 0, left: 0,
+                width: '100%', height: '100vh',
+                zIndex: 0,
+                background: 'linear-gradient(180deg, rgba(13,15,20,0.25) 0%, rgba(13,15,20,0.1) 25%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.5) 75%, rgba(13,15,20,0.8) 100%)',
+                pointerEvents: 'none',
+            }} />
+
+            {/* ═══ HERO CONTENT — scrolls away as user scrolls ═══ */}
+            <section style={{
+                position: 'relative',
+                height: '100vh',
+                overflow: 'hidden',
+                zIndex: 1,
+            }}>
+                {/* Content overlay — sits on top of the video */}
+                <div style={{
+                    position: 'absolute', inset: 0, zIndex: 1,
+                    display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'space-between',
+                    paddingTop: '120px', paddingBottom: 'var(--space-3xl)',
+                }}>
+
+                    {/* Radial Glow */}
+                    <div style={{
+                        position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)',
+                        width: '700px', height: '700px',
+                        background: 'radial-gradient(circle, rgba(228,185,90,0.06), transparent 65%)',
+                        pointerEvents: 'none',
+                    }} />
+
+                    {/* Decorative corner frames */}
+                    <div style={{
+                        position: 'absolute', top: '80px', left: '20px', width: '60px', height: '60px',
+                        borderTop: '2px solid rgba(228,185,90,0.2)', borderLeft: '2px solid rgba(228,185,90,0.2)',
+                        pointerEvents: 'none',
+                    }} />
+                    <div style={{
+                        position: 'absolute', top: '80px', right: '20px', width: '60px', height: '60px',
+                        borderTop: '2px solid rgba(228,185,90,0.2)', borderRight: '2px solid rgba(228,185,90,0.2)',
+                        pointerEvents: 'none',
+                    }} />
+
+                    {/* Cinematic scan lines */}
+                    <div style={{
+                        position: 'absolute', top: '25%', left: 0, right: 0, height: '1px',
+                        background: 'linear-gradient(90deg, transparent 5%, rgba(228,185,90,0.05) 30%, rgba(228,185,90,0.05) 70%, transparent 95%)',
+                    }} />
+                    <div style={{
+                        position: 'absolute', top: '75%', left: 0, right: 0, height: '1px',
+                        background: 'linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent 95%)',
+                    }} />
+
+                    {/* Title & Subtitle */}
+                    <div style={{
+                        position: 'relative', zIndex: 1,
+                        textAlign: 'center',
+                        maxWidth: 'min(700px, 100%)',
+                        padding: '0 var(--space-md)',
+                        flex: 1,
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <span className="text-label animate-fade-in-up" style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            marginBottom: 'var(--space-sm)',
+                        }}>
+                            <span style={{
+                                width: '6px', height: '6px', borderRadius: '50%',
+                                background: 'var(--accent-gold)',
+                                animation: 'pulse-gold 2s infinite',
+                            }} />
+                            {t('label')}
+                        </span>
+
+                        <h1 className="animate-fade-in-up delay-1" style={{
+                            fontSize: 'clamp(1.8rem, 4.5vw, 2.8rem)',
+                            fontWeight: 800,
+                            marginBottom: 'var(--space-sm)',
+                            lineHeight: 1.15,
+                        }}>
+                            {t('title')}{' '}
+                            <span style={{
+                                fontFamily: 'var(--font-serif)',
+                                fontStyle: 'italic',
+                                background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text',
+                            }}>{t('titleAccent')}</span>
+                        </h1>
+
+                        <p className="animate-fade-in-up delay-2" style={{
+                            fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
+                            color: 'var(--text-secondary)',
+                            maxWidth: '460px',
+                            margin: '0 auto',
+                            lineHeight: 1.7,
+                        }}>
+                            {t('description')}
+                        </p>
+
+                        {/* Compact stats pill */}
+                        <div className="animate-fade-in-up delay-3" style={{
+                            display: 'inline-flex',
+                            gap: 'var(--space-xl)',
+                            marginTop: 'var(--space-lg)',
+                            padding: '0.6rem 1.5rem',
+                            background: 'rgba(255,255,255,0.03)',
+                            borderRadius: 'var(--radius-full)',
+                            border: '1px solid var(--border-subtle)',
+                            backdropFilter: 'blur(12px)',
+                        }}>
+                            <div>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{projects.length}</span>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('all')}</span>
+                            </div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                            <div>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{completedCount}</span>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('completed')}</span>
+                            </div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                            <div>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{inProdCount}</span>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('inProd')}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* CTA + Video Dots */}
+                    <div style={{
+                        position: 'relative', zIndex: 1,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        gap: 'var(--space-md)',
+                    }}>
+                        <a href="#projects" className="btn btn-primary btn-lg animate-fade-in-up delay-3">
+                            {t('viewDetails')}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 5v14M5 12l7 7 7-7" />
+                            </svg>
+                        </a>
+
+                        {videos.length > 1 && (
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                                {videos.map((_, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => jumpToVideo(i)}
+                                        style={{
+                                            width: currentIdx === i ? '28px' : '6px',
+                                            height: '6px',
+                                            borderRadius: 'var(--radius-full)',
+                                            border: 'none',
+                                            background: currentIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.3s ease',
+                                            padding: 0,
+                                        }}
+                                        aria-label={`Play video ${i + 1}`}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══ PROJECTS GALLERY — scrolls over the video ═══ */}
+            <section id="projects" style={{
+                position: 'relative',
+                zIndex: 2,
+                marginTop: '-30px',
+            }}>
+                <div style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    paddingTop: 'var(--space-3xl)',
+                    paddingBottom: 'var(--space-3xl)',
+                }}>
+                    <div className="container">
+                        {/* Section Header */}
+                        <div style={{
+                            textAlign: 'center',
+                            marginBottom: 'var(--space-xl)',
+                            position: 'relative',
+                        }}>
+                            <div style={{
+                                width: '40px',
+                                height: '2px',
+                                background: 'linear-gradient(90deg, var(--accent-gold-light), var(--accent-gold))',
+                                margin: '0 auto var(--space-sm)',
+                                borderRadius: '2px',
+                            }} />
+                            <span className="text-label" style={{ display: 'block', marginBottom: '6px' }}>{t('label')}</span>
+                            <h2 style={{
+                                fontSize: 'clamp(1.8rem, 4.5vw, 2.6rem)',
+                                fontWeight: 800,
+                                marginBottom: 'var(--space-xs)',
+                            }}>
+                                {t('title')}{' '}
+                                <span style={{
+                                    fontFamily: 'var(--font-serif)',
+                                    fontStyle: 'italic',
+                                    background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    backgroundClip: 'text',
+                                }}>{t('titleAccent')}</span>
+                            </h2>
+                            <p style={{
+                                fontSize: '0.9rem',
+                                color: 'var(--text-secondary)',
+                                maxWidth: '420px',
+                                margin: '0 auto',
+                                lineHeight: 1.6,
+                            }}>
+                                {t('description')}
+                            </p>
+                        </div>
+
+                        {projects.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: 'var(--space-4xl) 0' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🎬</div>
+                                <h3 style={{ marginBottom: 'var(--space-sm)' }}>{t('title')}</h3>
+                                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.95rem', maxWidth: '440px', margin: '0 auto', lineHeight: 1.6, textAlign: 'center' }}>
+                                    {t('description')}
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="works-grid">
+                                {projects.map((project, index) => (
+                                    <ScrollReveal3D key={project.id} direction="up" delay={index * 120} distance={40}>
+                                        <div
+                                            className="project-card"
+                                            style={{
+                                                aspectRatio: '16/10',
+                                                borderRadius: 'var(--radius-lg)',
+                                                position: 'relative',
+                                            }}
+                                        >
+                                            {/* Clickable image area -> project detail */}
+                                            <Link
+                                                href={`/works/${project.slug}`}
+                                                style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+                                            >
+                                                <div
+                                                    className="project-card-image"
+                                                    style={{
+                                                        backgroundImage: project.coverImage
+                                                            ? `url(${project.coverImage})`
+                                                            : 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary))',
+                                                    }}
+                                                />
+                                                <div className="project-card-overlay" />
+                                            </Link>
+
+                                            {/* Content overlay */}
+                                            <div className="project-card-content" style={{ padding: 'var(--space-sm) var(--space-md)', zIndex: 2, pointerEvents: 'none' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                                                    <span style={{
+                                                        fontSize: '0.5rem', fontWeight: 600, letterSpacing: '0.14em',
+                                                        textTransform: 'uppercase' as const, color: 'var(--accent-gold)',
+                                                    }}>{project.genre}</span>
+                                                    {project.status === 'completed' && (
+                                                        <span style={{
+                                                            fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
+                                                            textTransform: 'uppercase' as const,
+                                                            color: '#34d399',
+                                                            background: 'rgba(52,211,153,0.1)',
+                                                            padding: '1px 5px',
+                                                            borderRadius: 'var(--radius-full)',
+                                                            border: '1px solid rgba(52,211,153,0.2)',
+                                                        }}>{t('completed')}</span>
+                                                    )}
+                                                    {project.status === 'in-production' && (
+                                                        <span style={{
+                                                            fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
+                                                            textTransform: 'uppercase' as const,
+                                                            color: 'var(--accent-gold)',
+                                                            background: 'rgba(212,168,83,0.1)',
+                                                            padding: '1px 5px',
+                                                            borderRadius: 'var(--radius-full)',
+                                                            border: '1px solid rgba(212,168,83,0.2)',
+                                                        }}>{t('inProduction')}</span>
+                                                    )}
+                                                    {project.status === 'upcoming' && (
+                                                        <span style={{
+                                                            fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
+                                                            textTransform: 'uppercase' as const,
+                                                            color: '#60a5fa',
+                                                            background: 'rgba(96,165,250,0.1)',
+                                                            padding: '1px 5px',
+                                                            borderRadius: 'var(--radius-full)',
+                                                            border: '1px solid rgba(96,165,250,0.2)',
+                                                        }}>{t('upcoming')}</span>
+                                                    )}
+                                                    {project.projectType === 'series' && (
+                                                        <span style={{
+                                                            fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
+                                                            textTransform: 'uppercase' as const,
+                                                            color: '#60a5fa',
+                                                            background: 'rgba(96,165,250,0.1)',
+                                                            padding: '1px 5px',
+                                                            borderRadius: 'var(--radius-full)',
+                                                            border: '1px solid rgba(96,165,250,0.2)',
+                                                        }}>{t('series')}</span>
+                                                    )}
+                                                </div>
+                                                <h3 style={{ fontSize: '0.95rem', marginBottom: '1px', fontWeight: 700 }}>{project.title}</h3>
+                                                <p style={{ fontSize: '0.7rem', lineHeight: 1.3 }}>{project.tagline}</p>
+                                                <div style={{ display: 'flex', gap: '6px', marginTop: '3px', fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                                                    {project.year && <span>{project.year}</span>}
+                                                    {project.duration && <span>• {project.duration}</span>}
+                                                </div>
+
+                                                {/* ── Media Action Buttons ── */}
+                                                <div style={{
+                                                    display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '6px',
+                                                    pointerEvents: 'auto',
+                                                }}>
+                                                    {project.trailerUrl && (
+                                                        <Link
+                                                            href={`/works/${project.slug}#trailer`}
+                                                            style={{
+                                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                                fontSize: '0.6rem', fontWeight: 600, padding: '3px 8px',
+                                                                borderRadius: 'var(--radius-full)',
+                                                                background: 'rgba(212,168,83,0.15)',
+                                                                border: '1px solid rgba(212,168,83,0.3)',
+                                                                color: 'var(--accent-gold)',
+                                                                textDecoration: 'none',
+                                                                transition: 'all 0.2s',
+                                                            }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,168,83,0.3)' }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,168,83,0.15)' }}
+                                                        >
+                                                            ▶ {t('watchTrailer')}
+                                                        </Link>
+                                                    )}
+                                                    {project.filmUrl && (
+                                                        <Link
+                                                            href={`/works/${project.slug}#watch`}
+                                                            style={{
+                                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                                fontSize: '0.6rem', fontWeight: 600, padding: '3px 8px',
+                                                                borderRadius: 'var(--radius-full)',
+                                                                background: 'rgba(52,211,153,0.12)',
+                                                                border: '1px solid rgba(52,211,153,0.25)',
+                                                                color: '#34d399',
+                                                                textDecoration: 'none',
+                                                                transition: 'all 0.2s',
+                                                            }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(52,211,153,0.25)' }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(52,211,153,0.12)' }}
+                                                        >
+                                                            🎬 {t('watchNow')}
+                                                        </Link>
+                                                    )}
+                                                    {project.projectType === 'series' && project.episodeCount > 0 && (
+                                                        <Link
+                                                            href={`/works/${project.slug}#episodes`}
+                                                            style={{
+                                                                display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                                fontSize: '0.6rem', fontWeight: 600, padding: '3px 8px',
+                                                                borderRadius: 'var(--radius-full)',
+                                                                background: 'rgba(96,165,250,0.12)',
+                                                                border: '1px solid rgba(96,165,250,0.25)',
+                                                                color: '#60a5fa',
+                                                                textDecoration: 'none',
+                                                                transition: 'all 0.2s',
+                                                            }}
+                                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(96,165,250,0.25)' }}
+                                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(96,165,250,0.12)' }}
+                                                        >
+                                                            📺 {project.episodeCount} {t('episodes')}
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </ScrollReveal3D>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+
+            {/* ═══ COMPACT CTA ═══ */}
+            <ScrollReveal3D direction="up" distance={50} rotate={5}>
+                <section style={{ position: 'relative', zIndex: 2, padding: '0 0 var(--space-3xl)' }}>
+                    <div className="container">
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: 'var(--space-lg) var(--space-2xl)',
+                            background: 'rgba(212,168,83,0.03)',
+                            border: '1px solid rgba(212,168,83,0.08)',
+                            borderRadius: 'var(--radius-lg)',
+                            position: 'relative',
+                            overflow: 'hidden',
+                        }}>
+                            <div style={{
+                                position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
+                                background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.2), transparent)',
+                            }} />
+                            <div>
+                                <span style={{ fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)' }}>
+                                    {t('label')}
+                                </span>
+                                <h3 style={{ fontSize: '1.1rem', marginTop: '2px' }}>
+                                    {t('viewDetails')} <span style={{ color: 'var(--accent-gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>{t('film')}</span>
+                                </h3>
+                            </div>
+                            <Link href="/casting" className="btn btn-primary btn-sm">
+                                {t('viewDetails')} →
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+            </ScrollReveal3D>
+        </div>
+    )
+}
