@@ -29,6 +29,12 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // Admin panel routes — skip next-intl entirely so it cannot
+  // rewrite or redirect /admin/* paths
+  if (pathname.startsWith('/admin')) {
+    return NextResponse.next()
+  }
+
   // All other routes — apply i18n middleware
   return intlMiddleware(request)
 }
@@ -39,4 +45,3 @@ export const config = {
     '/((?!api|_next|_vercel|.*\\..*).*)',
   ],
 }
-
