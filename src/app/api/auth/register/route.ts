@@ -28,7 +28,13 @@ export async function POST(request: Request) {
             if (!(existing as any).emailVerified) {
                 const code = Math.floor(100000 + Math.random() * 900000).toString()
                 const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString()
-                await prisma.$executeRaw`UPDATE "User" SET "verificationCode" = ${code}, "verificationExpiry" = ${expiry} WHERE "email" = ${email}`
+                await prisma.user.update({
+        where: { email },
+        data: {
+          verificationCode: code,
+          verificationExpiry: new Date(expiry),
+        },
+      })
                 sendEmail({ to: email, subject: 'Verify your AIM Studio account', html: verificationEmail(existing.name, code) })
                 console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
                 return NextResponse.json({ requiresVerification: true, email }, { status: 200 })
@@ -52,7 +58,14 @@ export async function POST(request: Request) {
         })
 
         // Set verification fields via raw SQL (new columns not yet in compiled types)
-        await prisma.$executeRaw`UPDATE "User" SET "emailVerified" = false, "verificationCode" = ${code}, "verificationExpiry" = ${expiry} WHERE "id" = ${newUser.id}`
+        await prisma.user.update({
+        where: { id: newUser.id },
+        data: {
+          emailVerified: false,
+          verificationCode: code,
+          verificationExpiry: new Date(expiry),
+        },
+      })
 
         // Send verification email (fire-and-forget)
         sendEmail({
