@@ -19,6 +19,7 @@
     "@huggingface/transformers": "^3.8.1",
     "@prisma/client": "^6.6.0",
     "@sentry/nextjs": "^9.9.0",
+    "@swc/helpers": "^0.5.19",
     "@types/archiver": "^7.0.0",
     "@types/bcryptjs": "^2.4.6",
     "archiver": "^7.0.1",
