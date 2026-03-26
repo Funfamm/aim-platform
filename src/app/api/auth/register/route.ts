@@ -52,7 +52,7 @@ export async function POST(request: Request) {
         })
 
         // Set verification fields via raw SQL (new columns not yet in compiled types)
-        await prisma.$executeRaw`UPDATE "User" SET "emailVerified" = 0, "verificationCode" = ${code}, "verificationExpiry" = ${expiry} WHERE "id" = ${newUser.id}`
+        await prisma.$executeRaw`UPDATE "User" SET "emailVerified" = false, "verificationCode" = ${code}, "verificationExpiry" = ${expiry} WHERE "id" = ${newUser.id}`
 
         // Send verification email (fire-and-forget)
         sendEmail({
