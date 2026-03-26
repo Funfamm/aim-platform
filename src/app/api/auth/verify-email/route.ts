@@ -4,15 +4,7 @@ import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { sendEmail } from '@/lib/mailer'
 import { welcomeEmail } from '@/lib/email-templates'
 
-type VerificationRow = {
-    id: string
-    name: string
-    role: string
-    email: string
-    emailVerified: number | boolean
-    verificationCode: string | null
-    verificationExpiry: string | null
-}
+// No separate type needed – we use Prisma's User type directly
 
 // POST /api/auth/verify-email  { email, code }
 export async function POST(request: Request) {
@@ -23,19 +15,24 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Email and code are required' }, { status: 400 })
         }
 
-        // Use raw query to read new verification columns (bypass stale compiled Prisma types)
-        const rows = await prisma.$queryRaw<VerificationRow[]>`
-            SELECT "id", "name", "role", "email", "emailVerified", "verificationCode", "verificationExpiry"
-            FROM "User"
-            WHERE "email" = ${email}
-        `
-
-        if (!rows.length) {
-            return NextResponse.json({ error: 'Account not found' }, { status: 404 })
-        }
+        const user = await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          name: true,
+          role: true,
+          email: true,
+          emailVerified: true,
+          verificationCode: true,
+          verificationExpiry: true,
+        },
+      })
+      if (!user) {
+        return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+      }
 
         const user = rows[0]
-        const isVerified = user.emailVerified === true || user.emailVerified === 1
+        const isVerified = !!user.emailVerified;
 
         if (isVerified) {
             // Already verified — just log them in
@@ -55,11 +52,14 @@ export async function POST(request: Request) {
         }
 
         // Mark email as verified and clear the code via raw SQL
-        await prisma.$executeRaw`
-            UPDATE "User"
-            SET "emailVerified" = 1, "verificationCode" = NULL, "verificationExpiry" = NULL
-            WHERE "email" = ${email}
-        `
+        await prisma.user.update({
+        where: { email },
+        data: {
+          emailVerified: true,
+          verificationCode: null,
+          verificationExpiry: null,
+        },
+      })
 
         // Log the user in
         const tokenPayload = { userId: user.id, role: user.role, email: user.email }
@@ -92,18 +92,20 @@ export async function PUT(request: Request) {
         `
         if (!rows.length) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
 
-        const user = rows[0]
-        const isVerified = user.emailVerified === true || user.emailVerified === 1
+        const isVerified = !!user.emailVerified
         if (isVerified) return NextResponse.json({ error: 'Email already verified' }, { status: 400 })
 
         // Generate a fresh 6-digit code
         const code = Math.floor(100000 + Math.random() * 900000).toString()
         const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString()
 
-        await prisma.$executeRaw`
-            UPDATE "User" SET "verificationCode" = ${code}, "verificationExpiry" = ${expiry}
-            WHERE "email" = ${email}
-        `
+        await prisma.user.update({
+        where: { email },
+        data: {
+          verificationCode: code,
+          verificationExpiry: new Date(expiry),
+        },
+      })
 
         const { sendEmail } = await import('@/lib/mailer')
         const { verificationEmail } = await import('@/lib/email-templates')
