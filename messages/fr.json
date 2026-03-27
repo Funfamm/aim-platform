@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "Accueil",
     "works": "Œuvres",
@@ -247,9 +247,43 @@
     "spotsLeft": "places restantes",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secondaire",
-    "roleTypeExtra": "Figurant"
+    "roleTypeExtra": "Figurant",
+    "withdraw": "Retirer"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "Statut de la candidature",
+    "banner": "Vous avez déjà postulé !",
+    "bannerDesc": "Votre candidature pour {role} dans {project} a été reçue. Suivez son statut ci-dessous.",
+    "statusLabel": "Statut actuel",
+    "submittedInfo": "Informations soumises",
+    "fieldName": "Nom complet",
+    "fieldEmail": "E-mail",
+    "fieldPhone": "Téléphone",
+    "fieldAge": "Âge",
+    "fieldGender": "Genre",
+    "fieldLocation": "Lieu",
+    "fieldSkills": "Compétences spéciales",
+    "fieldAppliedOn": "Date de candidature",
+    "withdrawNote": "Votre candidature est en cours d'examen. Vous pouvez la retirer et postuler à nouveau.",
+    "withdrawBtn": "↩ Retirer la candidature",
+    "withdrawing": "Retrait en cours…",
+    "withdrawConfirm": "Êtes-vous sûr de vouloir retirer votre candidature ? Vous pourrez postuler à nouveau.",
+    "withdrawError": "Échec du retrait. Veuillez réessayer.",
+    "networkError": "Erreur réseau. Veuillez réessayer.",
+    "reapplyNote": "Vous avez retiré votre candidature. N'hésitez pas à postuler à nouveau !",
+    "reapplyBtn": "Postuler à nouveau →",
+    "backToRoles": "← Explorer d'autres rôles",
+    "statusSubmitted": "Soumis",
+    "statusUnderReview": "En cours d'examen",
+    "statusShortlisted": "Présélectionné",
+    "statusCallback": "Rappel",
+    "statusFinalReview": "Examen final",
+    "statusSelected": "Sélectionné 🎉",
+    "statusNotSelected": "Non sélectionné",
+    "statusWithdrawn": "Retiré",
+    "resultPending": "Votre candidature est en cours d'examen. Les résultats seront bientôt disponibles.",
+    "resultAvailableOn": "Résultats disponibles à partir du {date}"
+  },  "encouragement": {
     "label": "Pourquoi attendre?",
     "title": "Ne laissez pas le doute vous",
     "titleAccent": "retenir",
@@ -381,7 +415,8 @@
     "watch": "Regarder",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secondaire",
-    "roleTypeExtra": "Figurant"
+    "roleTypeExtra": "Figurant",
+    "withdraw": "Retirer"
   },
   "castingForm": {
     "pageLabel": "Candidature Casting",
@@ -390,6 +425,7 @@
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secondaire",
     "roleTypeExtra": "Figurant",
+    "withdraw": "Retirer",
     "step": "Étape",
     "of": "sur",
     "stepPersonal": "Informations Personnelles",

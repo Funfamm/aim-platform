@@ -11,7 +11,7 @@ export async function PATCH(
 
     const { id } = await params
     const body = await request.json()
-    const { status, statusNote } = body
+    const { status, statusNote, revealNow } = body
 
     // Build update data
     const updateData: Record<string, unknown> = {}
@@ -31,6 +31,11 @@ export async function PATCH(
     // Handle statusNote (applicant feedback) update
     if (statusNote !== undefined) {
         updateData.statusNote = statusNote
+    }
+
+    // Admin override: reveal AI result immediately (clear the delay)
+    if (revealNow === true) {
+        updateData.resultVisibleAt = null
     }
 
     if (Object.keys(updateData).length === 0) {

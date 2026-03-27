@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "होम",
     "works": "कार्य",
@@ -247,9 +247,43 @@
     "spotsLeft": "स्थान शेष",
     "roleTypeLead": "मुख्य",
     "roleTypeSupporting": "सहायक",
-    "roleTypeExtra": "एक्स्ट्रा"
+    "roleTypeExtra": "एक्स्ट्रा",
+    "withdraw": "वापस लें"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "आवेदन स्थिति",
+    "banner": "आपने पहले से आवेदन किया है!",
+    "bannerDesc": "{project} में {role} के लिए आपका आवेदन प्राप्त हो गया है। नीचे अपनी स्थिति ट्रैक करें।",
+    "statusLabel": "वर्तमान स्थिति",
+    "submittedInfo": "आपकी जमा की गई जानकारी",
+    "fieldName": "पूरा नाम",
+    "fieldEmail": "ईमेल",
+    "fieldPhone": "फ़ोन",
+    "fieldAge": "आयु",
+    "fieldGender": "लिंग",
+    "fieldLocation": "स्थान",
+    "fieldSkills": "विशेष कौशल",
+    "fieldAppliedOn": "आवेदन तिथि",
+    "withdrawNote": "आपका आवेदन समीक्षाधीन है। यदि आप अपनी जानकारी अपडेट करना चाहते हैं तो वापस लें और पुनः आवेदन करें।",
+    "withdrawBtn": "↩ आवेदन वापस लें",
+    "withdrawing": "वापस ले रहे हैं…",
+    "withdrawConfirm": "क्या आप वाकई अपना आवेदन वापस लेना चाहते हैं? आप बाद में पुनः आवेदन कर सकते हैं।",
+    "withdrawError": "वापस लेने में विफल। कृपया पुनः प्रयास करें।",
+    "networkError": "नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।",
+    "reapplyNote": "आपने अपना पिछला आवेदन वापस लिया। पुनः आवेदन करें!",
+    "reapplyBtn": "इस भूमिका के लिए पुनः आवेदन करें →",
+    "backToRoles": "← अन्य भूमिकाएँ देखें",
+    "statusSubmitted": "जमा किया",
+    "statusUnderReview": "समीक्षाधीन",
+    "statusShortlisted": "शॉर्टलिस्ट",
+    "statusCallback": "कॉलबैक",
+    "statusFinalReview": "अंतिम समीक्षा",
+    "statusSelected": "चुना गया 🎉",
+    "statusNotSelected": "नहीं चुना गया",
+    "statusWithdrawn": "वापस लिया",
+    "resultPending": "आपका आवेदन समीक्षाधीन है। परिणाम जल्द ही सामने आएंगे।",
+    "resultAvailableOn": "परिणाम {date} से उपलब्ध"
+  },  "encouragement": {
     "label": "क्यों इंतज़ार करें?",
     "title": "संदेह को खुद को",
     "titleAccent": "रोकने न दें",
@@ -381,7 +415,8 @@
     "watch": "देखें",
     "roleTypeLead": "मुख्य",
     "roleTypeSupporting": "सहायक",
-    "roleTypeExtra": "एक्स्ट्रा"
+    "roleTypeExtra": "एक्स्ट्रा",
+    "withdraw": "वापस लें"
   },
   "castingForm": {
     "pageLabel": "कास्टिंग आवेदन",
@@ -390,6 +425,7 @@
     "roleTypeLead": "मुख्य",
     "roleTypeSupporting": "सहायक",
     "roleTypeExtra": "एक्स्ट्रा",
+    "withdraw": "वापस लें",
     "step": "चरण",
     "of": "में से",
     "stepPersonal": "व्यक्तिगत जानकारी",

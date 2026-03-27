@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "Inicio",
     "works": "Obras",
@@ -247,9 +247,43 @@
     "spotsLeft": "lugares restantes",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secundario",
-    "roleTypeExtra": "Extra"
+    "roleTypeExtra": "Extra",
+    "withdraw": "Retirar"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "Estado de la solicitud",
+    "banner": "¡Ya has solicitado!",
+    "bannerDesc": "Tu solicitud para {role} en {project} ha sido recibida. Sigue tu estado a continuación.",
+    "statusLabel": "Estado actual",
+    "submittedInfo": "Información enviada",
+    "fieldName": "Nombre completo",
+    "fieldEmail": "Correo electrónico",
+    "fieldPhone": "Teléfono",
+    "fieldAge": "Edad",
+    "fieldGender": "Género",
+    "fieldLocation": "Ubicación",
+    "fieldSkills": "Habilidades especiales",
+    "fieldAppliedOn": "Fecha de solicitud",
+    "withdrawNote": "Tu solicitud está en revisión. Puedes retirarla y volver a aplicar si deseas actualizar tu información.",
+    "withdrawBtn": "↩ Retirar solicitud",
+    "withdrawing": "Retirando…",
+    "withdrawConfirm": "¿Estás seguro de retirar tu solicitud? Podrás volver a aplicar después.",
+    "withdrawError": "Error al retirar. Inténtalo de nuevo.",
+    "networkError": "Error de red. Inténtalo de nuevo.",
+    "reapplyNote": "Retiraste tu solicitud anterior. ¡Puedes volver a aplicar!",
+    "reapplyBtn": "Volver a aplicar →",
+    "backToRoles": "← Explorar otros roles",
+    "statusSubmitted": "Enviado",
+    "statusUnderReview": "En revisión",
+    "statusShortlisted": "Preseleccionado",
+    "statusCallback": "Llamada de retorno",
+    "statusFinalReview": "Revisión final",
+    "statusSelected": "Seleccionado 🎉",
+    "statusNotSelected": "No seleccionado",
+    "statusWithdrawn": "Retirado",
+    "resultPending": "Tu solicitud está siendo revisada. Los resultados se revelarán en breve.",
+    "resultAvailableOn": "Resultados disponibles desde el {date}"
+  },  "encouragement": {
     "label": "¿Por qué esperar?",
     "title": "No dejes que la duda te",
     "titleAccent": "detenga",
@@ -381,7 +415,8 @@
     "watch": "Ver",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secundario",
-    "roleTypeExtra": "Extra"
+    "roleTypeExtra": "Extra",
+    "withdraw": "Retirar"
   },
   "castingForm": {
     "pageLabel": "Solicitud de Casting",
@@ -390,6 +425,7 @@
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secundario",
     "roleTypeExtra": "Extra",
+    "withdraw": "Retirar",
     "step": "Paso",
     "of": "de",
     "stepPersonal": "Información Personal",

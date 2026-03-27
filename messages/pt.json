@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "Início",
     "works": "Obras",
@@ -247,9 +247,43 @@
     "spotsLeft": "vagas restantes",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Coadjuvante",
-    "roleTypeExtra": "Figurante"
+    "roleTypeExtra": "Figurante",
+    "withdraw": "Retirar"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "Status da candidatura",
+    "banner": "Você já se candidatou!",
+    "bannerDesc": "Sua candidatura para {role} em {project} foi recebida. Acompanhe seu status abaixo.",
+    "statusLabel": "Status atual",
+    "submittedInfo": "Informações enviadas",
+    "fieldName": "Nome completo",
+    "fieldEmail": "E-mail",
+    "fieldPhone": "Telefone",
+    "fieldAge": "Idade",
+    "fieldGender": "Gênero",
+    "fieldLocation": "Localização",
+    "fieldSkills": "Habilidades especiais",
+    "fieldAppliedOn": "Data da candidatura",
+    "withdrawNote": "Sua candidatura ainda está em análise. Você pode retirar e recandidatar-se para atualizar suas informações.",
+    "withdrawBtn": "↩ Retirar candidatura",
+    "withdrawing": "Retirando…",
+    "withdrawConfirm": "Tem certeza de que deseja retirar sua candidatura? Você poderá se recandidatar depois.",
+    "withdrawError": "Falha ao retirar. Tente novamente.",
+    "networkError": "Erro de rede. Tente novamente.",
+    "reapplyNote": "Você retirou sua candidatura anterior. Sinta-se à vontade para se recandidatar!",
+    "reapplyBtn": "Recandidatar-se →",
+    "backToRoles": "← Explorar outros papéis",
+    "statusSubmitted": "Enviado",
+    "statusUnderReview": "Em análise",
+    "statusShortlisted": "Pré-selecionado",
+    "statusCallback": "Retorno",
+    "statusFinalReview": "Análise final",
+    "statusSelected": "Selecionado ��",
+    "statusNotSelected": "Não selecionado",
+    "statusWithdrawn": "Retirado",
+    "resultPending": "Sua candidatura está sendo analisada. Os resultados serão revelados em breve.",
+    "resultAvailableOn": "Resultados disponíveis a partir de {date}"
+  },  "encouragement": {
     "label": "Por que esperar?",
     "title": "Não deixe a dúvida te",
     "titleAccent": "parar",
@@ -381,7 +415,8 @@
     "watch": "Assistir",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Coadjuvante",
-    "roleTypeExtra": "Figurante"
+    "roleTypeExtra": "Figurante",
+    "withdraw": "Retirar"
   },
   "castingForm": {
     "pageLabel": "Candidatura Casting",
@@ -390,6 +425,7 @@
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Coadjuvante",
     "roleTypeExtra": "Figurante",
+    "withdraw": "Retirar",
     "step": "Passo",
     "of": "de",
     "stepPersonal": "Informações Pessoais",

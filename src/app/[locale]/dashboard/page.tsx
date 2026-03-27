@@ -12,7 +12,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import DashboardStats from '@/components/dashboard/DashboardStats'
 import TabNavigation, { type TabType } from '@/components/dashboard/TabNavigation'
 import EmptyState from '@/components/dashboard/EmptyState'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface ApplicationData {
     id: string
@@ -88,6 +88,7 @@ export default function DashboardPage() {
     const { user, loading, refreshUser } = useAuth()
     const router = useRouter()
     const t = useTranslations('dashboard')
+    const locale = useLocale()
     const STATUS_CONFIG = getStatusConfig(t)
     const [applications, setApplications] = useState<ApplicationData[]>([])
     const [watchlist, setWatchlist] = useState<WatchlistItem[]>([])
@@ -112,7 +113,7 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (!user) return
-        fetch('/api/dashboard/applications').then(r => r.json())
+        fetch(`/api/dashboard/applications?locale=${locale}`).then(r => r.json())
             .then(data => {
                 setApplications(data.applications || [])
                 setPagination(p => ({ ...p, appsCursor: data.nextCursor, appsHasMore: data.hasMore ?? false }))

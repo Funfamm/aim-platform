@@ -372,6 +372,13 @@ export default function AdminAnalyticsPage() {
                         <div className="loading-spinner" style={{ margin: '0 auto var(--space-md)' }} />
                         Initializing command center...
                     </div>
+                ) : !data ? (
+                    <div style={{ padding: 'var(--space-4xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                        <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⚠️</div>
+                        <div style={{ fontWeight: 700, marginBottom: '6px' }}>Failed to load analytics</div>
+                        <div style={{ fontSize: '0.8rem', marginBottom: '16px' }}>Could not fetch data from the server.</div>
+                        <button onClick={fetchData} className="btn btn-primary" style={{ fontSize: '0.8rem' }}>Retry</button>
+                    </div>
                 ) : data && (
                     <>
                         {/* ═══════ OVERVIEW TAB ═══════ */}

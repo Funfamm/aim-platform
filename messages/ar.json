@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "الرئيسية",
     "works": "الأعمال",
@@ -247,9 +247,43 @@
     "spotsLeft": "أماكن متبقية",
     "roleTypeLead": "رئيسي",
     "roleTypeSupporting": "ثانوي",
-    "roleTypeExtra": "كومبارس"
+    "roleTypeExtra": "كومبارس",
+    "withdraw": "سحب"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "حالة الطلب",
+    "banner": "لقد تقدمت مسبقاً!",
+    "bannerDesc": "طلبك لـ{role} في {project} تم استلامه. تابع حالتك أدناه.",
+    "statusLabel": "الحالة الحالية",
+    "submittedInfo": "المعلومات المُرسلة",
+    "fieldName": "الاسم الكامل",
+    "fieldEmail": "البريد الإلكتروني",
+    "fieldPhone": "الهاتف",
+    "fieldAge": "العمر",
+    "fieldGender": "الجنس",
+    "fieldLocation": "الموقع",
+    "fieldSkills": "مهارات خاصة",
+    "fieldAppliedOn": "تاريخ التقديم",
+    "withdrawNote": "طلبك قيد المراجعة. يمكنك سحبه وإعادة التقديم.",
+    "withdrawBtn": "↩ سحب الطلب",
+    "withdrawing": "جاري السحب…",
+    "withdrawConfirm": "هل أنت متأكد من سحب طلبك؟ يمكنك إعادة التقديم لاحقاً.",
+    "withdrawError": "فشل السحب. حاول مجدداً.",
+    "networkError": "خطأ في الشبكة. حاول مجدداً.",
+    "reapplyNote": "لقد سحبت طلبك. يمكنك إعادة التقديم!",
+    "reapplyBtn": "إعادة التقديم لهذا الدور →",
+    "backToRoles": "← استكشف أدوار أخرى",
+    "statusSubmitted": "مُرسل",
+    "statusUnderReview": "قيد المراجعة",
+    "statusShortlisted": "قائمة مختصرة",
+    "statusCallback": "مكالمة عودة",
+    "statusFinalReview": "مراجعة نهائية",
+    "statusSelected": "مُختار 🎉",
+    "statusNotSelected": "لم يُختر",
+    "statusWithdrawn": "مسحوب",
+    "resultPending": "طلبك قيد المراجعة. ستُكشف النتائج قريباً.",
+    "resultAvailableOn": "النتائج متاحة من {date}"
+  },  "encouragement": {
     "label": "لماذا الانتظار؟",
     "title": "لا تدع الشك",
     "titleAccent": "يوقفك",
@@ -381,7 +415,8 @@
     "watch": "شاهد",
     "roleTypeLead": "رئيسي",
     "roleTypeSupporting": "ثانوي",
-    "roleTypeExtra": "كومبارس"
+    "roleTypeExtra": "كومبارس",
+    "withdraw": "سحب"
   },
   "castingForm": {
     "pageLabel": "طلب كاستنج",
@@ -390,6 +425,7 @@
     "roleTypeLead": "رئيسي",
     "roleTypeSupporting": "ثانوي",
     "roleTypeExtra": "كومبارس",
+    "withdraw": "سحب",
     "step": "خطوة",
     "of": "من",
     "stepPersonal": "معلومات شخصية",

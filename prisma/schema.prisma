@@ -10,7 +10,6 @@ datasource db {
   directUrl  = env("DIRECT_URL")
 }
 
-
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -50,7 +49,6 @@ model User {
   @@index([createdAt])
 }
 
-
 model Project {
   id          String   @id @default(cuid())
   title       String
@@ -61,7 +59,7 @@ model Project {
   projectType String   @default("movie") // movie | series
   coverImage  String?
   trailerUrl  String?
-  filmUrl     String?  // Full film — member-only access
+  filmUrl     String?  // Full film ??? member-only access
   genre       String?
   year        String?
   duration    String?
@@ -179,13 +177,14 @@ model Application {
   selfTapePath  String?
   portfolioUrl  String?
   locale        String   @default("en") // User's locale at time of application
-  status        String   @default("submitted") // submitted | under-review | shortlisted | callback | final-review | selected | not-selected
+  status        ApplicationStatus @default(submitted)
   aiScore       Float?
   aiFitLevel    String?  // STRONG_FIT | GOOD_FIT | MODERATE | WEAK_FIT
   aiReport      String?  // JSON: { overallScore, roleFitScore, strengths, concerns, recommendation, notes }
   resultVisibleAt DateTime? // When AI result becomes visible to applicant (delayed reveal)
   adminNotes    String?
   statusNote    String?  // AI-generated note shown to the applicant explaining the decision
+  statusNoteTranslations String? // JSON: { "ar": "...", "fr": "..." } ??? cached translations of statusNote
   reviewedAt    DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -197,6 +196,17 @@ model Application {
   @@index([status])
   @@index([createdAt])
   @@index([aiScore])
+}
+
+enum ApplicationStatus {
+  submitted
+  under_review
+  shortlisted
+  callback
+  final_review
+  selected
+  not_selected
+  withdrawn
 }
 
 model Admin {
@@ -239,8 +249,8 @@ model SiteSettings {
   aiAutoAudit     Boolean @default(false) // Auto-run AI audit on new applications
 
   // Pipeline Automation
-  autoShortlistThreshold Int     @default(75) // AI score >= this → auto-shortlist
-  autoRejectThreshold    Int     @default(25) // AI score <= this → auto-reject
+  autoShortlistThreshold Int     @default(75) // AI score >= this ??? auto-shortlist
+  autoRejectThreshold    Int     @default(25) // AI score <= this ??? auto-reject
   pipelineAutoAdvance    Boolean @default(true) // Enable AI-driven auto-advance
   notifyApplicantOnStatusChange Boolean @default(true) // Email applicant on status change
 
@@ -271,9 +281,9 @@ model SiteSettings {
 
   // Section Visibility
   scriptCallsEnabled  Boolean @default(false) // master toggle for script call system
-  castingCallsEnabled Boolean @default(true)  // master toggle – hide all casting calls from platform
+  castingCallsEnabled Boolean @default(true)  // master toggle ??? hide all casting calls from platform
   trainingEnabled     Boolean @default(false) // master toggle for training hub
-  sponsorsPageEnabled Boolean @default(true)  // master toggle – show/hide public sponsors page
+  sponsorsPageEnabled Boolean @default(true)  // master toggle ??? show/hide public sponsors page
 
   // OAuth Configuration
   googleClientId     String?
@@ -398,7 +408,7 @@ model PageMedia {
   @@index([active])
 }
 
-// ─── Script Call System ───
+// ????????? Script Call System ?????????
 
 model ScriptCall {
   id              String   @id @default(cuid())
@@ -457,7 +467,7 @@ model ScriptAnalysis {
   analyzedAt           DateTime @default(now())
 }
 
-// ── Analytics ──────────────────────────────────────────────
+// ?????? Analytics ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 
 model PageView {
   id        String   @id @default(cuid())
@@ -500,7 +510,7 @@ model ApiKey {
   updatedAt     DateTime @updatedAt
 }
 
-// ─── Training System ───
+// ????????? Training System ?????????
 
 model Course {
   id           String   @id @default(cuid())
@@ -619,7 +629,7 @@ model TrainingBadge {
   @@index([userId])
 }
 
-// ─── Quiz Engine ───
+// ????????? Quiz Engine ?????????
 
 model Quiz {
   id          String   @id @default(cuid())
@@ -667,7 +677,7 @@ model QuizAttempt {
   @@index([quizId])
 }
 
-// ─── Learning Materials ───
+// ????????? Learning Materials ?????????
 
 model LearningMaterial {
   id         String   @id @default(cuid())
@@ -683,7 +693,7 @@ model LearningMaterial {
   @@index([moduleId])
 }
 
-// ─── Review Activity ───
+// ????????? Review Activity ?????????
 
 model ReviewActivity {
   id           String   @id @default(cuid())
@@ -699,3 +709,4 @@ model ReviewActivity {
   @@index([userId, moduleId])
   @@index([moduleId])
 }
+

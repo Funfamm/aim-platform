@@ -76,8 +76,8 @@ export async function GET(req: NextRequest) {
             // Dashboard counts
             prisma.project.count(),
             prisma.castingCall.count({ where: { status: 'open' } }),
-            prisma.application.count({ where: { status: 'pending' } }),
-            prisma.application.count({ where: { status: { not: 'pending' } } }),
+            prisma.application.count({ where: { status: 'submitted' } }),
+            prisma.application.count({ where: { status: { not: 'submitted' } } }),
             prisma.application.findMany({
                 take: 5,
                 orderBy: { createdAt: 'desc' },

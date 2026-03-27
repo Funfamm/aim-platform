@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { translateStatusNote } from '@/lib/translate'
 
 export async function GET(request: NextRequest) {
     const session = await getUserSession()
@@ -11,6 +12,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const cursor = searchParams.get('cursor')
     const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50)
+    const locale = searchParams.get('locale') || 'en'
 
     const user = await prisma.user.findUnique({
         where: { id: session.userId as string },
@@ -28,9 +30,17 @@ export async function GET(request: NextRequest) {
                 { email: user.email },
             ],
         },
-        include: {
+        select: {
+            id: true,
+            fullName: true,
+            status: true,
+            statusNote: true,
+            resultVisibleAt: true,
+            createdAt: true,
             castingCall: {
-                include: {
+                select: {
+                    roleName: true,
+                    roleType: true,
                     project: {
                         select: { title: true, slug: true },
                     },
@@ -46,8 +56,24 @@ export async function GET(request: NextRequest) {
     const items = hasMore ? applications.slice(0, limit) : applications
     const nextCursor = hasMore ? items[items.length - 1].id : null
 
+    // Gate statusNote behind resultVisibleAt — only reveal after the delay has passed
+    const now = new Date()
+    const translated = await Promise.all(
+        items.map(async (app) => {
+            const isRevealed = !app.resultVisibleAt || app.resultVisibleAt <= now
+            return {
+                ...app,
+                statusNote: isRevealed
+                    ? await translateStatusNote(app.statusNote, locale, app.id)
+                    : null,
+                // Pass resultVisibleAt so the frontend can show a countdown / "pending" message
+                resultVisibleAt: app.resultVisibleAt?.toISOString() ?? null,
+            }
+        })
+    )
+
     return NextResponse.json({
-        applications: items,
+        applications: translated,
         nextCursor,
         hasMore,
     })

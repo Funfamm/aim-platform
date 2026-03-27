@@ -9,8 +9,8 @@ export async function GET() {
         prisma.project.count(),
         prisma.castingCall.count({ where: { status: 'open' } }),
         prisma.application.count(),
-        prisma.application.count({ where: { status: 'pending' } }),
-        prisma.application.count({ where: { status: { not: 'pending' } } }),
+        prisma.application.count({ where: { status: 'submitted' } }),
+        prisma.application.count({ where: { status: { not: 'submitted' } } }),
     ])
 
     const recentApplications = await prisma.application.findMany({

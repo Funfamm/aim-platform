@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "Главная",
     "works": "Работы",
@@ -247,9 +247,43 @@
     "spotsLeft": "мест осталось",
     "roleTypeLead": "Главная роль",
     "roleTypeSupporting": "Второстепенная",
-    "roleTypeExtra": "Массовка"
+    "roleTypeExtra": "Массовка",
+    "withdraw": "Отозвать"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "Статус заявки",
+    "banner": "Вы уже подали заявку!",
+    "bannerDesc": "Ваша заявка на роль {role} в {project} получена. Отслеживайте статус ниже.",
+    "statusLabel": "Текущий статус",
+    "submittedInfo": "Отправленная информация",
+    "fieldName": "Полное имя",
+    "fieldEmail": "Электронная почта",
+    "fieldPhone": "Телефон",
+    "fieldAge": "Возраст",
+    "fieldGender": "Пол",
+    "fieldLocation": "Местоположение",
+    "fieldSkills": "Особые навыки",
+    "fieldAppliedOn": "Дата подачи",
+    "withdrawNote": "Ваша заявка всё ещё рассматривается. Вы можете отозвать её и подать повторно.",
+    "withdrawBtn": "↩ Отозвать заявку",
+    "withdrawing": "Отзыв…",
+    "withdrawConfirm": "Вы уверены, что хотите отозвать заявку? Вы сможете подать её снова.",
+    "withdrawError": "Не удалось отозвать. Попробуйте ещё раз.",
+    "networkError": "Ошибка сети. Попробуйте ещё раз.",
+    "reapplyNote": "Вы отозвали предыдущую заявку. Добро пожаловать снова!",
+    "reapplyBtn": "Подать заявку снова →",
+    "backToRoles": "← Изучить другие роли",
+    "statusSubmitted": "Отправлено",
+    "statusUnderReview": "На рассмотрении",
+    "statusShortlisted": "В шорт-листе",
+    "statusCallback": "Обратный звонок",
+    "statusFinalReview": "Финальный просмотр",
+    "statusSelected": "Выбран 🎉",
+    "statusNotSelected": "Не выбран",
+    "statusWithdrawn": "Отозвано",
+    "resultPending": "Ваша заявка рассматривается. Результаты будут раскрыты в ближайшее время.",
+    "resultAvailableOn": "Результаты доступны с {date}"
+  },  "encouragement": {
     "label": "Зачем ждать?",
     "title": "Не позволяй сомнению",
     "titleAccent": "остановить тебя",
@@ -381,7 +415,8 @@
     "watch": "Смотреть",
     "roleTypeLead": "Главная",
     "roleTypeSupporting": "Второстепенная",
-    "roleTypeExtra": "Массовка"
+    "roleTypeExtra": "Массовка",
+    "withdraw": "Отозвать"
   },
   "castingForm": {
     "pageLabel": "Заявка на Кастинг",
@@ -390,6 +425,7 @@
     "roleTypeLead": "Главная",
     "roleTypeSupporting": "Второстепенная",
     "roleTypeExtra": "Массовка",
+    "withdraw": "Отозвать",
     "step": "Шаг",
     "of": "из",
     "stepPersonal": "Личные Данные",

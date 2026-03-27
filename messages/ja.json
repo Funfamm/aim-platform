@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "ホーム",
     "works": "作品",
@@ -247,9 +247,43 @@
     "spotsLeft": "残り枠",
     "roleTypeLead": "主役",
     "roleTypeSupporting": "助演",
-    "roleTypeExtra": "エキストラ"
+    "roleTypeExtra": "エキストラ",
+    "withdraw": "取り下げ"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "申請状況",
+    "banner": "すでに応募済みです！",
+    "bannerDesc": "{project}の{role}へのご応募を受け付けました。以下で状況をご確認ください。",
+    "statusLabel": "現在の状況",
+    "submittedInfo": "提出した情報",
+    "fieldName": "氏名",
+    "fieldEmail": "メールアドレス",
+    "fieldPhone": "電話番号",
+    "fieldAge": "年齢",
+    "fieldGender": "性別",
+    "fieldLocation": "所在地",
+    "fieldSkills": "特技・スキル",
+    "fieldAppliedOn": "応募日",
+    "withdrawNote": "応募はまだ審査中です。情報を更新したい場合は取り下げて再応募できます。",
+    "withdrawBtn": "↩ 応募を取り下げる",
+    "withdrawing": "取り下げ中…",
+    "withdrawConfirm": "本当に応募を取り下げますか？後で再応募できます。",
+    "withdrawError": "取り下げに失敗しました。もう一度お試しください。",
+    "networkError": "ネットワークエラーです。もう一度お試しください。",
+    "reapplyNote": "前回の応募を取り下げました。ぜひ再応募してください！",
+    "reapplyBtn": "このロールに再応募する →",
+    "backToRoles": "← 他のロールを探す",
+    "statusSubmitted": "提出済み",
+    "statusUnderReview": "審査中",
+    "statusShortlisted": "候補",
+    "statusCallback": "コールバック",
+    "statusFinalReview": "最終審査",
+    "statusSelected": "選出 🎉",
+    "statusNotSelected": "非選出",
+    "statusWithdrawn": "取り下げ済み",
+    "resultPending": "応募内容を審査中です。まもなく結果がお知らせできます。",
+    "resultAvailableOn": "{date} 以降に結果が公開されます"
+  },  "encouragement": {
     "label": "なぜ待つ？",
     "title": "疑いに",
     "titleAccent": "負けないで",
@@ -381,7 +415,8 @@
     "watch": "見る",
     "roleTypeLead": "主役",
     "roleTypeSupporting": "助演",
-    "roleTypeExtra": "エキストラ"
+    "roleTypeExtra": "エキストラ",
+    "withdraw": "取り下げ"
   },
   "castingForm": {
     "pageLabel": "キャスティング応募",
@@ -390,6 +425,7 @@
     "roleTypeLead": "主役",
     "roleTypeSupporting": "助演",
     "roleTypeExtra": "エキストラ",
+    "withdraw": "取り下げ",
     "step": "ステップ",
     "of": "/",
     "stepPersonal": "個人情報",

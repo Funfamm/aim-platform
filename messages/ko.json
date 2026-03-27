@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "홈",
     "works": "작품",
@@ -247,9 +247,43 @@
     "spotsLeft": "남은 자리",
     "roleTypeLead": "주연",
     "roleTypeSupporting": "조연",
-    "roleTypeExtra": "엑스트라"
+    "roleTypeExtra": "엑스트라",
+    "withdraw": "취소"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "지원 상태",
+    "banner": "이미 지원하셨습니다!",
+    "bannerDesc": "{project}의 {role} 지원이 접수되었습니다. 아래에서 상태를 확인하세요.",
+    "statusLabel": "현재 상태",
+    "submittedInfo": "제출한 정보",
+    "fieldName": "성명",
+    "fieldEmail": "이메일",
+    "fieldPhone": "전화번호",
+    "fieldAge": "나이",
+    "fieldGender": "성별",
+    "fieldLocation": "위치",
+    "fieldSkills": "특기",
+    "fieldAppliedOn": "지원일",
+    "withdrawNote": "지원서가 아직 검토 중입니다. 정보를 수정하려면 취소 후 재지원하세요.",
+    "withdrawBtn": "↩ 지원 취소",
+    "withdrawing": "취소 중…",
+    "withdrawConfirm": "지원을 취소하시겠습니까? 나중에 재지원할 수 있습니다.",
+    "withdrawError": "취소에 실패했습니다. 다시 시도해 주세요.",
+    "networkError": "네트워크 오류. 다시 시도해 주세요.",
+    "reapplyNote": "이전 지원을 취소하셨습니다. 재지원하실 수 있습니다!",
+    "reapplyBtn": "이 역할에 재지원 →",
+    "backToRoles": "← 다른 역할 탐색",
+    "statusSubmitted": "제출됨",
+    "statusUnderReview": "검토 중",
+    "statusShortlisted": "후보",
+    "statusCallback": "콜백",
+    "statusFinalReview": "최종 검토",
+    "statusSelected": "선발됨 🎉",
+    "statusNotSelected": "미선발",
+    "statusWithdrawn": "취소됨",
+    "resultPending": "지원서를 검토 중입니다. 곧 결과가 공개될 예정입니다.",
+    "resultAvailableOn": "{date}부터 결과 확인 가능"
+  },  "encouragement": {
     "label": "왜 기다리나요?",
     "title": "의심이 당신을",
     "titleAccent": "막지 못하게",
@@ -381,7 +415,8 @@
     "watch": "보기",
     "roleTypeLead": "주연",
     "roleTypeSupporting": "조연",
-    "roleTypeExtra": "엑스트라"
+    "roleTypeExtra": "엑스트라",
+    "withdraw": "취소"
   },
   "castingForm": {
     "pageLabel": "캐스팅 지원",
@@ -390,6 +425,7 @@
     "roleTypeLead": "주연",
     "roleTypeSupporting": "조연",
     "roleTypeExtra": "엑스트라",
+    "withdraw": "취소",
     "step": "단계",
     "of": "/",
     "stepPersonal": "개인 정보",

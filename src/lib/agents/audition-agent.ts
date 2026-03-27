@@ -220,7 +220,7 @@ Based ONLY on what was submitted, assess:
     prompt += `\n\nBe encouraging and constructive. This is a volunteer/independent production, so prioritize passion, personality fit, and potential.`
 
     if (input.locale && input.locale !== 'en') {
-        prompt += `\n\n## LANGUAGE REQUIREMENT\nIMPORTANT: The admin team reads reports in English. Keep the following fields in ENGLISH: "strengths", "areasToExplore", "notes", and "visualAssessment".\nHowever, the "applicantFeedback" field MUST be written in ${lang}, because it is shown directly to the applicant who speaks ${lang}. Write it warmly and naturally in ${lang}.`
+        prompt += `\n\n## ⚠️ CRITICAL LANGUAGE REQUIREMENT ⚠️\nThe applicant speaks ${lang}. You MUST write the "applicantFeedback" field entirely in ${lang}.\nDo NOT write applicantFeedback in English under any circumstances — the applicant will not understand it.\nAll other fields (strengths, concerns, notes, visualAssessment) should remain in English for the admin team.\nIMPORTANT: "applicantFeedback" MUST be ${lang} only.`
     }
 
     if (customPrompt) {

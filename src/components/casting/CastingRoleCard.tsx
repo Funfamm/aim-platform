@@ -32,9 +32,11 @@ interface CastingCall {
 interface Props {
     call: CastingCall
     index: number
+    hasApplied?: boolean
+    applicationStatus?: string
 }
 
-export default function CastingRoleCard({ call, index }: Props) {
+export default function CastingRoleCard({ call, index, hasApplied = false, applicationStatus }: Props) {
     const t = useTranslations('castingCard')
     const locale = useLocale()
     const roleTypeKeys: Record<string, string> = { lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }
@@ -132,17 +134,65 @@ export default function CastingRoleCard({ call, index }: Props) {
                     )}
                 </div>
 
-                <Link href={`/casting/${call.id}/apply`} className="btn btn-primary" style={{
-                    width: '100%',
-                    padding: '0.5rem 1rem',
-                    fontSize: '0.8rem',
-                }}>
-                    {t('apply')}
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M5 12h14M12 5l7 7-7 7" />
-                    </svg>
-                </Link>
+                {hasApplied ? (
+                    <div style={{
+                        width: '100%',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        border: '1px solid rgba(228, 185, 90, 0.4)',
+                        borderRadius: 'var(--radius-full)',
+                        color: 'var(--accent-gold)',
+                        background: 'rgba(228, 185, 90, 0.08)',
+                        cursor: 'not-allowed',
+                        opacity: 0.85,
+                        fontWeight: 600,
+                        letterSpacing: '0.02em',
+                    }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Applied
+                    </div>
+                ) : (
+                    <Link href={`/casting/${call.id}/apply`} className="btn btn-primary" style={{
+                        width: '100%',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                    }}>
+                        {t('apply')}
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </Link>
+                )}
             </div>
+            {hasApplied && (applicationStatus === 'submitted' || applicationStatus === 'under_review') && (
+                <button
+                    className="btn btn-outline btn-warning"
+                    style={{
+                        width: '100%',
+                        marginTop: '0.5rem',
+                        padding: '0.5rem 1rem',
+                        fontSize: '0.8rem',
+                    }}
+                    onClick={async () => {
+                        const res = await fetch(`/api/casting/${call.id}/withdraw`, { method: 'POST' })
+                        if (res.ok) {
+                            // simple refresh to reflect change
+                            window.location.reload()
+                        } else {
+                            const data = await res.json()
+                            alert(data.error || 'Failed to withdraw')
+                        }
+                    }}
+                >
+                    {t('withdraw')}
+                </button>
+            )}
         </ScrollReveal3D>
     )
 }

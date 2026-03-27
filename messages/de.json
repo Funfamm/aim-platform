@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "Startseite",
     "works": "Werke",
@@ -247,9 +247,43 @@
     "spotsLeft": "Plätze übrig",
     "roleTypeLead": "Hauptrolle",
     "roleTypeSupporting": "Nebenrolle",
-    "roleTypeExtra": "Statist"
+    "roleTypeExtra": "Statist",
+    "withdraw": "Zurückziehen"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "Bewerbungsstatus",
+    "banner": "Sie haben sich bereits beworben!",
+    "bannerDesc": "Ihre Bewerbung für {role} in {project} wurde erhalten. Verfolgen Sie Ihren Status unten.",
+    "statusLabel": "Aktueller Status",
+    "submittedInfo": "Eingereichte Informationen",
+    "fieldName": "Vollständiger Name",
+    "fieldEmail": "E-Mail",
+    "fieldPhone": "Telefon",
+    "fieldAge": "Alter",
+    "fieldGender": "Geschlecht",
+    "fieldLocation": "Standort",
+    "fieldSkills": "Besondere Fähigkeiten",
+    "fieldAppliedOn": "Bewerbungsdatum",
+    "withdrawNote": "Ihre Bewerbung wird noch geprüft. Sie können sie zurückziehen und erneut bewerben.",
+    "withdrawBtn": "↩ Bewerbung zurückziehen",
+    "withdrawing": "Wird zurückgezogen…",
+    "withdrawConfirm": "Möchten Sie Ihre Bewerbung wirklich zurückziehen? Sie können sich danach erneut bewerben.",
+    "withdrawError": "Rückzug fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "networkError": "Netzwerkfehler. Bitte versuchen Sie es erneut.",
+    "reapplyNote": "Sie haben Ihre vorherige Bewerbung zurückgezogen. Sie können sich erneut bewerben!",
+    "reapplyBtn": "Erneut bewerben →",
+    "backToRoles": "← Andere Rollen erkunden",
+    "statusSubmitted": "Eingereicht",
+    "statusUnderReview": "In Prüfung",
+    "statusShortlisted": "In der engeren Auswahl",
+    "statusCallback": "Rückruf",
+    "statusFinalReview": "Abschließende Prüfung",
+    "statusSelected": "Ausgewählt 🎉",
+    "statusNotSelected": "Nicht ausgewählt",
+    "statusWithdrawn": "Zurückgezogen",
+    "resultPending": "Ihre Bewerbung wird geprüft. Die Ergebnisse werden in Kürze bekannt gegeben.",
+    "resultAvailableOn": "Ergebnisse verfügbar ab {date}"
+  },  "encouragement": {
     "label": "Warum Warten?",
     "title": "Lass Zweifel dich nicht",
     "titleAccent": "aufhalten",
@@ -381,7 +415,8 @@
     "watch": "Ansehen",
     "roleTypeLead": "Hauptrolle",
     "roleTypeSupporting": "Nebenrolle",
-    "roleTypeExtra": "Statist"
+    "roleTypeExtra": "Statist",
+    "withdraw": "Zurückziehen"
   },
   "castingForm": {
     "pageLabel": "Casting-Bewerbung",
@@ -390,6 +425,7 @@
     "roleTypeLead": "Hauptrolle",
     "roleTypeSupporting": "Nebenrolle",
     "roleTypeExtra": "Statist",
+    "withdraw": "Zurückziehen",
     "step": "Schritt",
     "of": "von",
     "stepPersonal": "Persönliche Daten",

@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "首页",
     "works": "作品",
@@ -247,9 +247,43 @@
     "spotsLeft": "剩余名额",
     "roleTypeLead": "主角",
     "roleTypeSupporting": "配角",
-    "roleTypeExtra": "临演"
+    "roleTypeExtra": "临演",
+    "withdraw": "撤回"
   },
-  "encouragement": {
+  "alreadyApplied": {
+    "pageLabel": "申请状态",
+    "banner": "您已申请过！",
+    "bannerDesc": "您对{project}中{role}角色的申请已收到。请在下方跟踪状态。",
+    "statusLabel": "当前状态",
+    "submittedInfo": "您提交的信息",
+    "fieldName": "全名",
+    "fieldEmail": "电子邮件",
+    "fieldPhone": "电话",
+    "fieldAge": "年龄",
+    "fieldGender": "性别",
+    "fieldLocation": "地点",
+    "fieldSkills": "特殊技能",
+    "fieldAppliedOn": "申请日期",
+    "withdrawNote": "您的申请仍在审核中。您可以撤回并重新申请以更新信息。",
+    "withdrawBtn": "↩ 撤回申请",
+    "withdrawing": "撤回中…",
+    "withdrawConfirm": "您确定要撤回申请吗？您可以之后重新申请。",
+    "withdrawError": "撤回失败，请重试。",
+    "networkError": "网络错误，请重试。",
+    "reapplyNote": "您已撤回上次申请，欢迎重新申请！",
+    "reapplyBtn": "重新申请此角色 →",
+    "backToRoles": "← 探索其他角色",
+    "statusSubmitted": "已提交",
+    "statusUnderReview": "审核中",
+    "statusShortlisted": "入围",
+    "statusCallback": "回调",
+    "statusFinalReview": "最终审核",
+    "statusSelected": "已选中 🎉",
+    "statusNotSelected": "未选中",
+    "statusWithdrawn": "已撤回",
+    "resultPending": "您的申请正在审核中，结果即将公布。",
+    "resultAvailableOn": "结果将于 {date} 起公布"
+  },  "encouragement": {
     "label": "为什么等待？",
     "title": "别让怀疑",
     "titleAccent": "阻止你",
@@ -381,7 +415,8 @@
     "watch": "观看",
     "roleTypeLead": "主角",
     "roleTypeSupporting": "配角",
-    "roleTypeExtra": "临演"
+    "roleTypeExtra": "临演",
+    "withdraw": "撤回"
   },
   "castingForm": {
     "pageLabel": "选角申请",
@@ -390,6 +425,7 @@
     "roleTypeLead": "主角",
     "roleTypeSupporting": "配角",
     "roleTypeExtra": "临演",
+    "withdraw": "撤回",
     "step": "步骤",
     "of": "共",
     "stepPersonal": "个人信息",

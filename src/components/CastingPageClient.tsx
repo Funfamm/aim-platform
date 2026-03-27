@@ -38,7 +38,7 @@ interface CastingCall {
     translations: string | null
 }
 
-export default function CastingPageClient({ castingCalls }: { castingCalls: CastingCall[] }) {
+export default function CastingPageClient({ castingCalls, appliedMap = {} }: { castingCalls: CastingCall[]; appliedMap?: Record<string, string> }) {
     // Hero videos — dual-slot crossfade
     const [heroVideos, setHeroVideos] = useState<HeroVideoItem[]>([])
     const [currentVideoIdx, setCurrentVideoIdx] = useState(0)
@@ -468,7 +468,13 @@ export default function CastingPageClient({ castingCalls }: { castingCalls: Cast
                                         {/* Roles Grid — compact cards */}
                                         <div className="grid-auto-fill">
                                             {calls.map((call, callIdx) => (
-                                                <CastingRoleCard key={call.id} call={call} index={callIdx} />
+                                                <CastingRoleCard
+                                                    key={call.id}
+                                                    call={call}
+                                                    index={callIdx}
+                                                    hasApplied={!!appliedMap[call.id]}
+                                                    applicationStatus={appliedMap[call.id]}
+                                                />
                                             ))}
                                         </div>
                                     </div>

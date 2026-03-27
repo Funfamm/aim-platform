@@ -61,6 +61,25 @@ export async function POST(
             return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
         }
 
+        // Try to link to a logged-in user (resolved early so it can be used in duplicate checks)
+        let userId: string | null = null
+        try {
+            const session = await getUserSession()
+            if (session?.userId) userId = session.userId
+        } catch { /* guest application is fine */ }
+
+        // ═══ DUPLICATE CHECK — same logged-in user, same role ═══
+        if (userId) {
+            const existingByUser = await prisma.application.findFirst({
+                where: { castingCallId: id, userId },
+            })
+            if (existingByUser) {
+                return NextResponse.json({
+                    error: `You've already submitted an application for this role.`,
+                }, { status: 409 })
+            }
+        }
+
         // ═══ DUPLICATE CHECK — same email, same role ═══
         const existingApplication = await prisma.application.findFirst({
             where: { castingCallId: id, email },
@@ -82,12 +101,7 @@ export async function POST(
             }, { status: 429 })
         }
 
-        // Try to link to a logged-in user
-        let userId: string | null = null
-        try {
-            const session = await getUserSession()
-            if (session?.userId) userId = session.userId
-        } catch { /* guest application is fine */ }
+        // userId already resolved above for duplicate checks
 
         // Create upload directory for this application
         const timestamp = Date.now()
