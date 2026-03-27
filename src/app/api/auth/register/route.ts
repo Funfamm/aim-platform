@@ -29,14 +29,16 @@ export async function POST(request: Request) {
                 const code = Math.floor(100000 + Math.random() * 900000).toString()
                 const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString()
                 await prisma.user.update({
-        where: { email },
-        data: {
-          verificationCode: code,
-          verificationExpiry: new Date(expiry),
-        },
-      })
-                sendEmail({ to: email, subject: 'Verify your AIM Studio account', html: verificationEmail(existing.name, code) })
-                console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
+                    where: { email },
+                    data: {
+                        verificationCode: code,
+                        verificationExpiry: new Date(expiry),
+                    },
+                })
+                void sendEmail({ to: email, subject: 'Verify your AIM Studio account', html: verificationEmail(existing.name, code) }).catch(() => {})
+                if (process.env.NODE_ENV !== 'production') {
+                    console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
+                }
                 return NextResponse.json({ requiresVerification: true, email }, { status: 200 })
             }
             return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
@@ -57,15 +59,15 @@ export async function POST(request: Request) {
             },
         })
 
-        // Set verification fields via raw SQL (new columns not yet in compiled types)
+        // Set verification fields via Prisma update
         await prisma.user.update({
-        where: { id: newUser.id },
-        data: {
-          emailVerified: false,
-          verificationCode: code,
-          verificationExpiry: new Date(expiry),
-        },
-      })
+            where: { id: newUser.id },
+            data: {
+                emailVerified: false,
+                verificationCode: code,
+                verificationExpiry: new Date(expiry),
+            } as any,
+        })
 
         // Send verification email (fire-and-forget)
         sendEmail({
@@ -74,8 +76,10 @@ export async function POST(request: Request) {
             html: verificationEmail(name, code),
         })
 
-        // Always log in dev so it works without SMTP
-        console.log(`[DEV] Email verification code for ${email}: ${code}`)
+        // Log verification code in development so it works without SMTP
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`[DEV] Email verification code for ${email}: ${code}`)
+        }
 
         return NextResponse.json({ requiresVerification: true, email })
     } catch (error) {

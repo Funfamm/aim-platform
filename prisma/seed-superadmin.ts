@@ -46,7 +46,10 @@ async function main() {
 
     await prisma.user.update({
         where: { id: user.id },
-        data: { role: 'superadmin' },
+        data: {
+            role: 'superadmin',
+            emailVerified: true,
+        } as any,
     })
 
     console.log(`✅ ${user.name} (${user.email}) has been promoted to superadmin!`)
