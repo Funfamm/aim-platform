@@ -120,9 +120,9 @@ export async function POST(request: NextRequest) {
             let newStatus = app.status
             const autoStatus = await getAutoAdvanceStatus(app.status, report.overallScore)
             if (autoStatus) {
-                newStatus = autoStatus
-            } else if (app.status === 'submitted' || app.status === 'pending') {
-                newStatus = 'under_review'
+                newStatus = autoStatus as import('@prisma/client').ApplicationStatus
+            } else if (app.status === 'submitted') {
+                newStatus = 'under_review' as import('@prisma/client').ApplicationStatus
             }
 
             const resultVisibleAt = new Date(Date.now() + REVEAL_DELAY_HOURS * 60 * 60 * 1000)

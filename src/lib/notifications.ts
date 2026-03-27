@@ -155,7 +155,7 @@ ${opts.siteName} Casting Team
 export async function getAutoAdvanceStatus(
     currentStatus: string,
     aiScore: number
-): Promise<string | null> {
+): Promise<'shortlisted' | 'rejected' | 'under_review' | null> {
     const settings = await prisma.siteSettings.findFirst()
     if (!settings?.pipelineAutoAdvance) return null
 
@@ -163,7 +163,7 @@ export async function getAutoAdvanceStatus(
     const rejectThreshold = settings.autoRejectThreshold ?? 25
 
     // Only auto-advance from early pipeline stages
-    const autoAdvanceFrom = ['submitted', 'pending', 'under_review']
+    const autoAdvanceFrom = ['submitted', 'under_review']
     if (!autoAdvanceFrom.includes(currentStatus)) return null
 
     if (aiScore >= shortlistThreshold) return 'shortlisted'

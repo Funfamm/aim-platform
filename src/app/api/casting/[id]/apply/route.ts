@@ -165,7 +165,7 @@ export async function POST(
                 selfTapePath: voicePath,
                 portfolioUrl: JSON.stringify(socialData),
                 locale,
-                status: 'pending',
+                status: 'submitted',
             },
         })
 
