@@ -76,8 +76,19 @@ export default async function CastingPage() {
 
     return (
         <>
-            <CastingPageClient castingCalls={castingCalls} appliedMap={appliedMap} />
-            <Footer />
+            <style>{`
+                .fadeIn {
+                    opacity: 0;
+                    animation: fadeIn 0.6s ease-out forwards;
+                }
+                @keyframes fadeIn {
+                    to { opacity: 1; }
+                }
+            `}</style>
+            <div className="fadeIn">
+                <CastingPageClient castingCalls={castingCalls} appliedMap={appliedMap} />
+                <Footer />
+            </div>
         </>
     )
 }

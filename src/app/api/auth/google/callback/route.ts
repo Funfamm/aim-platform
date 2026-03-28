@@ -17,26 +17,30 @@ interface GoogleUserInfo {
 }
 
 export async function GET(req: Request) {
+    // Use NEXT_PUBLIC_SITE_URL as the authoritative base for ALL redirects.
+    // req.url contains the internal Render hostname (localhost:10000) behind
+    // the proxy, NOT the public-facing domain — using it would send users to
+    // localhost:10000/... which is unreachable from their browser.
+    const siteBase = (process.env.NEXT_PUBLIC_SITE_URL ?? '').replace(/\/$/, '')
+        || new URL(req.url).origin
+
+    const r = (path: string) => NextResponse.redirect(`${siteBase}${path}`)
+
     const { searchParams } = new URL(req.url)
     const code = searchParams.get('code')
     const stateParam = searchParams.get('state')
     const errorParam = searchParams.get('error')
 
     // Handle user cancellation / denied access
-    if (errorParam === 'access_denied') {
-        return NextResponse.redirect(new URL('/login?error=google_cancelled', req.url))
-    }
-
-    if (!code) {
-        return NextResponse.redirect(new URL('/login?error=no_code', req.url))
-    }
+    if (errorParam === 'access_denied') return r('/login?error=google_cancelled')
+    if (!code) return r('/login?error=no_code')
 
     // CSRF: verify state matches what we set in the initiation route
     const cookieStore = await cookies()
     const savedState = cookieStore.get('oauth_state')?.value
     if (!savedState || savedState !== stateParam) {
         console.error('[Google OAuth] State mismatch — possible CSRF. saved:', savedState, 'received:', stateParam)
-        return NextResponse.redirect(new URL('/login?error=invalid_state', req.url))
+        return r('/login?error=invalid_state')
     }
     // Clear the state cookie immediately after use
     cookieStore.set('oauth_state', '', { maxAge: 0, path: '/' })
@@ -46,12 +50,11 @@ export async function GET(req: Request) {
         const settings = await prisma.siteSettings.findFirst()
         const clientId = process.env.GOOGLE_CLIENT_ID || (settings as Record<string, string> | null)?.googleClientId || ''
         const clientSecret = process.env.GOOGLE_CLIENT_SECRET || (settings as Record<string, string> | null)?.googleClientSecret || ''
-        const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || new URL(req.url).origin
-        const redirectUri = `${origin}/api/auth/google/callback`
 
-        if (!clientId || !clientSecret) {
-            return NextResponse.redirect(new URL('/login?error=oauth_not_configured', req.url))
-        }
+        // The redirect_uri MUST match what was sent during initiation
+        const redirectUri = `${siteBase}/api/auth/google/callback`
+
+        if (!clientId || !clientSecret) return r('/login?error=oauth_not_configured')
 
         // Exchange auth code for access + ID tokens
         const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
@@ -69,7 +72,7 @@ export async function GET(req: Request) {
         if (!tokenRes.ok) {
             const errorBody = await tokenRes.text()
             console.error('[Google OAuth] Token exchange failed:', tokenRes.status, errorBody)
-            return NextResponse.redirect(new URL('/login?error=token_exchange_failed', req.url))
+            return r('/login?error=token_exchange_failed')
         }
 
         const tokens = await tokenRes.json() as GoogleTokenResponse
@@ -81,7 +84,7 @@ export async function GET(req: Request) {
 
         if (!userRes.ok) {
             console.error('[Google OAuth] Failed to fetch user info:', userRes.status)
-            return NextResponse.redirect(new URL('/login?error=user_info_failed', req.url))
+            return r('/login?error=user_info_failed')
         }
 
         const googleUser = await userRes.json() as GoogleUserInfo
@@ -122,7 +125,7 @@ export async function GET(req: Request) {
 
         // Never allow admins to bypass their password requirement via OAuth
         if (user.role === 'admin' || user.role === 'superadmin') {
-            return NextResponse.redirect(new URL('/login?error=admin_oauth_disallowed', req.url))
+            return r('/login?error=admin_oauth_disallowed')
         }
 
         // Fetch tokenVersion via Prisma (not raw SQL)
@@ -145,9 +148,12 @@ export async function GET(req: Request) {
         // Redirect to where the user was trying to go, or dashboard
         const returnTo = cookieStore.get('oauth_return_to')?.value || '/dashboard'
         cookieStore.set('oauth_return_to', '', { maxAge: 0, path: '/' })
-        return NextResponse.redirect(new URL(returnTo, req.url))
+
+        // Ensure returnTo is a relative path to prevent open redirect attacks
+        const safePath = returnTo.startsWith('/') ? returnTo : '/dashboard'
+        return r(safePath)
     } catch (err) {
         console.error('[Google OAuth] Unexpected error:', err)
-        return NextResponse.redirect(new URL('/login?error=oauth_failed', req.url))
+        return r('/login?error=oauth_failed')
     }
 }
