@@ -288,18 +288,33 @@ export function applicationAdminNotification(name: string, email: string, roleNa
 
 export function applicationStatusUpdate(name: string, roleName: string, newStatus: string, note?: string, siteUrl?: string): string {
     const statusLabels: Record<string, { emoji: string; label: string; color: string }> = {
-        'under-review': { emoji: '🔍', label: 'Under Review', color: ACCENT_BLUE },
-        'shortlisted': { emoji: '⭐', label: 'Shortlisted', color: '#f59e0b' },
-        'callback': { emoji: '✉️', label: 'Contacted', color: '#8b5cf6' },
-        'final-review': { emoji: '🎯', label: 'Final Review', color: '#ec4899' },
-        'selected': { emoji: '🎉', label: 'Selected', color: ACCENT_GREEN },
-        'not-selected': { emoji: '📝', label: 'Not Selected', color: '#6b7280' },
+        'under-review':    { emoji: '🔍', label: 'Under Review', color: ACCENT_BLUE },
+        'under_review':    { emoji: '🔍', label: 'Under Review', color: ACCENT_BLUE },
+        'shortlisted':     { emoji: '⭐', label: 'Shortlisted', color: '#f59e0b' },
+        'callback':        { emoji: '✉️', label: 'Contacted', color: '#8b5cf6' },
+        'contacted':       { emoji: '✉️', label: 'Contacted', color: '#8b5cf6' },
+        'audition':        { emoji: '🎭', label: 'Moving to Next Round', color: '#8b5cf6' },
+        'final-review':    { emoji: '🎯', label: 'Final Review', color: '#ec4899' },
+        'final_review':    { emoji: '🎯', label: 'Final Review', color: '#ec4899' },
+        'selected':        { emoji: '🎉', label: 'Selected for the Role!', color: ACCENT_GREEN },
+        // All non-selection variants use professional, compassionate language
+        'not-selected':    { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
+        'not_selected':    { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
+        'rejected':        { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
+        'withdrawn':       { emoji: '📋', label: 'Application Withdrawn', color: '#6b7280' },
     }
-    const st = statusLabels[newStatus] || { emoji: '📋', label: newStatus, color: TEXT_SECONDARY }
+    const st = statusLabels[newStatus] || { emoji: '📋', label: newStatus.replace(/_/g, ' ').replace(/-/g, ' '), color: TEXT_SECONDARY }
+
+    // For non-selection, use a special compassionate message body
+    const isNotSelected = ['rejected', 'not_selected', 'not-selected'].includes(newStatus)
+    const mainMessage = isNotSelected
+        ? paragraph(`We wanted to reach out with an update on your application for the <strong>${roleName}</strong> role. After thoughtful review, we've decided to move forward with other candidates for this particular role.`)
+        + paragraph(`Please know that this is never an easy decision, and we truly appreciate your interest and the time you invested in your application. We encourage you to explore other roles on our platform — your passion for this craft is exactly what we look for.`)
+        : paragraph(`There's an update on your application for the <strong>${roleName}</strong> role.`)
 
     return emailWrapper(`
         ${heading('Application Update')}
-        ${subtext(`Hi ${name}, there's an update on your application.`)}
+        ${subtext(`Hi ${name}, we have news for you.`)}
         <div style="text-align: center; padding: 20px 0;">
             <div style="font-size: 36px; margin-bottom: 8px;">${st.emoji}</div>
             <div style="display: inline-block; padding: 8px 24px; background-color: ${BG_DARK}; border-radius: 20px; border: 1px solid ${st.color};">
@@ -307,10 +322,13 @@ export function applicationStatusUpdate(name: string, roleName: string, newStatu
             </div>
             <div style="font-size: 13px; color: ${TEXT_SECONDARY}; margin-top: 10px;">Role: ${roleName}</div>
         </div>
-        ${note ? divider() + paragraph(note) : ''}
-        ${siteUrl ? button('View Your Dashboard', `${siteUrl}/dashboard`) : ''}
-    `, `Application update: ${st.label} for ${roleName}`)
+        ${divider()}
+        ${mainMessage}
+        ${note ? divider() + paragraph(`<em style="color: ${TEXT_SECONDARY};">${note}</em>`) : ''}
+        ${siteUrl ? button('View More Casting Roles', `${siteUrl}/casting`) : ''}
+    `, `Application update for ${roleName}`)
 }
+
 
 export function forgotPasswordCode(name: string, code: string, siteUrl?: string): string {
     return emailWrapper(`

@@ -811,6 +811,30 @@ export default function AdminSettingsPage() {
     const update = (field: keyof Settings, value: unknown) => {
         setSettings(s => ({ ...s, [field]: value }))
         setDirty(true)
+        // Auto-save boolean toggles immediately so they persist on refresh
+        if (typeof value === 'boolean') {
+            autoSaveBoolean(field, value)
+        }
+    }
+
+    const autoSaveBoolean = async (field: keyof Settings, value: boolean) => {
+        try {
+            const currentSettings = await fetch('/api/admin/settings').then(r => r.json())
+            const body = {
+                ...currentSettings,
+                socialLinks: typeof currentSettings.socialLinks === 'string'
+                    ? currentSettings.socialLinks
+                    : JSON.stringify(currentSettings.socialLinks || {}),
+                [field]: value,
+            }
+            await fetch('/api/admin/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+            })
+        } catch (e) {
+            console.warn('Auto-save failed for', field, e)
+        }
     }
 
     const updateSocial = (key: string, value: string) => {

@@ -73,13 +73,41 @@ export async function DELETE(request: NextRequest) {
         if (!ids || ids.length === 0) return NextResponse.json({ error: 'No IDs provided' }, { status: 400 })
 
         // Never delete superadmins via bulk delete
-        const deleted = await prisma.user.deleteMany({
+        const usersToDelete = await prisma.user.findMany({
             where: { id: { in: ids }, role: { not: 'superadmin' } },
+            select: { id: true },
         })
-        return NextResponse.json({ deleted: deleted.count })
+        const safeIds = usersToDelete.map(u => u.id)
+        if (safeIds.length === 0) return NextResponse.json({ error: 'No eligible users to delete' }, { status: 400 })
+
+        // Cascade-clear all user data systematically
+        // 1. Unlink applications (set userId to null — preserve application data for admin records)
+        await prisma.application.updateMany({
+            where: { userId: { in: safeIds } },
+            data: { userId: null },
+        })
+
+        // 2. Anonymize donations (preserve financial records, unlink user)
+        await prisma.donation.updateMany({
+            where: { userId: { in: safeIds } },
+            data: { userId: null },
+        })
+
+        // 3. Delete all cascading user activity (Prisma onDelete: Cascade handles most)
+        // The following are NOT Cascade in schema so we delete them explicitly:
+        // (Watchlist, WatchHistory, Enrollments, LessonProgress, TrainingBadges,
+        //  QuizAttempts, ReviewActivities, PasswordHistory are all Cascade — handled automatically)
+
+        // 4. Delete users — this triggers Cascade for all related models with onDelete: Cascade
+        const deleted = await prisma.user.deleteMany({
+            where: { id: { in: safeIds } },
+        })
+
+        return NextResponse.json({ deleted: deleted.count, message: `${deleted.count} user(s) and all their data have been permanently deleted.` })
     } catch (err) {
         console.error('Bulk delete users error:', err)
         return NextResponse.json({ error: 'Delete failed' }, { status: 500 })
     }
 }
+
 

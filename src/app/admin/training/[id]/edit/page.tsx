@@ -130,6 +130,8 @@ export default function StudyCanvasPage() {
 
     // AI generation state
     const [aiGenerating, setAiGenerating] = useState<string | null>(null) // 'lesson:0' or 'quiz:1' etc.
+    const [translating, setTranslating] = useState(false)
+    const [translateMsg, setTranslateMsg] = useState('')
 
     // Load existing course
     useEffect(() => {
@@ -704,6 +706,64 @@ export default function StudyCanvasPage() {
                                 </div>
                             )}
                         </div>
+
+                        {/* ── Auto-translate missing translations ── */}
+                        {!isNew && (
+                            <div style={{
+                                padding: '16px 20px', borderRadius: '12px',
+                                background: 'rgba(34,197,94,0.03)', border: '1px dashed rgba(34,197,94,0.15)',
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '1rem' }}>🔤</span>
+                                        <div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Fix Missing Translations</div>
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '1px' }}>
+                                                Auto-translate any modules/lessons missing Spanish or Chinese
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        disabled={translating}
+                                        onClick={async () => {
+                                            setTranslating(true)
+                                            setTranslateMsg('⏳ Scanning for missing translations...')
+                                            setError('')
+                                            try {
+                                                const res = await fetch(`/api/admin/training/${courseId}/translate`, { method: 'POST' })
+                                                const data = await res.json()
+                                                if (!res.ok) throw new Error(data.error || 'Translation failed')
+                                                setTranslateMsg(`✅ ${data.message}`)
+                                                setTimeout(() => setTranslateMsg(''), 8000)
+                                            } catch (err) {
+                                                setTranslateMsg('')
+                                                setError(err instanceof Error ? err.message : 'Translation failed')
+                                            } finally { setTranslating(false) }
+                                        }}
+                                        style={{
+                                            padding: '8px 18px', fontSize: '0.8rem', fontWeight: 700,
+                                            border: 'none', borderRadius: '10px',
+                                            cursor: translating ? 'wait' : 'pointer',
+                                            background: translating ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.12)',
+                                            color: '#34d399',
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        {translating ? '⏳ Translating...' : '🔤 Auto-translate Missing'}
+                                    </button>
+                                </div>
+                                {translateMsg && (
+                                    <div style={{
+                                        marginTop: '10px', padding: '8px 12px', borderRadius: '8px',
+                                        background: translateMsg.startsWith('✅') ? 'rgba(34,197,94,0.06)' : 'rgba(168,85,247,0.06)',
+                                        border: `1px solid ${translateMsg.startsWith('✅') ? 'rgba(34,197,94,0.15)' : 'rgba(168,85,247,0.15)'}`,
+                                        fontSize: '0.78rem', color: translateMsg.startsWith('✅') ? '#34d399' : '#a855f7', fontWeight: 600,
+                                    }}>
+                                        {translateMsg}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )

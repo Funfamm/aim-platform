@@ -48,8 +48,9 @@ export async function verifyToken(token: string): Promise<TokenPayload | null> {
     }
 }
 
-// Unified session — single cookie for all users (members, admins, superadmins)
-// Auto-refreshes: if access token expired but refresh token valid, issues new access token
+// Unified session — READ-ONLY version safe for Server Components (RSC)
+// Does NOT attempt to write cookies (Next.js 15 prohibits cookie writes in RSC render)
+// Returns the session payload from whichever valid token is present
 export async function getSession(): Promise<TokenPayload | null> {
     const cookieStore = await cookies()
     const accessToken = cookieStore.get('user_token')?.value
@@ -60,21 +61,52 @@ export async function getSession(): Promise<TokenPayload | null> {
         if (payload) return payload
     }
 
-    // 2. Access token missing or expired — try the refresh token
+    // 2. Access token missing or expired — check the refresh token (read-only)
     const refreshToken = cookieStore.get('refresh_token')?.value
     if (!refreshToken) return null
 
     const refreshPayload = await verifyToken(refreshToken)
     if (!refreshPayload) return null // refresh also expired → force re-login
 
-    // Verify tokenVersion against DB
-    const user = await prisma.user.findUnique({ where: { id: refreshPayload.userId }, select: { tokenVersion: true } })
-    if (!user || user.tokenVersion !== refreshPayload.tokenVersion) {
-        // Token version mismatch → invalidate
+    // Verify tokenVersion against DB — prevents use of revoked refresh tokens
+    const user = await prisma.user.findUnique({
+        where: { id: refreshPayload.userId as string },
+        select: { tokenVersion: true },
+    })
+    if (!user || user.tokenVersion !== (refreshPayload.tokenVersion ?? 0)) {
+        return null // revoked — force re-login
+    }
+
+    // Return the refresh payload — the new access token will be issued by API route or /api/auth/me
+    return refreshPayload
+}
+
+// API-route-safe version: attempts to silently renew the access token
+// Only call this from within API route handlers (not RSC/layout)
+export async function getSessionAndRefresh(): Promise<TokenPayload | null> {
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get('user_token')?.value
+
+    if (accessToken) {
+        const payload = await verifyToken(accessToken)
+        if (payload) return payload
+    }
+
+    const refreshToken = cookieStore.get('refresh_token')?.value
+    if (!refreshToken) return null
+
+    const refreshPayload = await verifyToken(refreshToken)
+    if (!refreshPayload) return null
+
+    const user = await prisma.user.findUnique({
+        where: { id: refreshPayload.userId as string },
+        select: { tokenVersion: true },
+    })
+    if (!user || user.tokenVersion !== (refreshPayload.tokenVersion ?? 0)) {
         return null
     }
 
-    // 3. Refresh is valid — silently issue a new access token
+    // Issue a new access token and write it — safe here because we're in an API route
     try {
         const newAccess = await createToken({
             userId: refreshPayload.userId,
@@ -86,7 +118,7 @@ export async function getSession(): Promise<TokenPayload | null> {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 15 * 60, // 15 minutes
+            maxAge: 15 * 60,
             path: '/',
         })
         return refreshPayload
@@ -95,10 +127,11 @@ export async function getSession(): Promise<TokenPayload | null> {
     }
 }
 
-// Alias for backward compatibility — same as getSession
+// Alias for backward compatibility — same as getSession (read-only)
 export async function getUserSession(): Promise<TokenPayload | null> {
     return getSession()
 }
+
 
 // Require authenticated admin (admin or superadmin)
 // Returns the session or sends 401

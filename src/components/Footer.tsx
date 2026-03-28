@@ -5,8 +5,13 @@ import Link from 'next/link'
 import SubscribeForm from './SubscribeForm'
 import { useTranslations } from 'next-intl'
 
+interface FooterSponsor {
+    id: string; name: string; logoUrl: string | null; website: string | null; tier: string
+}
+
 export default function Footer() {
     const [brand, setBrand] = useState({ name: 'AIM Studio', social: { youtube: '', instagram: '', x: '' } })
+    const [footerSponsors, setFooterSponsors] = useState<FooterSponsor[]>([])
     const t = useTranslations('footer')
 
     useEffect(() => {
@@ -21,8 +26,20 @@ export default function Footer() {
             .catch(() => { /* */ })
     }, [])
 
+    useEffect(() => {
+        fetch('/api/sponsors?location=footer')
+            .then(r => r.ok ? r.json() : [])
+            .then(data => {
+                if (Array.isArray(data)) setFooterSponsors(data)
+            })
+            .catch(() => { /* */ })
+    }, [])
+
     return (
         <footer className="footer" aria-label="Site footer">
+            {/* Footer Sponsor Strip */}
+            
+
             <div className="container">
                 <div className="footer-inner footer-responsive-grid" style={{
                     gap: 'var(--space-2xl)',
@@ -88,3 +105,5 @@ export default function Footer() {
         </footer>
     )
 }
+
+

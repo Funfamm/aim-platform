@@ -45,12 +45,41 @@ export interface AuditReport {
 // Tracks calls per key in a sliding 60-second window
 const keyUsage: Map<string, number[]> = new Map()
 
+// Keys that have hit the daily quota (429). Cleared at midnight UTC.
+const dailyExhaustedKeys: Set<string> = new Set()
+let exhaustedResetDate = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+
+/** Reset daily exhaustion tracking if the UTC date has changed */
+function checkDailyReset() {
+    const today = new Date().toISOString().slice(0, 10)
+    if (today !== exhaustedResetDate) {
+        dailyExhaustedKeys.clear()
+        exhaustedResetDate = today
+        console.log('[AI Audit] Daily quota reset — clearing exhausted key list')
+    }
+}
+
+/** Mark a key as having hit the daily quota (429) */
+function markDailyExhausted(keyId: string) {
+    dailyExhaustedKeys.add(keyId)
+    console.warn(`[AI Audit] Key ${keyId} marked as daily-exhausted (429 quota)`)
+}
+
+/** Returns true if the error is a daily quota exhaustion (429) */
+function isDailyQuotaError(errMsg: string): boolean {
+    return errMsg.includes('429') || errMsg.includes('quota') || errMsg.includes('Too Many Requests')
+}
+
 // RPM limits per provider (conservative — leaves headroom)
 const RPM_LIMITS: Record<string, number> = {
     gemini: 12,   // Gemini free tier is 15 RPM, we stop at 12
     groq: 25,     // Groq free tier is 30 RPM, we stop at 25
     openai: 50,   // OpenAI varies, 50 is safe for most tiers
 }
+
+// Daily request quota per API key (free tier limit). Adjust if you have a paid plan.
+const DAILY_QUOTA = 20; // number of requests allowed per key per day
+
 
 /** Record a call for a key and return current usage in the window */
 function recordKeyUsage(keyId: string): number {
@@ -116,26 +145,29 @@ async function getAIConfig() {
             ...(['groq', 'gemini', 'openai'] as const).filter(p => p !== provider)
         ]
 
+        // Build a flat list of ALL keys across all providers in preferred order.
+        // This lets the rotation engine fall through from one provider to the next
+        // when all keys for a given provider are daily-exhausted.
+        const allKeys: Array<{ id: string; key: string; label: string; provider: 'groq' | 'gemini' | 'openai'; model: string }> = []
+
         for (const p of providerOrder) {
-            // Try agent-specific keys first, then any key for this provider
-            let keys = await prisma.apiKey.findMany({
+            // Only use keys explicitly assigned to 'audition' or 'all' — strictly enforced
+            const keys = await prisma.apiKey.findMany({
                 where: { isActive: true, provider: p, assignedAgent: { in: ['audition', 'all'] } },
                 orderBy: { lastUsed: 'asc' },
             })
-            if (keys.length === 0) {
-                keys = await prisma.apiKey.findMany({
-                    where: { isActive: true, provider: p },
-                    orderBy: { lastUsed: 'asc' },
-                })
+            const useModel = (p === provider && resolvedModel) ? resolvedModel : defaultModel[p]
+            for (const k of keys) {
+                allKeys.push({ id: k.id, key: k.key, label: k.label, provider: p, model: useModel })
             }
-            if (keys.length > 0) {
-                const useModel = (p === provider && resolvedModel) ? resolvedModel : defaultModel[p]
-                return {
-                    keys: keys.map(k => ({ id: k.id, key: k.key, label: k.label })),
-                    provider: p,
-                    model: useModel,
-                    customPrompt: settings?.aiCustomPrompt || '',
-                }
+        }
+
+        if (allKeys.length > 0) {
+            return {
+                keys: allKeys,
+                provider,           // default provider (may change per-key during rotation)
+                model: resolvedModel || defaultModel[provider],
+                customPrompt: settings?.aiCustomPrompt || '',
             }
         }
 
@@ -343,8 +375,11 @@ async function callGemini(apiKey: string, model: string, prompt: string, photos?
     return result.response.text()
 }
 
-// ═══ MAIN AGENT WITH RATE-LIMITED ROUND-ROBIN ═══
+// ═══ MAIN AGENT WITH RATE-LIMITED ROUND-ROBIN + DAILY QUOTA AWARENESS ═══
 export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> {
+    // Reset daily exhaustion tracking if we crossed midnight
+    checkDailyReset()
+
     const config = await getAIConfig()
 
     if (config.keys.length === 0 || !config.keys[0].key) {
@@ -354,59 +389,106 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
     // Load applicant photos for vision-capable models
     const hasPhotos = (input.applicant.photoUrls?.length ?? 0) > 0
     let photos: { base64: string; mimeType: string }[] = []
+    let irrelevantImageFlag = false
     if (hasPhotos) {
-        photos = await loadPhotosAsBase64(input.applicant.photoUrls!)
-        console.log(`[AI Audit] Loaded ${photos.length} photos for visual analysis`)
+        // Filter out images that appear irrelevant (simple heuristic: filename contains 'irrelevant' or 'placeholder')
+        const filteredUrls = input.applicant.photoUrls!.filter(url => {
+            const lowered = url.toLowerCase()
+            if (lowered.includes('irrelevant') || lowered.includes('placeholder')) {
+                irrelevantImageFlag = true
+                return false
+            }
+            return true
+        })
+        if (filteredUrls.length > 0) {
+            photos = await loadPhotosAsBase64(filteredUrls)
+            console.log(`[AI Audit] Loaded ${photos.length} relevant photos for visual analysis`)
+        } else {
+            console.log('[AI Audit] No relevant photos after filtering irrelevant images')
+        }
     }
 
-    const prompt = buildPrompt(input, config.customPrompt, photos.length > 0)
     let lastError = ''
 
-    // Smart round-robin: sort keys by remaining capacity (most available first)
-    const sortedKeys = [...config.keys].sort((a, b) => {
-        const capA = getRemainingCapacity(a.id, config.provider)
-        const capB = getRemainingCapacity(b.id, config.provider)
-        return capB - capA  // highest capacity first
-    })
+    // Each entry may carry its own provider/model when the key list spans multiple providers
+    type KeyEntry = { id: string; key: string; label: string; provider?: string; model?: string }
+    const allKeys = config.keys as KeyEntry[]
 
-    // Retry loop: if all keys are rate-limited, wait and retry
-    const MAX_RETRIES = 3
-    for (let retry = 0; retry <= MAX_RETRIES; retry++) {
-        // Check if any key has capacity
-        const availableKeys = sortedKeys.filter(k => hasCapacity(k.id, config.provider))
+    // Filter out daily-exhausted keys, sort remainder by RPM capacity (most available first)
+    const freshKeys = allKeys
+        .filter(k => !dailyExhaustedKeys.has(k.id))
+        .sort((a, b) => {
+            const pA = (a.provider || config.provider) as string
+            const pB = (b.provider || config.provider) as string
+            return getRemainingCapacity(b.id, pB) - getRemainingCapacity(a.id, pA)
+        })
 
-        if (availableKeys.length === 0 && retry < MAX_RETRIES) {
+    console.log(`[AI Audit] ${freshKeys.length}/${allKeys.length} keys available (${dailyExhaustedKeys.size} daily-exhausted)`)
+
+    if (freshKeys.length === 0) {
+        throw new Error(
+            `All API keys have hit their daily quota. They will reset at midnight UTC. ` +
+            `(${allKeys.length} keys checked, all exhausted)`
+        )
+    }
+
+    // Retry loop: if all fresh keys are at RPM limit, wait briefly and retry
+    const MAX_RPM_RETRIES = 3
+    for (let retry = 0; retry <= MAX_RPM_RETRIES; retry++) {
+        // Re-filter exhausted keys each retry cycle in case new ones hit 429
+        const keysThisRound = freshKeys.filter(k => !dailyExhaustedKeys.has(k.id))
+        const availableKeys = keysThisRound.filter(k => {
+            const p = (k.provider || config.provider) as string
+            return hasCapacity(k.id, p)
+        })
+
+        if (availableKeys.length === 0 && retry < MAX_RPM_RETRIES) {
             const waitSec = 10 + retry * 5
-            console.log(`[AI Audit] All ${sortedKeys.length} keys at capacity. Waiting ${waitSec}s before retry ${retry + 1}/${MAX_RETRIES}...`)
+            console.log(`[AI Audit] All ${keysThisRound.length} keys at RPM limit. Waiting ${waitSec}s (retry ${retry + 1}/${MAX_RPM_RETRIES})...`)
             await new Promise(r => setTimeout(r, waitSec * 1000))
             continue
         }
 
-        const keysToTry = availableKeys.length > 0 ? availableKeys : sortedKeys
+        const keysToTry = availableKeys.length > 0 ? availableKeys : keysThisRound
 
         for (const keyInfo of keysToTry) {
-            const remaining = getRemainingCapacity(keyInfo.id, config.provider)
+            // Skip any key that was exhausted mid-loop
+            if (dailyExhaustedKeys.has(keyInfo.id)) {
+                console.log(`[AI Audit] Skipping key ${keyInfo.label} (daily quota exhausted)`)
+                continue
+            }
+
+            const keyProvider = (keyInfo.provider || config.provider) as 'groq' | 'gemini' | 'openai'
+            const keyModel = keyInfo.model || config.model
+            const remaining = getRemainingCapacity(keyInfo.id, keyProvider)
+
             if (remaining <= 0) {
                 console.log(`[AI Audit] Skipping key ${keyInfo.label} (at RPM limit)`)
                 continue
             }
 
-            try {
-                console.log(`[AI Audit] Using key: ${keyInfo.label} (${remaining} RPM remaining), provider: ${config.provider}, model: ${config.model}`)
+            // Build prompt, adding a note about irrelevant images if needed
+            const basePrompt = buildPrompt(input, config.customPrompt, photos.length > 0)
+            const prompt = irrelevantImageFlag
+                ? `${basePrompt}\n\n[NOTE] The applicant uploaded images that appear irrelevant; they have been excluded from visual analysis.`
+                : basePrompt
 
-                // Record the call BEFORE making it
+            try {
+                console.log(`[AI Audit] Trying key: ${keyInfo.label} | provider: ${keyProvider} | model: ${keyModel} | RPM left: ${remaining}`)
+
+                // Record the call BEFORE making it (RPM tracking)
                 recordKeyUsage(keyInfo.id)
 
                 let responseText: string
-                if (config.provider === 'groq') {
+                if (keyProvider === 'groq') {
                     const textPrompt = photos.length > 0
                         ? prompt + '\n\n(Note: Applicant uploaded photos but this model cannot analyze images. Evaluate based on text data only and mention photos were not analyzed.)'
                         : prompt
-                    responseText = await callGroq(keyInfo.key, config.model, textPrompt)
-                } else if (config.provider === 'openai') {
-                    responseText = await callOpenAI(keyInfo.key, config.model, prompt)
+                    responseText = await callGroq(keyInfo.key, keyModel, textPrompt)
+                } else if (keyProvider === 'openai') {
+                    responseText = await callOpenAI(keyInfo.key, keyModel, prompt)
                 } else {
-                    responseText = await callGemini(keyInfo.key, config.model, prompt, photos.length > 0 ? photos : undefined)
+                    responseText = await callGemini(keyInfo.key, keyModel, prompt, photos.length > 0 ? photos : undefined)
                 }
 
                 // Record success in DB
@@ -425,20 +507,48 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
 
                 const report: AuditReport = JSON.parse(jsonStr)
 
+                // If irrelevant images were filtered, add a note to the report
+                if (irrelevantImageFlag) {
+                    report.notes = (report.notes ? report.notes + ' ' : '') + 'Irrelevant images were uploaded and excluded from analysis.'
+                }
+
                 // Validate and clamp scores
                 report.overallScore = Math.max(0, Math.min(100, Math.round(report.overallScore)))
                 report.roleFitScore = Math.max(0, Math.min(100, Math.round(report.roleFitScore)))
+
+                // Apply penalty if irrelevant images were filtered out
+                if (irrelevantImageFlag) {
+                    const penalty = 5 // points deducted
+                    report.overallScore = Math.max(0, report.overallScore - penalty)
+                    report.roleFitScore = Math.max(0, report.roleFitScore - penalty)
+                    report.notes = (report.notes ? report.notes + ' ' : '') + `Penalty applied: -${penalty} points for irrelevant images.`
+                }
 
                 if (!['STRONG_FIT', 'GOOD_FIT', 'MODERATE', 'WEAK_FIT'].includes(report.recommendation)) {
                     report.recommendation = 'MODERATE'
                 }
 
                 return report
+
             } catch (error) {
                 const errMsg = error instanceof Error ? error.message : String(error)
                 lastError = errMsg
                 console.error(`[AI Audit] Key ${keyInfo.label} failed:`, errMsg)
 
+                // If it's a daily quota error, mark this key exhausted and immediately try the next one
+                if (isDailyQuotaError(errMsg)) {
+                    markDailyExhausted(keyInfo.id)
+                    if (keyInfo.id !== 'env' && keyInfo.id !== 'settings') {
+                        await prisma.apiKey.update({
+                            where: { id: keyInfo.id },
+                            data: { lastError: 'Daily quota exhausted (429)', lastUsed: new Date() },
+                        }).catch(() => { /* non-critical */ })
+                    }
+                    // Don't break — continue to next key
+                    continue
+                }
+
+                // Any other error: log and try next key
                 if (keyInfo.id !== 'env' && keyInfo.id !== 'settings') {
                     await prisma.apiKey.update({
                         where: { id: keyInfo.id },
@@ -450,7 +560,10 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
         }
     }
 
-    throw new Error(`All API keys failed for AI Audition. Last error: ${lastError}`)
+    const exhaustedCount = dailyExhaustedKeys.size
+    throw new Error(
+        `All API keys failed for AI Audition. ${exhaustedCount > 0 ? `${exhaustedCount} key(s) hit daily quota. ` : ''}Last error: ${lastError}`
+    )
 }
 
 /** Get the current rate limit status for monitoring */

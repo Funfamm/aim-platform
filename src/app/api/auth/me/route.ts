@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/auth'
+import { getSessionAndRefresh } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function GET() {
-    const session = await getUserSession()
+    const session = await getSessionAndRefresh()
     if (!session?.userId) {
         return NextResponse.json({ user: null }, { status: 401 })
     }

@@ -112,16 +112,36 @@ export function DonutChart({ segments }: { segments: { label: string; value: num
 export function AreaChart({ data, labels, height = 180 }: { data: number[]; labels: string[]; height?: number }) {
     const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
     const max = Math.max(...data, 1)
+    const min = Math.min(...data, 0)
+    const range = max - min || 1
     const width = 100
-    const pad = 3
+    const pad = 4
 
-    const points = data.map((v, i) => {
-        const x = pad + (i / (data.length - 1)) * (width - pad * 2)
-        const y = pad + (1 - v / max) * (100 - pad * 2)
-        return { x, y, value: v }
-    })
-    const pathD = points.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ')
-    const fillD = `${pathD} L${points[points.length - 1].x},${100 - pad} L${points[0].x},${100 - pad} Z`
+    const pts = data.map((v, i) => ({
+        x: pad + (i / (data.length - 1)) * (width - pad * 2),
+        y: pad + (1 - (v - min) / range) * (100 - pad * 2),
+        value: v,
+    }))
+
+    // Build smooth cubic bezier path
+    function smoothPath(points: { x: number; y: number }[]) {
+        if (points.length < 2) return `M${points[0].x},${points[0].y}`
+        let d = `M${points[0].x},${points[0].y}`
+        for (let i = 1; i < points.length; i++) {
+            const cp1x = points[i - 1].x + (points[i].x - points[i - 1].x) / 3
+            const cp1y = points[i - 1].y
+            const cp2x = points[i].x - (points[i].x - points[i - 1].x) / 3
+            const cp2y = points[i].y
+            d += ` C${cp1x},${cp1y} ${cp2x},${cp2y} ${points[i].x},${points[i].y}`
+        }
+        return d
+    }
+    const linePath = smoothPath(pts)
+    const fillPath = `${linePath} L${pts[pts.length - 1].x},${100 - pad} L${pts[0].x},${100 - pad} Z`
+
+    const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length)
+    const peak = Math.max(...data)
+    const gradId = `areaG${Math.random().toString(36).slice(2, 7)}`
 
     return (
         <div style={{
@@ -129,28 +149,41 @@ export function AreaChart({ data, labels, height = 180 }: { data: number[]; labe
             border: '1px solid var(--border-subtle)', padding: 'var(--space-lg)',
             position: 'relative',
         }}>
+            {/* Summary stats */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '8px', justifyContent: 'flex-end' }}>
+                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>Peak: <strong style={{ color: 'var(--accent-gold)' }}>{peak}</strong></span>
+                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>Avg: <strong style={{ color: 'var(--text-secondary)' }}>{avg}</strong></span>
+            </div>
             <svg viewBox={`0 0 ${width} 100`} style={{ width: '100%', height, display: 'block' }}
                 onMouseLeave={() => setHoveredIdx(null)}>
                 <defs>
-                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--accent-gold)" stopOpacity={0.3} />
+                    <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--accent-gold)" stopOpacity={0.35} />
+                        <stop offset="60%" stopColor="var(--accent-gold)" stopOpacity={0.08} />
                         <stop offset="100%" stopColor="var(--accent-gold)" stopOpacity={0.01} />
                     </linearGradient>
+                    <filter id="lineGlow">
+                        <feGaussianBlur stdDeviation="0.8" result="blur" />
+                        <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                    </filter>
                 </defs>
+                {/* Grid lines */}
                 {[0.25, 0.5, 0.75].map(pct => (
                     <line key={pct} x1={pad} x2={width - pad}
                         y1={pad + (1 - pct) * (100 - pad * 2)} y2={pad + (1 - pct) * (100 - pad * 2)}
-                        stroke="rgba(255,255,255,0.04)" strokeWidth={0.3} />
+                        stroke="rgba(255,255,255,0.04)" strokeWidth={0.3} strokeDasharray="2 2" />
                 ))}
-                <path d={fillD} fill="url(#areaGrad)" />
-                <path d={pathD} fill="none" stroke="var(--accent-gold)" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
-                {points.map((p, i) => (
+                <path d={fillPath} fill={`url(#${gradId})`} />
+                <path d={linePath} fill="none" stroke="var(--accent-gold)" strokeWidth={1.5}
+                    strokeLinecap="round" strokeLinejoin="round" filter="url(#lineGlow)" />
+                {/* Hit areas and dots */}
+                {pts.map((p, i) => (
                     <g key={i} onMouseEnter={() => setHoveredIdx(i)}>
                         <rect x={p.x - (width / data.length) / 2} y={0} width={width / data.length} height={100} fill="transparent" style={{ cursor: 'pointer' }} />
                         {hoveredIdx === i && (
                             <>
-                                <line x1={p.x} x2={p.x} y1={p.y} y2={100 - pad} stroke="rgba(212,168,83,0.3)" strokeWidth={0.4} strokeDasharray="2 2" />
-                                <circle cx={p.x} cy={p.y} r={1.8} fill="var(--accent-gold)" stroke="#0a0a0a" strokeWidth={0.8} />
+                                <line x1={p.x} x2={p.x} y1={pad} y2={100 - pad} stroke="rgba(212,168,83,0.25)" strokeWidth={0.5} strokeDasharray="2 2" />
+                                <circle cx={p.x} cy={p.y} r={2.5} fill="var(--accent-gold)" stroke="#0a0a0a" strokeWidth={1} />
                             </>
                         )}
                     </g>
@@ -160,21 +193,25 @@ export function AreaChart({ data, labels, height = 180 }: { data: number[]; labe
                 <div style={{
                     position: 'absolute',
                     left: `${pad + (hoveredIdx / (data.length - 1)) * (100 - pad * 2)}%`,
-                    top: '8px',
+                    top: '28px',
                     transform: 'translateX(-50%)',
-                    background: 'rgba(10,10,10,0.95)', border: '1px solid var(--accent-gold)',
-                    borderRadius: 'var(--radius-sm)', padding: '4px 10px',
-                    fontSize: '0.72rem', fontWeight: 700, color: 'var(--accent-gold)',
+                    background: 'rgba(10,10,10,0.96)', border: '1px solid var(--accent-gold)',
+                    borderRadius: '6px', padding: '4px 10px',
+                    fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-gold)',
                     whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 5,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
                 }}>
-                    {data[hoveredIdx]} views · {labels[hoveredIdx]}
+                    {data[hoveredIdx]} views
+                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: '4px' }}>· {labels[hoveredIdx]}</span>
                 </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
                 {labels.map((label, i) => (
                     <span key={i} style={{
-                        fontSize: '0.58rem', color: hoveredIdx === i ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                        flex: 1, textAlign: 'center', fontWeight: hoveredIdx === i ? 700 : 400,
+                        fontSize: '0.58rem',
+                        color: hoveredIdx === i ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                        flex: 1, textAlign: 'center',
+                        fontWeight: hoveredIdx === i ? 700 : 400,
                         transition: 'all 0.15s',
                     }}>{label}</span>
                 ))}
@@ -185,33 +222,93 @@ export function AreaChart({ data, labels, height = 180 }: { data: number[]; labe
 
 // ─── Hourly Heatmap ───
 export function HourlyHeatmap({ data }: { data: number[] }) {
+    const [hovered, setHovered] = useState<number | null>(null)
     const max = Math.max(...data, 1)
+    const total = data.reduce((a, b) => a + b, 0)
+    const avg = total / 24
+    const peakHour = data.indexOf(max)
+    const quietHour = data.indexOf(Math.min(...data))
+
+    function getColor(v: number) {
+        const t = v / max
+        if (t === 0) return 'rgba(255,255,255,0.025)'
+        if (t < 0.3) return `rgba(99,102,241,${0.1 + t * 0.5})`   // indigo — low traffic
+        if (t < 0.6) return `rgba(212,168,83,${0.2 + t * 0.6})`   // gold — medium
+        return `rgba(251,146,60,${0.4 + t * 0.55})`                 // amber/orange — peak
+    }
+
+    function formatHour(h: number) {
+        if (h === 0) return '12am'
+        if (h === 12) return '12pm'
+        return h < 12 ? `${h}am` : `${h - 12}pm`
+    }
+
     return (
-        <div>
+        <div style={{ position: 'relative' }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(24, 1fr)', gap: '2px', marginBottom: '4px' }}>
                 {data.map((v, i) => {
-                    const intensity = v / max
+                    const isPeak = i === peakHour && v > 0
                     return (
-                        <div key={i} title={`${i}:00 — ${v} views`} style={{
-                            height: '32px', borderRadius: '3px',
-                            background: intensity > 0
-                                ? `rgba(212,168,83,${0.08 + intensity * 0.55})`
-                                : 'rgba(255,255,255,0.02)',
-                            border: intensity > 0.7 ? '1px solid rgba(212,168,83,0.25)' : '1px solid transparent',
-                            transition: 'all 0.3s', cursor: 'default',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '0.5rem', fontWeight: 700,
-                            color: intensity > 0.3 ? 'var(--accent-gold)' : 'transparent',
-                        }}>
-                            {v > 0 ? v : ''}
+                        <div
+                            key={i}
+                            onMouseEnter={() => setHovered(i)}
+                            onMouseLeave={() => setHovered(null)}
+                            style={{
+                                height: '36px', borderRadius: '4px',
+                                background: getColor(v),
+                                border: isPeak
+                                    ? '1px solid rgba(251,146,60,0.6)'
+                                    : hovered === i
+                                    ? '1px solid rgba(212,168,83,0.5)'
+                                    : '1px solid transparent',
+                                transition: 'all 0.2s',
+                                cursor: 'default',
+                                position: 'relative',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}
+                        >
+                            {v > avg * 1.5 && (
+                                <span style={{
+                                    fontSize: '0.45rem', fontWeight: 800,
+                                    color: v / max > 0.6 ? '#fff' : 'var(--accent-gold)',
+                                }}>{v}</span>
+                            )}
                         </div>
                     )
                 })}
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                {[0, 6, 12, 18, 23].map(h => (
-                    <span key={h} style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)' }}>{h}:00</span>
+            {/* Tooltip */}
+            {hovered !== null && (
+                <div style={{
+                    position: 'absolute', top: '-32px',
+                    left: `${(hovered / 24) * 100}%`,
+                    transform: 'translateX(-50%)',
+                    background: 'rgba(10,10,10,0.96)', border: '1px solid var(--accent-gold)',
+                    borderRadius: '6px', padding: '3px 8px',
+                    fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)',
+                    whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 10,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                }}>
+                    {formatHour(hovered)} · {data[hovered]} views
+                </div>
+            )}
+            {/* Hour axis */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3px' }}>
+                {[0, 4, 8, 12, 16, 20, 23].map(h => (
+                    <span key={h} style={{ fontSize: '0.48rem', color: 'var(--text-tertiary)' }}>{formatHour(h)}</span>
                 ))}
+            </div>
+            {/* Peak / quiet summary */}
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>
+                    🔥 Peak: <strong style={{ color: '#fb923c' }}>{formatHour(peakHour)}</strong> ({max} views)
+                </span>
+                <span style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>
+                    🌙 Quiet: <strong style={{ color: '#6366f1' }}>{formatHour(quietHour)}</strong>
+                </span>
+                <span style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>
+                    Avg: <strong style={{ color: 'var(--text-secondary)' }}>{Math.round(avg)}/hr</strong>
+                </span>
             </div>
         </div>
     )

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { verifyToken, createToken, createRefreshToken } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 
 // POST /api/auth/refresh — exchange valid refresh token for new access + refresh tokens
 export async function POST() {
@@ -17,17 +18,25 @@ export async function POST() {
             return NextResponse.json({ error: 'Refresh token expired or invalid' }, { status: 401 })
         }
 
+        // Verify tokenVersion against DB — prevents use of revoked tokens
+        const user = await prisma.user.findUnique({
+            where: { id: payload.userId as string },
+            select: { tokenVersion: true, role: true, email: true },
+        })
+        if (!user || user.tokenVersion !== (payload.tokenVersion ?? 0)) {
+            return NextResponse.json({ error: 'Token revoked' }, { status: 401 })
+        }
+
+        const tokenPayload = {
+            userId: payload.userId,
+            role: user.role,
+            email: user.email,
+            tokenVersion: user.tokenVersion,  // CRITICAL: must carry tokenVersion forward
+        }
+
         // Issue new token pair (rotation — old refresh token is effectively replaced)
-        const newAccess = await createToken({
-            userId: payload.userId,
-            role: payload.role,
-            email: payload.email,
-        })
-        const newRefresh = await createRefreshToken({
-            userId: payload.userId,
-            role: payload.role,
-            email: payload.email,
-        })
+        const newAccess = await createToken(tokenPayload)
+        const newRefresh = await createRefreshToken(tokenPayload)
 
         // Set new cookies
         cookieStore.set('user_token', newAccess, {

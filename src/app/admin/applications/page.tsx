@@ -185,12 +185,12 @@ export default function AdminApplicationsPage() {
         if (bulkAction === 'delete') {
             await fetch('/api/admin/applications/bulk-delete', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: [...selected] }),
+                body: JSON.stringify({ applicationIds: [...selected] }),
             })
         } else {
             await fetch('/api/admin/applications/bulk-status', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: [...selected], status: bulkAction }),
+                body: JSON.stringify({ applicationIds: [...selected], status: bulkAction }),
             })
         }
         setSelected(new Set()); setBulkAction(''); fetchApps(pagination.page)

@@ -78,13 +78,18 @@ export async function POST(req: Request) {
                     try {
                         const photoPaths: string[] = JSON.parse(app.headshotPath)
                         for (const photoPath of photoPaths) {
-                            const fullPath = path.join(uploadsDir, photoPath)
+                            // Strip leading slash — path.join treats absolute-looking paths as root on POSIX
+                            const normalizedPath = photoPath.replace(/^\/+/, '')
+                            const fullPath = path.join(uploadsDir, normalizedPath)
                             if (existsSync(fullPath)) {
                                 archive.append(createReadStream(fullPath), { name: `${folderName}/photos/${path.basename(fullPath)}` })
+                            } else {
+                                console.warn(`[download] Photo not found: ${fullPath}`)
                             }
                         }
                     } catch {
-                        const fullPath = path.join(uploadsDir, app.headshotPath)
+                        const normalizedPath = app.headshotPath.replace(/^\/+/, '')
+                        const fullPath = path.join(uploadsDir, normalizedPath)
                         if (existsSync(fullPath)) {
                             archive.append(createReadStream(fullPath), { name: `${folderName}/photos/${path.basename(fullPath)}` })
                         }
@@ -93,9 +98,12 @@ export async function POST(req: Request) {
 
                 // Voice recording
                 if (app.selfTapePath) {
-                    const voicePath = path.join(uploadsDir, app.selfTapePath)
+                    const normalizedPath = app.selfTapePath.replace(/^\/+/, '')
+                    const voicePath = path.join(uploadsDir, normalizedPath)
                     if (existsSync(voicePath)) {
                         archive.append(createReadStream(voicePath), { name: `${folderName}/voice/${path.basename(voicePath)}` })
+                    } else {
+                        console.warn(`[download] Voice not found: ${voicePath}`)
                     }
                 }
 

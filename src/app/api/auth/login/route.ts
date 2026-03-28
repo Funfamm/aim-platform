@@ -30,11 +30,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
         }
 
-        // Block login if email not yet verified — query raw to avoid stale compiled types
-        const rawRows = await prisma.$queryRaw<{ emailVerified: number | boolean; tokenVersion: number }[]>`SELECT "emailVerified", "tokenVersion" FROM "User" WHERE "id" = ${user.id}`
-        const emailVerified = rawRows[0]?.emailVerified
-        const isVerified = emailVerified === true || emailVerified === 1
-        const tokenVersion = rawRows[0]?.tokenVersion ?? 0
+        // Block login if email not yet verified
+        const userDetail = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { emailVerified: true, tokenVersion: true },
+        })
+        const isVerified = userDetail?.emailVerified === true
+        const tokenVersion = userDetail?.tokenVersion ?? 0
 
         if (!isVerified) {
             return NextResponse.json({ error: 'Please verify your email before logging in.', requiresVerification: true, email: user.email }, { status: 403 })
