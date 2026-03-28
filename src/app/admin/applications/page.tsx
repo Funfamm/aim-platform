@@ -383,12 +383,18 @@ export default function AdminApplicationsPage() {
                         {apps.map(app => {
                             const st = STATUS_STYLES[app.status] || STATUS_STYLES.pending
                             const photo = getPhoto(app)
+                            const isWithdrawn = app.status === 'withdrawn'
                             return (
                                 <div key={app.id} style={{
                                     display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
-                                    borderRadius: '8px', background: selected.has(app.id) ? 'rgba(212,168,83,0.04)' : 'rgba(255,255,255,0.02)',
-                                    border: `1px solid ${selected.has(app.id) ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                                    borderRadius: '8px',
+                                    background: isWithdrawn
+                                        ? 'rgba(239,68,68,0.02)'
+                                        : selected.has(app.id) ? 'rgba(212,168,83,0.04)' : 'rgba(255,255,255,0.02)',
+                                    border: `1px solid ${isWithdrawn ? 'rgba(239,68,68,0.1)' : selected.has(app.id) ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                                    borderLeft: isWithdrawn ? '3px solid rgba(239,68,68,0.35)' : undefined,
                                     transition: 'all 0.15s',
+                                    opacity: isWithdrawn ? 0.65 : 1,
                                 }}>
                                     <input type="checkbox" checked={selected.has(app.id)} onChange={() => toggleSelect(app.id)}
                                         style={{ cursor: 'pointer', accentColor: 'var(--accent-gold)' }} />
@@ -397,11 +403,15 @@ export default function AdminApplicationsPage() {
                                             width: '36px', height: '36px', borderRadius: '6px', flexShrink: 0,
                                             backgroundImage: `url(${photo})`, backgroundSize: 'cover', backgroundPosition: 'center',
                                             border: '1px solid rgba(255,255,255,0.08)',
+                                            filter: isWithdrawn ? 'grayscale(0.6)' : undefined,
                                         }} />
                                     )}
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                            <Link href={`/admin/applications/${app.id}`} style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>
+                                            <Link href={`/admin/applications/${app.id}`} style={{
+                                                fontSize: '0.85rem', fontWeight: 700, textDecoration: isWithdrawn ? 'line-through' : 'none',
+                                                color: isWithdrawn ? 'var(--text-tertiary)' : 'var(--text-primary)',
+                                            }}>
                                                 {app.fullName}
                                             </Link>
                                             <span style={{ fontSize: '0.52rem', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
@@ -415,6 +425,7 @@ export default function AdminApplicationsPage() {
                                             <span>🎬 {app.castingCall.project.title}</span>
                                             <span>🎭 {app.castingCall.roleName}</span>
                                             <span>📧 {app.email}</span>
+                                            {isWithdrawn && <span style={{ color: '#f87171', fontWeight: 600 }}>⤺ Withdrawn by user</span>}
                                         </div>
                                     </div>
                                     <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>

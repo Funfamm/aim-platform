@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { authLimiter } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
+import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
 
 export async function POST(request: Request) {
     const blocked = authLimiter.check(request)
@@ -47,6 +48,8 @@ export async function POST(request: Request) {
         const refresh = await createRefreshToken(tokenPayload)
         await setUserCookie(token, refresh)
 
+        // New device detection + email alert (fire-and-forget)
+        void handleDeviceFingerprint(request, user.id, user.name, user.email, tokenVersion).catch(() => {})
         // Role-based redirect: admins/superadmins → /admin, members → /dashboard
         const redirectTo = (user.role === 'admin' || user.role === 'superadmin') ? '/admin' : '/dashboard'
 

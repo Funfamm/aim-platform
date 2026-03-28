@@ -28,14 +28,17 @@ export async function POST(request: Request) {
             if (!(existing as any).emailVerified) {
                 const code = Math.floor(100000 + Math.random() * 900000).toString()
                 const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+                const passwordHash = await hash(password, 12)
                 await prisma.user.update({
                     where: { email },
                     data: {
+                        name,                              // ← use the NEW submitted name
+                        passwordHash,                      // ← update to the new password
                         verificationCode: code,
                         verificationExpiry: new Date(expiry),
-                    },
+                    } as any,
                 })
-                void sendEmail({ to: email, subject: 'Verify your AIM Studio account', html: verificationEmail(existing.name, code) }).catch(() => {})
+                void sendEmail({ to: email, subject: 'Verify your AIM Studio account', html: verificationEmail(name, code) }).catch(() => {})
                 if (process.env.NODE_ENV !== 'production') {
                     console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
                 }

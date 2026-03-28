@@ -166,11 +166,7 @@ function EmailSmtpTab({ settings, update, Toggle }: {
     return (
         <section className="admin-form-section">
             <h3 className="admin-form-section-title">📧 Microsoft Graph Email</h3>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-lg)', lineHeight: 1.6 }}>
-                Emails are sent via <strong>Microsoft Graph API</strong> (Azure AD). Configure your Azure credentials in <code>.env</code> under
-                {' '}<code>AZURE_TENANT_ID</code>, <code>AZURE_CLIENT_ID</code>, and <code>AZURE_CLIENT_SECRET</code>.
-                Set the sender identity below.
-            </p>
+
 
             {/* Info badge */}
             <div style={{

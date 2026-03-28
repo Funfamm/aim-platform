@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
 
 interface GoogleTokenResponse {
     access_token: string
@@ -144,6 +145,9 @@ export async function GET(req: Request) {
         const token = await createToken(tokenPayload)
         const refresh = await createRefreshToken(tokenPayload)
         await setUserCookie(token, refresh)
+
+        // New device detection + branded email alert (fire-and-forget)
+        void handleDeviceFingerprint(req, user.id, user.name, user.email, tokenVersion).catch(() => {})
 
         // Redirect to where the user was trying to go, or dashboard
         const returnTo = cookieStore.get('oauth_return_to')?.value || '/dashboard'
