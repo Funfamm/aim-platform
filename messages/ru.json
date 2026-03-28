@@ -248,7 +248,8 @@
     "roleTypeLead": "Главная роль",
     "roleTypeSupporting": "Второстепенная",
     "roleTypeExtra": "Массовка",
-    "withdraw": "Отозвать"
+    "withdraw": "Отозвать",
+  "applyAgain": "Подать заявку снова"
   },
   "alreadyApplied": {
     "pageLabel": "Статус заявки",
@@ -416,7 +417,8 @@
     "roleTypeLead": "Главная",
     "roleTypeSupporting": "Второстепенная",
     "roleTypeExtra": "Массовка",
-    "withdraw": "Отозвать"
+    "withdraw": "Отозвать",
+  "applyAgain": "Подать заявку снова"
   },
   "castingForm": {
     "pageLabel": "Заявка на Кастинг",

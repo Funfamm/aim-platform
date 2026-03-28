@@ -248,7 +248,8 @@
     "roleTypeLead": "मुख्य",
     "roleTypeSupporting": "सहायक",
     "roleTypeExtra": "एक्स्ट्रा",
-    "withdraw": "वापस लें"
+    "withdraw": "वापस लें",
+  "applyAgain": "फिर से आवेदन करें"
   },
   "alreadyApplied": {
     "pageLabel": "आवेदन स्थिति",
@@ -416,7 +417,8 @@
     "roleTypeLead": "मुख्य",
     "roleTypeSupporting": "सहायक",
     "roleTypeExtra": "एक्स्ट्रा",
-    "withdraw": "वापस लें"
+    "withdraw": "वापस लें",
+  "applyAgain": "फिर से आवेदन करें"
   },
   "castingForm": {
     "pageLabel": "कास्टिंग आवेदन",

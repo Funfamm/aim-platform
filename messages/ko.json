@@ -248,7 +248,8 @@
     "roleTypeLead": "주연",
     "roleTypeSupporting": "조연",
     "roleTypeExtra": "엑스트라",
-    "withdraw": "취소"
+    "withdraw": "취소",
+  "applyAgain": "다시 지원"
   },
   "alreadyApplied": {
     "pageLabel": "지원 상태",
@@ -416,7 +417,8 @@
     "roleTypeLead": "주연",
     "roleTypeSupporting": "조연",
     "roleTypeExtra": "엑스트라",
-    "withdraw": "취소"
+    "withdraw": "취소",
+  "applyAgain": "다시 지원"
   },
   "castingForm": {
     "pageLabel": "캐스팅 지원",

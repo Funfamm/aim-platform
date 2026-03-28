@@ -248,7 +248,8 @@
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secundario",
     "roleTypeExtra": "Extra",
-    "withdraw": "Retirar"
+    "withdraw": "Retirar",
+  "applyAgain": "Aplicar de nuevo"
   },
   "alreadyApplied": {
     "pageLabel": "Estado de la solicitud",
@@ -416,7 +417,8 @@
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secundario",
     "roleTypeExtra": "Extra",
-    "withdraw": "Retirar"
+    "withdraw": "Retirar",
+  "applyAgain": "Aplicar de nuevo"
   },
   "castingForm": {
     "pageLabel": "Solicitud de Casting",

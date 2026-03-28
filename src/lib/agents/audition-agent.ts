@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { prisma } from '@/lib/db'
-import { readFile } from 'fs/promises'
+import { readFile, stat } from 'fs/promises'
 import path from 'path'
 
 interface AuditInput {
@@ -17,6 +17,7 @@ interface AuditInput {
             unique_quality: string
         }
         photoUrls?: string[]  // Uploaded headshot/portfolio photo paths
+        voiceUrl?: string     // Self-tape / voice recording path
     }
     role: {
         roleName: string
@@ -28,6 +29,19 @@ interface AuditInput {
         projectTitle: string
     }
     locale?: string  // User's language preference (e.g. 'zh', 'es', 'fr')
+}
+
+// ═══ PRE-CHECK RESULT ═══
+interface PreCheckResult {
+    ageMismatch: boolean
+    ageDetails: string
+    genderMismatch: boolean
+    genderDetails: string
+    voiceMissing: boolean
+    voiceDetails: string
+    totalPenalty: number
+    preNotes: string[]
+    preConcerns: string[]
 }
 
 export interface AuditReport {
@@ -200,32 +214,37 @@ const LOCALE_NAMES: Record<string, string> = {
     hi: 'Hindi', pt: 'Portuguese', ru: 'Russian', ja: 'Japanese', de: 'German', ko: 'Korean',
 }
 
-function buildPrompt(input: AuditInput, customPrompt: string, hasPhotos: boolean): string {
+function buildPrompt(input: AuditInput, customPrompt: string, hasPhotos: boolean, preCheck: PreCheckResult): string {
     const lang = LOCALE_NAMES[input.locale || 'en'] || 'English'
+    const hasVoice = !!input.applicant.voiceUrl && !preCheck.voiceMissing
+
     let prompt = `You are the AI assessment assistant for AIM Studio, an AI-powered film production company.
 
-Your task is to analyze a casting applicant's submission and generate a structured compatibility report. 
+Your task is to analyze a casting applicant's submission and generate a structured compatibility report.
 
-## IMPORTANT RULES
-- Do NOT evaluate or comment on the applicant's past experience or acting history
-- Base your evaluation ONLY on the information and materials the applicant has submitted (personality answers, photos, special skills, voice)
-- You CAN recommend selection if the applicant clearly meets the role requirements based on their submission
-- You CAN recommend rejection if the applicant clearly does not match what the role needs
-- Be warm, encouraging, and constructive in all feedback
+## INTEGRITY RULES — READ FIRST
+- If the photos submitted do not appear to show the applicant themselves (e.g. celebrities, stock images, animals, objects), you MUST flag this in concerns and reduce the score significantly.
+- If personality answers are copy-pasted, generic, or clearly do not match the role, flag them.
+- If the applicant's age or gender clearly falls outside the stated role requirements, this MUST be listed as a concern and reflected in a lower score.
+- Do NOT evaluate or comment on the applicant's past experience or acting history.
+- Base your evaluation ONLY on the submission provided (personality answers, photos, skills, voice).
+- You CAN recommend rejection if the applicant clearly does not match what the role needs.
+- Be warm and constructive, but always honest.
 
 ## ROLE BEING CAST
 - **Project**: ${input.role.projectTitle}
 - **Role**: ${input.role.roleName} (${input.role.roleType})
 - **Description**: ${input.role.roleDescription}
 - **Requirements**: ${input.role.requirements}
-- **Preferred Age Range**: ${input.role.ageRange || 'Any'}
-- **Preferred Gender**: ${input.role.gender || 'Any'}
+- **Required Age Range**: ${input.role.ageRange || 'Any'}
+- **Required Gender**: ${input.role.gender || 'Any'}
 
 ## APPLICANT SUBMISSION
 - **Name**: ${input.applicant.fullName}
-- **Age**: ${input.applicant.age || 'Not specified'}
-- **Gender**: ${input.applicant.gender || 'Not specified'}
+- **Age**: ${input.applicant.age || 'Not specified'}${preCheck.ageMismatch ? ' ⚠️ OUTSIDE ROLE AGE RANGE' : ''}
+- **Gender**: ${input.applicant.gender || 'Not specified'}${preCheck.genderMismatch ? ' ⚠️ DOES NOT MATCH ROLE GENDER REQUIREMENT' : ''}
 - **Special Skills**: ${input.applicant.specialSkills || 'Not specified'}
+- **Voice/Self-Tape**: ${hasVoice ? 'Submitted ✓' : 'NOT SUBMITTED ⚠️'}
 
 ## PERSONALITY INSIGHTS (from their answers)
 - **Self-Description**: ${input.applicant.personality.describe_yourself || 'Not provided'}
@@ -235,21 +254,28 @@ Your task is to analyze a casting applicant's submission and generate a structur
 
 ## WHAT TO EVALUATE
 Based ONLY on what was submitted, assess:
-1. How well the applicant's profile (age, gender, skills) aligns with the role requirements
-2. How their personality and motivation fit the character
+1. How well the applicant's profile (age, gender, skills) aligns with the role requirements — flag any hard mismatches
+2. How their personality and motivation fit the character — note if answers feel generic or irrelevant
 3. Unique qualities or skills that could enhance this role
-4. Overall compatibility between the applicant and the role`
+4. Overall integrity and completeness of the submission (missing voice, mismatched photos, etc.)
+5. Overall compatibility between the applicant and the role`
 
     if (hasPhotos) {
         prompt += `
-5. **VISUAL ASSESSMENT** (photos are attached): Analyze the applicant's uploaded photos:
+6. **VISUAL ASSESSMENT** (photos are attached — verify they show the actual applicant):
+   - Confirm the photos appear to show a real person (not stock photos, celebrities, or AI-generated faces)
    - Screen presence and photogenic quality
    - How well their look matches the character description
    - Expressiveness shown in their photos
+   - Flag any photos that seem suspicious or irrelevant
    Be respectful and professional. Focus on casting compatibility, not personal appearance judgments.`
     }
 
-    prompt += `\n\nBe encouraging and constructive. This is a volunteer/independent production, so prioritize passion, personality fit, and potential.`
+    if (preCheck.preNotes.length > 0) {
+        prompt += `\n\n## ⚠️ SYSTEM PRE-CHECK ALERTS (factor these into your scoring)\n${preCheck.preNotes.map(n => `- ${n}`).join('\n')}`
+    }
+
+    prompt += `\n\nThis is a volunteer/independent production — prioritize passion and personality fit, but maintain submission integrity standards.`
 
     if (input.locale && input.locale !== 'en') {
         prompt += `\n\n## ⚠️ CRITICAL LANGUAGE REQUIREMENT ⚠️\nThe applicant speaks ${lang}. You MUST write the "applicantFeedback" field entirely in ${lang}.\nDo NOT write applicantFeedback in English under any circumstances — the applicant will not understand it.\nAll other fields (strengths, concerns, notes, visualAssessment) should remain in English for the admin team.\nIMPORTANT: "applicantFeedback" MUST be ${lang} only.`
@@ -267,14 +293,14 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
   "overallScore": <0-100>,
   "roleFitScore": <0-100>,
   "strengths": ["strength 1", "strength 2", "strength 3"],
-  "concerns": ["area to explore 1", "area to explore 2"],
+  "concerns": ["concern 1", "concern 2"],
   "recommendation": "<STRONG_FIT|GOOD_FIT|MODERATE|WEAK_FIT>",
-  "notes": "Constructive assessment notes about the applicant's compatibility with the role based on their submission...",
-  "applicantFeedback": "A personalized message (2-3 sentences) for the applicant BY NAME. RULES: (1) If they are a GOOD FIT: congratulate them, mention what specifically makes them right for this role based on their submission. (2) If they are NOT a fit: be honest and kind — tell them this particular role isn't the best match for them, but encourage them to explore and apply for other roles on the platform that may suit them better. (3) NEVER suggest they improve their current application, provide more details, or elaborate on answers — they cannot reapply for this role. (4) NEVER advise them to take workshops, classes, or build experience. (5) Keep it warm, direct, and forward-looking."`
+  "notes": "Admin-facing assessment notes about compatibility, submission quality, and any integrity flags...",
+  "applicantFeedback": "A personalized message (2-3 sentences) for the applicant BY NAME. RULES: (1) GOOD FIT: congratulate them, mention what specifically makes them right for this role. (2) NOT a fit: be honest and kind — this role isn't the best match, but encourage them to apply for other roles on the platform. (3) NEVER suggest they improve or re-submit — they cannot reapply. (4) NEVER advise workshops or classes. (5) Keep it warm, direct, and forward-looking."`
 
     if (hasPhotos) {
         prompt += `,
-  "visualAssessment": "A brief assessment (2-3 sentences) of the applicant's photos in relation to the role. Comment on screen presence, look fit, and expressiveness."`
+  "visualAssessment": "Assessment of the applicant's photos: confirm they appear to be the real applicant, comment on screen presence, look match for the role, and any concerns."`
     }
 
     prompt += `\n}`
@@ -282,10 +308,109 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
     return prompt
 }
 
+// ═══ PRE-CHECK HELPERS ═══
+
+/** Parse an age range string like "18-35", "25+", "under 40" → [min, max] or null */
+function parseAgeRange(ageRange: string | null): [number, number] | null {
+    if (!ageRange) return null
+    const s = ageRange.trim()
+    // "18-35" or "18 - 35"
+    const rangeMatch = s.match(/(\d+)\s*[-–]\s*(\d+)/)
+    if (rangeMatch) return [parseInt(rangeMatch[1]), parseInt(rangeMatch[2])]
+    // "25+" or "25 and above"
+    const plusMatch = s.match(/(\d+)\s*\+/)
+    if (plusMatch) return [parseInt(plusMatch[1]), 120]
+    // "under 40" or "maximum 40"
+    const underMatch = s.match(/(?:under|max(?:imum)?|up to)\s*(\d+)/i)
+    if (underMatch) return [0, parseInt(underMatch[1])]
+    // Single number "30"
+    const single = s.match(/^(\d+)$/)
+    if (single) { const n = parseInt(single[1]); return [n - 5, n + 5] }
+    return null
+}
+
+/** Normalise a gender string to a canonical form for comparison */
+function normaliseGender(g: string | null): string {
+    if (!g) return 'any'
+    const lower = g.toLowerCase().trim()
+    if (['male', 'man', 'men', 'm'].includes(lower)) return 'male'
+    if (['female', 'woman', 'women', 'f'].includes(lower)) return 'female'
+    return 'any'
+}
+
+/** Run all pre-checks and return a consolidated result */
+async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
+    const result: PreCheckResult = {
+        ageMismatch: false, ageDetails: '',
+        genderMismatch: false, genderDetails: '',
+        voiceMissing: false, voiceDetails: '',
+        totalPenalty: 0,
+        preNotes: [],
+        preConcerns: [],
+    }
+
+    // ── Age range check ──
+    const range = parseAgeRange(input.role.ageRange)
+    if (range && input.applicant.age !== null) {
+        const [minAge, maxAge] = range
+        if (input.applicant.age < minAge || input.applicant.age > maxAge) {
+            result.ageMismatch = true
+            result.ageDetails = `Applicant age ${input.applicant.age} is outside the required range ${input.role.ageRange}`
+            result.totalPenalty += 20
+            result.preNotes.push(`AGE MISMATCH: ${result.ageDetails}`)
+            result.preConcerns.push(result.ageDetails)
+            console.warn(`[AI Audit] Pre-check: ${result.ageDetails}`)
+        }
+    }
+
+    // ── Gender check ──
+    const roleGender = normaliseGender(input.role.gender)
+    const applicantGender = normaliseGender(input.applicant.gender)
+    if (roleGender !== 'any' && applicantGender !== 'any' && roleGender !== applicantGender) {
+        result.genderMismatch = true
+        result.genderDetails = `Applicant gender (${input.applicant.gender}) does not match role requirement (${input.role.gender})`
+        result.totalPenalty += 15
+        result.preNotes.push(`GENDER MISMATCH: ${result.genderDetails}`)
+        result.preConcerns.push(result.genderDetails)
+        console.warn(`[AI Audit] Pre-check: ${result.genderDetails}`)
+    }
+
+    // ── Voice / self-tape check ──
+    if (input.applicant.voiceUrl) {
+        try {
+            const filePath = path.join(process.cwd(), 'public', input.applicant.voiceUrl)
+            const fileStat = await stat(filePath)
+            if (fileStat.size < 1024) { // < 1 KB — essentially empty
+                result.voiceMissing = true
+                result.voiceDetails = 'Voice/self-tape file appears to be empty or corrupt'
+                result.totalPenalty += 8
+                result.preNotes.push(`VOICE ISSUE: ${result.voiceDetails}`)
+                result.preConcerns.push('Voice recording appears to be empty — please resubmit')
+            } else {
+                result.voiceDetails = `Voice file present (${Math.round(fileStat.size / 1024)} KB)`
+            }
+        } catch {
+            result.voiceMissing = true
+            result.voiceDetails = 'Voice/self-tape file could not be found on server'
+            result.totalPenalty += 8
+            result.preNotes.push(`VOICE MISSING: ${result.voiceDetails}`)
+            result.preConcerns.push('Voice/self-tape recording could not be located')
+        }
+    } else {
+        result.voiceMissing = true
+        result.voiceDetails = 'No voice/self-tape recording submitted'
+        result.totalPenalty += 5
+        result.preNotes.push('No voice/self-tape recording was submitted')
+        result.preConcerns.push('Missing voice recording — applicant did not submit a self-tape')
+    }
+
+    return result
+}
+
 // Read photo files from disk and return as base64 for vision APIs
-async function loadPhotosAsBase64(photoUrls: string[]): Promise<{ base64: string; mimeType: string }[]> {
-    const photos: { base64: string; mimeType: string }[] = []
-    for (const url of photoUrls.slice(0, 4)) { // Max 4 photos to avoid token limits
+async function loadPhotosAsBase64(photoUrls: string[]): Promise<{ base64: string; mimeType: string; url: string }[]> {
+    const photos: { base64: string; mimeType: string; url: string }[] = []
+    for (const url of photoUrls.slice(0, 4)) {
         try {
             const filePath = path.join(process.cwd(), 'public', url)
             const buffer = await readFile(filePath)
@@ -294,12 +419,78 @@ async function loadPhotosAsBase64(photoUrls: string[]): Promise<{ base64: string
                 : ext === '.webp' ? 'image/webp'
                 : ext === '.gif' ? 'image/gif'
                 : 'image/jpeg'
-            photos.push({ base64: buffer.toString('base64'), mimeType })
+            photos.push({ base64: buffer.toString('base64'), mimeType, url })
         } catch {
             console.log(`[AI Audit] Could not read photo: ${url}`)
         }
     }
     return photos
+}
+
+/**
+ * Vision pre-screen: asks Gemini to describe each image and classify it.
+ * Uses a rich prompt asking for a description + verdict to prevent easy bypass.
+ * Returns approved photos and flags any that don't contain a real human.
+ */
+async function screenPhotosForRelevance(
+    photos: { base64: string; mimeType: string; url: string }[],
+    geminiKey: string,
+    geminiModel: string
+): Promise<{ approved: { base64: string; mimeType: string }[]; hadIrrelevant: boolean; rejectedCount: number; rejectionReasons: string[] }> {
+    if (photos.length === 0) return { approved: [], hadIrrelevant: false, rejectedCount: 0, rejectionReasons: [] }
+
+    const { GoogleGenerativeAI } = await import('@google/generative-ai')
+    const genAI = new GoogleGenerativeAI(geminiKey)
+    const model = genAI.getGenerativeModel({ model: geminiModel })
+
+    const approved: { base64: string; mimeType: string }[] = []
+    const rejectionReasons: string[] = []
+    let rejectedCount = 0
+
+    for (const photo of photos) {
+        try {
+            const result = await model.generateContent([
+                {
+                    text: `You are a casting submission validator.
+
+Look at this image and answer the following questions:
+1. What does this image show? (describe in one sentence)
+2. Does it contain a real human person (face or body)? YES or NO
+3. If YES — does the person appear to be a genuine applicant photo (not a stock image, celebrity, AI-generated face, or meme)? YES or NO
+4. If anything seems suspicious or irrelevant, describe it.
+
+End your response with a single verdict line:
+VERDICT: PASS — if the image is a genuine human applicant photo
+VERDICT: FAIL — if it is not (animal, object, scenery, stock photo, celebrity, cartoon, meme, etc.)
+
+Be strict. An applicant should not be able to pass by submitting a picture of a dog, a landscape, a movie character, or someone else.`
+                },
+                {
+                    inlineData: { data: photo.base64, mimeType: photo.mimeType }
+                }
+            ])
+            const answer = result.response.text().trim()
+            const verdictLine = answer.split('\n').reverse().find(l => l.includes('VERDICT:')) || ''
+            const passed = verdictLine.includes('PASS')
+
+            if (passed) {
+                approved.push({ base64: photo.base64, mimeType: photo.mimeType })
+                console.log(`[AI Audit] ✓ Photo passed screening: ${photo.url}`)
+            } else {
+                rejectedCount++
+                // Extract description from first line for the rejection reason
+                const descLine = answer.split('\n')[0]?.replace(/^1\.\s*/, '').trim() || 'Non-human content detected'
+                rejectionReasons.push(descLine)
+                console.warn(`[AI Audit] ✗ Photo REJECTED: ${photo.url} — Gemini: ${descLine}`)
+            }
+        } catch (err) {
+            // Screening failed — allow through (fail-open) but log
+            console.warn(`[AI Audit] Photo screening error for ${photo.url}:`, err)
+            approved.push({ base64: photo.base64, mimeType: photo.mimeType })
+        }
+    }
+
+    return { approved, hadIrrelevant: rejectedCount > 0, rejectedCount, rejectionReasons }
 }
 
 // ═══ GROQ PROVIDER ═══
@@ -386,25 +577,38 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
         throw new Error('NO_API_KEY: Configure your API key in Admin → Settings → API Keys to enable AI casting analysis. Supports Groq (free & fast) and Google Gemini.')
     }
 
-    // Load applicant photos for vision-capable models
+    // ── Run pre-checks (age, gender, voice) before any AI call ──
+    const preCheck = await runPreChecks(input)
+    if (preCheck.totalPenalty > 0) {
+        console.warn(`[AI Audit] Pre-checks flagged issues: penalty=${preCheck.totalPenalty}pts | ${preCheck.preNotes.join('; ')}`)
+    }
+
+    // ── Load applicant photos and run AI vision pre-screen ──
     const hasPhotos = (input.applicant.photoUrls?.length ?? 0) > 0
     let photos: { base64: string; mimeType: string }[] = []
     let irrelevantImageFlag = false
+    let rejectedPhotoCount = 0
+    let photoRejectionReasons: string[] = []
+
     if (hasPhotos) {
-        // Filter out images that appear irrelevant (simple heuristic: filename contains 'irrelevant' or 'placeholder')
-        const filteredUrls = input.applicant.photoUrls!.filter(url => {
-            const lowered = url.toLowerCase()
-            if (lowered.includes('irrelevant') || lowered.includes('placeholder')) {
-                irrelevantImageFlag = true
-                return false
+        const rawPhotos = await loadPhotosAsBase64(input.applicant.photoUrls!)
+        console.log(`[AI Audit] Loaded ${rawPhotos.length} photo(s) for screening`)
+
+        const geminiKey = config.keys.find(k => (k as any).provider === 'gemini' || !(k as any).provider)?.key || ''
+        const geminiModel = ((config.keys.find(k => (k as any).provider === 'gemini') as any)?.model as string) || 'gemini-2.5-flash'
+
+        if (geminiKey && rawPhotos.length > 0) {
+            const screening = await screenPhotosForRelevance(rawPhotos, geminiKey, geminiModel)
+            photos = screening.approved
+            irrelevantImageFlag = screening.hadIrrelevant
+            rejectedPhotoCount = screening.rejectedCount
+            photoRejectionReasons = screening.rejectionReasons
+            if (irrelevantImageFlag) {
+                console.warn(`[AI Audit] ⚠️ ${rejectedPhotoCount} photo(s) rejected — ${photoRejectionReasons.join('; ')}`)
             }
-            return true
-        })
-        if (filteredUrls.length > 0) {
-            photos = await loadPhotosAsBase64(filteredUrls)
-            console.log(`[AI Audit] Loaded ${photos.length} relevant photos for visual analysis`)
         } else {
-            console.log('[AI Audit] No relevant photos after filtering irrelevant images')
+            photos = rawPhotos.map(p => ({ base64: p.base64, mimeType: p.mimeType }))
+            console.log('[AI Audit] No Gemini key for vision screening — photos passed through unvalidated')
         }
     }
 
@@ -467,11 +671,8 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
                 continue
             }
 
-            // Build prompt, adding a note about irrelevant images if needed
-            const basePrompt = buildPrompt(input, config.customPrompt, photos.length > 0)
-            const prompt = irrelevantImageFlag
-                ? `${basePrompt}\n\n[NOTE] The applicant uploaded images that appear irrelevant; they have been excluded from visual analysis.`
-                : basePrompt
+            // Build prompt — pre-check alerts are baked into the prompt itself
+            const prompt = buildPrompt(input, config.customPrompt, photos.length > 0, preCheck)
 
             try {
                 console.log(`[AI Audit] Trying key: ${keyInfo.label} | provider: ${keyProvider} | model: ${keyModel} | RPM left: ${remaining}`)
@@ -507,21 +708,40 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
 
                 const report: AuditReport = JSON.parse(jsonStr)
 
-                // If irrelevant images were filtered, add a note to the report
-                if (irrelevantImageFlag) {
-                    report.notes = (report.notes ? report.notes + ' ' : '') + 'Irrelevant images were uploaded and excluded from analysis.'
-                }
-
-                // Validate and clamp scores
+                // ── Validate and clamp raw LLM scores ──
                 report.overallScore = Math.max(0, Math.min(100, Math.round(report.overallScore)))
                 report.roleFitScore = Math.max(0, Math.min(100, Math.round(report.roleFitScore)))
 
-                // Apply penalty if irrelevant images were filtered out
+                // ── Apply pre-check server-side penalty (age/gender/voice) ──
+                if (preCheck.totalPenalty > 0) {
+                    report.overallScore = Math.max(0, report.overallScore - preCheck.totalPenalty)
+                    report.roleFitScore = Math.max(0, report.roleFitScore - preCheck.totalPenalty)
+                    report.concerns = [...(report.concerns || []), ...preCheck.preConcerns.filter(c => !report.concerns?.includes(c))]
+                    // Hard cap recommendation if critical mismatches
+                    if (preCheck.ageMismatch || preCheck.genderMismatch) {
+                        if (report.recommendation === 'STRONG_FIT') report.recommendation = 'MODERATE'
+                        else if (report.recommendation === 'GOOD_FIT') report.recommendation = 'MODERATE'
+                    }
+                }
+
+                // ── Apply photo rejection penalty ──
                 if (irrelevantImageFlag) {
-                    const penalty = 5 // points deducted
-                    report.overallScore = Math.max(0, report.overallScore - penalty)
-                    report.roleFitScore = Math.max(0, report.roleFitScore - penalty)
-                    report.notes = (report.notes ? report.notes + ' ' : '') + `Penalty applied: -${penalty} points for irrelevant images.`
+                    const photoPenalty = Math.min(30, rejectedPhotoCount * 12)
+                    report.overallScore = Math.max(0, report.overallScore - photoPenalty)
+                    report.roleFitScore = Math.max(0, report.roleFitScore - photoPenalty)
+                    const reasons = photoRejectionReasons.length > 0 ? ` (detected: ${photoRejectionReasons.join('; ')})` : ''
+                    const rejNote = `${rejectedPhotoCount} uploaded photo(s) did not pass content screening${reasons}. These were excluded from visual assessment. Score penalised by ${photoPenalty} points.`
+                    report.notes = (report.notes ? report.notes + ' ' : '') + rejNote
+                    if (report.applicantFeedback) {
+                        report.applicantFeedback += ` Note: one or more of your submitted photos could not be verified as showing a person and were excluded from the visual assessment.`
+                    }
+                    const photoConcern = `${rejectedPhotoCount} photo(s) did not appear to contain the applicant — please submit clear headshots.`
+                    if (!report.concerns?.includes(photoConcern)) {
+                        report.concerns = [...(report.concerns || []), photoConcern]
+                    }
+                    if (report.recommendation === 'STRONG_FIT') report.recommendation = 'GOOD_FIT'
+                    if (report.recommendation === 'GOOD_FIT' && rejectedPhotoCount >= 2) report.recommendation = 'MODERATE'
+                    if (rejectedPhotoCount >= 3) report.recommendation = 'WEAK_FIT'
                 }
 
                 if (!['STRONG_FIT', 'GOOD_FIT', 'MODERATE', 'WEAK_FIT'].includes(report.recommendation)) {

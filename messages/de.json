@@ -248,7 +248,8 @@
     "roleTypeLead": "Hauptrolle",
     "roleTypeSupporting": "Nebenrolle",
     "roleTypeExtra": "Statist",
-    "withdraw": "Zurückziehen"
+    "withdraw": "Zurückziehen",
+  "applyAgain": "Erneut bewerben"
   },
   "alreadyApplied": {
     "pageLabel": "Bewerbungsstatus",
@@ -416,7 +417,8 @@
     "roleTypeLead": "Hauptrolle",
     "roleTypeSupporting": "Nebenrolle",
     "roleTypeExtra": "Statist",
-    "withdraw": "Zurückziehen"
+    "withdraw": "Zurückziehen",
+  "applyAgain": "Erneut bewerben"
   },
   "castingForm": {
     "pageLabel": "Casting-Bewerbung",

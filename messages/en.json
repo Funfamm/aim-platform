@@ -248,7 +248,8 @@
     "roleTypeLead": "Lead",
     "roleTypeSupporting": "Supporting",
     "roleTypeExtra": "Extra",
-    "withdraw": "Withdraw"
+    "withdraw": "Withdraw",
+    "applyAgain": "Apply Again"
   },
   "alreadyApplied": {
     "pageLabel": "Application Status",

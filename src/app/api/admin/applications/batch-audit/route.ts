@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
                     specialSkills: app.specialSkills,
                     personality: experienceData.personality,
                     photoUrls,
+                    voiceUrl: app.selfTapePath || undefined,
                 },
                 role: {
                     roleName: app.castingCall.roleName,

@@ -248,7 +248,8 @@
     "roleTypeLead": "主役",
     "roleTypeSupporting": "助演",
     "roleTypeExtra": "エキストラ",
-    "withdraw": "取り下げ"
+    "withdraw": "取り下げ",
+  "applyAgain": "再応募"
   },
   "alreadyApplied": {
     "pageLabel": "申請状況",
@@ -416,7 +417,8 @@
     "roleTypeLead": "主役",
     "roleTypeSupporting": "助演",
     "roleTypeExtra": "エキストラ",
-    "withdraw": "取り下げ"
+    "withdraw": "取り下げ",
+  "applyAgain": "再応募"
   },
   "castingForm": {
     "pageLabel": "キャスティング応募",

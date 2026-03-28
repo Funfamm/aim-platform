@@ -248,7 +248,8 @@
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Coadjuvante",
     "roleTypeExtra": "Figurante",
-    "withdraw": "Retirar"
+    "withdraw": "Retirar",
+  "applyAgain": "Candidatar-se novamente"
   },
   "alreadyApplied": {
     "pageLabel": "Status da candidatura",
@@ -416,7 +417,8 @@
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Coadjuvante",
     "roleTypeExtra": "Figurante",
-    "withdraw": "Retirar"
+    "withdraw": "Retirar",
+  "applyAgain": "Candidatar-se novamente"
   },
   "castingForm": {
     "pageLabel": "Candidatura Casting",

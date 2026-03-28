@@ -248,7 +248,8 @@
     "roleTypeLead": "رئيسي",
     "roleTypeSupporting": "ثانوي",
     "roleTypeExtra": "كومبارس",
-    "withdraw": "سحب"
+    "withdraw": "سحب",
+  "applyAgain": "تطبيق مجددًا"
   },
   "alreadyApplied": {
     "pageLabel": "حالة الطلب",
@@ -416,7 +417,8 @@
     "roleTypeLead": "رئيسي",
     "roleTypeSupporting": "ثانوي",
     "roleTypeExtra": "كومبارس",
-    "withdraw": "سحب"
+    "withdraw": "سحب",
+  "applyAgain": "تطبيق مجددًا"
   },
   "castingForm": {
     "pageLabel": "طلب كاستنج",

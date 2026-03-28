@@ -248,7 +248,8 @@
     "roleTypeLead": "主角",
     "roleTypeSupporting": "配角",
     "roleTypeExtra": "临演",
-    "withdraw": "撤回"
+    "withdraw": "撤回",
+  "applyAgain": "重新申请"
   },
   "alreadyApplied": {
     "pageLabel": "申请状态",
@@ -416,7 +417,8 @@
     "roleTypeLead": "主角",
     "roleTypeSupporting": "配角",
     "roleTypeExtra": "临演",
-    "withdraw": "撤回"
+    "withdraw": "撤回",
+  "applyAgain": "重新申请"
   },
   "castingForm": {
     "pageLabel": "选角申请",

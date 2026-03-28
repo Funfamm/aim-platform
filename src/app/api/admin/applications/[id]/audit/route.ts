@@ -52,6 +52,7 @@ export async function POST(
                 specialSkills: application.specialSkills,
                 personality: experienceData.personality,
                 photoUrls,
+                voiceUrl: application.selfTapePath || undefined,
             },
             role: {
                 roleName: application.castingCall.roleName,
