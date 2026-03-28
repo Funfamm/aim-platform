@@ -147,25 +147,16 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     )}
                 </div>
 
-                {hasApplied ? (
+                {/* ── CTA area — state-driven ── */}
+                {localApplied && !isWithdrawn ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {/* Applied badge */}
                         <div style={{
-                            width: '100%',
-                            padding: '0.5rem 1rem',
-                            fontSize: '0.8rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            border: '1px solid rgba(228, 185, 90, 0.4)',
-                            borderRadius: 'var(--radius-full)',
-                            color: 'var(--accent-gold)',
-                            background: 'rgba(228, 185, 90, 0.08)',
-                            cursor: 'not-allowed',
-                            opacity: 0.85,
-                            fontWeight: 600,
-                            letterSpacing: '0.02em',
+                            width: '100%', padding: '0.5rem 1rem', fontSize: '0.8rem',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                            border: '1px solid rgba(228,185,90,0.4)', borderRadius: 'var(--radius-full)',
+                            color: 'var(--accent-gold)', background: 'rgba(228,185,90,0.08)',
+                            cursor: 'not-allowed', opacity: 0.85, fontWeight: 600, letterSpacing: '0.02em',
                         }}>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <polyline points="20 6 9 17 4 12" />
@@ -173,21 +164,14 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                             Applied
                         </div>
 
-                        {/* Withdraw — only for pending/under-review */}
-                        {(applicationStatus === 'submitted' || applicationStatus === 'under_review') && (
+                        {/* Withdraw — only for submitted / under_review, and not after a reapply */}
+                        {showWithdraw && (
                             <button
                                 style={{
-                                    width: '100%',
-                                    padding: '0.4rem 1rem',
-                                    fontSize: '0.73rem',
-                                    fontWeight: 600,
-                                    letterSpacing: '0.02em',
-                                    borderRadius: 'var(--radius-full)',
-                                    border: '1px solid rgba(239,68,68,0.25)',
-                                    background: 'rgba(239,68,68,0.06)',
-                                    color: 'rgba(239,68,68,0.75)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.2s ease',
+                                    width: '100%', padding: '0.4rem 1rem', fontSize: '0.73rem',
+                                    fontWeight: 600, letterSpacing: '0.02em', borderRadius: 'var(--radius-full)',
+                                    border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)',
+                                    color: 'rgba(239,68,68,0.75)', cursor: 'pointer', transition: 'all 0.2s ease',
                                 }}
                                 onMouseEnter={e => {
                                     (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.12)'
@@ -202,7 +186,6 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                                 onClick={async () => {
                                     const res = await fetch(`/api/casting/${call.id}/withdraw`, { method: 'POST' })
                                     if (res.ok) {
-                                        // Instant UI update — no page reload
                                         setLocalStatus('withdrawn')
                                         setLocalApplied(false)
                                     } else {
@@ -215,6 +198,28 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                             </button>
                         )}
                     </div>
+                ) : (
+                    /* Apply / Re-apply button */
+                    <Link
+                        href={`/casting/${call.id}/apply`}
+                        style={{
+                            display: 'block', width: '100%', padding: '0.5rem 1rem',
+                            fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.02em', textAlign: 'center',
+                            borderRadius: 'var(--radius-full)', textDecoration: 'none',
+                            border: '1px solid rgba(228,185,90,0.35)',
+                            background: isWithdrawn ? 'rgba(228,185,90,0.04)' : 'rgba(228,185,90,0.08)',
+                            color: 'var(--accent-gold)', transition: 'all 0.2s ease',
+                        }}
+                        onClick={() => {
+                            if (isWithdrawn) {
+                                setReapplied(true)
+                                setLocalApplied(true)
+                                setLocalStatus('submitted')
+                            }
+                        }}
+                    >
+                        {isWithdrawn ? '↩ ' + t('applyAgain') : t('apply')}
+                    </Link>
                 )}
             </div>
         </ScrollReveal3D>
