@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
@@ -39,6 +40,18 @@ interface Props {
 export default function CastingRoleCard({ call, index, hasApplied = false, applicationStatus }: Props) {
     const t = useTranslations('castingCard')
     const locale = useLocale()
+
+    // Local state so withdrawal/reapply updates UI instantly without page reload
+    const [localStatus, setLocalStatus] = useState<string | undefined>(applicationStatus)
+    const [localApplied, setLocalApplied] = useState(hasApplied)
+    // After reapply, don't show Withdraw again (one reapply = done)
+    const [reapplied, setReapplied] = useState(false)
+
+    const isWithdrawn = localStatus === 'withdrawn'
+    const showApplyBtn = !localApplied || isWithdrawn
+    const showWithdraw = localApplied && !isWithdrawn && !reapplied
+        && (localStatus === 'submitted' || localStatus === 'under_review')
+
     const roleTypeKeys: Record<string, string> = { lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }
     const roleTypeLabel = t(roleTypeKeys[call.roleType.toLowerCase()] || 'roleTypeLead')
 
@@ -135,64 +148,75 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                 </div>
 
                 {hasApplied ? (
-                    <div style={{
-                        width: '100%',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.8rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        border: '1px solid rgba(228, 185, 90, 0.4)',
-                        borderRadius: 'var(--radius-full)',
-                        color: 'var(--accent-gold)',
-                        background: 'rgba(228, 185, 90, 0.08)',
-                        cursor: 'not-allowed',
-                        opacity: 0.85,
-                        fontWeight: 600,
-                        letterSpacing: '0.02em',
-                    }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        Applied
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {/* Applied badge */}
+                        <div style={{
+                            width: '100%',
+                            padding: '0.5rem 1rem',
+                            fontSize: '0.8rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            border: '1px solid rgba(228, 185, 90, 0.4)',
+                            borderRadius: 'var(--radius-full)',
+                            color: 'var(--accent-gold)',
+                            background: 'rgba(228, 185, 90, 0.08)',
+                            cursor: 'not-allowed',
+                            opacity: 0.85,
+                            fontWeight: 600,
+                            letterSpacing: '0.02em',
+                        }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                            Applied
+                        </div>
+
+                        {/* Withdraw — only for pending/under-review */}
+                        {(applicationStatus === 'submitted' || applicationStatus === 'under_review') && (
+                            <button
+                                style={{
+                                    width: '100%',
+                                    padding: '0.4rem 1rem',
+                                    fontSize: '0.73rem',
+                                    fontWeight: 600,
+                                    letterSpacing: '0.02em',
+                                    borderRadius: 'var(--radius-full)',
+                                    border: '1px solid rgba(239,68,68,0.25)',
+                                    background: 'rgba(239,68,68,0.06)',
+                                    color: 'rgba(239,68,68,0.75)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease',
+                                }}
+                                onMouseEnter={e => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.12)'
+                                    ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.45)'
+                                    ;(e.currentTarget as HTMLButtonElement).style.color = 'rgb(239,68,68)'
+                                }}
+                                onMouseLeave={e => {
+                                    (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.06)'
+                                    ;(e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(239,68,68,0.25)'
+                                    ;(e.currentTarget as HTMLButtonElement).style.color = 'rgba(239,68,68,0.75)'
+                                }}
+                                onClick={async () => {
+                                    const res = await fetch(`/api/casting/${call.id}/withdraw`, { method: 'POST' })
+                                    if (res.ok) {
+                                        // Instant UI update — no page reload
+                                        setLocalStatus('withdrawn')
+                                        setLocalApplied(false)
+                                    } else {
+                                        const data = await res.json()
+                                        alert(data.error || 'Failed to withdraw')
+                                    }
+                                }}
+                            >
+                                {t('withdraw')}
+                            </button>
+                        )}
                     </div>
-                ) : (
-                    <Link href={`/casting/${call.id}/apply`} className="btn btn-primary" style={{
-                        width: '100%',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.8rem',
-                    }}>
-                        {t('apply')}
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 12h14M12 5l7 7-7 7" />
-                        </svg>
-                    </Link>
                 )}
             </div>
-            {hasApplied && (applicationStatus === 'submitted' || applicationStatus === 'under_review') && (
-                <button
-                    className="btn btn-outline btn-warning"
-                    style={{
-                        width: '100%',
-                        marginTop: '0.5rem',
-                        padding: '0.5rem 1rem',
-                        fontSize: '0.8rem',
-                    }}
-                    onClick={async () => {
-                        const res = await fetch(`/api/casting/${call.id}/withdraw`, { method: 'POST' })
-                        if (res.ok) {
-                            // simple refresh to reflect change
-                            window.location.reload()
-                        } else {
-                            const data = await res.json()
-                            alert(data.error || 'Failed to withdraw')
-                        }
-                    }}
-                >
-                    {t('withdraw')}
-                </button>
-            )}
         </ScrollReveal3D>
     )
 }

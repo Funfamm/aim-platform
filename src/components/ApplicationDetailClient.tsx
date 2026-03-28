@@ -211,7 +211,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
             </div>
 
             {/* ─── MAIN GRID ─── */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '16px', alignItems: 'start' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '16px', alignItems: 'start' }}>
                 {/* LEFT COLUMN */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                     {/* Photo Gallery — Compact Filmstrip */}
@@ -496,7 +496,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
 
             <style jsx>{`
                 @media (max-width: 900px) {
-                    div[style*="grid-template-columns: 1fr 300px"] {
+                    div[style*="grid-template-columns: 1fr 380px"] {
                         grid-template-columns: 1fr !important;
                     }
                     div[style*="grid-template-columns: 1fr 1fr"] {

@@ -68,12 +68,26 @@ export async function POST(
             if (session?.userId) userId = session.userId
         } catch { /* guest application is fine */ }
 
-        // ═══ DUPLICATE CHECK — same logged-in user, same role ═══
+        // ═══ DUPLICATE / REAPPLY CHECK ═══
         if (userId) {
             const existingByUser = await prisma.application.findFirst({
                 where: { castingCallId: id, userId },
             })
             if (existingByUser) {
+                // Allow reapply only if previously withdrawn (once only)
+                if (existingByUser.status === 'withdrawn') {
+                    // Update existing record back to submitted — counts as reapplication
+                    await prisma.application.update({
+                        where: { id: existingByUser.id },
+                        data: { status: 'submitted', updatedAt: new Date() },
+                    })
+                    return NextResponse.json({
+                        success: true,
+                        applicationId: existingByUser.id,
+                        message: 'Application resubmitted successfully',
+                        reapplied: true,
+                    })
+                }
                 return NextResponse.json({
                     error: `You've already submitted an application for this role.`,
                 }, { status: 409 })
@@ -82,8 +96,9 @@ export async function POST(
 
         // ═══ DUPLICATE CHECK — same email, same role ═══
         const existingApplication = await prisma.application.findFirst({
-            where: { castingCallId: id, email },
+            where: { castingCallId: id, email, status: { not: 'withdrawn' } },
         })
+
         if (existingApplication) {
             return NextResponse.json({
                 error: `You've already applied for this role! You can apply for other roles in different projects. Check your email (${email}) for confirmation.`,

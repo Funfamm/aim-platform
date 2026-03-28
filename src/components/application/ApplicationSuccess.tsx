@@ -94,7 +94,7 @@ export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
                 }}>
                     Your application for <strong style={{ color: 'var(--accent-gold)' }}>{roleName}</strong> in{' '}
                     <em style={{ color: 'var(--text-primary)' }}>{projectTitle}</em> has been received.
-                    Our team and AI casting director are now reviewing your submission.
+                    Our team is now reviewing your submission.
                 </p>
 
                 <div style={{
@@ -120,8 +120,8 @@ export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
                     }}>What Happens Next</div>
 
                     {[
-                        { icon: '🔍', title: 'AI Review', desc: 'Our AI casting director analyzes your photos, voice, and profile for character compatibility', time: 'Within 24 hours' },
-                        { icon: '👥', title: 'Team Evaluation', desc: 'Our creative team reviews AI recommendations and makes final casting decisions', time: '1-3 days' },
+                        { icon: '🔍', title: 'Review', desc: 'Our casting director analyzes your photos, voice, and profile for character compatibility', time: 'Within 24 hours' },
+                        { icon: '👥', title: 'Team Evaluation', desc: 'Our creative team reviews the submission and makes final casting decisions', time: '1-3 days' },
                         { icon: '✉️', title: 'Contacted', desc: 'If selected, we\'ll reach out via email with next steps for your role', time: 'If shortlisted' },
                     ].map((s, i) => (
                         <div key={i} style={{

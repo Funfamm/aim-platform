@@ -78,16 +78,18 @@ interface Application {
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
 
 const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
-    pending: { label: 'Pending', bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' },
-    submitted: { label: 'Submitted', bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' },
-    under_review: { label: 'Under Review', bg: 'rgba(139,92,246,0.12)', color: '#a78bfa' },
-    shortlisted: { label: 'Shortlisted', bg: 'rgba(59,130,246,0.12)', color: '#60a5fa' },
-    contacted: { label: 'Contacted', bg: 'rgba(212,168,83,0.12)', color: '#d4a853' },
-    audition: { label: 'Audition', bg: 'rgba(168,85,247,0.12)', color: '#a855f7' },
-    selected: { label: 'Selected', bg: 'rgba(34,197,94,0.12)', color: '#22c55e' },
-    rejected: { label: 'Rejected', bg: 'rgba(107,114,128,0.12)', color: '#9ca3af' },
-    approved: { label: 'Approved', bg: 'rgba(34,197,94,0.12)', color: '#22c55e' },
+    pending:      { label: 'Pending',      bg: 'rgba(245,158,11,0.12)',  color: '#f59e0b' },
+    submitted:    { label: 'Submitted',    bg: 'rgba(245,158,11,0.12)',  color: '#f59e0b' },
+    under_review: { label: 'Under Review', bg: 'rgba(139,92,246,0.12)',  color: '#a78bfa' },
+    shortlisted:  { label: 'Shortlisted',  bg: 'rgba(59,130,246,0.12)',  color: '#60a5fa' },
+    contacted:    { label: 'Contacted',    bg: 'rgba(212,168,83,0.12)',  color: '#d4a853' },
+    audition:     { label: 'Audition',     bg: 'rgba(168,85,247,0.12)',  color: '#a855f7' },
+    selected:     { label: 'Selected',     bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
+    rejected:     { label: 'Rejected',     bg: 'rgba(107,114,128,0.12)', color: '#9ca3af' },
+    approved:     { label: 'Approved',     bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
+    withdrawn:    { label: 'Withdrawn',    bg: 'rgba(239,68,68,0.10)',   color: '#f87171' },
 }
+
 
 export default function AdminApplicationsPage() {
     const [apps, setApps] = useState<Application[]>([])
