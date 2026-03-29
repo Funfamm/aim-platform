@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "홈",
     "works": "작품",
@@ -12,6 +12,22 @@
     "language": "언어",
     "scripts": "대본",
     "training": "교육"
+  },
+  "search": {
+    "searchButton": "검색",
+    "placeholder": "영화, 캐스팅, 교육 검색...",
+    "cancel": "취소",
+    "suggestions": "검색 제안",
+    "noResults": "\"{query}\"에 대한 결과가 없습니다",
+    "tryDifferent": "다른 검색어를 시도하거나 페이지를 탐색하세요",
+    "quickAccess": "빠른 접근",
+    "browseAll": "모든 작품 보기",
+    "comingSoon": "곧 공개될 작품",
+    "openRoles": "오픈 역할 탐색",
+    "learnSkills": "새로운 기술 배우기",
+    "supportUs": "프로젝트 지원하기",
+    "about": "소개",
+    "ourStory": "우리의 이야기와 미션"
   },
   "hero": {
     "label": "AI 영화",

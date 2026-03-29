@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "Accueil",
     "works": "Œuvres",
@@ -12,6 +12,22 @@
     "language": "Langue",
     "scripts": "Scénarios",
     "training": "Formation"
+  },
+  "search": {
+    "searchButton": "Rechercher",
+    "placeholder": "Rechercher films, casting, formation...",
+    "cancel": "Annuler",
+    "suggestions": "Suggestions de recherche",
+    "noResults": "Aucun résultat pour \"{query}\"",
+    "tryDifferent": "Essayez un autre terme ou parcourez nos pages",
+    "quickAccess": "Accès Rapide",
+    "browseAll": "Parcourir toutes les productions",
+    "comingSoon": "Productions à venir",
+    "openRoles": "Explorer les rôles ouverts",
+    "learnSkills": "Apprendre de nouvelles compétences",
+    "supportUs": "Soutenir nos projets",
+    "about": "À Propos",
+    "ourStory": "Notre histoire et mission"
   },
   "hero": {
     "label": "Cinéma IA",

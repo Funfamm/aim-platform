@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "首页",
     "works": "作品",
@@ -12,6 +12,22 @@
     "language": "语言",
     "scripts": "剧本",
     "training": "培训"
+  },
+  "search": {
+    "searchButton": "搜索",
+    "placeholder": "搜索电影、选角、培训...",
+    "cancel": "取消",
+    "suggestions": "搜索建议",
+    "noResults": "未找到 \"{query}\" 的结果",
+    "tryDifferent": "试试其他搜索词或浏览我们的页面",
+    "quickAccess": "快速访问",
+    "browseAll": "浏览所有作品",
+    "comingSoon": "即将推出的作品",
+    "openRoles": "探索开放角色",
+    "learnSkills": "学习新技能",
+    "supportUs": "支持我们的项目",
+    "about": "关于我们",
+    "ourStory": "我们的故事和使命"
   },
   "hero": {
     "label": "AI电影",

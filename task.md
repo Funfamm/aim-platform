@@ -1,0 +1,14 @@
+- [ ] Add missing i18n keys to all language JSON files (placeholder, noResults, loading, suggestionTitle)
+- [ ] Create SearchContext component (src/components/search/SearchContext.tsx)
+- [ ] Create SearchBar component (src/components/search/SearchBar.tsx)
+- [ ] Create SuggestionPanel component (src/components/search/SuggestionPanel.tsx)
+- [ ] Create ResultItem component (src/components/search/ResultItem.tsx)
+- [ ] Add CSS variables for glassmorphism in globals.css
+- [ ] Add SearchAnalytics model to prisma/schema.prisma
+- [ ] Create analytics endpoint (src/app/api/v1/analytics/search/route.ts)
+- [ ] Update admin Site Settings UI to include searchBetaEnabled checkbox
+- [ ] Write unit tests for SearchContext
+- [ ] Write integration tests with MSW for search API and analytics
+- [ ] Write Playwright E2E test for mobile search UI
+- [ ] Generate UI mockup artifact (already generated)
+- [ ] Verify functionality manually

@@ -1,17 +1,10 @@
-﻿{
+{
   "nav": {
     "home": "ホーム",
     "works": "作品",
     "upcoming": "近日公開",
-    "casting": "キャスティング",
-    "donate": "寄付",
-    "signIn": "サインイン",
-    "signOut": "サインアウト",
-    "dashboard": "ダッシュボード",
-    "notifications": "通知",
-    "language": "言語",
-    "scripts": "脚本",
-    "training": "トレーニング"
+    "about": "概要",
+    "ourStory": "私たちの物語と使命"
   },
   "hero": {
     "label": "AI映画",

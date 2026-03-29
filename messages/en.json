@@ -13,6 +13,23 @@
     "scripts": "Scripts",
     "training": "Training"
   },
+  "search": {
+    "searchButton": "Search",
+    "placeholder": "Search films, casting, training...",
+    "cancel": "Cancel",
+    "suggestions": "Search suggestions",
+    "noResults": "No results for \"{query}\"",
+    "tryDifferent": "Try a different search term or browse our pages",
+    "quickAccess": "Quick Access",
+    "browseAll": "Browse all productions",
+    "comingSoon": "Future productions",
+    "openRoles": "Explore open roles",
+    "learnSkills": "Learn new skills",
+    "supportUs": "Support our projects",
+    "about": "About Us",
+    "ourStory": "Our story and mission",
+    "close": "Close"
+  },
   "hero": {
     "label": "AI-Powered Cinema",
     "title": "Where AI Meets {accent}",
@@ -771,6 +788,12 @@
     "member": "MEMBER",
     "exploreCasting": "Explore Casting",
     "browseWorks": "Browse Works",
-    "supportUs": "Support Us"
+    "supportUs": "Support Us",
+    "search": {
+      "placeholder": "Search films, casting, training...",
+      "noResults": "No results found.",
+      "loading": "Searching…",
+      "suggestionTitle": "Suggestions"
+    }
   }
 }

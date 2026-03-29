@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "Startseite",
     "works": "Werke",
@@ -12,6 +12,22 @@
     "language": "Sprache",
     "scripts": "Drehbücher",
     "training": "Ausbildung"
+  },
+  "search": {
+    "searchButton": "Suchen",
+    "placeholder": "Filme, Casting, Training suchen...",
+    "cancel": "Abbrechen",
+    "suggestions": "Suchvorschläge",
+    "noResults": "Keine Ergebnisse für \"{query}\"",
+    "tryDifferent": "Versuchen Sie einen anderen Suchbegriff",
+    "quickAccess": "Schnellzugriff",
+    "browseAll": "Alle Produktionen durchsuchen",
+    "comingSoon": "Zukünftige Produktionen",
+    "openRoles": "Offene Rollen erkunden",
+    "learnSkills": "Neue Fähigkeiten erlernen",
+    "supportUs": "Unsere Projekte unterstützen",
+    "about": "Über uns",
+    "ourStory": "Unsere Geschichte und Mission"
   },
   "hero": {
     "label": "KI-Kino",

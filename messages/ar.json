@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "الرئيسية",
     "works": "الأعمال",
@@ -12,6 +12,24 @@
     "language": "اللغة",
     "scripts": "السيناريوهات",
     "training": "التدريب"
+  },
+  "search": {
+    "searchButton": "بحث",
+    "placeholder": "ابحث عن أفلام، كاستنغ، تدريب...",
+    "cancel": "إلغاء",
+    "suggestions": "اقتراحات البحث",
+    "noResults": "لا توجد نتائج لـ \"{query}\"",
+    "tryDifferent": "جرب مصطلحاً مختلفاً أو تصفح صفحاتنا",
+    "quickAccess": "وصول سريع",
+    "browseAll": "تصفح جميع الإنتاجات",
+    "comingSoon": "الإنتاجات القادمة",
+    "openRoles": "استكشاف الأدوار المتاحة",
+    "learnSkills": "تعلم مهارات جديدة",
+    "supportUs": "ادعم مشاريعنا",
+    "about": "من نحن",
+    "ourStory": "قصتنا ورسالتنا",
+    "loading": "جارٍ البحث…",
+    "suggestionTitle": "اقتراحات"
   },
   "hero": {
     "label": "سينما الذكاء الاصطناعي",

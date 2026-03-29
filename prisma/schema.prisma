@@ -50,6 +50,8 @@ model User {
 }
 
 model Project {
+  // Index for fast title/tagline search
+  @@index([title, tagline])
   id          String   @id @default(cuid())
   title       String
   slug        String   @unique
@@ -135,6 +137,8 @@ model FilmSubtitle {
 }
 
 model CastingCall {
+  // Index for role name/description search
+  @@index([roleName, roleDescription])
   id              String   @id @default(cuid())
   projectId       String
   project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -236,6 +240,8 @@ model HeroVideo {
 }
 
 model SiteSettings {
+  // Feature flag for premium mobile search UI
+  searchBetaEnabled Boolean @default(false) // toggle search UI
   id           String @id @default("default")
   siteName     String @default("AIM Studio")
   tagline      String @default("AI-Powered Filmmaking")
@@ -292,6 +298,8 @@ model SiteSettings {
   trainingEnabled     Boolean @default(false) // master toggle for training hub
   sponsorsPageEnabled Boolean @default(true)  // master toggle ??? show/hide public sponsors page
 
+
+
   // OAuth Configuration
   googleClientId     String?
   googleClientSecret String?
@@ -312,6 +320,8 @@ model SiteSettings {
 }
 
 // Password history for reuse prevention
+
+
 model PasswordHistory {
   id           String   @id @default(cuid())
   userId       String
@@ -320,6 +330,16 @@ model PasswordHistory {
   createdAt    DateTime @default(now())
 
   @@index([userId])
+}
+
+model SearchAnalytics {
+  id          String   @id @default(cuid())
+  userId      String?
+  query       String
+  resultsCount Int
+  device      String   @default("desktop")
+  timestamp   DateTime @default(now())
+  // No relation to User to simplify migration
 }
 
 // Notification log for applicant communications
@@ -366,6 +386,8 @@ model Donation {
 }
 
 model Sponsor {
+  // Index for sponsor name search
+  @@index([name])
   id          String   @id @default(cuid())
   name        String
   description String?  // About the sponsor
@@ -418,6 +440,8 @@ model PageMedia {
 // ????????? Script Call System ?????????
 
 model ScriptCall {
+  // Index for script title search
+  @@index([title])
   id              String   @id @default(cuid())
   title           String
   description     String

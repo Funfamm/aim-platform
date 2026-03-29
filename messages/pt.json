@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "Início",
     "works": "Obras",
@@ -12,6 +12,22 @@
     "language": "Idioma",
     "scripts": "Roteiros",
     "training": "Treinamento"
+  },
+  "search": {
+    "searchButton": "Pesquisar",
+    "placeholder": "Pesquisar filmes, casting, treinamento...",
+    "cancel": "Cancelar",
+    "suggestions": "Sugestões de pesquisa",
+    "noResults": "Nenhum resultado para \"{query}\"",
+    "tryDifferent": "Tente outro termo ou navegue pelas nossas páginas",
+    "quickAccess": "Acesso Rápido",
+    "browseAll": "Ver todas as produções",
+    "comingSoon": "Produções em breve",
+    "openRoles": "Explorar papéis abertos",
+    "learnSkills": "Aprender novas habilidades",
+    "supportUs": "Apoiar nossos projetos",
+    "about": "Sobre Nós",
+    "ourStory": "Nossa história e missão"
   },
   "hero": {
     "label": "Cinema IA",

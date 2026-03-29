@@ -15,6 +15,7 @@ export async function GET() {
     return NextResponse.json({
         castingCallsEnabled: settings.castingCallsEnabled,
         scriptCallsEnabled: settings.scriptCallsEnabled,
+        searchBetaEnabled: settings.searchBetaEnabled,
     })
 }
 
@@ -46,6 +47,7 @@ export async function PUT(req: Request) {
         return NextResponse.json({
             castingCallsEnabled: settings.castingCallsEnabled,
             scriptCallsEnabled: settings.scriptCallsEnabled,
+            searchBetaEnabled: settings.searchBetaEnabled,
         })
     } catch (err) {
         console.error('Toggle error:', err)

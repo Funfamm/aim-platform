@@ -3082,7 +3082,7 @@ img, video, iframe, canvas {
 }
 
 /* ═══════════════════════════════════════════════════════════
-   MOBILE BOTTOM TAB BAR — APP-LIKE NAVIGATION
+   MOBILE BOTTOM TAB BAR — PREMIUM PILL NAVIGATION
    ═══════════════════════════════════════════════════════════ */
 .mobile-tab-bar {
   display: none;
@@ -3092,86 +3092,497 @@ img, video, iframe, canvas {
   .mobile-tab-bar {
     display: flex;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
     z-index: 998;
-    height: 60px;
-    padding-bottom: env(safe-area-inset-bottom);
-    background: rgba(10, 10, 16, 0.92);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4);
     align-items: center;
-    justify-content: space-around;
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: env(safe-area-inset-bottom);
+    pointer-events: none; /* children get pointer events */
   }
 
-  .mobile-tab-bar a,
-  .mobile-tab-bar button {
+  /* ── Shared pill base ── */
+  .tab-pill {
+    display: flex;
+    align-items: center;
+    border-radius: 999px;
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    pointer-events: auto;
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* ── Main navigation pill ── */
+  .tab-pill-nav {
+    flex: 1;
+    height: 56px;
+    background: rgba(10, 10, 16, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.45),
+      0 0 0 0.5px rgba(255, 255, 255, 0.04) inset;
+    justify-content: space-evenly;
+    overflow: hidden;
+    max-width: 380px;
+  }
+
+  /* ── Search pill ── */
+  .tab-pill-search {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    background: rgba(212, 168, 83, 0.12);
+    border: 1px solid rgba(212, 168, 83, 0.2);
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.35),
+      0 0 16px rgba(212, 168, 83, 0.08);
+    justify-content: center;
+    cursor: pointer;
+    color: var(--accent-gold);
+    transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.2s ease;
+  }
+  .tab-pill-search:active {
+    transform: scale(0.9);
+  }
+  .tab-pill-search:hover {
+    background: rgba(212, 168, 83, 0.18);
+  }
+  .tab-pill-search svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* ── Tab items inside nav pill ── */
+  .tab-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
     flex: 1;
-    padding: 6px 0;
+    padding: 8px 0;
     background: none;
     border: none;
     cursor: pointer;
     text-decoration: none;
-    color: var(--text-tertiary);
-    transition: color 0.2s ease, transform 0.15s ease;
+    color: rgba(255, 255, 255, 0.4);
     -webkit-tap-highlight-color: transparent;
     position: relative;
+    /* Collapse animation */
+    transition:
+      opacity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+      transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+      flex 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+      max-width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
+      padding 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    max-width: 100px;
+    overflow: hidden;
   }
 
-  .mobile-tab-bar a.tab-active,
-  .mobile-tab-bar button.tab-active {
+  .tab-item.tab-active {
     color: var(--accent-gold);
   }
 
   /* Active indicator dot */
-  .mobile-tab-bar a.tab-active::after {
+  .tab-item.tab-active::after {
     content: '';
     position: absolute;
-    bottom: 2px;
+    bottom: 4px;
     left: 50%;
     transform: translateX(-50%);
     width: 4px;
     height: 4px;
     border-radius: 50%;
     background: var(--accent-gold);
-    box-shadow: 0 0 6px rgba(212, 168, 83, 0.5);
+    box-shadow: 0 0 8px rgba(212, 168, 83, 0.6);
+    animation: tabDotPulse 2s ease-in-out infinite;
   }
 
-  .mobile-tab-bar a:active,
-  .mobile-tab-bar button:active {
-    transform: scale(0.9);
+  @keyframes tabDotPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(212, 168, 83, 0.5); }
+    50% { box-shadow: 0 0 12px rgba(212, 168, 83, 0.8); }
   }
 
-  .mobile-tab-bar svg {
+  .tab-item:active {
+    transform: scale(0.88);
+  }
+
+  .tab-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tab-icon-wrap svg {
     width: 22px;
     height: 22px;
     flex-shrink: 0;
   }
 
-  .mobile-tab-bar .tab-label {
-    font-size: 0.58rem;
+  .tab-label {
+    font-size: 0.56rem;
     font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     line-height: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
     display: block;
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
 
-  /* Extra body padding so content isn't hidden behind tab bar */
-  body {
-    padding-bottom: calc(60px + env(safe-area-inset-bottom));
+  /* ═══ COLLAPSE ANIMATION ═══
+     When collapsed, collapsible tabs slide behind the home tab:
+     - opacity → 0
+     - max-width → 0
+     - transform → translateX toward home
+     The home tab stays fully visible and acts as a "hub" icon. */
+
+  .mobile-tab-bar.collapsed .tab-collapsible {
+    opacity: 0;
+    max-width: 0;
+    flex: 0;
+    padding: 0;
+    transform: translateX(-20px) scale(0.5);
+    pointer-events: none;
   }
+
+  /* Home icon gets a subtle glow when collapsed, hinting it's expandable */
+  .mobile-tab-bar.collapsed .tab-home {
+    flex: 0 0 auto;
+  }
+  .mobile-tab-bar.collapsed .tab-home .tab-icon-wrap {
+    animation: homeGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes homeGlow {
+    0%, 100% { filter: drop-shadow(0 0 0px transparent); }
+    50% { filter: drop-shadow(0 0 8px rgba(212, 168, 83, 0.4)); }
+  }
+
+  /* Nav pill shrinks to hug the home icon when collapsed */
+  .mobile-tab-bar.collapsed .tab-pill-nav {
+    max-width: 68px;
+    transition: max-width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .tab-pill-nav {
+    transition: max-width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  }
+
+  /* ═══ SEARCH OVERLAY ═══ */
+  .mobile-search-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 60px 16px 16px;
+    animation: searchFadeIn 0.3s ease forwards;
+  }
+  @keyframes searchFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .mobile-search-container {
+    width: 100%;
+    max-width: 440px;
+    animation: searchSlideIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  @keyframes searchSlideIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .mobile-search-form {
+    width: 100%;
+  }
+
+  .mobile-search-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 18px;
+    background: rgba(20, 20, 30, 0.95);
+    border: 1px solid rgba(212, 168, 83, 0.25);
+    border-radius: 999px;
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(212, 168, 83, 0.08) inset;
+  }
+  .mobile-search-input-wrap svg {
+    width: 20px;
+    height: 20px;
+    color: var(--accent-gold);
+    flex-shrink: 0;
+  }
+
+  .mobile-search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: inherit;
+  }
+  .mobile-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .mobile-search-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+  .mobile-search-close:hover {
+    color: var(--accent-gold);
+  }
+
+  /* Quick links grid */
+  .mobile-search-quick {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mobile-search-quick-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255, 255, 255, 0.3);
+    padding: 0 8px 8px;
+    font-weight: 600;
+  }
+
+  .mobile-search-quick-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 14px;
+    color: var(--text-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: background 0.2s ease, transform 0.15s ease;
+  }
+  .mobile-search-quick-item:active {
+    transform: scale(0.97);
+    background: rgba(212, 168, 83, 0.1);
+  }
+
+  /* ═══ SEARCH STATE MACHINE: TAB BAR ═══ */
+
+  /* Search bar pill (morphs from the search button) */
+  .tab-search-bar {
+    display: flex;
+    align-items: center;
+    height: 56px;
+    background: rgba(10, 10, 16, 0.92);
+    border: 1px solid rgba(212, 168, 83, 0.3);
+    border-radius: 999px;
+    padding: 0 8px;
+    flex: 1;
+    max-width: 380px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.45), 0 0 16px rgba(212,168,83,0.08);
+    animation: searchBarExpand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  .tab-search-bar.full-width { max-width: 100%; }
+
+  @keyframes searchBarExpand {
+    from { opacity: 0.4; transform: scaleX(0.7); }
+    to   { opacity: 1;   transform: scaleX(1); }
+  }
+
+  .search-bar-inner {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+    padding: 0 8px;
+  }
+
+  .search-bar-icon {
+    display: flex;
+    align-items: center;
+    color: var(--accent-gold);
+    flex-shrink: 0;
+  }
+  .search-bar-icon svg { width: 18px; height: 18px; }
+
+  .search-bar-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: inherit;
+    min-width: 0;
+    caret-color: var(--accent-gold);
+  }
+  .search-bar-input::placeholder { color: rgba(255,255,255,0.3); }
+
+  .search-bar-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(212,168,83,0.15);
+    border-top-color: rgba(212,168,83,0.8);
+    border-radius: 50%;
+    animation: tabBarSpin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tabBarSpin { to { transform: rotate(360deg); } }
+
+  .search-bar-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: rgba(255,255,255,0.06);
+    border: none;
+    border-radius: 50%;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .search-bar-cancel svg { width: 14px; height: 14px; }
+  .search-bar-cancel:active { background: rgba(212,168,83,0.15); color: var(--accent-gold); }
+
+  /* Shrink nav pill when search is active */
+  .tab-pill-nav.search-active {
+    max-width: 68px;
+    transition: max-width 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .tab-pill-nav.search-active .tab-collapsible {
+    opacity: 0; max-width: 0; flex: 0; padding: 0; pointer-events: none;
+  }
+
+  /* ═══ SUGGESTIONS PANEL (slides up from tab bar) ═══ */
+  .search-suggestions-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 997;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: searchFadeIn 0.25s ease forwards;
+  }
+
+  .search-suggestions-panel {
+    position: fixed;
+    bottom: calc(80px + env(safe-area-inset-bottom));
+    left: 12px;
+    right: 12px;
+    max-height: 60vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(12,14,22,0.97);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 24px;
+    box-shadow: 0 -4px 40px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.04) inset;
+    z-index: 998;
+    padding: 12px 0 8px;
+    animation: panelSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+  @keyframes panelSlideUp {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .search-suggestions-loading { padding: 8px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .search-suggestion-skeleton {
+    display: flex; align-items: center; gap: 12px;
+    animation: skeletonPulse 1.4s ease-in-out infinite;
+  }
+  @keyframes skeletonPulse {
+    0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; }
+  }
+  .skeleton-icon { width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.05); flex-shrink: 0; }
+  .skeleton-text { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .skeleton-title { height: 13px; width: 60%; border-radius: 6px; background: rgba(255,255,255,0.05); }
+  .skeleton-subtitle { height: 10px; width: 40%; border-radius: 6px; background: rgba(255,255,255,0.03); }
+
+  .search-suggestions-results { padding: 4px 0; }
+  .search-suggestion-group { padding: 0 8px 8px; }
+  .search-suggestion-group-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 10px 4px;
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: rgba(212,168,83,0.6);
+  }
+
+  .search-suggestion-item {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 12px;
+    background: transparent; border: none; border-radius: 14px;
+    cursor: pointer; text-align: left;
+    transition: background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .search-suggestion-item:active,
+  .search-suggestion-item.focused { background: rgba(212,168,83,0.08); }
+
+  .suggestion-icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; flex-shrink: 0;
+  }
+  .suggestion-content { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .suggestion-title {
+    font-size: 0.9rem; font-weight: 500; color: var(--text-primary);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .suggestion-subtitle {
+    font-size: 0.75rem; color: rgba(255,255,255,0.35);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .suggestion-arrow { width: 14px; height: 14px; color: rgba(255,255,255,0.15); flex-shrink: 0; }
+
+  /* Empty state */
+  .search-empty-state {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 32px 20px; text-align: center; gap: 8px;
+  }
+  .search-empty-icon {
+    width: 52px; height: 52px; border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+  }
+  .search-empty-icon svg { width: 24px; height: 24px; color: rgba(255,255,255,0.2); }
+  .search-empty-title { font-size: 0.9rem; font-weight: 500; color: rgba(255,255,255,0.6); margin: 0; }
+  .search-empty-subtitle { font-size: 0.8rem; color: rgba(255,255,255,0.3); margin: 0 0 12px; }
+  .search-empty-links { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .search-empty-link {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 999px; color: var(--text-primary);
+    font-size: 0.8rem; padding: 8px 14px; cursor: pointer;
+  }
+  .search-empty-link:active { background: rgba(212,168,83,0.12); }
+
+  /* Quick access */
+  .search-quick-access { padding: 0 8px 4px; }
+
+  /* Extra body padding so content isn't hidden behind tab bar */
+  body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 
   /* Hide the floating admin button on mobile — it overlaps the tab bar */
 }

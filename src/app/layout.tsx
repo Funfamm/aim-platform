@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { getCachedSettings } from "@/lib/cached-settings";
+import { SearchProvider } from "@/components/search/SearchContext";
 
 export async function generateMetadata(): Promise<Metadata> {
   let siteName = "AIM Studio";
@@ -62,7 +63,9 @@ export default function RootLayout({
         <a href="#main-content" className="skip-to-content">
           Skip to main content
         </a>
-        {children}
+                <SearchProvider>
+          {children}
+        </SearchProvider>
         <script
           dangerouslySetInnerHTML={{
             __html: `if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js')})}`

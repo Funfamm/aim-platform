@@ -8,6 +8,7 @@ interface SiteSettings {
   scriptCallsEnabled?: boolean;
   trainingEnabled?: boolean;
   donationsEnabled?: boolean;
+  searchBetaEnabled?: boolean;
 }
 
 const SiteSettingsContext = createContext<SiteSettings | null>(null);

@@ -5,11 +5,14 @@ import Link from 'next/link'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import { useSiteSettings } from '@/context/SiteSettingsContext';
+import { SearchBar } from '@/components/search/SearchBar';
+import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/routing'
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false)
+    const [searchOpen, setSearchOpen] = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
     const [userMenuOpen, setUserMenuOpen] = useState(false)
     const [langMenuOpen, setLangMenuOpen] = useState(false)
@@ -96,6 +99,13 @@ export default function Navbar() {
                         ))}
                     </ul>
 
+                    {/* Desktop Search Bar */}
+                    {settings?.searchBetaEnabled && (
+                      <div className="navbar-desktop-only mr-4">
+                        <SearchBar />
+                      </div>
+                    )}
+
                     {/* Right actions — Bell + Language hidden on mobile via CSS */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {/* Bell — desktop only */}
@@ -109,6 +119,26 @@ export default function Navbar() {
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                             </svg>
                         </Link>
+                        {/* Mobile Search Button */}
+                        {settings?.searchBetaEnabled && (
+                          <button
+                            onClick={() => setSearchOpen(true)}
+                            className="navbar-mobile-only"
+                            style={{
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--text-primary)',
+                              fontSize: '1.2rem',
+                              cursor: 'pointer',
+                            }}
+                            aria-label="Search"
+                          >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <circle cx="11" cy="11" r="8" />
+                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                            </svg>
+                          </button>
+                        )}
                         {/* Auth — always visible (avatar on mobile, full pill on desktop) */}
                         {loading ? null : user ? (
                             <div style={{ position: 'relative' }}>
@@ -345,6 +375,34 @@ export default function Navbar() {
                         </svg>
                         About Us
                     </Link>
+                    {sections.training && (
+                        <Link href="/training" onClick={() => setMobileOpen(false)} className="drawer-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                            </svg>
+                            Training
+                        </Link>
+                    )}
+                    {sections.donations && (
+                        <Link href="/donate" onClick={() => setMobileOpen(false)} className="drawer-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                            </svg>
+                            Donate
+                        </Link>
+                    )}
+                    {sections.scripts && (
+                        <Link href="/scripts" onClick={() => setMobileOpen(false)} className="drawer-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                            Scripts
+                        </Link>
+                    )}
                     <Link href="/contact" onClick={() => setMobileOpen(false)} className="drawer-item">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -418,6 +476,7 @@ export default function Navbar() {
                     ⚙️ Admin Panel
                 </a>
             )}
+            <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         </>
-    )
+    );
 }
