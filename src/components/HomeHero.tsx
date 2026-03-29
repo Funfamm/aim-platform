@@ -27,7 +27,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
     const [wordFade, setWordFade] = useState(true)
     const videoARef = useRef<HTMLVideoElement>(null)
     const videoBRef = useRef<HTMLVideoElement>(null)
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
 
     useEffect(() => {
         fetch('/api/admin/media?type=hero-video&page=home')
@@ -48,38 +48,10 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
         videoA.load()
         videoA.play().catch(() => { })
         setActiveSlot('A')
-
-        const durationMs = (videos[0].duration || 10) * 1000
-        timerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
-
-        return () => {
-            if (timerRef.current) clearTimeout(timerRef.current)
-        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [videos])
 
-    // Crossfade: preload next video in the inactive slot, then swap
-    const crossfadeToNext = useCallback((prevIdx: number) => {
-        if (videos.length <= 1) return
 
-        const nextIdx = (prevIdx + 1) % videos.length
-        setCurrentIdx(nextIdx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = videos[nextIdx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        const durationMs = (videos[nextIdx].duration || 10) * 1000
-        if (timerRef.current) clearTimeout(timerRef.current)
-        timerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
-    }, [videos])
 
     // Manual dot click
     const jumpToVideo = useCallback((idx: number) => {
@@ -97,10 +69,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
             return nextSlot
         })
 
-        const durationMs = (videos[idx].duration || 10) * 1000
-        if (timerRef.current) clearTimeout(timerRef.current)
-        timerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
-    }, [currentIdx, videos, crossfadeToNext])
+    }, [currentIdx, videos])
 
     // Rotate highlight word every 3s
     useEffect(() => {

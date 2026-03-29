@@ -43,7 +43,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
     const [mounted, setMounted] = useState(false)
     const videoARef = useRef<HTMLVideoElement>(null)
     const videoBRef = useRef<HTMLVideoElement>(null)
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
 
     // Page-entry fade-in
     useEffect(() => { setMounted(true) }, [])
@@ -69,39 +69,11 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
         videoA.play().catch(() => { })
         setActiveSlot('A')
 
-        // Schedule the first transition
-        const durationMs = (videos[0].duration || 10) * 1000
-        timerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
-
-        return () => {
-            if (timerRef.current) clearTimeout(timerRef.current)
-        }
+        // No automatic crossfade scheduling; videos will start instantly
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [videos])
 
-    // Crossfade: preload next video in the inactive slot, then swap
-    const crossfadeToNext = useCallback((prevIdx: number) => {
-        if (videos.length <= 1) return
-
-        const nextIdx = (prevIdx + 1) % videos.length
-        setCurrentIdx(nextIdx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = videos[nextIdx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        // Schedule next crossfade
-        const durationMs = (videos[nextIdx].duration || 10) * 1000
-        if (timerRef.current) clearTimeout(timerRef.current)
-        timerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
-    }, [videos])
+// Crossfade logic removed; manual navigation will handle video switching with opacity transition
 
     // Manual dot click
     const jumpToVideo = useCallback((idx: number) => {
@@ -119,10 +91,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
             return nextSlot
         })
 
-        const durationMs = (videos[idx].duration || 10) * 1000
-        if (timerRef.current) clearTimeout(timerRef.current)
-        timerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
-    }, [currentIdx, videos, crossfadeToNext])
+        // No timer scheduling on manual video jump
+    }, [currentIdx, videos])
 
     return (
         <div style={{
