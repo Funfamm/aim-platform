@@ -3,11 +3,15 @@ import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { runAuditionAgent } from '@/lib/agents/audition-agent'
 import { getAutoAdvanceStatus, notifyApplicantStatusChange } from '@/lib/notifications'
+import { aiLimiter } from '@/lib/rate-limit'
 
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    const blocked = aiLimiter.check(request)
+    if (blocked) return blocked
+
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     const { id } = await params
@@ -90,7 +94,8 @@ export async function POST(
                 status: newStatus,
                 reviewedAt: new Date(),
                 resultVisibleAt,
-            },
+                photoScreeningStatus: report.screeningSkipped ? 'skipped' : 'completed',
+            } as any,
         })
 
         // Schedule notification for when results become visible
@@ -116,7 +121,10 @@ export async function POST(
             newStatus,
         })
     } catch (error) {
-        const message = error instanceof Error ? error.message : 'AI analysis failed'
+        console.error('AI audit error:', error)
+        const message = process.env.NODE_ENV === 'development'
+            ? (error instanceof Error ? error.message : 'AI analysis failed')
+            : 'AI analysis failed'
         return NextResponse.json({ error: message }, { status: 422 })
     }
 }

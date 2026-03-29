@@ -64,14 +64,19 @@ function getStatusConfig(t: (key: string) => string): Record<string, { label: st
         'pending': { label: `📩 ${t('statusSubmitted')}`, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
         'submitted': { label: `📩 ${t('statusSubmitted')}`, color: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
         'under-review': { label: `🔍 ${t('statusUnderReview')}`, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+        'under_review': { label: `🔍 ${t('statusUnderReview')}`, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
         'reviewed': { label: `🔍 ${t('statusUnderReview')}`, color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
         'shortlisted': { label: `⭐ ${t('statusShortlisted')}`, color: '#10b981', bg: 'rgba(16,185,129,0.1)' },
         'contacted': { label: `✉️ ${t('statusContacted')}`, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+        'callback': { label: `✉️ ${t('statusContacted')}`, color: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+        'audition': { label: `🎭 ${t('statusFinalReview')}`, color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
         'final-review': { label: `🎯 ${t('statusFinalReview')}`, color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
+        'final_review': { label: `🎯 ${t('statusFinalReview')}`, color: '#f97316', bg: 'rgba(249,115,22,0.1)' },
         'approved': { label: `✅ ${t('statusApproved')}`, color: '#22c55e', bg: 'rgba(34,197,94,0.15)' },
         'selected': { label: `✅ ${t('statusSelected')}`, color: '#22c55e', bg: 'rgba(34,197,94,0.1)' },
         'rejected': { label: t('statusNotSelected'), color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
         'not-selected': { label: t('statusNotSelected'), color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
+        'not_selected': { label: t('statusNotSelected'), color: '#6b7280', bg: 'rgba(107,114,128,0.1)' },
     }
 }
 

@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { logAdminAction } from '@/lib/audit-log'
 
 export async function POST(req: Request) {
-    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    let session
+    try { session = await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     try {
         const { applicationIds } = await req.json()
@@ -14,6 +16,13 @@ export async function POST(req: Request) {
 
         const result = await prisma.application.deleteMany({
             where: { id: { in: applicationIds } },
+        })
+
+        logAdminAction({
+            actor: session.userId,
+            action: 'DELETE_APPLICATIONS',
+            target: applicationIds.join(','),
+            details: { count: result.count },
         })
 
         return NextResponse.json({

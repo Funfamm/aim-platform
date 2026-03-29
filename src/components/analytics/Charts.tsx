@@ -37,10 +37,10 @@ export function VitalityRing({ score }: { score: number }) {
     const stroke = 8
     const circumference = 2 * Math.PI * radius
     const offset = circumference - (score / 100) * circumference
-    const health = score >= 75 ? { label: 'Excellent', color: '#22c55e' }
+    const health = score >= 75 ? { label: 'Excellent', color: 'var(--color-success)' }
         : score >= 50 ? { label: 'Growing', color: 'var(--accent-gold)' }
-            : score >= 25 ? { label: 'Building', color: '#f59e0b' }
-                : { label: 'Getting Started', color: '#6b7280' }
+            : score >= 25 ? { label: 'Building', color: 'var(--color-warning)' }
+                : { label: 'Getting Started', color: 'var(--color-muted)' }
 
     return (
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -48,7 +48,7 @@ export function VitalityRing({ score }: { score: number }) {
                 <defs>
                     <linearGradient id="vitalGrad" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stopColor="var(--accent-gold)" />
-                        <stop offset="100%" stopColor="#c4943a" />
+                        <stop offset="100%" stopColor="var(--accent-gold-dark)" />
                     </linearGradient>
                     <filter id="vitalGlow">
                         <feGaussianBlur stdDeviation="4" result="blur" />
@@ -322,7 +322,7 @@ export function TrendArrow({ current, previous }: { current: number; previous: n
     return (
         <span style={{
             fontSize: '0.65rem', fontWeight: 700,
-            color: isUp ? '#22c55e' : '#ef4444',
+            color: isUp ? 'var(--color-success)' : 'var(--color-error)',
             display: 'inline-flex', alignItems: 'center', gap: '2px',
         }}>
             {isUp ? '↑' : '↓'} {Math.abs(pct)}%

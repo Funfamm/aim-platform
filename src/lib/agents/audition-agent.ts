@@ -32,13 +32,14 @@ interface AuditInput {
 }
 
 // ═══ PRE-CHECK RESULT ═══
-interface PreCheckResult {
+export interface PreCheckResult {
     ageMismatch: boolean
     ageDetails: string
     genderMismatch: boolean
     genderDetails: string
     voiceMissing: boolean
     voiceDetails: string
+    voiceHardRequired: boolean
     totalPenalty: number
     preNotes: string[]
     preConcerns: string[]
@@ -53,6 +54,7 @@ export interface AuditReport {
     notes: string
     applicantFeedback: string
     visualAssessment?: string  // AI assessment of applicant photos
+    screeningSkipped?: boolean // true when Gemini vision key is missing and photos are unvalidated
 }
 
 // ═══ IN-MEMORY RATE LIMITER ═══
@@ -311,7 +313,7 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
 // ═══ PRE-CHECK HELPERS ═══
 
 /** Parse an age range string like "18-35", "25+", "under 40" → [min, max] or null */
-function parseAgeRange(ageRange: string | null): [number, number] | null {
+export function parseAgeRange(ageRange: string | null): [number, number] | null {
     if (!ageRange) return null
     const s = ageRange.trim()
     // "18-35" or "18 - 35"
@@ -330,12 +332,55 @@ function parseAgeRange(ageRange: string | null): [number, number] | null {
 }
 
 /** Normalise a gender string to a canonical form for comparison */
-function normaliseGender(g: string | null): string {
+export function normaliseGender(g: string | null): string {
     if (!g) return 'any'
     const lower = g.toLowerCase().trim()
     if (['male', 'man', 'men', 'm'].includes(lower)) return 'male'
     if (['female', 'woman', 'women', 'f'].includes(lower)) return 'female'
     return 'any'
+}
+
+/**
+ * Pure function: Apply pre-check penalties and recommendation caps to an AuditReport.
+ * Extracted for testability — mirrors the inline logic in runAuditionAgent().
+ */
+export function applyPreCheckPenalties(
+    report: AuditReport,
+    preCheck: PreCheckResult
+): AuditReport {
+    const r = { ...report, concerns: [...(report.concerns || [])] }
+
+    // Clamp raw scores
+    r.overallScore = Math.max(0, Math.min(100, Math.round(r.overallScore)))
+    r.roleFitScore = Math.max(0, Math.min(100, Math.round(r.roleFitScore)))
+
+    if (preCheck.totalPenalty > 0) {
+        r.overallScore = Math.max(0, r.overallScore - preCheck.totalPenalty)
+        r.roleFitScore = Math.max(0, r.roleFitScore - preCheck.totalPenalty)
+        r.concerns = [...r.concerns, ...preCheck.preConcerns.filter(c => !r.concerns.includes(c))]
+
+        // Hard cap recommendation if critical mismatches
+        if (preCheck.ageMismatch || preCheck.genderMismatch) {
+            if (r.recommendation === 'STRONG_FIT') r.recommendation = 'MODERATE'
+            else if (r.recommendation === 'GOOD_FIT') r.recommendation = 'MODERATE'
+        }
+
+        // Voice hard requirement: cap at WEAK_FIT
+        if (preCheck.voiceHardRequired && preCheck.voiceMissing) {
+            r.recommendation = 'WEAK_FIT'
+            const hardNote = 'A voice/self-tape recording is required for this role and was not submitted. This is a disqualifying factor.'
+            if (!r.concerns.includes(hardNote)) {
+                r.concerns = [...r.concerns, hardNote]
+            }
+        }
+    }
+
+    // Normalize invalid recommendations
+    if (!['STRONG_FIT', 'GOOD_FIT', 'MODERATE', 'WEAK_FIT'].includes(r.recommendation)) {
+        r.recommendation = 'MODERATE'
+    }
+
+    return r
 }
 
 /** Run all pre-checks and return a consolidated result */
@@ -344,10 +389,15 @@ async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
         ageMismatch: false, ageDetails: '',
         genderMismatch: false, genderDetails: '',
         voiceMissing: false, voiceDetails: '',
+        voiceHardRequired: false,
         totalPenalty: 0,
         preNotes: [],
         preConcerns: [],
     }
+
+    // Load site settings once for voice requirement
+    const settings = await prisma.siteSettings.findFirst()
+    const requireVoice = settings?.requireVoice ?? false
 
     // ── Age range check ──
     const range = parseAgeRange(input.role.ageRange)
@@ -383,7 +433,7 @@ async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
             if (fileStat.size < 1024) { // < 1 KB — essentially empty
                 result.voiceMissing = true
                 result.voiceDetails = 'Voice/self-tape file appears to be empty or corrupt'
-                result.totalPenalty += 8
+                result.totalPenalty += requireVoice ? 25 : 8
                 result.preNotes.push(`VOICE ISSUE: ${result.voiceDetails}`)
                 result.preConcerns.push('Voice recording appears to be empty — please resubmit')
             } else {
@@ -392,17 +442,20 @@ async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
         } catch {
             result.voiceMissing = true
             result.voiceDetails = 'Voice/self-tape file could not be found on server'
-            result.totalPenalty += 8
+            result.totalPenalty += requireVoice ? 25 : 8
             result.preNotes.push(`VOICE MISSING: ${result.voiceDetails}`)
             result.preConcerns.push('Voice/self-tape recording could not be located')
         }
     } else {
         result.voiceMissing = true
         result.voiceDetails = 'No voice/self-tape recording submitted'
-        result.totalPenalty += 5
+        result.totalPenalty += requireVoice ? 25 : 5
         result.preNotes.push('No voice/self-tape recording was submitted')
         result.preConcerns.push('Missing voice recording — applicant did not submit a self-tape')
     }
+
+    // Flag hard requirement so the caller can cap recommendation
+    result.voiceHardRequired = requireVoice
 
     return result
 }
@@ -590,12 +643,14 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
     let rejectedPhotoCount = 0
     let photoRejectionReasons: string[] = []
 
+    let screeningSkipped = false
     if (hasPhotos) {
         const rawPhotos = await loadPhotosAsBase64(input.applicant.photoUrls!)
         console.log(`[AI Audit] Loaded ${rawPhotos.length} photo(s) for screening`)
 
         const geminiKey = config.keys.find(k => (k as any).provider === 'gemini' || !(k as any).provider)?.key || ''
         const geminiModel = ((config.keys.find(k => (k as any).provider === 'gemini') as any)?.model as string) || 'gemini-2.5-flash'
+        
 
         if (geminiKey && rawPhotos.length > 0) {
             const screening = await screenPhotosForRelevance(rawPhotos, geminiKey, geminiModel)
@@ -609,6 +664,7 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
         } else {
             photos = rawPhotos.map(p => ({ base64: p.base64, mimeType: p.mimeType }))
             console.log('[AI Audit] No Gemini key for vision screening — photos passed through unvalidated')
+            screeningSkipped = true
         }
     }
 
@@ -706,7 +762,13 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
                     jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```$/g, '').trim()
                 }
 
-                const report: AuditReport = JSON.parse(jsonStr)
+                let report: AuditReport = JSON.parse(jsonStr)
+        // Apply vision‑fallback penalty if screening was skipped
+        if (screeningSkipped) {
+            report.overallScore = Math.max(0, report.overallScore - 5)
+            report.roleFitScore = Math.max(0, report.roleFitScore - 5)
+            report.screeningSkipped = true
+        }
 
                 // ── Validate and clamp raw LLM scores ──
                 report.overallScore = Math.max(0, Math.min(100, Math.round(report.overallScore)))
@@ -721,6 +783,14 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
                     if (preCheck.ageMismatch || preCheck.genderMismatch) {
                         if (report.recommendation === 'STRONG_FIT') report.recommendation = 'MODERATE'
                         else if (report.recommendation === 'GOOD_FIT') report.recommendation = 'MODERATE'
+                    }
+                    // Voice hard requirement: cap at WEAK_FIT
+                    if (preCheck.voiceHardRequired && preCheck.voiceMissing) {
+                        report.recommendation = 'WEAK_FIT'
+                        const hardNote = 'A voice/self-tape recording is required for this role and was not submitted. This is a disqualifying factor.'
+                        if (!report.concerns?.includes(hardNote)) {
+                            report.concerns = [...(report.concerns || []), hardNote]
+                        }
                     }
                 }
 

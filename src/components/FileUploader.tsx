@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 
 interface FileUploaderProps {
-    accept?: string         // e.g. "image/*" or "video/*" or "image/*,video/*"
+    accept?: string         // e.g. "image/*" or "audio/*"
     category?: string       // folder category: 'covers', 'trailers', 'films'
     currentUrl?: string     // existing URL to show
     onUpload: (url: string) => void
@@ -13,12 +13,12 @@ interface FileUploaderProps {
 }
 
 export default function FileUploader({
-    accept = 'image/*,video/*',
+    accept = 'image/*',
     category = 'general',
     currentUrl = '',
     onUpload,
     label = 'Upload File',
-    maxSizeMB = 500,
+    maxSizeMB = 50,
     compact = false,
 }: FileUploaderProps) {
     const [uploading, setUploading] = useState(false)
@@ -28,8 +28,19 @@ export default function FileUploader({
     const [preview, setPreview] = useState(currentUrl)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    const isImage = (url: string) => /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(url)
+    const isImage = (url: string) => /\.(jpg|jpeg|png|webp|gif)$/i.test(url)
     const isVideo = (url: string) => /\.(mp4|webm|mov|avi)$/i.test(url)
+
+    // URL sanitisation — block dangerous schemes
+    const isUrlSafe = (url: string): boolean => {
+        const trimmed = url.trim()
+        if (!trimmed) return true
+        if (trimmed.length > 2000) return false
+        const lower = trimmed.toLowerCase()
+        const dangerous = ['javascript:', 'data:', 'blob:', 'file:', 'vbscript:']
+        if (dangerous.some(s => lower.startsWith(s))) return false
+        return trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('/')
+    }
 
     const uploadFile = useCallback(async (file: File) => {
         setError('')
@@ -112,7 +123,7 @@ export default function FileUploader({
                 style={{
                     position: 'relative',
                     height,
-                    border: `2px dashed ${dragOver ? 'var(--accent-gold)' : error ? '#ef4444' : 'var(--border-subtle)'}`,
+                    border: `2px dashed ${dragOver ? 'var(--accent-gold)' : error ? 'var(--color-error)' : 'var(--border-subtle)'}`,
                     borderRadius: 'var(--radius-lg)',
                     background: dragOver ? 'rgba(212,168,83,0.05)' : preview ? 'var(--bg-primary)' : 'var(--bg-secondary)',
                     cursor: uploading ? 'default' : 'pointer',
@@ -184,7 +195,7 @@ export default function FileUploader({
                             </div>
                             {!compact && (
                                 <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                    {accept.includes('video') ? 'Images & Videos' : 'Images only'} • Max {maxSizeMB}MB
+                                    {accept.includes('video') ? 'Images & Videos' : accept.includes('audio') ? 'Audio files' : 'Images only'} • Max {maxSizeMB}MB
                                 </div>
                             )}
                         </>
@@ -208,7 +219,7 @@ export default function FileUploader({
             {/* Error */}
             {error && (
                 <div style={{
-                    fontSize: '0.75rem', color: '#ef4444', marginTop: '4px',
+                    fontSize: '0.75rem', color: 'var(--color-error)', marginTop: '4px',
                 }}>⚠️ {error}</div>
             )}
 
@@ -227,11 +238,17 @@ export default function FileUploader({
             }}>
                 <input
                     type="text"
-                    placeholder="Or paste a URL..."
+                    placeholder="Or paste a URL (https://...)"
                     value={preview}
                     onChange={e => {
-                        setPreview(e.target.value)
-                        onUpload(e.target.value)
+                        const val = e.target.value
+                        if (val && !isUrlSafe(val)) {
+                            setError('Invalid URL. Must start with https://, http://, or /')
+                            return
+                        }
+                        setError('')
+                        setPreview(val)
+                        onUpload(val)
                     }}
                     style={{
                         flex: 1, padding: '0.4rem 0.6rem',
@@ -249,7 +266,7 @@ export default function FileUploader({
                         style={{
                             padding: '0.4rem 0.6rem', border: 'none',
                             borderRadius: 'var(--radius-md)',
-                            background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+                            background: 'rgba(239,68,68,0.1)', color: 'var(--color-error)',
                             fontSize: '0.7rem', cursor: 'pointer',
                         }}
                     >✕</button>

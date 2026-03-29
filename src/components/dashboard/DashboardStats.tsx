@@ -115,7 +115,7 @@ export default function DashboardStats({ applications, saved, watched, donated }
                     }}>💛</div>
                     <div style={{
                         fontSize: '1.5rem', fontWeight: 800,
-                        background: 'linear-gradient(135deg, var(--accent-gold), #f59e0b, var(--accent-gold))',
+                        background: 'linear-gradient(135deg, var(--accent-gold), var(--color-warning), var(--accent-gold))',
                         backgroundSize: '200% auto',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',

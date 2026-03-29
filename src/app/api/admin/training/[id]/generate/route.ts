@@ -389,7 +389,10 @@ Generate focused review guidance in this JSON format:
             return NextResponse.json({ error: 'Invalid type. Use: lesson_content, quiz, or review_guidance' }, { status: 400 })
         }
     } catch (error) {
-        const msg = error instanceof Error ? error.message : 'AI generation failed'
+        console.error('Training AI generation error:', error)
+        const msg = process.env.NODE_ENV === 'development'
+            ? (error instanceof Error ? error.message : 'AI generation failed')
+            : 'AI generation failed'
         return NextResponse.json({ error: msg }, { status: 500 })
     }
 }

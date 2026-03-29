@@ -79,6 +79,128 @@
   --shadow-gold-lift: 0 8px 30px rgba(228, 185, 90, 0.25), 0 2px 8px rgba(228, 185, 90, 0.15);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   LIGHT THEME — warm cream, dark charcoal, gold retained
+   Applied when <html data-theme="light"> is set
+   ═══════════════════════════════════════════════════════════ */
+[data-theme='light'] {
+  /* Backgrounds */
+  --bg-primary:    #faf9f6;
+  --bg-secondary:  #f3f1ec;
+  --bg-tertiary:   #ece9e2;
+  --bg-card:       #ffffff;
+  --bg-card-hover: #f5f2eb;
+  --bg-glass:      rgba(250, 249, 246, 0.88);
+  --bg-glass-light: rgba(0, 0, 0, 0.04);
+  --bg-glass-gold: rgba(196, 154, 40, 0.07);
+
+  /* Text */
+  --text-primary:   #1a1814;
+  --text-secondary: #4a453e;
+  --text-tertiary:  #8a857c;
+  --text-accent:    #b8922e;
+
+  /* Gold accent — slightly deeper for contrast on light bg */
+  --accent-gold:       #c49a28;
+  --accent-gold-light: #e4b95a;
+  --accent-gold-dark:  #8f6e18;
+  --accent-gold-glow:  rgba(196, 154, 40, 0.15);
+  --accent-ember:      #e0582e;
+  --accent-silver:     #7a7a8a;
+  --accent-cream:      #3a3530;
+
+  /* Borders */
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --border-medium: rgba(0, 0, 0, 0.14);
+  --border-accent: rgba(196, 154, 40, 0.35);
+  --border-glow:   rgba(196, 154, 40, 0.5);
+
+  /* Shadows — softer, warm-tinted */
+  --shadow-sm: 0 1px 3px rgba(90, 80, 60, 0.12);
+  --shadow-md: 0 4px 20px rgba(90, 80, 60, 0.14);
+  --shadow-lg: 0 8px 40px rgba(90, 80, 60, 0.18);
+  --shadow-xl: 0 20px 80px rgba(90, 80, 60, 0.22);
+  --shadow-glow: 0 0 40px rgba(196, 154, 40, 0.08);
+  --shadow-glow-strong: 0 0 80px rgba(196, 154, 40, 0.14);
+  --shadow-gold-lift: 0 8px 30px rgba(196, 154, 40, 0.2), 0 2px 8px rgba(196, 154, 40, 0.1);
+}
+
+/* Light-mode: tone down the grain texture */
+[data-theme='light'] body::before {
+  opacity: 0.4;
+}
+
+/* Light-mode: scrollbar */
+[data-theme='light'] ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(196, 154, 40, 0.25);
+}
+
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(196, 154, 40, 0.35);
+}
+
+/* Light-mode: navbar scrolled state */
+[data-theme='light'] .navbar.scrolled {
+  background: rgba(243, 241, 236, 0.92);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 30px rgba(90, 80, 60, 0.1);
+}
+
+/* Light-mode: navbar pill */
+[data-theme='light'] .navbar-links {
+  background: rgba(250, 249, 246, 0.8);
+  border: 1px solid rgba(196, 154, 40, 0.12);
+  box-shadow: 0 2px 12px rgba(90, 80, 60, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+[data-theme='light'] .navbar-links a {
+  color: rgba(26, 24, 20, 0.65);
+}
+
+[data-theme='light'] .navbar-links a:hover {
+  color: #1a1814;
+  background: rgba(196, 154, 40, 0.08);
+  text-shadow: none;
+}
+
+/* Glass-card opacity token — override with --glass-opacity in any theme */
+:root { --glass-opacity: 0.65; }
+
+/* Light-mode: glass cards */
+[data-theme='light'] .glass-card {
+  background: rgba(255, 255, 255, var(--glass-opacity));
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Light-mode: form inputs */
+[data-theme='light'] .form-input,
+[data-theme='light'] .form-textarea,
+[data-theme='light'] .form-select {
+  background: var(--bg-card);
+  border-color: rgba(0, 0, 0, 0.12);
+  color: var(--text-primary);
+}
+
+/* Accent swatch keyboard focus — WCAG 2.1 AA */
+.accent-swatch:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+/* Semantic error / success helper colours (always token-driven) */
+:root {
+  --color-error:   #ef4444;
+  --color-success: #34d399;
+  --color-info:    #60a5fa;
+  --color-warning: #f59e0b;
+  --color-muted:   #6b7280;
+}
+
+
 /* ── Reset & Base ── */
 *,
 *::before,

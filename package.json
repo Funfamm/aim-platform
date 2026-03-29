@@ -11,6 +11,14 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "postinstall": "prisma generate",
+    "db:migrate": "node scripts/prisma-guard.mjs migrate dev && prisma migrate dev",
+    "db:migrate:name": "node scripts/prisma-guard.mjs migrate dev && prisma migrate dev --name",
+    "db:push": "node scripts/prisma-guard.mjs db push && prisma db push",
+    "db:reset": "node scripts/prisma-guard.mjs migrate reset && prisma migrate reset",
+    "db:deploy": "prisma migrate deploy",
+    "db:studio": "prisma studio",
+    "db:status": "prisma migrate status",
+    "db:seed": "node scripts/prisma-guard.mjs db seed && tsx prisma/seed-superadmin.ts",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed-superadmin.ts"
   },
@@ -26,6 +34,7 @@
     "@types/archiver": "^7.0.0",
     "@types/bcryptjs": "^2.4.6",
     "archiver": "^7.0.1",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
     "eslint-config-next": "^16.2.1",
@@ -37,12 +46,15 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.1.1",
     "eslint": "^10.1.0",
+    "jest": "^30.3.0",
     "prisma": "^6.6.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.8.0",
     "vitest": "^4.1.1"
   }

@@ -18,13 +18,13 @@ interface Props {
     onRunAudit: () => void
 }
 
-const scoreColor = (s: number) => s >= 75 ? '#22c55e' : s >= 50 ? '#f59e0b' : '#ef4444'
+const scoreColor = (s: number) => s >= 75 ? 'var(--color-success)' : s >= 50 ? 'var(--color-warning)' : 'var(--color-error)'
 
 const fitColors: Record<string, { bg: string; c: string }> = {
-    STRONG_FIT: { bg: 'rgba(34,197,94,0.12)', c: '#22c55e' },
-    GOOD_FIT: { bg: 'rgba(59,130,246,0.12)', c: '#60a5fa' },
-    MODERATE: { bg: 'rgba(245,158,11,0.12)', c: '#f59e0b' },
-    WEAK_FIT: { bg: 'rgba(239,68,68,0.12)', c: '#ef4444' },
+    STRONG_FIT: { bg: 'rgba(34,197,94,0.12)', c: 'var(--color-success)' },
+    GOOD_FIT: { bg: 'rgba(59,130,246,0.12)', c: 'var(--color-info)' },
+    MODERATE: { bg: 'rgba(245,158,11,0.12)', c: 'var(--color-warning)' },
+    WEAK_FIT: { bg: 'rgba(239,68,68,0.12)', c: 'var(--color-error)' },
 }
 
 export default function AICastingReport({ report, isLoading, error, onRunAudit }: Props) {
@@ -46,7 +46,7 @@ export default function AICastingReport({ report, isLoading, error, onRunAudit }
                     <div style={{ fontSize: '1.8rem', opacity: 0.3, marginBottom: '6px' }}>🔬</div>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: '10px' }}>No analysis yet</div>
                     {error && (
-                        <div style={{ padding: '6px 10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', fontSize: '0.72rem', color: '#ef4444', marginBottom: '8px', textAlign: 'left' }}>
+                        <div style={{ padding: '6px 10px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '6px', fontSize: '0.72rem', color: 'var(--color-error)', marginBottom: '8px', textAlign: 'left' }}>
                             ⚠️ {error}
                         </div>
                     )}
@@ -106,7 +106,7 @@ export default function AICastingReport({ report, isLoading, error, onRunAudit }
                     <div style={{ maxHeight: expanded ? '600px' : '140px', overflow: 'hidden', transition: 'max-height 0.3s' }}>
                         {report.strengths.length > 0 && (
                             <div style={{ marginBottom: '8px' }}>
-                                <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#22c55e', marginBottom: '4px' }}>Strengths</div>
+                                <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-success)', marginBottom: '4px' }}>Strengths</div>
                                 {report.strengths.map((s: string, i: number) => (
                                     <div key={i} style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', padding: '1px 0' }}>✓ {s}</div>
                                 ))}
@@ -114,7 +114,7 @@ export default function AICastingReport({ report, isLoading, error, onRunAudit }
                         )}
                         {report.concerns.length > 0 && (
                             <div style={{ marginBottom: '8px' }}>
-                                <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#f59e0b', marginBottom: '4px' }}>Considerations</div>
+                                <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-warning)', marginBottom: '4px' }}>Considerations</div>
                                 {report.concerns.map((c: string, i: number) => (
                                     <div key={i} style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', padding: '1px 0' }}>⚠ {c}</div>
                                 ))}

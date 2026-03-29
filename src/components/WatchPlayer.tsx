@@ -424,7 +424,7 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
                                                             padding: '6px 10px', textAlign: 'left',
                                                             background: ccLang === lang && ccEnabled ? 'rgba(212,168,83,0.15)' : 'transparent',
                                                             border: 'none', borderRadius: '4px',
-                                                            color: ccLang === lang && ccEnabled ? 'var(--accent-gold)' : '#ccc',
+                                                            color: ccLang === lang && ccEnabled ? 'var(--accent-gold)' : 'var(--text-secondary)',
                                                             fontSize: '0.8rem', cursor: 'pointer',
                                                             transition: 'background 0.15s',
                                                         }}
@@ -447,7 +447,7 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
                                                         padding: '6px 10px', textAlign: 'left',
                                                         background: !ccEnabled ? 'rgba(255,255,255,0.06)' : 'transparent',
                                                         border: 'none', borderRadius: '4px',
-                                                        color: '#999', fontSize: '0.8rem', cursor: 'pointer',
+                                                        color: 'var(--text-tertiary)', fontSize: '0.8rem', cursor: 'pointer',
                                                     }}
                                                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)' }}
                                                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}

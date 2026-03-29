@@ -141,7 +141,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                         </span>
                     </span>
                     {call.maxApplications && (call.maxApplications - (call._count?.applications ?? 0)) <= 10 && (call.maxApplications - (call._count?.applications ?? 0)) > 0 && (
-                        <span style={{ color: '#f59e0b', fontWeight: 600 }}>
+                        <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>
                             {call.maxApplications - (call._count?.applications ?? 0)} {t('spotsLeft')}
                         </span>
                     )}

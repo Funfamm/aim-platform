@@ -454,7 +454,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                                         <span style={{
                                                             fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
                                                             textTransform: 'uppercase' as const,
-                                                            color: '#34d399',
+                                                            color: 'var(--color-success)',
                                                             background: 'rgba(52,211,153,0.1)',
                                                             padding: '1px 5px',
                                                             borderRadius: 'var(--radius-full)',
@@ -476,7 +476,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                                         <span style={{
                                                             fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
                                                             textTransform: 'uppercase' as const,
-                                                            color: '#60a5fa',
+                                                            color: 'var(--color-info)',
                                                             background: 'rgba(96,165,250,0.1)',
                                                             padding: '1px 5px',
                                                             borderRadius: 'var(--radius-full)',
@@ -487,7 +487,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                                         <span style={{
                                                             fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
                                                             textTransform: 'uppercase' as const,
-                                                            color: '#60a5fa',
+                                                            color: 'var(--color-info)',
                                                             background: 'rgba(96,165,250,0.1)',
                                                             padding: '1px 5px',
                                                             borderRadius: 'var(--radius-full)',
@@ -535,7 +535,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                                                 borderRadius: 'var(--radius-full)',
                                                                 background: 'rgba(52,211,153,0.12)',
                                                                 border: '1px solid rgba(52,211,153,0.25)',
-                                                                color: '#34d399',
+                                                                color: 'var(--color-success)',
                                                                 textDecoration: 'none',
                                                                 transition: 'all 0.2s',
                                                             }}
@@ -554,7 +554,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                                                 borderRadius: 'var(--radius-full)',
                                                                 background: 'rgba(96,165,250,0.12)',
                                                                 border: '1px solid rgba(96,165,250,0.25)',
-                                                                color: '#60a5fa',
+                                                                color: 'var(--color-info)',
                                                                 textDecoration: 'none',
                                                                 transition: 'all 0.2s',
                                                             }}

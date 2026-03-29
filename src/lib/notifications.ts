@@ -32,10 +32,22 @@ const STATUS_EMAIL_TEMPLATES: Record<string, {
         body: 'We\'ve reviewed your submission and we\'re excited about your potential for this role. Please check your email for details and next steps from our casting team.',
         emoji: '✉️',
     },
+    callback: {
+        subject: 'We\'d Like to Move Forward With You',
+        heading: 'Great News About Your Application! ✉️',
+        body: 'We\'ve reviewed your submission and we\'re excited about your potential for this role. Please check your email for details and next steps from our casting team.',
+        emoji: '✉️',
+    },
     audition: {
         subject: 'You\'ve Been Selected for the Next Round! 🎭',
         heading: 'You\'re Moving Forward!',
         body: 'Congratulations! Your submission impressed our casting team and you\'ve been selected to advance to the next round. We\'ll reach out via email with everything you need to know, including any additional materials we may need.',
+        emoji: '🎭',
+    },
+    final_review: {
+        subject: 'You\'ve Been Selected for Final Review! 🎭',
+        heading: 'You\'re in Final Review!',
+        body: 'Congratulations! Your submission impressed our casting team and you\'ve been selected for final review. We\'ll reach out via email with everything you need to know, including any additional materials we may need.',
         emoji: '🎭',
     },
     selected: {
@@ -45,6 +57,12 @@ const STATUS_EMAIL_TEMPLATES: Record<string, {
         emoji: '🏆',
     },
     rejected: {
+        subject: 'Application Update',
+        heading: 'Thank You for Your Application',
+        body: 'After careful consideration, we\'ve decided to go in a different direction for this particular role. We truly appreciate your interest and encourage you to apply for future roles. Your talent didn\'t go unnoticed.',
+        emoji: '🎬',
+    },
+    not_selected: {
         subject: 'Application Update',
         heading: 'Thank You for Your Application',
         body: 'After careful consideration, we\'ve decided to go in a different direction for this particular role. We truly appreciate your interest and encourage you to apply for future roles. Your talent didn\'t go unnoticed.',
@@ -155,7 +173,7 @@ ${opts.siteName} Casting Team
 export async function getAutoAdvanceStatus(
     currentStatus: string,
     aiScore: number
-): Promise<'shortlisted' | 'rejected' | 'under_review' | null> {
+): Promise<'shortlisted' | 'not_selected' | 'under_review' | null> {
     const settings = await prisma.siteSettings.findFirst()
     if (!settings?.pipelineAutoAdvance) return null
 
@@ -167,7 +185,7 @@ export async function getAutoAdvanceStatus(
     if (!autoAdvanceFrom.includes(currentStatus)) return null
 
     if (aiScore >= shortlistThreshold) return 'shortlisted'
-    if (aiScore <= rejectThreshold) return 'rejected'
+    if (aiScore <= rejectThreshold) return 'not_selected'
 
     return 'under_review' // Middle range → just mark as reviewed
 }

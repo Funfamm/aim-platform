@@ -39,7 +39,7 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
         return (
             <div style={{ textAlign: 'center', padding: 'var(--space-xl) 0' }}>
                 <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-md)' }}>✅</div>
-                <h3 style={{ marginBottom: 'var(--space-sm)', color: '#34d399' }}>Script Submitted!</h3>
+                <h3 style={{ marginBottom: 'var(--space-sm)', color: 'var(--color-success)' }}>Script Submitted!</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                     Your screenplay has been received. Our AI will analyze it and our team will review the top submissions.
                 </p>
@@ -117,7 +117,7 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
             </div>
 
             {error && (
-                <div style={{ padding: '8px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: 'var(--radius-md)', color: '#f43f5e', fontSize: '0.8rem' }}>
+                <div style={{ padding: '8px 12px', background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.2)', borderRadius: 'var(--radius-md)', color: 'var(--color-error)', fontSize: '0.8rem' }}>
                     {error}
                 </div>
             )}

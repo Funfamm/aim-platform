@@ -19,8 +19,10 @@ export async function PATCH(
     // Handle status update
     if (status) {
         const validStatuses = [
-            'pending', 'submitted', 'under_review', 'reviewed',
-            'shortlisted', 'contacted', 'audition', 'selected', 'rejected',
+            'submitted', 'under_review', 'reviewed', 'shortlisted',
+            'contacted', 'audition', 'callback', 'final_review',
+            'selected', 'not_selected', 'rejected', 'withdrawn',
+            'pending', 'approved',
         ]
         if (!validStatuses.includes(status)) {
             return NextResponse.json({ error: 'Invalid status' }, { status: 400 })

@@ -2,6 +2,12 @@
  * Branded HTML email templates for AIM Studio.
  * All templates use inline CSS for max email-client compatibility.
  * Premium dark theme with gold accents matching the website design.
+ *
+ * ⚠️  INTENTIONAL EXCEPTION: These colour constants are hard-coded hex
+ *     values on purpose, NOT CSS custom properties. Email clients
+ *     (Gmail, Outlook, Yahoo) strip <style> blocks and do not evaluate
+ *     CSS custom properties (var(...)). All colours in this file MUST
+ *     remain as literal hex strings.
  */
 
 // ── DB override loader ──────────────────────────────────────────

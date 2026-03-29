@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin, requireSuperAdmin, createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { hash, compare } from 'bcryptjs'
+import { validatePassword } from '@/lib/validation'
+import { logAdminAction } from '@/lib/audit-log'
 
 // GET — list all admin/superadmin users (any admin can view)
 export async function GET() {
@@ -46,6 +48,13 @@ export async function POST(request: NextRequest) {
 
     await prisma.user.update({ where: { id: userId }, data: { role } })
 
+    logAdminAction({
+        actor: (await requireSuperAdmin()).userId,
+        action: role === 'admin' ? 'PROMOTE_USER' : 'DEMOTE_USER',
+        target: userId,
+        details: { targetName: targetUser.name, newRole: role },
+    })
+
     return NextResponse.json({
         success: true,
         message: `${targetUser.name} is now ${role === 'admin' ? 'an admin' : 'a member'}`,
@@ -76,8 +85,9 @@ export async function PATCH(request: NextRequest) {
         if (!currentPassword) {
             return NextResponse.json({ error: 'Current password is required to change password' }, { status: 400 })
         }
-        if (newPassword.length < 6) {
-            return NextResponse.json({ error: 'New password must be at least 6 characters' }, { status: 400 })
+        const pwCheck = validatePassword(newPassword)
+        if (!pwCheck.valid) {
+            return NextResponse.json({ error: pwCheck.message }, { status: 400 })
         }
 
         const user = await prisma.user.findUnique({ where: { id: session.userId } })
@@ -128,8 +138,9 @@ export async function PATCH(request: NextRequest) {
 
 // PUT — create a new power admin with credentials (superadmin only)
 export async function PUT(request: NextRequest) {
+    let session
     try {
-        await requireSuperAdmin()
+        session = await requireSuperAdmin()
     } catch {
         return NextResponse.json({ error: 'Superadmin access required' }, { status: 403 })
     }
@@ -140,8 +151,9 @@ export async function PUT(request: NextRequest) {
         return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
     }
 
-    if (password.length < 6) {
-        return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+    const pwCheck = validatePassword(password)
+    if (!pwCheck.valid) {
+        return NextResponse.json({ error: pwCheck.message }, { status: 400 })
     }
 
     // Check if email already exists
@@ -155,6 +167,14 @@ export async function PUT(request: NextRequest) {
             where: { id: existing.id },
             data: { role: 'admin', name: name.trim(), emailVerified: true },
         })
+
+        logAdminAction({
+            actor: session.userId,
+            action: 'CREATE_ADMIN',
+            target: existing.id,
+            details: { method: 'promote_existing', name: name.trim(), email: existing.email },
+        })
+
         return NextResponse.json({
             success: true,
             message: `${name} promoted to power admin`,
@@ -172,6 +192,13 @@ export async function PUT(request: NextRequest) {
             role: 'admin',
             emailVerified: true,
         },
+    })
+
+    logAdminAction({
+        actor: session.userId,
+        action: 'CREATE_ADMIN',
+        target: newAdmin.id,
+        details: { method: 'create_new', name: newAdmin.name, email: newAdmin.email },
     })
 
     return NextResponse.json({
@@ -220,6 +247,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     await prisma.user.update({ where: { id: userId }, data: { role: 'member' } })
+
+    logAdminAction({
+        actor: session.userId,
+        action: 'DEMOTE_USER',
+        target: userId,
+        details: { targetName: targetUser.name, previousRole: targetUser.role },
+    })
 
     return NextResponse.json({
         success: true,

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import AICastingReport from '@/components/application/AICastingReport'
 
@@ -51,6 +51,7 @@ interface Props {
         concerns: string[]
         recommendation: string
         notes: string
+        screeningSkipped?: boolean
     } | null
 }
 
@@ -58,8 +59,8 @@ const PIPELINE = [
     { key: 'submitted', label: 'Received', icon: '📥' },
     { key: 'under_review', label: 'Reviewing', icon: '🔍' },
     { key: 'shortlisted', label: 'Shortlisted', icon: '⭐' },
-    { key: 'contacted', label: 'Contacted', icon: '✉️' },
-    { key: 'audition', label: 'Audition', icon: '🎭' },
+    { key: 'callback', label: 'Callback', icon: '✉️' },
+    { key: 'final_review', label: 'Final Review', icon: '🎭' },
     { key: 'selected', label: 'Cast', icon: '🏆' },
 ]
 
@@ -73,6 +74,38 @@ export default function ApplicationDetailClient({ application, castingCall, phot
     const [editingFeedback, setEditingFeedback] = useState(application.statusNote || '')
     const [savingFeedback, setSavingFeedback] = useState(false)
     const [feedbackSaved, setFeedbackSaved] = useState(false)
+
+    // Notification log
+    const [notifOpen, setNotifOpen] = useState(false)
+    const [notifLoading, setNotifLoading] = useState(false)
+    const [notifications, setNotifications] = useState<Array<{
+        id: string; createdAt: string; type: string; subject: string;
+        recipientEmail: string; status: string;
+    }>>([])
+    const [notifPage, setNotifPage] = useState(1)
+    const [notifTotal, setNotifTotal] = useState(0)
+    const NOTIF_SIZE = 10
+
+    const loadNotifications = async (page = 1) => {
+        setNotifLoading(true)
+        try {
+            const res = await fetch(`/api/admin/applications/${application.id}/notifications?page=${page}&size=${NOTIF_SIZE}`)
+            if (res.ok) {
+                const data = await res.json()
+                setNotifications(data.notifications)
+                setNotifTotal(data.pagination.total)
+                setNotifPage(page)
+            }
+        } catch { /* */ }
+        finally { setNotifLoading(false) }
+    }
+
+    useEffect(() => {
+        if (notifOpen && notifications.length === 0) {
+            loadNotifications(1)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [notifOpen])
 
     // Compute delivery status
     const resultVisibleAt = application.resultVisibleAt ? new Date(application.resultVisibleAt) : null
@@ -127,7 +160,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
 
     const stageOrder = PIPELINE.map(s => s.key)
     const currentIdx = stageOrder.indexOf(application.status)
-    const isRejected = application.status === 'rejected'
+    const isRejected = application.status === 'rejected' || application.status === 'not_selected'
 
     return (
         <div>
@@ -145,7 +178,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {isRejected && (
-                        <span style={{ padding: '4px 14px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '20px', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)' }}>
+                        <span style={{ padding: '4px 14px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '20px', background: 'rgba(239,68,68,0.12)', color: 'var(--color-error)', border: '1px solid rgba(239,68,68,0.2)' }}>
                             NOT SELECTED
                         </span>
                     )}
@@ -159,11 +192,11 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         {runningAI ? '⏳ Analyzing...' : '🤖 AI Audit'}
                     </button>
                     {!isRejected && (
-                        <button onClick={() => updateStatus('rejected')} disabled={updatingStatus}
+                        <button onClick={() => updateStatus('not_selected')} disabled={updatingStatus}
                             style={{
                                 padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '8px',
                                 border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
-                                color: '#ef4444', cursor: 'pointer',
+                                color: 'var(--color-error)', cursor: 'pointer',
                             }}>
                             ✗ Deny
                         </button>
@@ -199,7 +232,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                             <div style={{ fontSize: '0.85rem', marginBottom: '2px' }}>{isPast ? '✓' : stage.icon}</div>
                             <div style={{
                                 fontSize: '0.62rem', fontWeight: isActive ? 700 : 500, letterSpacing: '0.02em',
-                                color: isActive ? 'var(--accent-gold)' : isPast ? '#10b981' : 'var(--text-tertiary)',
+                                color: isActive ? 'var(--accent-gold)' : isPast ? 'var(--color-success)' : 'var(--text-tertiary)',
                             }}>{stage.label}</div>
                             {isActive && <div style={{
                                 width: '4px', height: '4px', borderRadius: '50%',
@@ -209,6 +242,21 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                     )
                 })}
             </div>
+
+            {/* ─── VISION SCREENING SKIPPED WARNING ─── */}
+            {currentReport?.screeningSkipped && (
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    padding: '8px 14px', marginBottom: '16px', borderRadius: '8px',
+                    background: 'rgba(245,158,11,0.08)',
+                    border: '1px solid rgba(245,158,11,0.25)',
+                    fontSize: '0.75rem', fontWeight: 600,
+                    color: 'hsl(38, 92%, 50%)',
+                }}>
+                    <span style={{ fontSize: '1rem' }}>⚠️</span>
+                    <span>Vision screening was skipped — photos were not validated by AI. A <strong>−5 point</strong> penalty has been applied.</span>
+                </div>
+            )}
 
             {/* ─── MAIN GRID ─── */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '16px', alignItems: 'start' }}>
@@ -380,7 +428,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                 : 'linear-gradient(135deg, rgba(245,158,11,0.06), rgba(245,158,11,0.02))',
                             border: `1px solid ${isDelivered ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)'}`,
                         }}>
-                            <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: isDelivered ? '#22c55e' : '#f59e0b', marginBottom: '10px' }}>
+                            <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: isDelivered ? 'var(--color-success)' : 'var(--color-warning)', marginBottom: '10px' }}>
                                 📬 Applicant Delivery
                             </div>
 
@@ -388,7 +436,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                                 <div style={{
                                     width: '8px', height: '8px', borderRadius: '50%',
-                                    background: isDelivered ? '#22c55e' : '#f59e0b',
+                                    background: isDelivered ? 'var(--color-success)' : 'var(--color-warning)',
                                     boxShadow: `0 0 8px ${isDelivered ? 'rgba(34,197,94,0.4)' : 'rgba(245,158,11,0.4)'}`,
                                     animation: isDelivered ? 'none' : 'pulse 2s infinite',
                                 }} />
@@ -440,7 +488,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                         {savingFeedback ? '⏳ Saving...' : feedbackSaved ? '✓ Saved' : '💾 Save Changes'}
                                     </button>
                                     {editingFeedback !== (application.statusNote || '') && (
-                                        <span style={{ fontSize: '0.65rem', color: '#f59e0b' }}>Unsaved changes</span>
+                                        <span style={{ fontSize: '0.65rem', color: 'var(--color-warning)' }}>Unsaved changes</span>
                                     )}
                                 </div>
                             </div>
@@ -465,6 +513,78 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         )}
                     </div>
                 </div>
+            </div>
+
+            {/* ─── NOTIFICATION LOG ─── */}
+            <div style={{ marginTop: '20px' }}>
+                <button
+                    onClick={() => setNotifOpen(o => !o)}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+                        borderRadius: '8px', padding: '8px 14px', cursor: 'pointer',
+                        fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)',
+                        width: '100%', justifyContent: 'space-between',
+                    }}
+                >
+                    <span>📬 Notification Log {notifTotal > 0 && <span style={{ color: 'var(--accent-gold)' }}>({notifTotal})</span>}</span>
+                    <span style={{ fontSize: '0.7rem', opacity: 0.5 }}>{notifOpen ? '▲ collapse' : '▼ expand'}</span>
+                </button>
+                {notifOpen && (
+                    <div style={{
+                        marginTop: '8px', padding: '12px', borderRadius: '8px',
+                        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                    }}>
+                        {notifLoading ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>Loading…</div>
+                        ) : notifications.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>No notifications sent yet.</div>
+                        ) : (
+                            <>
+                                {notifications.map((n, idx) => (
+                                    <div key={n.id} style={{
+                                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                                        padding: '8px 0',
+                                        borderBottom: idx < notifications.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                    }}>
+                                        <span style={{ fontSize: '1rem', marginTop: '1px' }}>{n.status === 'sent' ? '✅' : '❌'}</span>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {n.subject}
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                                {new Date(n.createdAt).toLocaleString()} · {n.recipientEmail}
+                                            </div>
+                                        </div>
+                                        <span style={{
+                                            fontSize: '0.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px',
+                                            background: n.status === 'sent' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                                            color: n.status === 'sent' ? 'var(--color-success)' : 'var(--color-error)',
+                                        }}>{n.status.toUpperCase()}</span>
+                                    </div>
+                                ))}
+                                {/* Pagination */}
+                                {notifTotal > NOTIF_SIZE && (
+                                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
+                                        <button
+                                            disabled={notifPage <= 1 || notifLoading}
+                                            onClick={() => loadNotifications(notifPage - 1)}
+                                            style={{ padding: '4px 10px', fontSize: '0.7rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', opacity: notifPage <= 1 ? 0.4 : 1 }}
+                                        >← Prev</button>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', alignSelf: 'center' }}>
+                                            {notifPage} / {Math.ceil(notifTotal / NOTIF_SIZE)}
+                                        </span>
+                                        <button
+                                            disabled={notifPage >= Math.ceil(notifTotal / NOTIF_SIZE) || notifLoading}
+                                            onClick={() => loadNotifications(notifPage + 1)}
+                                            style={{ padding: '4px 10px', fontSize: '0.7rem', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', opacity: notifPage >= Math.ceil(notifTotal / NOTIF_SIZE) ? 0.4 : 1 }}
+                                        >Next →</button>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* ─── LIGHTBOX ─── */}
@@ -495,7 +615,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
             )}
 
             <style jsx>{`
-                @media (max-width: 900px) {
+                @media (max-width: 1100px) {
                     div[style*="grid-template-columns: 1fr 380px"] {
                         grid-template-columns: 1fr !important;
                     }

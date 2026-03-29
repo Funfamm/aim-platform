@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { CsrfProvider } from '@/components/CsrfProvider'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
     const session = await getSession()
@@ -10,5 +11,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         redirect('/login?redirect=/admin')
     }
 
-    return <>{children}</>
+    return <CsrfProvider>{children}</CsrfProvider>
 }
+

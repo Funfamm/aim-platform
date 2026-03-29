@@ -131,7 +131,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                     background: 'rgba(239,68,68,0.1)',
                     border: '1px solid rgba(239,68,68,0.2)',
                     borderRadius: 'var(--radius-md)',
-                    fontSize: '0.82rem', color: '#ef4444',
+                    fontSize: '0.82rem', color: 'var(--color-error)',
                     marginBottom: 'var(--space-md)',
                 }}>⚠️ {uploadError}</div>
             )}
@@ -173,7 +173,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                             background: 'rgba(239,68,68,0.1)',
                             border: '1px solid rgba(239,68,68,0.2)',
                             borderRadius: 'var(--radius-md)',
-                            fontSize: '0.82rem', color: '#ef4444',
+                            fontSize: '0.82rem', color: 'var(--color-error)',
                             marginBottom: 'var(--space-md)',
                         }}>⚠️ {micError}</div>
                     )}
@@ -211,14 +211,14 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                             <div style={{
                                 fontSize: '1.8rem', fontWeight: 700,
                                 fontFamily: 'monospace',
-                                color: isRecording ? '#ef4444' : 'var(--accent-gold)',
+                                color: isRecording ? 'var(--color-error)' : 'var(--accent-gold)',
                                 marginBottom: 'var(--space-md)',
                                 display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
                             }}>
                                 {isRecording && (
                                     <span style={{
                                         width: '10px', height: '10px', borderRadius: '50%',
-                                        background: '#ef4444',
+                                        background: 'var(--color-error)',
                                         animation: 'pulse 1s infinite',
                                     }} />
                                 )}
@@ -232,7 +232,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                             onClick={isRecording ? stopRecording : startRecording}
                             style={{
                                 width: '64px', height: '64px', borderRadius: '50%',
-                                border: `3px solid ${isRecording ? '#ef4444' : 'var(--accent-gold)'}`,
+                                border: `3px solid ${isRecording ? 'var(--color-error)' : 'var(--accent-gold)'}`,
                                 background: isRecording ? 'rgba(239,68,68,0.1)' : 'var(--accent-gold-glow)',
                                 cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -240,7 +240,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                             }}
                         >
                             {isRecording ? (
-                                <div style={{ width: '20px', height: '20px', borderRadius: '3px', background: '#ef4444' }} />
+                                <div style={{ width: '20px', height: '20px', borderRadius: '3px', background: 'var(--color-error)' }} />
                             ) : (
                                 <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
                             )}

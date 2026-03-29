@@ -1725,7 +1725,14 @@ export default function AdminSettingsPage() {
                                         marginBottom: 'var(--space-lg)',
                                     }}>
                                         <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: '6px' }}>Application Requirements</div>
-                                        <Toggle checked={settings.requireVoice} onChange={v => update('requireVoice', v)} label="Require voice recording in applications" />
+                                        <Toggle checked={settings.requireVoice} onChange={v => {
+                                            if (v && !confirm('Enable voice hard-requirement?\n\nApplicants who do not submit a voice/self-tape recording will receive a −25 point penalty and be capped at WEAK_FIT recommendation.\n\nAre you sure?')) return
+                                            if (!v && !confirm('Disable voice hard-requirement?\n\nThe penalty for missing voice recordings will revert to the default −5 points.\n\nProceed?')) return
+                                            update('requireVoice', v)
+                                        }} label="Require voice recording in applications" />
+                                        <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '-4px', marginBottom: '8px', lineHeight: 1.5, paddingLeft: '2px' }}>
+                                            When enabled, applicants without a voice/self-tape receive a <strong style={{ color: '#ef4444' }}>−25 pt</strong> penalty and are capped at <strong>WEAK_FIT</strong>. When disabled, the penalty is only −5 pts.
+                                        </div>
                                         <Toggle checked={settings.castingAutoClose} onChange={v => update('castingAutoClose', v)} label="Auto-close casting when all roles are filled" />
                                     </div>
 

@@ -183,10 +183,10 @@ export default function Navbar() {
                         ) : (
                             <Link href="/login" style={{
                                 padding: '0.4rem 1.2rem',
-                                background: 'rgba(255,255,255,0.08)',
-                                border: '1px solid rgba(255,255,255,0.2)',
+                                background: 'var(--bg-glass-light)',
+                                border: '1px solid var(--border-medium)',
                                 borderRadius: 'var(--radius-full)',
-                                color: '#fff',
+                                color: 'var(--text-primary)',
                                 fontSize: '0.8rem',
                                 fontWeight: 600,
                                 textDecoration: 'none',
@@ -317,7 +317,7 @@ export default function Navbar() {
                     display: 'flex', alignItems: 'center', gap: '8px',
                     padding: '10px 20px', borderRadius: '24px',
                     background: 'linear-gradient(135deg, rgba(168,85,247,0.9), rgba(139,92,246,0.9))',
-                    color: '#fff', fontWeight: 700, fontSize: '0.78rem',
+                    color: 'rgba(255,255,255,0.95)', fontWeight: 700, fontSize: '0.78rem',
                     textDecoration: 'none',
                     boxShadow: '0 4px 20px rgba(168,85,247,0.4), 0 2px 8px rgba(0,0,0,0.3)',
                     backdropFilter: 'blur(10px)',

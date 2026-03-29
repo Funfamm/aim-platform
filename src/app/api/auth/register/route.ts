@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { authLimiter } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/mailer'
 import { verificationEmail, welcomeEmailWithOverrides } from '@/lib/email-templates'
+import { validatePassword } from '@/lib/validation'
 
 export async function POST(request: Request) {
     const blocked = authLimiter.check(request)
@@ -16,8 +17,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
         }
 
-        if (password.length < 6) {
-            return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+        const pwCheck = validatePassword(password)
+        if (!pwCheck.valid) {
+            return NextResponse.json({ error: pwCheck.message }, { status: 400 })
         }
 
         // Check if user exists

@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { logAdminAction } from '@/lib/audit-log'
 
 const VALID_STATUSES = [
-    'submitted', 'under_review', 'shortlisted', 'contacted',
-    'audition', 'selected', 'rejected', 'approved', 'pending',
+    'submitted', 'under_review', 'reviewed', 'shortlisted',
+    'contacted', 'audition', 'callback', 'final_review',
+    'selected', 'not_selected', 'rejected', 'withdrawn',
+    'pending', 'approved',
 ]
 
 async function handleBulkStatus(req: Request) {
-    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    let session
+    try { session = await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     try {
         const body = await req.json()
@@ -29,6 +33,13 @@ async function handleBulkStatus(req: Request) {
             data: { status },
         })
 
+        logAdminAction({
+            actor: session.userId,
+            action: 'CHANGE_STATUS',
+            target: applicationIds.join(','),
+            details: { newStatus: status, count: result.count },
+        })
+
         return NextResponse.json({
             success: true,
             updated: result.count,
@@ -43,3 +54,4 @@ async function handleBulkStatus(req: Request) {
 // Frontend sends POST; support both POST and PATCH
 export const POST = handleBulkStatus
 export const PATCH = handleBulkStatus
+

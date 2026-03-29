@@ -5,11 +5,27 @@ import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import { sendEmail } from '@/lib/mailer'
 import { applicationConfirmationWithOverrides, applicationAdminNotification } from '@/lib/email-templates'
+import { uploadLimiter } from '@/lib/rate-limit'
+import { checkMagicBytes, guardPathTraversal } from '@/lib/upload-safety'
+import { logUploadEvent } from '@/lib/upload-audit'
+
+// ═══ FILE UPLOAD SECURITY ═══
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+const ALLOWED_PHOTO_EXTS = ['.jpg', '.jpeg', '.png', '.webp']
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024 // 5 MB
+
+const ALLOWED_VOICE_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/x-m4a', 'audio/mp3']
+const ALLOWED_VOICE_EXTS = ['.mp3', '.mp4', '.m4a', '.wav', '.webm', '.ogg']
+const MAX_VOICE_SIZE = 25 * 1024 * 1024 // 25 MB
 
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
+    // IP-based rate limit (5 uploads/min)
+    const blocked = uploadLimiter.check(request)
+    if (blocked) return blocked
+
     try {
         const { id } = await params
 
@@ -131,11 +147,67 @@ export async function POST(
         for (const key of photoKeys) {
             const file = formData.get(`photo_${key}`) as File | null
             if (file && file.size > 0) {
-                const ext = file.name.split('.').pop() || 'jpg'
-                const fileName = `${key}.${ext}`
+                // ═══ PHOTO VALIDATION ═══
+                const ext = '.' + (file.name.split('.').pop() || 'jpg').toLowerCase()
+                if (!ALLOWED_PHOTO_EXTS.includes(ext)) {
+                    logUploadEvent({
+                        action: 'upload_rejected', route: '/api/casting/apply',
+                        userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
+                        reason: `Invalid photo extension: ${ext}`, code: 'EXT_REJECTED',
+                    })
+                    return NextResponse.json({ error: `Invalid photo format for ${key}. Allowed: JPG, PNG, WebP.` }, { status: 400 })
+                }
+                if (file.type && !ALLOWED_PHOTO_TYPES.includes(file.type)) {
+                    logUploadEvent({
+                        action: 'upload_rejected', route: '/api/casting/apply',
+                        userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
+                        reason: `Invalid photo MIME: ${file.type}`, code: 'MIME_REJECTED',
+                    })
+                    return NextResponse.json({ error: `Invalid photo type for ${key}. Allowed: JPEG, PNG, WebP.` }, { status: 400 })
+                }
+                if (file.size > MAX_PHOTO_SIZE) {
+                    return NextResponse.json({ error: `Photo ${key} is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum 5 MB.` }, { status: 400 })
+                }
+
+                const fileName = `${key}${ext}`
                 const filePath = path.join(uploadDir, fileName)
                 const buffer = Buffer.from(await file.arrayBuffer())
-                await writeFile(filePath, buffer)
+
+                // ═══ MAGIC-BYTE CHECK ═══
+                if (file.type) {
+                    const magicCheck = checkMagicBytes(buffer, file.type)
+                    if (!magicCheck.valid) {
+                        logUploadEvent({
+                            action: 'upload_rejected', route: '/api/casting/apply',
+                            userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
+                            reason: magicCheck.error, code: 'MAGIC_BYTE_MISMATCH',
+                        })
+                        return NextResponse.json({
+                            error: `Photo "${key}" failed content verification: the file does not appear to be a valid image. It may be corrupted or disguised.`,
+                        }, { status: 400 })
+                    }
+                }
+
+                // ═══ PATH TRAVERSAL GUARD ═══
+                let resolvedPath: string
+                try {
+                    resolvedPath = guardPathTraversal(filePath, uploadDir)
+                } catch {
+                    logUploadEvent({
+                        action: 'upload_rejected', route: '/api/casting/apply',
+                        userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
+                        reason: 'Path traversal attempt', code: 'PATH_TRAVERSAL',
+                    })
+                    return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+                }
+
+                await writeFile(resolvedPath, buffer)
+
+                logUploadEvent({
+                    action: 'upload_accepted', route: '/api/casting/apply',
+                    userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
+                })
+
                 photoPaths.push(`/uploads/${safeName}_${timestamp}/${fileName}`)
             }
         }
@@ -144,11 +216,67 @@ export async function POST(
         let voicePath: string | null = null
         const voiceFile = formData.get('voiceRecording') as File | null
         if (voiceFile && voiceFile.size > 0) {
-            const ext = voiceFile.name.split('.').pop() || 'mp3'
-            const fileName = `voice_recording.${ext}`
+            // ═══ VOICE VALIDATION ═══
+            const vExt = '.' + (voiceFile.name.split('.').pop() || 'mp3').toLowerCase()
+            if (!ALLOWED_VOICE_EXTS.includes(vExt)) {
+                logUploadEvent({
+                    action: 'upload_rejected', route: '/api/casting/apply',
+                    userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
+                    reason: `Invalid voice extension: ${vExt}`, code: 'EXT_REJECTED',
+                })
+                return NextResponse.json({ error: `Invalid voice file format. Allowed: MP3, MP4, M4A, WAV, WebM, OGG.` }, { status: 400 })
+            }
+            if (voiceFile.type && !ALLOWED_VOICE_TYPES.includes(voiceFile.type)) {
+                logUploadEvent({
+                    action: 'upload_rejected', route: '/api/casting/apply',
+                    userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
+                    reason: `Invalid voice MIME: ${voiceFile.type}`, code: 'MIME_REJECTED',
+                })
+                return NextResponse.json({ error: `Invalid voice file type. Allowed: audio/mpeg, audio/mp4, audio/wav, audio/webm, audio/ogg.` }, { status: 400 })
+            }
+            if (voiceFile.size > MAX_VOICE_SIZE) {
+                return NextResponse.json({ error: `Voice recording is too large (${(voiceFile.size / 1024 / 1024).toFixed(1)} MB). Maximum 25 MB.` }, { status: 400 })
+            }
+
+            const fileName = `voice_recording${vExt}`
             const filePath = path.join(uploadDir, fileName)
             const buffer = Buffer.from(await voiceFile.arrayBuffer())
-            await writeFile(filePath, buffer)
+
+            // ═══ MAGIC-BYTE CHECK ═══
+            if (voiceFile.type) {
+                const magicCheck = checkMagicBytes(buffer, voiceFile.type)
+                if (!magicCheck.valid) {
+                    logUploadEvent({
+                        action: 'upload_rejected', route: '/api/casting/apply',
+                        userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
+                        reason: magicCheck.error, code: 'MAGIC_BYTE_MISMATCH',
+                    })
+                    return NextResponse.json({
+                        error: `Voice recording failed content verification: the file does not appear to be valid audio. It may be corrupted or disguised.`,
+                    }, { status: 400 })
+                }
+            }
+
+            // ═══ PATH TRAVERSAL GUARD ═══
+            let resolvedPath: string
+            try {
+                resolvedPath = guardPathTraversal(filePath, uploadDir)
+            } catch {
+                logUploadEvent({
+                    action: 'upload_rejected', route: '/api/casting/apply',
+                    userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
+                    reason: 'Path traversal attempt', code: 'PATH_TRAVERSAL',
+                })
+                return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+            }
+
+            await writeFile(resolvedPath, buffer)
+
+            logUploadEvent({
+                action: 'upload_accepted', route: '/api/casting/apply',
+                userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
+            })
+
             voicePath = `/uploads/${safeName}_${timestamp}/${fileName}`
         }
         // ═══ MAX APPLICATION CHECK — prevent overflow ═══

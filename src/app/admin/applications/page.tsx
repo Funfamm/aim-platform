@@ -83,9 +83,12 @@ const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }
     under_review: { label: 'Under Review', bg: 'rgba(139,92,246,0.12)',  color: '#a78bfa' },
     shortlisted:  { label: 'Shortlisted',  bg: 'rgba(59,130,246,0.12)',  color: '#60a5fa' },
     contacted:    { label: 'Contacted',    bg: 'rgba(212,168,83,0.12)',  color: '#d4a853' },
+    callback:     { label: 'Callback',     bg: 'rgba(212,168,83,0.12)',  color: '#d4a853' },
     audition:     { label: 'Audition',     bg: 'rgba(168,85,247,0.12)',  color: '#a855f7' },
+    final_review: { label: 'Final Review', bg: 'rgba(168,85,247,0.12)',  color: '#a855f7' },
     selected:     { label: 'Selected',     bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
     rejected:     { label: 'Rejected',     bg: 'rgba(107,114,128,0.12)', color: '#9ca3af' },
+    not_selected: { label: 'Not Selected', bg: 'rgba(107,114,128,0.12)', color: '#9ca3af' },
     approved:     { label: 'Approved',     bg: 'rgba(34,197,94,0.12)',   color: '#22c55e' },
     withdrawn:    { label: 'Withdrawn',    bg: 'rgba(239,68,68,0.10)',   color: '#f87171' },
 }
@@ -143,23 +146,63 @@ export default function AdminApplicationsPage() {
     const handleBulkAction = async () => {
         if (!bulkAction || selected.size === 0) return
         if (bulkAction === 'batch_audit') {
-            setBatchRunning(true)
-            setBatchProgress({ total: selected.size, done: 0, results: [] })
+            setBatchRunning(true);
+            setBatchProgress({ total: selected.size, done: 0, results: [] });
             try {
                 const res = await fetch('/api/admin/applications/batch-audit', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ applicationIds: [...selected], delaySeconds: 8 }),
-                })
-                if (res.ok) {
-                    const data = await res.json()
-                    setBatchProgress({ total: data.summary.total, done: data.summary.total, results: data.results })
-                    fetchApps(pagination.page)
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    setBatchProgress(prev => prev ? { ...prev, results: [{ id: '', fullName: 'Error', status: 'error', error: err.error }] } : null);
                 } else {
-                    const err = await res.json()
-                    setBatchProgress(prev => prev ? { ...prev, results: [{ id: '', fullName: 'Error', status: 'error', error: err.error }] } : null)
+                    const reader = res.body?.getReader();
+                    if (!reader) {
+                        setBatchProgress(prev => prev ? { ...prev, results: [{ id: '', fullName: 'Error', status: 'error', error: 'Stream not available' }] } : null);
+                        return;
+                    }
+                    const decoder = new TextDecoder();
+                    let done = false;
+                    while (!done) {
+                        const { value, done: streamDone } = await reader.read();
+                        if (value) {
+                            const chunk = decoder.decode(value, { stream: true });
+                            const lines = chunk.split('\n').filter(l => l.trim().length > 0);
+                            for (const line of lines) {
+                                try {
+                                    const obj = JSON.parse(line);
+                                    if (obj.type === 'result') {
+                                        setBatchProgress(prev => ({
+                                            total: prev?.total ?? selected.size,
+                                            done: (prev?.done ?? 0) + 1,
+                                            results: [...(prev?.results ?? []), obj],
+                                        }));
+                                    } else if (obj.type === 'eof') {
+                                        setBatchProgress(prev => ({
+                                            total: prev?.total ?? obj.summary.total,
+                                            done: obj.summary.total,
+                                            results: prev?.results ?? [],
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error('Failed to parse NDJSON line', e);
+                                }
+                            }
+                        }
+                        done = streamDone;
+                    }
+                    fetchApps(pagination.page);
                 }
-            } catch { setBatchProgress(prev => prev ? { ...prev, results: [{ id: '', fullName: 'Error', status: 'error', error: 'Network error' }] } : null) }
-            finally { setBatchRunning(false); setSelected(new Set()); setBulkAction('') }
+            } catch (e) {
+                console.error('Batch audit error', e);
+                setBatchProgress(prev => prev ? { ...prev, results: [{ id: '', fullName: 'Error', status: 'error', error: 'Network error' }] } : null);
+            } finally {
+                setBatchRunning(false);
+                setSelected(new Set());
+                setBulkAction('');
+            }
             return
         }
         if (bulkAction === 'download') {
@@ -265,7 +308,8 @@ export default function AdminApplicationsPage() {
                                 { value: 'batch_audit', label: '🤖 Batch AI Audit' },
                                 { value: 'download', label: '📥 Download ZIP' },
                                 { value: 'shortlisted', label: '→ Shortlist' },
-                                { value: 'contacted', label: '→ Contacted' },
+                                { value: 'callback', label: '→ Callback' },
+                                { value: 'final_review', label: '→ Final Review' },
                                 { value: 'rejected', label: '→ Reject' },
                                 { value: 'delete', label: '🗑️ Delete' },
                             ]} />

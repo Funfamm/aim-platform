@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { invalidateSettings } from '@/lib/cached-settings'
 import { invalidateMailerCache } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
+import { logAdminAction } from '@/lib/audit-log'
 
 export async function GET() {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
@@ -29,7 +30,8 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    let session
+    try { session = await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     try {
         const body = await req.json()
@@ -120,6 +122,12 @@ export async function PUT(req: Request) {
         invalidateSettings()
         invalidateMailerCache()
 
+        logAdminAction({
+            actor: session.userId,
+            action: 'UPDATE_SETTINGS',
+            target: 'default',
+        })
+
         // Mask secrets in response
         const masked = {
             ...settings,
@@ -133,10 +141,12 @@ export async function PUT(req: Request) {
 
         return NextResponse.json(masked)
     } catch (err) {
-        const errMsg = err instanceof Error ? err.message : String(err)
-        const errStack = err instanceof Error ? err.stack : undefined
         logger.error('admin/settings', 'Settings save failed', { error: err })
         console.error('Settings save FULL error:', err)
-        return NextResponse.json({ error: 'Save failed', details: errMsg, stack: errStack }, { status: 500 })
+        const isDev = process.env.NODE_ENV === 'development'
+        const body = isDev
+            ? { error: 'Save failed', details: err instanceof Error ? err.message : String(err) }
+            : { error: 'Save failed' }
+        return NextResponse.json(body, { status: 500 })
     }
 }

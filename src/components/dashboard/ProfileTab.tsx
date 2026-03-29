@@ -38,6 +38,82 @@ const labelStyle: React.CSSProperties = {
     color: 'var(--text-secondary)', marginBottom: '4px',
 }
 
+// ── Accent colour definitions ──────────────────────────────
+const ACCENT_KEY = 'aim-accent'
+
+const ACCENTS = [
+    {
+        key: 'gold',
+        label: 'Gold',
+        base: '#e4b95a',
+        light: '#f5dfa0',
+        dark: '#b8922e',
+        glow: 'rgba(228,185,90,0.15)',
+        glowStrong: 'rgba(228,185,90,0.25)',
+        lift: '0 8px 30px rgba(228,185,90,0.25),0 2px 8px rgba(228,185,90,0.15)',
+    },
+    {
+        key: 'silver',
+        label: 'Silver',
+        base: '#c8c8d4',
+        light: '#e8e8f0',
+        dark: '#8888a0',
+        glow: 'rgba(200,200,212,0.15)',
+        glowStrong: 'rgba(200,200,212,0.25)',
+        lift: '0 8px 30px rgba(200,200,212,0.25),0 2px 8px rgba(200,200,212,0.15)',
+    },
+    {
+        key: 'ember',
+        label: 'Ember',
+        base: '#f06b47',
+        light: '#f9a88e',
+        dark: '#b84820',
+        glow: 'rgba(240,107,71,0.15)',
+        glowStrong: 'rgba(240,107,71,0.25)',
+        lift: '0 8px 30px rgba(240,107,71,0.25),0 2px 8px rgba(240,107,71,0.15)',
+    },
+    {
+        key: 'jade',
+        label: 'Jade',
+        base: '#34d399',
+        light: '#6ee7b7',
+        dark: '#059669',
+        glow: 'rgba(52,211,153,0.15)',
+        glowStrong: 'rgba(52,211,153,0.25)',
+        lift: '0 8px 30px rgba(52,211,153,0.25),0 2px 8px rgba(52,211,153,0.15)',
+    },
+    {
+        key: 'azure',
+        label: 'Azure',
+        base: '#60a5fa',
+        light: '#93c5fd',
+        dark: '#2563eb',
+        glow: 'rgba(96,165,250,0.15)',
+        glowStrong: 'rgba(96,165,250,0.25)',
+        lift: '0 8px 30px rgba(96,165,250,0.25),0 2px 8px rgba(96,165,250,0.15)',
+    },
+] as const
+
+type AccentKey = typeof ACCENTS[number]['key']
+
+function applyAccent(key: AccentKey) {
+    const accent = ACCENTS.find(a => a.key === key)!
+    requestAnimationFrame(() => {
+        const r = document.documentElement
+        r.style.setProperty('--accent-gold',       accent.base)
+        r.style.setProperty('--accent-gold-light',  accent.light)
+        r.style.setProperty('--accent-gold-dark',   accent.dark)
+        r.style.setProperty('--accent-gold-glow',   accent.glow)
+        r.style.setProperty('--accent-cream',       accent.dark)
+        r.style.setProperty('--text-accent',        accent.base)
+        r.style.setProperty('--border-accent',      `${accent.base}55`)
+        r.style.setProperty('--border-glow',        `${accent.base}80`)
+        r.style.setProperty('--shadow-glow',        `0 0 40px ${accent.glow}`)
+        r.style.setProperty('--shadow-glow-strong', `0 0 80px ${accent.glowStrong}`)
+        r.style.setProperty('--shadow-gold-lift',   accent.lift)
+    })
+}
+
 // Persisted notification keys
 const NOTIF_KEYS = {
     appUpdates: 'aim-notif-app-updates',
@@ -66,16 +142,25 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
     const [themeMode, setThemeMode] = useState<'dark' | 'light' | 'system'>('dark')
     useEffect(() => {
         const saved = localStorage.getItem('aim-theme') as 'dark' | 'light' | 'system' | null
-        if (saved) {
-            setThemeMode(saved)
-            applyTheme(saved)
+        const effective = saved ?? 'dark'
+        setThemeMode(effective)
+        applyTheme(effective)
+        // Mirror system changes in real time when mode === 'system'
+        const mq = window.matchMedia('(prefers-color-scheme: dark)')
+        const onSystemChange = () => {
+            if ((localStorage.getItem('aim-theme') ?? 'dark') === 'system') applyTheme('system')
         }
+        mq.addEventListener('change', onSystemChange)
+        return () => mq.removeEventListener('change', onSystemChange)
     }, [])
 
     function applyTheme(mode: 'dark' | 'light' | 'system') {
-        if (mode === 'light') document.documentElement.setAttribute('data-theme', 'light')
-        else if (mode === 'dark') document.documentElement.removeAttribute('data-theme')
-        else {
+        if (mode === 'light') {
+            document.documentElement.setAttribute('data-theme', 'light')
+        } else if (mode === 'dark') {
+            document.documentElement.removeAttribute('data-theme')
+        } else {
+            // system
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
             if (prefersDark) document.documentElement.removeAttribute('data-theme')
             else document.documentElement.setAttribute('data-theme', 'light')
@@ -86,6 +171,21 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
         setThemeMode(key)
         localStorage.setItem('aim-theme', key)
         applyTheme(key)
+    }
+
+    // Accent colour — persisted in localStorage
+    const [accentKey, setAccentKey] = useState<AccentKey>('gold')
+    useEffect(() => {
+        const saved = localStorage.getItem(ACCENT_KEY) as AccentKey | null
+        const effective = saved ?? 'gold'
+        setAccentKey(effective)
+        applyAccent(effective)
+    }, [])
+
+    function handleAccent(key: AccentKey) {
+        setAccentKey(key)
+        localStorage.setItem(ACCENT_KEY, key)
+        applyAccent(key)
     }
 
     // Notifications — persisted in localStorage
@@ -165,9 +265,9 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                         <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '140px', height: '140px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,83,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
                         <div style={{
                             width: '52px', height: '52px', borderRadius: '50%',
-                            background: 'linear-gradient(135deg, var(--accent-gold), #b8941f)',
+                            background: 'linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark))',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1.3rem', fontWeight: 800, color: '#000',
+                            fontSize: '1.3rem', fontWeight: 800, color: 'var(--bg-primary)',
                             boxShadow: '0 0 0 3px rgba(212,168,83,0.2)',
                             marginBottom: '8px',
                         }}>{user.name.charAt(0).toUpperCase()}</div>
@@ -217,8 +317,8 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                             <label style={{
                                 display: 'inline-flex', alignItems: 'center', gap: '4px',
                                 padding: '0.4rem 0.9rem', fontSize: '0.72rem', fontWeight: 600,
-                                background: 'linear-gradient(135deg, var(--accent-gold), #b8941f)',
-                                color: '#000', borderRadius: 'var(--radius-sm)',
+                                background: 'linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark))',
+                                color: 'var(--bg-primary)', borderRadius: 'var(--radius-sm)',
                                 cursor: bannerUploading ? 'wait' : 'pointer',
                                 opacity: bannerUploading ? 0.6 : 1,
                             }}>
@@ -228,7 +328,7 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                             {user.bannerUrl && (
                                 <button onClick={handleRemoveBanner} style={{
                                     padding: '0.4rem 0.8rem', fontSize: '0.72rem', fontWeight: 600,
-                                    background: 'rgba(239,68,68,0.12)', color: '#ef4444',
+                                    background: 'rgba(239,68,68,0.12)', color: 'var(--color-error)',
                                     border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-sm)',
                                     cursor: 'pointer',
                                 }}>✕ {t('remove')}</button>
@@ -247,10 +347,10 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                         <h3 style={sectionTitle}>✏️ {t('personalInfo')}</h3>
                         <p style={sectionDesc}>{t('personalInfoDesc')}</p>
                         {profileStatus === 'saved' && (
-                            <div style={{ padding: '6px 10px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.75rem', color: '#22c55e' }}>✓ {t('profileUpdated')}</div>
+                            <div style={{ padding: '6px 10px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.75rem', color: 'var(--color-success)' }}>✓ {t('profileUpdated')}</div>
                         )}
                         {profileError && (
-                            <div style={{ padding: '6px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.75rem', color: '#ef4444' }}>{profileError}</div>
+                            <div style={{ padding: '6px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.75rem', color: 'var(--color-error)' }}>{profileError}</div>
                         )}
                         <form onSubmit={handleProfileUpdate}>
                             <div style={{ marginBottom: '10px' }}>
@@ -301,20 +401,75 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                     <div style={cardStyle}>
                         <h3 style={sectionTitle}>🎨 {t('appearance')}</h3>
                         <p style={sectionDesc}>{t('appearanceDesc')}</p>
-                        <div style={{ display: 'flex', gap: '3px', background: 'rgba(255,255,255,0.04)', borderRadius: 'var(--radius-sm)', padding: '3px', border: '1px solid var(--border-subtle)' }}>
+
+                        {/* Theme switcher */}
+                        <label style={{ ...labelStyle, marginBottom: '6px' }}>Theme</label>
+                        <div
+                            role="radiogroup"
+                            aria-label="Theme selection"
+                            style={{ display: 'flex', gap: '3px', background: 'var(--bg-glass-light)', borderRadius: 'var(--radius-sm)', padding: '3px', border: '1px solid var(--border-subtle)', marginBottom: '4px' }}
+                        >
                             {([['dark', `🌙 ${t('dark')}`], ['light', `☀️ ${t('light')}`], ['system', `💻 ${t('system')}`]] as const).map(([key, label]) => (
-                                <button key={key} onClick={() => handleTheme(key)} style={{
-                                    flex: 1, padding: '0.45rem 0.6rem', fontSize: '0.72rem', fontWeight: 600,
-                                    border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                                    background: themeMode === key ? 'var(--accent-gold)' : 'transparent',
-                                    color: themeMode === key ? '#000' : 'var(--text-tertiary)',
-                                    transition: 'all 0.25s ease',
-                                    boxShadow: themeMode === key ? '0 2px 8px rgba(212,168,83,0.3)' : 'none',
-                                }}>{label}</button>
+                                <button
+                                    key={key}
+                                    role="radio"
+                                    aria-checked={themeMode === key}
+                                    onClick={() => handleTheme(key)}
+                                    style={{
+                                        flex: 1, padding: '0.45rem 0.6rem', fontSize: '0.72rem', fontWeight: 600,
+                                        border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                        background: themeMode === key ? 'var(--accent-gold)' : 'transparent',
+                                        color: themeMode === key ? 'var(--bg-primary)' : 'var(--text-tertiary)',
+                                        transition: 'all 0.25s ease',
+                                        boxShadow: themeMode === key ? 'var(--shadow-glow)' : 'none',
+                                        outline: 'none',
+                                    }}
+                                >{label}</button>
                             ))}
                         </div>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '8px' }}>{t('systemDesc')}</p>
+                        <p style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>{t('systemDesc')}</p>
+
+                        {/* Accent colour picker */}
+                        <label style={{ ...labelStyle, marginBottom: '8px' }}>Accent Colour</label>
+                        <div
+                            role="radiogroup"
+                            aria-label="Accent colour selection"
+                            style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}
+                        >
+                            {ACCENTS.map((a) => (
+                                <button
+                                    key={a.key}
+                                    className="accent-swatch"
+                                    role="radio"
+                                    aria-checked={accentKey === a.key}
+                                    aria-label={`${a.label} accent`}
+                                    title={a.label}
+                                    onClick={() => handleAccent(a.key)}
+                                    style={{
+                                        width: '26px', height: '26px', borderRadius: '50%',
+                                        background: a.base,
+                                        border: accentKey === a.key
+                                            ? `3px solid var(--bg-card)`
+                                            : '3px solid transparent',
+                                        outline: accentKey === a.key
+                                            ? `2px solid ${a.base}`
+                                            : '2px solid transparent',
+                                        outlineOffset: '2px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                        boxShadow: accentKey === a.key ? `0 0 12px ${a.glow}` : 'none',
+                                        transform: accentKey === a.key ? 'scale(1.18)' : 'scale(1)',
+                                        flexShrink: 0,
+                                    }}
+                                />
+
+                            ))}
+                            <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginLeft: '4px' }}>
+                                {ACCENTS.find(a => a.key === accentKey)?.label}
+                            </span>
+                        </div>
                     </div>
+
 
                     {/* Notifications — persisted to localStorage */}
                     <div style={cardStyle}>

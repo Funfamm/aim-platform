@@ -48,14 +48,14 @@ export default function AlreadyAppliedView({ application }: { application: Appli
         withdrawn:    'statusWithdrawn',
     }
     const statusColorMap: Record<string, { color: string; bg: string; icon: string }> = {
-        submitted:    { color: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  icon: '📩' },
-        under_review: { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: '🔍' },
-        shortlisted:  { color: '#10b981', bg: 'rgba(16,185,129,0.12)',  icon: '⭐' },
-        callback:     { color: '#8b5cf6', bg: 'rgba(139,92,246,0.12)',  icon: '📞' },
-        final_review: { color: '#f97316', bg: 'rgba(249,115,22,0.12)',  icon: '🎯' },
-        selected:     { color: '#22c55e', bg: 'rgba(34,197,94,0.15)',   icon: '✅' },
-        not_selected: { color: '#6b7280', bg: 'rgba(107,114,128,0.12)', icon: '💭' },
-        withdrawn:    { color: '#9ca3af', bg: 'rgba(156,163,175,0.1)',  icon: '↩️' },
+        submitted:    { color: 'var(--color-info)',    bg: 'rgba(59,130,246,0.12)',  icon: '📩' },
+        under_review: { color: 'var(--color-warning)', bg: 'rgba(245,158,11,0.12)', icon: '🔍' },
+        shortlisted:  { color: 'var(--color-success)', bg: 'rgba(16,185,129,0.12)',  icon: '⭐' },
+        callback:     { color: '#8b5cf6',              bg: 'rgba(139,92,246,0.12)',  icon: '📞' },
+        final_review: { color: '#f97316',              bg: 'rgba(249,115,22,0.12)',  icon: '🎯' },
+        selected:     { color: 'var(--color-success)', bg: 'rgba(34,197,94,0.15)',   icon: '✅' },
+        not_selected: { color: 'var(--color-muted)',   bg: 'rgba(107,114,128,0.12)', icon: '💭' },
+        withdrawn:    { color: '#9ca3af',              bg: 'rgba(156,163,175,0.1)',  icon: '↩️' },
     }
     const meta   = statusColorMap[application.status] ?? statusColorMap['submitted']
     const label  = t(statusKeyMap[application.status] ?? 'statusSubmitted')
@@ -209,7 +209,7 @@ export default function AlreadyAppliedView({ application }: { application: Appli
                             {t('withdrawNote')}
                         </p>
                         {error && (
-                            <div style={{ padding: '0.6rem 1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-md)', color: '#f87171', fontSize: '0.82rem', textAlign: 'center' }}>
+                            <div style={{ padding: '0.6rem 1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-md)', color: 'var(--color-error)', fontSize: '0.82rem', textAlign: 'center' }}>
                                 {error}
                             </div>
                         )}
@@ -221,7 +221,7 @@ export default function AlreadyAppliedView({ application }: { application: Appli
                                 background: withdrawing ? 'rgba(239,68,68,0.05)' : 'rgba(239,68,68,0.1)',
                                 border: '1px solid rgba(239,68,68,0.3)',
                                 borderRadius: 'var(--radius-full)',
-                                color: '#f87171', cursor: withdrawing ? 'not-allowed' : 'pointer',
+                                color: 'var(--color-error)', cursor: withdrawing ? 'not-allowed' : 'pointer',
                                 transition: 'all 0.2s', opacity: withdrawing ? 0.6 : 1,
                             }}
                         >

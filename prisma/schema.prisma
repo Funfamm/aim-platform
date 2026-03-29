@@ -185,6 +185,7 @@ model Application {
   adminNotes    String?
   statusNote    String?  // AI-generated note shown to the applicant explaining the decision
   statusNoteTranslations String? // JSON: { "ar": "...", "fr": "..." } ??? cached translations of statusNote
+  photoScreeningStatus String? // 'skipped' | 'completed'
   reviewedAt    DateTime?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -201,12 +202,18 @@ model Application {
 enum ApplicationStatus {
   submitted
   under_review
+  reviewed
   shortlisted
+  contacted
+  audition
   callback
   final_review
   selected
   not_selected
+  rejected
   withdrawn
+  pending
+  approved
 }
 
 model Admin {

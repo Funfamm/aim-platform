@@ -45,9 +45,29 @@ const nextConfig: NextConfig = {
       {
         source: '/(.*)',
         headers: [
+          // Existing
           { key: 'Permissions-Policy', value: 'display-capture=()' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
+          // New — transport security
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // New — Content Security Policy
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudinary.com https://*.unsplash.com https://lh3.googleusercontent.com https://*.r2.dev",
+              "font-src 'self' https://fonts.gstatic.com",
+              "connect-src 'self' https://accounts.google.com https://*.sentry.io https://*.r2.dev",
+              "media-src 'self' blob: https://*.r2.dev",
+              "frame-ancestors 'self'",
+              "base-uri 'self'",
+              "form-action 'self' https://accounts.google.com",
+            ].join('; '),
+          },
         ],
       },
       {
@@ -55,6 +75,13 @@ const nextConfig: NextConfig = {
         headers: [
           { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+        ],
+      },
+      {
+        source: '/uploads/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, private' },
+          { key: 'Content-Disposition', value: 'inline' },
         ],
       },
     ]

@@ -43,9 +43,9 @@ interface ProjectData {
 }
 
 const statusColors: Record<string, { color: string; bg: string }> = {
-    completed: { color: '#34d399', bg: 'rgba(52,211,153,0.12)' },
-    'in-production': { color: '#d4a853', bg: 'rgba(212,168,83,0.12)' },
-    upcoming: { color: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+    completed: { color: 'var(--color-success)', bg: 'rgba(52,211,153,0.12)' },
+    'in-production': { color: 'var(--accent-gold)', bg: 'rgba(212,168,83,0.12)' },
+    upcoming: { color: 'var(--color-info)', bg: 'rgba(96,165,250,0.12)' },
 }
 
 const statusLabelKeys: Record<string, string> = {
@@ -171,7 +171,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                     inset: 0,
                     backgroundImage: project.coverImage
                         ? `url(${project.coverImage})`
-                        : 'linear-gradient(135deg, #1a1a2e, #0a0a14)',
+                        : 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))',
                     backgroundSize: 'cover',
                     backgroundPosition: 'center top',
                     transform: 'scale(1.05)',
@@ -238,7 +238,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                     display: 'inline-flex', marginLeft: '8px',
                                     fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.14em',
                                     textTransform: 'uppercase',
-                                    color: '#60a5fa',
+                                    color: 'var(--color-info)',
                                     background: 'rgba(96,165,250,0.12)',
                                     padding: '4px 12px',
                                     borderRadius: 'var(--radius-full)',
@@ -512,7 +512,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                                 {ep.videoUrl && (
                                                     <span style={{
                                                         fontSize: '0.6rem', fontWeight: 600,
-                                                        color: '#34d399',
+                                                        color: 'var(--color-success)',
                                                         background: 'rgba(52,211,153,0.1)',
                                                         padding: '3px 8px',
                                                         borderRadius: 'var(--radius-full)',

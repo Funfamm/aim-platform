@@ -74,8 +74,8 @@ export default function EmptyState({ icon, title, desc, linkHref, linkText }: Em
                 <Link href={linkHref} style={{
                     display: 'inline-flex', alignItems: 'center', gap: '8px',
                     padding: '0.65rem 1.8rem', fontSize: '0.82rem', fontWeight: 700,
-                    background: 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
-                    color: '#0a0a0a', borderRadius: 'var(--radius-full)',
+                    background: 'linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark))',
+                    color: 'var(--bg-primary)', borderRadius: 'var(--radius-full)',
                     textDecoration: 'none', position: 'relative', zIndex: 1,
                     boxShadow: '0 2px 16px rgba(212,168,83,0.25), 0 0 0 1px rgba(212,168,83,0.1)',
                     transition: 'all 0.3s ease',

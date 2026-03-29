@@ -177,7 +177,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             where: { id: submissionId },
             data: { status: 'submitted' },
         })
-        const message = error instanceof Error ? error.message : 'Analysis failed'
+        const message = process.env.NODE_ENV === 'development'
+            ? (error instanceof Error ? error.message : 'Analysis failed')
+            : 'Analysis failed'
         return NextResponse.json({ error: message }, { status: 500 })
     }
 }
