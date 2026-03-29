@@ -266,87 +266,139 @@ export default function Navbar() {
                 </div>
             </nav>
 
-            {/* Mobile Menu */}
-            <div className={`mobile-menu ${mobileOpen ? 'open' : ''}`}>
-                <button
+            {/* ═══ MOBILE SIDE DRAWER ═══ */}
+            {/* Backdrop overlay */}
+            {mobileOpen && (
+                <div
+                    className="mobile-drawer-backdrop"
                     onClick={() => setMobileOpen(false)}
-                    aria-label="Close menu"
-                    style={{
-                        position: 'absolute',
-                        top: '1.5rem',
-                        right: '1.5rem',
-                        background: 'none',
-                        border: 'none',
-                        color: 'var(--text-primary)',
-                        fontSize: '2rem',
-                        cursor: 'pointer',
-                    }}
-                >
-                    ✕
-                </button>
-                {links.map((link) => (
-                    <Link
-                        key={link.href}
-                        href={link.href}
+                    aria-hidden="true"
+                />
+            )}
+            <div className={`mobile-drawer ${mobileOpen ? 'open' : ''}`}>
+                {/* ── Profile Section ── */}
+                <div className="drawer-profile">
+                    {user ? (
+                        <>
+                            <div className="drawer-avatar">
+                                {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="drawer-user-info">
+                                <span className="drawer-user-name">{user.name}</span>
+                                <span className="drawer-user-role">
+                                    {user.role === 'admin' || user.role === 'superadmin' ? '⚡ Admin' : '🎬 Member'}
+                                </span>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="drawer-avatar" style={{ background: 'var(--bg-glass-light)' }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                    <circle cx="12" cy="7" r="4" />
+                                </svg>
+                            </div>
+                            <div className="drawer-user-info">
+                                <span className="drawer-user-name">Guest</span>
+                                <Link href="/login" onClick={() => setMobileOpen(false)}
+                                    className="drawer-sign-in-link">
+                                    {t('signIn')} →
+                                </Link>
+                            </div>
+                        </>
+                    )}
+                    <button
                         onClick={() => setMobileOpen(false)}
+                        aria-label="Close menu"
+                        className="drawer-close"
                     >
-                        {link.label}
-                    </Link>
-                ))}
-                {!user && (
-                    <Link href="/login" onClick={() => setMobileOpen(false)}>
-                        {t('signIn')}
-                    </Link>
-                )}
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* ── Account Actions ── */}
                 {user && (
-                    <>
-                        <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
+                    <div className="drawer-section">
+                        <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="drawer-item">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="3" width="7" height="7" />
+                                <rect x="14" y="3" width="7" height="7" />
+                                <rect x="14" y="14" width="7" height="7" />
+                                <rect x="3" y="14" width="7" height="7" />
+                            </svg>
                             {t('dashboard')}
                         </Link>
-                        <button
-                            onClick={() => { logout(); setMobileOpen(false) }}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}
-                        >
-                            {t('signOut')}
-                        </button>
-                    </>
+                    </div>
                 )}
-                {/* Notifications — moved from navbar on mobile */}
-                <Link href="/subscribe" onClick={() => setMobileOpen(false)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                    </svg>
-                    {t('notifications')}
-                </Link>
-                {/* Language Switcher — moved from navbar on mobile */}
-                <div style={{ padding: '0.5rem 0', borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-sm)' }}>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-tertiary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
-                        {t('language')}
-                    </span>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+
+                {/* ── Discover Section ── */}
+                <div className="drawer-section">
+                    <span className="drawer-section-label">Discover</span>
+                    <Link href="/about" onClick={() => setMobileOpen(false)} className="drawer-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="16" x2="12" y2="12" />
+                            <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                        About Us
+                    </Link>
+                    <Link href="/contact" onClick={() => setMobileOpen(false)} className="drawer-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
+                        </svg>
+                        Contact
+                    </Link>
+                    <Link href="/sponsors" onClick={() => setMobileOpen(false)} className="drawer-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                        Sponsors
+                    </Link>
+                    <Link href="/subscribe" onClick={() => setMobileOpen(false)} className="drawer-item">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                        </svg>
+                        {t('notifications')}
+                    </Link>
+                </div>
+
+                {/* ── Language Switcher ── */}
+                <div className="drawer-section">
+                    <span className="drawer-section-label">{t('language')}</span>
+                    <div className="drawer-lang-grid">
                         {locales.map((loc) => (
                             <button
                                 key={loc}
                                 onClick={() => { switchLocale(loc); setMobileOpen(false) }}
-                                style={{
-                                    padding: '6px 12px', fontSize: '0.8rem',
-                                    borderRadius: 'var(--radius-full)',
-                                    background: currentLocale === loc ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
-                                    border: currentLocale === loc ? '1px solid rgba(212,168,83,0.3)' : '1px solid var(--border-subtle)',
-                                    cursor: 'pointer',
-                                    color: currentLocale === loc ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                                    fontWeight: currentLocale === loc ? 600 : 400,
-                                    transition: 'all 0.2s',
-                                }}
+                                className={`drawer-lang-btn ${currentLocale === loc ? 'active' : ''}`}
                             >
                                 {localeNames[loc]}
                             </button>
                         ))}
                     </div>
                 </div>
+
+                {/* ── Sign Out ── */}
+                {user && (
+                    <div className="drawer-section drawer-signout-section">
+                        <button
+                            onClick={() => { logout(); setMobileOpen(false) }}
+                            className="drawer-item drawer-signout"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                            {t('signOut')}
+                        </button>
+                    </div>
+                )}
             </div>
             {/* Floating Admin Tab — visible only to admin users */}
             {user && ['admin', 'superadmin', 'ADMIN', 'SUPER_ADMIN', 'POWER_ADMIN'].includes(user.role) && (

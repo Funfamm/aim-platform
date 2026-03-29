@@ -248,19 +248,19 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         background: 'linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent 95%)',
                     }} />
 
-                    {/* Title & Subtitle */}
+                    {/* Hero Content — single centered column like Works page */}
                     <div style={{
                         position: 'relative', zIndex: 1,
                         textAlign: 'center',
                         maxWidth: 'min(700px, 100%)',
                         padding: '0 var(--space-md)',
-                        flex: 1,
                         display: 'flex', flexDirection: 'column',
                         alignItems: 'center', justifyContent: 'center',
+                        gap: 'var(--space-md)',
+                        flex: 1,
                     }}>
                         <span className="text-label animate-fade-in-up" style={{
                             display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            marginBottom: 'var(--space-sm)',
                         }}>
                             <span style={{
                                 width: '6px', height: '6px', borderRadius: '50%',
@@ -273,8 +273,8 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         <h1 className="animate-fade-in-up delay-1" style={{
                             fontSize: 'clamp(1.8rem, 4.5vw, 2.8rem)',
                             fontWeight: 800,
-                            marginBottom: 'var(--space-sm)',
                             lineHeight: 1.15,
+                            margin: 0,
                         }}>
                             {t('title', { accent: '' })}{' '}
                             <span style={{
@@ -287,23 +287,38 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             }}>{t('accent')}</span>
                         </h1>
 
-                        <p className="animate-fade-in-up delay-2" style={{
-                            fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
-                            color: 'var(--text-secondary)',
-                            maxWidth: '460px',
-                            margin: '0 auto',
-                            lineHeight: 1.7,
+                        {/* Stats-style capsule row — matching Works page pattern */}
+                        <div className="animate-fade-in-up delay-2" style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            gap: '6px',
+                            flexWrap: 'wrap',
+                            padding: '10px 20px',
+                            background: 'rgba(13,15,20,0.6)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            borderRadius: 'var(--radius-full)',
+                            border: '1px solid rgba(228,185,90,0.12)',
                         }}>
-                            {t('description')}
-                        </p>
-                    </div>
+                            {[
+                                { icon: '🌟', text: t('noExperience') },
+                                { icon: '🌍', text: t('allBackgrounds') },
+                                { icon: '⚡', text: t('aiEnhanced') },
+                                { icon: '🎬', text: t('globalCasting') },
+                            ].map((tag, i) => (
+                                <span key={tag.text} style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                    fontSize: '0.65rem', fontWeight: 600,
+                                    color: 'var(--accent-gold)',
+                                    letterSpacing: '0.03em',
+                                }}>
+                                    <span style={{ fontSize: '0.7rem' }}>{tag.icon}</span>
+                                    {tag.text}
+                                    {i < 3 && <span style={{ margin: '0 4px', opacity: 0.3, color: 'var(--text-tertiary)' }}>·</span>}
+                                </span>
+                            ))}
+                        </div>
 
-                    {/* CTA + Video Dots */}
-                    <div style={{
-                        position: 'relative', zIndex: 1,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        gap: 'var(--space-md)',
-                    }}>
+                        {/* CTA Button */}
                         <a href="#roles" className="btn btn-primary btn-lg animate-fade-in-up delay-3">
                             {t('cta')}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -311,6 +326,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             </svg>
                         </a>
 
+                        {/* Video indicator dots */}
                         {heroVideos.length > 1 && (
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
                                 {heroVideos.map((_, i) => (
@@ -336,41 +352,10 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                 </div>
             </section>
 
-            {/* ═══ FLOATING HIGHLIGHT TAGS — between hero and roles ═══ */}
-            <div style={{
-                position: 'relative', zIndex: 2,
-                display: 'flex', justifyContent: 'center', gap: 'var(--space-md)',
-                flexWrap: 'wrap', padding: 'var(--space-sm) var(--space-md) 0',
-                margin: '-40px auto 0', maxWidth: '800px', marginBottom: 0,
-            }}>
-                {[
-                    { icon: '🌟', text: t('noExperience') },
-                    { icon: '🌍', text: t('allBackgrounds') },
-                    { icon: '⚡', text: t('aiEnhanced') },
-                    { icon: '🎬', text: t('globalCasting') },
-                ].map((tag) => (
-                    <div key={tag.text} style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        padding: '6px 14px',
-                        background: 'rgba(212,168,83,0.06)',
-                        border: '1px solid rgba(212,168,83,0.15)',
-                        borderRadius: 'var(--radius-full)',
-                        backdropFilter: 'blur(12px)',
-                        fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.04em',
-                        color: 'var(--accent-gold)',
-                        transition: 'all 0.3s ease',
-                    }}>
-                        <span style={{ fontSize: '0.8rem' }}>{tag.icon}</span>
-                        {tag.text}
-                    </div>
-                ))}
-            </div>
-
             {/* ═══ OPEN ROLES — scrolls over the video ═══ */}
             <section id="roles" style={{
                 position: 'relative',
                 zIndex: 2,
-                marginTop: '-30px',
             }}>
 
 

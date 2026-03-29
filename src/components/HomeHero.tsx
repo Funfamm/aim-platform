@@ -30,8 +30,6 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     useEffect(() => {
-        // Skip loading heavy video assets on small screens to improve performance
-        if (typeof window !== 'undefined' && window.innerWidth < 768) return;
         fetch('/api/admin/media?type=hero-video&page=home')
             .then(r => r.json())
             .then((data: HeroVideo[]) => {

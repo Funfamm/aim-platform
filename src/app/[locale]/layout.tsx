@@ -7,6 +7,7 @@ import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HtmlDirSetter } from "@/components/HtmlDirSetter";
 import Navbar from "@/components/Navbar";
+import MobileTabBar from "@/components/MobileTabBar";
 import PageTransition from "@/components/PageTransition";
 import SiteSettingsWrapper from "@/components/SiteSettingsWrapper";
 
@@ -43,6 +44,7 @@ export default async function LocaleLayout({
           <div dir={isRtl ? 'rtl' : 'ltr'} style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
             <SiteSettingsWrapper>
               <Navbar />
+              <MobileTabBar />
               <PageTransition>
                 {children}
               </PageTransition>

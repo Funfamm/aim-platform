@@ -140,7 +140,7 @@ export default async function AboutPage() {
                 <section style={{ padding: 'var(--space-3xl) 0' }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
                         <ScrollReveal3D direction="up" distance={30}>
-                            <div style={{
+                            <div className="about-stats-grid" style={{
                                 ...glassCard,
                                 padding: 'var(--space-2xl) var(--space-xl)',
                                 display: 'grid',
@@ -166,7 +166,7 @@ export default async function AboutPage() {
                 {/* ═══════════════════ MISSION + STORY ═══════════════════ */}
                 <section style={{ padding: 'var(--space-3xl) 0' }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)', alignItems: 'start' }}>
+                        <div className="about-mission-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)', alignItems: 'start' }}>
                             {/* Mission */}
                             <ScrollReveal3D direction="left" distance={40}>
                                 <div style={{
@@ -282,7 +282,7 @@ export default async function AboutPage() {
                         </ScrollReveal3D>
 
                         {/* Timeline */}
-                        <div style={{ position: 'relative', paddingLeft: '60px' }}>
+                        <div className="about-timeline" style={{ position: 'relative', paddingLeft: '60px' }}>
                             {/* Vertical line */}
                             <div style={{
                                 position: 'absolute', left: '20px', top: '10px', bottom: '10px',
@@ -301,7 +301,7 @@ export default async function AboutPage() {
                                         marginBottom: i < 2 ? 'var(--space-2xl)' : 0,
                                     }}>
                                         {/* Dot */}
-                                        <div style={{
+                                        <div className="timeline-dot" style={{
                                             position: 'absolute', left: '-48px', top: '8px',
                                             width: '14px', height: '14px', borderRadius: '50%',
                                             background: 'var(--bg-primary)',

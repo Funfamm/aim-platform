@@ -199,7 +199,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                             {t('label')}
                         </span>
 
-                        <h1 className="animate-fade-in-up delay-1" style={{
+                        <h1 className="upcoming-hero-title animate-fade-in-up delay-1" style={{
                             fontSize: 'clamp(2rem, 5vw, 3.2rem)',
                             fontWeight: 800,
                             lineHeight: 1.1,
@@ -344,7 +344,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                         {t('label')}
                     </span>
 
-                    <h1 className="animate-fade-in-up delay-1" style={{
+                    <h1 className="upcoming-hero-title animate-fade-in-up delay-1" style={{
                         fontSize: 'clamp(2rem, 5vw, 3.2rem)',
                         fontWeight: 800,
                         lineHeight: 1.1,
@@ -360,8 +360,10 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
 
                     {/* Stats strip */}
                     <div className="animate-fade-in-up delay-2" style={{
-                        display: 'flex', gap: 'var(--space-md)',
+                        display: 'flex', gap: 'var(--space-sm)',
                         marginTop: 'var(--space-md)',
+                        flexWrap: 'wrap' as const,
+                        justifyContent: 'center',
                     }}>
                         {[
                             { value: projects.length, label: t('inPipeline'), icon: '🎯' },
@@ -378,7 +380,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                                 border: '1px solid rgba(228,185,90,0.15)',
                                 position: 'relative',
                                 overflow: 'hidden',
-                                minWidth: '110px',
+                                minWidth: '90px',
                             }}>
                                 {/* Top glow accent */}
                                 <div style={{

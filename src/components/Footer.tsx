@@ -42,8 +42,8 @@ export default function Footer() {
 
             <div className="container">
                 <div className="footer-inner footer-responsive-grid" style={{
-                    gap: 'var(--space-2xl)',
-                    marginBottom: 'var(--space-2xl)',
+                    gap: 'var(--space-lg)',
+                    marginBottom: 'var(--space-lg)',
                 }}>
                     {/* Brand */}
                     <div className="footer-brand">
@@ -57,24 +57,27 @@ export default function Footer() {
                         </p>
                     </div>
 
-                    {/* Explore */}
-                    <div className="footer-col">
-                        <h4>{t('explore')}</h4>
-                        <ul>
-                            <li><Link href="/works">{t('ourWorks')}</Link></li>
-                            <li><Link href="/upcoming">{t('comingSoon')}</Link></li>
-                            <li><Link href="/casting">{t('castingCalls')}</Link></li>
-                            <li><Link href="/about">{t('about')}</Link></li>
-                        </ul>
-                    </div>
+                    {/* Link columns — side-by-side on mobile */}
+                    <div className="footer-link-columns">
+                        {/* Explore */}
+                        <div className="footer-col">
+                            <h4>{t('explore')}</h4>
+                            <ul>
+                                <li><Link href="/works">{t('ourWorks')}</Link></li>
+                                <li><Link href="/upcoming">{t('comingSoon')}</Link></li>
+                                <li><Link href="/casting">{t('castingCalls')}</Link></li>
+                                <li><Link href="/about">{t('about')}</Link></li>
+                            </ul>
+                        </div>
 
-                    {/* Support */}
-                    <div className="footer-col">
-                        <h4>{t('support')}</h4>
-                        <ul>
-                            <li><Link href="/donate">{t('donateLink')}</Link></li>
-                            <li><Link href="/contact">{t('contact')}</Link></li>
-                        </ul>
+                        {/* Support */}
+                        <div className="footer-col">
+                            <h4>{t('support')}</h4>
+                            <ul>
+                                <li><Link href="/donate">{t('donateLink')}</Link></li>
+                                <li><Link href="/contact">{t('contact')}</Link></li>
+                            </ul>
+                        </div>
                     </div>
 
                     {/* Newsletter */}
