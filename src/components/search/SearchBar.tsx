@@ -138,14 +138,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({ autoFocus, onSubmit }) => 
         )}
       </div>
 
-      <style jsx>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-        input::placeholder {
-          color: rgba(255, 255, 255, 0.3);
-        }
-      `}</style>
     </div>
   );
 };

@@ -1,4 +1,15 @@
 {
   "extends": ["next/core-web-vitals"],
-  "rules": {}
+  "rules": {
+    "react/display-name": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**/*", "**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
+      "rules": {
+        "react/display-name": "off",
+        "@typescript-eslint/no-unused-vars": "warn"
+      }
+    }
+  ]
 }

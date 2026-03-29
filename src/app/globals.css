@@ -5,6 +5,9 @@
    Award-winning, breathtaking dark theme for AI filmmaking
    ═══════════════════════════════════════════════════════════ */
 
+@keyframes spin { to { transform: rotate(360deg); } }
+
+
 :root {
   /* ── Refined Color Palette — Premium Cinematic ── */
   --bg-primary: #0d0f14;
