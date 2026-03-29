@@ -205,7 +205,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                 <div style={{
                     position: 'absolute', inset: 0, zIndex: 1,
                     display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'space-between',
+                    alignItems: 'center', justifyContent: 'center',
+                    gap: 'var(--space-xl)',
                     paddingTop: '120px', paddingBottom: 'var(--space-3xl)',
                 }}>
 
@@ -245,7 +246,6 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                         textAlign: 'center',
                         maxWidth: 'min(700px, 100%)',
                         padding: '0 var(--space-md)',
-                        flex: 1,
                         display: 'flex', flexDirection: 'column',
                         alignItems: 'center', justifyContent: 'center',
                     }}>
@@ -278,18 +278,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                             }}>{t('titleAccent')}</span>
                         </h1>
 
-                        <p className="animate-fade-in-up delay-2" style={{
-                            fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
-                            color: 'var(--text-secondary)',
-                            maxWidth: '460px',
-                            margin: '0 auto',
-                            lineHeight: 1.7,
-                        }}>
-                            {t('description')}
-                        </p>
-
                         {/* Compact stats pill */}
-                        <div className="animate-fade-in-up delay-3" style={{
+                        <div className="hero-stats-pill animate-fade-in-up delay-2" style={{
                             display: 'inline-flex',
                             gap: 'var(--space-xl)',
                             marginTop: 'var(--space-lg)',
@@ -579,7 +569,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
             <ScrollReveal3D direction="up" distance={50} rotate={5}>
                 <section style={{ position: 'relative', zIndex: 2, padding: '0 0 var(--space-3xl)' }}>
                     <div className="container">
-                        <div style={{
+                        <div className="works-cta-bar" style={{
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',

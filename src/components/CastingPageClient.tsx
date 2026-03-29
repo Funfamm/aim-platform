@@ -203,7 +203,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
             }} />
 
             {/* ═══ HERO CONTENT — scrolls away as user scrolls ═══ */}
-            <section style={{
+            <section className="casting-hero" style={{
                 position: 'relative',
                 height: '100vh',
                 overflow: 'hidden',

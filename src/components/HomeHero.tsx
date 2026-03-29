@@ -248,17 +248,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
                         {t('titleSuffix')}
                     </h1>
 
-                    <p className="animate-fade-in-up delay-2" style={{
-                        fontSize: 'clamp(0.85rem, 2vw, 0.95rem)',
-                        lineHeight: 1.7,
-                        maxWidth: '460px',
-                        color: 'var(--text-secondary)',
-                        marginBottom: 'var(--space-xl)',
-                    }}>
-                        {t('description')}
-                    </p>
-
-                    <div className="hero-actions animate-fade-in-up delay-3" style={{ marginBottom: 'var(--space-xl)' }}>
+                    <div className="hero-actions hero-cta-row animate-fade-in-up delay-2" style={{ marginBottom: 'var(--space-xl)' }}>
                         <Link href="/works" className="btn btn-primary btn-lg">
                             {t('cta')}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -271,7 +261,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
                     </div>
 
                     {/* Compact stats pill — matches Works page */}
-                    <div className="animate-fade-in-up delay-4" style={{
+                    <div className="hero-stats-pill animate-fade-in-up delay-4" style={{
                         display: 'inline-flex',
                         gap: 'var(--space-xl)',
                         padding: '0.6rem 1.5rem',

@@ -358,16 +358,8 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                         }}>{t('titleAccent')}</span>
                     </h1>
 
-                    <p className="animate-fade-in-up delay-2" style={{
-                        fontSize: 'clamp(0.85rem, 2vw, 1rem)',
-                        color: 'var(--text-secondary)', lineHeight: 1.7,
-                        maxWidth: '460px',
-                    }}>
-                        {t('description')}
-                    </p>
-
                     {/* Stats strip */}
-                    <div className="animate-fade-in-up delay-3" style={{
+                    <div className="animate-fade-in-up delay-2" style={{
                         display: 'flex', gap: 'var(--space-md)',
                         marginTop: 'var(--space-md)',
                     }}>

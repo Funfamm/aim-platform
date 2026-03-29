@@ -96,9 +96,10 @@ export default function Navbar() {
                         ))}
                     </ul>
 
-                    {/* Bell, Auth, Language — always visible on all devices */}
+                    {/* Right actions — Bell + Language hidden on mobile via CSS */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <Link href="/subscribe" title={t('notifications')} style={{
+                        {/* Bell — desktop only */}
+                        <Link href="/subscribe" title={t('notifications')} className="navbar-desktop-only" style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             color: 'var(--text-secondary)', transition: 'color 0.2s',
                             textDecoration: 'none',
@@ -108,6 +109,7 @@ export default function Navbar() {
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                             </svg>
                         </Link>
+                        {/* Auth — always visible (avatar on mobile, full pill on desktop) */}
                         {loading ? null : user ? (
                             <div style={{ position: 'relative' }}>
                                 <button
@@ -142,7 +144,7 @@ export default function Navbar() {
                                     }}>
                                         {user.name.charAt(0).toUpperCase()}
                                     </div>
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{user.name.split(' ')[0]}</span>
+                                    <span className="navbar-desktop-only" style={{ fontSize: '0.8rem', fontWeight: 600 }}>{user.name.split(' ')[0]}</span>
                                 </button>
 
                                 {userMenuOpen && (
@@ -196,8 +198,8 @@ export default function Navbar() {
                                 {t('signIn')}
                             </Link>
                         )}
-                        {/* Language Switcher */}
-                        <div style={{ position: 'relative' }}>
+                        {/* Language Switcher — desktop only */}
+                        <div style={{ position: 'relative' }} className="navbar-desktop-only">
                             <button
                                 onClick={(e) => { e.stopPropagation(); setLangMenuOpen(!langMenuOpen) }}
                                 title={t('language')}
@@ -309,6 +311,42 @@ export default function Navbar() {
                         </button>
                     </>
                 )}
+                {/* Notifications — moved from navbar on mobile */}
+                <Link href="/subscribe" onClick={() => setMobileOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                    {t('notifications')}
+                </Link>
+                {/* Language Switcher — moved from navbar on mobile */}
+                <div style={{ padding: '0.5rem 0', borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-sm)' }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-tertiary)', display: 'block', marginBottom: 'var(--space-xs)' }}>
+                        {t('language')}
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {locales.map((loc) => (
+                            <button
+                                key={loc}
+                                onClick={() => { switchLocale(loc); setMobileOpen(false) }}
+                                style={{
+                                    padding: '6px 12px', fontSize: '0.8rem',
+                                    borderRadius: 'var(--radius-full)',
+                                    background: currentLocale === loc ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
+                                    border: currentLocale === loc ? '1px solid rgba(212,168,83,0.3)' : '1px solid var(--border-subtle)',
+                                    cursor: 'pointer',
+                                    color: currentLocale === loc ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                    fontWeight: currentLocale === loc ? 600 : 400,
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                {localeNames[loc]}
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
             {/* Floating Admin Tab — visible only to admin users */}
             {user && ['admin', 'superadmin', 'ADMIN', 'SUPER_ADMIN', 'POWER_ADMIN'].includes(user.role) && (

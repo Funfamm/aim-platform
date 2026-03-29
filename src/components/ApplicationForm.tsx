@@ -416,7 +416,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         </div>
 
                         {/* Primary Social */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
+                        <div className="social-grid" style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
                             <select className="form-select" value={formData.socialPlatform} onChange={(e) => updateField('socialPlatform', e.target.value)}>
                                 {SOCIAL_PLATFORMS.map((p) => (
                                     <option key={p.value} value={p.value}>{p.label}</option>
@@ -429,7 +429,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }}>
                             {t('additionalSocial')}
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 'var(--space-sm)' }}>
+                        <div className="social-grid" style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 'var(--space-sm)' }}>
                             <select className="form-select" value={formData.socialPlatform2} onChange={(e) => updateField('socialPlatform2', e.target.value)}>
                                 <option value="">{t('selectPlatform')}</option>
                                 {SOCIAL_PLATFORMS.map((p) => (

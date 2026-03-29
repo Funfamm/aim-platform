@@ -2589,6 +2589,44 @@ textarea:focus:not(:focus-visible) {
     text-align: center;
   }
 
+  .footer-responsive-grid .footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .footer-responsive-grid .footer-brand p {
+    max-width: 280px;
+  }
+
+  .footer-responsive-grid .footer-col ul {
+    align-items: center;
+  }
+
+  /* Full-width subscribe form on mobile */
+  .footer-responsive-grid form {
+    max-width: 100% !important;
+    width: 100%;
+  }
+
+  /* Footer bottom: center-stack on mobile */
+  .footer-bottom {
+    flex-direction: column !important;
+    gap: var(--space-md) !important;
+    text-align: center !important;
+    align-items: center;
+  }
+
+  .footer-social {
+    justify-content: center;
+  }
+
+  /* Larger touch targets for social icons on mobile */
+  .footer-social a {
+    width: 40px;
+    height: 40px;
+  }
+
   /* Featured projects */
   .featured-grid {
     grid-template-columns: 1fr !important;
@@ -2691,4 +2729,118 @@ textarea:focus:not(:focus-visible) {
   .admin-sidebar-nav::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PREMIUM RESPONSIVE — DEVICE-SPECIFIC POLISH
+   Added for cross-device premium display
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Global overflow prevention ── */
+img, video, iframe, canvas {
+  max-width: 100%;
+}
+
+/* ── Navbar: hide bell + globe on mobile, hamburger to left ── */
+@media (max-width: 768px) {
+  .navbar-desktop-only {
+    display: none !important;
+  }
+  /* Move hamburger to the left side on mobile */
+  .navbar-menu-btn {
+    order: -1;
+  }
+}
+
+/* ── Hero CTAs: stack vertically on small screens ── */
+@media (max-width: 640px) {
+  .hero-cta-row {
+    flex-direction: column !important;
+    width: 100%;
+  }
+  .hero-cta-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Hero stats pill: compact on small screens ── */
+@media (max-width: 640px) {
+  .hero-stats-pill {
+    gap: var(--space-md) !important;
+    padding: 0.5rem 1rem !important;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Homepage stats row: stack on tiny screens ── */
+@media (max-width: 480px) {
+  .home-stats-row {
+    flex-direction: column !important;
+    gap: var(--space-md) !important;
+    align-items: center;
+  }
+  .home-stats-row > div[style*="width: 1px"] {
+    width: 40px !important;
+    height: 1px !important;
+  }
+}
+
+/* ── Works CTA bar: stack on mobile ── */
+@media (max-width: 640px) {
+  .works-cta-bar {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: var(--space-md) !important;
+    padding: var(--space-lg) var(--space-md) !important;
+    align-items: center !important;
+  }
+  .works-cta-bar .btn {
+    width: 100%;
+  }
+}
+
+/* ── CTA button rows: full-width stack on mobile ── */
+@media (max-width: 640px) {
+  .cta-button-row {
+    flex-direction: column !important;
+    gap: var(--space-sm) !important;
+    width: 100%;
+  }
+  .cta-button-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Casting hero: reduce height on mobile — less empty space ── */
+@media (max-width: 768px) {
+  .casting-hero {
+    height: auto !important;
+    min-height: 80vh !important;
+  }
+}
+
+/* ── Social media grid: stack on mobile ── */
+@media (max-width: 640px) {
+  .social-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+
+
+/* ── Mobile menu: smooth slide-in ── */
+.mobile-menu {
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.mobile-menu.open {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
 }

@@ -315,7 +315,7 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                     }}>
                         {t('joinDesc')}
                     </p>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+                    <div className="cta-button-row" style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
                         <Link href="/casting" className="btn btn-primary btn-lg">{t('viewRoles')}</Link>
                         <Link href="/upcoming" className="btn btn-secondary btn-lg">{t('exploreProjects')}</Link>
                         <Link href="/contact" className="btn btn-secondary btn-lg" style={{
