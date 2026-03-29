@@ -16,6 +16,15 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description: `Where artificial intelligence meets cinematic storytelling. ${tagline}`,
     keywords: "AI filmmaking, AI movies, AI filmmaker, casting calls, AI cinema, AIM Studio",
+    icons: {
+      icon: [
+        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      ],
+      apple: [
+        { url: "/apple-touch-icon.png", sizes: "180x180" },
+      ],
+    },
     openGraph: {
       title,
       description: `Where artificial intelligence meets cinematic storytelling. ${tagline}`,
@@ -42,11 +51,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#D4A853" />
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <meta name="theme-color" content="#0d0f14" />
+        <meta name="msapplication-TileColor" content="#0d0f14" />
       </head>
-      <body>
+      <body className="antigravity-scroll-lock">
         <a href="#main-content" className="skip-to-content">
           Skip to main content
         </a>
