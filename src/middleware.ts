@@ -10,7 +10,15 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Admin API guard — runs before i18n routing
-  if (pathname.startsWith('/api/admin')) {
+  // GET requests to /api/admin/media and /api/admin/videos are public —
+  // they serve hero videos and page media to public-facing pages.
+  // The route handlers themselves enforce admin-only access for write operations
+  // and for the full dataset (via the ?admin=true param + requireAdmin() check).
+  const isPublicMediaRead =
+    request.method === 'GET' &&
+    (pathname === '/api/admin/media' || pathname === '/api/admin/videos')
+
+  if (!isPublicMediaRead && pathname.startsWith('/api/admin')) {
     const token = request.cookies.get('user_token')?.value
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
