@@ -21,10 +21,10 @@ export default async function CastingPage() {
     const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
 
     const session = await getUserSession();
-    // Access gate: require login if setting is enabled
-  if (settings?.requireLoginForCasting && !session) {
-    redirect('/login');
-  }
+  // Enforce login for casting page
+    if (!session) {
+      redirect('/login');
+    }
     if (settings && settings.castingCallsEnabled === false) {
         return (
             <>

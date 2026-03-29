@@ -17,9 +17,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 export default async function ScriptCallDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
 
-    // Require login to submit scripts
     const session = await getUserSession()
-    if (!session?.userId) {
+    if (!session) {
         redirect(`/login?redirect=/scripts/${id}`)
     }
 
