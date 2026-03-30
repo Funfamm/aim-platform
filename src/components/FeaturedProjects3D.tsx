@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import ScrollReveal3D from './ScrollReveal3D'
+import { useLocale } from 'next-intl'
+import { getLocalizedProject } from '@/lib/localize'
 
 interface ProjectData {
     id: string
@@ -11,12 +13,16 @@ interface ProjectData {
     genre: string | null
     coverImage: string | null
     trailerUrl: string | null
+    translations: string | null
 }
 
 export default function FeaturedProjects3D({ projects }: { projects: ProjectData[] }) {
+    const locale = useLocale()
     return (
         <div className="grid-3">
-            {projects.map((project, i) => (
+            {projects.map((project, i) => {
+                const loc = getLocalizedProject(project, locale)
+                return (
                 <ScrollReveal3D key={project.id} delay={i * 150} direction="up" distance={50} rotate={6}>
                     <Link
                         href={`/works/${project.slug}`}
@@ -40,9 +46,9 @@ export default function FeaturedProjects3D({ projects }: { projects: ProjectData
                             </div>
                         )}
                         <div className="project-card-content">
-                            <span className="project-card-genre">{project.genre}</span>
-                            <h3>{project.title}</h3>
-                            <p>{project.tagline}</p>
+                            <span className="project-card-genre">{loc.genre}</span>
+                            <h3>{loc.title}</h3>
+                            <p>{loc.tagline}</p>
                             {project.trailerUrl && (
                                 <span style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '4px',
@@ -56,7 +62,8 @@ export default function FeaturedProjects3D({ projects }: { projects: ProjectData
                         </div>
                     </Link>
                 </ScrollReveal3D>
-            ))}
+                )
+            })}
         </div>
     )
 }

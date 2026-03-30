@@ -6,6 +6,7 @@ import Scene3D from '@/components/Scene3D'
 import CastingRoleCard from '@/components/casting/CastingRoleCard'
 import EncouragementSection from '@/components/casting/EncouragementSection'
 import { useTranslations, useLocale } from 'next-intl'
+import { getLocalizedProject } from '@/lib/localize'
 
 interface HeroVideoItem {
     id: string
@@ -30,6 +31,7 @@ interface CastingCall {
         genre: string | null
         year: string | null
         coverImage: string | null
+        translations: string | null
     }
     _count?: {
         applications: number
@@ -130,16 +132,18 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
 
     // Group by project
     const grouped = castingCalls.reduce((acc, call) => {
-        const projectTitle = call.project.title
+        const loc = getLocalizedProject(call.project, locale)
+        const projectTitle = loc.title
         if (!acc[projectTitle]) {
             acc[projectTitle] = {
                 project: call.project,
+                localized: loc,
                 calls: [],
             }
         }
         acc[projectTitle].calls.push(call)
         return acc
-    }, {} as Record<string, { project: CastingCall['project']; calls: CastingCall[] }>)
+    }, {} as Record<string, { project: CastingCall['project']; localized: ReturnType<typeof getLocalizedProject>; calls: CastingCall[] }>)
 
     return (
         <div style={{
@@ -426,7 +430,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2xl)' }}>
-                                {Object.entries(grouped).map(([projectTitle, { project, calls }]) => (
+                                {Object.entries(grouped).map(([projectTitle, { project, localized, calls }]) => (
                                     <div key={project.id}>
                                         {/* Project Header */}
                                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)' }}>
@@ -445,7 +449,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                                                     {projectTitle}
                                                 </Link>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                                    {project.genre} • {project.year || t('tbd')}
+                                                    {localized.genre} • {project.year || t('tbd')}
                                                 </div>
                                             </div>
                                         </div>

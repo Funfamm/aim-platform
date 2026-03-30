@@ -5,7 +5,8 @@ import Link from 'next/link'
 import Scene3D from '@/components/Scene3D'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import TiltCard3D from '@/components/TiltCard3D'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
+import { getLocalizedProject } from '@/lib/localize'
 
 interface Project {
     id: string
@@ -21,6 +22,7 @@ interface Project {
     trailerUrl: string | null
     filmUrl: string | null
     episodeCount: number
+    translations: string | null
 }
 
 interface HeroVideo {
@@ -37,6 +39,7 @@ interface WorksPageClientProps {
 
 export default function WorksPageClient({ projects, completedCount, inProdCount }: WorksPageClientProps) {
     const t = useTranslations('works')
+    const locale = useLocale()
     const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
     const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
@@ -377,7 +380,9 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                             </div>
                         ) : (
                             <div className="works-grid">
-                                {projects.map((project, index) => (
+                                {projects.map((project, index) => {
+                                    const loc = getLocalizedProject(project, locale)
+                                    return (
                                     <ScrollReveal3D key={project.id} direction="up" delay={index * 120} distance={40}>
                                         <div
                                             className="project-card"
@@ -409,7 +414,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                                     <span style={{
                                                         fontSize: '0.5rem', fontWeight: 600, letterSpacing: '0.14em',
                                                         textTransform: 'uppercase' as const, color: 'var(--accent-gold)',
-                                                    }}>{project.genre}</span>
+                                                    }}>{loc.genre}</span>
                                                     {project.status === 'completed' && (
                                                         <span style={{
                                                             fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',
@@ -455,8 +460,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                                         }}>{t('series')}</span>
                                                     )}
                                                 </div>
-                                                <h3 style={{ fontSize: '0.95rem', marginBottom: '1px', fontWeight: 700 }}>{project.title}</h3>
-                                                <p style={{ fontSize: '0.7rem', lineHeight: 1.3 }}>{project.tagline}</p>
+                                                <h3 style={{ fontSize: '0.95rem', marginBottom: '1px', fontWeight: 700 }}>{loc.title}</h3>
+                                                <p style={{ fontSize: '0.7rem', lineHeight: 1.3 }}>{loc.tagline}</p>
                                                 <div style={{ display: 'flex', gap: '6px', marginTop: '3px', fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
                                                     {project.year && <span>{project.year}</span>}
                                                     {project.duration && <span>• {project.duration}</span>}
@@ -528,7 +533,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                             </div>
                                         </div>
                                     </ScrollReveal3D>
-                                ))}
+                                    )
+                                })}
                             </div>
                         )}
                     </div>

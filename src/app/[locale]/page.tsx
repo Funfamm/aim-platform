@@ -117,6 +117,7 @@ export default async function HomePage() {
             genre: p.genre,
             coverImage: p.coverImage,
             trailerUrl: p.trailerUrl,
+            translations: p.translations,
           }))} />
 
 
