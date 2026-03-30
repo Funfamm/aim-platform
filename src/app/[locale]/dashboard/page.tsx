@@ -234,6 +234,46 @@ export default function DashboardPage() {
     return (
         <>
 <CinematicBackground variant="dashboard" />
+            <style>{`
+                .dash-app-card {
+                    background: var(--bg-glass-light);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: var(--radius-lg);
+                    padding: var(--space-lg);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    gap: var(--space-md);
+                    transition: all 0.3s ease;
+                }
+                .dash-app-card:hover {
+                    border-color: rgba(212,168,83,0.2);
+                    transform: translateY(-1px);
+                }
+                @media (max-width: 600px) {
+                    .dash-app-card {
+                        flex-direction: column;
+                        align-items: flex-start;
+                        gap: var(--space-sm);
+                    }
+                }
+                .dash-history-card {
+                    background: var(--bg-glass-light);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: var(--radius-lg);
+                    padding: var(--space-md);
+                    display: flex;
+                    gap: var(--space-md);
+                    align-items: center;
+                    transition: all 0.3s ease;
+                }
+                .dash-history-card:hover {
+                    border-color: rgba(212,168,83,0.2);
+                }
+                @media (max-width: 480px) {
+                    .dash-history-thumb { display: none; }
+                }
+            `}</style>
             <main style={{ paddingTop: 'calc(80px + var(--space-2xl))' }}>
                 <div className="container" style={{ maxWidth: '900px', paddingBottom: 'var(--space-5xl)' }}>
                     {/* Header with Banner — Next.js Image optimized */}
@@ -265,13 +305,9 @@ export default function DashboardPage() {
                                         const statusInfo = STATUS_CONFIG[app.status] || STATUS_CONFIG['submitted']
                                         return (
                                             <ScrollReveal3D key={app.id} direction="up" delay={250 + i * 60} distance={15}>
-                                                <div style={{
-                                                    background: 'var(--bg-glass-light)', border: '1px solid var(--border-subtle)',
-                                                    borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)',
-                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-md)',
-                                                }}>
-                                                    <div style={{ flex: 1 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '4px' }}>
+                                                <div className="dash-app-card">
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '4px', flexWrap: 'wrap' }}>
                                                             <Link href={`/works/${app.castingCall.project.slug}`} style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>
                                                                 {app.castingCall.project.title}
                                                             </Link>
@@ -285,7 +321,7 @@ export default function DashboardPage() {
                                                             </div>
                                                         )}
                                                     </div>
-                                                    <div style={{ padding: '0.35rem 0.9rem', background: statusInfo.bg, border: `1px solid ${statusInfo.color}30`, borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 600, color: statusInfo.color, whiteSpace: 'nowrap' }}>
+                                                    <div style={{ padding: '0.35rem 0.9rem', background: statusInfo.bg, border: `1px solid ${statusInfo.color}30`, borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 600, color: statusInfo.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
                                                         {statusInfo.label}
                                                     </div>
                                                 </div>
@@ -355,12 +391,8 @@ export default function DashboardPage() {
                                     {history.map((item, i) => (
                                         <ScrollReveal3D key={item.id} direction="up" delay={250 + i * 60} distance={15}>
                                             <Link href={`/works/${item.project.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
-                                                <div style={{
-                                                    background: 'var(--bg-glass-light)', border: '1px solid var(--border-subtle)',
-                                                    borderRadius: 'var(--radius-lg)', padding: 'var(--space-md)',
-                                                    display: 'flex', gap: 'var(--space-md)', alignItems: 'center',
-                                                }}>
-                                                    <div style={{
+                                                <div className="dash-history-card">
+                                                    <div className="dash-history-thumb" style={{
                                                         width: '100px', height: '60px', borderRadius: 'var(--radius-md)', flexShrink: 0,
                                                         backgroundImage: item.project.coverImage ? `url(${item.project.coverImage})` : 'linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.02))',
                                                         backgroundSize: 'cover', backgroundPosition: 'center',
