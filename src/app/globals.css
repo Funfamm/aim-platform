@@ -2407,6 +2407,21 @@ textarea:focus:not(:focus-visible) {
     gap: var(--space-xl) !important;
   }
 
+  /* Glass cards — tighter on mobile */
+  .glass-card {
+    padding: var(--space-md) !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Prevent any inline-style wide containers from overflowing */
+  .container > * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
   /* Typography */
   h1 {
     font-size: clamp(1.8rem, 6vw, 2.8rem);

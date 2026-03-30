@@ -463,13 +463,13 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
 
             {/* ═══ CONTENT SECTION ═══ */}
             <section style={{ padding: 'var(--space-2xl) 0 var(--space-xl)' }}>
-                <div className="container">
-                    <div className="responsive-grid-2-1">
+                <div className="container" style={{ maxWidth: '100%', boxSizing: 'border-box' }}>
+                    <div className="responsive-grid-2-1" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                         {/* Main Content */}
                         <div>
                             <h2 style={{ marginBottom: 'var(--space-lg)' }}>{t('synopsis')}</h2>
                             <div className="divider" />
-                            <p style={{ fontSize: '1.05rem', lineHeight: 1.8 }}>{description}</p>
+                            <p style={{ fontSize: '1.05rem', lineHeight: 1.8, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{description}</p>
 
                             {/* Episodes list for series */}
                             {project.projectType === 'series' && project.episodes.length > 0 && (
@@ -486,8 +486,8 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                         {project.episodes.map((ep) => (
                                             <div key={ep.id} style={{
-                                                display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
-                                                padding: 'var(--space-md) var(--space-lg)',
+                                                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                                                padding: 'var(--space-sm) var(--space-md)',
                                                 background: 'rgba(255,255,255,0.02)',
                                                 borderRadius: 'var(--radius-md)',
                                                 border: '1px solid var(--border-subtle)',
@@ -529,9 +529,9 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                         {/* Sidebar */}
                         <div>
                             {/* Compact Project Info */}
-                            <div className="glass-card" style={{ padding: 'var(--space-md) var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                                <div className="form-grid-2col" style={{
-                                    gap: 'var(--space-sm)',
+                            <div className="glass-card" style={{ padding: 'var(--space-md)', marginBottom: 'var(--space-lg)', maxWidth: '100%', boxSizing: 'border-box' }}>
+                                <div style={{
+                                    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 'var(--space-sm)',
                                 }}>
                                     {genre && (
                                         <div>
@@ -566,7 +566,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
 
                             {/* Casting Calls */}
                             {project.castingCalls.length > 0 && (
-                                <div className="glass-card" style={{ padding: 'var(--space-md) var(--space-lg)', border: '1px solid var(--border-accent)' }}>
+                                <div className="glass-card" style={{ padding: 'var(--space-md)', border: '1px solid var(--border-accent)', maxWidth: '100%', boxSizing: 'border-box' }}>
                                     <h4 style={{ color: 'var(--accent-gold)', marginBottom: 'var(--space-md)', fontSize: '0.9rem' }}>
                                         🎭 {t('openCasting')}
                                     </h4>
