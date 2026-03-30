@@ -1,7 +1,6 @@
 import createMiddleware from 'next-intl/middleware'
 import { routing } from './i18n/routing'
 import { NextResponse, NextRequest } from 'next/server'
-import { jwtVerify } from 'jose'
 import { CSRF_COOKIE_NAME, generateCsrfToken, setCsrfCookie, verifyCsrfToken } from './lib/csrf'
 
 const intlMiddleware = createMiddleware(routing)
@@ -9,38 +8,9 @@ const intlMiddleware = createMiddleware(routing)
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Admin API guard — runs before i18n routing
-  // GET requests to /api/admin/media and /api/admin/videos are public —
-  // they serve hero videos and page media to public-facing pages.
-  // The route handlers themselves enforce admin-only access for write operations
-  // and for the full dataset (via the ?admin=true param + requireAdmin() check).
-  const isPublicMediaRead =
-    request.method === 'GET' &&
-    (pathname === '/api/admin/media' || pathname === '/api/admin/videos')
-
-  if (!isPublicMediaRead && pathname.startsWith('/api/admin')) {
-    const token = request.cookies.get('user_token')?.value
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    try {
-      const secret = new TextEncoder().encode(
-        process.env.JWT_SECRET || '__dev-only-secret-do-not-use-in-production__'
-      )
-      const { payload } = await jwtVerify(token, secret)
-      if (payload.role !== 'admin' && payload.role !== 'superadmin') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-      }
-    } catch {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // ═══ CSRF VERIFICATION ═══
-    // Verify CSRF token on all state-changing admin API requests
-    const csrfError = verifyCsrfToken(request)
-    if (csrfError) return csrfError
-
-    // Admin token valid — pass through without i18n processing
+  // Admin API routes — pass through to route handlers which do their own requireAdmin() check
+  // (getSession() supports refresh token renewal; the old middleware check did not)
+  if (pathname.startsWith('/api/admin')) {
     const response = NextResponse.next()
     ensureCsrfCookie(request, response)
     return response
