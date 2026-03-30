@@ -1,9 +1,17 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations } from 'next-intl'
+
+declare global {
+    interface Window {
+        paypal?: {
+            Buttons: (config: Record<string, unknown>) => { render: (selector: string) => void; close: () => void }
+        }
+    }
+}
 
 export default function DonatePage() {
     const t = useTranslations('donate')
@@ -16,6 +24,10 @@ export default function DonatePage() {
     const [bgImages, setBgImages] = useState<string[]>([])
     const [currentBg, setCurrentBg] = useState(0)
     const [mounted, setMounted] = useState(false)
+    const [showPaypal, setShowPaypal] = useState(false)
+    const [paypalReady, setPaypalReady] = useState(false)
+    const paypalRef = useRef<HTMLDivElement>(null)
+    const paypalButtonsRef = useRef<{ close: () => void } | null>(null)
 
     // Settings from admin
     const [donationsEnabled, setDonationsEnabled] = useState(true)
@@ -26,6 +38,21 @@ export default function DonatePage() {
 
     useEffect(() => { setMounted(true) }, [])
 
+    // Load PayPal JS SDK
+    useEffect(() => {
+        const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+        if (!clientId || document.getElementById('paypal-sdk')) {
+            if (window.paypal) setPaypalReady(true)
+            return
+        }
+        const script = document.createElement('script')
+        script.id = 'paypal-sdk'
+        script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`
+        script.async = true
+        script.onload = () => setPaypalReady(true)
+        document.head.appendChild(script)
+    }, [])
+
     // Fetch donation settings
     useEffect(() => {
         fetch('/api/site-settings')
@@ -34,7 +61,6 @@ export default function DonatePage() {
                 if (typeof data.donationsEnabled === 'boolean') setDonationsEnabled(data.donationsEnabled)
                 if (typeof data.donationMinAmount === 'number' && data.donationMinAmount > 0) setMinAmount(data.donationMinAmount)
                 if (!data.donationsEnabled) setStatus('disabled')
-                // Access gate: redirect if login required for donate
                 if (data.requireLoginForDonate) {
                     fetch('/api/auth/session').then(r => r.json()).then(session => {
                         if (!session?.user) window.location.href = '/login'
@@ -63,8 +89,88 @@ export default function DonatePage() {
         return () => clearInterval(timer)
     }, [bgImages])
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault()
+    // Render PayPal buttons when showPaypal is true and SDK is ready
+    const renderPayPalButtons = useCallback(() => {
+        if (!window.paypal || !paypalRef.current) return
+
+        // Clear any old buttons
+        if (paypalButtonsRef.current) {
+            try { paypalButtonsRef.current.close() } catch { /* ignore */ }
+        }
+        paypalRef.current.innerHTML = ''
+
+        const currentAmount = finalAmount
+        const currentForm = form
+        const currentAnonymous = anonymous
+
+        const buttons = window.paypal.Buttons({
+            style: {
+                layout: 'vertical',
+                color: 'gold',
+                shape: 'rect',
+                label: 'donate',
+                height: 45,
+            },
+            createOrder: async () => {
+                const res = await fetch('/api/donate/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...currentForm,
+                        amount: currentAmount,
+                        anonymous: currentAnonymous,
+                    }),
+                })
+                const data = await res.json()
+                if (!res.ok) throw new Error(data.error || 'Failed to create order')
+                return data.orderID
+            },
+            onApprove: async (data: { orderID: string }) => {
+                setStatus('sending')
+                try {
+                    const res = await fetch('/api/donate/capture-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderID: data.orderID }),
+                    })
+                    if (res.ok) {
+                        setStatus('sent')
+                    } else {
+                        const errData = await res.json()
+                        setErrorMsg(errData.error || 'Payment failed')
+                        setStatus('error')
+                    }
+                } catch {
+                    setErrorMsg('Payment processing error')
+                    setStatus('error')
+                }
+            },
+            onError: (err: Error) => {
+                console.error('PayPal error:', err)
+                setErrorMsg('Payment failed. Please try again.')
+                setStatus('error')
+            },
+            onCancel: () => {
+                setErrorMsg('Payment was canceled. You can try again.')
+                setStatus('error')
+                setShowPaypal(false)
+            },
+        })
+
+        buttons.render('#paypal-button-container')
+        paypalButtonsRef.current = buttons
+    }, [finalAmount, form, anonymous])
+
+    useEffect(() => {
+        if (showPaypal && paypalReady) {
+            // Small delay to let DOM mount
+            const timer = setTimeout(() => renderPayPalButtons(), 100)
+            return () => clearTimeout(timer)
+        }
+    }, [showPaypal, paypalReady, renderPayPalButtons])
+
+    // Validate and show PayPal buttons
+    const handleProceedToPayment = () => {
         setErrorMsg('')
         if (!finalAmount || finalAmount <= 0) return
         if (finalAmount < minAmount) {
@@ -75,24 +181,11 @@ export default function DonatePage() {
             setErrorMsg(t('errorNameRequired'))
             return
         }
-        setStatus('sending')
-        try {
-            const res = await fetch('/api/donate', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, amount: finalAmount, anonymous }),
-            })
-            if (res.ok) {
-                setStatus('sent')
-            } else {
-                const data = await res.json()
-                setErrorMsg(data.error || t('errorDefault'))
-                setStatus('error')
-            }
-        } catch {
-            setErrorMsg(t('errorNetwork'))
-            setStatus('error')
+        if (!form.email) {
+            setErrorMsg(t('emailLabel') + ' is required')
+            return
         }
+        setShowPaypal(true)
     }
 
     const inputStyle = {
@@ -106,7 +199,6 @@ export default function DonatePage() {
         outline: 'none',
     }
 
-    // Generate suggested amounts based on min amount
     const suggestedAmounts = [
         Math.max(minAmount, 10),
         Math.max(minAmount, 25),
@@ -114,7 +206,7 @@ export default function DonatePage() {
         Math.max(minAmount, 100),
         Math.max(minAmount, 250),
         Math.max(minAmount, 500),
-    ].filter((v, i, a) => a.indexOf(v) === i) // deduplicate
+    ].filter((v, i, a) => a.indexOf(v) === i)
 
     return (
         <>
@@ -183,7 +275,7 @@ export default function DonatePage() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <form onSubmit={handleSubmit}>
+                                    <div>
                                         <div style={{
                                             padding: 'var(--space-md)', background: 'rgba(212,168,83,0.06)',
                                             border: '1px solid rgba(212,168,83,0.1)', borderRadius: 'var(--radius-md)',
@@ -200,7 +292,7 @@ export default function DonatePage() {
                                         <div className="grid-3col" style={{ marginBottom: 'var(--space-md)' }}>
                                             {suggestedAmounts.map((amt) => (
                                                 <button key={amt} type="button"
-                                                    onClick={() => { setSelectedAmount(amt); setCustomAmount('') }}
+                                                    onClick={() => { setSelectedAmount(amt); setCustomAmount(''); setShowPaypal(false) }}
                                                     style={{
                                                         padding: '0.7rem', borderRadius: 'var(--radius-md)',
                                                         border: selectedAmount === amt ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
@@ -217,7 +309,7 @@ export default function DonatePage() {
                                                 {t('customAmount')} {minAmount > 1 && <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>({t('minLabel')} ${minAmount})</span>}
                                             </label>
                                             <input type="number" min={minAmount} value={customAmount}
-                                                onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null) }}
+                                                onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(null); setShowPaypal(false) }}
                                                 placeholder={t('amountPlaceholder', { min: minAmount })} style={inputStyle} />
                                         </div>
 
@@ -283,17 +375,70 @@ export default function DonatePage() {
                                             </div>
                                         )}
 
-                                        <button type="submit" disabled={status === 'sending' || !finalAmount || finalAmount < minAmount} className="btn btn-primary" style={{
-                                            width: '100%', padding: '0.85rem', fontSize: '0.95rem', fontWeight: 700,
-                                            opacity: finalAmount && finalAmount >= minAmount ? 1 : 0.5,
-                                        }}>
-                                            {status === 'sending' ? t('processing') : `${t('donateBtn')} $${finalAmount || '-'}`}
-                                        </button>
+                                        {/* PayPal Buttons or Proceed Button */}
+                                        {showPaypal ? (
+                                            <div>
+                                                {/* Summary */}
+                                                <div style={{
+                                                    padding: 'var(--space-md)',
+                                                    background: 'rgba(212,168,83,0.08)',
+                                                    border: '1px solid rgba(212,168,83,0.15)',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    marginBottom: 'var(--space-md)',
+                                                    textAlign: 'center',
+                                                }}>
+                                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                                                        Donating <strong style={{ color: 'var(--accent-gold)', fontSize: '1.2rem' }}>${finalAmount.toFixed(2)}</strong>
+                                                        {!anonymous && form.name && <> as <strong>{form.name}</strong></>}
+                                                    </p>
+                                                </div>
+
+                                                {/* PayPal Button Container */}
+                                                <div
+                                                    id="paypal-button-container"
+                                                    ref={paypalRef}
+                                                    style={{ minHeight: '55px', marginBottom: 'var(--space-md)' }}
+                                                >
+                                                    {!paypalReady && (
+                                                        <div style={{ textAlign: 'center', padding: 'var(--space-md)', color: 'var(--text-tertiary)' }}>
+                                                            Loading payment options...
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Back button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setShowPaypal(false); setErrorMsg('') }}
+                                                    style={{
+                                                        width: '100%', padding: '0.6rem', fontSize: '0.85rem',
+                                                        background: 'transparent', border: '1px solid var(--border-subtle)',
+                                                        borderRadius: 'var(--radius-md)', color: 'var(--text-tertiary)',
+                                                        cursor: 'pointer', transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    ← Change amount or details
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={handleProceedToPayment}
+                                                disabled={status === 'sending' || !finalAmount || finalAmount < minAmount}
+                                                className="btn btn-primary"
+                                                style={{
+                                                    width: '100%', padding: '0.85rem', fontSize: '0.95rem', fontWeight: 700,
+                                                    opacity: finalAmount && finalAmount >= minAmount ? 1 : 0.5,
+                                                }}
+                                            >
+                                                {status === 'sending' ? t('processing') : `${t('donateBtn')} $${finalAmount || '-'}`}
+                                            </button>
+                                        )}
 
                                         <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>
-                                            {t('donateFooter')}
+                                            🔒 Secured by PayPal — {t('donateFooter')}
                                         </p>
-                                    </form>
+                                    </div>
                                 )}
                             </div>
                         </ScrollReveal3D>
