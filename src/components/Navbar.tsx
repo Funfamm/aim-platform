@@ -319,7 +319,7 @@ export default function Navbar() {
                             <div className="drawer-user-info">
                                 <span className="drawer-user-name">{user.name}</span>
                                 <span className="drawer-user-role">
-                                    {user.role === 'admin' || user.role === 'superadmin' ? '👑 Admin' : '🎬 Member'}
+                                    {user.role === 'admin' || user.role === 'superadmin' ? `👑 ${t('admin')}` : `🎬 ${t('member')}`}
                                 </span>
                             </div>
                         </>
@@ -334,7 +334,7 @@ export default function Navbar() {
                                 </div>
                             </div>
                             <div className="drawer-user-info">
-                                <span className="drawer-user-name">Guest</span>
+                                <span className="drawer-user-name">{t('guest')}</span>
                                 <Link href="/login" onClick={() => setMobileOpen(false)}
                                     className="drawer-sign-in-link">
                                     {t('signIn')} →
@@ -360,24 +360,24 @@ export default function Navbar() {
                     type QCard = { href: string; label: string; path: string; icon: React.ReactNode };
                     const pool: QCard[] = [];
                     if (sections.training) pool.push({
-                        href: '/training', label: 'Training', path: '/training',
+                        href: '/training', label: t('training'), path: '/training',
                         icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
                     });
                     if (sections.scripts) pool.push({
-                        href: '/scripts', label: 'Scripts', path: '/scripts',
+                        href: '/scripts', label: t('scripts'), path: '/scripts',
                         icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
                     });
                     // Fill remaining slots with Works, then Casting
                     if (pool.length < 2) pool.push({
-                        href: '/works', label: 'Works', path: '/works',
+                        href: '/works', label: t('works'), path: '/works',
                         icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" /><line x1="7" y1="2" x2="7" y2="22" /><line x1="17" y1="2" x2="17" y2="22" /><line x1="2" y1="12" x2="22" y2="12" /><line x1="2" y1="7" x2="7" y2="7" /><line x1="2" y1="17" x2="7" y2="17" /><line x1="17" y1="7" x2="22" y2="7" /><line x1="17" y1="17" x2="22" y2="17" /></svg>
                     });
                     if (pool.length < 2 && sections.casting) pool.push({
-                        href: '/casting', label: 'Casting', path: '/casting',
+                        href: '/casting', label: t('casting'), path: '/casting',
                         icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
                     });
                     if (pool.length < 2) pool.push({
-                        href: '/upcoming', label: 'Upcoming', path: '/upcoming',
+                        href: '/upcoming', label: t('upcoming'), path: '/upcoming',
                         icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
                     });
                     const slots = pool.slice(0, 2);
@@ -393,7 +393,7 @@ export default function Navbar() {
                                         <polyline points="9 22 9 12 15 12 15 22" />
                                     </svg>
                                 </span>
-                                <span className="quick-label">Home</span>
+                                <span className="quick-label">{t('home')}</span>
                             </Link>
                             {/* Slots 2 & 3: Dynamic priority */}
                             {slots.map((card) => (
@@ -427,7 +427,7 @@ export default function Navbar() {
 
                 {/* ── Discover Section ── */}
                 <div className="drawer-section">
-                    <span className="drawer-section-label">Discover</span>
+                    <span className="drawer-section-label">{t('discover')}</span>
                     <Link href="/about" onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/about' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow">
@@ -437,7 +437,7 @@ export default function Navbar() {
                                 <line x1="12" y1="8" x2="12.01" y2="8" />
                             </svg>
                         </span>
-                        About Us
+                        {t('about')}
                     </Link>
 
                     {sections.donations && (
@@ -448,7 +448,7 @@ export default function Navbar() {
                                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                                 </svg>
                             </span>
-                            Donate
+                            {t('donate')}
                         </Link>
                     )}
 
@@ -460,7 +460,7 @@ export default function Navbar() {
                                 <polyline points="22,6 12,13 2,6" />
                             </svg>
                         </span>
-                        Contact
+                        {t('contact')}
                     </Link>
                     <Link href="/sponsors" onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/sponsors' ? 'active-page' : ''}`}>
@@ -469,7 +469,7 @@ export default function Navbar() {
                                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                             </svg>
                         </span>
-                        Sponsors
+                        {t('sponsors')}
                     </Link>
                     <Link href="/subscribe" onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/subscribe' ? 'active-page' : ''}`}>
@@ -539,7 +539,7 @@ export default function Navbar() {
                     transition: 'all 0.3s ease',
                     letterSpacing: '0.02em',
                 }}>
-                    ⚙️ Admin Panel
+                    ⚙️ {t('adminPanel')}
                 </a>
             )}
             <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />

@@ -11,7 +11,15 @@
     "notifications": "Get Notifications",
     "language": "Language",
     "scripts": "Scripts",
-    "training": "Training"
+    "training": "Training",
+    "about": "About Us",
+    "contact": "Contact",
+    "sponsors": "Sponsors",
+    "discover": "Discover",
+    "guest": "Guest",
+    "admin": "Admin",
+    "member": "Member",
+    "adminPanel": "Admin Panel"
   },
   "search": {
     "searchButton": "Search",

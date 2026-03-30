@@ -35,9 +35,9 @@ export default function DashboardStats({ applications, saved, watched, donated }
     }, [showDonation])
 
     const stats = [
-        { label: t('applications'), value: applications, icon: '📋', cta: t('exploreCasting'), href: '/casting#roles' },
-        { label: t('saved'), value: saved, icon: '🎬', cta: t('browseProjects'), href: '/projects' },
-        { label: t('watched'), value: watched, icon: '📺', cta: t('watchFilms'), href: '/films' },
+        { label: t('applications'), value: applications, icon: '📋', cta: t('exploreCasting'), href: '/casting' },
+        { label: t('saved'), value: saved, icon: '🎬', cta: t('browseProjects'), href: '/works' },
+        { label: t('watched'), value: watched, icon: '📺', cta: t('watchFilms'), href: '/works' },
     ]
 
     return (
@@ -67,7 +67,7 @@ export default function DashboardStats({ applications, saved, watched, donated }
                     background: var(--bg-glass-light);
                     border: 1px solid var(--border-subtle);
                     border-radius: var(--radius-lg);
-                    padding: var(--space-lg) var(--space-md);
+                    padding: var(--space-md) var(--space-sm);
                     text-align: center;
                     transition: all 0.3s ease;
                     cursor: default;
@@ -80,12 +80,12 @@ export default function DashboardStats({ applications, saved, watched, donated }
                     box-shadow: 0 8px 24px rgba(0,0,0,0.2);
                 }
                 .dash-stat-card .stat-icon {
-                    font-size: 1.3rem;
-                    margin-bottom: 6px;
+                    font-size: 1.1rem;
+                    margin-bottom: 4px;
                     display: block;
                 }
                 .dash-stat-card .stat-value {
-                    font-size: 1.6rem;
+                    font-size: 1.3rem;
                     font-weight: 800;
                     color: var(--accent-gold);
                     line-height: 1.2;
@@ -122,12 +122,16 @@ export default function DashboardStats({ applications, saved, watched, donated }
                 @media (max-width: 480px) {
                     .dash-stats-grid {
                         grid-template-columns: repeat(2, 1fr);
+                        gap: var(--space-sm);
                     }
                     .dash-stat-card {
-                        padding: var(--space-md) var(--space-sm);
+                        padding: var(--space-sm);
                     }
                     .dash-stat-card .stat-value {
-                        font-size: 1.3rem;
+                        font-size: 1.1rem;
+                    }
+                    .dash-stat-card .stat-icon {
+                        font-size: 1rem;
                     }
                 }
             `}</style>

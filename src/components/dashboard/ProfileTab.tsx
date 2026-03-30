@@ -252,10 +252,22 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <style>{`
+                .profile-grid-2col {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: var(--space-md);
+                }
+                @media (max-width: 640px) {
+                    .profile-grid-2col {
+                        grid-template-columns: 1fr;
+                    }
+                }
+            `}</style>
 
             {/* ────── ROW 1: Profile Summary + Banner (side by side) ────── */}
             <ScrollReveal3D direction="up" delay={80} distance={15}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                <div className="profile-grid-2col">
                     {/* Profile Avatar Card */}
                     <div style={{
                         ...cardStyle,
@@ -341,7 +353,7 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
 
             {/* ────── ROW 2: Personal Info + Security (side by side) ────── */}
             <ScrollReveal3D direction="up" delay={150} distance={15}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                <div className="profile-grid-2col">
                     {/* Personal Info */}
                     <div style={cardStyle}>
                         <h3 style={sectionTitle}>✏️ {t('personalInfo')}</h3>
@@ -396,7 +408,7 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
 
             {/* ────── ROW 3: Appearance + Notifications (side by side) ────── */}
             <ScrollReveal3D direction="up" delay={220} distance={15}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                <div className="profile-grid-2col">
                     {/* Appearance */}
                     <div style={cardStyle}>
                         <h3 style={sectionTitle}>🎨 {t('appearance')}</h3>
