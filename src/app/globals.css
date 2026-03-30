@@ -589,6 +589,30 @@ a:hover {
   gap: var(--space-xl);
 }
 
+/* Photo upload grid — always 2 columns, even on mobile */
+.photo-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+}
+
+@media (max-width: 768px) {
+  .photo-upload-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: var(--space-sm);
+  }
+  .photo-upload-grid .file-upload-zone {
+    padding: var(--space-sm) !important;
+    min-height: 130px !important;
+  }
+  .photo-upload-grid .file-upload-zone img {
+    height: 90px !important;
+  }
+  .photo-upload-grid .file-upload-zone div {
+    font-size: 0.72rem !important;
+  }
+}
+
 .grid-3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

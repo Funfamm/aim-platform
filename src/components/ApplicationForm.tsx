@@ -342,7 +342,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         📷 {t('photosTip')}
                     </p>
 
-                    <div className="grid-2" style={{ gap: 'var(--space-md)' }}>
+                    <div className="photo-upload-grid" style={{ gap: 'var(--space-md)' }}>
                         {PHOTO_SLOTS.map((slot) => (
                             <div key={slot.key} style={{ marginBottom: 'var(--space-sm)' }}>
                                 <div
