@@ -27,7 +27,8 @@
     "learnSkills": "नए कौशल सीखें",
     "supportUs": "हमारी परियोजनाओं का समर्थन करें",
     "about": "हमारे बारे में",
-    "ourStory": "हमारी कहानी और मिशन"
+    "ourStory": "हमारी कहानी और मिशन",
+    "close": "बंद करें"
   },
   "hero": {
     "label": "AI सिनेमा",
@@ -265,7 +266,7 @@
     "roleTypeSupporting": "सहायक",
     "roleTypeExtra": "एक्स्ट्रा",
     "withdraw": "वापस लें",
-  "applyAgain": "फिर से आवेदन करें"
+    "applyAgain": "फिर से आवेदन करें"
   },
   "alreadyApplied": {
     "pageLabel": "आवेदन स्थिति",
@@ -300,7 +301,8 @@
     "statusWithdrawn": "वापस लिया",
     "resultPending": "आपका आवेदन समीक्षाधीन है। परिणाम जल्द ही सामने आएंगे।",
     "resultAvailableOn": "परिणाम {date} से उपलब्ध"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "क्यों इंतज़ार करें?",
     "title": "संदेह को खुद को",
     "titleAccent": "रोकने न दें",
@@ -434,7 +436,7 @@
     "roleTypeSupporting": "सहायक",
     "roleTypeExtra": "एक्स्ट्रा",
     "withdraw": "वापस लें",
-  "applyAgain": "फिर से आवेदन करें"
+    "applyAgain": "फिर से आवेदन करें"
   },
   "castingForm": {
     "pageLabel": "कास्टिंग आवेदन",
@@ -789,6 +791,12 @@
     "member": "सदस्य",
     "exploreCasting": "कास्टिंग खोजें",
     "browseWorks": "कार्य देखें",
-    "supportUs": "हमें सपोर्ट करें"
+    "supportUs": "हमें सपोर्ट करें",
+    "search": {
+      "placeholder": "फ़िल्में, कास्टिंग, प्रशिक्षण खोजें...",
+      "noResults": "कोई परिणाम नहीं मिला।",
+      "loading": "खोज रहे हैं…",
+      "suggestionTitle": "सुझाव"
+    }
   }
 }

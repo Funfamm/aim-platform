@@ -44,6 +44,8 @@ model User {
   lastTrainingAt   DateTime?
   // Security
   passwordHistory  PasswordHistory[]
+  // Projects owned
+  ownedProjects    Project[]
 
   @@index([role])
   @@index([createdAt])
@@ -61,7 +63,10 @@ model Project {
   projectType String   @default("movie") // movie | series
   coverImage  String?
   trailerUrl  String?
-  filmUrl     String?  // Full film ??? member-only access
+  filmUrl     String?  // Full film — member-only access
+  country     String?  // ISO country code for reach metric
+  ownerId     String?  // reference to User who created the project
+  owner       User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   genre       String?
   year        String?
   duration    String?

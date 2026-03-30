@@ -27,7 +27,8 @@
     "learnSkills": "Neue Fähigkeiten erlernen",
     "supportUs": "Unsere Projekte unterstützen",
     "about": "Über uns",
-    "ourStory": "Unsere Geschichte und Mission"
+    "ourStory": "Unsere Geschichte und Mission",
+    "close": "Schließen"
   },
   "hero": {
     "label": "KI-Kino",
@@ -265,7 +266,7 @@
     "roleTypeSupporting": "Nebenrolle",
     "roleTypeExtra": "Statist",
     "withdraw": "Zurückziehen",
-  "applyAgain": "Erneut bewerben"
+    "applyAgain": "Erneut bewerben"
   },
   "alreadyApplied": {
     "pageLabel": "Bewerbungsstatus",
@@ -300,7 +301,8 @@
     "statusWithdrawn": "Zurückgezogen",
     "resultPending": "Ihre Bewerbung wird geprüft. Die Ergebnisse werden in Kürze bekannt gegeben.",
     "resultAvailableOn": "Ergebnisse verfügbar ab {date}"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "Warum Warten?",
     "title": "Lass Zweifel dich nicht",
     "titleAccent": "aufhalten",
@@ -434,7 +436,7 @@
     "roleTypeSupporting": "Nebenrolle",
     "roleTypeExtra": "Statist",
     "withdraw": "Zurückziehen",
-  "applyAgain": "Erneut bewerben"
+    "applyAgain": "Erneut bewerben"
   },
   "castingForm": {
     "pageLabel": "Casting-Bewerbung",
@@ -789,6 +791,12 @@
     "member": "MITGLIED",
     "exploreCasting": "Castings Entdecken",
     "browseWorks": "Werke Ansehen",
-    "supportUs": "Uns Unterstützen"
+    "supportUs": "Uns Unterstützen",
+    "search": {
+      "placeholder": "Filme, Casting, Training suchen...",
+      "noResults": "Keine Ergebnisse gefunden.",
+      "loading": "Suche läuft…",
+      "suggestionTitle": "Vorschläge"
+    }
   }
 }

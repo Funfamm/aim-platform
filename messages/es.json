@@ -27,7 +27,8 @@
     "learnSkills": "Aprende nuevas habilidades",
     "supportUs": "Apoya nuestros proyectos",
     "about": "Sobre Nosotros",
-    "ourStory": "Nuestra historia y misión"
+    "ourStory": "Nuestra historia y misión",
+    "close": "Cerrar"
   },
   "hero": {
     "label": "Cine IA",
@@ -265,7 +266,7 @@
     "roleTypeSupporting": "Secundario",
     "roleTypeExtra": "Extra",
     "withdraw": "Retirar",
-  "applyAgain": "Aplicar de nuevo"
+    "applyAgain": "Aplicar de nuevo"
   },
   "alreadyApplied": {
     "pageLabel": "Estado de la solicitud",
@@ -300,7 +301,8 @@
     "statusWithdrawn": "Retirado",
     "resultPending": "Tu solicitud está siendo revisada. Los resultados se revelarán en breve.",
     "resultAvailableOn": "Resultados disponibles desde el {date}"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "¿Por qué esperar?",
     "title": "No dejes que la duda te",
     "titleAccent": "detenga",
@@ -434,7 +436,7 @@
     "roleTypeSupporting": "Secundario",
     "roleTypeExtra": "Extra",
     "withdraw": "Retirar",
-  "applyAgain": "Aplicar de nuevo"
+    "applyAgain": "Aplicar de nuevo"
   },
   "castingForm": {
     "pageLabel": "Solicitud de Casting",
@@ -789,6 +791,12 @@
     "member": "MIEMBRO",
     "exploreCasting": "Explorar Castings",
     "browseWorks": "Ver Obras",
-    "supportUs": "Apoyarnos"
+    "supportUs": "Apoyarnos",
+    "search": {
+      "placeholder": "Buscar películas, casting, formación...",
+      "noResults": "No se encontraron resultados.",
+      "loading": "Buscando…",
+      "suggestionTitle": "Sugerencias"
+    }
   }
 }

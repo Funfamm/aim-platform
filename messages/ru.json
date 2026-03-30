@@ -27,7 +27,8 @@
     "learnSkills": "Изучить новые навыки",
     "supportUs": "Поддержать наши проекты",
     "about": "О Нас",
-    "ourStory": "Наша история и миссия"
+    "ourStory": "Наша история и миссия",
+    "close": "Закрыть"
   },
   "hero": {
     "label": "ИИ Кино",
@@ -265,7 +266,7 @@
     "roleTypeSupporting": "Второстепенная",
     "roleTypeExtra": "Массовка",
     "withdraw": "Отозвать",
-  "applyAgain": "Подать заявку снова"
+    "applyAgain": "Подать заявку снова"
   },
   "alreadyApplied": {
     "pageLabel": "Статус заявки",
@@ -300,7 +301,8 @@
     "statusWithdrawn": "Отозвано",
     "resultPending": "Ваша заявка рассматривается. Результаты будут раскрыты в ближайшее время.",
     "resultAvailableOn": "Результаты доступны с {date}"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "Зачем ждать?",
     "title": "Не позволяй сомнению",
     "titleAccent": "остановить тебя",
@@ -434,7 +436,7 @@
     "roleTypeSupporting": "Второстепенная",
     "roleTypeExtra": "Массовка",
     "withdraw": "Отозвать",
-  "applyAgain": "Подать заявку снова"
+    "applyAgain": "Подать заявку снова"
   },
   "castingForm": {
     "pageLabel": "Заявка на Кастинг",
@@ -789,6 +791,12 @@
     "member": "УЧАСТНИК",
     "exploreCasting": "Смотреть Кастинги",
     "browseWorks": "Смотреть Работы",
-    "supportUs": "Поддержать Нас"
+    "supportUs": "Поддержать Нас",
+    "search": {
+      "placeholder": "Поиск фильмов, кастинга, обучения...",
+      "noResults": "Результаты не найдены.",
+      "loading": "Идёт поиск…",
+      "suggestionTitle": "Подсказки"
+    }
   }
 }

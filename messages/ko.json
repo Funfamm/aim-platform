@@ -27,7 +27,8 @@
     "learnSkills": "새로운 기술 배우기",
     "supportUs": "프로젝트 지원하기",
     "about": "소개",
-    "ourStory": "우리의 이야기와 미션"
+    "ourStory": "우리의 이야기와 미션",
+    "close": "닫기"
   },
   "hero": {
     "label": "AI 영화",
@@ -265,7 +266,7 @@
     "roleTypeSupporting": "조연",
     "roleTypeExtra": "엑스트라",
     "withdraw": "취소",
-  "applyAgain": "다시 지원"
+    "applyAgain": "다시 지원"
   },
   "alreadyApplied": {
     "pageLabel": "지원 상태",
@@ -300,7 +301,8 @@
     "statusWithdrawn": "취소됨",
     "resultPending": "지원서를 검토 중입니다. 곧 결과가 공개될 예정입니다.",
     "resultAvailableOn": "{date}부터 결과 확인 가능"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "왜 기다리나요?",
     "title": "의심이 당신을",
     "titleAccent": "막지 못하게",
@@ -434,7 +436,7 @@
     "roleTypeSupporting": "조연",
     "roleTypeExtra": "엑스트라",
     "withdraw": "취소",
-  "applyAgain": "다시 지원"
+    "applyAgain": "다시 지원"
   },
   "castingForm": {
     "pageLabel": "캐스팅 지원",
@@ -789,6 +791,12 @@
     "member": "멤버",
     "exploreCasting": "캐스팅 탐색",
     "browseWorks": "작품 보기",
-    "supportUs": "지원하기"
+    "supportUs": "지원하기",
+    "search": {
+      "placeholder": "영화, 캐스팅, 트레이닝 검색...",
+      "noResults": "결과를 찾을 수 없습니다.",
+      "loading": "검색 중…",
+      "suggestionTitle": "제안"
+    }
   }
 }

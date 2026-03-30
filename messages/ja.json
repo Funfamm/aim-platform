@@ -4,7 +4,16 @@
     "works": "作品",
     "upcoming": "近日公開",
     "about": "概要",
-    "ourStory": "私たちの物語と使命"
+    "ourStory": "私たちの物語と使命",
+    "casting": "キャスティング",
+    "donate": "寄付する",
+    "signIn": "ログイン",
+    "signOut": "ログアウト",
+    "dashboard": "ダッシュボード",
+    "notifications": "通知を受け取る",
+    "language": "言語",
+    "scripts": "脚本",
+    "training": "トレーニング"
   },
   "hero": {
     "label": "AI映画",
@@ -242,7 +251,7 @@
     "roleTypeSupporting": "助演",
     "roleTypeExtra": "エキストラ",
     "withdraw": "取り下げ",
-  "applyAgain": "再応募"
+    "applyAgain": "再応募"
   },
   "alreadyApplied": {
     "pageLabel": "申請状況",
@@ -277,7 +286,8 @@
     "statusWithdrawn": "取り下げ済み",
     "resultPending": "応募内容を審査中です。まもなく結果がお知らせできます。",
     "resultAvailableOn": "{date} 以降に結果が公開されます"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "なぜ待つ？",
     "title": "疑いに",
     "titleAccent": "負けないで",
@@ -411,7 +421,7 @@
     "roleTypeSupporting": "助演",
     "roleTypeExtra": "エキストラ",
     "withdraw": "取り下げ",
-  "applyAgain": "再応募"
+    "applyAgain": "再応募"
   },
   "castingForm": {
     "pageLabel": "キャスティング応募",
@@ -766,6 +776,29 @@
     "member": "メンバー",
     "exploreCasting": "キャスティングを探す",
     "browseWorks": "作品を見る",
-    "supportUs": "サポート"
+    "supportUs": "サポート",
+    "search": {
+      "placeholder": "映画、キャスティング、トレーニングを検索...",
+      "noResults": "結果が見つかりませんでした。",
+      "loading": "検索中…",
+      "suggestionTitle": "候補"
+    }
+  },
+  "search": {
+    "close": "閉じる",
+    "searchButton": "検索",
+    "placeholder": "映画、キャスティング、トレーニングを検索...",
+    "cancel": "キャンセル",
+    "suggestions": "検索候補",
+    "noResults": "「{query}」の結果はありません",
+    "tryDifferent": "別のキーワードを試すか、ページを閲覧してください",
+    "quickAccess": "クイックアクセス",
+    "browseAll": "すべての制作作品を見る",
+    "comingSoon": "今後の制作予定",
+    "openRoles": "募集中の役を探す",
+    "learnSkills": "新しいスキルを学ぶ",
+    "supportUs": "プロジェクトを支援する",
+    "about": "私たちについて",
+    "ourStory": "私たちのストーリーとミッション"
   }
 }

@@ -27,7 +27,8 @@
     "learnSkills": "学习新技能",
     "supportUs": "支持我们的项目",
     "about": "关于我们",
-    "ourStory": "我们的故事和使命"
+    "ourStory": "我们的故事和使命",
+    "close": "关闭"
   },
   "hero": {
     "label": "AI电影",
@@ -265,7 +266,7 @@
     "roleTypeSupporting": "配角",
     "roleTypeExtra": "临演",
     "withdraw": "撤回",
-  "applyAgain": "重新申请"
+    "applyAgain": "重新申请"
   },
   "alreadyApplied": {
     "pageLabel": "申请状态",
@@ -300,7 +301,8 @@
     "statusWithdrawn": "已撤回",
     "resultPending": "您的申请正在审核中，结果即将公布。",
     "resultAvailableOn": "结果将于 {date} 起公布"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "为什么等待？",
     "title": "别让怀疑",
     "titleAccent": "阻止你",
@@ -434,7 +436,7 @@
     "roleTypeSupporting": "配角",
     "roleTypeExtra": "临演",
     "withdraw": "撤回",
-  "applyAgain": "重新申请"
+    "applyAgain": "重新申请"
   },
   "castingForm": {
     "pageLabel": "选角申请",
@@ -789,6 +791,12 @@
     "member": "成员",
     "exploreCasting": "探索选角",
     "browseWorks": "浏览作品",
-    "supportUs": "支持我们"
+    "supportUs": "支持我们",
+    "search": {
+      "placeholder": "搜索电影、选角、培训...",
+      "noResults": "未找到结果。",
+      "loading": "搜索中…",
+      "suggestionTitle": "建议"
+    }
   }
 }

@@ -21,10 +21,23 @@ const DEFAULT_STORY = `We're not a traditional studio behind closed doors. We cr
 
 This is cinema built together. Your talent, your creativity, powered by AI. Welcome to AIM Studio.`
 
+async function fetchAboutStats() {
+    const [productions, countryRows, ownerRows] = await Promise.all([
+        prisma.project.count({ where: { OR: [{ projectType: 'movie' }, { projectType: 'series' }] } }),
+        prisma.project.findMany({ where: { country: { not: null } }, select: { country: true } }),
+        prisma.project.findMany({ where: { ownerId: { not: null } }, select: { ownerId: true } }),
+    ]);
+    const distinctCountries = new Set(countryRows.map(r => r.country)).size;
+    const distinctCreators = new Set(ownerRows.map(r => r.ownerId)).size;
+    const awards = 0; // placeholder until an Award model exists
+    return { productions, distinctCountries, distinctCreators, awards };
+}
+
 export default async function AboutPage() {
     const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
     const session = await getUserSession()
     const isLoggedIn = !!session?.userId
+    const stats = await fetchAboutStats()
 
     const pageMedia = await prisma.pageMedia.findMany({
         where: { page: 'about', type: 'background', active: true },
@@ -52,10 +65,10 @@ export default async function AboutPage() {
     }
 
     const glassCard = {
-        background: 'rgba(10,10,16,0.75)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(212,168,83,0.08)',
+        background: 'rgba(22,24,35,0.55)',
+        backdropFilter: 'blur(30px)',
+        WebkitBackdropFilter: 'blur(30px)',
+        border: '1px solid rgba(255,255,255,0.06)',
         borderRadius: 'var(--radius-xl)',
     }
 
@@ -66,10 +79,9 @@ export default async function AboutPage() {
 
                 {/* ═══════════════════ HERO ═══════════════════ */}
                 <section style={{
-                    padding: 'calc(var(--space-5xl) + 100px) 0 var(--space-5xl)',
+                    padding: 'calc(var(--space-5xl) + 80px) 0 var(--space-xl)',
                     textAlign: 'center',
                     position: 'relative',
-                    minHeight: '80vh',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -92,34 +104,39 @@ export default async function AboutPage() {
 
                     <div className="container" style={{ maxWidth: '850px', position: 'relative' }}>
                         <ScrollReveal3D direction="up" distance={50}>
-                            <span className="text-label" style={{ marginBottom: 'var(--space-lg)', display: 'inline-block' }}>
+                            <span className="text-label" style={{
+                                marginBottom: 'var(--space-lg)', display: 'inline-block',
+                                fontFamily: '"Playfair Display", Georgia, serif',
+                                fontStyle: 'italic',
+                                fontSize: '0.85rem',
+                                letterSpacing: '0.15em',
+                                color: 'rgba(212,168,83,0.7)',
+                            }}>
                                 {t('label')}
                             </span>
                             <h1 style={{
-                                fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+                                fontSize: 'clamp(2.2rem, 5.5vw, 3.8rem)',
                                 fontWeight: 800,
                                 lineHeight: 1.1,
                                 marginBottom: 'var(--space-lg)',
-                                letterSpacing: '-0.02em',
+                                letterSpacing: '-0.03em',
+                                fontFamily: 'Outfit, sans-serif',
                             }}>
                                 {t('title')}<br />
                                 <span style={{
-                                    background: 'linear-gradient(135deg, var(--accent-gold) 0%, #f5d799 40%, var(--accent-gold) 100%)',
+                                    fontFamily: '"Playfair Display", Georgia, serif',
+                                    fontWeight: 700,
+                                    fontStyle: 'italic',
+                                    letterSpacing: '0.01em',
+                                    background: 'linear-gradient(135deg, var(--accent-gold) 0%, #f5d799 30%, #FFE4A0 50%, var(--accent-gold) 100%)',
+                                    backgroundSize: '200% auto',
                                     WebkitBackgroundClip: 'text',
                                     WebkitTextFillColor: 'transparent',
+                                    animation: 'shimmerText 4s linear infinite',
                                 }}>
                                     {t('titleAccent')}
                                 </span>
                             </h1>
-                            <p style={{
-                                fontSize: 'clamp(0.9rem, 1.8vw, 1.05rem)',
-                                color: 'var(--text-secondary)',
-                                lineHeight: 1.8,
-                                maxWidth: '650px',
-                                margin: '0 auto',
-                            }}>
-                                {v('heroSubtitle', 'heroSubtitle')}
-                            </p>
                         </ScrollReveal3D>
 
                         {/* Scroll indicator */}
@@ -137,7 +154,7 @@ export default async function AboutPage() {
                 </section>
 
                 {/* ═══════════════════ STATS BAR ═══════════════════ */}
-                <section style={{ padding: 'var(--space-3xl) 0' }}>
+                <section style={{ padding: 'var(--space-lg) 0 var(--space-3xl)', position: 'relative' }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
                         <ScrollReveal3D direction="up" distance={30}>
                             <div className="about-stats-grid" style={{
@@ -154,17 +171,21 @@ export default async function AboutPage() {
                                     position: 'absolute', top: 0, left: '10%', right: '10%', height: '1px',
                                     background: 'linear-gradient(to right, transparent, var(--accent-gold), transparent)',
                                 }} />
-                                <AnimatedCounter end={n('stat1Value', 12)} suffix="+" label={v('stat1Label', 'statsProductions')} />
-                                <AnimatedCounter end={n('stat2Value', 30)} suffix="+" label={v('stat2Label', 'statsCountries')} />
-                                <AnimatedCounter end={n('stat3Value', 500)} suffix="+" label={v('stat3Label', 'statsCreators')} />
-                                <AnimatedCounter end={n('stat4Value', 8)} label={v('stat4Label', 'statsAwards')} />
+                                <AnimatedCounter end={stats.productions} suffix="+" label={v('stat1Label', 'statsProductions')} />
+                                <AnimatedCounter end={stats.distinctCountries} suffix="+" label={v('stat2Label', 'statsCountries')} />
+                                <AnimatedCounter end={stats.distinctCreators} suffix="+" label={v('stat3Label', 'statsCreators')} />
+                                <AnimatedCounter end={stats.awards} label={v('stat4Label', 'statsAwards')} />
                             </div>
                         </ScrollReveal3D>
                     </div>
                 </section>
 
                 {/* ═══════════════════ MISSION + STORY ═══════════════════ */}
-                <section style={{ padding: 'var(--space-3xl) 0' }}>
+                <section style={{
+                    padding: 'var(--space-4xl) 0',
+                    position: 'relative',
+                    background: 'linear-gradient(180deg, transparent, rgba(22,24,35,0.3) 20%, rgba(22,24,35,0.3) 80%, transparent)',
+                }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
                         <div className="about-mission-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)', alignItems: 'start' }}>
                             {/* Mission */}
@@ -183,7 +204,7 @@ export default async function AboutPage() {
                                         {t('missionTitle')}
                                     </span>
                                     <p style={{
-                                        fontSize: '0.92rem', lineHeight: 1.8, color: 'var(--text-secondary)',
+                                        fontSize: '0.92rem', lineHeight: 1.8, color: 'rgba(200,200,210,0.7)',
                                     }}>
                                         {mission}
                                     </p>
@@ -198,7 +219,7 @@ export default async function AboutPage() {
                                 }}>
                                     {storyParagraphs.map((paragraph: string, i: number) => (
                                         <p key={i} style={{
-                                            fontSize: '0.92rem', lineHeight: 1.8, color: 'var(--text-secondary)',
+                                            fontSize: '0.92rem', lineHeight: 1.8, color: 'rgba(200,200,210,0.7)',
                                             marginBottom: i < storyParagraphs.length - 1 ? 'var(--space-lg)' : 0,
                                         }}>
                                             {paragraph}
@@ -271,12 +292,37 @@ export default async function AboutPage() {
                     <div className="container" style={{ maxWidth: '900px' }}>
                         <ScrollReveal3D direction="up" distance={30}>
                             <div style={{ textAlign: 'center', marginBottom: 'var(--space-3xl)' }}>
-                                <span className="text-label" style={{ marginBottom: 'var(--space-md)', display: 'inline-block' }}>
+                                <span className="text-label" style={{
+                                    marginBottom: 'var(--space-md)', display: 'inline-block',
+                                    fontFamily: '"Playfair Display", Georgia, serif',
+                                    fontStyle: 'italic',
+                                    fontSize: '0.8rem',
+                                    letterSpacing: '0.14em',
+                                    color: 'rgba(212,168,83,0.65)',
+                                }}>
                                     {t('journeyLabel')}
                                 </span>
-                                <h2 style={{ fontSize: 'clamp(1.5rem, 3.5vw, 2.2rem)', fontWeight: 800, lineHeight: 1.2 }}>
+                                <h2 style={{
+                                    fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
+                                    fontWeight: 800,
+                                    lineHeight: 1.2,
+                                    fontFamily: 'Outfit, sans-serif',
+                                    letterSpacing: '-0.02em',
+                                }}>
                                     {t('journeyTitle')}<br />
-                                    <span style={{ color: 'var(--accent-gold)' }}>{t('journeyTitleAccent')}</span>
+                                    <span style={{
+                                        fontFamily: '"Playfair Display", Georgia, serif',
+                                        fontWeight: 700,
+                                        fontStyle: 'italic',
+                                        letterSpacing: '0.01em',
+                                        background: 'linear-gradient(135deg, var(--accent-gold) 0%, #f5d799 30%, #FFE4A0 50%, var(--accent-gold) 100%)',
+                                        backgroundSize: '200% auto',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        animation: 'shimmerText 4s linear infinite',
+                                    }}>
+                                        {t('journeyTitleAccent')}
+                                    </span>
                                 </h2>
                             </div>
                         </ScrollReveal3D>
@@ -331,7 +377,7 @@ export default async function AboutPage() {
                                             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 'var(--space-xs)' }}>
                                                 {milestone.title}
                                             </h3>
-                                            <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>
+                                            <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'rgba(200,200,210,0.7)', margin: 0 }}>
                                                 {milestone.desc}
                                             </p>
                                         </div>
@@ -343,7 +389,11 @@ export default async function AboutPage() {
                 </section>
 
                 {/* ═══════════════════ VALUES ═══════════════════ */}
-                <section style={{ padding: 'var(--space-5xl) 0' }}>
+                <section style={{
+                    padding: 'var(--space-5xl) 0',
+                    position: 'relative',
+                    background: 'linear-gradient(180deg, transparent, rgba(22,24,35,0.25) 20%, rgba(22,24,35,0.25) 80%, transparent)',
+                }}>
                     <div className="container" style={{ maxWidth: '1000px' }}>
                         <ScrollReveal3D direction="up" distance={30}>
                             <div style={{ textAlign: 'center', marginBottom: 'var(--space-3xl)' }}>
@@ -426,7 +476,7 @@ export default async function AboutPage() {
                                         }}>
                                             {card.sub}
                                         </div>
-                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', lineHeight: 1.7, margin: 0 }}>{card.desc}</p>
+                                        <p style={{ fontSize: '0.82rem', color: 'rgba(180,180,195,0.7)', lineHeight: 1.7, margin: 0 }}>{card.desc}</p>
                                     </div>
                                 </ScrollReveal3D>
                             ))}
@@ -492,6 +542,10 @@ export default async function AboutPage() {
                 @keyframes float {
                     0%, 100% { transform: translateY(0px); }
                     50% { transform: translateY(-20px); }
+                }
+                @keyframes shimmerText {
+                    0% { background-position: 0% center; }
+                    100% { background-position: 200% center; }
                 }
                 .about-value-card:hover {
                     border-color: rgba(212,168,83,0.25) !important;

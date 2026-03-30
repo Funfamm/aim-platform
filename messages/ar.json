@@ -29,7 +29,8 @@
     "about": "من نحن",
     "ourStory": "قصتنا ورسالتنا",
     "loading": "جارٍ البحث…",
-    "suggestionTitle": "اقتراحات"
+    "suggestionTitle": "اقتراحات",
+    "close": "إغلاق"
   },
   "hero": {
     "label": "سينما الذكاء الاصطناعي",
@@ -267,7 +268,7 @@
     "roleTypeSupporting": "ثانوي",
     "roleTypeExtra": "كومبارس",
     "withdraw": "سحب",
-  "applyAgain": "تطبيق مجددًا"
+    "applyAgain": "تطبيق مجددًا"
   },
   "alreadyApplied": {
     "pageLabel": "حالة الطلب",
@@ -302,7 +303,8 @@
     "statusWithdrawn": "مسحوب",
     "resultPending": "طلبك قيد المراجعة. ستُكشف النتائج قريباً.",
     "resultAvailableOn": "النتائج متاحة من {date}"
-  },  "encouragement": {
+  },
+  "encouragement": {
     "label": "لماذا الانتظار؟",
     "title": "لا تدع الشك",
     "titleAccent": "يوقفك",
@@ -436,7 +438,7 @@
     "roleTypeSupporting": "ثانوي",
     "roleTypeExtra": "كومبارس",
     "withdraw": "سحب",
-  "applyAgain": "تطبيق مجددًا"
+    "applyAgain": "تطبيق مجددًا"
   },
   "castingForm": {
     "pageLabel": "طلب كاستنج",
@@ -791,6 +793,12 @@
     "member": "عضو",
     "exploreCasting": "استكشف الكاستنج",
     "browseWorks": "تصفح الأعمال",
-    "supportUs": "ادعمنا"
+    "supportUs": "ادعمنا",
+    "search": {
+      "placeholder": "ابحث عن أفلام، وتمثيل، وتدريب...",
+      "noResults": "لا توجد نتائج.",
+      "loading": "جارٍ البحث…",
+      "suggestionTitle": "اقتراحات"
+    }
   }
 }
