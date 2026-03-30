@@ -3,7 +3,7 @@
     "home": "ホーム",
     "works": "作品",
     "upcoming": "近日公開",
-    "about": "概要",
+    "about": "私たちについて",
     "ourStory": "私たちの物語と使命",
     "casting": "キャスティング",
     "donate": "寄付する",
@@ -13,7 +13,14 @@
     "notifications": "通知を受け取る",
     "language": "言語",
     "scripts": "脚本",
-    "training": "トレーニング"
+    "training": "トレーニング",
+    "contact": "お問い合わせ",
+    "sponsors": "スポンサー",
+    "discover": "発見する",
+    "guest": "ゲスト",
+    "admin": "管理者",
+    "member": "メンバー",
+    "adminPanel": "管理パネル"
   },
   "hero": {
     "label": "AI映画",

@@ -11,7 +11,15 @@
     "notifications": "सूचनाएं",
     "language": "भाषा",
     "scripts": "स्क्रिप्ट",
-    "training": "प्रशिक्षण"
+    "training": "प्रशिक्षण",
+    "about": "हमारे बारे में",
+    "contact": "संपर्क करें",
+    "sponsors": "प्रायोजक",
+    "discover": "खोजें",
+    "guest": "अतिथि",
+    "admin": "व्यवस्थापक",
+    "member": "सदस्य",
+    "adminPanel": "एडमिन पैनल"
   },
   "search": {
     "searchButton": "खोजें",

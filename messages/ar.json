@@ -11,7 +11,15 @@
     "notifications": "الإشعارات",
     "language": "اللغة",
     "scripts": "السيناريوهات",
-    "training": "التدريب"
+    "training": "التدريب",
+    "about": "من نحن",
+    "contact": "اتصل بنا",
+    "sponsors": "الرعاة",
+    "discover": "اكتشف",
+    "guest": "زائر",
+    "admin": "مشرف",
+    "member": "عضو",
+    "adminPanel": "لوحة الإدارة"
   },
   "search": {
     "searchButton": "بحث",

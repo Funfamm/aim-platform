@@ -11,7 +11,15 @@
     "notifications": "Notificaciones",
     "language": "Idioma",
     "scripts": "Guiones",
-    "training": "Formación"
+    "training": "Formación",
+    "about": "Sobre Nosotros",
+    "contact": "Contacto",
+    "sponsors": "Patrocinadores",
+    "discover": "Descubrir",
+    "guest": "Invitado",
+    "admin": "Admin",
+    "member": "Miembro",
+    "adminPanel": "Panel de Admin"
   },
   "search": {
     "searchButton": "Buscar",

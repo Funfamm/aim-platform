@@ -11,7 +11,15 @@
     "notifications": "알림",
     "language": "언어",
     "scripts": "대본",
-    "training": "교육"
+    "training": "교육",
+    "about": "소개",
+    "contact": "문의",
+    "sponsors": "스폰서",
+    "discover": "발견",
+    "guest": "게스트",
+    "admin": "관리자",
+    "member": "회원",
+    "adminPanel": "관리자 패널"
   },
   "search": {
     "searchButton": "검색",

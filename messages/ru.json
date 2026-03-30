@@ -11,7 +11,15 @@
     "notifications": "Уведомления",
     "language": "Язык",
     "scripts": "Сценарии",
-    "training": "Обучение"
+    "training": "Обучение",
+    "about": "О Нас",
+    "contact": "Контакты",
+    "sponsors": "Спонсоры",
+    "discover": "Открыть",
+    "guest": "Гость",
+    "admin": "Админ",
+    "member": "Участник",
+    "adminPanel": "Панель Админа"
   },
   "search": {
     "searchButton": "Поиск",

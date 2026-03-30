@@ -11,7 +11,15 @@
     "notifications": "通知",
     "language": "语言",
     "scripts": "剧本",
-    "training": "培训"
+    "training": "培训",
+    "about": "关于我们",
+    "contact": "联系我们",
+    "sponsors": "赞助商",
+    "discover": "发现",
+    "guest": "访客",
+    "admin": "管理员",
+    "member": "会员",
+    "adminPanel": "管理面板"
   },
   "search": {
     "searchButton": "搜索",
