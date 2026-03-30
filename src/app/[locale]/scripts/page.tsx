@@ -2,6 +2,8 @@ import Link from 'next/link'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
 import { prisma } from '@/lib/db'
+import { getUserSession } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 
 export const revalidate = 120
 
@@ -11,6 +13,10 @@ export const metadata = {
 }
 
 export default async function ScriptCallsPage() {
+    // Require login to access scripts
+    const session = await getUserSession()
+    if (!session) redirect('/login')
+
     const settings = await prisma.siteSettings.findFirst()
     const enabled = settings?.scriptCallsEnabled ?? false
 

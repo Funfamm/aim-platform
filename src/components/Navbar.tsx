@@ -310,23 +310,28 @@ export default function Navbar() {
                 <div className="drawer-profile">
                     {user ? (
                         <>
-                            <div className="drawer-avatar">
-                                {user.name.charAt(0).toUpperCase()}
+                            <div className="drawer-avatar-wrap">
+                                <div className="drawer-avatar">
+                                    {user.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="drawer-status-dot" />
                             </div>
                             <div className="drawer-user-info">
                                 <span className="drawer-user-name">{user.name}</span>
                                 <span className="drawer-user-role">
-                                    {user.role === 'admin' || user.role === 'superadmin' ? '⚡ Admin' : '🎬 Member'}
+                                    {user.role === 'admin' || user.role === 'superadmin' ? '👑 Admin' : '🎬 Member'}
                                 </span>
                             </div>
                         </>
                     ) : (
                         <>
-                            <div className="drawer-avatar" style={{ background: 'var(--bg-glass-light)' }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                                    <circle cx="12" cy="7" r="4" />
-                                </svg>
+                            <div className="drawer-avatar-wrap">
+                                <div className="drawer-avatar" style={{ background: 'var(--bg-glass-light)' }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                        <circle cx="12" cy="7" r="4" />
+                                    </svg>
+                                </div>
                             </div>
                             <div className="drawer-user-info">
                                 <span className="drawer-user-name">Guest</span>
@@ -342,23 +347,79 @@ export default function Navbar() {
                         aria-label="Close menu"
                         className="drawer-close"
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
                         </svg>
                     </button>
                 </div>
 
+                {/* ── Quick Actions — Glass Card Grid (Smart Priority) ── */}
+                {(() => {
+                    // Slot 1 = Home (always). Slots 2 & 3 = priority: Training/Scripts first, then Works/Casting
+                    type QCard = { href: string; label: string; path: string; icon: React.ReactNode };
+                    const pool: QCard[] = [];
+                    if (sections.training) pool.push({
+                        href: '/training', label: 'Training', path: '/training',
+                        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></svg>
+                    });
+                    if (sections.scripts) pool.push({
+                        href: '/scripts', label: 'Scripts', path: '/scripts',
+                        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
+                    });
+                    // Fill remaining slots with Works, then Casting
+                    if (pool.length < 2) pool.push({
+                        href: '/works', label: 'Works', path: '/works',
+                        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" /><line x1="7" y1="2" x2="7" y2="22" /><line x1="17" y1="2" x2="17" y2="22" /><line x1="2" y1="12" x2="22" y2="12" /><line x1="2" y1="7" x2="7" y2="7" /><line x1="2" y1="17" x2="7" y2="17" /><line x1="17" y1="7" x2="22" y2="7" /><line x1="17" y1="17" x2="22" y2="17" /></svg>
+                    });
+                    if (pool.length < 2 && sections.casting) pool.push({
+                        href: '/casting', label: 'Casting', path: '/casting',
+                        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></svg>
+                    });
+                    if (pool.length < 2) pool.push({
+                        href: '/upcoming', label: 'Upcoming', path: '/upcoming',
+                        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                    });
+                    const slots = pool.slice(0, 2);
+
+                    return (
+                        <div className="drawer-quick-actions">
+                            {/* Slot 1: Home — Always */}
+                            <Link href="/" onClick={() => setMobileOpen(false)}
+                                className={`drawer-quick-card ${pathname === '/' ? 'active-page' : ''}`}>
+                                <span className="quick-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                                        <polyline points="9 22 9 12 15 12 15 22" />
+                                    </svg>
+                                </span>
+                                <span className="quick-label">Home</span>
+                            </Link>
+                            {/* Slots 2 & 3: Dynamic priority */}
+                            {slots.map((card) => (
+                                <Link key={card.href} href={card.href} onClick={() => setMobileOpen(false)}
+                                    className={`drawer-quick-card ${pathname === card.path ? 'active-page' : ''}`}>
+                                    <span className="quick-icon">{card.icon}</span>
+                                    <span className="quick-label">{card.label}</span>
+                                </Link>
+                            ))}
+                        </div>
+                    );
+                })()}
+
                 {/* ── Account Actions ── */}
                 {user && (
                     <div className="drawer-section">
-                        <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="drawer-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="3" width="7" height="7" />
-                                <rect x="14" y="3" width="7" height="7" />
-                                <rect x="14" y="14" width="7" height="7" />
-                                <rect x="3" y="14" width="7" height="7" />
-                            </svg>
+                        <Link href="/dashboard" onClick={() => setMobileOpen(false)}
+                            className={`drawer-item ${pathname === '/dashboard' ? 'active-page' : ''}`}>
+                            <span className="drawer-icon-badge">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect x="3" y="3" width="7" height="7" />
+                                    <rect x="14" y="3" width="7" height="7" />
+                                    <rect x="14" y="14" width="7" height="7" />
+                                    <rect x="3" y="14" width="7" height="7" />
+                                </svg>
+                            </span>
                             {t('dashboard')}
                         </Link>
                     </div>
@@ -367,60 +428,58 @@ export default function Navbar() {
                 {/* ── Discover Section ── */}
                 <div className="drawer-section">
                     <span className="drawer-section-label">Discover</span>
-                    <Link href="/about" onClick={() => setMobileOpen(false)} className="drawer-item">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="16" x2="12" y2="12" />
-                            <line x1="12" y1="8" x2="12.01" y2="8" />
-                        </svg>
+                    <Link href="/about" onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/about' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                        </span>
                         About Us
                     </Link>
-                    {sections.training && (
-                        <Link href="/training" onClick={() => setMobileOpen(false)} className="drawer-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-                            </svg>
-                            Training
-                        </Link>
-                    )}
+
                     {sections.donations && (
-                        <Link href="/donate" onClick={() => setMobileOpen(false)} className="drawer-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                            </svg>
+                        <Link href="/donate" onClick={() => setMobileOpen(false)}
+                            className={`drawer-item ${pathname === '/donate' ? 'active-page' : ''}`}>
+                            <span className="drawer-icon-glow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                </svg>
+                            </span>
                             Donate
                         </Link>
                     )}
-                    {sections.scripts && (
-                        <Link href="/scripts" onClick={() => setMobileOpen(false)} className="drawer-item">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                                <polyline points="14 2 14 8 20 8" />
-                                <line x1="16" y1="13" x2="8" y2="13" />
-                                <line x1="16" y1="17" x2="8" y2="17" />
+
+                    <Link href="/contact" onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/contact' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                <polyline points="22,6 12,13 2,6" />
                             </svg>
-                            Scripts
-                        </Link>
-                    )}
-                    <Link href="/contact" onClick={() => setMobileOpen(false)} className="drawer-item">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                            <polyline points="22,6 12,13 2,6" />
-                        </svg>
+                        </span>
                         Contact
                     </Link>
-                    <Link href="/sponsors" onClick={() => setMobileOpen(false)} className="drawer-item">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
+                    <Link href="/sponsors" onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/sponsors' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                        </span>
                         Sponsors
                     </Link>
-                    <Link href="/subscribe" onClick={() => setMobileOpen(false)} className="drawer-item">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
+                    <Link href="/subscribe" onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/subscribe' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow" style={{ position: 'relative' }}>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                            <span className="drawer-notif-dot" />
+                        </span>
                         {t('notifications')}
                     </Link>
                 </div>
@@ -448,15 +507,22 @@ export default function Navbar() {
                             onClick={() => { logout(); setMobileOpen(false) }}
                             className="drawer-item drawer-signout"
                         >
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-                                <polyline points="16 17 21 12 16 7" />
-                                <line x1="21" y1="12" x2="9" y2="12" />
-                            </svg>
+                            <span className="drawer-icon-glow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                    <polyline points="16 17 21 12 16 7" />
+                                    <line x1="21" y1="12" x2="9" y2="12" />
+                                </svg>
+                            </span>
                             {t('signOut')}
                         </button>
                     </div>
                 )}
+
+                {/* ── Branding Footer ── */}
+                <div className="drawer-footer-brand">
+                    <span>AIM Studio · AI Cinema</span>
+                </div>
             </div>
             {/* Floating Admin Tab — visible only to admin users */}
             {user && ['admin', 'superadmin', 'ADMIN', 'SUPER_ADMIN', 'POWER_ADMIN'].includes(user.role) && (

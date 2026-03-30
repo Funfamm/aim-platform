@@ -378,19 +378,65 @@ export default function DonatePage() {
                                         {/* PayPal Buttons or Proceed Button */}
                                         {showPaypal ? (
                                             <div>
-                                                {/* Summary */}
+                                                {/* Donation Summary Card */}
                                                 <div style={{
-                                                    padding: 'var(--space-md)',
-                                                    background: 'rgba(212,168,83,0.08)',
-                                                    border: '1px solid rgba(212,168,83,0.15)',
-                                                    borderRadius: 'var(--radius-md)',
-                                                    marginBottom: 'var(--space-md)',
+                                                    padding: 'var(--space-lg)',
+                                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.06), rgba(212,168,83,0.02))',
+                                                    border: '1px solid rgba(212,168,83,0.2)',
+                                                    borderRadius: 'var(--radius-lg)',
+                                                    marginBottom: 'var(--space-lg)',
                                                     textAlign: 'center',
+                                                    position: 'relative',
+                                                    overflow: 'hidden',
                                                 }}>
-                                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                                                        Donating <strong style={{ color: 'var(--accent-gold)', fontSize: '1.2rem' }}>${finalAmount.toFixed(2)}</strong>
-                                                        {!anonymous && form.name && <> as <strong>{form.name}</strong></>}
-                                                    </p>
+                                                    {/* Shimmer effect */}
+                                                    <div style={{
+                                                        position: 'absolute', inset: 0, opacity: 0.08, pointerEvents: 'none',
+                                                        background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.5), transparent)',
+                                                        backgroundSize: '200% 100%',
+                                                        animation: 'donateShimmer 3s ease-in-out infinite',
+                                                    }} />
+                                                    <style>{`
+                                                        @keyframes donateShimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+                                                        @keyframes donatePulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+                                                        @keyframes donateSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                                                        .edit-donation-btn {
+                                                            width: 100%; padding: 0.7rem 1.2rem; font-size: 0.82rem;
+                                                            background: rgba(255,255,255,0.03); border: 1px solid var(--border-subtle);
+                                                            border-radius: var(--radius-lg); color: var(--text-secondary);
+                                                            cursor: pointer; transition: all 0.3s ease;
+                                                            display: flex; align-items: center; justify-content: center; gap: 8px;
+                                                            font-weight: 500; letter-spacing: 0.01em;
+                                                        }
+                                                        .edit-donation-btn:hover {
+                                                            background: rgba(212,168,83,0.06);
+                                                            border-color: rgba(212,168,83,0.25);
+                                                            color: var(--accent-gold);
+                                                            transform: translateY(-1px);
+                                                        }
+                                                        .edit-donation-btn:hover .edit-icon { transform: rotate(-15deg) scale(1.15); }
+                                                        .edit-icon { transition: transform 0.3s ease; display: inline-block; }
+                                                    `}</style>
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
+                                                        Your Donation
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '2rem', fontWeight: 800, color: 'var(--accent-gold)',
+                                                        animation: 'donatePulse 2s ease-in-out 1',
+                                                        lineHeight: 1.2,
+                                                    }}>
+                                                        ${finalAmount.toFixed(2)}
+                                                    </div>
+                                                    {!anonymous && form.name && (
+                                                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                                                            from <strong>{form.name}</strong>
+                                                        </div>
+                                                    )}
+                                                    {anonymous && (
+                                                        <div style={{ fontSize: '0.75rem', color: '#a78bfa', marginTop: '4px' }}>
+                                                            🤫 Anonymous donation
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* PayPal Button Container */}
@@ -400,24 +446,32 @@ export default function DonatePage() {
                                                     style={{ minHeight: '55px', marginBottom: 'var(--space-md)' }}
                                                 >
                                                     {!paypalReady && (
-                                                        <div style={{ textAlign: 'center', padding: 'var(--space-md)', color: 'var(--text-tertiary)' }}>
-                                                            Loading payment options...
+                                                        <div style={{
+                                                            textAlign: 'center', padding: 'var(--space-lg)',
+                                                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px',
+                                                        }}>
+                                                            {/* Spinner */}
+                                                            <div style={{
+                                                                width: '28px', height: '28px', borderRadius: '50%',
+                                                                border: '3px solid rgba(212,168,83,0.15)',
+                                                                borderTopColor: 'var(--accent-gold)',
+                                                                animation: 'donateSpin 0.8s linear infinite',
+                                                            }} />
+                                                            <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
+                                                                Preparing secure payment...
+                                                            </span>
                                                         </div>
                                                     )}
                                                 </div>
 
-                                                {/* Back button */}
+                                                {/* Creative Edit Button */}
                                                 <button
                                                     type="button"
+                                                    className="edit-donation-btn"
                                                     onClick={() => { setShowPaypal(false); setErrorMsg('') }}
-                                                    style={{
-                                                        width: '100%', padding: '0.6rem', fontSize: '0.85rem',
-                                                        background: 'transparent', border: '1px solid var(--border-subtle)',
-                                                        borderRadius: 'var(--radius-md)', color: 'var(--text-tertiary)',
-                                                        cursor: 'pointer', transition: 'all 0.2s',
-                                                    }}
                                                 >
-                                                    ← Change amount or details
+                                                    <span className="edit-icon">✏️</span>
+                                                    Edit donation details
                                                 </button>
                                             </div>
                                         ) : (
