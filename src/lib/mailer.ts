@@ -11,21 +11,22 @@ interface EmailOptions {
     replyTo?: string
 }
 
-interface SmtpConfig {
-    host: string
-    port: number
-    user: string
-    pass: string
+interface MailConfig {
     fromName: string
     fromEmail: string
-    secure: boolean
+    transport: 'graph' | 'smtp'
 }
 
-let cachedConfig: SmtpConfig | null = null
+let cachedConfig: MailConfig | null = null
 let cacheTime = 0
 const CACHE_TTL = 60_000 // 1 minute
 
-async function getSmtpConfig(): Promise<SmtpConfig | null> {
+/** Check whether Microsoft Graph credentials are available */
+function hasGraphCredentials(): boolean {
+    return !!(process.env.AZURE_TENANT_ID && process.env.AZURE_CLIENT_ID && process.env.AZURE_CLIENT_SECRET)
+}
+
+async function getMailConfig(): Promise<MailConfig | null> {
     const now = Date.now()
     if (cachedConfig && now - cacheTime < CACHE_TTL) return cachedConfig
 
@@ -44,25 +45,39 @@ async function getSmtpConfig(): Promise<SmtpConfig | null> {
             },
         })
 
-        if (!settings?.emailsEnabled || !settings.smtpHost || !settings.smtpUser || !settings.smtpPass) {
+        // Emails must be enabled in the admin panel
+        if (!settings?.emailsEnabled) {
+            cachedConfig = null
+            cacheTime = now
+            return null
+        }
+
+        const fromName = settings.smtpFromName || settings.siteName || 'AIM Studio'
+
+        // Prefer Microsoft Graph when Azure credentials are present
+        if (hasGraphCredentials()) {
+            const fromEmail = process.env.GRAPH_EMAIL_SENDER || settings.smtpFromEmail || settings.smtpUser || 'aimstudio@impactaistudio.com'
+            cachedConfig = { fromName, fromEmail, transport: 'graph' }
+            cacheTime = now
+            return cachedConfig
+        }
+
+        // Fallback: require SMTP fields
+        if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPass) {
             cachedConfig = null
             cacheTime = now
             return null
         }
 
         cachedConfig = {
-            host: settings.smtpHost,
-            port: settings.smtpPort ?? 587,
-            user: settings.smtpUser,
-            pass: settings.smtpPass,
-            fromName: settings.smtpFromName || settings.siteName || 'AIM Studio',
+            fromName,
             fromEmail: settings.smtpFromEmail || settings.smtpUser,
-            secure: settings.smtpSecure ?? false,
+            transport: 'smtp',
         }
         cacheTime = now
         return cachedConfig
     } catch (err) {
-        logger.error('mailer', 'Failed to load SMTP config', { error: err as Error })
+        logger.error('mailer', 'Failed to load mail config', { error: err as Error })
         return null
     }
 }
@@ -74,15 +89,15 @@ export function invalidateMailerCache() {
 }
 
 /**
- * Send an email via SMTP.
- * Gracefully no-ops if emails are disabled or SMTP is not configured.
+ * Send an email via Microsoft Graph (preferred) or SMTP fallback.
+ * Gracefully no-ops if emails are disabled or not configured.
  * Errors are logged but never thrown — email sending is fire-and-forget.
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
     try {
-        const config = await getSmtpConfig()
+        const config = await getMailConfig()
         if (!config) {
-            logger.info('mailer', 'Email skipped — SMTP not configured or emails disabled')
+            logger.info('mailer', 'Email skipped — not configured or emails disabled')
             return false
         }
 
@@ -120,12 +135,12 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 }
 
 /**
- * Send a test email to verify SMTP configuration.
+ * Send a test email to verify email configuration.
  * Unlike sendEmail, this DOES throw on error so admin can see the issue.
  */
 export async function sendTestEmail(to: string): Promise<void> {
-    const config = await getSmtpConfig()
-    if (!config) throw new Error('SMTP is not configured or emails are disabled')
+    const config = await getMailConfig()
+    if (!config) throw new Error('Email is not configured or emails are disabled in admin settings')
 
     const token = await getGraphAccessToken()
         const response = await fetch(`https://graph.microsoft.com/v1.0/users/${config.fromEmail}/sendMail`, {
