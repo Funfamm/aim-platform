@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
   const name = form.get('name')?.toString() ?? '';
   const email = form.get('email')?.toString() ?? '';
   const phone = form.get('phone')?.toString() ?? '';
+  const experience = form.get('experience')?.toString() ?? '';
   const castingCallId = form.get('castingCallId')?.toString();
 
   if (!castingCallId) {
@@ -46,19 +47,14 @@ export async function POST(request: NextRequest) {
       castingCallId,
       fullName: name,
       email,
-      phone,
-      audioUrl,
+      phone: phone || null,
+      experience,
+      audioUrl: audioUrl || null,
     },
   });
 
-  // Audit log entry
-  await prisma.castingApplicationLog.create({
-    data: {
-      userId: null, // fill if you have auth context
-      status: 'pending',
-      audioUrl,
-    },
-  });
+  // Audit log (model does not exist yet — log to console until schema is updated)
+  logger.info('castingSubmit', `Application ${application.id} created with status pending`);
 
   // Enqueue background processing (currently a no‑op but ready for future transcoding)
   await audioQueue.add('process', { applicationId: application.id, audioUrl });
