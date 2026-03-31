@@ -99,7 +99,8 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   silent: true,
   disableLogger: true,
   telemetry: false,
-  // Sentry v9: client initialised via instrumentation-client.ts – disable
-  // the legacy sentry.client.config.ts auto-discovery to avoid build errors.
-  autoInstrumentServerFunctions: false,
+  // Disable source map uploads — no SENTRY_AUTH_TOKEN in CI
+  sourcemaps: {
+    disable: true,
+  },
 });
