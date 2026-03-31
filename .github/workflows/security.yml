@@ -64,10 +64,23 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Apply DB migrations for build
-        run: npx prisma migrate deploy
+      - name: Test DB connection
+        run: pg_isready -h localhost -p 5432 -U test
+        env:
+          PGPASSWORD: test
+
+      - name: Show Prisma migration status
+        run: npx prisma migrate status
         env:
           DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
+
+      - name: Wait for DB and apply migrations
+        run: |
+          until pg_isready -h localhost -p 5432 -U test; do echo "Waiting for DB..."; sleep 1; done
+          npx prisma migrate deploy
+        env:
+          DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
+          PGPASSWORD: test
 
       - name: Build (skip DB deploy in CI, use ephemeral DB for SSG)
         run: npx next build
