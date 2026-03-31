@@ -60,6 +60,9 @@ jobs:
 
       - name: Generate Prisma client
         run: npx prisma generate
+        env:
+          DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
+          DIRECT_URL: 'postgresql://test:test@localhost:5432/testdb'
 
       - name: Type check
         run: npx tsc --noEmit
