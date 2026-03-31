@@ -68,12 +68,14 @@ jobs:
         run: npx prisma db push --force-reset --accept-data-loss
         env:
           DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
+          DIRECT_URL: 'postgresql://test:test@localhost:5432/testdb'
 
       - name: Build (skip DB deploy in CI, use ephemeral DB for SSG)
         run: npx next build
         env:
           SKIP_ENV_VALIDATION: '1'
           DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
+          DIRECT_URL: 'postgresql://test:test@localhost:5432/testdb'
           # Suppress Sentry warnings when no auth token is present
           SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: '1'
           SENTRY_SUPPRESS_INSTRUMENTATION_FILE_WARNING: '1'
