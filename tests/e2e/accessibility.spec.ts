@@ -22,16 +22,12 @@ const PUBLIC_ROUTES = [
 
 for (const route of PUBLIC_ROUTES) {
     test(`Accessibility: ${route}`, async ({ page }) => {
-        // Use networkidle for pages with video/fetch to avoid "execution context destroyed"
-        const waitState = (route === '/casting' || route === '/works')
-            ? 'networkidle'
-            : 'domcontentloaded'
+        // Use networkidle for maximum stability across all routes
+        await page.goto(route, { waitUntil: 'networkidle' })
 
-        await page.goto(route, { waitUntil: waitState })
-
-        // Extra settle time for client-rendered pages
-        if (route === '/casting' || route === '/works') {
-            await page.waitForTimeout(1000)
+        // Extra settle time for pages with dynamic video/fetch content
+        if (['/casting', '/works'].includes(route)) {
+            await page.waitForLoadState('networkidle')
         }
 
         const results = await new AxeBuilder({ page })
