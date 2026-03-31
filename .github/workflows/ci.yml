@@ -113,21 +113,38 @@ jobs:
         run: npm ci
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
-      - name: Push schema to CI database
+      - name: Generate Prisma client
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
-        run: npx prisma db push --force-reset --accept-data-loss
-      - name: Start dev server
+        run: npx prisma generate
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/testdb
+          DIRECT_URL: postgresql://test:test@localhost:5432/testdb
+        run: npx prisma migrate deploy
+      - name: Build production app
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
           ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
-        run: |
-          npm run dev &
-          npx wait-on http://localhost:3000
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          NEXT_TELEMETRY_DISABLED: 1
+        run: npm run build
+      - name: Start production server
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/testdb
+          DIRECT_URL: postgresql://test:test@localhost:5432/testdb
+          ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
+          JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+        run: npm run start &
+      - name: Wait for app to be ready (2xx on health endpoint)
+        run: npx wait-on --httpTimeout 60000 http-get://localhost:3000/api/health
       - name: Run Playwright tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/testdb
         run: npx playwright test
 
   accessibility:
