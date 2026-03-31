@@ -75,7 +75,7 @@ export default async function AboutPage() {
     return (
         <>
             <AboutBackground bgUrls={bgUrls} />
-            <main id="main-content" style={{ position: 'relative', zIndex: 2 }}>
+            <main id="main-content" tabIndex={0} role="main" aria-label="About page content" style={{ position: 'relative', zIndex: 2 }}>
 
                 {/* ═══════════════════ HERO ═══════════════════ */}
                 <section style={{

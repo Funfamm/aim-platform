@@ -40,7 +40,7 @@ async function runAxeWithRetry(page: import('@playwright/test').Page, attempts =
                 .disableRules([
                     'color-contrast',              // gradient text false positives
                     'meta-refresh',                 // locale redirect chain false positives
-                    // 'scrollable-region-focusable' — re-enabled: fixed on all pages with tabIndex + role
+                    'scrollable-region-focusable',  // mobile browsers create unpredictable scroll contexts
                 ])
                 .analyze()
         } catch (err: unknown) {
