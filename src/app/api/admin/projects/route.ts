@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
+import { notifyContentPublish } from '@/lib/notifications'
 
 export async function GET() {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
@@ -69,6 +70,12 @@ export async function POST(req: Request) {
             await prisma.project.update({ where: { id: project.id }, data: { translations } })
         }
     )
+
+    // Fire-and-forget: notify users if project is published immediately
+    if (project.status === 'published') {
+        const link = `/works/${project.slug}`
+        notifyContentPublish(project.title, project.projectType || 'project', link).catch(() => {})
+    }
 
     return NextResponse.json(project, { status: 201 })
 }

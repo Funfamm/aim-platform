@@ -44,6 +44,7 @@ const SIDEBAR = [
     { href: '/admin/users', label: '👥 Users' },
     { href: '/admin/scripts', label: '✍️ Scripts' },
     { href: '/admin/training', label: '🎓 Training' },
+    { href: '/admin/announcements', label: '📣 Announcements' },
     { href: '/admin/settings', label: '⚙️ Settings' },
 ]
 

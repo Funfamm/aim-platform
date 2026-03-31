@@ -4,48 +4,56 @@
  * Handles all outbound notification jobs: email + in-app.
  * Each job is retried up to 3 times with exponential back-off.
  *
+ * Redis: set REDIS_URL to your Upstash rediss:// URL in production.
+ * Worker: started via src/instrumentation.ts on server boot (Node runtime only).
+ *
  * Usage:
  *   import { notificationQueue } from '@/lib/queues/notificationQueue'
  *   await notificationQueue.add('email', payload)
  */
 import { Queue, Worker, Job } from 'bullmq'
-import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
 
 // ─── Redis connection ────────────────────────────────────────────────────────
-// BullMQ requires Redis. On Render, set REDIS_URL env var.
-// Falls back to local Redis for development.
+// Supports:
+//   redis://127.0.0.1:6379            (local dev)
+//   rediss://:password@host:port      (Upstash — TLS required)
 const redisUrl = process.env.REDIS_URL || 'redis://127.0.0.1:6379'
-const [, , hostPort] = redisUrl.replace('redis://', '').split('@').reverse()
-const [host = '127.0.0.1', portStr = '6379'] = (hostPort || redisUrl.replace('redis://', '')).split(':')
-const port = parseInt(portStr, 10)
-const password = redisUrl.includes('@') ? redisUrl.split(':')[2]?.split('@')[0] : undefined
+const parsedUrl = new URL(redisUrl)
+const isTls = redisUrl.startsWith('rediss://')
 
-const connection = { host, port, ...(password ? { password } : {}) }
-
-// ─── Job payload types ────────────────────────────────────────────────────────
-export interface NotificationJobPayload {
-    type: 'email' | 'in_app' | 'both'
-    userId?: string          // target user (for in-app)
-    email?: string           // recipient email address
-    subject?: string
-    html?: string
-    notificationId?: string  // UserNotification row to mark sent/failed
+const connection = {
+    host: parsedUrl.hostname,
+    port: parseInt(parsedUrl.port || '6379', 10),
+    ...(parsedUrl.password ? { password: decodeURIComponent(parsedUrl.password) } : {}),
+    ...(isTls ? { tls: {} } : {}),  // Upstash requires TLS
 }
 
-// ─── Queue definition ─────────────────────────────────────────────────────────
+// ─── Job payload types ─────────────────────────────────────────────────────
+export interface NotificationJobPayload {
+    type: 'email' | 'in_app' | 'both'
+    userId?: string           // target user (for in-app)
+    email?: string            // recipient email address
+    subject?: string
+    html?: string
+    notificationId?: string  // UserNotification row id (for logging)
+}
+
+// ─── Queue ─────────────────────────────────────────────────────────────────
 export const notificationQueue = new Queue<NotificationJobPayload>('notifications', {
     connection,
     defaultJobOptions: {
         attempts: 3,
         backoff: { type: 'exponential', delay: 5_000 },
-        removeOnComplete: { age: 60 * 60 * 24 }, // keep 24h
-        removeOnFail: { age: 60 * 60 * 24 * 7 }, // keep 7 days on failure
+        removeOnComplete: { age: 60 * 60 * 24 },       // keep 24 h
+        removeOnFail:     { age: 60 * 60 * 24 * 7 },   // keep 7 days on failure
     },
 })
 
-// ─── Worker (processes jobs when running in Node, not in Next.js edge runtime) ─
+// ─── Worker ────────────────────────────────────────────────────────────────
+// Started once on server boot via instrumentation.ts (Node runtime only).
+// Guards against double-start across hot-reload cycles.
 let workerStarted = false
 
 export function startNotificationWorker() {
@@ -63,10 +71,8 @@ export function startNotificationWorker() {
                 if (!sent) throw new Error(`Email delivery failed for job ${job.id}`)
             }
 
-            // Mark in-app notification as "delivered" if we have its id
             if (notificationId) {
-                // Optionally update a `delivered` field; currently just log
-                logger.info('notificationQueue', `Job ${job.id} processed notificationId=${notificationId}`)
+                logger.info('notificationQueue', `Job ${job.id} delivered notificationId=${notificationId}`)
             }
         },
         {
@@ -82,5 +88,6 @@ export function startNotificationWorker() {
         logger.error('notificationQueue', `Job ${job?.id} failed: ${err.message}`, { error: err })
     })
 
+    logger.info('notificationQueue', 'Worker started')
     return worker
 }

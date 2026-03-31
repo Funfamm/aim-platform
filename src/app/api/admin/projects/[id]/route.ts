@@ -2,12 +2,16 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
+import { notifyContentPublish } from '@/lib/notifications'
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     const { id } = await params
     const body = await req.json()
+
+    // Capture prior status so we only notify on the transition to 'published'
+    const prior = await prisma.project.findUnique({ where: { id }, select: { status: true, slug: true } })
 
     const project = await prisma.project.update({
         where: { id },
@@ -40,6 +44,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 await prisma.project.update({ where: { id }, data: { translations } })
             }
         )
+    }
+
+    // Fire-and-forget: notify users when status transitions to 'published'
+    if (body.status === 'published' && prior?.status !== 'published') {
+        const link = `/works/${project.slug}`
+        notifyContentPublish(project.title, project.projectType || 'project', link).catch(() => {})
     }
 
     return NextResponse.json(project)
