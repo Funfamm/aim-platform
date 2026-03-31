@@ -1,0 +1,25 @@
+﻿2026-03-31T03:29:08.9942299Z ##[group]Run actions/setup-node@v4
+2026-03-31T03:29:08.9942716Z with:
+2026-03-31T03:29:08.9942982Z   node-version: 22
+2026-03-31T03:29:08.9943245Z   cache: npm
+2026-03-31T03:29:08.9943500Z   always-auth: false
+2026-03-31T03:29:08.9943783Z   check-latest: false
+2026-03-31T03:29:08.9944234Z   token: ***
+2026-03-31T03:29:08.9944512Z ##[endgroup]
+2026-03-31T03:29:09.2470113Z Found in cache @ /opt/hostedtoolcache/node/22.22.1/x64
+2026-03-31T03:29:09.2470943Z ##[group]Environment details
+2026-03-31T03:29:13.2904945Z node: v22.22.1
+2026-03-31T03:29:13.2905456Z npm: 10.9.4
+2026-03-31T03:29:13.2905913Z yarn: 1.22.22
+2026-03-31T03:29:13.2907297Z ##[endgroup]
+2026-03-31T03:29:13.2932254Z [command]/opt/hostedtoolcache/node/22.22.1/x64/bin/npm config get cache
+2026-03-31T03:29:13.5356481Z /home/runner/.npm
+2026-03-31T03:29:13.7993582Z Cache hit for: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:29:15.0135308Z Received 37748736 of 479585721 (7.9%), 36.0 MBs/sec
+2026-03-31T03:29:16.0179606Z Received 205520896 of 479585721 (42.9%), 97.9 MBs/sec
+2026-03-31T03:29:17.0163362Z Received 402653184 of 479585721 (84.0%), 127.8 MBs/sec
+2026-03-31T03:29:17.2957225Z Received 479585721 of 479585721 (100.0%), 139.3 MBs/sec
+2026-03-31T03:29:17.2958905Z Cache Size: ~457 MB (479585721 B)
+2026-03-31T03:29:17.3083192Z [command]/usr/bin/tar -xf /home/runner/work/_temp/f6a77cd3-eff3-48f0-836f-631906331d02/cache.tzst -P -C /home/runner/work/aim-platform/aim-platform --use-compress-program unzstd
+2026-03-31T03:29:18.5267736Z Cache restored successfully
+2026-03-31T03:29:18.5484008Z Cache restored from key: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853

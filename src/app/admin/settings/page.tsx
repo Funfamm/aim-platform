@@ -61,9 +61,10 @@ type Settings = {
     // OAuth
     googleClientId: string; googleClientSecret: string
     appleClientId: string; appleTeamId: string; appleKeyId: string; applePrivateKey: string
-    // Email / SMTP
+    // Email
     smtpHost: string; smtpPort: number; smtpUser: string; smtpPass: string
-    smtpFromName: string; smtpFromEmail: string; smtpSecure: boolean; emailsEnabled: boolean
+    smtpFromName: string; smtpFromEmail: string; smtpSecure: boolean
+    emailsEnabled: boolean; emailTransport: string
 }
 
 const TABS = [
@@ -116,7 +117,8 @@ function EmailSmtpTab({ settings, update, Toggle }: {
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
 
-    // Microsoft Graph transport — no SMTP credentials needed here
+    const transport = settings.emailTransport || 'graph'
+    const isGraph = transport === 'graph'
 
     const handleTestEmail = async () => {
         const to = settings.notifyEmail || settings.contactEmail
@@ -137,14 +139,12 @@ function EmailSmtpTab({ settings, update, Toggle }: {
     const handleSave = async () => {
         setSaving(true); setSaved(false); setTestResult(null)
         try {
-            // Build the body — socialLinks may already be a string from the API
             const body = {
                 ...settings,
                 socialLinks: typeof settings.socialLinks === 'string'
                     ? settings.socialLinks
                     : JSON.stringify(settings.socialLinks),
             }
-            console.log('Saving email settings:', { emailsEnabled: body.emailsEnabled, smtpHost: body.smtpHost, smtpUser: body.smtpUser })
             const res = await fetch('/api/admin/settings', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
             })
@@ -157,27 +157,21 @@ function EmailSmtpTab({ settings, update, Toggle }: {
             setTestResult({ ok: true, msg: '✅ Email settings saved successfully!' })
             setTimeout(() => setSaved(false), 3000)
         } catch (err) {
-            console.error('Email settings save error:', err)
             setTestResult({ ok: false, msg: `Save failed: ${err instanceof Error ? err.message : 'Network error'}` })
-        }
-        finally { setSaving(false) }
+        } finally { setSaving(false) }
+    }
+
+    const cardBase: React.CSSProperties = {
+        flex: 1, padding: '16px 18px', borderRadius: 'var(--radius-lg)',
+        cursor: 'pointer', transition: 'all 0.18s', display: 'flex',
+        flexDirection: 'column', gap: '6px',
     }
 
     return (
         <section className="admin-form-section">
-            <h3 className="admin-form-section-title">📧 Microsoft Graph Email</h3>
+            <h3 className="admin-form-section-title">📧 Email Configuration</h3>
 
-
-            {/* Info badge */}
-            <div style={{
-                padding: '10px 14px', marginBottom: 'var(--space-xl)',
-                background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
-                borderRadius: 'var(--radius-lg)', fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.6,
-            }}>
-                ℹ️ Transport: <strong>Microsoft Graph</strong> — SMTP settings are not used.
-            </div>
-
-            {/* Master Toggle */}
+            {/* ─── Master Enable Toggle ─── */}
             <div style={{
                 padding: 'var(--space-lg)', marginBottom: 'var(--space-xl)',
                 background: settings.emailsEnabled ? 'rgba(52,211,153,0.04)' : 'rgba(239,68,68,0.03)',
@@ -187,19 +181,84 @@ function EmailSmtpTab({ settings, update, Toggle }: {
                 <Toggle checked={settings.emailsEnabled} onChange={v => update('emailsEnabled', v)} label="Enable email sending" />
                 <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
                     {settings.emailsEnabled
-                        ? '✅ Emails are enabled via Microsoft Graph.'
-                        : '🔇 All outgoing emails are paused. Toggle on when ready.'}
+                        ? '✅ Emails are active. Choose a transport below.'
+                        : '🔇 All outgoing emails are paused. Enable to configure.'}
                 </div>
             </div>
 
-            {/* Divider */}
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: 'var(--space-xl) 0' }} />
+            {/* ─── Transport Picker ─── */}
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                Email Transport
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: 'var(--space-xl)' }}>
+                {/* Microsoft Graph card */}
+                <div
+                    onClick={() => update('emailTransport', 'graph')}
+                    style={{
+                        ...cardBase,
+                        background: isGraph ? 'rgba(59,130,246,0.08)' : 'var(--bg-secondary)',
+                        border: isGraph ? '2px solid rgba(59,130,246,0.5)' : '1px solid var(--border-subtle)',
+                        boxShadow: isGraph ? '0 0 0 1px rgba(59,130,246,0.15)' : 'none',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                            width: 16, height: 16, borderRadius: '50%',
+                            border: `2px solid ${isGraph ? '#3b82f6' : 'var(--border-subtle)'}`,
+                            background: isGraph ? '#3b82f6' : 'transparent',
+                            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            {isGraph && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                        </div>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>🔵 Microsoft Graph</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', paddingLeft: '24px' }}>
+                        Send via Azure registered app. No SMTP server needed. Recommended for Office 365 / Exchange.
+                    </div>
+                    {isGraph && (
+                        <div style={{ fontSize: '0.65rem', color: '#3b82f6', paddingLeft: '24px', marginTop: '2px' }}>
+                            ✓ Uses AZURE_TENANT_ID / CLIENT_ID / CLIENT_SECRET from environment
+                        </div>
+                    )}
+                </div>
 
-            {/* From Fields */}
+                {/* SMTP card */}
+                <div
+                    onClick={() => update('emailTransport', 'smtp')}
+                    style={{
+                        ...cardBase,
+                        background: !isGraph ? 'rgba(212,168,83,0.06)' : 'var(--bg-secondary)',
+                        border: !isGraph ? '2px solid rgba(212,168,83,0.4)' : '1px solid var(--border-subtle)',
+                        boxShadow: !isGraph ? '0 0 0 1px rgba(212,168,83,0.12)' : 'none',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                            width: 16, height: 16, borderRadius: '50%',
+                            border: `2px solid ${!isGraph ? '#d4a853' : 'var(--border-subtle)'}`,
+                            background: !isGraph ? '#d4a853' : 'transparent',
+                            flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}>
+                            {!isGraph && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff' }} />}
+                        </div>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>📮 SMTP</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', paddingLeft: '24px' }}>
+                        Send via any SMTP server (Gmail, Mailgun, SendGrid, custom). Enter credentials below.
+                    </div>
+                    {!isGraph && (
+                        <div style={{ fontSize: '0.65rem', color: '#d4a853', paddingLeft: '24px', marginTop: '2px' }}>
+                            ✓ Uses the credentials you enter below
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ─── Sender Identity (always visible) ─── */}
             <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>
                 ✉️ Sender Identity
             </div>
-            <div className="admin-form-grid" style={{ marginBottom: 'var(--space-lg)' }}>
+            <div className="admin-form-grid" style={{ marginBottom: 'var(--space-xl)' }}>
                 <div>
                     <label className="admin-label">From Name</label>
                     <input className="admin-input" value={settings.smtpFromName} onChange={e => update('smtpFromName', e.target.value)} placeholder="AIM Studio" />
@@ -207,23 +266,65 @@ function EmailSmtpTab({ settings, update, Toggle }: {
                 </div>
                 <div>
                     <label className="admin-label">From Email</label>
-                    <input className="admin-input" type="email" value={settings.smtpFromEmail} onChange={e => update('smtpFromEmail', e.target.value)} placeholder="noreply@aimstudio.ai" />
-                    <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Defaults to SMTP username if blank</div>
+                    <input className="admin-input" type="email" value={settings.smtpFromEmail} onChange={e => update('smtpFromEmail', e.target.value)}
+                        placeholder={isGraph ? 'aimstudio@impactaistudio.com' : 'noreply@yourdomain.com'} />
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                        {isGraph ? 'Must be a mailbox licensed in your Azure tenant' : 'The address emails are sent from'}
+                    </div>
                 </div>
             </div>
 
-            {/* Save + Test */}
-            <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center', marginTop: 'var(--space-xl)' }}>
+            {/* ─── SMTP Credentials (only when smtp is selected) ─── */}
+            {!isGraph && (
+                <>
+                    <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: 'var(--space-lg) 0' }} />
+                    <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#d4a853', marginBottom: 'var(--space-md)' }}>
+                        🔐 SMTP Credentials
+                    </div>
+                    <div className="admin-form-grid" style={{ marginBottom: 'var(--space-md)' }}>
+                        <div>
+                            <label className="admin-label">SMTP Host</label>
+                            <input className="admin-input" value={settings.smtpHost} onChange={e => update('smtpHost', e.target.value)} placeholder="smtp.gmail.com" />
+                        </div>
+                        <div>
+                            <label className="admin-label">SMTP Port</label>
+                            <input className="admin-input" type="number" value={settings.smtpPort} onChange={e => update('smtpPort', parseInt(e.target.value))} placeholder="587" />
+                        </div>
+                        <div>
+                            <label className="admin-label">Username / Email</label>
+                            <input className="admin-input" value={settings.smtpUser} onChange={e => update('smtpUser', e.target.value)} placeholder="you@gmail.com" />
+                        </div>
+                        <div>
+                            <label className="admin-label">Password / App Password</label>
+                            <input className="admin-input" type="password" value={settings.smtpPass} onChange={e => update('smtpPass', e.target.value)} placeholder="•••••••••••••••" />
+                        </div>
+                    </div>
+                    <div style={{ marginBottom: 'var(--space-xl)' }}>
+                        <Toggle checked={settings.smtpSecure} onChange={v => update('smtpSecure', v)} label="Use SSL (port 465)" />
+                        <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                            Off = STARTTLS on port 587 (recommended). On = SSL on port 465.
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* ─── Save + Test ─── */}
+            <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center', marginTop: 'var(--space-xl)', flexWrap: 'wrap' }}>
                 <button type="button" onClick={handleSave} className="btn btn-primary" disabled={saving} style={{ minWidth: '160px' }}>
                     {saving ? 'Saving…' : saved ? '✓ Saved' : '💾 Save Email Settings'}
                 </button>
-                <button type="button" onClick={handleTestEmail} className="btn btn-primary btn-sm" disabled={testingSending || !settings.emailsEnabled} style={{
-                    opacity: settings.emailsEnabled ? 1 : 0.4,
-                    background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)',
-                    color: 'var(--success)', whiteSpace: 'nowrap',
-                }}>
+                <button type="button" onClick={handleTestEmail} className="btn btn-primary btn-sm"
+                    disabled={testingSending || !settings.emailsEnabled}
+                    style={{
+                        opacity: settings.emailsEnabled ? 1 : 0.4,
+                        background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)',
+                        color: 'var(--success)', whiteSpace: 'nowrap',
+                    }}>
                     {testingSending ? '⏳ Sending…' : '📤 Send Test Email'}
                 </button>
+                {!settings.emailsEnabled && (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Enable emails above to test</span>
+                )}
             </div>
             {testResult && (
                 <div style={{
@@ -237,7 +338,7 @@ function EmailSmtpTab({ settings, update, Toggle }: {
                 </div>
             )}
 
-            {/* What gets emailed */}
+            {/* ─── What gets emailed ─── */}
             <div style={{
                 marginTop: 'var(--space-2xl)', padding: 'var(--space-lg)',
                 background: 'rgba(139,92,246,0.03)', borderRadius: 'var(--radius-lg)',
@@ -618,9 +719,10 @@ export default function AdminSettingsPage() {
         trainingEnabled: false,
         googleClientId: '', googleClientSecret: '',
         appleClientId: '', appleTeamId: '', appleKeyId: '', applePrivateKey: '',
-        // Email / SMTP
+        // Email
         smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
-        smtpFromName: '', smtpFromEmail: '', smtpSecure: false, emailsEnabled: false,
+        smtpFromName: '', smtpFromEmail: '', smtpSecure: false,
+        emailsEnabled: false, emailTransport: 'graph',
     })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -680,7 +782,7 @@ export default function AdminSettingsPage() {
                     appleTeamId: data.appleTeamId || '',
                     appleKeyId: data.appleKeyId || '',
                     applePrivateKey: data.applePrivateKey || '',
-                    // Email / SMTP — normalize null to defaults
+                    // Email — normalize null to defaults
                     smtpHost: data.smtpHost || '',
                     smtpPort: data.smtpPort ?? 587,
                     smtpUser: data.smtpUser || '',
@@ -689,6 +791,7 @@ export default function AdminSettingsPage() {
                     smtpFromEmail: data.smtpFromEmail || '',
                     smtpSecure: data.smtpSecure ?? false,
                     emailsEnabled: data.emailsEnabled ?? false,
+                    emailTransport: data.emailTransport || 'graph',
                     aboutPageData: data.aboutPageData || '',
                 })
                 setDirty(false)

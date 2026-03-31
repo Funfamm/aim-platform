@@ -1,0 +1,1116 @@
+﻿2026-03-31T03:44:30.5406701Z Current runner version: '2.333.0'
+2026-03-31T03:44:30.5431325Z ##[group]Runner Image Provisioner
+2026-03-31T03:44:30.5432412Z Hosted Compute Agent
+2026-03-31T03:44:30.5433028Z Version: 20260213.493
+2026-03-31T03:44:30.5433734Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-03-31T03:44:30.5434461Z Build Date: 2026-02-13T00:28:41Z
+2026-03-31T03:44:30.5435113Z Worker ID: {a6e3f489-69f6-4f91-952a-a527cbd1d891}
+2026-03-31T03:44:30.5436502Z Azure Region: eastus2
+2026-03-31T03:44:30.5437349Z ##[endgroup]
+2026-03-31T03:44:30.5439804Z ##[group]Operating System
+2026-03-31T03:44:30.5440827Z Ubuntu
+2026-03-31T03:44:30.5441823Z 24.04.4
+2026-03-31T03:44:30.5442595Z LTS
+2026-03-31T03:44:30.5443372Z ##[endgroup]
+2026-03-31T03:44:30.5444270Z ##[group]Runner Image
+2026-03-31T03:44:30.5445162Z Image: ubuntu-24.04
+2026-03-31T03:44:30.5446080Z Version: 20260323.65.1
+2026-03-31T03:44:30.5447994Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260323.65/images/ubuntu/Ubuntu2404-Readme.md
+2026-03-31T03:44:30.5450595Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260323.65
+2026-03-31T03:44:30.5452540Z ##[endgroup]
+2026-03-31T03:44:30.5454626Z ##[group]GITHUB_TOKEN Permissions
+2026-03-31T03:44:30.5457536Z Contents: read
+2026-03-31T03:44:30.5458443Z Metadata: read
+2026-03-31T03:44:30.5459383Z Packages: read
+2026-03-31T03:44:30.5460556Z ##[endgroup]
+2026-03-31T03:44:30.5463654Z Secret source: Actions
+2026-03-31T03:44:30.5464988Z Prepare workflow directory
+2026-03-31T03:44:30.5933470Z Prepare all required actions
+2026-03-31T03:44:30.5988321Z Getting action download info
+2026-03-31T03:44:30.8817705Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-03-31T03:44:31.0210979Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-03-31T03:44:31.2645386Z Complete job name: lint
+2026-03-31T03:44:31.3350532Z ##[group]Run actions/checkout@v4
+2026-03-31T03:44:31.3351713Z with:
+2026-03-31T03:44:31.3352265Z   repository: Funfamm/aim-platform
+2026-03-31T03:44:31.3352952Z   token: ***
+2026-03-31T03:44:31.3353315Z   ssh-strict: true
+2026-03-31T03:44:31.3353707Z   ssh-user: git
+2026-03-31T03:44:31.3354101Z   persist-credentials: true
+2026-03-31T03:44:31.3354533Z   clean: true
+2026-03-31T03:44:31.3354915Z   sparse-checkout-cone-mode: true
+2026-03-31T03:44:31.3355361Z   fetch-depth: 1
+2026-03-31T03:44:31.3355737Z   fetch-tags: false
+2026-03-31T03:44:31.3356114Z   show-progress: true
+2026-03-31T03:44:31.3356501Z   lfs: false
+2026-03-31T03:44:31.3356845Z   submodules: false
+2026-03-31T03:44:31.3357229Z   set-safe-directory: true
+2026-03-31T03:44:31.3357969Z ##[endgroup]
+2026-03-31T03:44:31.4433614Z Syncing repository: Funfamm/aim-platform
+2026-03-31T03:44:31.4435358Z ##[group]Getting Git version info
+2026-03-31T03:44:31.4436087Z Working directory is '/home/runner/work/aim-platform/aim-platform'
+2026-03-31T03:44:31.4437119Z [command]/usr/bin/git version
+2026-03-31T03:44:31.4500675Z git version 2.53.0
+2026-03-31T03:44:31.4526635Z ##[endgroup]
+2026-03-31T03:44:31.4540763Z Temporarily overriding HOME='/home/runner/work/_temp/4d5a5062-629b-4030-a97b-f2f15eab0fca' before making global git config changes
+2026-03-31T03:44:31.4543129Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-31T03:44:31.4546270Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:44:31.4577964Z Deleting the contents of '/home/runner/work/aim-platform/aim-platform'
+2026-03-31T03:44:31.4581625Z ##[group]Initializing the repository
+2026-03-31T03:44:31.4585646Z [command]/usr/bin/git init /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:44:31.4686972Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-03-31T03:44:31.4688875Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-03-31T03:44:31.4689970Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-03-31T03:44:31.4690990Z hint: call:
+2026-03-31T03:44:31.4691660Z hint:
+2026-03-31T03:44:31.4692356Z hint: 	git config --global init.defaultBranch <name>
+2026-03-31T03:44:31.4692988Z hint:
+2026-03-31T03:44:31.4693691Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-03-31T03:44:31.4694657Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-03-31T03:44:31.4695324Z hint:
+2026-03-31T03:44:31.4695679Z hint: 	git branch -m <name>
+2026-03-31T03:44:31.4696095Z hint:
+2026-03-31T03:44:31.4696650Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-03-31T03:44:31.4697594Z Initialized empty Git repository in /home/runner/work/aim-platform/aim-platform/.git/
+2026-03-31T03:44:31.4699712Z [command]/usr/bin/git remote add origin https://github.com/Funfamm/aim-platform
+2026-03-31T03:44:31.4729169Z ##[endgroup]
+2026-03-31T03:44:31.4729883Z ##[group]Disabling automatic garbage collection
+2026-03-31T03:44:31.4733703Z [command]/usr/bin/git config --local gc.auto 0
+2026-03-31T03:44:31.4761073Z ##[endgroup]
+2026-03-31T03:44:31.4762319Z ##[group]Setting up auth
+2026-03-31T03:44:31.4768678Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-31T03:44:31.4797842Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-31T03:44:31.5094644Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-31T03:44:31.5129923Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-31T03:44:31.5364117Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-31T03:44:31.5406039Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-31T03:44:31.5648400Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-03-31T03:44:31.5685590Z ##[endgroup]
+2026-03-31T03:44:31.5686841Z ##[group]Fetching the repository
+2026-03-31T03:44:31.5696324Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +946add77693215e96313237fb07e6b4e4fa70d83:refs/remotes/pull/5/merge
+2026-03-31T03:44:32.1781605Z From https://github.com/Funfamm/aim-platform
+2026-03-31T03:44:32.1783435Z  * [new ref]         946add77693215e96313237fb07e6b4e4fa70d83 -> pull/5/merge
+2026-03-31T03:44:32.1813999Z ##[endgroup]
+2026-03-31T03:44:32.1815325Z ##[group]Determining the checkout info
+2026-03-31T03:44:32.1817763Z ##[endgroup]
+2026-03-31T03:44:32.1823010Z [command]/usr/bin/git sparse-checkout disable
+2026-03-31T03:44:32.1864597Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-03-31T03:44:32.1894221Z ##[group]Checking out the ref
+2026-03-31T03:44:32.1899307Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/5/merge
+2026-03-31T03:44:32.3043565Z Note: switching to 'refs/remotes/pull/5/merge'.
+2026-03-31T03:44:32.3044616Z 
+2026-03-31T03:44:32.3045455Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-03-31T03:44:32.3047447Z changes and commit them, and you can discard any commits you make in this
+2026-03-31T03:44:32.3049391Z state without impacting any branches by switching back to a branch.
+2026-03-31T03:44:32.3050515Z 
+2026-03-31T03:44:32.3051529Z If you want to create a new branch to retain commits you create, you may
+2026-03-31T03:44:32.3053503Z do so (now or later) by using -c with the switch command. Example:
+2026-03-31T03:44:32.3054656Z 
+2026-03-31T03:44:32.3055139Z   git switch -c <new-branch-name>
+2026-03-31T03:44:32.3055877Z 
+2026-03-31T03:44:32.3056210Z Or undo this operation with:
+2026-03-31T03:44:32.3056992Z 
+2026-03-31T03:44:32.3057248Z   git switch -
+2026-03-31T03:44:32.3057624Z 
+2026-03-31T03:44:32.3058287Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-03-31T03:44:32.3059273Z 
+2026-03-31T03:44:32.3060641Z HEAD is now at 946add7 Merge 7511fe95037f2abd53b54ef67ba3e193688f3083 into 8cba4816a94ddca7b4a12564e5e9c19f451ff1c6
+2026-03-31T03:44:32.3064502Z ##[endgroup]
+2026-03-31T03:44:32.3101212Z [command]/usr/bin/git log -1 --format=%H
+2026-03-31T03:44:32.3123170Z 946add77693215e96313237fb07e6b4e4fa70d83
+2026-03-31T03:44:32.3448181Z ##[group]Run actions/setup-node@v4
+2026-03-31T03:44:32.3449274Z with:
+2026-03-31T03:44:32.3450055Z   node-version: 22
+2026-03-31T03:44:32.3450896Z   cache: npm
+2026-03-31T03:44:32.3452246Z   always-auth: false
+2026-03-31T03:44:32.3453155Z   check-latest: false
+2026-03-31T03:44:32.3454348Z   token: ***
+2026-03-31T03:44:32.3455185Z ##[endgroup]
+2026-03-31T03:44:32.5249234Z Found in cache @ /opt/hostedtoolcache/node/22.22.1/x64
+2026-03-31T03:44:32.5256233Z ##[group]Environment details
+2026-03-31T03:44:35.6646631Z node: v22.22.1
+2026-03-31T03:44:35.6647704Z npm: 10.9.4
+2026-03-31T03:44:35.6647981Z yarn: 1.22.22
+2026-03-31T03:44:35.6649139Z ##[endgroup]
+2026-03-31T03:44:35.6675995Z [command]/opt/hostedtoolcache/node/22.22.1/x64/bin/npm config get cache
+2026-03-31T03:44:35.8343757Z /home/runner/.npm
+2026-03-31T03:44:35.9335176Z Cache hit for: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:44:36.9782802Z Received 247463936 of 479585721 (51.6%), 234.6 MBs/sec
+2026-03-31T03:44:37.9509576Z Received 479585721 of 479585721 (100.0%), 231.2 MBs/sec
+2026-03-31T03:44:37.9510890Z Cache Size: ~457 MB (479585721 B)
+2026-03-31T03:44:37.9551579Z [command]/usr/bin/tar -xf /home/runner/work/_temp/2aa81568-8a02-48d9-b4f2-722fd3aca02b/cache.tzst -P -C /home/runner/work/aim-platform/aim-platform --use-compress-program unzstd
+2026-03-31T03:44:39.0622701Z Cache restored successfully
+2026-03-31T03:44:39.0833270Z Cache restored from key: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:44:39.1025663Z ##[group]Run npm ci
+2026-03-31T03:44:39.1025986Z [36;1mnpm ci[0m
+2026-03-31T03:44:39.1095263Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:44:39.1095536Z ##[endgroup]
+2026-03-31T03:44:41.0156251Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:44:41.0159041Z npm warn While resolving: eslint-plugin-react@7.37.5
+2026-03-31T03:44:41.0161381Z npm warn Found: eslint@10.1.0
+2026-03-31T03:44:41.0162215Z npm warn node_modules/eslint
+2026-03-31T03:44:41.0162914Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:44:41.0163819Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:44:41.0164528Z npm warn
+2026-03-31T03:44:41.0165020Z npm warn Could not resolve dependency:
+2026-03-31T03:44:41.0165970Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:44:41.0166868Z npm warn node_modules/eslint-plugin-react
+2026-03-31T03:44:41.0167811Z npm warn   eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.0168653Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:44:41.0169153Z npm warn
+2026-03-31T03:44:41.0169780Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:44:41.0170386Z npm warn node_modules/eslint
+2026-03-31T03:44:41.0171246Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:44:41.0172463Z npm warn   node_modules/eslint-plugin-react
+2026-03-31T03:44:41.0173321Z npm warn     eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.0174160Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:44:41.0473956Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:44:41.0476012Z npm warn While resolving: eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:44:41.0476628Z npm warn Found: eslint@10.1.0
+2026-03-31T03:44:41.0477034Z npm warn node_modules/eslint
+2026-03-31T03:44:41.0477800Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:44:41.0478289Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:44:41.0478644Z npm warn
+2026-03-31T03:44:41.0478936Z npm warn Could not resolve dependency:
+2026-03-31T03:44:41.0479547Z npm warn peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:44:41.0480102Z npm warn node_modules/eslint-plugin-react-hooks
+2026-03-31T03:44:41.0480587Z npm warn   eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.0481044Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:44:41.0481616Z npm warn
+2026-03-31T03:44:41.0481980Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:44:41.0482320Z npm warn node_modules/eslint
+2026-03-31T03:44:41.0482884Z npm warn   peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:44:41.0483459Z npm warn   node_modules/eslint-plugin-react-hooks
+2026-03-31T03:44:41.0483954Z npm warn     eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.0484538Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:44:41.0784196Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:44:41.0784811Z npm warn While resolving: eslint-plugin-import@2.32.0
+2026-03-31T03:44:41.0785208Z npm warn Found: eslint@10.1.0
+2026-03-31T03:44:41.0785510Z npm warn node_modules/eslint
+2026-03-31T03:44:41.0785883Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:44:41.0786409Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:44:41.0786796Z npm warn
+2026-03-31T03:44:41.0787063Z npm warn Could not resolve dependency:
+2026-03-31T03:44:41.0787639Z npm warn peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:44:41.0788314Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:44:41.0789314Z npm warn   eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.0789813Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:44:41.0790265Z npm warn   1 more (eslint-import-resolver-typescript)
+2026-03-31T03:44:41.0790601Z npm warn
+2026-03-31T03:44:41.0790919Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:44:41.0791275Z npm warn node_modules/eslint
+2026-03-31T03:44:41.0792207Z npm warn   peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:44:41.0792902Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:44:41.0793538Z npm warn     eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.0794009Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:44:41.0794422Z npm warn     1 more (eslint-import-resolver-typescript)
+2026-03-31T03:44:41.1032217Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:44:41.1033628Z npm warn While resolving: eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:44:41.1034266Z npm warn Found: eslint@10.1.0
+2026-03-31T03:44:41.1034718Z npm warn node_modules/eslint
+2026-03-31T03:44:41.1035319Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:44:41.1036131Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:44:41.1036881Z npm warn
+2026-03-31T03:44:41.1037335Z npm warn Could not resolve dependency:
+2026-03-31T03:44:41.1038266Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:44:41.1039385Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:44:41.1040480Z npm warn   eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.1041282Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:44:41.1042039Z npm warn
+2026-03-31T03:44:41.1042713Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:44:41.1043068Z npm warn node_modules/eslint
+2026-03-31T03:44:41.1043537Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:44:41.1044138Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:44:41.1044716Z npm warn     eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:44:41.1045158Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:44:44.8304537Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-03-31T03:44:45.3738546Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:44:52.1254040Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:45:13.2673414Z 
+2026-03-31T03:45:13.2675677Z > aim-platform@0.1.0 postinstall
+2026-03-31T03:45:13.2676330Z > prisma generate
+2026-03-31T03:45:13.2676538Z 
+2026-03-31T03:45:14.1410072Z Prisma schema loaded from prisma/schema.prisma
+2026-03-31T03:45:14.6503187Z ┌─────────────────────────────────────────────────────────┐
+2026-03-31T03:45:14.6504299Z │  Update available 6.19.2 -> 7.6.0                       │
+2026-03-31T03:45:14.6505254Z │                                                         │
+2026-03-31T03:45:14.6506269Z │  This is a major update - please follow the guide at    │
+2026-03-31T03:45:14.6507390Z │  https://pris.ly/d/major-version-upgrade                │
+2026-03-31T03:45:14.6508960Z │                                                         │
+2026-03-31T03:45:14.6510073Z │  Run the following to update                            │
+2026-03-31T03:45:14.6511176Z │    npm i --save-dev prisma@latest                       │
+2026-03-31T03:45:14.6512393Z │    npm i @prisma/client@latest                          │
+2026-03-31T03:45:14.6513277Z └─────────────────────────────────────────────────────────┘
+2026-03-31T03:45:14.6513670Z 
+2026-03-31T03:45:14.6514366Z ✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 242ms
+2026-03-31T03:45:14.6514922Z 
+2026-03-31T03:45:14.6515500Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-03-31T03:45:14.6516069Z 
+2026-03-31T03:45:14.6516591Z Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+2026-03-31T03:45:14.6517092Z 
+2026-03-31T03:45:14.6853683Z 
+2026-03-31T03:45:14.6854480Z added 1007 packages, and audited 1008 packages in 36s
+2026-03-31T03:45:14.6854829Z 
+2026-03-31T03:45:14.6855018Z 222 packages are looking for funding
+2026-03-31T03:45:14.6855326Z   run `npm fund` for details
+2026-03-31T03:45:14.7723478Z 
+2026-03-31T03:45:14.7724186Z 4 vulnerabilities (1 moderate, 3 high)
+2026-03-31T03:45:14.7724616Z 
+2026-03-31T03:45:14.7724824Z To address all issues, run:
+2026-03-31T03:45:14.7725257Z   npm audit fix
+2026-03-31T03:45:14.7725472Z 
+2026-03-31T03:45:14.7725670Z Run `npm audit` for details.
+2026-03-31T03:45:14.9380465Z ##[group]Run npm run lint:ci
+2026-03-31T03:45:14.9380749Z [36;1mnpm run lint:ci[0m
+2026-03-31T03:45:14.9409114Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:45:14.9409347Z ##[endgroup]
+2026-03-31T03:45:15.0393991Z 
+2026-03-31T03:45:15.0394576Z > aim-platform@0.1.0 lint:ci
+2026-03-31T03:45:15.0395030Z > eslint . --max-warnings=226
+2026-03-31T03:45:15.0395201Z 
+2026-03-31T03:45:15.2111706Z (node:2597) ESLintIgnoreWarning: The ".eslintignore" file is no longer supported. Switch to using the "ignores" property in "eslint.config.js": https://eslint.org/docs/latest/use/configure/migration-guide#ignore-files
+2026-03-31T03:45:15.2113215Z (Use `node --trace-warnings ...` to show where the warning was created)
+2026-03-31T03:45:33.7388648Z 
+2026-03-31T03:45:33.7389508Z /home/runner/work/aim-platform/aim-platform/prisma/check-user.cjs
+2026-03-31T03:45:33.7422913Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7433857Z 
+2026-03-31T03:45:33.7434416Z /home/runner/work/aim-platform/aim-platform/prisma/enable-email.cjs
+2026-03-31T03:45:33.7436083Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7437481Z 
+2026-03-31T03:45:33.7438010Z /home/runner/work/aim-platform/aim-platform/prisma/ensure-superadmin.mjs
+2026-03-31T03:45:33.7439432Z ##[warning]  6:10  warning  'createHash' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7440724Z 
+2026-03-31T03:45:33.7441188Z /home/runner/work/aim-platform/aim-platform/prisma/seed-admin.cjs
+2026-03-31T03:45:33.7442938Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7445238Z ##[warning]  2:33  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7447457Z ##[warning]  3:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7449625Z ##[warning]  4:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7450926Z 
+2026-03-31T03:45:33.7451664Z /home/runner/work/aim-platform/aim-platform/prisma/seed-pg-superadmin.mjs
+2026-03-31T03:45:33.7453057Z ##[warning]  6:10  warning  'createHmac' is defined but never used   @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7455298Z ##[warning]  6:22  warning  'randomBytes' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7456690Z 
+2026-03-31T03:45:33.7457197Z /home/runner/work/aim-platform/aim-platform/prisma/seed-superadmin.js
+2026-03-31T03:45:33.7458596Z ##[warning]  1:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7460929Z ##[warning]  2:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7462580Z 
+2026-03-31T03:45:33.7463087Z /home/runner/work/aim-platform/aim-platform/prisma/seed-superadmin.ts
+2026-03-31T03:45:33.7464510Z ##[warning]  52:14  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7465859Z 
+2026-03-31T03:45:33.7466353Z /home/runner/work/aim-platform/aim-platform/prisma/seed-superadmin2.js
+2026-03-31T03:45:33.7467731Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7469944Z ##[warning]  2:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7471542Z 
+2026-03-31T03:45:33.7472055Z /home/runner/work/aim-platform/aim-platform/prisma/seed-superadmin3.js
+2026-03-31T03:45:33.7473468Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7475727Z ##[warning]  2:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7477104Z 
+2026-03-31T03:45:33.7477956Z /home/runner/work/aim-platform/aim-platform/prisma/seed.cjs
+2026-03-31T03:45:33.7479389Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7481968Z ##[warning]  2:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7484275Z ##[warning]  3:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7485669Z 
+2026-03-31T03:45:33.7486369Z /home/runner/work/aim-platform/aim-platform/prisma/seed.ts
+2026-03-31T03:45:33.7487905Z ##[warning]  1:1  warning  Do not use "@ts-nocheck" because it alters compilation errors  @typescript-eslint/ban-ts-comment
+2026-03-31T03:45:33.7489420Z 
+2026-03-31T03:45:33.7489929Z /home/runner/work/aim-platform/aim-platform/prisma/test-graph-email.mjs
+2026-03-31T03:45:33.7491767Z ##[warning]  1:9   warning  'getGraphAccessToken' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7494341Z ##[warning]  1:33  warning  A `require()` style import is forbidden                   @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7495851Z 
+2026-03-31T03:45:33.7496348Z /home/runner/work/aim-platform/aim-platform/prisma/test-raw-update.cjs
+2026-03-31T03:45:33.7497717Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7499167Z 
+2026-03-31T03:45:33.7499646Z /home/runner/work/aim-platform/aim-platform/prisma/test-register.cjs
+2026-03-31T03:45:33.7500992Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7503421Z ##[warning]  2:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7504776Z 
+2026-03-31T03:45:33.7505250Z /home/runner/work/aim-platform/aim-platform/scripts/enable_email.js
+2026-03-31T03:45:33.7506764Z ##[warning]  4:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7508130Z 
+2026-03-31T03:45:33.7508623Z /home/runner/work/aim-platform/aim-platform/scripts/fix-superadmin.cjs
+2026-03-31T03:45:33.7509994Z ##[warning]   1:18  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7512473Z ##[warning]   2:16  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7514785Z ##[warning]   3:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7516995Z ##[warning]  26:22  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7518379Z 
+2026-03-31T03:45:33.7518844Z /home/runner/work/aim-platform/aim-platform/scripts/seed-videos.js
+2026-03-31T03:45:33.7520208Z ##[warning]  1:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7522762Z ##[warning]  2:33  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7524915Z ##[warning]  3:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7526275Z 
+2026-03-31T03:45:33.7526781Z /home/runner/work/aim-platform/aim-platform/scripts/send_test_email.js
+2026-03-31T03:45:33.7528296Z ##[warning]  4:26  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7530713Z ##[warning]  5:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7533332Z ##[warning]  6:12  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7534344Z 
+2026-03-31T03:45:33.7534652Z /home/runner/work/aim-platform/aim-platform/scripts/test_email.js
+2026-03-31T03:45:33.7535840Z ##[warning]  3:14  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7537349Z ##[warning]  4:27  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.7538204Z 
+2026-03-31T03:45:33.7538569Z /home/runner/work/aim-platform/aim-platform/src/__tests__/upload-safety.test.ts
+2026-03-31T03:45:33.7539722Z ##[warning]  6:60   warning  'validateUpload' is defined but never used    @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7541203Z ##[warning]  6:76   warning  'validateFileType' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7543371Z ##[warning]  6:94   warning  'validateFileSize' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7544815Z ##[warning]  6:112  warning  'IMAGE_TYPES' is defined but never used       @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7546304Z ##[warning]  6:125  warning  'AUDIO_TYPES' is defined but never used       @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7547646Z 
+2026-03-31T03:45:33.7548131Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/about/page.tsx
+2026-03-31T03:45:33.7549863Z ##[warning]   49:61  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7552489Z ##[warning]   50:67  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7555237Z ##[warning]   55:28  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7557838Z ##[warning]   55:79  warning  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7560329Z ##[warning]   61:11  warning  'n' is assigned a value but never used                           @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7563077Z ##[warning]  253:36  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+2026-03-31T03:45:33.7564505Z 
+2026-03-31T03:45:33.7565144Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/casting/[id]/apply/page.tsx
+2026-03-31T03:45:33.7567055Z ##[warning]  32:13  warning  'reapply' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7568451Z 
+2026-03-31T03:45:33.7569030Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/dashboard/page.tsx
+2026-03-31T03:45:33.7571577Z ##[warning]  149:8  warning  React Hook useEffect has a missing dependency: 'locale'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+2026-03-31T03:45:33.7573414Z 
+2026-03-31T03:45:33.7573955Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/donate/page.tsx
+2026-03-31T03:45:33.7575278Z   39:23  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.7575938Z 
+2026-03-31T03:45:33.7577716Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.7579572Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.7580817Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.7581823Z 
+2026-03-31T03:45:33.7583236Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.7584463Z 
+2026-03-31T03:45:33.7585072Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/donate/page.tsx:39:23
+2026-03-31T03:45:33.7586171Z   37 |     const finalAmount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0)
+2026-03-31T03:45:33.7586906Z   38 |
+2026-03-31T03:45:33.7587541Z > 39 |     useEffect(() => { setMounted(true) }, [])
+2026-03-31T03:45:33.7588266Z      |                       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.7588828Z   40 |
+2026-03-31T03:45:33.7589176Z   41 |     // Load PayPal JS SDK
+2026-03-31T03:45:33.7590070Z   42 |     useEffect(() => {                                                                                                      react-hooks/set-state-in-effect
+2026-03-31T03:45:33.7591886Z   45:32  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.7592744Z 
+2026-03-31T03:45:33.7594520Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.7596349Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.7597609Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.7598392Z 
+2026-03-31T03:45:33.7599780Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.7600960Z 
+2026-03-31T03:45:33.7601770Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/donate/page.tsx:45:32
+2026-03-31T03:45:33.7602721Z   43 |         const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+2026-03-31T03:45:33.7603517Z   44 |         if (!clientId || document.getElementById('paypal-sdk')) {
+2026-03-31T03:45:33.7604274Z > 45 |             if (window.paypal) setPaypalReady(true)
+2026-03-31T03:45:33.7605055Z      |                                ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.7605670Z   46 |             return
+2026-03-31T03:45:33.7606018Z   47 |         }
+2026-03-31T03:45:33.7606720Z   48 |         const script = document.createElement('script')  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.7607320Z 
+2026-03-31T03:45:33.7607910Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/forgot-password/page.tsx
+2026-03-31T03:45:33.7609502Z ##[warning]  43:10  warning  'CodeInput' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7610874Z 
+2026-03-31T03:45:33.7611625Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/login/page.tsx
+2026-03-31T03:45:33.7614650Z ##[warning]  187:41  warning  Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7619056Z ##[warning]  187:41  warning  Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7623733Z ##[warning]  187:41  warning  Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7628166Z ##[warning]  187:41  warning  Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7632783Z ##[warning]  204:41  warning  Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages   @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7637316Z ##[warning]  204:41  warning  Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages   @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7641882Z ##[warning]  204:41  warning  Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages   @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7646229Z ##[warning]  204:41  warning  Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages   @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7648411Z 
+2026-03-31T03:45:33.7648903Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/page.tsx
+2026-03-31T03:45:33.7650368Z ##[warning]  17:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7652955Z ##[warning]  17:89  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7655208Z ##[warning]  64:8   warning  'Project' is defined but never used       @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7656565Z 
+2026-03-31T03:45:33.7657117Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/register/page.tsx
+2026-03-31T03:45:33.7658681Z ##[warning]  20:13  warning  'register' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7660074Z 
+2026-03-31T03:45:33.7660623Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/sponsors/page.tsx
+2026-03-31T03:45:33.7665276Z ##[warning]  188:65  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+2026-03-31T03:45:33.7671235Z ##[warning]  432:33  warning  Do not use an `<a>` element to navigate to `/contact/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                            @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7676169Z ##[warning]  432:33  warning  Do not use an `<a>` element to navigate to `/contact/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                            @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7679791Z ##[warning]  432:33  warning  Do not use an `<a>` element to navigate to `/contact/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                            @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7683077Z ##[warning]  432:33  warning  Do not use an `<a>` element to navigate to `/contact/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                            @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.7684401Z 
+2026-03-31T03:45:33.7684751Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/training/[slug]/page.tsx
+2026-03-31T03:45:33.7686251Z ##[warning]  114:8   warning  React Hook useMemo has a missing dependency: 'PUNCT'. Either include it or remove the dependency array           react-hooks/exhaustive-deps
+2026-03-31T03:45:33.7688061Z ##[warning]  284:32  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7689945Z ##[warning]  293:12  warning  'currentSegmentIndex' is assigned a value but never used                                                         @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7692052Z ##[warning]  375:8   warning  React Hook useEffect has a missing dependency: 'activeLesson'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+2026-03-31T03:45:33.7693860Z ##[warning]  469:58  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7695491Z ##[warning]  524:36  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7697293Z ##[warning]  524:58  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7698904Z ##[warning]  525:62  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7700511Z ##[warning]  529:56  warning  Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7702518Z ##[warning]  590:8   warning  React Hook useEffect has a missing dependency: 'activeLesson'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+2026-03-31T03:45:33.7703512Z 
+2026-03-31T03:45:33.7703826Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/training/page.tsx
+2026-03-31T03:45:33.7704666Z ##[warning]  19:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7705433Z 
+2026-03-31T03:45:33.7705752Z /home/runner/work/aim-platform/aim-platform/src/app/[locale]/works/[slug]/page.tsx
+2026-03-31T03:45:33.7706657Z ##[warning]  1:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7707395Z 
+2026-03-31T03:45:33.7707693Z /home/runner/work/aim-platform/aim-platform/src/app/admin/analytics/page.tsx
+2026-03-31T03:45:33.7711980Z ##[warning]     4:52  warning  'useMemo' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7718079Z ##[warning]     6:85  warning  'ActivityItem' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7720802Z     12:29  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.7721528Z 
+2026-03-31T03:45:33.7722506Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.7723536Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.7724234Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.7724666Z 
+2026-03-31T03:45:33.7725430Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.7726088Z 
+2026-03-31T03:45:33.7726425Z /home/runner/work/aim-platform/aim-platform/src/app/admin/analytics/page.tsx:12:29
+2026-03-31T03:45:33.7726891Z   10 |     const [count, setCount] = useState(0)
+2026-03-31T03:45:33.7727176Z   11 |     useEffect(() => {
+2026-03-31T03:45:33.7727498Z > 12 |         if (target === 0) { setCount(0); return }
+2026-03-31T03:45:33.7727911Z      |                             ^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.7728249Z   13 |         let start = 0
+2026-03-31T03:45:33.7728528Z   14 |         const startTime = performance.now()
+2026-03-31T03:45:33.7728957Z   15 |         const step = (now: number) => {  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.7733173Z ##[warning]   573:50  warning  'i' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7740228Z ##[warning]   899:61  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @next/next/no-img-element
+2026-03-31T03:45:33.7746844Z ##[warning]  1301:10  warning  'FunnelBar' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7749215Z 
+2026-03-31T03:45:33.7749538Z /home/runner/work/aim-platform/aim-platform/src/app/admin/applications/page.tsx
+2026-03-31T03:45:33.7750689Z ##[warning]  136:13  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+2026-03-31T03:45:33.7751811Z 
+2026-03-31T03:45:33.7752128Z /home/runner/work/aim-platform/aim-platform/src/app/admin/donations/page.tsx
+2026-03-31T03:45:33.7752863Z   42:23  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.7753234Z 
+2026-03-31T03:45:33.7754202Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.7755268Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.7755955Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.7756388Z 
+2026-03-31T03:45:33.7757142Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.7757806Z 
+2026-03-31T03:45:33.7758140Z /home/runner/work/aim-platform/aim-platform/src/app/admin/donations/page.tsx:42:23
+2026-03-31T03:45:33.7758585Z   40 |     }, [search, status, sort])
+2026-03-31T03:45:33.7758818Z   41 |
+2026-03-31T03:45:33.7759137Z > 42 |     useEffect(() => { fetchDonations(1) }, [fetchDonations])
+2026-03-31T03:45:33.7759592Z      |                       ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.7759923Z   43 |
+2026-03-31T03:45:33.7760154Z   44 |     const handleSearch = (val: string) => {
+2026-03-31T03:45:33.7760516Z   45 |         setSearch(val)  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.7760740Z 
+2026-03-31T03:45:33.7760996Z /home/runner/work/aim-platform/aim-platform/src/app/admin/loading.tsx
+2026-03-31T03:45:33.7761709Z   20:40  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.7761955Z 
+2026-03-31T03:45:33.7763288Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.7764276Z 
+2026-03-31T03:45:33.7764573Z /home/runner/work/aim-platform/aim-platform/src/app/admin/loading.tsx:20:40
+2026-03-31T03:45:33.7765028Z   18 |                 {Array.from({ length: 8 }).map((_, i) => (
+2026-03-31T03:45:33.7765359Z   19 |                     <div key={i} style={{
+2026-03-31T03:45:33.7765976Z > 20 |                         width: `${60 + Math.random() * 40}%`, height: '14px', borderRadius: '4px',
+2026-03-31T03:45:33.7766458Z      |                                        ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.7766935Z   21 |                         background: i === 0 ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.03)',
+2026-03-31T03:45:33.7767323Z   22 |                     }} />
+2026-03-31T03:45:33.7767595Z   23 |                 ))}  react-hooks/purity
+2026-03-31T03:45:33.7767783Z 
+2026-03-31T03:45:33.7768051Z /home/runner/work/aim-platform/aim-platform/src/app/admin/media/page.tsx
+2026-03-31T03:45:33.7768763Z    94:23  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.7769135Z 
+2026-03-31T03:45:33.7770098Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.7771123Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.7771956Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.7772383Z 
+2026-03-31T03:45:33.7773143Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.7773804Z 
+2026-03-31T03:45:33.7774102Z /home/runner/work/aim-platform/aim-platform/src/app/admin/media/page.tsx:94:23
+2026-03-31T03:45:33.7774485Z   92 |     }
+2026-03-31T03:45:33.7774678Z   93 |
+2026-03-31T03:45:33.7774957Z > 94 |     useEffect(() => { fetchMedia() }, [fetchMedia])
+2026-03-31T03:45:33.7775365Z      |                       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.7775764Z   95 |     useEffect(() => { fetchHeroVideos() }, [])
+2026-03-31T03:45:33.7776035Z   96 |
+2026-03-31T03:45:33.7776660Z   97 |     // ─── Page Media handlers ───                               react-hooks/set-state-in-effect
+2026-03-31T03:45:33.7777399Z    95:23  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.7777772Z 
+2026-03-31T03:45:33.7778734Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.7779742Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.7780418Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.7780843Z 
+2026-03-31T03:45:33.7781768Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.7782438Z 
+2026-03-31T03:45:33.7782738Z /home/runner/work/aim-platform/aim-platform/src/app/admin/media/page.tsx:95:23
+2026-03-31T03:45:33.7783114Z   93 |
+2026-03-31T03:45:33.7783364Z   94 |     useEffect(() => { fetchMedia() }, [fetchMedia])
+2026-03-31T03:45:33.7783751Z > 95 |     useEffect(() => { fetchHeroVideos() }, [])
+2026-03-31T03:45:33.7784298Z      |                       ^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.7784632Z   96 |
+2026-03-31T03:45:33.7784907Z   97 |     // ─── Page Media handlers ───
+2026-03-31T03:45:33.7785273Z   98 |     const resetForm = () => {  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.7789146Z ##[warning]  281:11  warning  'getPageLabel' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7796253Z ##[warning]  439:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @next/next/no-img-element
+2026-03-31T03:45:33.7803599Z ##[warning]  490:45  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @next/next/no-img-element
+2026-03-31T03:45:33.7806265Z 
+2026-03-31T03:45:33.7806573Z /home/runner/work/aim-platform/aim-platform/src/app/admin/projects/page.tsx
+2026-03-31T03:45:33.7807501Z ##[warning]    7:35  warning  'LANGUAGE_NAMES' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7808921Z ##[warning]  355:70  warning  'err' is defined but never used             @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7809706Z 
+2026-03-31T03:45:33.7809998Z /home/runner/work/aim-platform/aim-platform/src/app/admin/scripts/page.tsx
+2026-03-31T03:45:33.7810555Z   308:109  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.7810809Z 
+2026-03-31T03:45:33.7812141Z `Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.7813243Z 
+2026-03-31T03:45:33.7813581Z /home/runner/work/aim-platform/aim-platform/src/app/admin/scripts/page.tsx:308:109
+2026-03-31T03:45:33.7814050Z   306 |                         {filtered.map(call => {
+2026-03-31T03:45:33.7814481Z   307 |                             const meta = STATUS_META[call.status] || STATUS_META.draft
+2026-03-31T03:45:33.7815292Z > 308 |                             const daysLeft = call.deadline ? Math.ceil((new Date(call.deadline).getTime() - Date.now()) / 86400000) : null
+2026-03-31T03:45:33.7816032Z       |                                                                                                             ^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.7816425Z   309 |
+2026-03-31T03:45:33.7816636Z   310 |                             return (
+2026-03-31T03:45:33.7817010Z   311 |                                 <div key={call.id} style={{  react-hooks/purity
+2026-03-31T03:45:33.7817273Z 
+2026-03-31T03:45:33.7817559Z /home/runner/work/aim-platform/aim-platform/src/app/admin/settings/page.tsx
+2026-03-31T03:45:33.7820084Z ##[warning]   952:66  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+2026-03-31T03:45:33.7823938Z ##[warning]   985:55  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+2026-03-31T03:45:33.7826683Z ##[warning]  1991:65  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+2026-03-31T03:45:33.7828998Z ##[warning]  1991:95  warning  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+2026-03-31T03:45:33.7830085Z 
+2026-03-31T03:45:33.7830383Z /home/runner/work/aim-platform/aim-platform/src/app/admin/sponsors/page.tsx
+2026-03-31T03:45:33.7830939Z   187:59  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.7831194Z 
+2026-03-31T03:45:33.7832529Z `Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.7833505Z 
+2026-03-31T03:45:33.7833831Z /home/runner/work/aim-platform/aim-platform/src/app/admin/sponsors/page.tsx:187:59
+2026-03-31T03:45:33.7834294Z   185 |     const daysLeft = (s: Sponsor) => {
+2026-03-31T03:45:33.7834599Z   186 |         if (!s.endDate) return null
+2026-03-31T03:45:33.7835211Z > 187 |         return Math.ceil((new Date(s.endDate).getTime() - Date.now()) / 86400000)
+2026-03-31T03:45:33.7835736Z       |                                                           ^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.7836068Z   188 |     }
+2026-03-31T03:45:33.7836244Z   189 |
+2026-03-31T03:45:33.7836503Z   190 |     // Shared dark input style  react-hooks/purity
+2026-03-31T03:45:33.7836716Z 
+2026-03-31T03:45:33.7837039Z /home/runner/work/aim-platform/aim-platform/src/app/admin/training/[id]/edit/page.tsx
+2026-03-31T03:45:33.7838091Z ##[warning]    28:6    warning  'Course' is defined but never used        @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7839610Z ##[warning]   152:124  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7840892Z ##[warning]   165:73   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7842442Z ##[warning]   322:73   warning  'contentType' is defined but never used   @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7843730Z ##[warning]   592:105  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7844988Z ##[warning]   596:88   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7846246Z ##[warning]   617:105  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7847500Z ##[warning]   892:91   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7848758Z ##[warning]   961:62   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7850011Z ##[warning]   991:34   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7851254Z ##[warning]   998:71   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7852780Z ##[warning]  1229:37   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7854069Z ##[warning]  1236:74   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7855399Z ##[warning]  1470:62   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7856676Z ##[warning]  1516:78   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7857443Z 
+2026-03-31T03:45:33.7857742Z /home/runner/work/aim-platform/aim-platform/src/app/admin/training/page.tsx
+2026-03-31T03:45:33.7863255Z ##[warning]  43:7   warning  'CONTENT_TYPES' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7870968Z ##[warning]  69:7   warning  'emptyModule' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7878910Z ##[warning]  77:12  warning  'error' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7882110Z   80:23  warning  Error: Cannot access variable before it is declared
+2026-03-31T03:45:33.7882372Z 
+2026-03-31T03:45:33.7882891Z `loadCourses` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+2026-03-31T03:45:33.7883359Z 
+2026-03-31T03:45:33.7883685Z /home/runner/work/aim-platform/aim-platform/src/app/admin/training/page.tsx:80:23
+2026-03-31T03:45:33.7884168Z   78 |     const [filter, setFilter] = useState('all')
+2026-03-31T03:45:33.7884446Z   79 |
+2026-03-31T03:45:33.7884844Z > 80 |     useEffect(() => { loadCourses() }, [])
+2026-03-31T03:45:33.7885229Z      |                       ^^^^^^^^^^^ `loadCourses` accessed before it is declared
+2026-03-31T03:45:33.7885543Z   81 |
+2026-03-31T03:45:33.7885745Z   82 |     const loadCourses = () => {
+2026-03-31T03:45:33.7886015Z   83 |         setLoading(true)
+2026-03-31T03:45:33.7886163Z 
+2026-03-31T03:45:33.7886481Z /home/runner/work/aim-platform/aim-platform/src/app/admin/training/page.tsx:82:5
+2026-03-31T03:45:33.7886924Z   80 |     useEffect(() => { loadCourses() }, [])
+2026-03-31T03:45:33.7887298Z   81 |
+2026-03-31T03:45:33.7887520Z > 82 |     const loadCourses = () => {
+2026-03-31T03:45:33.7887781Z      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.7888047Z > 83 |         setLoading(true)
+2026-03-31T03:45:33.7888286Z      | ^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.7914711Z > 84 |         fetch('/api/admin/training')
+2026-03-31T03:45:33.7915107Z      | ^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.7915705Z > 85 |             .then(r => { if (r.status === 401) { window.location.href = '/admin/login'; return [] } return r.json() })
+2026-03-31T03:45:33.7916197Z      | ^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.7916511Z > 86 |             .then(data => setCourses(data))
+2026-03-31T03:45:33.7916800Z      | ^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.7917141Z > 87 |             .catch(() => setError('Failed to load courses'))
+2026-03-31T03:45:33.7917464Z      | ^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.7917765Z > 88 |             .finally(() => setLoading(false))
+2026-03-31T03:45:33.7918064Z      | ^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.7918273Z > 89 |     }
+2026-03-31T03:45:33.7918491Z      | ^^^^^^ `loadCourses` is declared here
+2026-03-31T03:45:33.7918737Z   90 |
+2026-03-31T03:45:33.7918978Z   91 |     const handleDelete = async (id: string) => {
+2026-03-31T03:45:33.7919600Z   92 |         if (!confirm('Delete this course and all its modules/lessons? This cannot be undone.')) return  react-hooks/immutability
+2026-03-31T03:45:33.7920043Z 
+2026-03-31T03:45:33.7920319Z /home/runner/work/aim-platform/aim-platform/src/app/admin/users/page.tsx
+2026-03-31T03:45:33.7921039Z   50:23  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.7921574Z 
+2026-03-31T03:45:33.7922533Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.7923563Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.7924249Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.7924672Z 
+2026-03-31T03:45:33.7925433Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.7926093Z 
+2026-03-31T03:45:33.7926414Z /home/runner/work/aim-platform/aim-platform/src/app/admin/users/page.tsx:50:23
+2026-03-31T03:45:33.7926835Z   48 |     }, [search, role, sort])
+2026-03-31T03:45:33.7927063Z   49 |
+2026-03-31T03:45:33.7927346Z > 50 |     useEffect(() => { fetchUsers(1) }, [fetchUsers])
+2026-03-31T03:45:33.7927763Z      |                       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.7928083Z   51 |
+2026-03-31T03:45:33.7928311Z   52 |     const handleSearch = (val: string) => {
+2026-03-31T03:45:33.7928676Z   53 |         setSearch(val)  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.7933032Z ##[warning]  61:13  warning  Expected an assignment or function call and instead saw an expression                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-expressions
+2026-03-31T03:45:33.7935499Z 
+2026-03-31T03:45:33.7935896Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/applications/[id]/audit/route.ts
+2026-03-31T03:45:33.7937281Z ##[warning]  98:18  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7938105Z 
+2026-03-31T03:45:33.7938492Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/applications/batch-audit/route.ts
+2026-03-31T03:45:33.7939485Z ##[warning]  153:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7940283Z 
+2026-03-31T03:45:33.7940626Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/casting/[id]/route.ts
+2026-03-31T03:45:33.7941860Z ##[warning]  38:92  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7942678Z 
+2026-03-31T03:45:33.7943026Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/email-preview/route.ts
+2026-03-31T03:45:33.7943993Z ##[warning]  87:67  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7944778Z 
+2026-03-31T03:45:33.7945124Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/email-templates/route.ts
+2026-03-31T03:45:33.7946045Z ##[warning]  31:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7947307Z ##[warning]  46:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7948565Z ##[warning]  51:30  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7949794Z ##[warning]  73:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7951035Z ##[warning]  82:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7952026Z 
+2026-03-31T03:45:33.7952351Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/settings/route.ts
+2026-03-31T03:45:33.7953280Z ##[warning]  117:59  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7954060Z 
+2026-03-31T03:45:33.7954423Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/subtitles/route.ts
+2026-03-31T03:45:33.7955312Z ##[warning]  14:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7956583Z ##[warning]  35:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7957830Z ##[warning]  44:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7959075Z ##[warning]  54:41  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7959820Z 
+2026-03-31T03:45:33.7960147Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/training/[id]/route.ts
+2026-03-31T03:45:33.7961119Z ##[warning]   36:15  warning  'course' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7962773Z ##[warning]   54:57  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7964108Z ##[warning]   54:79  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7965956Z ##[warning]   81:60  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7967604Z ##[warning]   81:82  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7968906Z ##[warning]  130:74  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7970412Z ##[warning]  130:96  warning  Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7971188Z 
+2026-03-31T03:45:33.7971682Z /home/runner/work/aim-platform/aim-platform/src/app/api/admin/training/route.ts
+2026-03-31T03:45:33.7972532Z ##[warning]  56:50  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7973820Z ##[warning]  62:55  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7974578Z 
+2026-03-31T03:45:33.7974902Z /home/runner/work/aim-platform/aim-platform/src/app/api/auth/apple/callback/route.ts
+2026-03-31T03:45:33.7975921Z ##[warning]  4:10  warning  'cookies' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7976668Z 
+2026-03-31T03:45:33.7977062Z /home/runner/work/aim-platform/aim-platform/src/app/api/auth/register/register.integration.test.ts
+2026-03-31T03:45:33.7977966Z ##[warning]  8:32  warning  'vi' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7978686Z 
+2026-03-31T03:45:33.7978981Z /home/runner/work/aim-platform/aim-platform/src/app/api/auth/register/route.ts
+2026-03-31T03:45:33.7979880Z ##[warning]   6:29  warning  'welcomeEmailWithOverrides' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7981262Z ##[warning]  41:26  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7983073Z ##[warning]  74:18  warning  Unexpected any. Specify a different type               @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7983872Z 
+2026-03-31T03:45:33.7984221Z /home/runner/work/aim-platform/aim-platform/src/app/api/script-calls/[id]/analyze/route.ts
+2026-03-31T03:45:33.7985246Z ##[warning]  11:44  warning  'params' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7986001Z 
+2026-03-31T03:45:33.7986331Z /home/runner/work/aim-platform/aim-platform/src/app/api/subtitles/[projectId]/route.ts
+2026-03-31T03:45:33.7987290Z ##[warning]  14:39  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.7988061Z 
+2026-03-31T03:45:33.7988393Z /home/runner/work/aim-platform/aim-platform/src/components/AdminApplicationsClient.tsx
+2026-03-31T03:45:33.7989542Z ##[warning]  83:56  warning  Expected an assignment or function call and instead saw an expression  @typescript-eslint/no-unused-expressions
+2026-03-31T03:45:33.7990432Z 
+2026-03-31T03:45:33.7990766Z /home/runner/work/aim-platform/aim-platform/src/components/ApplicationDetailClient.tsx
+2026-03-31T03:45:33.7991740Z ##[warning]  213:39  warning  'i' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7992496Z 
+2026-03-31T03:45:33.7992801Z /home/runner/work/aim-platform/aim-platform/src/components/ApplicationForm.tsx
+2026-03-31T03:45:33.7993740Z ##[warning]  43:7  warning  'PERSONALITY_QUESTIONS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7995162Z ##[warning]  64:7  warning  'CONSENT_ITEMS' is assigned a value but never used          @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7995968Z 
+2026-03-31T03:45:33.7996228Z /home/runner/work/aim-platform/aim-platform/src/components/Footer.tsx
+2026-03-31T03:45:33.7997228Z ##[warning]  14:12  warning  'footerSponsors' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.7998055Z 
+2026-03-31T03:45:33.7998337Z /home/runner/work/aim-platform/aim-platform/src/components/HomeHero.tsx
+2026-03-31T03:45:33.7999103Z   51:9  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+2026-03-31T03:45:33.8000584Z ##[warning]  84:8  warning  React Hook useEffect has a missing dependency: 'ROTATING_WORDS.length'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+2026-03-31T03:45:33.8001944Z 
+2026-03-31T03:45:33.8002248Z /home/runner/work/aim-platform/aim-platform/src/components/MobileTabBar.tsx
+2026-03-31T03:45:33.8002977Z   195:13  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.8003354Z 
+2026-03-31T03:45:33.8004317Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.8005336Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.8006012Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.8006439Z 
+2026-03-31T03:45:33.8007198Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.8007863Z 
+2026-03-31T03:45:33.8008195Z /home/runner/work/aim-platform/aim-platform/src/components/MobileTabBar.tsx:195:13
+2026-03-31T03:45:33.8008616Z   193 |     useEffect(() => {
+2026-03-31T03:45:33.8008904Z   194 |         if (debouncedQuery.length < 2) {
+2026-03-31T03:45:33.8009224Z > 195 |             setResults([])
+2026-03-31T03:45:33.8009566Z       |             ^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.8009921Z   196 |             setLoading(false)
+2026-03-31T03:45:33.8010164Z   197 |             return
+2026-03-31T03:45:33.8010435Z   198 |         }  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.8010630Z 
+2026-03-31T03:45:33.8010890Z /home/runner/work/aim-platform/aim-platform/src/components/Navbar.tsx
+2026-03-31T03:45:33.8013437Z ##[warning]   77:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+2026-03-31T03:45:33.8016670Z ##[warning]  529:17  warning  Do not use an `<a>` element to navigate to `/admin/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                              @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.8019651Z ##[warning]  529:17  warning  Do not use an `<a>` element to navigate to `/admin/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                              @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.8022823Z ##[warning]  529:17  warning  Do not use an `<a>` element to navigate to `/admin/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                              @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.8025961Z ##[warning]  529:17  warning  Do not use an `<a>` element to navigate to `/admin/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                              @next/next/no-html-link-for-pages
+2026-03-31T03:45:33.8027264Z 
+2026-03-31T03:45:33.8027582Z /home/runner/work/aim-platform/aim-platform/src/components/PageTransition.tsx
+2026-03-31T03:45:33.8028317Z   15:13  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.8028686Z 
+2026-03-31T03:45:33.8029640Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.8030767Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.8031642Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.8032079Z 
+2026-03-31T03:45:33.8032839Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.8033501Z 
+2026-03-31T03:45:33.8033839Z /home/runner/work/aim-platform/aim-platform/src/components/PageTransition.tsx:15:13
+2026-03-31T03:45:33.8034267Z   13 |     useEffect(() => {
+2026-03-31T03:45:33.8034566Z   14 |         if (pathname === prevPathname.current) {
+2026-03-31T03:45:33.8034927Z > 15 |             setDisplayChildren(children)
+2026-03-31T03:45:33.8035329Z      |             ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.8035662Z   16 |             return
+2026-03-31T03:45:33.8035864Z   17 |         }
+2026-03-31T03:45:33.8036087Z   18 |  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.8036274Z 
+2026-03-31T03:45:33.8036568Z /home/runner/work/aim-platform/aim-platform/src/components/ProjectDetail3D.tsx
+2026-03-31T03:45:33.8037467Z ##[warning]  3:50  warning  'CSSProperties' is defined but never used         @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8038847Z ##[warning]  7:11  warning  'ProjectDetail3DProps' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8039659Z 
+2026-03-31T03:45:33.8039987Z /home/runner/work/aim-platform/aim-platform/src/components/ProjectDetailClient2.tsx
+2026-03-31T03:45:33.8041143Z ##[warning]  62:12  warning  'isTrailerVisible' is assigned a value but never used                                                          @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8043153Z ##[warning]  96:8   warning  React Hook useEffect has a missing dependency: 'project.id'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+2026-03-31T03:45:33.8044126Z 
+2026-03-31T03:45:33.8044410Z /home/runner/work/aim-platform/aim-platform/src/components/TiltCard3D.tsx
+2026-03-31T03:45:33.8044967Z    55:52  warning  Error: Cannot access variable before it is declared
+2026-03-31T03:45:33.8045220Z 
+2026-03-31T03:45:33.8045713Z `animate` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+2026-03-31T03:45:33.8046167Z 
+2026-03-31T03:45:33.8046469Z /home/runner/work/aim-platform/aim-platform/src/components/TiltCard3D.tsx:55:52
+2026-03-31T03:45:33.8047027Z   53 |         const ds = Math.abs(targetScaleRef.current - currentScaleRef.current)
+2026-03-31T03:45:33.8047468Z   54 |         if (dx > 0.01 || dy > 0.01 || ds > 0.001) {
+2026-03-31T03:45:33.8047877Z > 55 |             rafRef.current = requestAnimationFrame(animate)
+2026-03-31T03:45:33.8048324Z      |                                                    ^^^^^^^ `animate` accessed before it is declared
+2026-03-31T03:45:33.8048663Z   56 |         } else {
+2026-03-31T03:45:33.8048922Z   57 |             animatingRef.current = false
+2026-03-31T03:45:33.8049181Z   58 |         }
+2026-03-31T03:45:33.8049288Z 
+2026-03-31T03:45:33.8049597Z /home/runner/work/aim-platform/aim-platform/src/components/TiltCard3D.tsx:38:5
+2026-03-31T03:45:33.8050110Z   36 |
+2026-03-31T03:45:33.8050621Z   37 |     // Smooth animation loop — lerp toward target rotation
+2026-03-31T03:45:33.8051016Z > 38 |     const animate = useCallback(() => {
+2026-03-31T03:45:33.8051482Z      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8051797Z > 39 |         const card = cardRef.current
+2026-03-31T03:45:33.8052077Z      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8052359Z > 40 |         if (!card) return
+2026-03-31T03:45:33.8052602Z      …
+2026-03-31T03:45:33.8052938Z      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8053174Z > 58 |         }
+2026-03-31T03:45:33.8053383Z      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8053642Z > 59 |     }, [perspective])
+2026-03-31T03:45:33.8053930Z      | ^^^^^^^^^^^^^^^^^^^^^^ `animate` is declared here
+2026-03-31T03:45:33.8054189Z   60 |
+2026-03-31T03:45:33.8054617Z   61 |     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+2026-03-31T03:45:33.8055142Z   62 |         const card = cardRef.current  react-hooks/immutability
+2026-03-31T03:45:33.8060085Z ##[warning]   86:8   warning  React Hook useCallback has a missing dependency: 'scale'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+2026-03-31T03:45:33.8067351Z ##[warning]  103:11  warning  'Tag' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8069863Z 
+2026-03-31T03:45:33.8070333Z /home/runner/work/aim-platform/aim-platform/src/components/WatchPlayer.tsx
+2026-03-31T03:45:33.8071063Z    60:54  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.8071625Z 
+2026-03-31T03:45:33.8072594Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.8073742Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.8074429Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.8074862Z 
+2026-03-31T03:45:33.8075620Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.8076286Z 
+2026-03-31T03:45:33.8076607Z /home/runner/work/aim-platform/aim-platform/src/components/WatchPlayer.tsx:60:54
+2026-03-31T03:45:33.8077084Z   58 |     // Find current subtitle based on video time
+2026-03-31T03:45:33.8077376Z   59 |     useEffect(() => {
+2026-03-31T03:45:33.8077817Z > 60 |         if (!ccEnabled || ccSegments.length === 0) { setActiveSubtitle(''); return }
+2026-03-31T03:45:33.8078398Z      |                                                      ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.8079001Z   61 |         const seg = ccSegments.find(s => currentTime >= s.start && currentTime <= s.end)
+2026-03-31T03:45:33.8079453Z   62 |         setActiveSubtitle(seg?.text || '')
+2026-03-31T03:45:33.8079892Z   63 |     }, [currentTime, ccEnabled, ccSegments])  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.8080606Z   118:13  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.8080984Z 
+2026-03-31T03:45:33.8082092Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.8083111Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.8083787Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.8084209Z 
+2026-03-31T03:45:33.8085365Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.8086054Z 
+2026-03-31T03:45:33.8086390Z /home/runner/work/aim-platform/aim-platform/src/components/WatchPlayer.tsx:118:13
+2026-03-31T03:45:33.8086800Z   116 |     useEffect(() => {
+2026-03-31T03:45:33.8087119Z   117 |         if (isSeries && project.episodes.length > 0) {
+2026-03-31T03:45:33.8087543Z > 118 |             setActiveEpisode(project.episodes[0])
+2026-03-31T03:45:33.8087949Z       |             ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.8088271Z   119 |         }
+2026-03-31T03:45:33.8088502Z   120 |     }, [isSeries, project.episodes])
+2026-03-31T03:45:33.8089118Z   121 |                                                                                                                                                                                                   react-hooks/set-state-in-effect
+2026-03-31T03:45:33.8089958Z   131:21  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.8090333Z 
+2026-03-31T03:45:33.8091282Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.8092632Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.8093323Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.8093746Z 
+2026-03-31T03:45:33.8094503Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.8095155Z 
+2026-03-31T03:45:33.8095579Z /home/runner/work/aim-platform/aim-platform/src/components/WatchPlayer.tsx:131:21
+2026-03-31T03:45:33.8095966Z   129 |     }
+2026-03-31T03:45:33.8096138Z   130 |
+2026-03-31T03:45:33.8096439Z > 131 |     useEffect(() => resetControlsTimer(), [isPlaying])
+2026-03-31T03:45:33.8096880Z       |                     ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.8097205Z   132 |
+2026-03-31T03:45:33.8097408Z   133 |     const togglePlay = () => {
+2026-03-31T03:45:33.8098200Z   134 |         const vid = videoRef.current                                                                                                                                                                                                                                      react-hooks/set-state-in-effect
+2026-03-31T03:45:33.8103517Z ##[warning]  131:43  warning  React Hook useEffect has a missing dependency: 'resetControlsTimer'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        react-hooks/exhaustive-deps
+2026-03-31T03:45:33.8106164Z 
+2026-03-31T03:45:33.8106481Z /home/runner/work/aim-platform/aim-platform/src/components/WorksPageClient.tsx
+2026-03-31T03:45:33.8107558Z ##[warning]   7:8  warning  'TiltCard3D' is defined but never used                                                          @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8108891Z   76:9  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+2026-03-31T03:45:33.8109302Z 
+2026-03-31T03:45:33.8109607Z /home/runner/work/aim-platform/aim-platform/src/components/analytics/Charts.tsx
+2026-03-31T03:45:33.8110201Z    90:21  warning  Error: Cannot reassign variable after render completes
+2026-03-31T03:45:33.8110466Z 
+2026-03-31T03:45:33.8110992Z Reassigning `accum` after render has completed can cause inconsistent behavior on subsequent renders. Consider using state instead.
+2026-03-31T03:45:33.8111663Z 
+2026-03-31T03:45:33.8111996Z /home/runner/work/aim-platform/aim-platform/src/components/analytics/Charts.tsx:90:21
+2026-03-31T03:45:33.8112490Z   88 |                     const gap = circumference - dash
+2026-03-31T03:45:33.8112863Z   89 |                     const off = -accum * circumference
+2026-03-31T03:45:33.8113199Z > 90 |                     accum += pct
+2026-03-31T03:45:33.8113683Z      |                     ^^^^^ Cannot reassign `accum` after render completes
+2026-03-31T03:45:33.8114182Z   91 |                     return <circle key={i} cx={size / 2} cy={size / 2} r={radius} fill="none"
+2026-03-31T03:45:33.8114734Z   92 |                         stroke={seg.color} strokeWidth={strokeWidth} strokeLinecap="round"
+2026-03-31T03:45:33.8115295Z   93 |                         strokeDasharray={`${dash - 2} ${gap + 2}`}  react-hooks/immutability
+2026-03-31T03:45:33.8115853Z   144:28  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.8116203Z 
+2026-03-31T03:45:33.8117368Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.8118337Z 
+2026-03-31T03:45:33.8118672Z /home/runner/work/aim-platform/aim-platform/src/components/analytics/Charts.tsx:144:28
+2026-03-31T03:45:33.8119241Z   142 |     const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length)
+2026-03-31T03:45:33.8119639Z   143 |     const peak = Math.max(...data)
+2026-03-31T03:45:33.8120069Z > 144 |     const gradId = `areaG${Math.random().toString(36).slice(2, 7)}`
+2026-03-31T03:45:33.8120499Z       |                            ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.8120783Z   145 |
+2026-03-31T03:45:33.8120954Z   146 |     return (
+2026-03-31T03:45:33.8121429Z   147 |         <div style={{                                              react-hooks/purity
+2026-03-31T03:45:33.8121710Z 
+2026-03-31T03:45:33.8122070Z /home/runner/work/aim-platform/aim-platform/src/components/analytics/VoiceConversation.tsx
+2026-03-31T03:45:33.8122908Z    65:5  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/exhaustive-deps')
+2026-03-31T03:45:33.8123823Z   283:9  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+2026-03-31T03:45:33.8124265Z 
+2026-03-31T03:45:33.8124629Z /home/runner/work/aim-platform/aim-platform/src/components/application/ApplicationSuccess.tsx
+2026-03-31T03:45:33.8125250Z   49:35  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.8125497Z 
+2026-03-31T03:45:33.8126655Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.8127633Z 
+2026-03-31T03:45:33.8128028Z /home/runner/work/aim-platform/aim-platform/src/components/application/ApplicationSuccess.tsx:49:35
+2026-03-31T03:45:33.8128542Z   47 |                 <div key={i} style={{
+2026-03-31T03:45:33.8128846Z   48 |                     position: 'absolute',
+2026-03-31T03:45:33.8129211Z > 49 |                     width: `${4 + Math.random() * 8}px`,
+2026-03-31T03:45:33.8129594Z      |                                   ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.8129974Z   50 |                     height: `${4 + Math.random() * 8}px`,
+2026-03-31T03:45:33.8130458Z   51 |                     background: ['#d4a853', '#ffd700', '#b8860b', '#fff', '#f0c040', '#a0784c'][i % 6],
+2026-03-31T03:45:33.8131070Z   52 |                     borderRadius: i % 3 === 0 ? '50%' : '2px',                                   react-hooks/purity
+2026-03-31T03:45:33.8131762Z   50:36  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.8132016Z 
+2026-03-31T03:45:33.8133162Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.8134134Z 
+2026-03-31T03:45:33.8134530Z /home/runner/work/aim-platform/aim-platform/src/components/application/ApplicationSuccess.tsx:50:36
+2026-03-31T03:45:33.8135168Z   48 |                     position: 'absolute',
+2026-03-31T03:45:33.8135510Z   49 |                     width: `${4 + Math.random() * 8}px`,
+2026-03-31T03:45:33.8135896Z > 50 |                     height: `${4 + Math.random() * 8}px`,
+2026-03-31T03:45:33.8136270Z      |                                    ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.8136768Z   51 |                     background: ['#d4a853', '#ffd700', '#b8860b', '#fff', '#f0c040', '#a0784c'][i % 6],
+2026-03-31T03:45:33.8137348Z   52 |                     borderRadius: i % 3 === 0 ? '50%' : '2px',
+2026-03-31T03:45:33.8137806Z   53 |                     left: `${Math.random() * 100}%`,                   react-hooks/purity
+2026-03-31T03:45:33.8138338Z   53:30  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.8138578Z 
+2026-03-31T03:45:33.8139736Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.8140699Z 
+2026-03-31T03:45:33.8141097Z /home/runner/work/aim-platform/aim-platform/src/components/application/ApplicationSuccess.tsx:53:30
+2026-03-31T03:45:33.8141966Z   51 |                     background: ['#d4a853', '#ffd700', '#b8860b', '#fff', '#f0c040', '#a0784c'][i % 6],
+2026-03-31T03:45:33.8142436Z   52 |                     borderRadius: i % 3 === 0 ? '50%' : '2px',
+2026-03-31T03:45:33.8142830Z > 53 |                     left: `${Math.random() * 100}%`,
+2026-03-31T03:45:33.8143195Z      |                              ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.8143523Z   54 |                     top: '-20px',
+2026-03-31T03:45:33.8144018Z   55 |                     animation: `confettiFall ${2 + Math.random() * 3}s ease-in ${Math.random() * 2}s forwards`,
+2026-03-31T03:45:33.8144525Z   56 |                     opacity: 0.8,  react-hooks/purity
+2026-03-31T03:45:33.8144975Z   55:52  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.8145219Z 
+2026-03-31T03:45:33.8146365Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.8147332Z 
+2026-03-31T03:45:33.8147724Z /home/runner/work/aim-platform/aim-platform/src/components/application/ApplicationSuccess.tsx:55:52
+2026-03-31T03:45:33.8148263Z   53 |                     left: `${Math.random() * 100}%`,
+2026-03-31T03:45:33.8148572Z   54 |                     top: '-20px',
+2026-03-31T03:45:33.8149118Z > 55 |                     animation: `confettiFall ${2 + Math.random() * 3}s ease-in ${Math.random() * 2}s forwards`,
+2026-03-31T03:45:33.8149679Z      |                                                    ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.8150030Z   56 |                     opacity: 0.8,
+2026-03-31T03:45:33.8150273Z   57 |                 }} />
+2026-03-31T03:45:33.8150689Z   58 |             ))}                                                                                                             react-hooks/purity
+2026-03-31T03:45:33.8151235Z   55:82  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.8151632Z 
+2026-03-31T03:45:33.8152786Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.8153763Z 
+2026-03-31T03:45:33.8154156Z /home/runner/work/aim-platform/aim-platform/src/components/application/ApplicationSuccess.tsx:55:82
+2026-03-31T03:45:33.8154729Z   53 |                     left: `${Math.random() * 100}%`,
+2026-03-31T03:45:33.8155157Z   54 |                     top: '-20px',
+2026-03-31T03:45:33.8155709Z > 55 |                     animation: `confettiFall ${2 + Math.random() * 3}s ease-in ${Math.random() * 2}s forwards`,
+2026-03-31T03:45:33.8156313Z      |                                                                                  ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.8156703Z   56 |                     opacity: 0.8,
+2026-03-31T03:45:33.8156947Z   57 |                 }} />
+2026-03-31T03:45:33.8157319Z   58 |             ))}                                                                               react-hooks/purity
+2026-03-31T03:45:33.8157727Z 
+2026-03-31T03:45:33.8158075Z /home/runner/work/aim-platform/aim-platform/src/components/application/VoiceRecorder.tsx
+2026-03-31T03:45:33.8158680Z   197:57  warning  Error: Cannot call impure function during render
+2026-03-31T03:45:33.8158926Z 
+2026-03-31T03:45:33.8160084Z `Math.random` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+2026-03-31T03:45:33.8161055Z 
+2026-03-31T03:45:33.8161587Z /home/runner/work/aim-platform/aim-platform/src/components/application/VoiceRecorder.tsx:197:57
+2026-03-31T03:45:33.8162138Z   195 |                                         borderRadius: '2px',
+2026-03-31T03:45:33.8162652Z   196 |                                         animation: `waveform 0.8s ease-in-out ${i * 0.05}s infinite alternate`,
+2026-03-31T03:45:33.8163224Z > 197 |                                         height: `${12 + Math.random() * 28}px`,
+2026-03-31T03:45:33.8163671Z       |                                                         ^^^^^^^^^^^^^ Cannot call impure function
+2026-03-31T03:45:33.8164036Z   198 |                                     }} />
+2026-03-31T03:45:33.8164322Z   199 |                                 ))}
+2026-03-31T03:45:33.8164657Z   200 |                                 <style>{`  react-hooks/purity
+2026-03-31T03:45:33.8164871Z 
+2026-03-31T03:45:33.8165205Z /home/runner/work/aim-platform/aim-platform/src/components/casting/CastingRoleCard.tsx
+2026-03-31T03:45:33.8166273Z ##[warning]  51:11  warning  'showApplyBtn' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8167159Z 
+2026-03-31T03:45:33.8167523Z /home/runner/work/aim-platform/aim-platform/src/components/casting/EncouragementSection.tsx
+2026-03-31T03:45:33.8168863Z ##[warning]  21:8  warning  React Hook useEffect has a missing dependency: 'VALUES.length'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+2026-03-31T03:45:33.8169853Z 
+2026-03-31T03:45:33.8170182Z /home/runner/work/aim-platform/aim-platform/src/components/dashboard/ProfileTab.tsx
+2026-03-31T03:45:33.8170775Z   147:9  warning  Error: Cannot access variable before it is declared
+2026-03-31T03:45:33.8171028Z 
+2026-03-31T03:45:33.8171691Z `applyTheme` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+2026-03-31T03:45:33.8172158Z 
+2026-03-31T03:45:33.8172510Z /home/runner/work/aim-platform/aim-platform/src/components/dashboard/ProfileTab.tsx:147:9
+2026-03-31T03:45:33.8172995Z   145 |         const effective = saved ?? 'dark'
+2026-03-31T03:45:33.8173299Z   146 |         setThemeMode(effective)
+2026-03-31T03:45:33.8173603Z > 147 |         applyTheme(effective)
+2026-03-31T03:45:33.8173933Z       |         ^^^^^^^^^^ `applyTheme` accessed before it is declared
+2026-03-31T03:45:33.8174350Z   148 |         // Mirror system changes in real time when mode === 'system'
+2026-03-31T03:45:33.8174812Z   149 |         const mq = window.matchMedia('(prefers-color-scheme: dark)')
+2026-03-31T03:45:33.8175203Z   150 |         const onSystemChange = () => {
+2026-03-31T03:45:33.8175388Z 
+2026-03-31T03:45:33.8175737Z /home/runner/work/aim-platform/aim-platform/src/components/dashboard/ProfileTab.tsx:157:5
+2026-03-31T03:45:33.8176301Z   155 |     }, [])
+2026-03-31T03:45:33.8176487Z   156 |
+2026-03-31T03:45:33.8176813Z > 157 |     function applyTheme(mode: 'dark' | 'light' | 'system') {
+2026-03-31T03:45:33.8177198Z       |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8177517Z > 158 |         if (mode === 'light') {
+2026-03-31T03:45:33.8177776Z       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8178202Z > 159 |             document.documentElement.setAttribute('data-theme', 'light')
+2026-03-31T03:45:33.8178756Z       …
+2026-03-31T03:45:33.8178951Z       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8179183Z > 167 |         }
+2026-03-31T03:45:33.8179389Z       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2026-03-31T03:45:33.8179613Z > 168 |     }
+2026-03-31T03:45:33.8179838Z       | ^^^^^^ `applyTheme` is declared here
+2026-03-31T03:45:33.8180082Z   169 |
+2026-03-31T03:45:33.8180364Z   170 |     function handleTheme(key: 'dark' | 'light' | 'system') {
+2026-03-31T03:45:33.8180784Z   171 |         setThemeMode(key)  react-hooks/immutability
+2026-03-31T03:45:33.8181001Z 
+2026-03-31T03:45:33.8181499Z /home/runner/work/aim-platform/aim-platform/src/components/search/ResultItem.tsx
+2026-03-31T03:45:33.8184070Z ##[warning]  34:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+2026-03-31T03:45:33.8185667Z 
+2026-03-31T03:45:33.8186002Z /home/runner/work/aim-platform/aim-platform/src/components/search/SearchContext.tsx
+2026-03-31T03:45:33.8186851Z ##[warning]  27:9  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8187638Z 
+2026-03-31T03:45:33.8187958Z /home/runner/work/aim-platform/aim-platform/src/components/search/SearchOverlay.tsx
+2026-03-31T03:45:33.8188718Z   150:5  warning  Error: Calling setState synchronously within an effect can trigger cascading renders
+2026-03-31T03:45:33.8189093Z 
+2026-03-31T03:45:33.8190057Z Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+2026-03-31T03:45:33.8191073Z * Update external systems with the latest state from React.
+2026-03-31T03:45:33.8191946Z * Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+2026-03-31T03:45:33.8192391Z 
+2026-03-31T03:45:33.8193153Z Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+2026-03-31T03:45:33.8193822Z 
+2026-03-31T03:45:33.8194170Z /home/runner/work/aim-platform/aim-platform/src/components/search/SearchOverlay.tsx:150:5
+2026-03-31T03:45:33.8194597Z   148 |
+2026-03-31T03:45:33.8194779Z   149 |   useEffect(() => {
+2026-03-31T03:45:33.8195022Z > 150 |     setMounted(true);
+2026-03-31T03:45:33.8195352Z       |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+2026-03-31T03:45:33.8195663Z   151 |   }, []);
+2026-03-31T03:45:33.8195840Z   152 |
+2026-03-31T03:45:33.8196134Z   153 |   if (!mounted) return null;  react-hooks/set-state-in-effect
+2026-03-31T03:45:33.8196379Z 
+2026-03-31T03:45:33.8196685Z /home/runner/work/aim-platform/aim-platform/src/lib/agents/audition-agent.test.ts
+2026-03-31T03:45:33.8197711Z ##[warning]  312:72  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8198535Z 
+2026-03-31T03:45:33.8198828Z /home/runner/work/aim-platform/aim-platform/src/lib/agents/audition-agent.ts
+2026-03-31T03:45:33.8199695Z ##[warning]   97:7   warning  'DAILY_QUOTA' is assigned a value but never used     @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8201120Z ##[warning]  149:13  warning  'provider' is never reassigned. Use 'const' instead  prefer-const
+2026-03-31T03:45:33.8202669Z ##[warning]  651:55  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8204039Z ##[warning]  651:92  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8205390Z ##[warning]  652:59  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8206900Z ##[warning]  652:90  warning  Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8208163Z ##[warning]  765:21  warning  'report' is never reassigned. Use 'const' instead    prefer-const
+2026-03-31T03:45:33.8208898Z 
+2026-03-31T03:45:33.8209183Z /home/runner/work/aim-platform/aim-platform/src/lib/device-fingerprint.ts
+2026-03-31T03:45:33.8209972Z ##[warning]  16:3   warning  'tokenVersion' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8211260Z ##[warning]  26:75  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8212721Z ##[warning]  27:9   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8213976Z ##[warning]  48:34  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8215229Z ##[warning]  63:25  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8216007Z 
+2026-03-31T03:45:33.8216279Z /home/runner/work/aim-platform/aim-platform/src/lib/email-templates.ts
+2026-03-31T03:45:33.8217047Z ##[warning]  30:43  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8217820Z 
+2026-03-31T03:45:33.8218069Z /home/runner/work/aim-platform/aim-platform/src/lib/logger.test.ts
+2026-03-31T03:45:33.8218775Z ##[warning]  7:32  warning  'vi' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8219503Z 
+2026-03-31T03:45:33.8219735Z /home/runner/work/aim-platform/aim-platform/src/lib/mailer.ts
+2026-03-31T03:45:33.8220449Z ##[warning]  178:10  warning  'stripHtml' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8221210Z 
+2026-03-31T03:45:33.8221699Z /home/runner/work/aim-platform/aim-platform/src/lib/subtitle-translator.ts
+2026-03-31T03:45:33.8222515Z   84:1   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+2026-03-31T03:45:33.8223805Z ##[warning]  87:17  warning  Unexpected any. Specify a different type                                                               @typescript-eslint/no-explicit-any
+2026-03-31T03:45:33.8224706Z 
+2026-03-31T03:45:33.8224989Z /home/runner/work/aim-platform/aim-platform/src/lib/transcribe-client.ts
+2026-03-31T03:45:33.8225793Z   139:9  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+2026-03-31T03:45:33.8226228Z 
+2026-03-31T03:45:33.8226455Z /home/runner/work/aim-platform/aim-platform/src/middleware.ts
+2026-03-31T03:45:33.8227235Z ##[warning]  4:62  warning  'verifyCsrfToken' is defined but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8228016Z 
+2026-03-31T03:45:33.8228260Z /home/runner/work/aim-platform/aim-platform/test-graph-email.js
+2026-03-31T03:45:33.8229011Z ##[warning]  1:1   warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.8230254Z ##[warning]  2:1   warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.8231667Z ##[warning]  3:1   warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.8232965Z ##[warning]  4:27  warning  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+2026-03-31T03:45:33.8233729Z 
+2026-03-31T03:45:33.8234123Z /home/runner/work/aim-platform/aim-platform/tests/e2e/auth.spec.ts
+2026-03-31T03:45:33.8235060Z ##[warning]  8:7  warning  'TEST_USER' is assigned a value but never used  @typescript-eslint/no-unused-vars
+2026-03-31T03:45:33.8235857Z 
+2026-03-31T03:45:33.8236169Z /home/runner/work/aim-platform/aim-platform/tests/performance/api_endpoints.js
+2026-03-31T03:45:33.8237097Z ##[warning]  29:1  warning  Unexpected default export of anonymous function  import/no-anonymous-default-export
+2026-03-31T03:45:33.8238054Z 
+2026-03-31T03:45:33.8238339Z /home/runner/work/aim-platform/aim-platform/tests/performance/home_load.js
+2026-03-31T03:45:33.8239191Z ##[warning]  29:1  warning  Unexpected default export of anonymous function  import/no-anonymous-default-export
+2026-03-31T03:45:33.8239995Z 
+2026-03-31T03:45:33.8240231Z ✖ 226 problems (0 errors, 226 warnings)
+2026-03-31T03:45:33.8240640Z   0 errors and 8 warnings potentially fixable with the `--fix` option.
+2026-03-31T03:45:33.8240907Z 
+2026-03-31T03:45:34.0333766Z Post job cleanup.
+2026-03-31T03:45:34.1874684Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853, not saving cache.
+2026-03-31T03:45:34.2040674Z Post job cleanup.
+2026-03-31T03:45:34.2991172Z [command]/usr/bin/git version
+2026-03-31T03:45:34.3029112Z git version 2.53.0
+2026-03-31T03:45:34.3081027Z Temporarily overriding HOME='/home/runner/work/_temp/5d9099e6-4c4a-4d7d-b7a9-b9a814ca59c4' before making global git config changes
+2026-03-31T03:45:34.3082378Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-31T03:45:34.3086815Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:45:34.3123233Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-31T03:45:34.3156879Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-31T03:45:34.3379242Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-31T03:45:34.3399364Z http.https://github.com/.extraheader
+2026-03-31T03:45:34.3412563Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-03-31T03:45:34.3442293Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-31T03:45:34.3656219Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-31T03:45:34.3686322Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-31T03:45:34.4013868Z Cleaning up orphan processes
+2026-03-31T03:45:34.4305221Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

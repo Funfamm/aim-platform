@@ -1,0 +1,119 @@
+﻿2026-03-31T03:29:18.5712031Z ##[group]Run npm ci
+2026-03-31T03:29:18.5712347Z [36;1mnpm ci[0m
+2026-03-31T03:29:18.5919744Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:29:18.5920053Z ##[endgroup]
+2026-03-31T03:29:20.8232466Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:29:20.8233130Z npm warn While resolving: eslint-plugin-react@7.37.5
+2026-03-31T03:29:20.8233496Z npm warn Found: eslint@10.1.0
+2026-03-31T03:29:20.8233761Z npm warn node_modules/eslint
+2026-03-31T03:29:20.8234114Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:29:20.8234609Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:29:20.8234971Z npm warn
+2026-03-31T03:29:20.8235227Z npm warn Could not resolve dependency:
+2026-03-31T03:29:20.8235762Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:29:20.8236226Z npm warn node_modules/eslint-plugin-react
+2026-03-31T03:29:20.8236702Z npm warn   eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.8237230Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:29:20.8237493Z npm warn
+2026-03-31T03:29:20.8237783Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:29:20.8238117Z npm warn node_modules/eslint
+2026-03-31T03:29:20.8239125Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:29:20.8239613Z npm warn   node_modules/eslint-plugin-react
+2026-03-31T03:29:20.8240092Z npm warn     eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.8240534Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:29:20.8560394Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:29:20.8563506Z npm warn While resolving: eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:29:20.8565408Z npm warn Found: eslint@10.1.0
+2026-03-31T03:29:20.8565911Z npm warn node_modules/eslint
+2026-03-31T03:29:20.8566566Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:29:20.8567482Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:29:20.8568134Z npm warn
+2026-03-31T03:29:20.8568878Z npm warn Could not resolve dependency:
+2026-03-31T03:29:20.8570029Z npm warn peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:29:20.8571066Z npm warn node_modules/eslint-plugin-react-hooks
+2026-03-31T03:29:20.8572008Z npm warn   eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.8572882Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:29:20.8573381Z npm warn
+2026-03-31T03:29:20.8573920Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:29:20.8574783Z npm warn node_modules/eslint
+2026-03-31T03:29:20.8575989Z npm warn   peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:29:20.8577041Z npm warn   node_modules/eslint-plugin-react-hooks
+2026-03-31T03:29:20.8577985Z npm warn     eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.8579091Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:29:20.8877395Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:29:20.8877963Z npm warn While resolving: eslint-plugin-import@2.32.0
+2026-03-31T03:29:20.8878639Z npm warn Found: eslint@10.1.0
+2026-03-31T03:29:20.8878936Z npm warn node_modules/eslint
+2026-03-31T03:29:20.8879315Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:29:20.8879864Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:29:20.8880258Z npm warn
+2026-03-31T03:29:20.8880519Z npm warn Could not resolve dependency:
+2026-03-31T03:29:20.8881113Z npm warn peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:29:20.8881771Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:29:20.8882391Z npm warn   eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.8883196Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:29:20.8883626Z npm warn   1 more (eslint-import-resolver-typescript)
+2026-03-31T03:29:20.8883950Z npm warn
+2026-03-31T03:29:20.8884248Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:29:20.8884583Z npm warn node_modules/eslint
+2026-03-31T03:29:20.8885105Z npm warn   peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:29:20.8885764Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:29:20.8886377Z npm warn     eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.8886848Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:29:20.8887267Z npm warn     1 more (eslint-import-resolver-typescript)
+2026-03-31T03:29:20.9182930Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:29:20.9184525Z npm warn While resolving: eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:29:20.9185122Z npm warn Found: eslint@10.1.0
+2026-03-31T03:29:20.9185443Z npm warn node_modules/eslint
+2026-03-31T03:29:20.9185855Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:29:20.9186445Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:29:20.9186870Z npm warn
+2026-03-31T03:29:20.9187166Z npm warn Could not resolve dependency:
+2026-03-31T03:29:20.9187782Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:29:20.9188874Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:29:20.9189610Z npm warn   eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.9190449Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:29:20.9190762Z npm warn
+2026-03-31T03:29:20.9191102Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:29:20.9191489Z npm warn node_modules/eslint
+2026-03-31T03:29:20.9192069Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:29:20.9192818Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:29:20.9193548Z npm warn     eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:29:20.9194090Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:29:24.8828183Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-03-31T03:29:25.4966221Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:29:31.9314789Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:29:54.4859171Z 
+2026-03-31T03:29:54.4859715Z > aim-platform@0.1.0 postinstall
+2026-03-31T03:29:54.4862361Z > prisma generate
+2026-03-31T03:29:54.4862597Z 
+2026-03-31T03:29:55.3814714Z Prisma schema loaded from prisma/schema.prisma
+2026-03-31T03:29:55.8974367Z ┌─────────────────────────────────────────────────────────┐
+2026-03-31T03:29:55.8975415Z │  Update available 6.19.2 -> 7.6.0                       │
+2026-03-31T03:29:55.8976235Z │                                                         │
+2026-03-31T03:29:55.8977145Z │  This is a major update - please follow the guide at    │
+2026-03-31T03:29:55.8977829Z │  https://pris.ly/d/major-version-upgrade                │
+2026-03-31T03:29:55.8978761Z │                                                         │
+2026-03-31T03:29:55.8979715Z │  Run the following to update                            │
+2026-03-31T03:29:55.8980291Z │    npm i --save-dev prisma@latest                       │
+2026-03-31T03:29:55.8980836Z │    npm i @prisma/client@latest                          │
+2026-03-31T03:29:55.8981349Z └─────────────────────────────────────────────────────────┘
+2026-03-31T03:29:55.8981601Z 
+2026-03-31T03:29:55.8982027Z ✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 258ms
+2026-03-31T03:29:55.8982385Z 
+2026-03-31T03:29:55.8982755Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-03-31T03:29:55.8983129Z 
+2026-03-31T03:29:55.8983718Z Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+2026-03-31T03:29:55.8984245Z 
+2026-03-31T03:29:55.9320322Z 
+2026-03-31T03:29:55.9321110Z added 1007 packages, and audited 1008 packages in 37s
+2026-03-31T03:29:55.9321505Z 
+2026-03-31T03:29:55.9321768Z 222 packages are looking for funding
+2026-03-31T03:29:55.9322298Z   run `npm fund` for details
+2026-03-31T03:29:56.0191743Z 
+2026-03-31T03:29:56.0192646Z 4 vulnerabilities (1 moderate, 3 high)
+2026-03-31T03:29:56.0192972Z 
+2026-03-31T03:29:56.0193132Z To address all issues, run:
+2026-03-31T03:29:56.0193444Z   npm audit fix
+2026-03-31T03:29:56.0193597Z 
+2026-03-31T03:29:56.0193744Z Run `npm audit` for details.

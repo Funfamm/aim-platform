@@ -322,6 +322,7 @@ model SiteSettings {
   smtpFromEmail  String?  // From address e.g. noreply@aimstudio.ai
   smtpSecure     Boolean  @default(false) // true = SSL (465), false = STARTTLS (587)
   emailsEnabled  Boolean  @default(false) // master kill switch
+  emailTransport String   @default("graph") // "graph" | "smtp"
 }
 
 // Password history for reuse prevention

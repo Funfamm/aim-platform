@@ -1,0 +1,304 @@
+﻿2026-03-31T03:46:40.7350613Z Current runner version: '2.333.0'
+2026-03-31T03:46:40.7376491Z ##[group]Runner Image Provisioner
+2026-03-31T03:46:40.7377987Z Hosted Compute Agent
+2026-03-31T03:46:40.7378628Z Version: 20260213.493
+2026-03-31T03:46:40.7379273Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-03-31T03:46:40.7380141Z Build Date: 2026-02-13T00:28:41Z
+2026-03-31T03:46:40.7380869Z Worker ID: {3e658466-883f-4c11-a47d-f9078eb4987a}
+2026-03-31T03:46:40.7381641Z Azure Region: eastus
+2026-03-31T03:46:40.7382331Z ##[endgroup]
+2026-03-31T03:46:40.7384300Z ##[group]Operating System
+2026-03-31T03:46:40.7384999Z Ubuntu
+2026-03-31T03:46:40.7385610Z 24.04.4
+2026-03-31T03:46:40.7386195Z LTS
+2026-03-31T03:46:40.7386698Z ##[endgroup]
+2026-03-31T03:46:40.7387577Z ##[group]Runner Image
+2026-03-31T03:46:40.7388202Z Image: ubuntu-24.04
+2026-03-31T03:46:40.7388809Z Version: 20260323.65.1
+2026-03-31T03:46:40.7390333Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260323.65/images/ubuntu/Ubuntu2404-Readme.md
+2026-03-31T03:46:40.7392036Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260323.65
+2026-03-31T03:46:40.7393099Z ##[endgroup]
+2026-03-31T03:46:40.7394262Z ##[group]GITHUB_TOKEN Permissions
+2026-03-31T03:46:40.7396559Z Contents: read
+2026-03-31T03:46:40.7397634Z Metadata: read
+2026-03-31T03:46:40.7398172Z Packages: read
+2026-03-31T03:46:40.7398810Z ##[endgroup]
+2026-03-31T03:46:40.7401094Z Secret source: Actions
+2026-03-31T03:46:40.7402290Z Prepare workflow directory
+2026-03-31T03:46:40.7743248Z Prepare all required actions
+2026-03-31T03:46:40.7782427Z Getting action download info
+2026-03-31T03:46:41.0803925Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-03-31T03:46:41.2366275Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-03-31T03:46:41.4304666Z Complete job name: unit
+2026-03-31T03:46:41.5016503Z ##[group]Run actions/checkout@v4
+2026-03-31T03:46:41.5017620Z with:
+2026-03-31T03:46:41.5018059Z   repository: Funfamm/aim-platform
+2026-03-31T03:46:41.5018782Z   token: ***
+2026-03-31T03:46:41.5019165Z   ssh-strict: true
+2026-03-31T03:46:41.5019592Z   ssh-user: git
+2026-03-31T03:46:41.5019996Z   persist-credentials: true
+2026-03-31T03:46:41.5020455Z   clean: true
+2026-03-31T03:46:41.5020889Z   sparse-checkout-cone-mode: true
+2026-03-31T03:46:41.5021386Z   fetch-depth: 1
+2026-03-31T03:46:41.5021782Z   fetch-tags: false
+2026-03-31T03:46:41.5022208Z   show-progress: true
+2026-03-31T03:46:41.5022651Z   lfs: false
+2026-03-31T03:46:41.5023024Z   submodules: false
+2026-03-31T03:46:41.5023480Z   set-safe-directory: true
+2026-03-31T03:46:41.5024156Z ##[endgroup]
+2026-03-31T03:46:41.6138412Z Syncing repository: Funfamm/aim-platform
+2026-03-31T03:46:41.6140306Z ##[group]Getting Git version info
+2026-03-31T03:46:41.6141205Z Working directory is '/home/runner/work/aim-platform/aim-platform'
+2026-03-31T03:46:41.6142520Z [command]/usr/bin/git version
+2026-03-31T03:46:41.6181920Z git version 2.53.0
+2026-03-31T03:46:41.6208134Z ##[endgroup]
+2026-03-31T03:46:41.6222818Z Temporarily overriding HOME='/home/runner/work/_temp/a0f930cd-8859-48dc-910c-4b962de9c459' before making global git config changes
+2026-03-31T03:46:41.6224701Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-31T03:46:41.6228082Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:46:41.6260732Z Deleting the contents of '/home/runner/work/aim-platform/aim-platform'
+2026-03-31T03:46:41.6264062Z ##[group]Initializing the repository
+2026-03-31T03:46:41.6268708Z [command]/usr/bin/git init /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:46:41.6404408Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-03-31T03:46:41.6408451Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-03-31T03:46:41.6412349Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-03-31T03:46:41.6415765Z hint: call:
+2026-03-31T03:46:41.6417484Z hint:
+2026-03-31T03:46:41.6419097Z hint: 	git config --global init.defaultBranch <name>
+2026-03-31T03:46:41.6420586Z hint:
+2026-03-31T03:46:41.6421892Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-03-31T03:46:41.6424182Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-03-31T03:46:41.6426095Z hint:
+2026-03-31T03:46:41.6427261Z hint: 	git branch -m <name>
+2026-03-31T03:46:41.6428266Z hint:
+2026-03-31T03:46:41.6429462Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-03-31T03:46:41.6431516Z Initialized empty Git repository in /home/runner/work/aim-platform/aim-platform/.git/
+2026-03-31T03:46:41.6433697Z [command]/usr/bin/git remote add origin https://github.com/Funfamm/aim-platform
+2026-03-31T03:46:41.6459460Z ##[endgroup]
+2026-03-31T03:46:41.6460984Z ##[group]Disabling automatic garbage collection
+2026-03-31T03:46:41.6464702Z [command]/usr/bin/git config --local gc.auto 0
+2026-03-31T03:46:41.6494652Z ##[endgroup]
+2026-03-31T03:46:41.6495982Z ##[group]Setting up auth
+2026-03-31T03:46:41.6502561Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-31T03:46:41.6534353Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-31T03:46:41.6838412Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-31T03:46:41.6872083Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-31T03:46:41.7104542Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-31T03:46:41.7147202Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-31T03:46:41.7395745Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-03-31T03:46:41.7435316Z ##[endgroup]
+2026-03-31T03:46:41.7447977Z ##[group]Fetching the repository
+2026-03-31T03:46:41.7449936Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +946add77693215e96313237fb07e6b4e4fa70d83:refs/remotes/pull/5/merge
+2026-03-31T03:46:42.3488011Z From https://github.com/Funfamm/aim-platform
+2026-03-31T03:46:42.3489554Z  * [new ref]         946add77693215e96313237fb07e6b4e4fa70d83 -> pull/5/merge
+2026-03-31T03:46:42.3522389Z ##[endgroup]
+2026-03-31T03:46:42.3523988Z ##[group]Determining the checkout info
+2026-03-31T03:46:42.3526180Z ##[endgroup]
+2026-03-31T03:46:42.3530133Z [command]/usr/bin/git sparse-checkout disable
+2026-03-31T03:46:42.3572714Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-03-31T03:46:42.3602223Z ##[group]Checking out the ref
+2026-03-31T03:46:42.3603995Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/5/merge
+2026-03-31T03:46:42.4739353Z Note: switching to 'refs/remotes/pull/5/merge'.
+2026-03-31T03:46:42.4740703Z 
+2026-03-31T03:46:42.4741869Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-03-31T03:46:42.4744239Z changes and commit them, and you can discard any commits you make in this
+2026-03-31T03:46:42.4746353Z state without impacting any branches by switching back to a branch.
+2026-03-31T03:46:42.4747897Z 
+2026-03-31T03:46:42.4748785Z If you want to create a new branch to retain commits you create, you may
+2026-03-31T03:46:42.4750895Z do so (now or later) by using -c with the switch command. Example:
+2026-03-31T03:46:42.4752183Z 
+2026-03-31T03:46:42.4752915Z   git switch -c <new-branch-name>
+2026-03-31T03:46:42.4754484Z 
+2026-03-31T03:46:42.4755034Z Or undo this operation with:
+2026-03-31T03:46:42.4756069Z 
+2026-03-31T03:46:42.4756479Z   git switch -
+2026-03-31T03:46:42.4757242Z 
+2026-03-31T03:46:42.4758488Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-03-31T03:46:42.4759992Z 
+2026-03-31T03:46:42.4761597Z HEAD is now at 946add7 Merge 7511fe95037f2abd53b54ef67ba3e193688f3083 into 8cba4816a94ddca7b4a12564e5e9c19f451ff1c6
+2026-03-31T03:46:42.4766224Z ##[endgroup]
+2026-03-31T03:46:42.4796022Z [command]/usr/bin/git log -1 --format=%H
+2026-03-31T03:46:42.4822100Z 946add77693215e96313237fb07e6b4e4fa70d83
+2026-03-31T03:46:42.5159065Z ##[group]Run actions/setup-node@v4
+2026-03-31T03:46:42.5160169Z with:
+2026-03-31T03:46:42.5160960Z   node-version: 22
+2026-03-31T03:46:42.5161839Z   cache: npm
+2026-03-31T03:46:42.5162663Z   always-auth: false
+2026-03-31T03:46:42.5163559Z   check-latest: false
+2026-03-31T03:46:42.5164806Z   token: ***
+2026-03-31T03:46:42.5165650Z ##[endgroup]
+2026-03-31T03:46:42.6988780Z Found in cache @ /opt/hostedtoolcache/node/22.22.1/x64
+2026-03-31T03:46:42.6995546Z ##[group]Environment details
+2026-03-31T03:46:46.0357482Z node: v22.22.1
+2026-03-31T03:46:46.0358932Z npm: 10.9.4
+2026-03-31T03:46:46.0359403Z yarn: 1.22.22
+2026-03-31T03:46:46.0360932Z ##[endgroup]
+2026-03-31T03:46:46.0383232Z [command]/opt/hostedtoolcache/node/22.22.1/x64/bin/npm config get cache
+2026-03-31T03:46:46.2294881Z /home/runner/.npm
+2026-03-31T03:46:46.3333430Z Cache hit for: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:46:47.3960172Z Received 243269632 of 479585721 (50.7%), 230.6 MBs/sec
+2026-03-31T03:46:48.2230612Z Received 479585721 of 479585721 (100.0%), 249.5 MBs/sec
+2026-03-31T03:46:48.2232447Z Cache Size: ~457 MB (479585721 B)
+2026-03-31T03:46:48.2363094Z [command]/usr/bin/tar -xf /home/runner/work/_temp/4fe11fca-5361-4685-9dc3-5589f4422c62/cache.tzst -P -C /home/runner/work/aim-platform/aim-platform --use-compress-program unzstd
+2026-03-31T03:46:49.6885975Z Cache restored successfully
+2026-03-31T03:46:49.7114667Z Cache restored from key: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:46:49.8983370Z ##[group]Run npm ci
+2026-03-31T03:46:49.8983814Z [36;1mnpm ci[0m
+2026-03-31T03:46:49.9391398Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:46:49.9391773Z ##[endgroup]
+2026-03-31T03:46:51.9728465Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:46:51.9731068Z npm warn While resolving: eslint-plugin-react@7.37.5
+2026-03-31T03:46:51.9731801Z npm warn Found: eslint@10.1.0
+2026-03-31T03:46:51.9732345Z npm warn node_modules/eslint
+2026-03-31T03:46:51.9733097Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:46:51.9734168Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:46:51.9736751Z npm warn
+2026-03-31T03:46:51.9737515Z npm warn Could not resolve dependency:
+2026-03-31T03:46:51.9738560Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:46:51.9739294Z npm warn node_modules/eslint-plugin-react
+2026-03-31T03:46:51.9739914Z npm warn   eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:51.9740405Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:46:51.9740724Z npm warn
+2026-03-31T03:46:51.9741087Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:46:51.9741460Z npm warn node_modules/eslint
+2026-03-31T03:46:51.9741984Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:46:51.9742501Z npm warn   node_modules/eslint-plugin-react
+2026-03-31T03:46:51.9743016Z npm warn     eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:51.9743504Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:46:52.0064658Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:46:52.0066442Z npm warn While resolving: eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:46:52.0068608Z npm warn Found: eslint@10.1.0
+2026-03-31T03:46:52.0070308Z npm warn node_modules/eslint
+2026-03-31T03:46:52.0072112Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:46:52.0073160Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:46:52.0073885Z npm warn
+2026-03-31T03:46:52.0074417Z npm warn Could not resolve dependency:
+2026-03-31T03:46:52.0075486Z npm warn peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:46:52.0076186Z npm warn node_modules/eslint-plugin-react-hooks
+2026-03-31T03:46:52.0076797Z npm warn   eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:52.0077708Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:46:52.0078038Z npm warn
+2026-03-31T03:46:52.0078386Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:46:52.0078773Z npm warn node_modules/eslint
+2026-03-31T03:46:52.0079479Z npm warn   peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:46:52.0080172Z npm warn   node_modules/eslint-plugin-react-hooks
+2026-03-31T03:46:52.0080980Z npm warn     eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:52.0081822Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:46:52.0414993Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:46:52.0417954Z npm warn While resolving: eslint-plugin-import@2.32.0
+2026-03-31T03:46:52.0419492Z npm warn Found: eslint@10.1.0
+2026-03-31T03:46:52.0425899Z npm warn node_modules/eslint
+2026-03-31T03:46:52.0426655Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:46:52.0427795Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:46:52.0428441Z npm warn
+2026-03-31T03:46:52.0428925Z npm warn Could not resolve dependency:
+2026-03-31T03:46:52.0430009Z npm warn peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:46:52.0431305Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:46:52.0432968Z npm warn   eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:52.0433956Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:46:52.0434792Z npm warn   1 more (eslint-import-resolver-typescript)
+2026-03-31T03:46:52.0435416Z npm warn
+2026-03-31T03:46:52.0435964Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:46:52.0436592Z npm warn node_modules/eslint
+2026-03-31T03:46:52.0437812Z npm warn   peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:46:52.0439025Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:46:52.0440128Z npm warn     eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:52.0441000Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:46:52.0441737Z npm warn     1 more (eslint-import-resolver-typescript)
+2026-03-31T03:46:52.0746247Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:46:52.0747612Z npm warn While resolving: eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:46:52.0748383Z npm warn Found: eslint@10.1.0
+2026-03-31T03:46:52.0748944Z npm warn node_modules/eslint
+2026-03-31T03:46:52.0750388Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:46:52.0751555Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:46:52.0752424Z npm warn
+2026-03-31T03:46:52.0753154Z npm warn Could not resolve dependency:
+2026-03-31T03:46:52.0754346Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:46:52.0755842Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:46:52.0757490Z npm warn   eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:52.0758506Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:46:52.0759097Z npm warn
+2026-03-31T03:46:52.0760084Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:46:52.0760834Z npm warn node_modules/eslint
+2026-03-31T03:46:52.0761969Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:46:52.0763455Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:46:52.0764726Z npm warn     eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:46:52.0765711Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:46:55.9200583Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-03-31T03:46:56.4634691Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:47:04.0261670Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:47:24.4109573Z 
+2026-03-31T03:47:24.4110141Z > aim-platform@0.1.0 postinstall
+2026-03-31T03:47:24.4110820Z > prisma generate
+2026-03-31T03:47:24.4111048Z 
+2026-03-31T03:47:25.3026083Z Prisma schema loaded from prisma/schema.prisma
+2026-03-31T03:47:25.8072341Z ┌─────────────────────────────────────────────────────────┐
+2026-03-31T03:47:25.8073581Z │  Update available 6.19.2 -> 7.6.0                       │
+2026-03-31T03:47:25.8074552Z │                                                         │
+2026-03-31T03:47:25.8075772Z │  This is a major update - please follow the guide at    │
+2026-03-31T03:47:25.8077921Z │  https://pris.ly/d/major-version-upgrade                │
+2026-03-31T03:47:25.8080084Z │                                                         │
+2026-03-31T03:47:25.8081789Z │  Run the following to update                            │
+2026-03-31T03:47:25.8083675Z │    npm i --save-dev prisma@latest                       │
+2026-03-31T03:47:25.8085485Z │    npm i @prisma/client@latest                          │
+2026-03-31T03:47:25.8087120Z └─────────────────────────────────────────────────────────┘
+2026-03-31T03:47:25.8087686Z 
+2026-03-31T03:47:25.8088659Z ✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 255ms
+2026-03-31T03:47:25.8089485Z 
+2026-03-31T03:47:25.8090313Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-03-31T03:47:25.8091127Z 
+2026-03-31T03:47:25.8091878Z Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+2026-03-31T03:47:25.8092665Z 
+2026-03-31T03:47:25.8450674Z 
+2026-03-31T03:47:25.8451487Z added 1007 packages, and audited 1008 packages in 36s
+2026-03-31T03:47:25.8451999Z 
+2026-03-31T03:47:25.8452254Z 222 packages are looking for funding
+2026-03-31T03:47:25.8452710Z   run `npm fund` for details
+2026-03-31T03:47:25.9331401Z 
+2026-03-31T03:47:25.9332382Z 4 vulnerabilities (1 moderate, 3 high)
+2026-03-31T03:47:25.9332957Z 
+2026-03-31T03:47:25.9333221Z To address all issues, run:
+2026-03-31T03:47:25.9333714Z   npm audit fix
+2026-03-31T03:47:25.9333991Z 
+2026-03-31T03:47:25.9334275Z Run `npm audit` for details.
+2026-03-31T03:47:26.1060719Z ##[group]Run npx vitest run
+2026-03-31T03:47:26.1061154Z [36;1mnpx vitest run[0m
+2026-03-31T03:47:26.1091067Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:47:26.1091342Z ##[endgroup]
+2026-03-31T03:47:26.7012943Z 
+2026-03-31T03:47:26.7017376Z [1m[46m RUN [49m[22m [36mv4.1.1 [39m[90m/home/runner/work/aim-platform/aim-platform[39m
+2026-03-31T03:47:26.7018283Z 
+2026-03-31T03:47:27.0313757Z  [32m✓[39m src/__tests__/upload-safety.test.ts [2m([22m[2m34 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+2026-03-31T03:47:27.1322815Z  [32m✓[39m src/lib/agents/audition-agent.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+2026-03-31T03:47:27.2571982Z  [32m✓[39m src/lib/auth.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+2026-03-31T03:47:27.3037661Z  [32m✓[39m src/lib/agents/batch-audit-stream.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+2026-03-31T03:47:27.4437245Z  [32m✓[39m src/lib/logger.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+2026-03-31T03:47:27.4770385Z  [32m✓[39m src/app/api/auth/register/register.integration.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+2026-03-31T03:47:27.6004322Z  [32m✓[39m src/lib/agents/notifications.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+2026-03-31T03:47:27.7848429Z  [32m✓[39m src/lib/cache.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 158[2mms[22m[39m
+2026-03-31T03:47:27.7897543Z  [32m✓[39m src/lib/device-fingerprint.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+2026-03-31T03:47:28.1782787Z  [32m✓[39m src/lib/api-security.test.ts [2m([22m[2m14 tests[22m[2m)[22m[33m 1150[2mms[22m[39m
+2026-03-31T03:47:28.1785749Z      [33m[2m✓[22m[39m expired token should not pass any guard [33m 1102[2mms[22m[39m
+2026-03-31T03:47:28.1822823Z 
+2026-03-31T03:47:28.1828706Z [2m Test Files [22m [1m[32m10 passed[39m[22m[90m (10)[39m
+2026-03-31T03:47:28.1830112Z [2m      Tests [22m [1m[32m141 passed[39m[22m[90m (141)[39m
+2026-03-31T03:47:28.1831130Z [2m   Start at [22m 03:47:26
+2026-03-31T03:47:28.1832833Z [2m   Duration [22m 1.47s[2m (transform 351ms, setup 113ms, import 572ms, tests 1.43s, environment 1ms)[22m
+2026-03-31T03:47:28.1833858Z 
+2026-03-31T03:47:28.2245821Z Post job cleanup.
+2026-03-31T03:47:28.3821329Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853, not saving cache.
+2026-03-31T03:47:28.3973491Z Post job cleanup.
+2026-03-31T03:47:28.4960530Z [command]/usr/bin/git version
+2026-03-31T03:47:28.4999075Z git version 2.53.0
+2026-03-31T03:47:28.5044771Z Temporarily overriding HOME='/home/runner/work/_temp/796c7b23-6827-4922-92b2-88cfb6c927ec' before making global git config changes
+2026-03-31T03:47:28.5046781Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-31T03:47:28.5059579Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:47:28.5098180Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-31T03:47:28.5133217Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-31T03:47:28.5384702Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-31T03:47:28.5408985Z http.https://github.com/.extraheader
+2026-03-31T03:47:28.5427513Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-03-31T03:47:28.5463202Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-31T03:47:28.5704150Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-31T03:47:28.5740528Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-31T03:47:28.6132866Z Cleaning up orphan processes
+2026-03-31T03:47:28.6470388Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

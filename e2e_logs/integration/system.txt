@@ -1,0 +1,8 @@
+2026-03-31T03:47:30.4250000Z Job is waiting for a hosted runner to come online.
+2026-03-31T03:47:30.4250000Z Job is about to start running on the hosted runner: GitHub Actions 1000000347
+2026-03-31T03:47:30.4170000Z Evaluating integration.if
+2026-03-31T03:47:30.4170000Z Evaluating: success()
+2026-03-31T03:47:30.4170000Z Result: true
+2026-03-31T03:47:30.4170000Z Requested labels: ubuntu-latest
+2026-03-31T03:47:30.4170000Z Job defined at: Funfamm/aim-platform/.github/workflows/ci.yml@refs/pull/5/merge
+2026-03-31T03:47:30.4170000Z Waiting for a runner to pick up this job...

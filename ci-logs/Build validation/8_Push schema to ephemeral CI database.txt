@@ -1,0 +1,21 @@
+﻿2026-03-31T03:30:23.9249308Z ##[group]Run npx prisma db push --force-reset --accept-data-loss
+2026-03-31T03:30:23.9249808Z [36;1mnpx prisma db push --force-reset --accept-data-loss[0m
+2026-03-31T03:30:23.9276775Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:30:23.9277012Z env:
+2026-03-31T03:30:23.9277417Z   DATABASE_URL: ***localhost:5432/testdb
+2026-03-31T03:30:23.9277680Z ##[endgroup]
+2026-03-31T03:30:25.0322369Z Prisma schema loaded from prisma/schema.prisma
+2026-03-31T03:30:25.0384320Z Error: Prisma schema validation - (get-config wasm)
+2026-03-31T03:30:25.0385116Z Error code: P1012
+2026-03-31T03:30:25.0385785Z error: Environment variable not found: DIRECT_URL.
+2026-03-31T03:30:25.0386293Z   -->  prisma/schema.prisma:10
+2026-03-31T03:30:25.0386606Z    | 
+2026-03-31T03:30:25.0386879Z  9 |   url        = env("DATABASE_URL")
+2026-03-31T03:30:25.0387272Z 10 |   directUrl  = env("DIRECT_URL")
+2026-03-31T03:30:25.0387567Z    | 
+2026-03-31T03:30:25.0387674Z 
+2026-03-31T03:30:25.0387811Z Validation Error Count: 1
+2026-03-31T03:30:25.0388099Z [Context: getConfig]
+2026-03-31T03:30:25.0388315Z 
+2026-03-31T03:30:25.0388451Z Prisma CLI Version : 6.19.2
+2026-03-31T03:30:25.0657967Z ##[error]Process completed with exit code 1.

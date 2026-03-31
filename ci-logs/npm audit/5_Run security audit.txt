@@ -1,0 +1,28 @@
+﻿2026-03-31T03:29:56.1789995Z ##[group]Run npm audit --audit-level=critical || true
+2026-03-31T03:29:56.1790403Z [36;1mnpm audit --audit-level=critical || true[0m
+2026-03-31T03:29:56.1819795Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:29:56.1820176Z ##[endgroup]
+2026-03-31T03:29:57.8425198Z # npm audit report
+2026-03-31T03:29:57.8426117Z 
+2026-03-31T03:29:57.8426420Z brace-expansion  2.0.0 - 2.0.2
+2026-03-31T03:29:57.8426941Z Severity: moderate
+2026-03-31T03:29:57.8428676Z brace-expansion: Zero-step sequence causes process hang and memory exhaustion - https://github.com/advisories/GHSA-f886-m6hf-6m8v
+2026-03-31T03:29:57.8429914Z fix available via `npm audit fix`
+2026-03-31T03:29:57.8430452Z node_modules/brace-expansion
+2026-03-31T03:29:57.8430769Z 
+2026-03-31T03:29:57.8430924Z effect  <3.20.0
+2026-03-31T03:29:57.8431280Z Severity: high
+2026-03-31T03:29:57.8432798Z Effect `AsyncLocalStorage` context lost/contaminated inside Effect fibers under concurrent load with RPC - https://github.com/advisories/GHSA-38f7-945m-qr2g
+2026-03-31T03:29:57.8434269Z fix available via `npm audit fix`
+2026-03-31T03:29:57.8434765Z node_modules/effect
+2026-03-31T03:29:57.8435479Z   @prisma/config  6.13.0-dev.1 - 7.6.0-integration-feat-prisma-bootstrap.13
+2026-03-31T03:29:57.8436321Z   Depends on vulnerable versions of effect
+2026-03-31T03:29:57.8436877Z   node_modules/@prisma/config
+2026-03-31T03:29:57.8437594Z     prisma  6.13.0-dev.1 - 7.6.0-integration-feat-prisma-bootstrap.13
+2026-03-31T03:29:57.8438637Z     Depends on vulnerable versions of @prisma/config
+2026-03-31T03:29:57.8439143Z     node_modules/prisma
+2026-03-31T03:29:57.8439382Z 
+2026-03-31T03:29:57.8439648Z 4 vulnerabilities (1 moderate, 3 high)
+2026-03-31T03:29:57.8439952Z 
+2026-03-31T03:29:57.8440111Z To address all issues, run:
+2026-03-31T03:29:57.8440462Z   npm audit fix

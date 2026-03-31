@@ -1,0 +1,23 @@
+﻿2026-03-31T03:29:28.4241397Z ##[group]Run actions/setup-node@v4
+2026-03-31T03:29:28.4241677Z with:
+2026-03-31T03:29:28.4241860Z   node-version: 22
+2026-03-31T03:29:28.4242047Z   cache: npm
+2026-03-31T03:29:28.4242231Z   always-auth: false
+2026-03-31T03:29:28.4242428Z   check-latest: false
+2026-03-31T03:29:28.4242749Z   token: ***
+2026-03-31T03:29:28.4242938Z ##[endgroup]
+2026-03-31T03:29:28.5987912Z Found in cache @ /opt/hostedtoolcache/node/22.22.1/x64
+2026-03-31T03:29:28.5994714Z ##[group]Environment details
+2026-03-31T03:29:28.9068711Z node: v22.22.1
+2026-03-31T03:29:28.9069090Z npm: 10.9.4
+2026-03-31T03:29:28.9069583Z yarn: 1.22.22
+2026-03-31T03:29:28.9070437Z ##[endgroup]
+2026-03-31T03:29:28.9093951Z [command]/opt/hostedtoolcache/node/22.22.1/x64/bin/npm config get cache
+2026-03-31T03:29:29.0483684Z /home/runner/.npm
+2026-03-31T03:29:29.1456641Z Cache hit for: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:29:30.2063065Z Received 230686720 of 479585721 (48.1%), 219.6 MBs/sec
+2026-03-31T03:29:31.0793569Z Received 479585721 of 479585721 (100.0%), 243.9 MBs/sec
+2026-03-31T03:29:31.0795678Z Cache Size: ~457 MB (479585721 B)
+2026-03-31T03:29:31.0913337Z [command]/usr/bin/tar -xf /home/runner/work/_temp/b830eea1-2577-40b6-aeb4-be312b29ee35/cache.tzst -P -C /home/runner/work/aim-platform/aim-platform --use-compress-program unzstd
+2026-03-31T03:29:32.2875133Z Cache restored successfully
+2026-03-31T03:29:32.3106399Z Cache restored from key: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853

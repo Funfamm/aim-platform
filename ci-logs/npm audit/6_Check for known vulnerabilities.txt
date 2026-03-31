@@ -1,0 +1,34 @@
+﻿2026-03-31T03:29:57.8620995Z ##[group]Run npx auditjs ossi --type npm || true
+2026-03-31T03:29:57.8621382Z [36;1mnpx auditjs ossi --type npm || true[0m
+2026-03-31T03:29:57.8649758Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:29:57.8650004Z ##[endgroup]
+2026-03-31T03:29:58.9982943Z  ________   ___  ___   ________   ___   _________       ___   ________      
+2026-03-31T03:29:58.9983904Z |\   __  \ |\  \|\  \ |\   ___ \ |\  \ |\___   ___\    |\  \ |\   ____\     
+2026-03-31T03:29:58.9984608Z \ \  \|\  \\ \  \\\  \\ \  \_|\ \\ \  \\|___ \  \_|    \ \  \\ \  \___|_    
+2026-03-31T03:29:58.9985328Z  \ \   __  \\ \  \\\  \\ \  \ \\ \\ \  \    \ \  \   __ \ \  \\ \_____  \   
+2026-03-31T03:29:58.9985995Z   \ \  \ \  \\ \  \\\  \\ \  \_\\ \\ \  \    \ \  \ |\  \\_\  \\|____|\  \  
+2026-03-31T03:29:58.9986749Z    \ \__\ \__\\ \_______\\ \_______\\ \__\    \ \__\\ \________\ ____\_\  \ 
+2026-03-31T03:29:58.9987525Z     \|__|\|__| \|_______| \|_______| \|__|     \|__| \|________||\_________\
+2026-03-31T03:29:58.9988501Z                                                                 \|_________|
+2026-03-31T03:29:58.9989303Z                                                                             
+2026-03-31T03:29:58.9990016Z                                                                             
+2026-03-31T03:29:58.9999537Z   _      _                       _   _              
+2026-03-31T03:29:59.0000214Z  /_)    /_`_  _  _ _/_   _  _   (/  /_`_._  _   _/ _
+2026-03-31T03:29:59.0010130Z /_)/_/ ._//_// //_|/ /_//_//_' (_X /  ///_'/ //_/_\ 
+2026-03-31T03:29:59.0014116Z    _/                _//                            
+2026-03-31T03:29:59.0014499Z 
+2026-03-31T03:29:59.0014662Z   AuditJS version: 4.2.0
+2026-03-31T03:29:59.0014919Z 
+2026-03-31T03:29:59.0017958Z - Starting application
+2026-03-31T03:29:59.0019628Z ✔ Starting application
+2026-03-31T03:29:59.0031513Z - Getting coordinates for Sonatype OSS Index
+2026-03-31T03:29:59.0043939Z (node:2632) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-03-31T03:29:59.0045443Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-03-31T03:30:00.4151254Z ✔ Getting coordinates for Sonatype OSS Index
+2026-03-31T03:30:00.4152341Z - Auditing your application with Sonatype OSS Index
+2026-03-31T03:30:00.4159337Z ✔ Auditing your application with Sonatype OSS Index
+2026-03-31T03:30:00.4162876Z - Submitting coordinates to Sonatype OSS Index
+2026-03-31T03:30:00.7485177Z [91m[2026-03-31T03:30:00.747] [ERROR] auditjs - [39mThere was an error auditing with Sonatype OSS Index Error: There was an error making the request: Error: Unauthorized
+2026-03-31T03:30:00.7487061Z     at /home/runner/.npm/_npx/9fdf97b2057c04c8/node_modules/auditjs/bin/Services/OssIndexRequestService.js:71:19
+2026-03-31T03:30:00.7488050Z     at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+2026-03-31T03:30:00.7489123Z     at async Promise.all (index 1)

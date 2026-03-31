@@ -1,0 +1,478 @@
+﻿2026-03-31T03:47:32.6676345Z Current runner version: '2.333.0'
+2026-03-31T03:47:32.6701212Z ##[group]Runner Image Provisioner
+2026-03-31T03:47:32.6701951Z Hosted Compute Agent
+2026-03-31T03:47:32.6702658Z Version: 20260213.493
+2026-03-31T03:47:32.6703227Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+2026-03-31T03:47:32.6704406Z Build Date: 2026-02-13T00:28:41Z
+2026-03-31T03:47:32.6705271Z Worker ID: {04806d86-cb5b-4d57-b3d1-26b39024829f}
+2026-03-31T03:47:32.6705943Z Azure Region: northcentralus
+2026-03-31T03:47:32.6706520Z ##[endgroup]
+2026-03-31T03:47:32.6708038Z ##[group]Operating System
+2026-03-31T03:47:32.6708647Z Ubuntu
+2026-03-31T03:47:32.6709076Z 24.04.4
+2026-03-31T03:47:32.6709646Z LTS
+2026-03-31T03:47:32.6710073Z ##[endgroup]
+2026-03-31T03:47:32.6710573Z ##[group]Runner Image
+2026-03-31T03:47:32.6711168Z Image: ubuntu-24.04
+2026-03-31T03:47:32.6711646Z Version: 20260323.65.1
+2026-03-31T03:47:32.6712803Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260323.65/images/ubuntu/Ubuntu2404-Readme.md
+2026-03-31T03:47:32.6714771Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260323.65
+2026-03-31T03:47:32.6715668Z ##[endgroup]
+2026-03-31T03:47:32.6716797Z ##[group]GITHUB_TOKEN Permissions
+2026-03-31T03:47:32.6719076Z Contents: read
+2026-03-31T03:47:32.6719851Z Metadata: read
+2026-03-31T03:47:32.6720353Z Packages: read
+2026-03-31T03:47:32.6720852Z ##[endgroup]
+2026-03-31T03:47:32.6722901Z Secret source: Actions
+2026-03-31T03:47:32.6724218Z Prepare workflow directory
+2026-03-31T03:47:32.7167167Z Prepare all required actions
+2026-03-31T03:47:32.7204376Z Getting action download info
+2026-03-31T03:47:33.0250516Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+2026-03-31T03:47:33.1675850Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+2026-03-31T03:47:33.4203612Z Complete job name: integration
+2026-03-31T03:47:33.4676996Z ##[group]Checking docker version
+2026-03-31T03:47:33.4690516Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+2026-03-31T03:47:33.5072498Z '1.48'
+2026-03-31T03:47:33.5087436Z Docker daemon API version: '1.48'
+2026-03-31T03:47:33.5088603Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+2026-03-31T03:47:33.5262265Z '1.48'
+2026-03-31T03:47:33.5272525Z Docker client API version: '1.48'
+2026-03-31T03:47:33.5278695Z ##[endgroup]
+2026-03-31T03:47:33.5281569Z ##[group]Clean up resources from previous jobs
+2026-03-31T03:47:33.5287481Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=d8b0a2"
+2026-03-31T03:47:33.5426434Z ##[command]/usr/bin/docker network prune --force --filter "label=d8b0a2"
+2026-03-31T03:47:33.5550747Z ##[endgroup]
+2026-03-31T03:47:33.5551222Z ##[group]Create local container network
+2026-03-31T03:47:33.5561097Z ##[command]/usr/bin/docker network create --label d8b0a2 github_network_3a10bc80e06e4989aff1a8f4b65891e4
+2026-03-31T03:47:33.6087325Z 8f56d2cf95cc9ad2c87122257f838b08bcc67a759b9d44d95af99b591099fb67
+2026-03-31T03:47:33.6107142Z ##[endgroup]
+2026-03-31T03:47:33.6130833Z ##[group]Starting postgres service container
+2026-03-31T03:47:33.6151435Z ##[command]/usr/bin/docker pull postgres:15
+2026-03-31T03:47:34.0352802Z 15: Pulling from library/postgres
+2026-03-31T03:47:34.1864643Z ec781dee3f47: Pulling fs layer
+2026-03-31T03:47:34.1866026Z ce2467f2f21d: Pulling fs layer
+2026-03-31T03:47:34.1867373Z d4ced18622af: Pulling fs layer
+2026-03-31T03:47:34.1868696Z af73ff344a10: Pulling fs layer
+2026-03-31T03:47:34.1869901Z 07cec992154a: Pulling fs layer
+2026-03-31T03:47:34.1871101Z fd0dcffac314: Pulling fs layer
+2026-03-31T03:47:34.1872342Z bda354b903ce: Pulling fs layer
+2026-03-31T03:47:34.1873950Z fcd98f4944fb: Pulling fs layer
+2026-03-31T03:47:34.1874892Z 45e04ac2d7d2: Pulling fs layer
+2026-03-31T03:47:34.1875746Z f1a2676f0017: Pulling fs layer
+2026-03-31T03:47:34.1876697Z eab3f9a27af8: Pulling fs layer
+2026-03-31T03:47:34.1877600Z d2c8c030ed3b: Pulling fs layer
+2026-03-31T03:47:34.1878485Z c2e686ef6906: Pulling fs layer
+2026-03-31T03:47:34.1879789Z b2c40507d19c: Pulling fs layer
+2026-03-31T03:47:34.1880683Z fd0dcffac314: Waiting
+2026-03-31T03:47:34.1881546Z bda354b903ce: Waiting
+2026-03-31T03:47:34.1882434Z fcd98f4944fb: Waiting
+2026-03-31T03:47:34.1883434Z af73ff344a10: Waiting
+2026-03-31T03:47:34.1884311Z 45e04ac2d7d2: Waiting
+2026-03-31T03:47:34.1885126Z 07cec992154a: Waiting
+2026-03-31T03:47:34.1886062Z f1a2676f0017: Waiting
+2026-03-31T03:47:34.1887012Z eab3f9a27af8: Waiting
+2026-03-31T03:47:34.1887867Z d2c8c030ed3b: Waiting
+2026-03-31T03:47:34.1888682Z c2e686ef6906: Waiting
+2026-03-31T03:47:34.1889595Z b2c40507d19c: Waiting
+2026-03-31T03:47:34.2756928Z ce2467f2f21d: Verifying Checksum
+2026-03-31T03:47:34.2758827Z ce2467f2f21d: Download complete
+2026-03-31T03:47:34.3357563Z d4ced18622af: Verifying Checksum
+2026-03-31T03:47:34.3361933Z d4ced18622af: Download complete
+2026-03-31T03:47:34.4066647Z af73ff344a10: Verifying Checksum
+2026-03-31T03:47:34.4069337Z af73ff344a10: Download complete
+2026-03-31T03:47:34.4121877Z ec781dee3f47: Verifying Checksum
+2026-03-31T03:47:34.4122600Z ec781dee3f47: Download complete
+2026-03-31T03:47:34.4916568Z 07cec992154a: Verifying Checksum
+2026-03-31T03:47:34.4921635Z 07cec992154a: Download complete
+2026-03-31T03:47:34.5181511Z bda354b903ce: Verifying Checksum
+2026-03-31T03:47:34.5189151Z bda354b903ce: Download complete
+2026-03-31T03:47:34.5369104Z fd0dcffac314: Verifying Checksum
+2026-03-31T03:47:34.5371176Z fd0dcffac314: Download complete
+2026-03-31T03:47:34.5870402Z fcd98f4944fb: Verifying Checksum
+2026-03-31T03:47:34.5871903Z fcd98f4944fb: Download complete
+2026-03-31T03:47:34.6377968Z f1a2676f0017: Verifying Checksum
+2026-03-31T03:47:34.6381808Z f1a2676f0017: Download complete
+2026-03-31T03:47:34.6849378Z eab3f9a27af8: Verifying Checksum
+2026-03-31T03:47:34.6849918Z eab3f9a27af8: Download complete
+2026-03-31T03:47:34.7360020Z d2c8c030ed3b: Verifying Checksum
+2026-03-31T03:47:34.7368130Z d2c8c030ed3b: Download complete
+2026-03-31T03:47:34.7806406Z c2e686ef6906: Verifying Checksum
+2026-03-31T03:47:34.7808405Z c2e686ef6906: Download complete
+2026-03-31T03:47:34.8421140Z b2c40507d19c: Verifying Checksum
+2026-03-31T03:47:34.8421565Z b2c40507d19c: Download complete
+2026-03-31T03:47:35.0451173Z 45e04ac2d7d2: Verifying Checksum
+2026-03-31T03:47:35.0451686Z 45e04ac2d7d2: Download complete
+2026-03-31T03:47:35.4874172Z ec781dee3f47: Pull complete
+2026-03-31T03:47:38.7242355Z ce2467f2f21d: Pull complete
+2026-03-31T03:47:38.8975771Z d4ced18622af: Pull complete
+2026-03-31T03:47:38.9451816Z af73ff344a10: Pull complete
+2026-03-31T03:47:39.2421236Z 07cec992154a: Pull complete
+2026-03-31T03:47:39.3294119Z fd0dcffac314: Pull complete
+2026-03-31T03:47:39.3393088Z bda354b903ce: Pull complete
+2026-03-31T03:47:39.3511837Z fcd98f4944fb: Pull complete
+2026-03-31T03:47:42.1811140Z 45e04ac2d7d2: Pull complete
+2026-03-31T03:47:42.1947461Z f1a2676f0017: Pull complete
+2026-03-31T03:47:42.2090539Z eab3f9a27af8: Pull complete
+2026-03-31T03:47:42.2189334Z d2c8c030ed3b: Pull complete
+2026-03-31T03:47:42.2295104Z c2e686ef6906: Pull complete
+2026-03-31T03:47:42.2380427Z b2c40507d19c: Pull complete
+2026-03-31T03:47:42.2429405Z Digest: sha256:c635fa3e3b7421a659d34abdfd6d492f679cbe8149e261a501237b55c5a94212
+2026-03-31T03:47:42.2444948Z Status: Downloaded newer image for postgres:15
+2026-03-31T03:47:42.2453451Z docker.io/library/postgres:15
+2026-03-31T03:47:42.2516326Z ##[command]/usr/bin/docker create --name d6de067bd2bc4808a0de073739d5a7e6_postgres15_50c120 --label d8b0a2 --network github_network_3a10bc80e06e4989aff1a8f4b65891e4 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U test -d testdb" --health-interval 10s --health-timeout 5s --health-retries 5 -e "POSTGRES_USER=test" -e "POSTGRES_PASSWORD=test" -e "POSTGRES_DB=testdb" -e GITHUB_ACTIONS=true -e CI=true postgres:15
+2026-03-31T03:47:42.2794950Z 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:42.2815399Z ##[command]/usr/bin/docker start 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:42.4854643Z 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:42.4880965Z ##[command]/usr/bin/docker ps --all --filter id=0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+2026-03-31T03:47:42.5019871Z 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50 Up Less than a second (health: starting)
+2026-03-31T03:47:42.5039575Z ##[command]/usr/bin/docker port 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:42.5224717Z 5432/tcp -> 0.0.0.0:5432
+2026-03-31T03:47:42.5226734Z 5432/tcp -> [::]:5432
+2026-03-31T03:47:42.5270376Z ##[endgroup]
+2026-03-31T03:47:42.5279431Z ##[group]Waiting for all services to be ready
+2026-03-31T03:47:42.5292666Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:42.5426772Z starting
+2026-03-31T03:47:42.5444699Z postgres service is starting, waiting 2 seconds before checking again.
+2026-03-31T03:47:44.5449622Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:44.5566371Z starting
+2026-03-31T03:47:44.5576909Z postgres service is starting, waiting 4 seconds before checking again.
+2026-03-31T03:47:48.8337517Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:48.8463683Z starting
+2026-03-31T03:47:48.8477769Z postgres service is starting, waiting 9 seconds before checking again.
+2026-03-31T03:47:57.9935265Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:47:58.0057082Z healthy
+2026-03-31T03:47:58.0074582Z postgres service is healthy.
+2026-03-31T03:47:58.0075232Z ##[endgroup]
+2026-03-31T03:47:58.0341618Z ##[group]Run actions/checkout@v4
+2026-03-31T03:47:58.0342153Z with:
+2026-03-31T03:47:58.0342343Z   repository: Funfamm/aim-platform
+2026-03-31T03:47:58.0342720Z   token: ***
+2026-03-31T03:47:58.0342892Z   ssh-strict: true
+2026-03-31T03:47:58.0343075Z   ssh-user: git
+2026-03-31T03:47:58.0343517Z   persist-credentials: true
+2026-03-31T03:47:58.0343735Z   clean: true
+2026-03-31T03:47:58.0343925Z   sparse-checkout-cone-mode: true
+2026-03-31T03:47:58.0344147Z   fetch-depth: 1
+2026-03-31T03:47:58.0344322Z   fetch-tags: false
+2026-03-31T03:47:58.0344495Z   show-progress: true
+2026-03-31T03:47:58.0344674Z   lfs: false
+2026-03-31T03:47:58.0344826Z   submodules: false
+2026-03-31T03:47:58.0345007Z   set-safe-directory: true
+2026-03-31T03:47:58.0345453Z ##[endgroup]
+2026-03-31T03:47:58.1400548Z Syncing repository: Funfamm/aim-platform
+2026-03-31T03:47:58.1402095Z ##[group]Getting Git version info
+2026-03-31T03:47:58.1402518Z Working directory is '/home/runner/work/aim-platform/aim-platform'
+2026-03-31T03:47:58.1403147Z [command]/usr/bin/git version
+2026-03-31T03:47:58.1452609Z git version 2.53.0
+2026-03-31T03:47:58.1478853Z ##[endgroup]
+2026-03-31T03:47:58.1569419Z Temporarily overriding HOME='/home/runner/work/_temp/24bf4a28-a611-4a86-aaac-30270863c4ba' before making global git config changes
+2026-03-31T03:47:58.1570612Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-31T03:47:58.1571696Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:47:58.1573587Z Deleting the contents of '/home/runner/work/aim-platform/aim-platform'
+2026-03-31T03:47:58.1574649Z ##[group]Initializing the repository
+2026-03-31T03:47:58.1575290Z [command]/usr/bin/git init /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:47:58.1647500Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-03-31T03:47:58.1648861Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-03-31T03:47:58.1649845Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-03-31T03:47:58.1650520Z hint: call:
+2026-03-31T03:47:58.1650815Z hint:
+2026-03-31T03:47:58.1651307Z hint: 	git config --global init.defaultBranch <name>
+2026-03-31T03:47:58.1651853Z hint:
+2026-03-31T03:47:58.1652358Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-03-31T03:47:58.1653212Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-03-31T03:47:58.1654103Z hint:
+2026-03-31T03:47:58.1654424Z hint: 	git branch -m <name>
+2026-03-31T03:47:58.1654813Z hint:
+2026-03-31T03:47:58.1655351Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-03-31T03:47:58.1656344Z Initialized empty Git repository in /home/runner/work/aim-platform/aim-platform/.git/
+2026-03-31T03:47:58.1662053Z [command]/usr/bin/git remote add origin https://github.com/Funfamm/aim-platform
+2026-03-31T03:47:58.1691134Z ##[endgroup]
+2026-03-31T03:47:58.1691733Z ##[group]Disabling automatic garbage collection
+2026-03-31T03:47:58.1696314Z [command]/usr/bin/git config --local gc.auto 0
+2026-03-31T03:47:58.1723932Z ##[endgroup]
+2026-03-31T03:47:58.1724554Z ##[group]Setting up auth
+2026-03-31T03:47:58.1731318Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-31T03:47:58.1759252Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-31T03:47:58.2043094Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-31T03:47:58.2071942Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-31T03:47:58.2286044Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-31T03:47:58.2322600Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-31T03:47:58.2538833Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-03-31T03:47:58.2571432Z ##[endgroup]
+2026-03-31T03:47:58.2572054Z ##[group]Fetching the repository
+2026-03-31T03:47:58.2580548Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +946add77693215e96313237fb07e6b4e4fa70d83:refs/remotes/pull/5/merge
+2026-03-31T03:47:59.1466439Z From https://github.com/Funfamm/aim-platform
+2026-03-31T03:47:59.1468567Z  * [new ref]         946add77693215e96313237fb07e6b4e4fa70d83 -> pull/5/merge
+2026-03-31T03:47:59.1499054Z ##[endgroup]
+2026-03-31T03:47:59.1499620Z ##[group]Determining the checkout info
+2026-03-31T03:47:59.1502729Z ##[endgroup]
+2026-03-31T03:47:59.1508925Z [command]/usr/bin/git sparse-checkout disable
+2026-03-31T03:47:59.1544902Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-03-31T03:47:59.1569947Z ##[group]Checking out the ref
+2026-03-31T03:47:59.1574940Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/5/merge
+2026-03-31T03:47:59.2704701Z Note: switching to 'refs/remotes/pull/5/merge'.
+2026-03-31T03:47:59.2705261Z 
+2026-03-31T03:47:59.2705718Z You are in 'detached HEAD' state. You can look around, make experimental
+2026-03-31T03:47:59.2706684Z changes and commit them, and you can discard any commits you make in this
+2026-03-31T03:47:59.2707360Z state without impacting any branches by switching back to a branch.
+2026-03-31T03:47:59.2707907Z 
+2026-03-31T03:47:59.2708276Z If you want to create a new branch to retain commits you create, you may
+2026-03-31T03:47:59.2709076Z do so (now or later) by using -c with the switch command. Example:
+2026-03-31T03:47:59.2709932Z 
+2026-03-31T03:47:59.2710143Z   git switch -c <new-branch-name>
+2026-03-31T03:47:59.2710490Z 
+2026-03-31T03:47:59.2710666Z Or undo this operation with:
+2026-03-31T03:47:59.2710945Z 
+2026-03-31T03:47:59.2711101Z   git switch -
+2026-03-31T03:47:59.2711391Z 
+2026-03-31T03:47:59.2711803Z Turn off this advice by setting config variable advice.detachedHead to false
+2026-03-31T03:47:59.2712498Z 
+2026-03-31T03:47:59.2713563Z HEAD is now at 946add7 Merge 7511fe95037f2abd53b54ef67ba3e193688f3083 into 8cba4816a94ddca7b4a12564e5e9c19f451ff1c6
+2026-03-31T03:47:59.2722074Z ##[endgroup]
+2026-03-31T03:47:59.2760841Z [command]/usr/bin/git log -1 --format=%H
+2026-03-31T03:47:59.2782286Z 946add77693215e96313237fb07e6b4e4fa70d83
+2026-03-31T03:47:59.3009873Z ##[group]Run actions/setup-node@v4
+2026-03-31T03:47:59.3010130Z with:
+2026-03-31T03:47:59.3010358Z   node-version: 22
+2026-03-31T03:47:59.3010533Z   cache: npm
+2026-03-31T03:47:59.3010704Z   always-auth: false
+2026-03-31T03:47:59.3010898Z   check-latest: false
+2026-03-31T03:47:59.3011212Z   token: ***
+2026-03-31T03:47:59.3011385Z ##[endgroup]
+2026-03-31T03:47:59.4769291Z Found in cache @ /opt/hostedtoolcache/node/22.22.1/x64
+2026-03-31T03:47:59.4776356Z ##[group]Environment details
+2026-03-31T03:47:59.8021533Z node: v22.22.1
+2026-03-31T03:47:59.8022792Z npm: 10.9.4
+2026-03-31T03:47:59.8023153Z yarn: 1.22.22
+2026-03-31T03:47:59.8024635Z ##[endgroup]
+2026-03-31T03:47:59.8049456Z [command]/opt/hostedtoolcache/node/22.22.1/x64/bin/npm config get cache
+2026-03-31T03:47:59.9513911Z /home/runner/.npm
+2026-03-31T03:48:00.0963843Z Cache hit for: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:48:01.2086889Z Received 134217728 of 479585721 (28.0%), 127.9 MBs/sec
+2026-03-31T03:48:02.2089201Z Received 394264576 of 479585721 (82.2%), 187.9 MBs/sec
+2026-03-31T03:48:02.6111989Z Received 479585721 of 479585721 (100.0%), 190.3 MBs/sec
+2026-03-31T03:48:02.6113660Z Cache Size: ~457 MB (479585721 B)
+2026-03-31T03:48:02.6153728Z [command]/usr/bin/tar -xf /home/runner/work/_temp/b1d0fc40-bd2b-44c3-8423-80c2e6f462eb/cache.tzst -P -C /home/runner/work/aim-platform/aim-platform --use-compress-program unzstd
+2026-03-31T03:48:03.6958627Z Cache restored successfully
+2026-03-31T03:48:03.7172073Z Cache restored from key: node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853
+2026-03-31T03:48:03.7368629Z ##[group]Run npm ci
+2026-03-31T03:48:03.7368891Z [36;1mnpm ci[0m
+2026-03-31T03:48:03.7409828Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:48:03.7410080Z ##[endgroup]
+2026-03-31T03:48:05.8873488Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:48:05.8874377Z npm warn While resolving: eslint-plugin-react@7.37.5
+2026-03-31T03:48:05.8874958Z npm warn Found: eslint@10.1.0
+2026-03-31T03:48:05.8875263Z npm warn node_modules/eslint
+2026-03-31T03:48:05.8875637Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:48:05.8876120Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:48:05.8876503Z npm warn
+2026-03-31T03:48:05.8876764Z npm warn Could not resolve dependency:
+2026-03-31T03:48:05.8877270Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:48:05.8877738Z npm warn node_modules/eslint-plugin-react
+2026-03-31T03:48:05.8878251Z npm warn   eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.8878685Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:48:05.8878958Z npm warn
+2026-03-31T03:48:05.8879248Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:48:05.8879583Z npm warn node_modules/eslint
+2026-03-31T03:48:05.8880044Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7" from eslint-plugin-react@7.37.5
+2026-03-31T03:48:05.8880498Z npm warn   node_modules/eslint-plugin-react
+2026-03-31T03:48:05.8880947Z npm warn     eslint-plugin-react@"^7.37.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.8881380Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:48:05.9190204Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:48:05.9191297Z npm warn While resolving: eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:48:05.9191918Z npm warn Found: eslint@10.1.0
+2026-03-31T03:48:05.9192348Z npm warn node_modules/eslint
+2026-03-31T03:48:05.9192924Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:48:05.9194001Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:48:05.9194582Z npm warn
+2026-03-31T03:48:05.9195002Z npm warn Could not resolve dependency:
+2026-03-31T03:48:05.9196041Z npm warn peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:48:05.9196848Z npm warn node_modules/eslint-plugin-react-hooks
+2026-03-31T03:48:05.9197367Z npm warn   eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.9197823Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:48:05.9198102Z npm warn
+2026-03-31T03:48:05.9198380Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:48:05.9198700Z npm warn node_modules/eslint
+2026-03-31T03:48:05.9199277Z npm warn   peer eslint@"^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0 || ^9.0.0" from eslint-plugin-react-hooks@7.0.1
+2026-03-31T03:48:05.9199932Z npm warn   node_modules/eslint-plugin-react-hooks
+2026-03-31T03:48:05.9200671Z npm warn     eslint-plugin-react-hooks@"^7.0.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.9201140Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:48:05.9500440Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:48:05.9501259Z npm warn While resolving: eslint-plugin-import@2.32.0
+2026-03-31T03:48:05.9501752Z npm warn Found: eslint@10.1.0
+2026-03-31T03:48:05.9502051Z npm warn node_modules/eslint
+2026-03-31T03:48:05.9502408Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:48:05.9502909Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:48:05.9503585Z npm warn
+2026-03-31T03:48:05.9503893Z npm warn Could not resolve dependency:
+2026-03-31T03:48:05.9504433Z npm warn peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:48:05.9505053Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:48:05.9505916Z npm warn   eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.9506361Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:48:05.9506760Z npm warn   1 more (eslint-import-resolver-typescript)
+2026-03-31T03:48:05.9507063Z npm warn
+2026-03-31T03:48:05.9507342Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:48:05.9507662Z npm warn node_modules/eslint
+2026-03-31T03:48:05.9508143Z npm warn   peer eslint@"^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9" from eslint-plugin-import@2.32.0
+2026-03-31T03:48:05.9508745Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-import
+2026-03-31T03:48:05.9509315Z npm warn     eslint-plugin-import@"^2.32.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.9509759Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:48:05.9510149Z npm warn     1 more (eslint-import-resolver-typescript)
+2026-03-31T03:48:05.9750948Z npm warn ERESOLVE overriding peer dependency
+2026-03-31T03:48:05.9752132Z npm warn While resolving: eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:48:05.9752758Z npm warn Found: eslint@10.1.0
+2026-03-31T03:48:05.9753202Z npm warn node_modules/eslint
+2026-03-31T03:48:05.9754116Z npm warn   dev eslint@"^10.1.0" from the root project
+2026-03-31T03:48:05.9754928Z npm warn   9 more (@eslint-community/eslint-utils, @eslint/compat, ...)
+2026-03-31T03:48:05.9755510Z npm warn
+2026-03-31T03:48:05.9755950Z npm warn Could not resolve dependency:
+2026-03-31T03:48:05.9756845Z npm warn peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:48:05.9757937Z npm warn node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:48:05.9759388Z npm warn   eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.9760284Z npm warn   node_modules/eslint-config-next
+2026-03-31T03:48:05.9760710Z npm warn
+2026-03-31T03:48:05.9761175Z npm warn Conflicting peer dependency: eslint@9.39.4
+2026-03-31T03:48:05.9761542Z npm warn node_modules/eslint
+2026-03-31T03:48:05.9762030Z npm warn   peer eslint@"^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9" from eslint-plugin-jsx-a11y@6.10.2
+2026-03-31T03:48:05.9762672Z npm warn   node_modules/eslint-config-next/node_modules/eslint-plugin-jsx-a11y
+2026-03-31T03:48:05.9763528Z npm warn     eslint-plugin-jsx-a11y@"^6.10.0" from eslint-config-next@16.2.1
+2026-03-31T03:48:05.9764269Z npm warn     node_modules/eslint-config-next
+2026-03-31T03:48:09.6807351Z npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+2026-03-31T03:48:10.2839331Z npm warn deprecated glob@7.2.3: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:48:17.4846241Z npm warn deprecated glob@10.5.0: Old versions of glob are not supported, and contain widely publicized security vulnerabilities, which have been fixed in the current version. Please update. Support for old versions may be purchased (at exorbitant rates) by contacting i@izs.me
+2026-03-31T03:48:37.6756004Z 
+2026-03-31T03:48:37.6756632Z > aim-platform@0.1.0 postinstall
+2026-03-31T03:48:37.6758669Z > prisma generate
+2026-03-31T03:48:37.6758907Z 
+2026-03-31T03:48:38.5288483Z Prisma schema loaded from prisma/schema.prisma
+2026-03-31T03:48:39.0188507Z ┌─────────────────────────────────────────────────────────┐
+2026-03-31T03:48:39.0189084Z 
+2026-03-31T03:48:39.0189836Z ✔ Generated Prisma Client (v6.19.2) to ./node_modules/@prisma/client in 240ms
+2026-03-31T03:48:39.0190316Z 
+2026-03-31T03:48:39.0190790Z │  Update available 6.19.2 -> 7.6.0                       │
+2026-03-31T03:48:39.0191505Z │                                                         │
+2026-03-31T03:48:39.0192588Z │  This is a major update - please follow the guide at    │
+2026-03-31T03:48:39.0193664Z │  https://pris.ly/d/major-version-upgrade                │
+2026-03-31T03:48:39.0194342Z │                                                         │
+2026-03-31T03:48:39.0195024Z │  Run the following to update                            │
+2026-03-31T03:48:39.0195790Z │    npm i --save-dev prisma@latest                       │
+2026-03-31T03:48:39.0196473Z │    npm i @prisma/client@latest                          │
+2026-03-31T03:48:39.0197158Z └─────────────────────────────────────────────────────────┘
+2026-03-31T03:48:39.0197972Z Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+2026-03-31T03:48:39.0198550Z 
+2026-03-31T03:48:39.0199019Z Tip: Want to turn off tips and other hints? https://pris.ly/tip-4-nohints
+2026-03-31T03:48:39.0199477Z 
+2026-03-31T03:48:39.0534811Z 
+2026-03-31T03:48:39.0535515Z added 1007 packages, and audited 1008 packages in 35s
+2026-03-31T03:48:39.0535942Z 
+2026-03-31T03:48:39.0536252Z 222 packages are looking for funding
+2026-03-31T03:48:39.0536800Z   run `npm fund` for details
+2026-03-31T03:48:39.1385520Z 
+2026-03-31T03:48:39.1386193Z 4 vulnerabilities (1 moderate, 3 high)
+2026-03-31T03:48:39.1386497Z 
+2026-03-31T03:48:39.1386633Z To address all issues, run:
+2026-03-31T03:48:39.1386920Z   npm audit fix
+2026-03-31T03:48:39.1387059Z 
+2026-03-31T03:48:39.1387189Z Run `npm audit` for details.
+2026-03-31T03:48:39.3027092Z ##[group]Run npm run test:integration
+2026-03-31T03:48:39.3027426Z [36;1mnpm run test:integration[0m
+2026-03-31T03:48:39.3055172Z shell: /usr/bin/bash -e {0}
+2026-03-31T03:48:39.3055411Z env:
+2026-03-31T03:48:39.3056023Z   DATABASE_URL: ***localhost:5432/testdb
+2026-03-31T03:48:39.3056282Z ##[endgroup]
+2026-03-31T03:48:39.3970815Z 
+2026-03-31T03:48:39.3971199Z > aim-platform@0.1.0 test:integration
+2026-03-31T03:48:39.3971967Z > vitest run --config vitest.config.ts 'integration.test'
+2026-03-31T03:48:39.3972271Z 
+2026-03-31T03:48:39.7244780Z 
+2026-03-31T03:48:39.7248323Z [1m[46m RUN [49m[22m [36mv4.1.1 [39m[90m/home/runner/work/aim-platform/aim-platform[39m
+2026-03-31T03:48:39.7248920Z 
+2026-03-31T03:48:39.9082619Z  [32m✓[39m src/app/api/auth/register/register.integration.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+2026-03-31T03:48:39.9110820Z 
+2026-03-31T03:48:39.9116878Z [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+2026-03-31T03:48:39.9117864Z [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+2026-03-31T03:48:39.9118537Z [2m   Start at [22m 03:48:39
+2026-03-31T03:48:39.9119636Z [2m   Duration [22m 174ms[2m (transform 31ms, setup 23ms, import 22ms, tests 7ms, environment 0ms)[22m
+2026-03-31T03:48:39.9123424Z 
+2026-03-31T03:48:39.9614286Z Post job cleanup.
+2026-03-31T03:48:40.1117786Z Cache hit occurred on the primary key node-cache-Linux-x64-npm-e57561703534a23f6a349990c6baf863feb756089a234c415da3e917792ec853, not saving cache.
+2026-03-31T03:48:40.1248684Z Post job cleanup.
+2026-03-31T03:48:40.2186818Z [command]/usr/bin/git version
+2026-03-31T03:48:40.2227339Z git version 2.53.0
+2026-03-31T03:48:40.2271571Z Temporarily overriding HOME='/home/runner/work/_temp/ea9f443d-7c5a-4d9b-b327-d83ed049cca1' before making global git config changes
+2026-03-31T03:48:40.2273108Z Adding repository directory to the temporary git global config as a safe directory
+2026-03-31T03:48:40.2285394Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/aim-platform/aim-platform
+2026-03-31T03:48:40.2318405Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-03-31T03:48:40.2350117Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-03-31T03:48:40.2571294Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-03-31T03:48:40.2590973Z http.https://github.com/.extraheader
+2026-03-31T03:48:40.2604089Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-03-31T03:48:40.2634576Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-03-31T03:48:40.2862644Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-03-31T03:48:40.2895720Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-03-31T03:48:40.3207018Z Print service container logs: d6de067bd2bc4808a0de073739d5a7e6_postgres15_50c120
+2026-03-31T03:48:40.3211473Z ##[command]/usr/bin/docker logs --details 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:48:40.3333879Z  initdb: warning: enabling "trust" authentication for local connections
+2026-03-31T03:48:40.3335154Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+2026-03-31T03:48:40.3336425Z  The files belonging to this database system will be owned by user "postgres".
+2026-03-31T03:48:40.3337729Z  2026-03-31 03:47:43.421 UTC [1] LOG:  starting PostgreSQL 15.17 (Debian 15.17-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-03-31T03:48:40.3338962Z  2026-03-31 03:47:43.421 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+2026-03-31T03:48:40.3339781Z  2026-03-31 03:47:43.421 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+2026-03-31T03:48:40.3341873Z  2026-03-31 03:47:43.422 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-03-31T03:48:40.3342831Z  2026-03-31 03:47:43.425 UTC [64] LOG:  database system was shut down at 2026-03-31 03:47:43 UTC
+2026-03-31T03:48:40.3343895Z  2026-03-31 03:47:43.428 UTC [1] LOG:  database system is ready to accept connections
+2026-03-31T03:48:40.3344578Z  This user must also own the server process.
+2026-03-31T03:48:40.3345154Z  
+2026-03-31T03:48:40.3345561Z  The database cluster will be initialized with locale "en_US.utf8".
+2026-03-31T03:48:40.3347547Z  The default database encoding has accordingly been set to "UTF8".
+2026-03-31T03:48:40.3348036Z  The default text search configuration will be set to "english".
+2026-03-31T03:48:40.3348396Z  
+2026-03-31T03:48:40.3348577Z  Data page checksums are disabled.
+2026-03-31T03:48:40.3348881Z  
+2026-03-31T03:48:40.3349168Z  fixing permissions on existing directory /var/lib/postgresql/data ... ok
+2026-03-31T03:48:40.3349600Z  creating subdirectories ... ok
+2026-03-31T03:48:40.3349922Z  selecting dynamic shared memory implementation ... posix
+2026-03-31T03:48:40.3350302Z  selecting default max_connections ... 100
+2026-03-31T03:48:40.3350585Z  selecting default shared_buffers ... 128MB
+2026-03-31T03:48:40.3350895Z  selecting default time zone ... Etc/UTC
+2026-03-31T03:48:40.3351158Z  creating configuration files ... ok
+2026-03-31T03:48:40.3351447Z  running bootstrap script ... ok
+2026-03-31T03:48:40.3351729Z  performing post-bootstrap initialization ... ok
+2026-03-31T03:48:40.3352056Z  syncing data to disk ... ok
+2026-03-31T03:48:40.3352270Z  
+2026-03-31T03:48:40.3352429Z  
+2026-03-31T03:48:40.3352637Z  Success. You can now start the database server using:
+2026-03-31T03:48:40.3352977Z  
+2026-03-31T03:48:40.3353209Z      pg_ctl -D /var/lib/postgresql/data -l logfile start
+2026-03-31T03:48:40.3353868Z  
+2026-03-31T03:48:40.3354930Z  waiting for server to start....2026-03-31 03:47:43.120 UTC [48] LOG:  starting PostgreSQL 15.17 (Debian 15.17-1.pgdg13+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+2026-03-31T03:48:40.3355813Z  2026-03-31 03:47:43.120 UTC [48] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+2026-03-31T03:48:40.3356352Z  2026-03-31 03:47:43.123 UTC [51] LOG:  database system was shut down at 2026-03-31 03:47:43 UTC
+2026-03-31T03:48:40.3356836Z  2026-03-31 03:47:43.126 UTC [48] LOG:  database system is ready to accept connections
+2026-03-31T03:48:40.3357181Z   done
+2026-03-31T03:48:40.3357341Z  server started
+2026-03-31T03:48:40.3357510Z  CREATE DATABASE
+2026-03-31T03:48:40.3357678Z  
+2026-03-31T03:48:40.3357823Z  
+2026-03-31T03:48:40.3358110Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+2026-03-31T03:48:40.3358469Z  
+2026-03-31T03:48:40.3358697Z  2026-03-31 03:47:43.303 UTC [48] LOG:  received fast shutdown request
+2026-03-31T03:48:40.3359456Z  waiting for server to shut down....2026-03-31 03:47:43.303 UTC [48] LOG:  aborting any active transactions
+2026-03-31T03:48:40.3360168Z  2026-03-31 03:47:43.305 UTC [48] LOG:  background worker "logical replication launcher" (PID 54) exited with exit code 1
+2026-03-31T03:48:40.3360676Z  2026-03-31 03:47:43.306 UTC [49] LOG:  shutting down
+2026-03-31T03:48:40.3361033Z  2026-03-31 03:47:43.306 UTC [49] LOG:  checkpoint starting: shutdown immediate
+2026-03-31T03:48:40.3362039Z  2026-03-31 03:47:43.322 UTC [49] LOG:  checkpoint complete: wrote 922 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.013 s, sync=0.003 s, total=0.017 s; sync files=301, longest=0.001 s, average=0.001 s; distance=4239 kB, estimate=4239 kB
+2026-03-31T03:48:40.3363009Z  2026-03-31 03:47:43.329 UTC [48] LOG:  database system is shut down
+2026-03-31T03:48:40.3363547Z   done
+2026-03-31T03:48:40.3363705Z  server stopped
+2026-03-31T03:48:40.3363876Z  
+2026-03-31T03:48:40.3364087Z  PostgreSQL init process complete; ready for start up.
+2026-03-31T03:48:40.3364377Z  
+2026-03-31T03:48:40.3369771Z Stop and remove container: d6de067bd2bc4808a0de073739d5a7e6_postgres15_50c120
+2026-03-31T03:48:40.3375272Z ##[command]/usr/bin/docker rm --force 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:48:42.2393911Z 0425fe1945dbe461e1134792e7a8d9afd75572c2b656136423df631e9f211d50
+2026-03-31T03:48:42.2419127Z Remove container network: github_network_3a10bc80e06e4989aff1a8f4b65891e4
+2026-03-31T03:48:42.2423962Z ##[command]/usr/bin/docker network rm github_network_3a10bc80e06e4989aff1a8f4b65891e4
+2026-03-31T03:48:42.3369788Z github_network_3a10bc80e06e4989aff1a8f4b65891e4
+2026-03-31T03:48:42.3430649Z Cleaning up orphan processes
+2026-03-31T03:48:42.3874666Z ##[warning]Node.js 20 actions are deprecated. The following actions are running on Node.js 20 and may not work as expected: actions/checkout@v4, actions/setup-node@v4. Actions will be forced to run with Node.js 24 by default starting June 2nd, 2026. Node.js 20 will be removed from the runner on September 16th, 2026. Please check if updated versions of these actions are available that support Node.js 24. To opt into Node.js 24 now, set the FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true environment variable on the runner or in your workflow file. Once Node.js 24 becomes the default, you can temporarily opt out by setting ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION=true. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
