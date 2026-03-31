@@ -64,7 +64,7 @@ type Settings = {
     // Email
     smtpHost: string; smtpPort: number; smtpUser: string; smtpPass: string
     smtpFromName: string; smtpFromEmail: string; smtpSecure: boolean
-    emailsEnabled: boolean; emailTransport: string
+    emailsEnabled: boolean; emailTransport: string; emailReplyTo: string
 }
 
 const TABS = [
@@ -270,6 +270,14 @@ function EmailSmtpTab({ settings, update, Toggle }: {
                         placeholder={isGraph ? 'aimstudio@impactaistudio.com' : 'noreply@yourdomain.com'} />
                     <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
                         {isGraph ? 'Must be a mailbox licensed in your Azure tenant' : 'The address emails are sent from'}
+                    </div>
+                </div>
+                <div>
+                    <label className="admin-label">Reply-To Email <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(optional)</span></label>
+                    <input className="admin-input" type="email" value={settings.emailReplyTo} onChange={e => update('emailReplyTo', e.target.value)}
+                        placeholder="noreply@impactaistudio.com" />
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                        Leave blank to allow replies to From Email. Set to noreply@impactaistudio.com to block replies.
                     </div>
                 </div>
             </div>
@@ -722,7 +730,7 @@ export default function AdminSettingsPage() {
         // Email
         smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
         smtpFromName: '', smtpFromEmail: '', smtpSecure: false,
-        emailsEnabled: false, emailTransport: 'graph',
+        emailsEnabled: false, emailTransport: 'graph', emailReplyTo: '',
     })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -792,6 +800,7 @@ export default function AdminSettingsPage() {
                     smtpSecure: data.smtpSecure ?? false,
                     emailsEnabled: data.emailsEnabled ?? false,
                     emailTransport: data.emailTransport || 'graph',
+                    emailReplyTo: data.emailReplyTo || '',
                     aboutPageData: data.aboutPageData || '',
                 })
                 setDirty(false)

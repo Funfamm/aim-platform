@@ -1,9 +1,7 @@
 import nodemailer from 'nodemailer'
-import { EmailTransport } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getGraphAccessToken } from '@/lib/graphClient'
 import { logger } from './logger'
-import { decrypt } from '@/lib/secure'
 
 interface EmailOptions {
     to: string
@@ -16,7 +14,8 @@ interface EmailOptions {
 interface MailConfig {
     fromName: string
     fromEmail: string
-    transport: EmailTransport
+    replyTo?: string        // admin-set reply-to e.g. noreply@impactaistudio.com
+    transport: 'smtp' | 'graph'
     // SMTP-only fields
     smtpHost?: string
     smtpPort?: number
@@ -34,7 +33,8 @@ async function getMailConfig(): Promise<MailConfig | null> {
     if (cachedConfig && now - cacheTime < CACHE_TTL) return cachedConfig
 
     try {
-        const settings = await prisma.siteSettings.findFirst({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const settings = await (prisma.siteSettings as any).findFirst({
             select: {
                 emailsEnabled: true,
                 emailTransport: true,
@@ -45,6 +45,7 @@ async function getMailConfig(): Promise<MailConfig | null> {
                 smtpFromName: true,
                 smtpFromEmail: true,
                 smtpSecure: true,
+                emailReplyTo: true,
                 siteName: true,
             },
         })
@@ -57,9 +58,10 @@ async function getMailConfig(): Promise<MailConfig | null> {
         }
 
         const fromName = settings.smtpFromName || settings.siteName || 'AIM Studio'
-        const transport = (settings.emailTransport ?? EmailTransport.graph) as EmailTransport
+        const transport: 'smtp' | 'graph' = settings.emailTransport === 'smtp' ? 'smtp' : 'graph'
+        const replyTo: string | undefined = settings.emailReplyTo || undefined
 
-        if (transport === EmailTransport.smtp) {
+        if (transport === 'smtp') {
             if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPass) {
                 logger.warn('mailer', 'SMTP transport selected but credentials are incomplete')
                 cachedConfig = null
@@ -69,7 +71,8 @@ async function getMailConfig(): Promise<MailConfig | null> {
             cachedConfig = {
                 fromName,
                 fromEmail: settings.smtpFromEmail || settings.smtpUser,
-                transport: EmailTransport.smtp,
+                replyTo,
+                transport: 'smtp',
                 smtpHost: settings.smtpHost,
                 smtpPort: settings.smtpPort || 587,
                 smtpUser: settings.smtpUser,
@@ -85,8 +88,9 @@ async function getMailConfig(): Promise<MailConfig | null> {
                 cacheTime = now
                 return null
             }
-            const fromEmail = process.env.GRAPH_EMAIL_SENDER || settings.smtpFromEmail || settings.smtpUser || 'aimstudio@impactaistudio.com'
-            cachedConfig = { fromName, fromEmail, transport: EmailTransport.graph }
+            // Priority: admin DB setting > env var fallback
+            const fromEmail = settings.smtpFromEmail || process.env.GRAPH_EMAIL_SENDER || 'aimstudio@impactaistudio.com'
+            cachedConfig = { fromName, fromEmail, replyTo, transport: 'graph' }
         }
 
         cacheTime = now
@@ -157,10 +161,16 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             return false
         }
 
-        if (config.transport === EmailTransport.smtp) {
-            await sendViaSMTP(config, options)
+        // Use admin-configured reply-to unless caller explicitly set one
+        const finalOptions: EmailOptions = {
+            ...options,
+            replyTo: options.replyTo ?? config.replyTo,
+        }
+
+        if (config.transport === 'smtp') {
+            await sendViaSMTP(config, finalOptions)
         } else {
-            await sendViaGraph(config, options)
+            await sendViaGraph(config, finalOptions)
         }
 
         logger.info('mailer', `Email sent to ${options.to}: ${options.subject}`)
@@ -179,19 +189,30 @@ export async function sendTestEmail(to: string): Promise<void> {
     const config = await getMailConfig()
     if (!config) throw new Error('Email is not configured or emails are disabled in admin settings')
 
+    const transportLabel = config.transport === 'graph' ? 'Microsoft Graph' : 'SMTP'
+    const replyToLabel = config.replyTo ? `Reply-To: ${config.replyTo}` : 'No reply-to configured'
+
     const html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 500px; margin: 0 auto; padding: 40px 20px; text-align: center;">
             <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
             <h2 style="color: #d4a853; margin-bottom: 8px;">Email Configuration Working!</h2>
             <p style="color: #999; font-size: 14px;">Your AIM Studio email settings are correctly configured.</p>
-            <p style="color: #666; font-size: 12px; margin-top: 24px;">Transport: <strong>${config.transport === EmailTransport.graph ? 'Microsoft Graph' : 'SMTP'}</strong></p>
+            <p style="color: #666; font-size: 12px; margin-top: 24px;">Transport: <strong>${transportLabel}</strong></p>
             <p style="color: #666; font-size: 12px;">Sender: ${config.fromEmail}</p>
+            <p style="color: #666; font-size: 12px;">${replyToLabel}</p>
         </div>
     `
 
-    if (config.transport === EmailTransport.smtp) {
-        await sendViaSMTP(config, { to, subject: '✅ AIM Studio | Email Test Successful', html })
+    const finalOptions: EmailOptions = {
+        to,
+        subject: '✅ AIM Studio | Email Test Successful',
+        html,
+        replyTo: config.replyTo,
+    }
+
+    if (config.transport === 'smtp') {
+        await sendViaSMTP(config, finalOptions)
     } else {
-        await sendViaGraph(config, { to, subject: '✅ AIM Studio | Email Test Successful', html })
+        await sendViaGraph(config, finalOptions)
     }
 }

@@ -324,10 +324,11 @@ model SiteSettings {
   smtpUser       String? // SMTP login email
   smtpPass       String? // SMTP password / app password
   smtpFromName   String? // Display name e.g. "AIM Studio"
-  smtpFromEmail  String? // From address e.g. noreply@aimstudio.ai
+  smtpFromEmail  String? // From address e.g. aimstudio@impactaistudio.com
   smtpSecure     Boolean        @default(false) // true = SSL (465), false = STARTTLS (587)
   emailsEnabled  Boolean        @default(false) // master kill switch
   emailTransport EmailTransport @default(graph) // enum
+  emailReplyTo   String? // Optional reply-to override e.g. noreply@impactaistudio.com
 }
 
 // Password history for reuse prevention

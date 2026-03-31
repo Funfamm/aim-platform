@@ -94,6 +94,7 @@ export async function PUT(req: Request) {
             smtpSecure: body.smtpSecure ?? false,
             emailsEnabled: body.emailsEnabled ?? false,
             emailTransport: body.emailTransport || 'graph',
+            emailReplyTo: body.emailReplyTo || null,
         }
 
         // Only update API key if user provided a new one (not masked)
