@@ -9,6 +9,10 @@ on:
     # Run weekly on Monday at 9am UTC
     - cron: '0 9 * * 1'
 
+# Use Node.js 24 runtime for GitHub Actions to avoid Node 20 deprecation warnings
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   audit:
     name: npm audit
@@ -77,6 +81,7 @@ jobs:
         run: npx next build
         env:
           SKIP_ENV_VALIDATION: '1'
+          NEXT_TELEMETRY_DISABLED: '1'
           DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
           DIRECT_URL: 'postgresql://test:test@localhost:5432/testdb'
           # Suppress Sentry warnings when no auth token is present

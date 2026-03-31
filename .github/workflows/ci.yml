@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Use Node.js 24 runtime for GitHub Actions to avoid Node 20 deprecation warnings
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  NEXT_TELEMETRY_DISABLED: 1
+
 jobs:
   lint:
     runs-on: ubuntu-latest
