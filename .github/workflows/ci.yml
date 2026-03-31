@@ -122,7 +122,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
-          ENCRYPTION_KEY: Y2ktcGxhY2Vob2xkZXItZW5jcnlwdGlvbi1rZXk=
+          ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
         run: |
           npm run dev &
@@ -166,7 +166,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
-          ENCRYPTION_KEY: Y2ktcGxhY2Vob2xkZXItZW5jcnlwdGlvbi1rZXk=
+          ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
         run: |
           npm run dev &

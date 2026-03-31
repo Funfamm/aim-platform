@@ -98,7 +98,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
     }, [currentIdx, videos])
 
     return (
-        <div style={{
+        <main id="main-content" style={{
             overflowX: 'hidden', width: '100%',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 0.4s ease',
@@ -576,6 +576,6 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                     </div>
                 </section>
             </ScrollReveal3D>
-        </div>
+        </main>
     )
 }

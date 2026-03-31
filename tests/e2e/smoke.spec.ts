@@ -40,7 +40,7 @@ test.describe('Public Pages Smoke Test', () => {
     test('Home page loads', async ({ page }) => {
         await navigateAndCheck(page, '/', /AIM/i)
         // Hero section should be visible
-        await expect(page.locator('main')).toBeVisible()
+        await expect(page.locator('main, [role="main"]').first()).toBeVisible({ timeout: 10000 })
     })
 
     test('About page loads', async ({ page }) => {

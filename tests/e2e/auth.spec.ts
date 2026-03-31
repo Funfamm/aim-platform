@@ -31,8 +31,8 @@ test.describe('Authentication Flow', () => {
         await page.goto('/login')
 
         // Fill with invalid credentials
-        const emailInput = page.getByLabel(/email/i).or(page.locator('input[type="email"]'))
-        const passwordInput = page.getByLabel(/password/i).or(page.locator('input[type="password"]'))
+        const emailInput = page.locator('input[type="email"]').first()
+        const passwordInput = page.locator('input[type="password"]').first()
 
         if (await emailInput.isVisible()) {
             await emailInput.fill('nonexistent@test.com')

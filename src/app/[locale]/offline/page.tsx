@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function OfflinePage() {
     return (
-        <div style={{
+        <main style={{
             minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
@@ -51,6 +51,6 @@ export default function OfflinePage() {
             }}>
                 ← Try Again
             </Link>
-        </div>
+        </main>
     )
 }

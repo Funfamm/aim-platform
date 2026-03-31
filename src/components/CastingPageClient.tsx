@@ -146,7 +146,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
     }, {} as Record<string, { project: CastingCall['project']; localized: ReturnType<typeof getLocalizedProject>; calls: CastingCall[] }>)
 
     return (
-        <div style={{
+        <main id="main-content" style={{
             overflowX: 'hidden', width: '100%',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 0.4s ease',
@@ -490,6 +490,6 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                     }
                 }
             `}</style>
-        </div>
+        </main>
     )
 }

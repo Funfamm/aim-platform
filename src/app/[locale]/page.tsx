@@ -66,9 +66,9 @@ export default async function HomePage() {
   const t = await getTranslations('home')
 
   return (
-    <>
+    <main id="main-content">
       <Scene3D />
-<div id="main-content" />
+<div id="hero-anchor" />
 
       <HomeHero
         completedCount={completedCount}
@@ -298,6 +298,6 @@ export default async function HomePage() {
       </div>{/* end scrolling content wrapper */}
 
       <Footer />
-    </>
+    </main>
   )
 }
