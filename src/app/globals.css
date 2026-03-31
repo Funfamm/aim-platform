@@ -18,7 +18,7 @@
 
   --text-primary: #f3efe8;
   --text-secondary: #b0a998;
-  --text-tertiary: #9a958c;
+  --text-tertiary: #b0ab9f;
   --text-accent: #e4b95a;
 
   --accent-gold: #e4b95a;
@@ -214,10 +214,13 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  overflow-y: scroll;
+  /* Use auto instead of scroll: scroll creates a keyboard-inaccessible
+     scrollable region that axe (WCAG scrollable-region-focusable) flags
+     on mobile browsers. scrollbar-gutter:stable preserves the layout. */
+  overflow-y: auto;
   scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;  
 }
 
 body {

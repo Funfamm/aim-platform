@@ -77,7 +77,7 @@ export default async function HomePage() {
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}
-      <div style={{ position: 'relative', zIndex: 2 }}>
+      <div style={{ position: 'relative', zIndex: 2 }} tabIndex={0} role="region" aria-label="Page content">
 
       {/* ═══ FEATURED WORKS ═══ */}
       <section className="section" style={{ position: 'relative' }}>

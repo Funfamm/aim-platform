@@ -204,7 +204,7 @@ export default async function AboutPage() {
                                         {t('missionTitle')}
                                     </span>
                                     <p style={{
-                                        fontSize: '0.92rem', lineHeight: 1.8, color: 'rgba(200,200,210,0.7)',
+                                        fontSize: '0.92rem', lineHeight: 1.8, color: 'var(--text-secondary)',
                                     }}>
                                         {mission}
                                     </p>
@@ -219,7 +219,7 @@ export default async function AboutPage() {
                                 }}>
                                     {storyParagraphs.map((paragraph: string, i: number) => (
                                         <p key={i} style={{
-                                            fontSize: '0.92rem', lineHeight: 1.8, color: 'rgba(200,200,210,0.7)',
+                                            fontSize: '0.92rem', lineHeight: 1.8, color: 'var(--text-secondary)',
                                             marginBottom: i < storyParagraphs.length - 1 ? 'var(--space-lg)' : 0,
                                         }}>
                                             {paragraph}
@@ -377,7 +377,7 @@ export default async function AboutPage() {
                                             <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: 'var(--space-xs)' }}>
                                                 {milestone.title}
                                             </h3>
-                                            <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'rgba(200,200,210,0.7)', margin: 0 }}>
+                                            <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>
                                                 {milestone.desc}
                                             </p>
                                         </div>
@@ -476,7 +476,7 @@ export default async function AboutPage() {
                                         }}>
                                             {card.sub}
                                         </div>
-                                        <p style={{ fontSize: '0.82rem', color: 'rgba(180,180,195,0.7)', lineHeight: 1.7, margin: 0 }}>{card.desc}</p>
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0 }}>{card.desc}</p>
                                     </div>
                                 </ScrollReveal3D>
                             ))}
