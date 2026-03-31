@@ -85,6 +85,7 @@ jobs:
           SENTRY_SUPPRESS_CLIENT_INSTRUMENTATION_FILE_WARNING: '1'
           # Stub values so Next.js build-time env validation passes
           NEXTAUTH_SECRET: 'ci-placeholder-secret-32-chars-long'
+          JWT_SECRET: 'ci-placeholder-jwt-secret-32-chars-long'
           NEXTAUTH_URL: 'http://localhost:3000'
           R2_ACCOUNT_ID: 'placeholder'
           R2_ACCESS_KEY_ID: 'placeholder'
