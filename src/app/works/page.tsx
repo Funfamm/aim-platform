@@ -1,16 +1,11 @@
-'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
+import type { Metadata } from 'next';
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Works – AIM Studio',
   description: 'Redirecting to the works page.',
 };
 
 export default function WorksRedirect() {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace('/en/works');
-  }, [router]);
-  return <h1>Redirecting to Works...</h1>;
+  redirect('/en/works');
 }
