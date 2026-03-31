@@ -195,7 +195,7 @@ export default async function HomePage() {
           </ScrollReveal3D>
 
           {/* Feature cards grid */}
-          <div className="grid-3" style={{
+          <div className="grid-3" tabIndex={0} role="region" aria-label="Feature highlights" style={{
             gap: 'var(--space-lg)',
           }}>
             {[
@@ -251,7 +251,7 @@ export default async function HomePage() {
 
           {/* Stats row */}
           <ScrollReveal3D direction="up" delay={600} distance={20}>
-            <div className="home-stats-row" style={{
+            <div className="home-stats-row" tabIndex={0} role="region" aria-label="Production statistics" style={{
               display: 'flex',
               justifyContent: 'center',
               gap: 'var(--space-3xl)',
