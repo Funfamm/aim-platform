@@ -11,9 +11,8 @@
  *   cannot be computed by axe, producing false positives.
  * - meta-refresh is disabled: Next.js locale redirect internals can emit
  *   transient meta-refresh tags that axe misidentifies as WCAG violations.
- * - scrollable-region-focusable is disabled as safety net while HTML fixes
- *   propagate across all viewport sizes. App code has been fixed with
- *   tabIndex={0} + role="region" on scrollable containers.
+ * - scrollable-region-focusable is now RE-ENABLED: all scrollable containers
+ *   on / and /about have tabIndex={0} + role="region" + aria-label.
  * - Retry logic handles intermittent "Execution context was destroyed" errors
  *   that occur when a page navigates while axe is evaluating.
  */
@@ -41,7 +40,7 @@ async function runAxeWithRetry(page: import('@playwright/test').Page, attempts =
                 .disableRules([
                     'color-contrast',              // gradient text false positives
                     'meta-refresh',                 // locale redirect chain false positives
-                    'scrollable-region-focusable',  // fixed in app HTML, disabled as safety net
+                    // 'scrollable-region-focusable' — re-enabled: fixed on all pages with tabIndex + role
                 ])
                 .analyze()
         } catch (err: unknown) {
