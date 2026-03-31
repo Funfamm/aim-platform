@@ -10,11 +10,12 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Run ESLint (baseline-aware)
@@ -24,11 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: TypeScript check
@@ -38,11 +40,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: typecheck
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Run Vitest with coverage
@@ -65,11 +68,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Run integration tests
@@ -94,11 +98,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Install Playwright browsers
@@ -116,11 +121,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: e2e
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Run axe accessibility tests
@@ -130,9 +136,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: accessibility
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python for ZAP
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.x'
       - name: Install ZAP
@@ -148,7 +154,7 @@ jobs:
         run: |
           zap-baseline.py -t http://localhost:3000 -r zap_report.html
       - name: Upload ZAP report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: zap-report
           path: zap_report.html
@@ -157,11 +163,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: security
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Install k6
@@ -182,11 +189,12 @@ jobs:
     needs: performance
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
       - name: Install dependencies
         run: npm ci
       - name: Build production bundle
@@ -195,7 +203,7 @@ jobs:
         run: |
           docker build -t ghcr.io/${{ github.repository }}:latest .
       - name: Push Docker image
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
