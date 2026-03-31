@@ -1,0 +1,6 @@
+# Files we intentionally do not lint
+lint-baseline.json
+.eslintrc.json
+.next/
+out/
+build/

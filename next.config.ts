@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
     'pino',
     'pino-pretty',
   ],
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       'sharp$': false,
@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
     // Keep these heavy server-only modules out of the client bundle
     if (!isServer) {
       config.resolve.alias['@prisma/client'] = false;
+    }
+    // Disable filesystem cache in dev to prevent .next/cache corruption
+    // when Playwright's webServer and the manual dev server run concurrently.
+    if (dev) {
+      config.cache = false;
     }
     return config;
   },
@@ -93,4 +98,7 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   silent: true,
   disableLogger: true,
   telemetry: false,
+  // Sentry v9: client initialised via instrumentation-client.ts – disable
+  // the legacy sentry.client.config.ts auto-discovery to avoid build errors.
+  autoInstrumentServerFunctions: false,
 });

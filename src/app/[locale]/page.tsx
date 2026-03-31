@@ -13,33 +13,53 @@ import { getTranslations } from 'next-intl/server'
 export const revalidate = 60
 
 export default async function HomePage() {
-  const [featuredProjects, completedCount, upcomingCount, openCastings, homeSponsors] = await Promise.all([
-    prisma.project.findMany({
-      where: { featured: true },
-      orderBy: { sortOrder: 'asc' },
-    }),
-    prisma.project.count({ where: { status: 'completed' } }),
-    prisma.project.count({ where: { status: 'upcoming' } }),
-    prisma.castingCall.count({ where: { status: 'open' } }),
-
-    prisma.sponsor.findMany({
-      where: {
-        active: true,
-        OR: [
-          { displayOn: { in: ['homepage', 'all'] } },
-          { featured: true },
-        ],
-        AND: [
-          { OR: [{ endDate: null }, { endDate: { gte: new Date() } }] },
-        ],
-      },
-      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
-      select: {
-        id: true, name: true, logoUrl: true, bannerUrl: true,
-        website: true, tier: true, description: true, bannerDurationHours: true,
-      },
-    }),
-  ])
+  // Helper to retry a Prisma query once if it fails due to a transient DB error.
+  const safeQuery = async (fn: () => Promise<any>, retries = 1, delayMs = 500): Promise<any> => {
+    try {
+      return await fn();
+    } catch (err) {
+      if (retries > 0) {
+        // Simple exponential backoff; fixed short delay.
+        await new Promise((res) => setTimeout(res, delayMs));
+        return safeQuery(fn, retries - 1, delayMs * 2);
+      }
+      throw err;
+    }
+  };
+  const [featuredProjects, completedCount, upcomingCount, openCastings, homeSponsors] = await safeQuery(() =>
+    Promise.all([
+      prisma.project.findMany({
+        where: { featured: true },
+        orderBy: { sortOrder: 'asc' },
+      }),
+      prisma.project.count({ where: { status: 'completed' } }),
+      prisma.project.count({ where: { status: 'upcoming' } }),
+      prisma.castingCall.count({ where: { status: 'open' } }),
+      prisma.sponsor.findMany({
+        where: {
+          active: true,
+          OR: [
+            { displayOn: { in: ['homepage', 'all'] } },
+            { featured: true },
+          ],
+          AND: [
+            { OR: [{ endDate: null }, { endDate: { gte: new Date() } }] },
+          ],
+        },
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+        select: {
+          id: true,
+          name: true,
+          logoUrl: true,
+          bannerUrl: true,
+          website: true,
+          tier: true,
+          description: true,
+          bannerDurationHours: true,
+        },
+      }),
+    ])
+  );
 
   type Project = typeof featuredProjects[number]
 
