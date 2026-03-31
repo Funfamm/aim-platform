@@ -10,6 +10,11 @@ datasource db {
   directUrl  = env("DIRECT_URL")
 }
 
+enum EmailTransport {
+  graph
+  smtp
+}
+
 model User {
   id           String   @id @default(cuid())
   name         String
@@ -180,6 +185,7 @@ model Application {
   gender        String?
   location      String?
   experience    String   // Resume/bio text
+  audioUrl      String?  // URL of uploaded audio recording
   specialSkills String?
   agencyName    String?
   headshotPath  String?
@@ -277,6 +283,7 @@ model SiteSettings {
   castingAutoClose    Boolean @default(false) // Auto-close casting when filled
   requireVoice        Boolean @default(false) // Require voice recording
   maxPhotoUploads     Int     @default(6)
+  audioUploadEnabled  Boolean @default(true) // Enable/disable audio upload feature
 
   // Content Access
   requireLoginForFilms    Boolean @default(true)
@@ -322,7 +329,7 @@ model SiteSettings {
   smtpFromEmail  String?  // From address e.g. noreply@aimstudio.ai
   smtpSecure     Boolean  @default(false) // true = SSL (465), false = STARTTLS (587)
   emailsEnabled  Boolean  @default(false) // master kill switch
-  emailTransport String   @default("graph") // "graph" | "smtp"
+  emailTransport EmailTransport   @default(graph) // enum
 }
 
 // Password history for reuse prevention
@@ -680,6 +687,17 @@ model Quiz {
   attempts    QuizAttempt[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model EmailAuditLog {
+  id           String   @id @default(cuid())
+  createdAt    DateTime @default(now())
+  userId       String?  // admin who triggered the email
+  transport    EmailTransport
+  to           String
+  subject      String
+  status       String   // success, failed, retry
+  errorMessage String?  // populated on failure
 }
 
 model QuizQuestion {

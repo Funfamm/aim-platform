@@ -2,8 +2,10 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { invalidateSettings } from '@/lib/cached-settings'
+import { encrypt } from '@/lib/secure'
 import { invalidateMailerCache } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
+
 import { logAdminAction } from '@/lib/audit-log'
 
 export async function GET() {
@@ -101,8 +103,9 @@ export async function PUT(req: Request) {
 
         // Only update SMTP password if user provided a new one (not masked)
         const isSmtpPassMasked = body.smtpPass?.startsWith('••')
-        if (!isSmtpPassMasked && body.smtpPass !== undefined) {
-            updateData.smtpPass = body.smtpPass || null
+        // Encrypt SMTP password before storing
+        if (body.smtpPass && !isSmtpPassMasked) {
+            updateData.smtpPass = encrypt(body.smtpPass)
         }
 
         // Try update first, create if doesn't exist

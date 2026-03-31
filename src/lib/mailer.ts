@@ -1,7 +1,9 @@
 import nodemailer from 'nodemailer'
-import { prisma } from './db'
-import { getGraphAccessToken } from './graphClient'
+import { EmailTransport } from '@prisma/client'
+import { prisma } from '@/lib/db'
+import { getGraphAccessToken } from '@/lib/graphClient'
 import { logger } from './logger'
+import { decrypt } from '@/lib/secure'
 
 interface EmailOptions {
     to: string
@@ -14,7 +16,7 @@ interface EmailOptions {
 interface MailConfig {
     fromName: string
     fromEmail: string
-    transport: 'graph' | 'smtp'
+    transport: EmailTransport
     // SMTP-only fields
     smtpHost?: string
     smtpPort?: number
@@ -55,9 +57,9 @@ async function getMailConfig(): Promise<MailConfig | null> {
         }
 
         const fromName = settings.smtpFromName || settings.siteName || 'AIM Studio'
-        const transport = (settings.emailTransport || 'graph') as 'graph' | 'smtp'
+        const transport = (settings.emailTransport ?? EmailTransport.graph) as EmailTransport
 
-        if (transport === 'smtp') {
+        if (transport === EmailTransport.smtp) {
             if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPass) {
                 logger.warn('mailer', 'SMTP transport selected but credentials are incomplete')
                 cachedConfig = null
@@ -67,7 +69,7 @@ async function getMailConfig(): Promise<MailConfig | null> {
             cachedConfig = {
                 fromName,
                 fromEmail: settings.smtpFromEmail || settings.smtpUser,
-                transport: 'smtp',
+                transport: EmailTransport.smtp,
                 smtpHost: settings.smtpHost,
                 smtpPort: settings.smtpPort || 587,
                 smtpUser: settings.smtpUser,
@@ -84,7 +86,7 @@ async function getMailConfig(): Promise<MailConfig | null> {
                 return null
             }
             const fromEmail = process.env.GRAPH_EMAIL_SENDER || settings.smtpFromEmail || settings.smtpUser || 'aimstudio@impactaistudio.com'
-            cachedConfig = { fromName, fromEmail, transport: 'graph' }
+            cachedConfig = { fromName, fromEmail, transport: EmailTransport.graph }
         }
 
         cacheTime = now
@@ -155,7 +157,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             return false
         }
 
-        if (config.transport === 'smtp') {
+        if (config.transport === EmailTransport.smtp) {
             await sendViaSMTP(config, options)
         } else {
             await sendViaGraph(config, options)
@@ -182,12 +184,12 @@ export async function sendTestEmail(to: string): Promise<void> {
             <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
             <h2 style="color: #d4a853; margin-bottom: 8px;">Email Configuration Working!</h2>
             <p style="color: #999; font-size: 14px;">Your AIM Studio email settings are correctly configured.</p>
-            <p style="color: #666; font-size: 12px; margin-top: 24px;">Transport: <strong>${config.transport === 'graph' ? 'Microsoft Graph' : 'SMTP'}</strong></p>
+            <p style="color: #666; font-size: 12px; margin-top: 24px;">Transport: <strong>${config.transport === EmailTransport.graph ? 'Microsoft Graph' : 'SMTP'}</strong></p>
             <p style="color: #666; font-size: 12px;">Sender: ${config.fromEmail}</p>
         </div>
     `
 
-    if (config.transport === 'smtp') {
+    if (config.transport === EmailTransport.smtp) {
         await sendViaSMTP(config, { to, subject: '✅ AIM Studio | Email Test Successful', html })
     } else {
         await sendViaGraph(config, { to, subject: '✅ AIM Studio | Email Test Successful', html })

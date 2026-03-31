@@ -92,5 +92,4 @@ jobs:
           R2_SECRET_ACCESS_KEY: 'placeholder'
           R2_BUCKET_NAME: 'placeholder'
           R2_ENDPOINT: 'https://placeholder.r2.cloudflarestorage.com'
-
-
+          ENCRYPTION_KEY: 'Y2ktcGxhY2Vob2xkZXItZW5jcnlwdGlvbi1rZXk='

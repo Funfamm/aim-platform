@@ -1,4 +1,5 @@
 import Footer from '@/components/Footer'
+import { sanitizeBigInt } from '@/lib/serializer'
 import WorksPageClient from '@/components/WorksPageClient'
 import { prisma } from '@/lib/db'
 
@@ -15,14 +16,15 @@ export default async function WorksPage() {
         include: { _count: { select: { episodes: true } } },
     })
 
-    const completedCount = projects.filter(p => p.status === 'completed').length
-    const inProdCount = projects.filter(p => p.status === 'in-production').length
-
-    // Flatten the _count into the project objects for the client
+    // ---- NEW: sanitize BigInt fields ----
     const projectsWithCounts = projects.map(p => ({
-        ...p,
+        ...sanitizeBigInt(p),
         episodeCount: p._count.episodes,
     }))
+    // ------------------------------------
+
+    const completedCount = projectsWithCounts.filter(p => p.status === 'completed').length
+    const inProdCount = projectsWithCounts.filter(p => p.status === 'in-production').length
 
     return (
         <>

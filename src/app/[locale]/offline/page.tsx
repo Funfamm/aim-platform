@@ -23,9 +23,7 @@ export default function OfflinePage() {
             <h1 style={{
                 fontSize: 'clamp(2rem, 5vw, 3.5rem)',
                 fontWeight: 800,
-                background: 'linear-gradient(135deg, #D4A853, #b8943d)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
+                color: '#D4A853',
                 marginBottom: '0.5rem',
             }}>
                 You&apos;re Offline

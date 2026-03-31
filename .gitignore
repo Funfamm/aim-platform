@@ -55,3 +55,9 @@ logs/
 # Uploaded / local video files (large binaries — use R2 instead)
 public/videos/
 public/uploads/
+
+# Test artifacts
+playwright-report/
+test-results/
+axe-*.txt
+dev-server-log.txt

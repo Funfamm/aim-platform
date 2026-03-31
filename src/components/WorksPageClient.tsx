@@ -395,6 +395,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                             {/* Clickable image area -> project detail */}
                                             <Link
                                                 href={`/works/${project.slug}`}
+                                                aria-label={`View project ${loc.title}`}
                                                 style={{ position: 'absolute', inset: 0, zIndex: 1 }}
                                             >
                                                 <div

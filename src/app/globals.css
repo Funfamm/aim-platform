@@ -18,7 +18,7 @@
 
   --text-primary: #f3efe8;
   --text-secondary: #b0a998;
-  --text-tertiary: #706b62;
+  --text-tertiary: #9a958c;
   --text-accent: #e4b95a;
 
   --accent-gold: #e4b95a;
@@ -97,7 +97,7 @@
   /* Text */
   --text-primary:   #1a1814;
   --text-secondary: #4a453e;
-  --text-tertiary:  #8a857c;
+  --text-tertiary:  #6b665e;
   --text-accent:    #b8922e;
 
   /* Gold accent — slightly deeper for contrast on light bg */
@@ -556,6 +556,14 @@ a:hover {
   background-repeat: no-repeat;
   background-position: right 1rem center;
   padding-right: 2.5rem;
+}
+
+/* ── Global placeholder contrast — WCAG 2 AA ── */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: var(--text-tertiary);
+  opacity: 1; /* Firefox reduces placeholder opacity by default */
 }
 
 /* ── Divider ── */
