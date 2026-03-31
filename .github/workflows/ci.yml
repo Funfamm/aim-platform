@@ -217,10 +217,11 @@ jobs:
         run: |
           mkdir -p ${{ github.workspace }}/zap-wrk
           chmod 777 ${{ github.workspace }}/zap-wrk
+          cp ${{ github.workspace }}/zap-rules.conf ${{ github.workspace }}/zap-wrk/
           docker run --rm --network host \
             -v ${{ github.workspace }}/zap-wrk:/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py -t http://localhost:3000 -r zap_report.html
+            zap-baseline.py -t http://localhost:3000 -c zap-rules.conf -r zap_report.html
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
         if: always()
