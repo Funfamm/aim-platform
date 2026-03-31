@@ -157,7 +157,7 @@ export default async function AboutPage() {
                 <section style={{ padding: 'var(--space-lg) 0 var(--space-3xl)', position: 'relative' }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
                         <ScrollReveal3D direction="up" distance={30}>
-                            <div className="about-stats-grid" style={{
+                            <div className="about-stats-grid" tabIndex={0} role="region" aria-label="Key statistics" style={{
                                 ...glassCard,
                                 padding: 'var(--space-2xl) var(--space-xl)',
                                 display: 'grid',
@@ -187,7 +187,7 @@ export default async function AboutPage() {
                     background: 'linear-gradient(180deg, transparent, rgba(22,24,35,0.3) 20%, rgba(22,24,35,0.3) 80%, transparent)',
                 }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
-                        <div className="about-mission-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)', alignItems: 'start' }}>
+                        <div className="about-mission-grid" tabIndex={0} role="region" aria-label="Mission and story" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-xl)', alignItems: 'start' }}>
                             {/* Mission */}
                             <ScrollReveal3D direction="left" distance={40}>
                                 <div style={{
@@ -328,7 +328,7 @@ export default async function AboutPage() {
                         </ScrollReveal3D>
 
                         {/* Timeline */}
-                        <div className="about-timeline" style={{ position: 'relative', paddingLeft: '60px' }}>
+                        <div className="about-timeline" tabIndex={0} role="region" aria-label="Company timeline" style={{ position: 'relative', paddingLeft: '60px' }}>
                             {/* Vertical line */}
                             <div style={{
                                 position: 'absolute', left: '20px', top: '10px', bottom: '10px',
@@ -407,7 +407,7 @@ export default async function AboutPage() {
                             </div>
                         </ScrollReveal3D>
 
-                        <div className="grid-3col" style={{ gap: 'var(--space-xl)' }}>
+                        <div className="grid-3col" tabIndex={0} role="region" aria-label="Core values" style={{ gap: 'var(--space-xl)' }}>
                             {[
                                 {
                                     icon: (

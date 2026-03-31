@@ -2912,9 +2912,20 @@ img, video, iframe, canvas {
     font-size: clamp(1.6rem, 7vw, 2.4rem) !important;
   }
 
-  /* About page stat cards — clip fix */
+  /* About page stat cards — responsive 2×2 grid on mobile */
   .about-stats-grid {
     padding: var(--space-lg) var(--space-md) !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* About page mission+story — stack vertically on mobile */
+  .about-mission-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* About page timeline — reduce left padding */
+  .about-timeline {
+    padding-left: 40px !important;
   }
 }
 
