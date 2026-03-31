@@ -64,8 +64,8 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Push DB schema for build
-        run: npx prisma db push
+      - name: Apply DB migrations for build
+        run: npx prisma migrate deploy
         env:
           DATABASE_URL: 'postgresql://test:test@localhost:5432/testdb'
 
