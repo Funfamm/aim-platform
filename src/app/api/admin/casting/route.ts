@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
+import { notifyNewRole } from '@/lib/notifications'
 
 export async function GET() {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
@@ -54,6 +55,12 @@ export async function POST(req: Request) {
             await prisma.castingCall.update({ where: { id: castingCall.id }, data: { translations } })
         }
     )
+
+    // Fire-and-forget: notify opted-in users about the new role
+    if ((body.status || 'open') === 'open') {
+        const projectTitle = castingCall.project?.title || 'AIM Studio'
+        notifyNewRole(castingCall.id, body.roleName, projectTitle).catch(() => {})
+    }
 
     return NextResponse.json(castingCall, { status: 201 })
 }

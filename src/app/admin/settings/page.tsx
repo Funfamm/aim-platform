@@ -44,6 +44,9 @@ type Settings = {
     geminiApiKey: string; aiModel: string; aiCustomPrompt: string; aiAutoAudit: boolean
     // Pipeline Automation
     autoShortlistThreshold: number; autoRejectThreshold: number; pipelineAutoAdvance: boolean; notifyApplicantOnStatusChange: boolean
+    notifyOnNewRole: boolean
+    notifyOnAnnouncement: boolean
+    notifyOnContentPublish: boolean
     // Casting
     defaultDeadlineDays: number; castingAutoClose: boolean; requireVoice: boolean; maxPhotoUploads: number
     // Content
@@ -731,6 +734,7 @@ export default function AdminSettingsPage() {
         smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
         smtpFromName: '', smtpFromEmail: '', smtpSecure: false,
         emailsEnabled: false, emailTransport: 'graph', emailReplyTo: '',
+        notifyOnNewRole: true, notifyOnAnnouncement: true, notifyOnContentPublish: false,
     })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -801,6 +805,9 @@ export default function AdminSettingsPage() {
                     emailsEnabled: data.emailsEnabled ?? false,
                     emailTransport: data.emailTransport || 'graph',
                     emailReplyTo: data.emailReplyTo || '',
+                    notifyOnNewRole: data.notifyOnNewRole ?? true,
+                    notifyOnAnnouncement: data.notifyOnAnnouncement ?? true,
+                    notifyOnContentPublish: data.notifyOnContentPublish ?? false,
                     aboutPageData: data.aboutPageData || '',
                 })
                 setDirty(false)
@@ -1869,6 +1876,19 @@ export default function AdminSettingsPage() {
                                         <Toggle checked={settings.pipelineAutoAdvance} onChange={v => update('pipelineAutoAdvance', v)} label="Enable AI-driven auto-advance" />
                                         <Toggle checked={settings.aiAutoAudit} onChange={v => update('aiAutoAudit', v)} label="Auto-run AI audit on new applications" />
                                         <Toggle checked={settings.notifyApplicantOnStatusChange} onChange={v => update('notifyApplicantOnStatusChange', v)} label="Email applicant when status changes" />
+
+                                        {/* Broadcast Triggers */}
+                                        <div style={{ marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)' }}>
+                                            <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>
+                                                📣 Broadcast Notifications
+                                            </div>
+                                            <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }}>
+                                                Notify all opted-in users when admin publishes content.
+                                            </div>
+                                            <Toggle checked={settings.notifyOnNewRole ?? true} onChange={v => update('notifyOnNewRole', v)} label="Notify users when a new casting role is published" />
+                                            <Toggle checked={settings.notifyOnAnnouncement ?? true} onChange={v => update('notifyOnAnnouncement', v)} label="Notify users when an announcement is posted" />
+                                            <Toggle checked={settings.notifyOnContentPublish ?? false} onChange={v => update('notifyOnContentPublish', v)} label="Notify users when new content goes live" />
+                                        </div>
 
                                         {settings.pipelineAutoAdvance && (
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: 'var(--space-md)' }}>

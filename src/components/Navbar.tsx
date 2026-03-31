@@ -9,6 +9,7 @@ import { SearchBar } from '@/components/search/SearchBar';
 import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/routing'
+import { NotificationBell } from '@/components/NotificationBell'
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false)
@@ -108,17 +109,10 @@ export default function Navbar() {
 
                     {/* Right actions — Bell + Language hidden on mobile via CSS */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {/* Bell — desktop only */}
-                        <Link href="/subscribe" title={t('notifications')} className="navbar-desktop-only" style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'var(--text-secondary)', transition: 'color 0.2s',
-                            textDecoration: 'none',
-                        }}>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                            </svg>
-                        </Link>
+                        {/* Bell — shows in-app notifications for logged-in users */}
+                        <div className="navbar-desktop-only">
+                            <NotificationBell />
+                        </div>
                         {/* Mobile Search Button */}
                         {settings?.searchBetaEnabled && (
                           <button
@@ -471,8 +465,8 @@ export default function Navbar() {
                         </span>
                         {t('sponsors')}
                     </Link>
-                    <Link href="/subscribe" onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/subscribe' ? 'active-page' : ''}`}>
+                    <Link href="/dashboard/notifications" onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/dashboard/notifications' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow" style={{ position: 'relative' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />

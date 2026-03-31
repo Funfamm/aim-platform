@@ -50,6 +50,9 @@ model User {
   passwordHistory    PasswordHistory[]
   // Projects owned
   ownedProjects      Project[]
+  // Notifications
+  notificationPreference UserNotificationPreference?
+  notifications          UserNotification[]
 
   @@index([role])
   @@index([createdAt])
@@ -303,6 +306,10 @@ model SiteSettings {
   notifyEmail            String? // Override email for notifications
   notifyOnNewDevice      Boolean @default(true) // toggle for new device login alerts
   emailTemplateOverrides String? // JSON map of {templateKey: customHTML} for admin-edited templates
+  // Broadcast triggers: admin-initiated notifications
+  notifyOnNewRole          Boolean @default(true)  // email+in-app when a new casting role is published
+  notifyOnAnnouncement     Boolean @default(true)  // email+in-app when admin posts an announcement
+  notifyOnContentPublish   Boolean @default(false) // email+in-app when new content goes live
 
   // Section Visibility
   scriptCallsEnabled  Boolean @default(false) // master toggle for script call system
@@ -341,6 +348,42 @@ model PasswordHistory {
   createdAt    DateTime @default(now())
 
   @@index([userId])
+}
+
+// Per-user notification channel & type preferences
+model UserNotificationPreference {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Type opt-ins
+  newRole        Boolean @default(true)  // new casting role published
+  announcement   Boolean @default(true)  // platform announcement
+  contentPublish Boolean @default(false) // new content published
+  statusChange   Boolean @default(true)  // casting application status change
+
+  // Channel opt-ins
+  email Boolean @default(true)
+  inApp Boolean @default(true)
+  sms   Boolean @default(false) // future: SMS via Twilio
+
+  updatedAt DateTime @updatedAt
+}
+
+// In‑app notification feed (bell icon)
+model UserNotification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // new_role | announcement | content_publish | status_change | system
+  title     String
+  message   String
+  link      String?  // deep-link e.g. /roles/[id]
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
 }
 
 model SearchAnalytics {

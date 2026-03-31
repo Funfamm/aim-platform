@@ -545,3 +545,65 @@ export async function scriptSubmissionConfirmationWithOverrides(name: string, ti
         ${f.buttonUrl ? `${divider()}${button(f.buttonText, f.buttonUrl)}${secondaryButton('Visit Homepage', siteUrl || '')}` : ''}
     `, `Script "${title}" submitted successfully`)
 }
+
+// ── Broadcast Notification Templates ─────────────────────────────────────────
+
+/** Sent to all opted-in users when admin publishes a new casting role */
+export function newCastingRoleEmail(roleName: string, projectTitle: string, applyUrl: string): string {
+    return emailWrapper(`
+        <div style="text-align:center;padding:16px 0 24px;">
+            <div style="font-size:52px;margin-bottom:12px;">🎭</div>
+            <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid ${BRAND_COLOR};">
+                <span style="font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1.5px;text-transform:uppercase;">New Casting Call</span>
+            </div>
+        </div>
+        ${heading(`Now Open: ${roleName}`)}
+        ${subtext(`A new audition opportunity in <strong style="color:${BRAND_COLOR};">${projectTitle}</strong> is now live.`)}
+        ${paragraph('Our casting team has just opened a new role. Applications are reviewed on a rolling basis — early applicants get priority attention.')}
+        ${infoCard(`
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${infoRow('Role', roleName)}
+                ${infoRow('Project', projectTitle)}
+                ${infoRow('Status', '<span style="color:#10b981;font-weight:700;">● Open</span>')}
+            </table>
+        `, BRAND_COLOR)}
+        ${button('Apply Now →', applyUrl)}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">Roles close once filled. Don’t miss your chance.</span>`)}
+    `, `New audition open: ${roleName} — Apply now`)
+}
+
+/** Sent to all opted-in users for platform announcements */
+export function announcementEmail(title: string, message: string, link?: string): string {
+    return emailWrapper(`
+        <div style="text-align:center;padding:16px 0 24px;">
+            <div style="font-size:52px;margin-bottom:12px;">📣</div>
+            <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid #8b5cf6;">
+                <span style="font-size:12px;font-weight:700;color:#8b5cf6;letter-spacing:1.5px;text-transform:uppercase;">Platform Announcement</span>
+            </div>
+        </div>
+        ${heading(title)}
+        ${paragraph(message)}
+        ${link ? button('Learn More →', link) : ''}
+        ${divider()}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">You’re receiving this because you opted in to platform announcements.</span>`)}
+    `, title)
+}
+
+/** Sent to opted-in users when admin publishes new content */
+export function contentPublishEmail(contentTitle: string, contentType: string, link: string): string {
+    const typeEmoji: Record<string, string> = { project: '🎬', video: '▶️', blog: '📝', training: '🎓', default: '✨' }
+    const emoji = typeEmoji[contentType.toLowerCase()] ?? typeEmoji.default
+    return emailWrapper(`
+        <div style="text-align:center;padding:16px 0 24px;">
+            <div style="font-size:52px;margin-bottom:12px;">${emoji}</div>
+            <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid ${ACCENT_BLUE};">
+                <span style="font-size:12px;font-weight:700;color:${ACCENT_BLUE};letter-spacing:1.5px;text-transform:uppercase;">New ${contentType}</span>
+            </div>
+        </div>
+        ${heading(`Just Published: ${contentTitle}`)}
+        ${paragraph(`We just released new ${contentType.toLowerCase()} content. Check it out on the platform.`)}
+        ${button(`View ${contentType} →`, link)}
+        ${divider()}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">You’re receiving this because you opted in to content updates.</span>`)}
+    `, `New ${contentType}: ${contentTitle}`)
+}
