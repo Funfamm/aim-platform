@@ -215,7 +215,10 @@ jobs:
           npx wait-on http://localhost:3000
       - name: Run OWASP ZAP baseline scan
         run: |
-          docker run --rm --network host -v ${{ github.workspace }}:/zap/wrk:rw \
+          mkdir -p ${{ github.workspace }}/zap-wrk
+          chmod 777 ${{ github.workspace }}/zap-wrk
+          docker run --rm --network host \
+            -v ${{ github.workspace }}/zap-wrk:/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
             zap-baseline.py -t http://localhost:3000 -r zap_report.html
       - name: Upload ZAP report
@@ -223,7 +226,7 @@ jobs:
         if: always()
         with:
           name: zap-report
-          path: zap_report.html
+          path: ${{ github.workspace }}/zap-wrk/zap_report.html
 
   performance:
     runs-on: ubuntu-latest
