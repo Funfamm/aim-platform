@@ -12,7 +12,7 @@ async function main() {
       smtpHost: 'graph',
       smtpPort: 587,
       smtpUser: 'aimstudio@impactaistudio.com',
-      smtpPass: 'graph-api',
+      smtpPass: 'PLACEHOLDER_NOT_A_REAL_PASSWORD',
       smtpFromName: 'AIM Studio',
       smtpFromEmail: 'aimstudio@impactaistudio.com',
       smtpSecure: false,

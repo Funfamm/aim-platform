@@ -12,7 +12,7 @@ async function main() {
       smtpHost: 'graph.microsoft.com',       // not really SMTP, but marks it as configured
       smtpPort: 443,
       smtpUser: 'aimstudio@impactaistudio.com',  // sender email (must be a licensed mailbox in Azure AD)
-      smtpPass: 'graph-api',                      // placeholder — real auth via AZURE_CLIENT_SECRET env var
+      smtpPass: 'PLACEHOLDER_NOT_A_REAL_PASSWORD',  // Auth handled via AZURE_CLIENT_SECRET env var
       smtpFromName: 'AIM Studio',
       smtpFromEmail: 'aimstudio@impactaistudio.com',
       smtpSecure: true,
