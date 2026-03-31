@@ -221,7 +221,7 @@ jobs:
           docker run --rm --network host \
             -v ${{ github.workspace }}/zap-wrk:/zap/wrk:rw \
             ghcr.io/zaproxy/zaproxy:stable \
-            zap-baseline.py -t http://localhost:3000 -c zap-rules.conf -r zap_report.html
+            zap-baseline.py -I -t http://localhost:3000 -c zap-rules.conf -r zap_report.html
       - name: Upload ZAP report
         uses: actions/upload-artifact@v4
         if: always()
