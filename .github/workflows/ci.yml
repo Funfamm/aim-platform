@@ -137,7 +137,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
-        run: npx prisma migrate deploy
+        run: npx prisma db push --force-reset --accept-data-loss
       - name: Build production app
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
@@ -318,7 +318,7 @@ jobs:
           npm run build
           npm run start &
       - name: Wait for app to be ready (DB-backed probe)
-        run: npx wait-on http://localhost:3000/api/ready --timeout 60000
+        run: npx wait-on http-get://localhost:3000/api/health --timeout 60000
       - name: Run k6 performance tests
         run: |
           k6 run ./tests/performance/home_load.js
