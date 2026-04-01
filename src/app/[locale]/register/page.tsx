@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'

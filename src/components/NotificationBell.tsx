@@ -150,7 +150,7 @@ export function NotificationBell() {
                     </div>
 
                     <div className={styles.dropdownFooter}>
-                        <button className={styles.prefsLink} onClick={() => { setOpen(false); router.push('/dashboard?tab=profile') }}>
+                        <button className={styles.prefsLink} onClick={() => { setOpen(false); router.push('/notifications') }}>
                             {t('managePrefsArrow')} {t('managePrefs')}
                         </button>
                     </div>
