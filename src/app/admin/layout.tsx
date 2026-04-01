@@ -8,7 +8,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     // Allow the admin login redirect page to render without auth
     // All other admin pages require admin/superadmin role
     if (!session || (session.role !== 'admin' && session.role !== 'superadmin')) {
-        redirect('/login?redirect=/admin')
+        redirect('/en/login?redirect=/admin')
     }
 
     return <CsrfProvider>{children}</CsrfProvider>

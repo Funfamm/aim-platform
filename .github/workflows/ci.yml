@@ -364,7 +364,7 @@ jobs:
         run: npx wait-on http-get://localhost:3000/api/health --timeout 60000
       - name: Run k6 performance tests
         run: |
-          k6 run ./tests/performance/home_load.js
+          k6 run ./tests/performance/home_loalatest
 
   publish:
     runs-on: ubuntu-latest

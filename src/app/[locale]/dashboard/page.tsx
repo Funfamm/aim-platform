@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/components/AuthProvider'
 import Footer from '@/components/Footer'
