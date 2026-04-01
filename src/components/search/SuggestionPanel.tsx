@@ -19,20 +19,6 @@ const QUICK_LINKS = [
   { key: 'about', href: '/about', icon: '✨' },
 ];
 
-const typeIcons: Record<string, string> = {
-  project: '🎬',
-  castingCall: '🎭',
-  scriptCall: '📝',
-  sponsor: '🤝',
-};
-
-const typeLabels: Record<string, string> = {
-  project: 'Production',
-  castingCall: 'Casting',
-  scriptCall: 'Script',
-  sponsor: 'Partner',
-};
-
 export const SuggestionPanel: React.FC<SuggestionPanelProps> = ({ onNavigate }) => {
   const { results, loading, query } = useSearch();
   const t = useTranslations('search');
@@ -40,16 +26,6 @@ export const SuggestionPanel: React.FC<SuggestionPanelProps> = ({ onNavigate }) 
   const hasResults = results.length > 0;
   const hasQuery = query.trim().length > 0;
   const showNoResults = hasQuery && !loading && !hasResults;
-
-  const getResultLink = (result: { type: string; slug?: string; id: string }) => {
-    switch (result.type) {
-      case 'project': return `/works/${result.slug ?? result.id}`;
-      case 'castingCall': return `/casting`;
-      case 'scriptCall': return `/scripts`;
-      case 'sponsor': return `/sponsors`;
-      default: return '#';
-    }
-  };
 
   return (
     <div style={{ marginTop: '20px' }}>
@@ -77,13 +53,13 @@ export const SuggestionPanel: React.FC<SuggestionPanelProps> = ({ onNavigate }) 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {results.slice(0, 8).map((result, i) => (
                 <motion.div
-                  key={result.id}
+                  key={`${result.category}-${result.title}-${i}`}
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.04, duration: 0.2 }}
                 >
                   <Link
-                    href={getResultLink(result)}
+                    href={result.href}
                     onClick={onNavigate}
                     style={{
                       display: 'flex',
@@ -109,7 +85,7 @@ export const SuggestionPanel: React.FC<SuggestionPanelProps> = ({ onNavigate }) 
                       fontSize: '1.1rem',
                       flexShrink: 0,
                     }}>
-                      {typeIcons[result.type] || '📄'}
+                      {result.icon}
                     </span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{
@@ -129,8 +105,11 @@ export const SuggestionPanel: React.FC<SuggestionPanelProps> = ({ onNavigate }) 
                         letterSpacing: '0.04em',
                         textTransform: 'uppercase',
                         marginTop: '2px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
                       }}>
-                        {typeLabels[result.type] || result.type}
+                        {result.subtitle || result.category}
                       </div>
                     </div>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

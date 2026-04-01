@@ -6,10 +6,11 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 export default function RegisterPage() {
     const t = useTranslations('register')
+    const locale = useLocale()
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -240,7 +241,7 @@ export default function RegisterPage() {
                             fontSize: '0.85rem', color: 'var(--text-tertiary)',
                         }}>
                             {t('alreadyHaveAccount')}{' '}
-                            <Link href="/login" style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
+                            <Link href={`/${locale}/login`} style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
                                 {t('signIn')}
                             </Link>
                         </div>

@@ -207,7 +207,7 @@ export default function Navbar() {
                                 )}
                             </div>
                         ) : (
-                            <Link href="/login" style={{
+                            <Link href={`/${currentLocale}/login`} style={{
                                 padding: '0.4rem 1.2rem',
                                 background: 'var(--bg-glass-light)',
                                 border: '1px solid var(--border-medium)',
@@ -329,7 +329,7 @@ export default function Navbar() {
                             </div>
                             <div className="drawer-user-info">
                                 <span className="drawer-user-name">{t('guest')}</span>
-                                <Link href="/login" onClick={() => setMobileOpen(false)}
+                                <Link href={`/${currentLocale}/login`} onClick={() => setMobileOpen(false)}
                                     className="drawer-sign-in-link">
                                     {t('signIn')} →
                                 </Link>

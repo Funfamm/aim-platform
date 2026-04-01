@@ -1,12 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { useLocale } from 'next-intl';
 
-interface SearchResult {
-  id: string;
-  type: 'project' | 'castingCall' | 'scriptCall' | 'sponsor';
+// Shape returned by /api/search
+export interface SearchResult {
+  category: string;   // 'Films' | 'Casting' | 'Training' | 'Scripts' | 'Sponsors' | 'Pages'
+  icon: string;
   title: string;
-  // add other fields as needed
+  subtitle: string;
+  href: string;
 }
 
 interface SearchContextProps {
@@ -24,32 +27,28 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const locale = useLocale();
 
   const fetchResults = async (q: string) => {
-    if (!q) {
+    if (!q || q.length < 2) {
       setResults([]);
       setLoading(false);
       return;
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?query=${encodeURIComponent(q)}`);
+      // Use ?q= (matches route.ts which reads searchParams.get('q'))
+      // Pass locale so translated content is returned
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&locale=${locale}`);
+      if (!res.ok) throw new Error(`Search API ${res.status}`);
       const data = await res.json();
       setResults(data.results || []);
-      // Send analytics for search event
-      try {
-        await fetch('/api/analytics/track', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            event: 'search',
-            query: q,
-            resultsCount: (data.results || []).length,
-          }),
-        });
-      } catch (analyticsErr) {
-        console.warn('Analytics tracking failed', analyticsErr);
-      }
+      // Fire-and-forget analytics
+      fetch('/api/analytics/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ event: 'search', query: q, resultsCount: (data.results || []).length }),
+      }).catch(() => {});
     } catch (err) {
       console.error('Search error', err);
       setResults([]);
@@ -58,11 +57,11 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // Inline debounce to avoid lodash dependency issues during build
   const debouncedFetch = useCallback((q: string) => {
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     debounceTimer.current = setTimeout(() => fetchResults(q), 300);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   const search = (q: string) => {
     setQuery(q);
@@ -78,8 +77,6 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 export const useSearch = () => {
   const ctx = useContext(SearchContext);
-  if (!ctx) {
-    throw new Error('useSearch must be used within SearchProvider');
-  }
+  if (!ctx) throw new Error('useSearch must be used within SearchProvider');
   return ctx;
 };

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from 'react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 /* ── Animated Step Progress ── */
 function StepProgress({ current }: { current: number }) {
@@ -147,6 +147,7 @@ function CountdownTimer({ seconds }: { seconds: number }) {
 
 export default function ForgotPasswordPage() {
     const t = useTranslations('forgotPassword')
+    const locale = useLocale()
     const [email, setEmail] = useState('')
     const [code, setCode] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -330,7 +331,7 @@ export default function ForgotPasswordPage() {
                                 <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)', fontSize: '0.9rem' }}>
                                     {t('canSignIn')}
                                 </p>
-                                <Link href="/login" className="btn btn-primary" style={{
+                                <Link href={`/${locale}/login`} className="btn btn-primary" style={{
                                     display: 'inline-block', width: '100%', padding: '0.85rem',
                                     fontSize: '0.95rem', fontWeight: 700, textAlign: 'center',
                                 }}>
@@ -525,7 +526,7 @@ export default function ForgotPasswordPage() {
                         )}
 
                         <div style={{ textAlign: 'center', marginTop: 'var(--space-lg)', fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-                            <Link href="/login" style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{t('backToSignIn')}</Link>
+                            <Link href={`/${locale}/login`} style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>{t('backToSignIn')}</Link>
                         </div>
                     </div>
                 </div>

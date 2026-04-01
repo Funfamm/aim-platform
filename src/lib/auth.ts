@@ -135,8 +135,10 @@ export async function getUserSession(): Promise<TokenPayload | null> {
 
 // Require authenticated admin (admin or superadmin)
 // Returns the session or sends 401
+// Uses getSessionAndRefresh so the access token is silently renewed in API routes
+// (getSession is read-only and cannot write cookies, so it fails after 15min expiry)
 export async function requireAdmin(): Promise<TokenPayload> {
-    const session = await getSession()
+    const session = await getSessionAndRefresh()
     if (!session) {
         throw new Error('Unauthorized')
     }
@@ -148,7 +150,7 @@ export async function requireAdmin(): Promise<TokenPayload> {
 
 // Require superadmin specifically
 export async function requireSuperAdmin(): Promise<TokenPayload> {
-    const session = await getSession()
+    const session = await getSessionAndRefresh()
     if (!session) {
         throw new Error('Unauthorized')
     }
