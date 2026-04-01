@@ -39,7 +39,9 @@
   ],
   "exclude": [
     "node_modules",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "scripts",
+    "tests"
   ]
 
 }
