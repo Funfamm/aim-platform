@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma migrate deploy && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=240",
     "lint:ci": "eslint . --max-warnings=240",
@@ -25,7 +25,9 @@
     "db:status": "prisma migrate status",
     "db:seed": "node scripts/prisma-guard.mjs db seed && tsx prisma/seed-superadmin.ts",
     "prisma:migrate": "prisma migrate deploy",
-    "prisma:seed": "tsx prisma/seed-superadmin.ts"
+    "prisma:seed": "tsx prisma/seed-superadmin.ts",
+    "prepare": "husky install",
+    "release": "standard-version && git push --follow-tags origin main"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.40.0",
@@ -71,6 +73,15 @@
     "prisma": "^6.6.0",
     "ts-jest": "^29.4.6",
     "typescript": "^5.8.0",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.1",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "standard-version": "^9.5.0",
+    "next-seo": "^6.5.0",
+    "swagger-ui-express": "^5.0.0",
+    "prom-client": "^15.0.0",
+    "helmet": "^7.0.0",
+    "express-rate-limit": "^7.0.0",
+    "next-sitemap": "^4.0.0"
   }
 }

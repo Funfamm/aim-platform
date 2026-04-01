@@ -45,6 +45,16 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'localhost' }], // skip locally
+        destination: 'https://%{host}/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {

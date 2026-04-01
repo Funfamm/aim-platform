@@ -1,0 +1,5 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Run Prisma diff to ensure migrations are up to date
+npx prisma migrate diff --from-schema-schema.prisma --to-schema prisma/schema.prisma --script || exit 1

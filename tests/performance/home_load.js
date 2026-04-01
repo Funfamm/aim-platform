@@ -15,13 +15,13 @@ const BASE_URL = __ENV.BASE_URL || 'http://localhost:3000'
 export const options = {
     stages: [
         { duration: '15s', target: 5 },    // Ramp up to 5 users
-        { duration: '30s', target: 10 },   // Sustain 10 users
+        { duration: '30s', target: 10 },   // Sustain 10 users (~50 RPS)
         { duration: '15s', target: 0 },    // Ramp down
     ],
     thresholds: {
-        http_req_duration: ['p(95)<5000'],         // 95th percentile < 5s (CI runners are slow)
-        http_req_failed:   ['rate<0.05'],           // < 5% errors (CI can have transient issues)
-        'http_req_duration{name:health}': ['p(99)<2000'],  // Health < 2s on CI
+        http_req_duration: ['p(95)<800'],         // 95th percentile < 800 ms
+        http_req_failed:   ['rate<0.05'],           // <5 % errors
+        'http_req_duration{name:health}': ['p(99)<2000'],  // Health < 2 s
     },
 }
 
