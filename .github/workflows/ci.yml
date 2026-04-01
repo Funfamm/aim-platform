@@ -170,8 +170,8 @@ jobs:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
         run: npm run start &
       - name: Wait for app to be ready (2xx on health endpoint)
-        timeout-minutes: 3
-        run: npx wait-on --httpTimeout 60000 --timeout 120000 http-get://localhost:3000/api/health
+        timeout-minutes: 5
+        run: npx wait-on --httpTimeout 60000 --timeout 240000 http-get://localhost:3000/api/health
       - name: Run Playwright tests
         timeout-minutes: 10
         env:

@@ -15,9 +15,9 @@ export default function AdminLoading() {
                     width: '120px', height: '20px', borderRadius: '6px',
                     background: 'rgba(255,255,255,0.04)', marginBottom: '24px',
                 }} />
-                {Array.from({ length: 8 }).map((_, i) => (
+                {[78, 66, 92, 70, 85, 62, 88, 74].map((w, i) => (
                     <div key={i} style={{
-                        width: `${60 + Math.random() * 40}%`, height: '14px', borderRadius: '4px',
+                        width: `${w}%`, height: '14px', borderRadius: '4px',
                         background: i === 0 ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.03)',
                     }} />
                 ))}

@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
 
 /**
  * GET /api/health
@@ -40,6 +39,7 @@ export async function GET() {
  * "wait until DB is up" probes — not for k6 latency thresholds.
  */
 export async function POST() {
+  const { prisma } = await import('@/lib/db')
   try {
     await prisma.$queryRaw`SELECT 1`
     return NextResponse.json({ status: 'ready' }, { status: 200 })

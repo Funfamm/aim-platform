@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 
 // ─── SVG Sparkline ───
 export function Sparkline({ data, color = 'var(--accent-gold)', height = 32, width = 80 }: { data: number[]; color?: string; height?: number; width?: number }) {
@@ -76,18 +76,21 @@ export function DonutChart({ segments }: { segments: { label: string; value: num
     const radius = 44
     const strokeWidth = 14
     const circumference = 2 * Math.PI * radius
-    let accum = 0
+    const pcts = segments.map(s => s.value / total)
+    const offsets = pcts.reduce<number[]>((arr, _, i) => {
+        arr.push(i === 0 ? 0 : arr[i - 1] + pcts[i - 1])
+        return arr
+    }, [])
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-lg)' }}>
             <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
                 <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth={strokeWidth} />
                 {segments.map((seg, i) => {
-                    const pct = seg.value / total
+                    const pct = pcts[i]
                     const dash = pct * circumference
                     const gap = circumference - dash
-                    const off = -accum * circumference
-                    accum += pct
+                    const off = -offsets[i] * circumference
                     return <circle key={i} cx={size / 2} cy={size / 2} r={radius} fill="none"
                         stroke={seg.color} strokeWidth={strokeWidth} strokeLinecap="round"
                         strokeDasharray={`${dash - 2} ${gap + 2}`}
@@ -141,7 +144,7 @@ export function AreaChart({ data, labels, height = 180 }: { data: number[]; labe
 
     const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length)
     const peak = Math.max(...data)
-    const gradId = `areaG${Math.random().toString(36).slice(2, 7)}`
+    const gradId = useMemo(() => `areaG${Math.random().toString(36).slice(2, 7)}`, [])
 
     return (
         <div style={{
