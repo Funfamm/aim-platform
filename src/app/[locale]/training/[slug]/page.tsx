@@ -326,6 +326,17 @@ export default function CourseDetailPage() {
         setTimeout(() => setShowConfetti(false), 3000)
     }
 
+    const confettiColors = ['#d4a853', '#34d399', '#a855f7', '#f59e0b', '#3b82f6', '#ef4444', '#22c55e']
+    const confettiData = useMemo(() => Array.from({ length: 60 }).map((_, i) => ({
+        left: `${Math.random() * 100}%`,
+        w: `${6 + Math.random() * 8}px`,
+        h: `${6 + Math.random() * 8}px`,
+        br: Math.random() > 0.5 ? '50%' : '2px',
+        bg: confettiColors[i % confettiColors.length],
+        dur: `${1.5 + Math.random() * 2}s`,
+        delay: `${Math.random() * 0.5}s`,
+    })), []) // eslint-disable-line react-hooks/exhaustive-deps
+
     const loadProgress = useCallback(async (courseId: string) => {
         try {
             const r = await fetch(`/api/training/${courseId}/progress`)
@@ -762,21 +773,21 @@ export default function CourseDetailPage() {
             {/* Confetti */}
             {showConfetti && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none', overflow: 'hidden' }}>
-                    {Array.from({ length: 60 }).map((_, i) => (
+                    {confettiData.map((c, i) => (
                         <div key={i} style={{
                             position: 'absolute',
-                            left: `${Math.random() * 100}%`, top: '-10px',
-                            width: `${6 + Math.random() * 8}px`, height: `${6 + Math.random() * 8}px`,
-                            borderRadius: Math.random() > 0.5 ? '50%' : '2px',
-                            background: ['#d4a853', '#34d399', '#a855f7', '#f59e0b', '#3b82f6', '#ef4444', '#22c55e'][Math.floor(Math.random() * 7)],
-                            animation: `confetti-fall ${1.5 + Math.random() * 2}s ease-out ${Math.random() * 0.5}s forwards`,
+                            left: c.left, top: '-10px',
+                            width: c.w, height: c.h,
+                            borderRadius: c.br,
+                            background: c.bg,
+                            animation: `confetti-fall ${c.dur} ease-out ${c.delay} forwards`,
                             opacity: 0.9,
                         }} />
                     ))}
                     <style>{`
                         @keyframes confetti-fall {
                             0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-                            100% { transform: translateY(100vh) rotate(${360 + Math.random() * 720}deg); opacity: 0; }
+                            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
                         }
                     `}</style>
                 </div>

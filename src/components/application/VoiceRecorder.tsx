@@ -188,13 +188,13 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                         {/* Waveform */}
                         {isRecording && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '40px', marginBottom: 'var(--space-md)' }}>
-                                {Array.from({ length: 20 }).map((_, i) => (
+                            {[28, 18, 35, 22, 30, 15, 38, 25, 32, 19, 36, 24, 29, 16, 33, 21, 37, 27, 31, 20].map((h, i) => (
                                     <div key={i} style={{
                                         width: '3px',
                                         background: 'var(--accent-gold)',
                                         borderRadius: '2px',
                                         animation: `waveform 0.8s ease-in-out ${i * 0.05}s infinite alternate`,
-                                        height: `${12 + Math.random() * 28}px`,
+                                        height: `${h}px`,
                                     }} />
                                 ))}
                                 <style>{`

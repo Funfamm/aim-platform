@@ -83,7 +83,7 @@ export default function TiltCard3D({
             animatingRef.current = true
             rafRef.current = requestAnimationFrame(animate)
         }
-    }, [intensity, animate])
+    }, [intensity, scale, animate])
 
     const handleMouseLeave = useCallback(() => {
         targetRef.current = { x: 0, y: 0 }
@@ -99,8 +99,6 @@ export default function TiltCard3D({
             rafRef.current = requestAnimationFrame(animate)
         }
     }, [animate])
-
-    const Tag = href ? 'a' : 'div'
 
     return (
         <div

@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Props {
@@ -9,6 +10,16 @@ interface Props {
 
 export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
     const router = useRouter()
+
+    const confettiPieces = useMemo(() => Array.from({ length: 40 }).map((_, i) => ({
+        w: `${4 + Math.random() * 8}px`,
+        h: `${4 + Math.random() * 8}px`,
+        bg: ['#d4a853', '#ffd700', '#b8860b', '#fff', '#f0c040', '#a0784c'][i % 6],
+        br: i % 3 === 0 ? '50%' : '2px',
+        left: `${Math.random() * 100}%`,
+        dur: `${2 + Math.random() * 3}s`,
+        delay: `${Math.random() * 2}s`,
+    })), [])
 
     return (
         <div style={{
@@ -43,16 +54,13 @@ export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
             `}</style>
 
             {/* Floating confetti */}
-            {Array.from({ length: 40 }).map((_, i) => (
+            {confettiPieces.map((p, i) => (
                 <div key={i} style={{
                     position: 'absolute',
-                    width: `${4 + Math.random() * 8}px`,
-                    height: `${4 + Math.random() * 8}px`,
-                    background: ['#d4a853', '#ffd700', '#b8860b', '#fff', '#f0c040', '#a0784c'][i % 6],
-                    borderRadius: i % 3 === 0 ? '50%' : '2px',
-                    left: `${Math.random() * 100}%`,
-                    top: '-20px',
-                    animation: `confettiFall ${2 + Math.random() * 3}s ease-in ${Math.random() * 2}s forwards`,
+                    width: p.w, height: p.h,
+                    background: p.bg, borderRadius: p.br,
+                    left: p.left, top: '-20px',
+                    animation: `confettiFall ${p.dur} ease-in ${p.delay} forwards`,
                     opacity: 0.8,
                 }} />
             ))}

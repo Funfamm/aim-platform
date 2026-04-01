@@ -1,7 +1,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface SearchResult {
   id: string;
@@ -24,7 +23,6 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchResults = async (q: string) => {

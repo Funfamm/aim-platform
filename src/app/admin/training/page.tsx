@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 
 /* ── Types ── */
@@ -40,7 +40,8 @@ const LEVELS = [
     { value: 'all', label: 'All Levels', color: '#3b82f6' },
 ]
 
-const CONTENT_TYPES = [
+// Content types available for reference (used in course editor)
+const _CONTENT_TYPES = [
     { value: 'video', label: '🎥 Video' },
     { value: 'document', label: '📄 Document' },
     { value: 'link', label: '🔗 External Link' },
@@ -66,7 +67,7 @@ const emptyLesson = (): Lesson => ({
     description: '', duration: '', sortOrder: 0,
 })
 
-const emptyModule = (): Module => ({
+const _emptyModule = (): Module => ({
     title: '', description: '', sortOrder: 0, lessons: [emptyLesson()],
 })
 
@@ -74,19 +75,19 @@ export default function AdminTrainingPage() {
     const router = useRouter()
     const [courses, setCourses] = useState<Course[]>([])
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState('')
+    const [_error, setError] = useState('')
     const [filter, setFilter] = useState('all')
 
-    useEffect(() => { loadCourses() }, [])
-
-    const loadCourses = () => {
+    const loadCourses = useCallback(() => {
         setLoading(true)
         fetch('/api/admin/training')
             .then(r => { if (r.status === 401) { window.location.href = '/admin/login'; return [] } return r.json() })
             .then(data => setCourses(data))
             .catch(() => setError('Failed to load courses'))
             .finally(() => setLoading(false))
-    }
+    }, [])
+
+    useEffect(() => { loadCourses() }, [loadCourses])
 
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this course and all its modules/lessons? This cannot be undone.')) return
