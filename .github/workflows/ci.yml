@@ -168,15 +168,19 @@ jobs:
           ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
-        run: npm run start &
-      - name: Wait for app to be ready (2xx on health endpoint)
+        run: npm run start > next-server.log 2>&1 &
+      - name: Wait for app to be ready (port + health)
         timeout-minutes: 5
         run: |
-          npx wait-on --httpTimeout 60000 --timeout 240000 http-get://localhost:3000/api/health || \
-          (echo "=== DIAGNOSTICS ===" && \
-           curl -v http://localhost:3000/api/health || true && \
-           lsof -i :3000 || true && \
-           exit 1)
+          # Step 1: wait until port 3000 is actually listening
+          npx wait-on --timeout 240000 tcp:3000
+          # Step 2: confirm the health route responds (plain http:// — no 2xx requirement)
+          npx wait-on --timeout 240000 http://localhost:3000/api/health
+      - name: Dump server log if healthcheck fails
+        if: failure()
+        run: |
+          echo "===== next-server.log ====="
+          cat next-server.log || true
       - name: Run Playwright tests
         timeout-minutes: 10
         env:
