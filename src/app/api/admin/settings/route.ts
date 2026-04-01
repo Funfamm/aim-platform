@@ -11,11 +11,17 @@ import { logAdminAction } from '@/lib/audit-log'
 export async function GET() {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
-    const settings = await prisma.siteSettings.upsert({
-        where: { id: 'default' },
-        create: { id: 'default' },
-        update: {},
-    })
+    let settings
+    try {
+        settings = await prisma.siteSettings.upsert({
+            where: { id: 'default' },
+            create: { id: 'default' },
+            update: {},
+        })
+    } catch {
+        // Schema drift fallback — return empty defaults so admin page still loads
+        return NextResponse.json({ id: 'default' })
+    }
 
     // Mask secrets for security
     const masked = {
@@ -95,6 +101,12 @@ export async function PUT(req: Request) {
             emailsEnabled: body.emailsEnabled ?? false,
             emailTransport: body.emailTransport || 'graph',
             emailReplyTo: body.emailReplyTo || null,
+            // Audio upload
+            audioUploadEnabled: body.audioUploadEnabled ?? true,
+            // In-app notification preferences
+            notifyOnNewRole: body.notifyOnNewRole ?? true,
+            notifyOnAnnouncement: body.notifyOnAnnouncement ?? true,
+            notifyOnContentPublish: body.notifyOnContentPublish ?? false,
         }
 
         // Only update API key if user provided a new one (not masked)
