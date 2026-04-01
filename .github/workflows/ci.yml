@@ -120,6 +120,14 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
@@ -146,6 +154,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
+          REDIS_URL: redis://localhost:6379
           ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
@@ -155,6 +164,7 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
+          REDIS_URL: redis://localhost:6379
           ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
@@ -166,6 +176,7 @@ jobs:
         timeout-minutes: 10
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
+          REDIS_URL: redis://localhost:6379
         run: npx playwright test --project=chromium
 
   accessibility:
