@@ -806,5 +806,13 @@
       "loading": "Идёт поиск…",
       "suggestionTitle": "Подсказки"
     }
+  },
+  "notificationBell": {
+    "title": "Уведомления",
+    "loading": "Загрузка…",
+    "allCaughtUp": "Вы всё прочитали! 🎉",
+    "markAllRead": "Отметить всё прочитанным",
+    "managePrefs": "Управление настройками",
+    "managePrefsArrow": "→"
   }
 }

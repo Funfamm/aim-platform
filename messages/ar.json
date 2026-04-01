@@ -808,5 +808,13 @@
       "loading": "جارٍ البحث…",
       "suggestionTitle": "اقتراحات"
     }
+  },
+  "notificationBell": {
+    "title": "الإشعارات",
+    "loading": "جارٍ التحميل…",
+    "allCaughtUp": "أنت على اطلاع بكل شيء! 🎉",
+    "markAllRead": "وضع الكل كمقروء",
+    "managePrefs": "إدارة التفضيلات",
+    "managePrefsArrow": "←"
   }
 }

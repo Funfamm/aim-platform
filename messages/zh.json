@@ -806,5 +806,13 @@
       "loading": "搜索中…",
       "suggestionTitle": "建议"
     }
+  },
+  "notificationBell": {
+    "title": "通知",
+    "loading": "加载中…",
+    "allCaughtUp": "您已全部查看完毕！🎉",
+    "markAllRead": "全部标为已读",
+    "managePrefs": "管理偏好设置",
+    "managePrefsArrow": "→"
   }
 }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import styles from './NotificationBell.module.css'
 
 interface Notification {
@@ -36,6 +37,7 @@ function timeAgo(dateStr: string): string {
 export function NotificationBell() {
     const { user } = useAuth()
     const router = useRouter()
+    const t = useTranslations('notificationBell')
     const [open, setOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
@@ -115,20 +117,20 @@ export function NotificationBell() {
             {open && (
                 <div className={styles.dropdown} role="dialog" aria-label="Notifications">
                     <div className={styles.dropdownHeader}>
-                        <span className={styles.dropdownTitle}>Notifications</span>
+                        <span className={styles.dropdownTitle}>{t('title')}</span>
                         {unreadCount > 0 && (
                             <button className={styles.markAllBtn} onClick={markAllRead}>
-                                Mark all read
+                                {t('markAllRead')}
                             </button>
                         )}
                     </div>
 
                     <div className={styles.list}>
                         {loading && notifications.length === 0 && (
-                            <div className={styles.empty}>Loading…</div>
+                            <div className={styles.empty}>{t('loading')}</div>
                         )}
                         {!loading && notifications.length === 0 && (
-                            <div className={styles.empty}>You&apos;re all caught up! 🎉</div>
+                            <div className={styles.empty}>{t('allCaughtUp')}</div>
                         )}
                         {notifications.map(n => (
                             <button
@@ -149,7 +151,7 @@ export function NotificationBell() {
 
                     <div className={styles.dropdownFooter}>
                         <button className={styles.prefsLink} onClick={() => { setOpen(false); router.push('/dashboard?tab=profile') }}>
-                            Manage preferences →
+                            {t('managePrefsArrow')} {t('managePrefs')}
                         </button>
                     </div>
                 </div>

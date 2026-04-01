@@ -803,5 +803,13 @@
       "loading": "Searching…",
       "suggestionTitle": "Suggestions"
     }
+  },
+  "notificationBell": {
+    "title": "Notifications",
+    "loading": "Loading…",
+    "allCaughtUp": "You're all caught up! 🎉",
+    "markAllRead": "Mark all read",
+    "managePrefs": "Manage preferences",
+    "managePrefsArrow": "→"
   }
 }

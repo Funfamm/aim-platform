@@ -806,5 +806,13 @@
       "loading": "검색 중…",
       "suggestionTitle": "제안"
     }
+  },
+  "notificationBell": {
+    "title": "알림",
+    "loading": "로딩 중…",
+    "allCaughtUp": "모두 확인하셨습니다! 🎉",
+    "markAllRead": "모두 읽음으로 표시",
+    "managePrefs": "환경설정 관리",
+    "managePrefsArrow": "→"
   }
 }

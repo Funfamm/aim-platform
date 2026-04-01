@@ -806,5 +806,13 @@
       "loading": "Buscando…",
       "suggestionTitle": "Sugerencias"
     }
+  },
+  "notificationBell": {
+    "title": "Notificaciones",
+    "loading": "Cargando…",
+    "allCaughtUp": "¡Estás al día ! 🎉",
+    "markAllRead": "Marcar todo como leído",
+    "managePrefs": "Administrar preferencias",
+    "managePrefsArrow": "→"
   }
 }

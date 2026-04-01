@@ -4,10 +4,9 @@ import { saveAudioFile } from '@/lib/upload';
 import { validateAudio } from '@/middleware/validateAudio';
 import { rateLimitCasting } from '@/middleware/rateLimitCasting';
 import { logger } from '@/lib/logger';
-import { Queue } from 'bullmq';
 
-// Initialize BullMQ queue (optional background processing)
-const audioQueue = new Queue('audioProcessingQueue');
+// BullMQ is optional — only used when REDIS_URL is set.
+// Do NOT instantiate Queue at module level (causes ECONNREFUSED during build/static-gen).
 
 export async function POST(request: NextRequest) {
   // Rate limiting
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest) {
   const form = await request.formData();
   const audioFile = form.get('audio') as File;
 
-  // Extract other fields (adjust as needed for your form)
+  // Extract other fields
   const name = form.get('name')?.toString() ?? '';
   const email = form.get('email')?.toString() ?? '';
   const phone = form.get('phone')?.toString() ?? '';
@@ -53,13 +52,28 @@ export async function POST(request: NextRequest) {
     },
   });
 
-  // Audit log (model does not exist yet — log to console until schema is updated)
-  logger.info('castingSubmit', `Application ${application.id} created with status pending`);
+  logger.info('castingSubmit', `Application ${application.id} created`);
 
-  // Enqueue background processing (currently a no‑op but ready for future transcoding)
-  await audioQueue.add('process', { applicationId: application.id, audioUrl });
+  // Enqueue background processing only when Redis is available
+  if (process.env.REDIS_URL) {
+    try {
+      const { Queue } = await import('bullmq');
+      const parsedUrl = new URL(process.env.REDIS_URL);
+      const isTls = process.env.REDIS_URL.startsWith('rediss://');
+      const audioQueue = new Queue('audioProcessingQueue', {
+        connection: {
+          host: parsedUrl.hostname,
+          port: parseInt(parsedUrl.port || '6379', 10),
+          ...(parsedUrl.password ? { password: decodeURIComponent(parsedUrl.password) } : {}),
+          ...(isTls ? { tls: {} } : {}),
+        },
+      });
+      await audioQueue.add('process', { applicationId: application.id, audioUrl });
+    } catch (err) {
+      logger.warn('castingSubmit', 'Failed to enqueue audio processing job', { error: err });
+    }
+  }
 
-  logger.info('castingSubmit', `Application ${application.id} received`);
   return NextResponse.json(
     { submissionId: application.id, message: 'Application received' },
     { status: 202 }

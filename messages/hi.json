@@ -806,5 +806,13 @@
       "loading": "खोज रहे हैं…",
       "suggestionTitle": "सुझाव"
     }
+  },
+  "notificationBell": {
+    "title": "सूचनाएँ",
+    "loading": "लोड हो रहा है…",
+    "allCaughtUp": "आप सब देख चुके हैं! 🎉",
+    "markAllRead": "सभी को पढ़ा हुआ चिह्नित करें",
+    "managePrefs": "प्राथमिकताएँ प्रबंधित करें",
+    "managePrefsArrow": "→"
   }
 }

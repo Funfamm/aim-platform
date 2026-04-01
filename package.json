@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node -e \"process.env.DATABASE_URL && require('child_process').execSync('npx prisma migrate deploy', {stdio:'inherit'})\"",
     "build": "next build",
     "build:prod": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
