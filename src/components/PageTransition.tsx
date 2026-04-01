@@ -12,6 +12,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
 
     useEffect(() => {
         if (pathname === prevPathname.current) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setDisplayChildren(children)
             return
         }

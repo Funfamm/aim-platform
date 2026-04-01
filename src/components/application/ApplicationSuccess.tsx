@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Props {
@@ -8,18 +7,19 @@ interface Props {
     projectTitle: string
 }
 
+// Pre-computed confetti data — module-level so Math.random() is never called during render
+const confettiPieces = Array.from({ length: 40 }).map((_, i) => ({
+    w: `${4 + Math.random() * 8}px`,
+    h: `${4 + Math.random() * 8}px`,
+    bg: ['#d4a853', '#ffd700', '#b8860b', '#fff', '#f0c040', '#a0784c'][i % 6],
+    br: i % 3 === 0 ? '50%' : '2px',
+    left: `${Math.random() * 100}%`,
+    dur: `${2 + Math.random() * 3}s`,
+    delay: `${Math.random() * 2}s`,
+}))
+
 export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
     const router = useRouter()
-
-    const confettiPieces = useMemo(() => Array.from({ length: 40 }).map((_, i) => ({
-        w: `${4 + Math.random() * 8}px`,
-        h: `${4 + Math.random() * 8}px`,
-        bg: ['#d4a853', '#ffd700', '#b8860b', '#fff', '#f0c040', '#a0784c'][i % 6],
-        br: i % 3 === 0 ? '50%' : '2px',
-        left: `${Math.random() * 100}%`,
-        dur: `${2 + Math.random() * 3}s`,
-        delay: `${Math.random() * 2}s`,
-    })), [])
 
     return (
         <div style={{
