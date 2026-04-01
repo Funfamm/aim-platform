@@ -370,6 +370,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [security]
     if: github.ref == 'refs/heads/main'
+    env:
+      ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+      NODE_ENV: production
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node
