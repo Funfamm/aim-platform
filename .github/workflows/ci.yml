@@ -148,7 +148,9 @@ jobs:
         env:
           DATABASE_URL: postgresql://test:test@localhost:5432/testdb
           DIRECT_URL: postgresql://test:test@localhost:5432/testdb
-        run: npx prisma db push --force-reset --accept-data-loss
+        run: |
+          npx prisma migrate reset --force --skip-seed
+          echo "✅ Schema push complete"
       - name: Build production app
         timeout-minutes: 15
         env:
@@ -158,7 +160,6 @@ jobs:
           ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
-          NEXT_TELEMETRY_DISABLED: 1
         run: npm run build
       - name: Start production server
         env:
@@ -170,7 +171,17 @@ jobs:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
-        run: npm run start > next-server.log 2>&1 &
+        run: |
+          npm run start > next-server.log 2>&1 &
+          SERVER_PID=$!
+          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          sleep 3
+          if ! kill -0 $SERVER_PID 2>/dev/null; then
+            echo "❌ Server died immediately – dumping log"
+            cat next-server.log
+            exit 1
+          fi
+# Duplicate Build/Start block removed – original block kept above
       - name: Wait for app to be ready (port + health)
         timeout-minutes: 5
         run: |
