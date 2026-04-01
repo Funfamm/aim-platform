@@ -3,6 +3,7 @@ import Footer from '@/components/Footer'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import ScriptSubmissionForm from '@/components/ScriptSubmissionForm'
+import { getLocale } from 'next-intl/server'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -19,7 +20,8 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
 
     const session = await getUserSession()
     if (!session) {
-        redirect(`/login?redirect=/scripts/${id}`)
+        const locale = await getLocale()
+        redirect(`/${locale}/login?redirect=/scripts/${id}`)
     }
 
     const call = await prisma.scriptCall.findUnique({

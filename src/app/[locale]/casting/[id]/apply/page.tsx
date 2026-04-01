@@ -33,11 +33,11 @@ export default async function ApplyPage({
 
     // Require login to apply
     const session = await getUserSession()
+    const locale = await getLocale()
     if (!session?.userId) {
-        redirect(`/login?redirect=/casting/${id}/apply`)
+        redirect(`/${locale}/login?redirect=/casting/${id}/apply`)
     }
     const isAdmin = session.role === 'admin' || session.role === 'superadmin'
-    const locale = await getLocale()
 
     // Fetch casting call (required for both paths)
     const castingCall = await prisma.castingCall.findUnique({

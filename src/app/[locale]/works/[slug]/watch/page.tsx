@@ -3,6 +3,7 @@ import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import Footer from '@/components/Footer'
 import WatchPlayer from '@/components/WatchPlayer'
+import { getLocale } from 'next-intl/server'
 
 export const revalidate = 60
 
@@ -22,7 +23,8 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
     // Auth gate — must be logged in
     const session = await getUserSession()
     if (!session?.userId) {
-        redirect(`/login?redirect=/works/${slug}/watch`)
+        const locale = await getLocale()
+        redirect(`/${locale}/login?redirect=/works/${slug}/watch`)
     }
 
     // Fetch project

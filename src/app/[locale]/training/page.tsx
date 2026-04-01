@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import TrainingCatalogClient from './TrainingCatalogClient'
+import { getLocale } from 'next-intl/server'
 
 export const metadata = {
     title: 'Training Hub | AIM Studio',
@@ -12,7 +13,8 @@ export const metadata = {
 
 export default async function TrainingPage() {
     const session = await getUserSession()
-    if (!session) redirect('/login?redirect=/training')
+    const locale = await getLocale()
+    if (!session) redirect(`/${locale}/login?redirect=/training`)
     const isLoggedIn = true
     const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
 

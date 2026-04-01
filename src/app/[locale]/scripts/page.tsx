@@ -4,6 +4,7 @@ import CinematicBackground from '@/components/CinematicBackground'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { getLocale } from 'next-intl/server'
 
 export const revalidate = 120
 
@@ -15,7 +16,8 @@ export const metadata = {
 export default async function ScriptCallsPage() {
     // Require login to access scripts
     const session = await getUserSession()
-    if (!session) redirect('/login')
+    const locale = await getLocale()
+    if (!session) redirect(`/${locale}/login`)
 
     const settings = await prisma.siteSettings.findFirst()
     const enabled = settings?.scriptCallsEnabled ?? false

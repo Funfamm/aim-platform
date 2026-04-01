@@ -3,6 +3,7 @@ import CastingPageClient from '@/components/CastingPageClient'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
+import { getLocale } from 'next-intl/server'
 
 // Must be dynamic so the auth check runs on every request.
 // If this page were cached (ISR), a signed-in user's render would be
@@ -19,11 +20,12 @@ export const metadata = {
 export default async function CastingPage() {
     // Check global toggle
     const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
+    const locale = await getLocale()
 
     const session = await getUserSession();
   // Enforce login for casting page
     if (!session) {
-      redirect('/login');
+      redirect(`/${locale}/login`);
     }
     if (settings && settings.castingCallsEnabled === false) {
         return (

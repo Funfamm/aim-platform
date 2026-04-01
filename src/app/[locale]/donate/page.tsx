@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 declare global {
     interface Window {
@@ -15,6 +15,7 @@ declare global {
 
 export default function DonatePage() {
     const t = useTranslations('donate')
+    const locale = useLocale()
     const [selectedAmount, setSelectedAmount] = useState<number | null>(50)
     const [customAmount, setCustomAmount] = useState('')
     const [form, setForm] = useState({ name: '', email: '', message: '' })
@@ -63,8 +64,8 @@ export default function DonatePage() {
                 if (!data.donationsEnabled) setStatus('disabled')
                 if (data.requireLoginForDonate) {
                     fetch('/api/auth/session').then(r => r.json()).then(session => {
-                        if (!session?.user) window.location.href = '/login'
-                    }).catch(() => { window.location.href = '/login' })
+                        if (!session?.user) window.location.href = `/${locale}/login`
+                    }).catch(() => { window.location.href = `/${locale}/login` })
                 }
             })
             .catch(() => { /* defaults */ })

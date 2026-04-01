@@ -8,7 +8,7 @@ import { prisma } from '@/lib/db'
 import type { Sponsor } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 
 export const metadata: Metadata = {
     title: 'Sponsors & Partners | AIM Studio',
@@ -41,7 +41,8 @@ export default async function SponsorsPage() {
 
     if (settings?.requireLoginForSponsors) {
         const session = await getUserSession()
-        if (!session) redirect('/login')
+        const locale = await getLocale()
+        if (!session) redirect(`/${locale}/login`)
     }
 
     const now = new Date()
