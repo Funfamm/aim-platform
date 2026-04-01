@@ -1,5 +1,22 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
-# Run Prisma diff to ensure migrations are up to date
-npx prisma migrate diff --from-schema-schema.prisma --to-schema prisma/schema.prisma --script || exit 1
+# Prisma schema drift check — only runs if DATABASE_URL is set (skips in CI)
+if [ -z "$DATABASE_URL" ]; then
+  echo "⚠️  DATABASE_URL not set — skipping Prisma schema drift check"
+  exit 0
+fi
+
+echo "🔍 Checking Prisma schema for drift..."
+npx prisma migrate diff \
+  --from-schema-datasource prisma/schema.prisma \
+  --to-schema-datamodel prisma/schema.prisma \
+  --script \
+  --exit-code 2>/dev/null
+
+if [ $? -ne 0 ]; then
+  echo "❌ Prisma schema has uncommitted changes. Run 'npx prisma migrate dev' first."
+  exit 1
+fi
+
+echo "✅ Prisma schema is in sync"
+exit 0
