@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useRouter } from '@/i18n/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/components/AuthProvider'
@@ -103,7 +104,12 @@ export default function DashboardPage() {
     const [loadingWatchlist, setLoadingWatchlist] = useState(true)
     const [loadingHistory, setLoadingHistory] = useState(true)
     const [loadingDonations, setLoadingDonations] = useState(true)
-    const [activeTab, setActiveTab] = useState<TabType>('applications')
+    const searchParams = useSearchParams()
+    const [activeTab, setActiveTab] = useState<TabType>(() => {
+        const tab = searchParams.get('tab')
+        const validTabs: TabType[] = ['applications', 'watchlist', 'activity', 'donations', 'profile']
+        return validTabs.includes(tab as TabType) ? (tab as TabType) : 'applications'
+    })
     const [pagination, setPagination] = useState<PaginationState>({
         appsCursor: null, appsHasMore: false,
         watchCursor: null, watchHasMore: false,

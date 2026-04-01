@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/components/AuthProvider'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 import styles from './NotificationBell.module.css'
 
 interface Notification {
@@ -148,7 +148,7 @@ export function NotificationBell() {
                     </div>
 
                     <div className={styles.dropdownFooter}>
-                        <button className={styles.prefsLink} onClick={() => { setOpen(false); router.push('/dashboard/notifications') }}>
+                        <button className={styles.prefsLink} onClick={() => { setOpen(false); router.push('/dashboard?tab=profile') }}>
                             Manage preferences →
                         </button>
                     </div>
