@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { defaultLocale } from '@/i18n/routing';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function WorksRedirect() {
-  redirect('/en/works');
+  redirect(`/${defaultLocale}/works`);
 }

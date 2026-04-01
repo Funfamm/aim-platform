@@ -46,14 +46,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [{ type: 'host', value: 'localhost' }], // skip locally
-        destination: 'https://%{host}/:path*',
-        permanent: true,
-      },
-    ];
+    return [];
   },
   async headers() {
     return [

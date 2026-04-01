@@ -8,7 +8,7 @@ export default function AdminLoginPage() {
     const router = useRouter()
 
     useEffect(() => {
-        router.replace('/login')
+        router.replace('/en/login')
     }, [router])
 
     return (
