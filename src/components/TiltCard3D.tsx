@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, type ReactNode, type CSSProperties } from 'react'
+import { useRef, useCallback, useEffect, type ReactNode, type CSSProperties } from 'react'
 
 interface TiltCard3DProps {
     children: ReactNode
@@ -33,6 +33,7 @@ export default function TiltCard3D({
 
     const targetScaleRef = useRef(1)
     const currentScaleRef = useRef(1)
+    const animateRef = useRef<() => void>(() => {})
 
     // Smooth animation loop — lerp toward target rotation
     const animate = useCallback(() => {
@@ -52,11 +53,21 @@ export default function TiltCard3D({
         const dy = Math.abs(targetRef.current.y - currentRef.current.y)
         const ds = Math.abs(targetScaleRef.current - currentScaleRef.current)
         if (dx > 0.01 || dy > 0.01 || ds > 0.001) {
-            rafRef.current = requestAnimationFrame(animate)
+            rafRef.current = requestAnimationFrame(animateRef.current)
         } else {
             animatingRef.current = false
         }
     }, [perspective])
+
+    // Keep ref in sync with latest animate callback
+    useEffect(() => { animateRef.current = animate }, [animate])
+
+    const startAnimation = useCallback(() => {
+        if (!animatingRef.current) {
+            animatingRef.current = true
+            rafRef.current = requestAnimationFrame(animateRef.current)
+        }
+    }, [])
 
     const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
         const card = cardRef.current
@@ -79,11 +90,8 @@ export default function TiltCard3D({
             glareRef.current.style.opacity = '1'
         }
 
-        if (!animatingRef.current) {
-            animatingRef.current = true
-            rafRef.current = requestAnimationFrame(animate)
-        }
-    }, [intensity, scale, animate])
+        startAnimation()
+    }, [intensity, scale, startAnimation])
 
     const handleMouseLeave = useCallback(() => {
         targetRef.current = { x: 0, y: 0 }
@@ -94,11 +102,8 @@ export default function TiltCard3D({
         }
 
         // Start smooth return animation if not already animating
-        if (!animatingRef.current) {
-            animatingRef.current = true
-            rafRef.current = requestAnimationFrame(animate)
-        }
-    }, [animate])
+        startAnimation()
+    }, [startAnimation])
 
     return (
         <div

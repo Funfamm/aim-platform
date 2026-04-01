@@ -140,19 +140,6 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
 
     // Theme — persisted in localStorage
     const [themeMode, setThemeMode] = useState<'dark' | 'light' | 'system'>('dark')
-    useEffect(() => {
-        const saved = localStorage.getItem('aim-theme') as 'dark' | 'light' | 'system' | null
-        const effective = saved ?? 'dark'
-        setThemeMode(effective)
-        applyTheme(effective)
-        // Mirror system changes in real time when mode === 'system'
-        const mq = window.matchMedia('(prefers-color-scheme: dark)')
-        const onSystemChange = () => {
-            if ((localStorage.getItem('aim-theme') ?? 'dark') === 'system') applyTheme('system')
-        }
-        mq.addEventListener('change', onSystemChange)
-        return () => mq.removeEventListener('change', onSystemChange)
-    }, [])
 
     function applyTheme(mode: 'dark' | 'light' | 'system') {
         if (mode === 'light') {
@@ -166,6 +153,20 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
             else document.documentElement.setAttribute('data-theme', 'light')
         }
     }
+
+    useEffect(() => {
+        const saved = localStorage.getItem('aim-theme') as 'dark' | 'light' | 'system' | null
+        const effective = saved ?? 'dark'
+        setThemeMode(effective)
+        applyTheme(effective)
+        // Mirror system changes in real time when mode === 'system'
+        const mq = window.matchMedia('(prefers-color-scheme: dark)')
+        const onSystemChange = () => {
+            if ((localStorage.getItem('aim-theme') ?? 'dark') === 'system') applyTheme('system')
+        }
+        mq.addEventListener('change', onSystemChange)
+        return () => mq.removeEventListener('change', onSystemChange)
+    }, [])
 
     function handleTheme(key: 'dark' | 'light' | 'system') {
         setThemeMode(key)
