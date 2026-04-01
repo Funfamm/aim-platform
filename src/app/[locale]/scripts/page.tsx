@@ -19,7 +19,8 @@ export default async function ScriptCallsPage() {
     const locale = await getLocale()
     if (!session) redirect(`/${locale}/login`)
 
-    const settings = await prisma.siteSettings.findFirst()
+    let settings = null
+    try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift — use defaults */ }
     const enabled = settings?.scriptCallsEnabled ?? false
 
     const calls = enabled ? await prisma.scriptCall.findMany({

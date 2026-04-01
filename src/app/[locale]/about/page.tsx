@@ -34,7 +34,8 @@ async function fetchAboutStats() {
 }
 
 export default async function AboutPage() {
-    const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
+    let settings = null
+    try { settings = await prisma.siteSettings.findFirst() as any } catch { /* schema drift */ }
     const session = await getUserSession()
     const isLoggedIn = !!session?.userId
     const stats = await fetchAboutStats()

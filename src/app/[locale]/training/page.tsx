@@ -16,7 +16,8 @@ export default async function TrainingPage() {
     const locale = await getLocale()
     if (!session) redirect(`/${locale}/login?redirect=/training`)
     const isLoggedIn = true
-    const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
+    let settings = null
+    try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift */ }
 
     if (!(settings as any)?.trainingEnabled) {
         return (

@@ -19,7 +19,8 @@ export const metadata = {
 
 export default async function CastingPage() {
     // Check global toggle
-    const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
+    let settings = null
+    try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift */ }
     const locale = await getLocale()
 
     const session = await getUserSession();

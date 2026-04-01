@@ -20,7 +20,8 @@ export const revalidate = 120
 export default async function SponsorsPage() {
     const t = await getTranslations('sponsors')
 
-    const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
+    let settings = null
+    try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift */ }
 
     if (settings && settings.sponsorsPageEnabled === false) {
         return (
