@@ -16,11 +16,14 @@ export default defineConfig({
         ? [['html', { open: 'never' }], ['github']]
         : [['html', { open: 'on-failure' }]],
 
+    timeout: 60_000,
+
     use: {
         baseURL: process.env.BASE_URL || 'http://localhost:3000',
         trace: 'on-first-retry',
         video: 'retain-on-failure',
         screenshot: 'only-on-failure',
+        actionTimeout: 15_000,
     },
 
     projects: [

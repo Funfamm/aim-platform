@@ -62,12 +62,12 @@ async function runAxeWithRetry(page: import('@playwright/test').Page, attempts =
 
 for (const route of PUBLIC_ROUTES) {
     test(`Accessibility: ${route}`, async ({ page }) => {
-        // Navigate and wait for full network quiet
-        await page.goto(route, { waitUntil: 'networkidle' })
+        // Navigate — domcontentloaded is more reliable than networkidle in CI
+        await page.goto(route, { waitUntil: 'domcontentloaded' })
 
         // Extra stability for pages with video/dynamic content
         if (['/works'].includes(route)) {
-            await page.waitForLoadState('networkidle')
+            await page.waitForLoadState('load')
         }
 
         // Wait for main content to be visible before scanning
