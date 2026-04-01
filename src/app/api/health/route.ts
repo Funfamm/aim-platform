@@ -3,19 +3,40 @@ import { prisma } from '@/lib/db'
 
 /**
  * GET /api/health
- * Pure process-level liveness probe — NO database access.
- * Safe to hit under load; always returns 200 unless the process is down.
+ * Liveness probe — always returns 200 so CI wait-on never hangs.
+ * Redis is optional; reported as "disabled" when REDIS_URL is not set.
  */
 export async function GET() {
+  // Redis status — gracefully disabled when REDIS_URL is absent (CI / local dev)
+  let redis: 'up' | 'down' | 'disabled' = 'disabled'
+  if (process.env.REDIS_URL) {
+    try {
+      // Lazy import so BullMQ is never loaded unless Redis is configured
+      const { getNotificationQueue } = await import('@/lib/queues/notificationQueue')
+      const q = getNotificationQueue()
+      // BullMQ Queue exposes a client property; a simple isPaused() ping is enough
+      if (q) {
+        await q.isPaused()
+        redis = 'up'
+      }
+    } catch {
+      redis = 'down'
+    }
+  }
+
   return NextResponse.json(
-    { status: 'ok', timestamp: new Date().toISOString() },
-    { status: 200 }
+    {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      services: { redis },
+    },
+    { status: 200 }   // always 200 so CI health probes succeed
   )
 }
 
 /**
- * GET /api/ready
- * DB-backed readiness probe. Use this for Render health checks and
+ * POST /api/health
+ * DB-backed readiness probe. Use for Render health checks and
  * "wait until DB is up" probes — not for k6 latency thresholds.
  */
 export async function POST() {
