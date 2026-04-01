@@ -182,9 +182,10 @@ export default function AdminSponsorsPage() {
         : sponsors.filter(s => s.tier === filter)
 
     const isExpired = (s: Sponsor) => s.endDate && new Date(s.endDate) < new Date()
+    const now = Date.now()
     const daysLeft = (s: Sponsor) => {
         if (!s.endDate) return null
-        return Math.ceil((new Date(s.endDate).getTime() - Date.now()) / 86400000)
+        return Math.ceil((new Date(s.endDate).getTime() - now) / 86400000)
     }
 
     // Shared dark input style

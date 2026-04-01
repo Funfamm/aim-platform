@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useId } from 'react'
 
 // ─── SVG Sparkline ───
 export function Sparkline({ data, color = 'var(--accent-gold)', height = 32, width = 80 }: { data: number[]; color?: string; height?: number; width?: number }) {
@@ -144,7 +144,8 @@ export function AreaChart({ data, labels, height = 180 }: { data: number[]; labe
 
     const avg = Math.round(data.reduce((a, b) => a + b, 0) / data.length)
     const peak = Math.max(...data)
-    const gradId = useMemo(() => `areaG${Math.random().toString(36).slice(2, 7)}`, [])
+    const rawId = useId()
+    const gradId = `areaG${rawId.replace(/[^a-z0-9]/gi, '')}`
 
     return (
         <div style={{

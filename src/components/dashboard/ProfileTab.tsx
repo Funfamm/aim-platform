@@ -139,7 +139,10 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
     const [bannerUploading, setBannerUploading] = useState(false)
 
     // Theme — persisted in localStorage
-    const [themeMode, setThemeMode] = useState<'dark' | 'light' | 'system'>('dark')
+    const [themeMode, setThemeMode] = useState<'dark' | 'light' | 'system'>(() => {
+        if (typeof window === 'undefined') return 'dark'
+        return (localStorage.getItem('aim-theme') as 'dark' | 'light' | 'system') ?? 'dark'
+    })
 
     function applyTheme(mode: 'dark' | 'light' | 'system') {
         if (mode === 'light') {
@@ -155,10 +158,7 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
     }
 
     useEffect(() => {
-        const saved = localStorage.getItem('aim-theme') as 'dark' | 'light' | 'system' | null
-        const effective = saved ?? 'dark'
-        setThemeMode(effective)
-        applyTheme(effective)
+        applyTheme(themeMode)
         // Mirror system changes in real time when mode === 'system'
         const mq = window.matchMedia('(prefers-color-scheme: dark)')
         const onSystemChange = () => {
@@ -166,7 +166,7 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
         }
         mq.addEventListener('change', onSystemChange)
         return () => mq.removeEventListener('change', onSystemChange)
-    }, [])
+    }, [themeMode])
 
     function handleTheme(key: 'dark' | 'light' | 'system') {
         setThemeMode(key)
@@ -175,13 +175,11 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
     }
 
     // Accent colour — persisted in localStorage
-    const [accentKey, setAccentKey] = useState<AccentKey>('gold')
-    useEffect(() => {
-        const saved = localStorage.getItem(ACCENT_KEY) as AccentKey | null
-        const effective = saved ?? 'gold'
-        setAccentKey(effective)
-        applyAccent(effective)
-    }, [])
+    const [accentKey, setAccentKey] = useState<AccentKey>(() => {
+        if (typeof window === 'undefined') return 'gold'
+        return (localStorage.getItem(ACCENT_KEY) as AccentKey) ?? 'gold'
+    })
+    useEffect(() => { applyAccent(accentKey) }, [accentKey])
 
     function handleAccent(key: AccentKey) {
         setAccentKey(key)
@@ -190,15 +188,9 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
     }
 
     // Notifications — persisted in localStorage
-    const [notifAppUpdates, setNotifAppUpdates] = useState(true)
-    const [notifCastingAlerts, setNotifCastingAlerts] = useState(true)
-    const [notifDonationReceipts, setNotifDonationReceipts] = useState(true)
-
-    useEffect(() => {
-        setNotifAppUpdates(readBool(NOTIF_KEYS.appUpdates, true))
-        setNotifCastingAlerts(readBool(NOTIF_KEYS.castingAlerts, true))
-        setNotifDonationReceipts(readBool(NOTIF_KEYS.donationReceipts, true))
-    }, [])
+    const [notifAppUpdates, setNotifAppUpdates] = useState(() => readBool(NOTIF_KEYS.appUpdates, true))
+    const [notifCastingAlerts, setNotifCastingAlerts] = useState(() => readBool(NOTIF_KEYS.castingAlerts, true))
+    const [notifDonationReceipts, setNotifDonationReceipts] = useState(() => readBool(NOTIF_KEYS.donationReceipts, true))
 
     function toggleNotif(key: keyof typeof NOTIF_KEYS, current: boolean, setter: (v: boolean) => void) {
         const next = !current

@@ -106,6 +106,7 @@ export default function AdminScriptsPage() {
     const filtered = filter === 'all' ? calls : calls.filter(c => c.status === filter)
     const totalSubs = calls.reduce((s, c) => s + c._count.submissions, 0)
     const openCount = calls.filter(c => c.status === 'open').length
+    const now = Date.now()
 
     const inp: React.CSSProperties = {
         width: '100%', padding: '8px 12px', background: 'rgba(255,255,255,0.04)',
@@ -305,7 +306,7 @@ export default function AdminScriptsPage() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {filtered.map(call => {
                             const meta = STATUS_META[call.status] || STATUS_META.draft
-                            const daysLeft = call.deadline ? Math.ceil((new Date(call.deadline).getTime() - Date.now()) / 86400000) : null
+                            const daysLeft = call.deadline ? Math.ceil((new Date(call.deadline).getTime() - now) / 86400000) : null
 
                             return (
                                 <div key={call.id} style={{

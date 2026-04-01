@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
 import { LANGUAGE_NAMES } from '@/lib/subtitle-translator'
@@ -38,7 +38,11 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
     const [totalDuration, setTotalDuration] = useState(0)
     const [isFullscreen, setIsFullscreen] = useState(false)
     const [showControls, setShowControls] = useState(true)
-    const [activeEpisode, setActiveEpisode] = useState<Episode | null>(null)
+    const [activeEpisode, setActiveEpisode] = useState<Episode | null>(
+        project.projectType === 'series' && project.episodes.length > 0
+            ? project.episodes[0]
+            : null
+    )
     const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -53,13 +57,10 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
     const [ccAvailable, setCcAvailable] = useState<string[]>([])
     const [ccLoading, setCcLoading] = useState(false)
     const [ccStatusText, setCcStatusText] = useState('')
-    const [activeSubtitle, setActiveSubtitle] = useState('')
-
-    // Find current subtitle based on video time
-    useEffect(() => {
-        if (!ccEnabled || ccSegments.length === 0) { setActiveSubtitle(''); return }
-        const seg = ccSegments.find(s => currentTime >= s.start && currentTime <= s.end)
-        setActiveSubtitle(seg?.text || '')
+    // Derive current subtitle based on video time (no effect/setState needed)
+    const activeSubtitle = useMemo(() => {
+        if (!ccEnabled || ccSegments.length === 0) return ''
+        return ccSegments.find(s => currentTime >= s.start && currentTime <= s.end)?.text || ''
     }, [currentTime, ccEnabled, ccSegments])
 
     // Fetch subtitles from DB on mount
@@ -113,11 +114,7 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
         }
     }, [ccEnabled, ccAvailable, showLangMenu])
 
-    useEffect(() => {
-        if (isSeries && project.episodes.length > 0) {
-            setActiveEpisode(project.episodes[0])
-        }
-    }, [isSeries, project.episodes])
+
 
     // Auto-hide controls after 3s of inactivity
     const resetControlsTimer = () => {
@@ -128,7 +125,12 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
         }, 3000)
     }
 
-    useEffect(() => resetControlsTimer(), [isPlaying])
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setShowControls(true)
+        const t = setTimeout(() => { if (isPlaying) setShowControls(false) }, 3000)
+        return () => clearTimeout(t)
+    }, [isPlaying])
 
     const togglePlay = () => {
         const vid = videoRef.current
