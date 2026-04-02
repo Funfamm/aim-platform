@@ -141,22 +141,34 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
         if (opts.type === 'announcement'     && !settings?.notifyOnAnnouncement)   return
         if (opts.type === 'content_publish'  && !settings?.notifyOnContentPublish) return
 
-        // Fetch all users who have opted in
+        // Fetch ALL users along with their preference record (may be null)
+        // We must not filter by preference here — users with no record default to opted-in
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
+        const users: { id: string; notificationPreference: Record<string, boolean> | null }[] =
+            await db.user.findMany({
+                select: {
+                    id: true,
+                    notificationPreference: opts.preferenceKey
+                        ? { select: { [opts.preferenceKey]: true, inApp: true, email: true } }
+                        : true,
+                },
+            })
+
+        // Filter locally: users with no preference record are treated as opted-in (safe defaults)
         const prefKey = opts.preferenceKey
-        const whereClause = prefKey ? { notificationPreference: { [prefKey]: true } } : {}
-        const users: { id: string }[] = await db.user.findMany({
-            where: whereClause,
-            select: { id: true },
+        const targeted = users.filter((u) => {
+            if (!u.notificationPreference) return true          // no record → default = opted-in
+            if (prefKey) return u.notificationPreference[prefKey] !== false  // explicit false = opted-out
+            return true
         })
 
-        logger.info('notifications', `Broadcasting "${opts.type}" to ${users.length} users`)
+        logger.info('notifications', `Broadcasting "${opts.type}" to ${targeted.length}/${users.length} users`)
 
         // Process in batches of 50 to avoid DB overload
         const BATCH = 50
-        for (let i = 0; i < users.length; i += BATCH) {
-            const batch = users.slice(i, i + BATCH)
+        for (let i = 0; i < targeted.length; i += BATCH) {
+            const batch = targeted.slice(i, i + BATCH)
             await Promise.allSettled(
                 batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id }))
             )
@@ -165,6 +177,7 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
         logger.error('notifications', 'broadcastNotification failed', { error: err })
     }
 }
+
 
 // ─── Application Status Change (existing flow, refactored) ────────────────────
 
