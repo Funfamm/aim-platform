@@ -314,6 +314,8 @@ export async function POST(
                 locale,
                 status: 'submitted',
             },
+            // Explicit select avoids fetching non-existent columns (e.g. audioUrl)
+            select: { id: true, status: true },
         })
 
         // ═══ AUTO-CLOSE — close casting when limit reached ═══
@@ -342,25 +344,33 @@ export async function POST(
             }).catch(err => console.error('Auto-audit trigger failed:', err))
         }
 
-        // Fire-and-forget: confirmation email to applicant
+        // Fire-and-forget: confirmation email to applicant + admin notification
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || ''
-        sendEmail({
-            to: email,
-            subject: `Application received for ${castingCall.roleName} 🎭`,
-            html: await applicationConfirmationWithOverrides(fullName, castingCall.roleName, undefined, siteUrl),
-        })
-
-        // Fire-and-forget: notify admin of new application
-        if (siteSettings?.notifyOnApplication) {
-            const adminEmail = siteSettings.notifyEmail || siteSettings.contactEmail
-            if (adminEmail) {
-                sendEmail({
-                    to: adminEmail,
-                    subject: `📋 New Application: ${fullName} for ${castingCall.roleName}`,
-                    html: applicationAdminNotification(fullName, email, castingCall.roleName),
+        Promise.resolve().then(async () => {
+            try {
+                await sendEmail({
+                    to: email,
+                    subject: `Application received for ${castingCall.roleName} 🎭`,
+                    html: await applicationConfirmationWithOverrides(fullName, castingCall.roleName, undefined, siteUrl),
                 })
+            } catch (emailErr) {
+                console.error('[apply] Confirmation email failed:', emailErr)
             }
-        }
+            try {
+                if (siteSettings?.notifyOnApplication) {
+                    const adminEmail = siteSettings.notifyEmail || siteSettings.contactEmail
+                    if (adminEmail) {
+                        await sendEmail({
+                            to: adminEmail,
+                            subject: `📋 New Application: ${fullName} for ${castingCall.roleName}`,
+                            html: applicationAdminNotification(fullName, email, castingCall.roleName),
+                        })
+                    }
+                }
+            } catch (adminEmailErr) {
+                console.error('[apply] Admin notification email failed:', adminEmailErr)
+            }
+        }).catch(() => null)
 
         return NextResponse.json({
             success: true,

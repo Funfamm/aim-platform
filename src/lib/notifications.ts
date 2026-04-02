@@ -72,12 +72,10 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                     select: {
                         email: true,
                         inApp: true,
-                        sms: true,
                         newRole: true,
                         announcement: true,
                         contentPublish: true,
                         statusChange: true,
-                        phoneNumber: true,
                     },
                 },
             },
