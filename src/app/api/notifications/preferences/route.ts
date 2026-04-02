@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
-import { getSession } from '@/lib/auth'
+import { getSessionAndRefresh } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 /** GET /api/notifications/preferences */
 export async function GET() {
-    const session = await getSession()
+    const session = await getSessionAndRefresh()
     if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -17,7 +17,7 @@ export async function GET() {
             data: {
                 userId: session.id,
                 newRole: true, announcement: true, contentPublish: false, statusChange: true,
-                email: true, inApp: true, sms: false,
+                email: true, inApp: true,
             }
         })
     }
@@ -36,21 +36,16 @@ export async function POST(req: Request) {
 }
 
 async function savePreferences(req: Request) {
-    const session = await getSession()
+    const session = await getSessionAndRefresh()
     if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
         const body = await req.json()
-        const boolFields = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms']
-        const data: Record<string, boolean | string | null> = {}
+        const boolFields = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp']
+        const data: Record<string, boolean> = {}
 
         for (const k of boolFields) {
             if (typeof body[k] === 'boolean') data[k] = body[k]
-        }
-
-        // Accept optional phone number for SMS delivery
-        if (typeof body.phoneNumber === 'string') {
-            data.phoneNumber = body.phoneNumber.trim() || null
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,7 +56,7 @@ async function savePreferences(req: Request) {
             create: {
                 userId: session.id,
                 newRole: true, announcement: true, contentPublish: false, statusChange: true,
-                email: true, inApp: true, sms: false,
+                email: true, inApp: true,
                 ...data,
             },
         })

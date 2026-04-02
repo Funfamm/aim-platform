@@ -82,7 +82,10 @@ export async function GET(req: NextRequest) {
             prisma.application.findMany({
                 take: 5,
                 orderBy: { createdAt: 'desc' },
-                include: { castingCall: { include: { project: { select: { title: true } } } } },
+                select: {
+                    id: true, fullName: true, status: true, aiScore: true, createdAt: true,
+                    castingCall: { select: { roleName: true, project: { select: { title: true } } } },
+                },
             }),
         ])
 

@@ -15,8 +15,6 @@ interface Prefs {
     statusChange: boolean
     email: boolean
     inApp: boolean
-    sms: boolean
-    phoneNumber?: string
 }
 
 interface Notification {
@@ -64,7 +62,6 @@ export default function NotificationsPage() {
     const t = useTranslations('NotificationsPage')
 
     const [prefs, setPrefs] = useState<Prefs | null>(null)
-    const [phoneNumber, setPhoneNumber] = useState('')
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
@@ -79,10 +76,9 @@ export default function NotificationsPage() {
             setNotifications(notifData.notifications ?? [])
             const p = prefData.preferences ?? {
                 newRole: true, announcement: true, contentPublish: false,
-                statusChange: true, email: true, inApp: true, sms: false,
+                statusChange: true, email: true, inApp: true,
             }
             setPrefs(p)
-            if (p.phoneNumber) setPhoneNumber(p.phoneNumber)
         }).finally(() => setLoading(false))
     }, [])
 
@@ -110,7 +106,7 @@ export default function NotificationsPage() {
             const res = await fetch('/api/notifications/preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...prefs, phoneNumber: phoneNumber.trim() || null }),
+                body: JSON.stringify(prefs),
             })
             if (!res.ok) throw new Error('Save failed')
             const data = await res.json()
@@ -331,15 +327,14 @@ export default function NotificationsPage() {
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{t('controlChannels')}</div>
                             </div>
                             {prefs && ([
-                                { key: 'inApp'  as keyof Prefs, emoji: '🔔', label: t('inApp'),  desc: t('inAppDesc'),  disabled: false },
-                                { key: 'email'  as keyof Prefs, emoji: '📧', label: t('email'),  desc: t('emailDesc'),  disabled: false },
-                                { key: 'sms'    as keyof Prefs, emoji: '💬', label: t('sms'),    desc: t('smsDesc'),    disabled: false },
+                                { key: 'inApp' as keyof Prefs, emoji: '🔔', label: t('inApp'), desc: t('inAppDesc') },
+                                { key: 'email' as keyof Prefs, emoji: '📧', label: t('email'), desc: t('emailDesc') },
                             ]).map(ch => (
                                 <div key={ch.key}>
                                     <div
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: '16px',
-                                            padding: '14px 20px', borderBottom: ch.key === 'sms' && prefs.sms ? 'none' : '1px solid var(--border-subtle)',
+                                            padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)',
                                         }}
                                     >
                                         <span style={{ fontSize: '24px', flexShrink: 0 }}>{ch.emoji}</span>
@@ -348,38 +343,10 @@ export default function NotificationsPage() {
                                             <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{ch.desc}</span>
                                         </span>
                                         <ToggleSwitch
-                                            checked={prefs[ch.key] as boolean}
-                                            disabled={ch.disabled}
-                                            onChange={() => { if (!ch.disabled) toggle(ch.key) }}
+                                            checked={!!prefs[ch.key]}
+                                            onChange={() => toggle(ch.key)}
                                         />
                                     </div>
-                                    {/* Phone number input – shown when SMS is enabled */}
-                                    {ch.key === 'sms' && prefs.sms && (
-                                        <div style={{
-                                            padding: '12px 20px 16px', borderBottom: '1px solid var(--border-subtle)',
-                                            background: 'rgba(212,168,83,0.03)',
-                                        }}>
-                                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
-                                                📱 Phone number (E.164 format, e.g. +15551234567)
-                                            </label>
-                                            <input
-                                                type="tel"
-                                                value={phoneNumber}
-                                                onChange={e => setPhoneNumber(e.target.value)}
-                                                placeholder="+1 555 000 0000"
-                                                style={{
-                                                    width: '100%', padding: '10px 14px', borderRadius: '8px',
-                                                    border: '1px solid var(--border-subtle)',
-                                                    background: 'var(--bg-primary)', color: 'var(--text-primary)',
-                                                    fontSize: '0.9rem', outline: 'none',
-                                                    boxSizing: 'border-box',
-                                                }}
-                                            />
-                                            <span style={{ fontSize: '0.73rem', color: 'var(--text-tertiary)', marginTop: '4px', display: 'block' }}>
-                                                Mock mode: SMS will be logged to the server console. No messages are sent.
-                                            </span>
-                                        </div>
-                                    )}
                                 </div>
                             ))}
                         </div>
