@@ -99,7 +99,17 @@ interface Insight {
     description: string
 }
 
-type TabType = 'overview' | 'traffic' | 'content' | 'ai'
+interface SystemHealth {
+    status: string
+    timestamp: string
+    responseTime: number
+    database: { status: string; latency: number; provider: string; totalRecords: number; tables: Record<string, number> }
+    activity: { views24h: number; views1h: number; users24h: number; apps24h: number; requestsPerMinute: number }
+    runtime: { platform: string; environment: string; region: string; nodeVersion: string; uptime: number; memory: { heapUsed: number; heapTotal: number; rss: number; external: number; utilization: number } }
+    services: { name: string; status: string; latency: number | null }[]
+}
+
+type TabType = 'overview' | 'traffic' | 'content' | 'ai' | 'system'
 
 export default function AdminAnalyticsPage() {
     const [data, setData] = useState<AnalyticsData | null>(null)
@@ -125,6 +135,8 @@ export default function AdminAnalyticsPage() {
     const [voiceModeOpen, setVoiceModeOpen] = useState(false)
 
     const [fetchError, setFetchError] = useState('')
+    const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
+    const [systemLoading, setSystemLoading] = useState(false)
 
     // Single unified fetch — section=all returns core + traffic + content + dashboard
     const fetchData = useCallback(async () => {
@@ -258,11 +270,29 @@ export default function AdminAnalyticsPage() {
 
     const deviceColors: Record<string, string> = { mobile: '#3b82f6', desktop: '#10b981', tablet: '#f59e0b', unknown: '#6b7280' }
 
+    // ── System health fetch ──
+    const fetchSystemHealth = useCallback(async () => {
+        setSystemLoading(true)
+        try {
+            const res = await fetch('/api/admin/system')
+            if (res.ok) setSystemHealth(await res.json())
+        } catch { /* silent */ }
+        setSystemLoading(false)
+    }, [])
+
+    useEffect(() => { if (activeTab === 'system') fetchSystemHealth() }, [activeTab, fetchSystemHealth])
+
+    const formatUptime = (s: number) => {
+        const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60)
+        return `${d}d ${h}h ${m}m`
+    }
+
     const tabs = [
         { id: 'overview', label: 'Overview', icon: '📊' },
         { id: 'traffic', label: 'Traffic', icon: '📈' },
         { id: 'content', label: 'Content', icon: '🎬' },
         { id: 'ai', label: 'AI Insights', icon: '🤖' },
+        { id: 'system', label: 'System', icon: '🖥️' },
     ]
 
     return (
@@ -1194,6 +1224,183 @@ export default function AdminAnalyticsPage() {
                                                 {chatLoading ? '⏳' : '➡️'}
                                             </button>
                                         </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+                        {/* ═══════ SYSTEM DATA CENTER TAB ═══════ */}
+                        {activeTab === 'system' && (
+                            <>
+                                {systemLoading && !systemHealth ? (
+                                    <div style={{ padding: 'var(--space-4xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                                        <div className="loading-spinner" style={{ margin: '0 auto var(--space-md)' }} />
+                                        Initializing system diagnostics…
+                                    </div>
+                                ) : systemHealth ? (
+                                    <>
+                                        {/* ── System Status Banner ── */}
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '16px',
+                                            padding: '16px 20px', marginBottom: 'var(--space-lg)',
+                                            background: systemHealth.status === 'operational'
+                                                ? 'linear-gradient(135deg, rgba(34,197,94,0.06), rgba(34,197,94,0.02))'
+                                                : 'linear-gradient(135deg, rgba(239,68,68,0.06), rgba(239,68,68,0.02))',
+                                            border: `1px solid ${systemHealth.status === 'operational' ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                                            borderRadius: 'var(--radius-lg)',
+                                            position: 'relative', overflow: 'hidden',
+                                        }}>
+                                            <div style={{
+                                                position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+                                                background: systemHealth.status === 'operational'
+                                                    ? 'linear-gradient(90deg, transparent, #22c55e, transparent)'
+                                                    : 'linear-gradient(90deg, transparent, #ef4444, transparent)',
+                                            }} />
+                                            <div style={{
+                                                width: '44px', height: '44px', borderRadius: '12px',
+                                                background: systemHealth.status === 'operational' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem',
+                                                boxShadow: `0 0 20px ${systemHealth.status === 'operational' ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}`,
+                                            }}>{systemHealth.status === 'operational' ? '✅' : '⚠️'}</div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontSize: '1rem', fontWeight: 900, color: systemHealth.status === 'operational' ? '#22c55e' : '#ef4444' }}>
+                                                    {systemHealth.status === 'operational' ? 'All Systems Operational' : 'System Degraded'}
+                                                </div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                                    Last checked: {new Date(systemHealth.timestamp).toLocaleTimeString()} · Response: {systemHealth.responseTime}ms
+                                                </div>
+                                            </div>
+                                            <button onClick={fetchSystemHealth} disabled={systemLoading} style={{
+                                                padding: '6px 14px', fontSize: '0.72rem', fontWeight: 700,
+                                                borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)',
+                                                background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)',
+                                                cursor: 'pointer', transition: 'all 0.2s',
+                                            }}>{systemLoading ? '⏳' : '🔄'} Refresh</button>
+                                        </div>
+
+                                        {/* ── Infrastructure Cards ── */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)' }}>
+                                            {[
+                                                { label: 'Platform', value: systemHealth.runtime.platform, sub: systemHealth.runtime.region, icon: '☁️', color: '#3b82f6' },
+                                                { label: 'Uptime', value: formatUptime(systemHealth.runtime.uptime), sub: systemHealth.runtime.nodeVersion, icon: '⏱', color: '#22c55e' },
+                                                { label: 'DB Latency', value: `${systemHealth.database.latency}ms`, sub: systemHealth.database.provider, icon: '🗄️', color: systemHealth.database.latency < 50 ? '#22c55e' : systemHealth.database.latency < 200 ? '#f59e0b' : '#ef4444' },
+                                                { label: 'Total Records', value: systemHealth.database.totalRecords.toLocaleString(), sub: `${Object.keys(systemHealth.database.tables).length} tables`, icon: '📊', color: 'var(--accent-gold)' },
+                                            ].map((card, idx) => (
+                                                <div key={card.label} className="cmd-card" style={{
+                                                    background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
+                                                    borderRadius: 'var(--radius-lg)', padding: '16px', textAlign: 'center',
+                                                    animation: `cardCascade 0.5s ease ${idx * 80}ms both`,
+                                                    transition: 'transform 0.25s ease, box-shadow 0.25s ease',
+                                                }}>
+                                                    <div style={{ fontSize: '1.4rem', marginBottom: '8px' }}>{card.icon}</div>
+                                                    <div style={{ fontSize: '1.2rem', fontWeight: 900, color: card.color, lineHeight: 1 }}>{card.value}</div>
+                                                    <div style={{ fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--text-tertiary)', fontWeight: 700, marginTop: '6px' }}>{card.label}</div>
+                                                    <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>{card.sub}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* ── Memory + Activity Row ── */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                                            {/* Memory Monitor */}
+                                            <div style={{ ...glassCard, position: 'relative', overflow: 'hidden' }}>
+                                                <h4 style={sectionLabel}>🧠 Memory Usage</h4>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginTop: 'var(--space-md)' }}>
+                                                    <VitalityRing score={systemHealth.runtime.memory.utilization} />
+                                                    <div style={{ flex: 1 }}>
+                                                        {[
+                                                            { label: 'Heap Used', val: `${systemHealth.runtime.memory.heapUsed} MB`, max: systemHealth.runtime.memory.heapTotal, color: '#3b82f6' },
+                                                            { label: 'RSS', val: `${systemHealth.runtime.memory.rss} MB`, max: systemHealth.runtime.memory.rss, color: '#22c55e' },
+                                                            { label: 'External', val: `${systemHealth.runtime.memory.external} MB`, max: systemHealth.runtime.memory.heapTotal, color: '#f59e0b' },
+                                                        ].map(m => (
+                                                            <div key={m.label} style={{ marginBottom: '8px' }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', marginBottom: '3px' }}>
+                                                                    <span style={{ color: 'var(--text-secondary)' }}>{m.label}</span>
+                                                                    <span style={{ fontWeight: 700, color: m.color }}>{m.val}</span>
+                                                                </div>
+                                                                <div style={{ height: '4px', background: 'rgba(255,255,255,0.04)', borderRadius: '2px' }}>
+                                                                    <div style={{ height: '100%', borderRadius: '2px', width: `${Math.min((parseInt(m.val) / m.max) * 100, 100)}%`, background: m.color, transition: 'width 0.8s ease' }} />
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 24h Activity */}
+                                            <div style={{ ...glassCard }}>
+                                                <h4 style={sectionLabel}>⚡ 24h Activity Pulse</h4>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: 'var(--space-md)' }}>
+                                                    {[
+                                                        { label: 'Page Views (24h)', value: systemHealth.activity.views24h, color: 'var(--accent-gold)' },
+                                                        { label: 'Views (1h)', value: systemHealth.activity.views1h, color: '#3b82f6' },
+                                                        { label: 'New Users (24h)', value: systemHealth.activity.users24h, color: '#22c55e' },
+                                                        { label: 'Applications (24h)', value: systemHealth.activity.apps24h, color: '#f59e0b' },
+                                                    ].map(a => (
+                                                        <div key={a.label} style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
+                                                            <div style={{ fontSize: '1.3rem', fontWeight: 900, color: a.color, lineHeight: 1 }}><AnimatedNumber value={a.value} /></div>
+                                                            <div style={{ fontSize: '0.52rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', fontWeight: 700, marginTop: '4px' }}>{a.label}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div style={{ marginTop: '12px', padding: '8px 12px', background: 'rgba(212,168,83,0.04)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(212,168,83,0.08)', textAlign: 'center' }}>
+                                                    <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{systemHealth.activity.requestsPerMinute}</span>
+                                                    <span style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginLeft: '4px' }}>req/min avg</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ── Service Status Grid ── */}
+                                        <div style={{ ...glassCard, marginBottom: 'var(--space-lg)', padding: 0, overflow: 'hidden' }}>
+                                            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', fontWeight: 700 }}>🔌 Service Status</span>
+                                                <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)' }}>— {systemHealth.services.filter(s => s.status === 'operational' || s.status === 'configured' || s.status === 'active').length}/{systemHealth.services.length} healthy</span>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1px', background: 'var(--border-subtle)' }}>
+                                                {systemHealth.services.map(svc => {
+                                                    const isOk = ['operational', 'configured', 'active'].includes(svc.status)
+                                                    return (
+                                                        <div key={svc.name} style={{ padding: '14px 16px', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                            <span style={{
+                                                                width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
+                                                                background: isOk ? '#22c55e' : svc.status === 'mock mode' ? '#f59e0b' : '#ef4444',
+                                                                boxShadow: `0 0 8px ${isOk ? 'rgba(34,197,94,0.4)' : svc.status === 'mock mode' ? 'rgba(245,158,11,0.4)' : 'rgba(239,68,68,0.4)'}`,
+                                                                animation: isOk ? 'livePulse 3s ease-in-out infinite' : 'none',
+                                                            }} />
+                                                            <div style={{ flex: 1 }}>
+                                                                <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>{svc.name}</div>
+                                                                <div style={{ fontSize: '0.6rem', color: isOk ? '#22c55e' : svc.status === 'mock mode' ? '#f59e0b' : 'var(--text-tertiary)', fontWeight: 600, textTransform: 'capitalize' }}>{svc.status}{svc.latency !== null ? ` · ${svc.latency}ms` : ''}</div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* ── Database Table Inventory ── */}
+                                        <div style={{ ...glassCard, padding: 0, overflow: 'hidden' }}>
+                                            <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-subtle)' }}>
+                                                <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', fontWeight: 700 }}>🗄️ Database Inventory</span>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', background: 'var(--border-subtle)' }}>
+                                                {Object.entries(systemHealth.database.tables).sort((a, b) => b[1] - a[1]).map(([name, count]) => {
+                                                    const maxCount = Math.max(...Object.values(systemHealth.database.tables))
+                                                    return (
+                                                        <div key={name} style={{ padding: '10px 14px', background: 'var(--bg-secondary)', position: 'relative', overflow: 'hidden' }}>
+                                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${Math.max((count / maxCount) * 100, 3)}%`, background: 'rgba(212,168,83,0.04)', transition: 'height 0.8s ease' }} />
+                                                            <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--accent-gold)', lineHeight: 1, position: 'relative', zIndex: 1 }}>{count.toLocaleString()}</div>
+                                                            <div style={{ fontSize: '0.55rem', textTransform: 'capitalize', color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '3px', position: 'relative', zIndex: 1 }}>{name}</div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div style={{ padding: 'var(--space-4xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                                        <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⚠️</div>
+                                        <div style={{ fontWeight: 700 }}>Failed to load system data</div>
+                                        <button onClick={fetchSystemHealth} className="btn btn-primary" style={{ fontSize: '0.8rem', marginTop: '12px' }}>Retry</button>
                                     </div>
                                 )}
                             </>
