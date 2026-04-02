@@ -29,7 +29,7 @@ export async function GET() {
             prisma.filmView.count(),
             prisma.enrollment.count(),
             prisma.course.count(),
-            prisma.notification.count(),
+            prisma.userNotification.count(),
         ])
 
         // ── Storage estimates ──
