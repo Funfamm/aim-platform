@@ -849,10 +849,13 @@ export default function AdminSettingsPage() {
             const res = await fetch('/api/admin/settings', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
             })
-            if (!res.ok) throw new Error('Save failed')
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}))
+                throw new Error(errData.details || errData.error || `Save failed (${res.status})`)
+            }
             setSaved(true); setDirty(false)
             setTimeout(() => setSaved(false), 3000)
-        } catch { setError('Failed to save settings') }
+        } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save settings') }
         finally { setSaving(false) }
     }
 

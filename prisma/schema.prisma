@@ -608,6 +608,7 @@ model Course {
   level         String         @default("beginner") // beginner | intermediate | advanced | all
   translations  String? // JSON: { "zh": { "title": "...", "description": "..." }, ... }
   sourceContent String? // Raw course material pasted by admin for AI generation
+  duration      String?        // Estimated duration e.g. "2h 30m" or "45m"
   published     Boolean        @default(false)
   sortOrder     Int            @default(0)
   createdAt     DateTime       @default(now())

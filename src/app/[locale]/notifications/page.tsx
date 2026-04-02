@@ -81,14 +81,23 @@ export default function NotificationsPage() {
     async function savePrefs() {
         if (!prefs) return
         setSaving(true)
-        await fetch('/api/notifications/preferences', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(prefs),
-        })
-        setSaving(false)
-        setSaved(true)
-        setTimeout(() => setSaved(false), 3000)
+        try {
+            const res = await fetch('/api/notifications/preferences', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(prefs),
+            })
+            if (!res.ok) throw new Error('Save failed')
+            const data = await res.json()
+            // Update local state from what the server actually saved
+            if (data.preferences) setPrefs(data.preferences)
+            setSaved(true)
+            setTimeout(() => setSaved(false), 3000)
+        } catch {
+            alert('Failed to save notification preferences. Please try again.')
+        } finally {
+            setSaving(false)
+        }
     }
 
     function toggle(key: keyof Prefs) {

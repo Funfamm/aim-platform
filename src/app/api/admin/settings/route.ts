@@ -160,10 +160,9 @@ export async function PUT(req: Request) {
     } catch (err) {
         logger.error('admin/settings', 'Settings save failed', { error: err })
         console.error('Settings save FULL error:', err)
-        const isDev = process.env.NODE_ENV === 'development'
-        const body = isDev
-            ? { error: 'Save failed', details: err instanceof Error ? err.message : String(err) }
-            : { error: 'Save failed' }
-        return NextResponse.json(body, { status: 500 })
+        return NextResponse.json(
+            { error: 'Save failed', details: err instanceof Error ? err.message : String(err) },
+            { status: 500 }
+        )
     }
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
 /* ── Types ── */
@@ -94,6 +94,7 @@ export default function StudyCanvasPage() {
     const [level, setLevel] = useState('beginner')
     const [thumbnail, setThumbnail] = useState('')
     const [published, setPublished] = useState(false)
+    const [duration, setDuration] = useState('')
     const [slug, setSlug] = useState('')
     const [modules, setModules] = useState<Module[]>([emptyModule()])
     const [sourceContent, setSourceContent] = useState('')
@@ -142,6 +143,7 @@ export default function StudyCanvasPage() {
                     if (!data) return
                     setTitle(data.title); setDescription(data.description)
                     setCategory(data.category); setLevel(data.level)
+                    if (data.duration) setDuration(data.duration)
                     if (data.sourceContent) setSourceContent(data.sourceContent)
                     if (data.slug) setSlug(data.slug)
                     setThumbnail(data.thumbnail || ''); setPublished(data.published)
@@ -185,7 +187,7 @@ export default function StudyCanvasPage() {
         if (!title.trim()) { setError('Course title is required'); return }
         setSaving(true); setError(''); setSuccess(''); setSaveProgress(0); setSaveStep('Saving course data...')
         try {
-            const body = { title, description, category, level, thumbnail: thumbnail || null, published, modules, sourceContent: sourceContent || null }
+            const body = { title, description, category, level, duration: duration || null, thumbnail: thumbnail || null, published, modules, sourceContent: sourceContent || null }
             const url = isNew ? '/api/admin/training' : `/api/admin/training/${courseId}`
             const method = isNew ? 'POST' : 'PUT'
             const res = await fetch(url, {
@@ -238,7 +240,7 @@ export default function StudyCanvasPage() {
             setTimeout(() => { setSuccess(''); setSaveProgress(0); setSaveStep('') }, 3000)
         } catch (e) { setError(e instanceof Error ? e.message : 'Failed to save course') }
         finally { setSaving(false) }
-    }, [title, description, category, level, thumbnail, published, modules, sourceContent, isNew, courseId, router])
+    }, [title, description, category, level, duration, thumbnail, published, modules, sourceContent, isNew, courseId, router])
 
     // Module/lesson helpers
     const addModule = () => {
@@ -464,19 +466,58 @@ export default function StudyCanvasPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                             <div>
                                 <label style={labelStyle}>Category</label>
-                                <select style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
-                                    value={category} onChange={e => setCategory(e.target.value)}>
-                                    {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                                </select>
+                                <StyledSelect
+                                    value={category}
+                                    onChange={setCategory}
+                                    options={CATEGORIES.map(c => ({ value: c.value, label: c.label, color: c.color }))}
+                                />
                             </div>
                             <div>
                                 <label style={labelStyle}>Level</label>
-                                <select style={{ ...inputStyle, cursor: 'pointer', appearance: 'auto' }}
-                                    value={level} onChange={e => setLevel(e.target.value)}>
-                                    {LEVELS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
-                                </select>
+                                <StyledSelect
+                                    value={level}
+                                    onChange={setLevel}
+                                    options={LEVELS.map(l => ({ value: l.value, label: l.label, color: l.color }))}
+                                />
                             </div>
                         </div>
+                        <div>
+                            <label style={labelStyle}>Estimated Duration</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', alignItems: 'center' }}>
+                                <input
+                                    style={inputStyle}
+                                    value={duration}
+                                    onChange={e => setDuration(e.target.value)}
+                                    placeholder="e.g. 2h 30m"
+                                />
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {['30m', '1h', '2h', '4h', '8h'].map(d => (
+                                        <button key={d} onClick={() => setDuration(d)} style={{
+                                            padding: '5px 10px', fontSize: '0.7rem', fontWeight: 600,
+                                            border: duration === d ? '1px solid rgba(212,168,83,0.4)' : '1px solid rgba(255,255,255,0.08)',
+                                            borderRadius: '8px', cursor: 'pointer',
+                                            background: duration === d ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)',
+                                            color: duration === d ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                            transition: 'all 0.15s',
+                                        }}>{d}</button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                        {/* Preview as Student */}
+                        {!isNew && slug && (
+                            <div>
+                                <Link href={`/en/training/${slug}?preview=admin`} target="_blank" style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    padding: '8px 16px', fontSize: '0.8rem', fontWeight: 600,
+                                    borderRadius: '10px', textDecoration: 'none',
+                                    background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)',
+                                    color: '#3b82f6', transition: 'all 0.2s',
+                                }}>
+                                    👁️ Preview as Student
+                                </Link>
+                            </div>
+                        )}
                         <div>
                             <label style={labelStyle}>Thumbnail</label>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -1843,6 +1884,98 @@ const uploadBtnStyle: React.CSSProperties = {
     border: '1px solid rgba(212,168,83,0.2)', borderRadius: '10px',
     cursor: 'pointer', background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
     whiteSpace: 'nowrap',
+}
+
+/* ── Custom Styled Select (replaces native <select>) ── */
+function StyledSelect({ value, onChange, options }: {
+    value: string
+    onChange: (v: string) => void
+    options: { value: string; label: string; color?: string }[]
+}) {
+    const [open, setOpen] = useState(false)
+    const ref = useRef<HTMLDivElement>(null)
+    const selected = options.find(o => o.value === value)
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+        }
+        document.addEventListener('mousedown', handler)
+        return () => document.removeEventListener('mousedown', handler)
+    }, [])
+
+    return (
+        <div ref={ref} style={{ position: 'relative' }}>
+            <button
+                type="button"
+                onClick={() => setOpen(!open)}
+                style={{
+                    ...inputStyle,
+                    width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    cursor: 'pointer', textAlign: 'left',
+                    borderColor: open ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)',
+                }}
+            >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {selected?.color && (
+                        <span style={{
+                            width: '8px', height: '8px', borderRadius: '50%',
+                            background: selected.color, display: 'inline-block', flexShrink: 0,
+                        }} />
+                    )}
+                    {selected?.label || 'Select...'}
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                     style={{ transform: open ? 'rotate(180deg)' : 'rotate(0)', transition: 'transform 0.2s', opacity: 0.5 }}>
+                    <polyline points="6 9 12 15 18 9" />
+                </svg>
+            </button>
+            {open && (
+                <div style={{
+                    position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                    background: '#1a1d24', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '10px', overflow: 'hidden', zIndex: 50,
+                    boxShadow: '0 8px 30px rgba(0,0,0,0.5)',
+                    animation: 'fadeIn 0.15s ease-out',
+                }}>
+                    {options.map(opt => (
+                        <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => { onChange(opt.value); setOpen(false) }}
+                            style={{
+                                width: '100%', padding: '9px 14px', fontSize: '0.85rem',
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                border: 'none', cursor: 'pointer', textAlign: 'left',
+                                background: opt.value === value ? 'rgba(212,168,83,0.08)' : 'transparent',
+                                color: opt.value === value ? 'var(--accent-gold)' : 'var(--text-primary)',
+                                fontWeight: opt.value === value ? 700 : 400,
+                                transition: 'background 0.1s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.background = opt.value === value ? 'rgba(212,168,83,0.12)' : 'rgba(255,255,255,0.04)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = opt.value === value ? 'rgba(212,168,83,0.08)' : 'transparent')}
+                        >
+                            {opt.color && (
+                                <span style={{
+                                    width: '8px', height: '8px', borderRadius: '50%',
+                                    background: opt.color, display: 'inline-block', flexShrink: 0,
+                                }} />
+                            )}
+                            {opt.label}
+                            {opt.value === value && (
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-gold)"
+                                     strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }}>
+                                    <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
 }
 
 function extractYouTubeId(url: string): string {

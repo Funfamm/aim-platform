@@ -175,20 +175,18 @@ jobs:
           npm run start > next-server.log 2>&1 &
           SERVER_PID=$!
           echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
-          sleep 3
           if ! kill -0 $SERVER_PID 2>/dev/null; then
             echo "❌ Server died immediately – dumping log"
             cat next-server.log
             exit 1
           fi
-# Duplicate Build/Start block removed – original block kept above
       - name: Wait for app to be ready (port + health)
         timeout-minutes: 5
         run: |
           # Step 1: wait until port 3000 is actually listening
-          npx wait-on --timeout 240000 tcp:3000
+          npx wait-on --timeout 120000 tcp:3000
           # Step 2: confirm the health route responds with 2xx
-          npx wait-on --timeout 240000 --interval 3000 --delay 5000 http-get://localhost:3000/api/health
+          npx wait-on --timeout 120000 --interval 2000 http-get://localhost:3000/api/health
       - name: Dump server log if healthcheck fails
         if: failure()
         run: |

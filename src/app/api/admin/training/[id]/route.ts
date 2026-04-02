@@ -41,6 +41,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 category: body.category,
                 level: body.level,
                 thumbnail: body.thumbnail || null,
+                duration: body.duration || null,
                 published: body.published ?? false,
                 translations: body.translations || null,
                 sourceContent: body.sourceContent || null,

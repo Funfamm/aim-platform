@@ -354,7 +354,8 @@ export default function CourseDetailPage() {
 
     useEffect(() => {
         if (!slug) return
-        fetch('/api/training')
+        const previewParam = isAdminPreview ? '?preview=admin' : ''
+        fetch(`/api/training${previewParam}`)
             .then(r => r.json())
             .then((courses: Course[]) => {
                 const found = courses.find(c => c.slug === slug)

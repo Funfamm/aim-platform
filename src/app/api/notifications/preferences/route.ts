@@ -30,25 +30,33 @@ export async function PUT(req: Request) {
     const session = await getSession()
     if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await req.json()
-    const allowed = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms']
-    const data: Record<string, boolean> = {}
-    for (const k of allowed) {
-        if (typeof body[k] === 'boolean') data[k] = body[k]
+    try {
+        const body = await req.json()
+        const allowed = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms']
+        const data: Record<string, boolean> = {}
+        for (const k of allowed) {
+            if (typeof body[k] === 'boolean') data[k] = body[k]
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = prisma as any
+        const pref = await db.userNotificationPreference.upsert({
+            where: { userId: session.id },
+            update: data,
+            create: {
+                userId: session.id,
+                newRole: true, announcement: true, contentPublish: false, statusChange: true,
+                email: true, inApp: true, sms: false,
+                ...data,
+            },
+        })
+
+        return NextResponse.json({ preferences: pref })
+    } catch (err) {
+        console.error('Notification preferences save error:', err)
+        return NextResponse.json(
+            { error: 'Failed to save preferences', details: err instanceof Error ? err.message : String(err) },
+            { status: 500 }
+        )
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = prisma as any
-    const pref = await db.userNotificationPreference.upsert({
-        where: { userId: session.id },
-        update: data,
-        create: {
-            userId: session.id,
-            newRole: true, announcement: true, contentPublish: false, statusChange: true,
-            email: true, inApp: true, sms: false,
-            ...data,
-        },
-    })
-
-    return NextResponse.json({ preferences: pref })
 }

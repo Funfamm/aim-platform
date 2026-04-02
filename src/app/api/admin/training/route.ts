@@ -49,6 +49,7 @@ export async function POST(req: Request) {
                 category: body.category || 'acting',
                 level: body.level || 'beginner',
                 thumbnail: body.thumbnail || null,
+                duration: body.duration || null,
                 published: false,
                 sourceContent: body.sourceContent || null,
                 translations: body.translations ? (typeof body.translations === 'string' ? body.translations : JSON.stringify(body.translations)) : null,
