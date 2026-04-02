@@ -32,6 +32,7 @@ function fillBuckets(buckets: { date: string }[], rawRows: { createdAt: Date }[]
 export async function GET(req: NextRequest) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
+    try {
     const section = req.nextUrl.searchParams.get('section') || 'all'
 
     const now = new Date()
@@ -343,6 +344,13 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(result)
+    } catch (err) {
+        console.error('Analytics GET error:', err)
+        return NextResponse.json(
+            { error: 'Analytics query failed', details: err instanceof Error ? err.message : String(err) },
+            { status: 500 }
+        )
+    }
 }
 
 // ═══════════════════════════════════════════════════════

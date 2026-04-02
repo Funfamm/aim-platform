@@ -18,6 +18,7 @@ export default function Navbar() {
     const [userMenuOpen, setUserMenuOpen] = useState(false)
     const [langMenuOpen, setLangMenuOpen] = useState(false)
     const settings = useSiteSettings();
+    const locale = useLocale();
     const brandName = settings?.siteName ? (() => {
         const parts = settings.siteName.split(' ');
         return { accent: parts[0] || 'AIM', rest: parts.slice(1).join(' ') || 'Studio' };
@@ -465,8 +466,8 @@ export default function Navbar() {
                         </span>
                         {t('sponsors')}
                     </Link>
-                    <Link href="/dashboard/notifications" onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/dashboard/notifications' ? 'active-page' : ''}`}>
+                    <Link href={`/${locale}/notifications`} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/notifications' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow" style={{ position: 'relative' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />

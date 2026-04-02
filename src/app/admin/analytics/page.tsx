@@ -124,14 +124,23 @@ export default function AdminAnalyticsPage() {
     // Voice conversation mode
     const [voiceModeOpen, setVoiceModeOpen] = useState(false)
 
+    const [fetchError, setFetchError] = useState('')
+
     // Single unified fetch — section=all returns core + traffic + content + dashboard
     const fetchData = useCallback(async () => {
         try {
+            setFetchError('')
             const res = await fetch('/api/admin/analytics')
             if (res.status === 401) { window.location.href = '/admin/login'; return }
             const json = await res.json()
+            if (!res.ok) {
+                setFetchError(json.details || json.error || `Server error ${res.status}`)
+                return
+            }
             setData(json)
-        } catch { /* */ }
+        } catch (err) {
+            setFetchError(err instanceof Error ? err.message : 'Network error')
+        }
         setLoading(false)
     }, [])
 
@@ -377,7 +386,7 @@ export default function AdminAnalyticsPage() {
                     <div style={{ padding: 'var(--space-4xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
                         <div style={{ fontSize: '2rem', marginBottom: '12px' }}>⚠️</div>
                         <div style={{ fontWeight: 700, marginBottom: '6px' }}>Failed to load analytics</div>
-                        <div style={{ fontSize: '0.8rem', marginBottom: '16px' }}>Could not fetch data from the server.</div>
+                        <div style={{ fontSize: '0.8rem', marginBottom: '16px' }}>{fetchError || 'Could not fetch data from the server.'}</div>
                         <button onClick={fetchData} className="btn btn-primary" style={{ fontSize: '0.8rem' }}>Retry</button>
                     </div>
                 ) : data && (
