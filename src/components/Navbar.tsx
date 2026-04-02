@@ -24,11 +24,12 @@ export default function Navbar() {
         return { accent: parts[0] || 'AIM', rest: parts.slice(1).join(' ') || 'Studio' };
     })() : { accent: 'AIM', rest: 'Studio' };
     const logoUrl = settings?.logoUrl ?? '';
+    // Default to false — sections only show once settings confirmed enabled (no unpublished tab flash)
     const sections = {
-        casting: settings?.castingCallsEnabled ?? true,
+        casting: settings?.castingCallsEnabled ?? false,
         scripts: settings?.scriptCallsEnabled ?? false,
         training: settings?.trainingEnabled ?? false,
-        donations: settings?.donationsEnabled ?? true,
+        donations: settings?.donationsEnabled ?? false,
     };
     const pathname = usePathname()
     const router = useRouter()

@@ -108,7 +108,7 @@ export default function MobileTabBar() {
         return pathname.startsWith(href)
     }
 
-    const castingEnabled = settings?.castingCallsEnabled ?? true
+    const castingEnabled = settings?.castingCallsEnabled ?? false
     const trainingEnabled = settings?.trainingEnabled ?? false
 
     /* ── Build the 4 main tabs ── */
