@@ -63,10 +63,16 @@ export default function NotificationsPage() {
     const [unreadCount, setUnreadCount] = useState(0)
 
     useEffect(() => {
-        Promise.all([
-            fetch('/api/notifications?limit=50').then(r => r.json()),
-            fetch('/api/notifications/preferences').then(r => r.json()),
-        ]).then(([notifData, prefData]) => {
+        // Fetch independently — a preferences error must NOT blank the feed
+        const fetchNotifs = fetch('/api/notifications?limit=50')
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .catch(() => ({ notifications: [], unreadCount: 0 }))
+
+        const fetchPrefs = fetch('/api/notifications/preferences')
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .catch(() => ({ preferences: null }))
+
+        Promise.all([fetchNotifs, fetchPrefs]).then(([notifData, prefData]) => {
             const notifs = notifData.notifications ?? []
             setNotifications(notifs)
             setUnreadCount(notifData.unreadCount ?? notifs.filter((n: Notification) => !n.read).length)
@@ -77,6 +83,7 @@ export default function NotificationsPage() {
             setPrefs(p)
         }).finally(() => setLoading(false))
     }, [])
+
 
     async function markAllRead() {
         const unread = notifications.filter(n => !n.read)
