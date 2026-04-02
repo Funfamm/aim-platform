@@ -41,11 +41,22 @@ async function savePreferences(req: Request) {
 
     try {
         const body = await req.json()
-        const boolFields = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp']
+        // Validate request body
+        if (typeof body !== 'object' || body === null) {
+            return NextResponse.json({ error: 'Invalid request payload' }, { status: 400 })
+        }
+        const boolFields = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms']
         const data: Record<string, boolean> = {}
 
         for (const k of boolFields) {
-            if (typeof body[k] === 'boolean') data[k] = body[k]
+            const val = body[k]
+            if (typeof val === 'boolean') {
+                data[k] = val
+            } else if (typeof val === 'string') {
+                // Convert common string representations to boolean
+                if (val.toLowerCase() === 'true') data[k] = true
+                else if (val.toLowerCase() === 'false') data[k] = false
+            }
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1298,21 +1298,7 @@ select::placeholder {
   margin-top: 0;
   position: relative;
   background: var(--bg-primary);
-  z-index: 10;
-}
-
-/* Extend footer background to cover the entire area below it,
-   preventing any fixed CinematicBackground from bleeding through */
-.footer::after {
-  content: '';
-  display: block;
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -200px; /* extend well beyond the footer */
-  height: 200px;
-  background: var(--bg-primary);
-  z-index: -1;
+  z-index: 10001;
 }
 
 .footer::before {
