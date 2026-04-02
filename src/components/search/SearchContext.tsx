@@ -3,6 +3,16 @@
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
 import { useLocale } from 'next-intl';
 
+/** Safely get locale — returns 'en' when rendered outside NextIntlClientProvider */
+function useSafeLocale(): string {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useLocale();
+  } catch {
+    return 'en';
+  }
+}
+
 // Shape returned by /api/search
 export interface SearchResult {
   category: string;   // 'Films' | 'Casting' | 'Training' | 'Scripts' | 'Sponsors' | 'Pages'
@@ -27,7 +37,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const locale = useLocale();
+  const locale = useSafeLocale();
 
   const fetchResults = async (q: string) => {
     if (!q || q.length < 2) {

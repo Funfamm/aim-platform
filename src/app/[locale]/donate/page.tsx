@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'

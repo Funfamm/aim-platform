@@ -5,7 +5,7 @@ import Footer from '@/components/Footer'
 import WatchPlayer from '@/components/WatchPlayer'
 import { getLocale } from 'next-intl/server'
 
-export const revalidate = 60
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params

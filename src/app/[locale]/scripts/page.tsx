@@ -6,7 +6,7 @@ import { getUserSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getLocale } from 'next-intl/server'
 
-export const revalidate = 120
+export const dynamic = 'force-dynamic'
 
 export const metadata = {
     title: 'Script Calls | AIM Studio',

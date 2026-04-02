@@ -8,7 +8,7 @@ import { getUserSession } from '@/lib/auth'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
     title: 'About | AIM Studio',

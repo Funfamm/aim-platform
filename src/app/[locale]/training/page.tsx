@@ -6,6 +6,8 @@ import { getUserSession } from '@/lib/auth'
 import TrainingCatalogClient from './TrainingCatalogClient'
 import { getLocale } from 'next-intl/server'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
     title: 'Training Hub | AIM Studio',
     description: 'Level up your filmmaking craft with courses, workshops, and resources from AIM Studio.',

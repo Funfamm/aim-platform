@@ -17,7 +17,7 @@ At line:1 char:1
    ) [], RemoteException
     + FullyQualifiedErrorId : NativeCommandError
  
- ΓÜá Compiled with warnings in 21.5s
+ ΓÜá Compiled with warnings in 24.4s
 
 ./node_modules/@huggingface/transformers/dist/transformers.web.js
 Critical dependency: Accessing import.meta directly is unsupported (only property 
@@ -29,7 +29,7 @@ Import trace for requested module:
 ./src/app/admin/projects/page.tsx
 
    Linting and checking validity of types ...
-(node:8364) ESLintIgnoreWarning: The ".eslintignore" file is no longer supported. 
+(node:14700) ESLintIgnoreWarning: The ".eslintignore" file is no longer supported. 
 Switch to using the "ignores" property in "eslint.config.js": 
 https://eslint.org/docs/latest/use/configure/migration-guide#ignore-files
 (Use `node --trace-warnings ...` to show where the warning was created)
@@ -279,13 +279,13 @@ C:\Users\mxz\Desktop\my website\aim-platform\src\app\admin\users\page.tsx:50:23
 254:36  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  react/no-unescaped-entities
 
 ./src/app/[locale]/casting/[id]/apply/page.tsx
-32:13  Warning: 'reapply' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+34:13  Warning: 'reapply' is assigned a value but never used.  @typescript-eslint/no-unused-vars
 
 ./src/app/[locale]/dashboard/page.tsx
-155:8  Warning: React Hook useEffect has a missing dependency: 'locale'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+157:8  Warning: React Hook useEffect has a missing dependency: 'locale'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 ./src/app/[locale]/donate/page.tsx
-40:23  Warning: Error: Calling setState synchronously within an effect can trigger cascading renders
+42:23  Warning: Error: Calling setState synchronously within an effect can trigger cascading renders
 
 Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
 * Update external systems with the latest state from React.
@@ -293,15 +293,15 @@ Effects are intended to synchronize state between React and external systems suc
 
 Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
 
-C:\Users\mxz\Desktop\my website\aim-platform\src\app\[locale]\donate\page.tsx:40:23
-  38 |     const finalAmount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0)
-  39 |
-> 40 |     useEffect(() => { setMounted(true) }, [])
-     |                       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+C:\Users\mxz\Desktop\my website\aim-platform\src\app\[locale]\donate\page.tsx:42:23
+  40 |     const finalAmount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0)
   41 |
-  42 |     // Load PayPal JS SDK
-  43 |     useEffect(() => {  react-hooks/set-state-in-effect
-46:32  Warning: Error: Calling setState synchronously within an effect can trigger cascading renders
+> 42 |     useEffect(() => { setMounted(true) }, [])
+     |                       ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  43 |
+  44 |     // Load PayPal JS SDK
+  45 |     useEffect(() => {  react-hooks/set-state-in-effect
+48:32  Warning: Error: Calling setState synchronously within an effect can trigger cascading renders
 
 Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
 * Update external systems with the latest state from React.
@@ -309,28 +309,28 @@ Effects are intended to synchronize state between React and external systems suc
 
 Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
 
-C:\Users\mxz\Desktop\my website\aim-platform\src\app\[locale]\donate\page.tsx:46:32
-  44 |         const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
-  45 |         if (!clientId || document.getElementById('paypal-sdk')) {
-> 46 |             if (window.paypal) setPaypalReady(true)
+C:\Users\mxz\Desktop\my website\aim-platform\src\app\[locale]\donate\page.tsx:48:32
+  46 |         const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+  47 |         if (!clientId || document.getElementById('paypal-sdk')) {
+> 48 |             if (window.paypal) setPaypalReady(true)
      |                                ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
-  47 |             return
-  48 |         }
-  49 |         const script = document.createElement('script')  react-hooks/set-state-in-effect
-73:8  Warning: React Hook useEffect has a missing dependency: 'locale'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+  49 |             return
+  50 |         }
+  51 |         const script = document.createElement('script')  react-hooks/set-state-in-effect
+75:8  Warning: React Hook useEffect has a missing dependency: 'locale'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 ./src/app/[locale]/forgot-password/page.tsx
 43:10  Warning: 'CodeInput' is defined but never used.  @typescript-eslint/no-unused-vars
 
 ./src/app/[locale]/login/page.tsx
-187:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
-187:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
-187:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
-187:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
-204:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
-204:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
-204:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
-204:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+189:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+189:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+189:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+189:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/google/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+206:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+206:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+206:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+206:41  Warning: Do not use an `<a>` element to navigate to `/api/auth/apple/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
 
 ./src/app/[locale]/page.tsx
 17:46  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
@@ -348,19 +348,19 @@ C:\Users\mxz\Desktop\my website\aim-platform\src\app\[locale]\donate\page.tsx:46
 434:33  Warning: Do not use an `<a>` element to navigate to `/contact/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
 
 ./src/app/[locale]/training/page.tsx
-22:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+24:23  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
 
 ./src/app/[locale]/training/[slug]/page.tsx
-114:8  Warning: React Hook useMemo has a missing dependency: 'PUNCT'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-284:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-293:12  Warning: 'currentSegmentIndex' is assigned a value but never used.  @typescript-eslint/no-unused-vars
-386:8  Warning: React Hook useEffect has a missing dependency: 'activeLesson'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
-480:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-535:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-535:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-536:62  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-540:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
-601:8  Warning: React Hook useEffect has a missing dependency: 'activeLesson'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+116:8  Warning: React Hook useMemo has a missing dependency: 'PUNCT'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+286:32  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+295:12  Warning: 'currentSegmentIndex' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+388:8  Warning: React Hook useEffect has a missing dependency: 'activeLesson'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+482:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+537:36  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+537:58  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+538:62  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+542:56  Warning: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+603:8  Warning: React Hook useEffect has a missing dependency: 'activeLesson'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
 
 ./src/app/[locale]/works/[slug]/page.tsx
 1:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
@@ -427,6 +427,9 @@ C:\Users\mxz\Desktop\my website\aim-platform\src\components\MobileTabBar.tsx:195
 ./src/components/ProjectDetailClient2.tsx
 62:12  Warning: 'isTrailerVisible' is assigned a value but never used.  @typescript-eslint/no-unused-vars
 96:8  Warning: React Hook useEffect has a missing dependency: 'project.id'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/search/SearchContext.tsx
+9:5  Warning: Unused eslint-disable directive (no problems were reported from 'react-hooks/rules-of-hooks').
 
 ./src/components/search/SearchOverlay.tsx
 150:5  Warning: Error: Calling setState synchronously within an effect can trigger cascading renders
@@ -514,31 +517,164 @@ C:\Users\mxz\Desktop\my website\aim-platform\src\components\search\SearchOverlay
 
 info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
    Collecting page data ...
-   Generating static pages (0/291) ...
-Error occurred prerendering page "/es/training". Read more: 
-https://nextjs.org/docs/messages/prerender-error
-Error: 
-    at aq (C:\Users\mxz\Desktop\my 
-website\aim-platform\.next\server\chunks\5666.js:13:3967)
-    at au (C:\Users\mxz\Desktop\my 
-website\aim-platform\.next\server\chunks\5666.js:13:5882)
-    at h (C:\Users\mxz\Desktop\my 
-website\aim-platform\.next\server\chunks\4449.js:1:11861) {
-  digest: '1949630793'
-}
-Export encountered an error on /[locale]/training/page: /es/training, exiting the 
-build.
-Error occurred prerendering page "/de/notifications". Read more: 
-https://nextjs.org/docs/messages/prerender-error
-Error: 
-    at aq (C:\Users\mxz\Desktop\my 
-website\aim-platform\.next\server\chunks\5666.js:13:3967)
-    at au (C:\Users\mxz\Desktop\my 
-website\aim-platform\.next\server\chunks\5666.js:13:5882)
-    at h (C:\Users\mxz\Desktop\my 
-website\aim-platform\.next\server\chunks\4449.js:1:11861) {
-  digest: '1949630793'
-}
-Export encountered an error on /[locale]/notifications/page: /de/notifications, 
-exiting the build.
- Γ¿» Next.js build worker exited with code: 1 and signal: null
+   Generating static pages (0/92) ...
+   Generating static pages (23/92) 
+   Generating static pages (46/92) 
+   Generating static pages (69/92) 
+ Γ£ô Generating static pages (92/92)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                        Size  First Load JS
+Γöî Γùï /                                             409 B         103 kB
+Γö£ Γùï /_not-found                                   409 B         103 kB
+Γö£ ╞Æ /[locale]                                   5.36 kB         127 kB
+Γö£ ╞Æ /[locale]/about                             3.65 kB         122 kB
+Γö£ ╞Æ /[locale]/casting                           5.52 kB         128 kB
+Γö£ ╞Æ /[locale]/casting/[id]/apply                14.4 kB         136 kB
+Γö£ ╞Æ /[locale]/contact                           3.92 kB         122 kB
+Γö£ ╞Æ /[locale]/dashboard                         22.7 kB         144 kB
+Γö£ ╞Æ /[locale]/donate                            6.79 kB         125 kB
+Γö£ ╞Æ /[locale]/forgot-password                    6.9 kB         128 kB
+Γö£ ╞Æ /[locale]/login                             6.25 kB         128 kB
+Γö£ ╞Æ /[locale]/notifications                     5.34 kB         124 kB
+Γö£ ╞Æ /[locale]/offline                             168 B         106 kB
+Γö£ ╞Æ /[locale]/register                          7.89 kB         129 kB
+Γö£ ╞Æ /[locale]/scripts                           2.91 kB         124 kB
+Γö£ ╞Æ /[locale]/scripts/[id]                      3.57 kB         122 kB
+Γö£ ╞Æ /[locale]/sponsors                          4.71 kB         126 kB
+Γö£ ╞Æ /[locale]/subscribe                          3.9 kB         122 kB
+Γö£ ╞Æ /[locale]/training                          6.55 kB         125 kB
+Γö£ ╞Æ /[locale]/training/[slug]                   12.5 kB         131 kB
+Γö£ ╞Æ /[locale]/upcoming                          6.95 kB         125 kB
+Γö£ ╞Æ /[locale]/verify-email                       5.2 kB         127 kB
+Γö£ ╞Æ /[locale]/works                             3.48 kB         125 kB
+Γö£ ╞Æ /[locale]/works/[slug]                      8.51 kB         127 kB
+Γö£ ╞Æ /[locale]/works/[slug]/watch                6.72 kB         125 kB
+Γö£ ╞Æ /admin                                        409 B         103 kB
+Γö£ ╞Æ /admin/analytics                              16 kB         122 kB
+Γö£ ╞Æ /admin/announcements                        2.12 kB         108 kB
+Γö£ ╞Æ /admin/applications                         5.39 kB         112 kB
+Γö£ ╞Æ /admin/applications/[id]                    11.2 kB         130 kB
+Γö£ ╞Æ /admin/casting                              5.09 kB         111 kB
+Γö£ ╞Æ /admin/donations                            2.71 kB         109 kB
+Γö£ ╞Æ /admin/login                                  544 B         103 kB
+Γö£ ╞Æ /admin/media                                6.21 kB         112 kB
+Γö£ ╞Æ /admin/projects                             10.4 kB         117 kB
+Γö£ ╞Æ /admin/scripts                              4.15 kB         110 kB
+Γö£ ╞Æ /admin/scripts/[id]                         3.08 kB         106 kB
+Γö£ ╞Æ /admin/settings                             18.9 kB         125 kB
+Γö£ ╞Æ /admin/sponsors                             6.29 kB         113 kB
+Γö£ ╞Æ /admin/training                             3.21 kB         109 kB
+Γö£ ╞Æ /admin/training/[id]/edit                     13 kB         119 kB
+Γö£ ╞Æ /admin/users                                4.58 kB         111 kB
+Γö£ ╞Æ /admin/videos                                 518 B         103 kB
+Γö£ ╞Æ /api/admin/analytics                          409 B         103 kB
+Γö£ ╞Æ /api/admin/analytics/chat                     409 B         103 kB
+Γö£ ╞Æ /api/admin/analytics/dashboard                409 B         103 kB
+Γö£ ╞Æ /api/admin/analytics/tts                      409 B         103 kB
+Γö£ ╞Æ /api/admin/analytics/voices                   409 B         103 kB
+Γö£ ╞Æ /api/admin/announcements                      409 B         103 kB
+Γö£ ╞Æ /api/admin/api-keys                           409 B         103 kB
+Γö£ ╞Æ /api/admin/applications                       409 B         103 kB
+Γö£ ╞Æ /api/admin/applications/[id]/audit            409 B         103 kB
+Γö£ ╞Æ /api/admin/applications/[id]/notifications    409 B         103 kB
+Γö£ ╞Æ /api/admin/applications/[id]/status           409 B         103 kB
+Γö£ ╞Æ /api/admin/applications/batch-audit           409 B         103 kB
+Γö£ ╞Æ /api/admin/applications/bulk-delete           409 B         103 kB
+Γö£ ╞Æ /api/admin/applications/bulk-status           409 B         103 kB
+Γö£ ╞Æ /api/admin/applications/download              409 B         103 kB
+Γö£ ╞Æ /api/admin/auth                               409 B         103 kB
+Γö£ ╞Æ /api/admin/casting                            409 B         103 kB
+Γö£ ╞Æ /api/admin/casting/[id]                       409 B         103 kB
+Γö£ ╞Æ /api/admin/donations                          409 B         103 kB
+Γö£ ╞Æ /api/admin/email-preview                      409 B         103 kB
+Γö£ ╞Æ /api/admin/email-templates                    409 B         103 kB
+Γö£ ╞Æ /api/admin/errors                             409 B         103 kB
+Γö£ ╞Æ /api/admin/manage                             409 B         103 kB
+Γö£ ╞Æ /api/admin/media                              409 B         103 kB
+Γö£ ╞Æ /api/admin/media/seed                         409 B         103 kB
+Γö£ ╞Æ /api/admin/projects                           409 B         103 kB
+Γö£ ╞Æ /api/admin/projects/[id]                      409 B         103 kB
+Γö£ ╞Æ /api/admin/settings                           409 B         103 kB
+Γö£ ╞Æ /api/admin/sponsors                           409 B         103 kB
+Γö£ ╞Æ /api/admin/sponsors/[id]                      409 B         103 kB
+Γö£ ╞Æ /api/admin/sponsors/toggle-page               409 B         103 kB
+Γö£ ╞Æ /api/admin/subtitles                          409 B         103 kB
+Γö£ ╞Æ /api/admin/test-email                         409 B         103 kB
+Γö£ ╞Æ /api/admin/toggles                            409 B         103 kB
+Γö£ ╞Æ /api/admin/training                           409 B         103 kB
+Γö£ ╞Æ /api/admin/training/[id]                      409 B         103 kB
+Γö£ ╞Æ /api/admin/training/[id]/analytics            409 B         103 kB
+Γö£ ╞Æ /api/admin/training/[id]/generate             409 B         103 kB
+Γö£ ╞Æ /api/admin/training/[id]/materials            409 B         103 kB
+Γö£ ╞Æ /api/admin/training/[id]/translate            409 B         103 kB
+Γö£ ╞Æ /api/admin/training/transcript                409 B         103 kB
+Γö£ ╞Æ /api/admin/upload                             409 B         103 kB
+Γö£ ╞Æ /api/admin/users                              409 B         103 kB
+Γö£ ╞Æ /api/admin/videos                             409 B         103 kB
+Γö£ ╞Æ /api/analytics/track                          409 B         103 kB
+Γö£ ╞Æ /api/auth/apple                               409 B         103 kB
+Γö£ ╞Æ /api/auth/apple/callback                      409 B         103 kB
+Γö£ ╞Æ /api/auth/banner                              409 B         103 kB
+Γö£ ╞Æ /api/auth/forgot-password                     409 B         103 kB
+Γö£ ╞Æ /api/auth/google                              409 B         103 kB
+Γö£ ╞Æ /api/auth/google/callback                     409 B         103 kB
+Γö£ ╞Æ /api/auth/login                               409 B         103 kB
+Γö£ ╞Æ /api/auth/logout                              409 B         103 kB
+Γö£ ╞Æ /api/auth/me                                  409 B         103 kB
+Γö£ ╞Æ /api/auth/profile                             409 B         103 kB
+Γö£ ╞Æ /api/auth/providers                           409 B         103 kB
+Γö£ ╞Æ /api/auth/refresh                             409 B         103 kB
+Γö£ ╞Æ /api/auth/register                            409 B         103 kB
+Γö£ ╞Æ /api/auth/verify-email                        409 B         103 kB
+Γö£ ╞Æ /api/casting/[id]/apply                       409 B         103 kB
+Γö£ ╞Æ /api/casting/[id]/withdraw                    409 B         103 kB
+Γö£ ╞Æ /api/casting/submit                           409 B         103 kB
+Γö£ ╞Æ /api/contact                                  409 B         103 kB
+Γö£ ╞Æ /api/dashboard/applications                   409 B         103 kB
+Γö£ ╞Æ /api/dashboard/donations                      409 B         103 kB
+Γö£ ╞Æ /api/dashboard/history                        409 B         103 kB
+Γö£ ╞Æ /api/dashboard/watchlist                      409 B         103 kB
+Γö£ ╞Æ /api/donate                                   409 B         103 kB
+Γö£ ╞Æ /api/donate/capture-order                     409 B         103 kB
+Γö£ ╞Æ /api/donate/create-order                      409 B         103 kB
+Γö£ ╞Æ /api/health                                   409 B         103 kB
+Γö£ ╞Æ /api/log-error                                409 B         103 kB
+Γö£ ╞Æ /api/metrics                                  409 B         103 kB
+Γö£ ╞Æ /api/notifications                            409 B         103 kB
+Γö£ ╞Æ /api/notifications/preferences                409 B         103 kB
+Γö£ ╞Æ /api/page-media                               409 B         103 kB
+Γö£ ╞Æ /api/ready                                    409 B         103 kB
+Γö£ ╞Æ /api/script-calls                             409 B         103 kB
+Γö£ ╞Æ /api/script-calls/[id]                        409 B         103 kB
+Γö£ ╞Æ /api/script-calls/[id]/analyze                409 B         103 kB
+Γö£ ╞Æ /api/script-calls/[id]/submissions            409 B         103 kB
+Γö£ ╞Æ /api/script-calls/[id]/submissions/[subId]    409 B         103 kB
+Γö£ ╞Æ /api/script-calls/[id]/submit                 409 B         103 kB
+Γö£ ╞Æ /api/search                                   409 B         103 kB
+Γö£ ╞Æ /api/seed                                     409 B         103 kB
+Γö£ ╞Æ /api/seed-videos                              409 B         103 kB
+Γö£ ╞Æ /api/site-settings                            409 B         103 kB
+Γö£ ╞Æ /api/sponsors                                 409 B         103 kB
+Γö£ ╞Æ /api/subscribe                                409 B         103 kB
+Γö£ ╞Æ /api/subtitles/[projectId]                    409 B         103 kB
+Γö£ ╞Æ /api/test-db                                  409 B         103 kB
+Γö£ ╞Æ /api/training                                 409 B         103 kB
+Γö£ ╞Æ /api/training/[id]/progress                   409 B         103 kB
+Γö£ ╞Æ /api/training/[id]/quiz                       409 B         103 kB
+Γö£ ╞Æ /api/training/[id]/review                     409 B         103 kB
+Γö£ ╞Æ /api/training/transcript                      409 B         103 kB
+Γö£ ╞Æ /api/watchlist                                409 B         103 kB
+Γöö ╞Æ /works                                        409 B         103 kB
++ First Load JS shared by all                    103 kB
+  Γö£ chunks/1255-ac5bffc14f4bae32.js             46.4 kB
+  Γö£ chunks/4bd1b696-f6bedae49f0827a5.js         54.2 kB
+  Γöö other shared chunks (total)                 2.22 kB
+
+
+╞Æ Middleware                                    98.7 kB
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

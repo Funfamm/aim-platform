@@ -1,7 +1,7 @@
 import { Metadata } from 'next'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import Footer from '@/components/Footer'
-const Scene3D = dynamic(() => import('@/components/Scene3D'))
+const Scene3D = nextDynamic(() => import('@/components/Scene3D'))
 import CinematicBackground from '@/components/CinematicBackground'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { prisma } from '@/lib/db'
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     description: 'Meet the sponsors and partners supporting AI-powered filmmaking at AIM Studio.',
 }
 
-export const revalidate = 120
+export const dynamic = 'force-dynamic'
 
 export default async function SponsorsPage() {
     const t = await getTranslations('sponsors')

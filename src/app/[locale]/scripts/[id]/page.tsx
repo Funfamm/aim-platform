@@ -5,6 +5,8 @@ import { getUserSession } from '@/lib/auth'
 import ScriptSubmissionForm from '@/components/ScriptSubmissionForm'
 import { getLocale } from 'next-intl/server'
 
+export const dynamic = 'force-dynamic'
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
     const call = await prisma.scriptCall.findUnique({ where: { id } })
