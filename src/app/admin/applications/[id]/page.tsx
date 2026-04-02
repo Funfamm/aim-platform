@@ -1,11 +1,11 @@
 import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
-import { getSession } from '@/lib/auth'
+import { getSessionAndRefresh } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import ApplicationDetailClient from '@/components/ApplicationDetailClient'
 
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const session = await getSession()
+    const session = await getSessionAndRefresh()
     if (!session) redirect('/admin/login')
 
     const { id } = await params

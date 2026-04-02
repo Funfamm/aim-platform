@@ -573,7 +573,11 @@ export function newCastingRoleEmail(roleName: string, projectTitle: string, appl
 }
 
 /** Sent to all opted-in users for platform announcements */
-export function announcementEmail(title: string, message: string, link?: string): string {
+export function announcementEmail(title: string, message: string, link?: string, siteUrl?: string): string {
+    const ctaUrl = link
+        ? (link.startsWith('http') ? link : `${siteUrl || 'https://impactaistudio.com'}${link}`)
+        : `${siteUrl || 'https://impactaistudio.com'}/notifications`
+    const ctaText = link ? 'View Announcement →' : 'View in Notifications →'
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
             <div style="font-size:52px;margin-bottom:12px;">📣</div>
@@ -583,9 +587,9 @@ export function announcementEmail(title: string, message: string, link?: string)
         </div>
         ${heading(title)}
         ${paragraph(message)}
-        ${link ? button('Learn More →', link) : ''}
+        ${button(ctaText, ctaUrl)}
         ${divider()}
-        ${paragraph(`<span style="font-size:12px;color:#6b7280;">You’re receiving this because you opted in to platform announcements.</span>`)}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">You're receiving this because you opted in to platform announcements. <a href="${siteUrl || 'https://impactaistudio.com'}/notifications" style="color:#6b7280;text-decoration:underline;">Manage preferences</a></span>`)}
     `, title)
 }
 

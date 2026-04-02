@@ -5,17 +5,17 @@ import { prisma } from '@/lib/db'
 /** GET /api/notifications/preferences */
 export async function GET() {
     const session = await getSessionAndRefresh()
-    if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = prisma as any
-    let pref = await db.userNotificationPreference.findUnique({ where: { userId: session.id } })
+    let pref = await db.userNotificationPreference.findUnique({ where: { userId: session.userId } })
 
     // Auto-create with defaults if not exists
     if (!pref) {
         pref = await db.userNotificationPreference.create({
             data: {
-                userId: session.id,
+                userId: session.userId,
                 newRole: true, announcement: true, contentPublish: false, statusChange: true,
                 email: true, inApp: true
             }
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
 async function savePreferences(req: Request) {
     const session = await getSessionAndRefresh()
-    if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
         const body = await req.json()
@@ -62,10 +62,10 @@ async function savePreferences(req: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
         const pref = await db.userNotificationPreference.upsert({
-            where: { userId: session.id },
+            where: { userId: session.userId },
             update: data,
             create: {
-                userId: session.id,
+                userId: session.userId,
                 newRole: true, announcement: true, contentPublish: false, statusChange: true,
                 email: true, inApp: true,
                 ...data,

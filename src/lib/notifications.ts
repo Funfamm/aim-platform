@@ -266,16 +266,19 @@ export async function notifyNewRole(roleId: string, roleName: string, projectTit
 
 /** Call this when admin posts a platform announcement */
 export async function notifyAnnouncement(title: string, message: string, link?: string): Promise<void> {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+    const inAppLink = link || '/notifications'
     await broadcastNotification({
         type: 'announcement',
         preferenceKey: 'announcement',
         title,
         message,
-        link,
+        link: inAppLink,
         emailSubject: `📣 ${title} | AIM Studio`,
-        emailHtml: announcementEmail(title, message, link),
+        emailHtml: announcementEmail(title, message, link, siteUrl),
     })
 }
+
 
 /** Call this when admin publishes new content (project, blog, video) */
 export async function notifyContentPublish(contentTitle: string, contentType: string, link: string): Promise<void> {
