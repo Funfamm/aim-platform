@@ -276,12 +276,12 @@ export async function GET(req: NextRequest) {
 
     // ─── TRAINING section (course analytics) ───
     if (section === 'all' || section === 'training') {
+        try {
         const [
             totalCourses, publishedCourses,
             totalEnrollments, completedEnrollments,
             recentEnrollments,
             popularCourses,
-            badgeCounts,
             activeStudents,
         ] = await Promise.all([
             prisma.course.count(),
@@ -304,15 +304,9 @@ export async function GET(req: NextRequest) {
                     enrollments: { where: { completedAt: { not: null } }, select: { id: true } },
                 },
             }),
-            prisma.trainingBadge.groupBy({
-                by: ['badgeType'],
-                _count: { badgeType: true },
-            }),
             prisma.enrollment.groupBy({
                 by: ['userId'],
-                where: {
-                    enrolledAt: { gte: week },
-                },
+                where: { enrolledAt: { gte: week } },
                 _count: { userId: true },
             }),
         ])
@@ -336,10 +330,16 @@ export async function GET(req: NextRequest) {
                 enrolledAt: e.enrolledAt.toISOString(),
                 completed: !!e.completedAt,
             })),
-            badgeDistribution: badgeCounts.map(b => ({
-                badge: b.badgeType,
-                count: b._count.badgeType,
-            })),
+            badgeDistribution: [], // TrainingBadge model not yet in schema
+        }
+        } catch (trainingErr) {
+            console.warn('Training analytics skipped (schema mismatch?):', trainingErr)
+            result.training = {
+                totalCourses: 0, publishedCourses: 0,
+                totalEnrollments: 0, completedEnrollments: 0,
+                completionRate: 0, activeStudents: 0,
+                popularCourses: [], recentActivity: [], badgeDistribution: [],
+            }
         }
     }
 

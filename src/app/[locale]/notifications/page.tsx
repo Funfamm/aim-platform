@@ -316,7 +316,7 @@ export default function NotificationsPage() {
                                         <span style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem' }}>{item.label}</span>
                                         <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{item.desc}</span>
                                     </span>
-                                    <ToggleSwitch checked={prefs[item.key]} onChange={() => toggle(item.key)} />
+                                    <ToggleSwitch checked={!!prefs[item.key]} onChange={() => toggle(item.key)} />
                                 </div>
                             ))}
                         </div>
