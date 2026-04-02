@@ -2689,9 +2689,10 @@ textarea:focus:not(:focus-visible) {
     height: 36px;
   }
 
-  /* Footer padding to clear the bottom tab bar */
+  /* Footer padding to clear the bottom tab bar — snug, no wasted space */
   .footer {
-    padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-top: var(--space-lg) !important;
   }
 
   /* Featured projects */
