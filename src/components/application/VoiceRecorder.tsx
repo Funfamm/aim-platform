@@ -92,8 +92,10 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
     const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
-        if (!file.type.startsWith('audio/')) {
-            setUploadError('Please upload an audio file only (MP3, WAV, M4A, etc.)')
+        // Accept any audio/* including codecs suffix like audio/webm;codecs=opus
+        const baseMime = file.type.split(';')[0].trim().toLowerCase()
+        if (file.type && !baseMime.startsWith('audio/')) {
+            setUploadError('Please upload an audio file only (MP3, WAV, M4A, WebM, OGG, FLAC)')
             return
         }
         if (file.size > 50 * 1024 * 1024) {
@@ -102,6 +104,8 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
         }
         setUploadError('')
         onAudioChange(file)
+        // Reset input so same file can be re-selected
+        e.target.value = ''
     }
 
     return (
@@ -264,39 +268,39 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
 
             {/* UPLOAD MODE */}
             {voiceMode === 'upload' && (
-                <>
-                    <div
-                        className={`file-upload-zone ${audioFile ? 'has-file' : ''}`}
-                        onClick={() => audioInputRef.current?.click()}
-                        style={{ padding: 'var(--space-lg)' }}
-                    >
-                        {audioFile && voiceMode === 'upload' ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
-                                <span style={{ fontSize: '1.5rem' }}>🎵</span>
-                                <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--success)' }}>✓ {audioFile.name}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                        {(audioFile.size / (1024 * 1024)).toFixed(1)}MB • Click to replace
-                                    </div>
+                <label
+                    htmlFor="voice-file-input"
+                    className={`file-upload-zone ${audioFile ? 'has-file' : ''}`}
+                    style={{ padding: 'var(--space-lg)', cursor: 'pointer', display: 'block' }}
+                >
+                    {audioFile && voiceMode === 'upload' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                            <span style={{ fontSize: '1.5rem' }}>🎵</span>
+                            <div>
+                                <div style={{ fontWeight: 600, color: 'var(--success)' }}>✓ {audioFile.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                    {(audioFile.size / (1024 * 1024)).toFixed(1)}MB • Tap to replace
                                 </div>
                             </div>
-                        ) : (
-                            <>
-                                <div className="file-upload-icon">🎤</div>
-                                <div className="file-upload-text">Click to upload your voice recording</div>
-                                <div className="file-upload-hint">MP3, WAV, M4A, OGG, or FLAC • Max 2 minutes • Max 50MB</div>
-                            </>
-                        )}
-                    </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className="file-upload-icon">🎤</div>
+                            <div className="file-upload-text">Tap or click to upload your voice recording</div>
+                            <div className="file-upload-hint">MP3, WAV, M4A, OGG, FLAC, WebM • Max 50MB</div>
+                        </>
+                    )}
                     <input
+                        id="voice-file-input"
                         ref={audioInputRef}
                         type="file"
-                        accept="audio/*"
+                        accept="audio/mpeg,audio/mp4,audio/wav,audio/webm,audio/ogg,audio/x-m4a,audio/flac,audio/aac,audio/x-wav,.mp3,.mp4,.m4a,.wav,.webm,.ogg,.flac,.aac"
                         style={{ display: 'none' }}
                         onChange={handleAudioUpload}
                     />
-                </>
+                </label>
             )}
         </div>
     )
 }
+
