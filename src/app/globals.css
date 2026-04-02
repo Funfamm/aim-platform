@@ -1298,7 +1298,8 @@ select::placeholder {
   margin-top: 0;
   position: relative;
   background: var(--bg-primary);
-  z-index: 10;
+  z-index: 20;
+  isolation: isolate;
 }
 
 .footer::before {
@@ -2691,7 +2692,8 @@ textarea:focus:not(:focus-visible) {
 
   /* Footer padding to clear the bottom tab bar */
   .footer {
-    padding-bottom: calc(70px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--bg-primary) !important;
   }
 
   /* Featured projects */
