@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "Startseite",
     "works": "Werke",
@@ -833,8 +833,14 @@
     "inAppDesc": "Benachrichtigungen innerhalb der Plattform",
     "email": "E-Mail",
     "emailDesc": "An deine registrierte E-Mail-Adresse",
-    "sms": "SMS",
-    "smsDesc": "SMS-Benachrichtigungen (Simulationsmodus)",
+    "newRole": "Neue Casting-Rolle",
+    "newRoleDesc": "Wenn ein neues Casting auf der Plattform öffnet",
+    "announcement": "Ankündigungen",
+    "announcementDesc": "Plattformnews und Updates vom AIM Studio Team",
+    "newContent": "Neuer Inhalt",
+    "newContentDesc": "Wenn neue Filme, Kurse oder Beiträge veröffentlicht werden",
+    "appUpdates": "Bewerbungsupdates",
+    "appUpdatesDesc": "Wenn sich der Status Ihrer Casting-Bewerbung ändert",
     "saving": "Wird gespeichert…",
     "saved": "✅ Einstellungen gespeichert",
     "savePreferences": "Einstellungen speichern",

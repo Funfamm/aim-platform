@@ -1,4 +1,4 @@
-{
+﻿{
   "nav": {
     "home": "首页",
     "works": "作品",
@@ -833,8 +833,14 @@
     "inAppDesc": "在平台内显示的通知",
     "email": "电子邮件",
     "emailDesc": "发送至您的注册邮箱",
-    "sms": "短信",
-    "smsDesc": "短信通知（模拟模式）",
+    "newRole": "新选角角色",
+    "newRoleDesc": "当平台开放新试镜时",
+    "announcement": "公告",
+    "announcementDesc": "AIM Studio 团队的平台新闻和更新",
+    "newContent": "新内容",
+    "newContentDesc": "当发布新电影、培训或博客内容时",
+    "appUpdates": "申请更新",
+    "appUpdatesDesc": "当您的选角申请状态改变时",
     "saving": "保存中…",
     "saved": "✅ 偏好设置已保存",
     "savePreferences": "保存偏好设置",

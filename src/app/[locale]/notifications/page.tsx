@@ -27,13 +27,6 @@ interface Notification {
     createdAt: string
 }
 
-const TYPE_LABELS: Record<string, { emoji: string; label: string; desc: string }> = {
-    new_role:       { emoji: '🎭', label: 'New Casting Role',      desc: 'When a new audition opens up on the platform' },
-    announcement:   { emoji: '📣', label: 'Announcements',         desc: 'Platform news and updates from the AIM Studio team' },
-    content_publish:{ emoji: '✨', label: 'New Content',           desc: 'When new films, training or blog content is published' },
-    status_change:  { emoji: '📋', label: 'Application Updates',   desc: 'When your casting application status changes' },
-    system:         { emoji: '⚙️', label: 'System',                desc: 'Account security and system alerts' },
-}
 
 function timeAgo(dateStr: string): string {
     const diff = Date.now() - new Date(dateStr).getTime()
@@ -248,7 +241,7 @@ export default function NotificationsPage() {
                                             }}
                                         >
                                             <span style={{ fontSize: '22px', flexShrink: 0, marginTop: '1px' }}>
-                                                {TYPE_LABELS[n.type]?.emoji ?? '🔔'}
+                                                {({'new_role':'🎭','announcement':'📣','content_publish':'✨','status_change':'📋','system':'⚙️'} as Record<string,string>)[n.type] ?? '🔔'}
                                             </span>
                                             <span style={{ flex: 1, minWidth: 0 }}>
                                                 <span style={{
@@ -295,10 +288,10 @@ export default function NotificationsPage() {
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{t('chooseEvents')}</div>
                             </div>
                             {prefs && ([
-                                { key: 'newRole',       ...TYPE_LABELS.new_role },
-                                { key: 'announcement',  ...TYPE_LABELS.announcement },
-                                { key: 'contentPublish',...TYPE_LABELS.content_publish },
-                                { key: 'statusChange',  ...TYPE_LABELS.status_change },
+                                { key: 'newRole',        emoji: '🎭', label: t('newRole'),       desc: t('newRoleDesc') },
+                                { key: 'announcement',   emoji: '📣', label: t('announcement'),  desc: t('announcementDesc') },
+                                { key: 'contentPublish', emoji: '✨', label: t('newContent'),    desc: t('newContentDesc') },
+                                { key: 'statusChange',   emoji: '📋', label: t('appUpdates'),   desc: t('appUpdatesDesc') },
                             ] as Array<{ key: keyof Prefs; emoji: string; label: string; desc: string }>).map(item => (
                                 <div
                                     key={item.key}
