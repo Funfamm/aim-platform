@@ -814,5 +814,30 @@
     "markAllRead": "全部标为已读",
     "managePrefs": "管理偏好设置",
     "managePrefsArrow": "→"
+  },
+  "NotificationsPage": {
+    "title": "通知",
+    "subtitle": "管理您的通知动态和投递偏好设置。",
+    "feedTab": "📨 动态",
+    "preferencesTab": "⚙️ 偏好设置",
+    "loading": "加载中…",
+    "recentNotifications": "最近通知",
+    "markAllRead": "全部标记为已读",
+    "allCaughtUp": "您已全部阅读！",
+    "noNotifications": "暂无通知。",
+    "whatToNotify": "通知内容",
+    "chooseEvents": "选择您希望接收的事件类型。",
+    "howToNotify": "通知方式",
+    "controlChannels": "管理哪些投递渠道处于激活状态。",
+    "inApp": "应用内",
+    "inAppDesc": "在平台内显示的通知",
+    "email": "电子邮件",
+    "emailDesc": "发送至您的注册邮箱",
+    "sms": "短信",
+    "smsDesc": "短信通知（模拟模式）",
+    "saving": "保存中…",
+    "saved": "✅ 偏好设置已保存",
+    "savePreferences": "保存偏好设置",
+    "preferencesSaved": "偏好设置已保存"
   }
 }

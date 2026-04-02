@@ -816,5 +816,30 @@
     "markAllRead": "وضع الكل كمقروء",
     "managePrefs": "إدارة التفضيلات",
     "managePrefsArrow": "←"
+  },
+  "NotificationsPage": {
+    "title": "الإشعارات",
+    "subtitle": "إدارة خلاصة الإشعارات وتفضيلات التسليم.",
+    "feedTab": "📨 الخلاصة",
+    "preferencesTab": "⚙️ التفضيلات",
+    "loading": "جارٍ التحميل…",
+    "recentNotifications": "الإشعارات الأخيرة",
+    "markAllRead": "وضع الكل كمقروء",
+    "allCaughtUp": "أنت على اطلاع بكل شيء!",
+    "noNotifications": "لا توجد إشعارات بعد.",
+    "whatToNotify": "ما الذي يجب إشعاري به",
+    "chooseEvents": "اختر أنواع الأحداث التي تريد تلقّيها.",
+    "howToNotify": "كيفية الإشعار",
+    "controlChannels": "تحكم في قنوات التسليم النشطة.",
+    "inApp": "داخل التطبيق",
+    "inAppDesc": "إشعارات مُعرضة داخل المنصة",
+    "email": "البريد الإلكتروني",
+    "emailDesc": "مُرسل إلى بريدك الإلكتروني المسجل",
+    "sms": "رسائل SMS",
+    "smsDesc": "إشعارات رسائل نصية (وضع محاكاة)",
+    "saving": "جارٍ الحفظ…",
+    "saved": "✅ تم حفظ التفضيلات",
+    "savePreferences": "حفظ التفضيلات",
+    "preferencesSaved": "تم حفظ التفضيلات"
   }
 }

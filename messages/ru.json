@@ -814,5 +814,30 @@
     "markAllRead": "Отметить всё прочитанным",
     "managePrefs": "Управление настройками",
     "managePrefsArrow": "→"
+  },
+  "NotificationsPage": {
+    "title": "Уведомления",
+    "subtitle": "Управляйте лентой уведомлений и настройками доставки.",
+    "feedTab": "📨 Лента",
+    "preferencesTab": "⚙️ Настройки",
+    "loading": "Загрузка…",
+    "recentNotifications": "Последние уведомления",
+    "markAllRead": "Отметить все как прочитанные",
+    "allCaughtUp": "Вы в курсе всего!",
+    "noNotifications": "Уведомлений пока нет.",
+    "whatToNotify": "О чём уведомлять",
+    "chooseEvents": "Выберите типы событий для уведомлений.",
+    "howToNotify": "Как уведомлять",
+    "controlChannels": "Управляйте активными каналами доставки.",
+    "inApp": "В приложении",
+    "inAppDesc": "Уведомления внутри платформы",
+    "email": "Email",
+    "emailDesc": "На ваш зарегистрированный email",
+    "sms": "SMS",
+    "smsDesc": "SMS-уведомления (тестовый режим)",
+    "saving": "Сохранение…",
+    "saved": "✅ Настройки сохранены",
+    "savePreferences": "Сохранить настройки",
+    "preferencesSaved": "Настройки сохранены"
   }
 }

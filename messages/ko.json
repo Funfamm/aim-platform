@@ -814,5 +814,30 @@
     "markAllRead": "모두 읽음으로 표시",
     "managePrefs": "환경설정 관리",
     "managePrefsArrow": "→"
+  },
+  "NotificationsPage": {
+    "title": "알림",
+    "subtitle": "알림 피드와 전달 설정을 관리하세요.",
+    "feedTab": "📨 피드",
+    "preferencesTab": "⚙️ 설정",
+    "loading": "불러오는 중…",
+    "recentNotifications": "최근 알림",
+    "markAllRead": "모두 읽음 표시",
+    "allCaughtUp": "모두 확인했습니다!",
+    "noNotifications": "아직 알림이 없습니다.",
+    "whatToNotify": "알림 받을 내용",
+    "chooseEvents": "알림 받을 이벤트 유형을 선택하세요.",
+    "howToNotify": "알림 방법",
+    "controlChannels": "활성화된 전달 채널을 관리하세요.",
+    "inApp": "앱 내",
+    "inAppDesc": "플랫폼 내부에서 표시되는 알림",
+    "email": "이메일",
+    "emailDesc": "등록된 이메일 주소로 전달",
+    "sms": "SMS",
+    "smsDesc": "문자 메시지 알림 (모의 모드)",
+    "saving": "저장 중…",
+    "saved": "✅ 설정이 저장되었습니다",
+    "savePreferences": "설정 저장",
+    "preferencesSaved": "설정이 저장되었습니다"
   }
 }

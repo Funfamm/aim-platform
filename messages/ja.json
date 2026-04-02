@@ -815,5 +815,30 @@
     "markAllRead": "すべて既読にする",
     "managePrefs": "設定を管理",
     "managePrefsArrow": "→"
+  },
+  "NotificationsPage": {
+    "title": "通知",
+    "subtitle": "通知フィードと配信設定を管理してください。",
+    "feedTab": "📨 フィード",
+    "preferencesTab": "⚙️ 設定",
+    "loading": "読み込み中…",
+    "recentNotifications": "最近の通知",
+    "markAllRead": "すべて既読にする",
+    "allCaughtUp": "すべて確認済みです！",
+    "noNotifications": "まだ通知はありません。",
+    "whatToNotify": "通知する内容",
+    "chooseEvents": "通知を受け取るイベントの種類を選択してください。",
+    "howToNotify": "通知方法",
+    "controlChannels": "有効な配信チャンネルを管理してください。",
+    "inApp": "アプリ内",
+    "inAppDesc": "プラットフォーム内で表示される通知",
+    "email": "メール",
+    "emailDesc": "登録済みのメールアドレスに送信",
+    "sms": "SMS",
+    "smsDesc": "SMSテキスト通知（モックモード）",
+    "saving": "保存中…",
+    "saved": "✅ 設定が保存されました",
+    "savePreferences": "設定を保存",
+    "preferencesSaved": "設定が保存されました"
   }
 }
