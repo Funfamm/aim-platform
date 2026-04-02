@@ -322,7 +322,12 @@ export async function POST(
         }
 
         // ═══ AUTO-AUDIT — run AI analysis if enabled ═══
-        const siteSettings = await prisma.siteSettings.findFirst()
+        let siteSettings: Awaited<ReturnType<typeof prisma.siteSettings.findFirst>> = null
+        try {
+            siteSettings = await prisma.siteSettings.findFirst()
+        } catch (settingsErr) {
+            console.error('Failed to load SiteSettings (schema drift?):', settingsErr)
+        }
         if (siteSettings?.aiAutoAudit) {
             // Fire-and-forget — don't block the response
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
@@ -342,9 +347,8 @@ export async function POST(
         })
 
         // Fire-and-forget: notify admin of new application
-        const adminSettings = siteSettings || await prisma.siteSettings.findFirst()
-        if (adminSettings?.notifyOnApplication) {
-            const adminEmail = adminSettings.notifyEmail || adminSettings.contactEmail
+        if (siteSettings?.notifyOnApplication) {
+            const adminEmail = siteSettings.notifyEmail || siteSettings.contactEmail
             if (adminEmail) {
                 sendEmail({
                     to: adminEmail,
