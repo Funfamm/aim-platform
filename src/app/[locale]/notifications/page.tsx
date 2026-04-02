@@ -69,7 +69,7 @@ export default function NotificationsPage() {
         ]).then(([notifData, prefData]) => {
             const notifs = notifData.notifications ?? []
             setNotifications(notifs)
-            setUnreadCount(notifData.unreadCount ?? notifs.filter(n => !n.read).length)
+            setUnreadCount(notifData.unreadCount ?? notifs.filter((n: Notification) => !n.read).length)
             const p = prefData.preferences ?? {
                 newRole: true, announcement: true, contentPublish: false,
                 statusChange: true, email: true, inApp: true,
