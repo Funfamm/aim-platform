@@ -37,10 +37,7 @@ export default function Footer() {
 
     return (
         <footer className="footer" aria-label="Site footer" style={{
-            position: 'relative',
-            zIndex: 20,
-            isolation: 'isolate',
-            background: 'var(--bg-primary)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
         }}>
             {/* Footer Sponsor Strip */}
             
