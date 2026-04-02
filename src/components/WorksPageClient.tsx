@@ -46,6 +46,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
     const [mounted, setMounted] = useState(false)
     const videoARef = useRef<HTMLVideoElement>(null)
     const videoBRef = useRef<HTMLVideoElement>(null)
+    const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 
     // Page-entry fade-in
@@ -72,11 +73,40 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
         videoA.play().catch(() => { })
         setActiveSlot('A')
 
-        // No automatic crossfade scheduling; videos will start instantly
+        // Schedule crossfade to next video (if multiple)
+        if (videos.length > 1) {
+            const durationMs = (videos[0].duration || 10) * 1000
+            videoTimerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
+        }
+
+        return () => {
+            if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [videos])
 
-// Crossfade logic removed; manual navigation will handle video switching with opacity transition
+    // Crossfade: preload next video in inactive slot, then swap
+    const crossfadeToNext = useCallback((prevIdx: number) => {
+        if (videos.length <= 1) return
+
+        const nextIdx = (prevIdx + 1) % videos.length
+        setCurrentIdx(nextIdx)
+
+        setActiveSlot(prev => {
+            const nextSlot = prev === 'A' ? 'B' : 'A'
+            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
+            if (nextVideo) {
+                nextVideo.src = videos[nextIdx].url
+                nextVideo.load()
+                nextVideo.play().catch(() => { })
+            }
+            return nextSlot
+        })
+
+        const durationMs = (videos[nextIdx].duration || 10) * 1000
+        if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
+        videoTimerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
+    }, [videos])
 
     // Manual dot click
     const jumpToVideo = useCallback((idx: number) => {
@@ -94,8 +124,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
             return nextSlot
         })
 
-        // No timer scheduling on manual video jump
-    }, [currentIdx, videos])
+        // Reschedule auto-rotation from this video
+        if (videos.length > 1) {
+            const durationMs = (videos[idx].duration || 10) * 1000
+            if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
+            videoTimerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
+        }
+    }, [currentIdx, videos, crossfadeToNext])
 
     return (
         <main id="main-content" style={{
@@ -124,7 +159,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                 }} />
                 <video
                     ref={videoARef}
-                    autoPlay muted playsInline
+                    autoPlay muted playsInline loop
                     controlsList="nodownload"
                     onContextMenu={(e) => e.preventDefault()}
                     poster="/images/works-bg.png"
@@ -141,7 +176,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                 />
                 <video
                     ref={videoBRef}
-                    autoPlay muted playsInline
+                    autoPlay muted playsInline loop
                     controlsList="nodownload"
                     onContextMenu={(e) => e.preventDefault()}
                     style={{
