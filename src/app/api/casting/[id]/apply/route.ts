@@ -14,7 +14,8 @@ const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const ALLOWED_PHOTO_EXTS = ['.jpg', '.jpeg', '.png', '.webp']
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024 // 5 MB
 
-const ALLOWED_VOICE_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/x-m4a', 'audio/mp3']
+const ALLOWED_VOICE_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/x-m4a', 'audio/mp3', 'audio/flac', 'audio/x-wav']
+const ALLOWED_VOICE_TYPE_PREFIXES = ['audio/']
 const ALLOWED_VOICE_EXTS = ['.mp3', '.mp4', '.m4a', '.wav', '.webm', '.ogg']
 const MAX_VOICE_SIZE = 25 * 1024 * 1024 // 25 MB
 
@@ -226,13 +227,15 @@ export async function POST(
                 })
                 return NextResponse.json({ error: `Invalid voice file format. Allowed: MP3, MP4, M4A, WAV, WebM, OGG.` }, { status: 400 })
             }
-            if (voiceFile.type && !ALLOWED_VOICE_TYPES.includes(voiceFile.type)) {
+            // Check MIME type — use prefix for flexibility (handles 'audio/webm;codecs=opus' from MediaRecorder)
+            const baseMime = voiceFile.type.split(';')[0].trim().toLowerCase()
+            if (voiceFile.type && !ALLOWED_VOICE_TYPES.includes(baseMime) && !ALLOWED_VOICE_TYPE_PREFIXES.some(p => baseMime.startsWith(p))) {
                 logUploadEvent({
                     action: 'upload_rejected', route: '/api/casting/apply',
                     userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
                     reason: `Invalid voice MIME: ${voiceFile.type}`, code: 'MIME_REJECTED',
                 })
-                return NextResponse.json({ error: `Invalid voice file type. Allowed: audio/mpeg, audio/mp4, audio/wav, audio/webm, audio/ogg.` }, { status: 400 })
+                return NextResponse.json({ error: `Invalid voice file type. Please upload an audio file (MP3, WAV, WebM, M4A, OGG).` }, { status: 400 })
             }
             if (voiceFile.size > MAX_VOICE_SIZE) {
                 return NextResponse.json({ error: `Voice recording is too large (${(voiceFile.size / 1024 / 1024).toFixed(1)} MB). Maximum 25 MB.` }, { status: 400 })
@@ -242,9 +245,10 @@ export async function POST(
             const filePath = path.join(uploadDir, fileName)
             const buffer = Buffer.from(await voiceFile.arrayBuffer())
 
-            // ═══ MAGIC-BYTE CHECK ═══
-            if (voiceFile.type) {
-                const magicCheck = checkMagicBytes(buffer, voiceFile.type)
+            // Magic-byte check — skip for WebM since browser-recorded blobs don't have standard magic bytes
+            const isWebm = baseMime === 'audio/webm' || vExt === '.webm'
+            if (voiceFile.type && !isWebm) {
+                const magicCheck = checkMagicBytes(buffer, baseMime)
                 if (!magicCheck.valid) {
                     logUploadEvent({
                         action: 'upload_rejected', route: '/api/casting/apply',
@@ -252,7 +256,7 @@ export async function POST(
                         reason: magicCheck.error, code: 'MAGIC_BYTE_MISMATCH',
                     })
                     return NextResponse.json({
-                        error: `Voice recording failed content verification: the file does not appear to be valid audio. It may be corrupted or disguised.`,
+                        error: `Voice recording failed content verification. Please use a standard audio format (MP3, WAV, M4A).`,
                     }, { status: 400 })
                 }
             }
