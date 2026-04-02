@@ -814,5 +814,30 @@
     "markAllRead": "Tout marquer comme lu",
     "managePrefs": "Gérer les préférences",
     "managePrefsArrow": "→"
+  },
+  "NotificationsPage": {
+    "title": "Notifications",
+    "subtitle": "Gérez votre fil de notifications et vos préférences.",
+    "feedTab": "📨 Fil",
+    "preferencesTab": "⚙️ Préférences",
+    "loading": "Chargement…",
+    "recentNotifications": "Notifications récentes",
+    "markAllRead": "Tout marquer comme lu",
+    "allCaughtUp": "Vous êtes à jour !",
+    "noNotifications": "Aucune notification.",
+    "whatToNotify": "Ce qui me notifie",
+    "chooseEvents": "Choisissez les types d'événements.",
+    "howToNotify": "Comment me notifier",
+    "controlChannels": "Contrôlez les canaux de livraison.",
+    "inApp": "Dans l'application",
+    "inAppDesc": "Notifications dans la plateforme",
+    "email": "Email",
+    "emailDesc": "Envoyé à votre adresse e-mail",
+    "sms": "SMS",
+    "smsDesc": "Notifications par SMS (mode simulé)",
+    "saving": "Enregistrement…",
+    "saved": "✅ Préférences sauvegardées",
+    "savePreferences": "Sauvegarder les préférences",
+    "preferencesSaved": "Préférences sauvegardées"
   }
 }

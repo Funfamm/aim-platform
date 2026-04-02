@@ -367,6 +367,9 @@ model UserNotificationPreference {
   inApp Boolean @default(true)
   sms   Boolean @default(false) // future: SMS via Twilio
 
+  // Phone number for SMS delivery (optional, required if sms=true)
+  phoneNumber String? // E.164 format e.g. +15551234567
+
   updatedAt DateTime @updatedAt
 }
 

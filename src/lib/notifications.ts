@@ -13,6 +13,7 @@
  */
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
+import { sendSMS, buildSMSBody } from '@/lib/sms'
 import { logger } from '@/lib/logger'
 import {
     applicationStatusUpdate,
@@ -68,7 +69,18 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 id: true,
                 name: true,
                 email: true,
-                notificationPreference: true,
+                notificationPreference: {
+                    select: {
+                        email: true,
+                        inApp: true,
+                        sms: true,
+                        newRole: true,
+                        announcement: true,
+                        contentPublish: true,
+                        statusChange: true,
+                        phoneNumber: true,
+                    },
+                },
             },
         })
         if (!user) return
@@ -105,10 +117,10 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
             await sendEmail({ to: user.email, subject, html })
         }
 
-        // ── SMS (future) ─────────────────────────────────────────────────────
-        if (pref.sms && process.env.ENABLE_SMS_NOTIFICATIONS === 'true') {
-            // TODO: call sms.ts when provisioned
-            logger.info('notifications', `SMS stub: would send to ${user.id}`)
+        // ── SMS ──────────────────────────────────────────────────────────────
+        if (pref.sms && pref.phoneNumber) {
+            const body = buildSMSBody(opts.title, opts.message, opts.link)
+            await sendSMS(pref.phoneNumber, body)
         }
     } catch (err) {
         logger.error('notifications', `notifyUser failed for ${opts.userId}`, { error: err })

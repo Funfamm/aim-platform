@@ -27,15 +27,30 @@ export async function GET() {
 
 /** PUT /api/notifications/preferences */
 export async function PUT(req: Request) {
+    return savePreferences(req)
+}
+
+/** POST /api/notifications/preferences (alias for PUT – used by the UI) */
+export async function POST(req: Request) {
+    return savePreferences(req)
+}
+
+async function savePreferences(req: Request) {
     const session = await getSession()
     if (!session?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     try {
         const body = await req.json()
-        const allowed = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms']
-        const data: Record<string, boolean> = {}
-        for (const k of allowed) {
+        const boolFields = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms']
+        const data: Record<string, boolean | string | null> = {}
+
+        for (const k of boolFields) {
             if (typeof body[k] === 'boolean') data[k] = body[k]
+        }
+
+        // Accept optional phone number for SMS delivery
+        if (typeof body.phoneNumber === 'string') {
+            data.phoneNumber = body.phoneNumber.trim() || null
         }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
