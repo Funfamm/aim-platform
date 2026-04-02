@@ -122,7 +122,43 @@ export async function GET(req: Request) {
                     role: 'member',
                 },
             })
+
+            // Fire welcome email + in-app notification (fire-and-forget, never blocks login)
+            const newUserId = user.id
+            const newUserName = googleUser.name
+            const newUserEmail = googleUser.email
+            void (async () => {
+                try {
+                    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+                    const { welcomeEmailWithOverrides } = await import('@/lib/email-templates')
+                    const { sendEmail } = await import('@/lib/mailer')
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const db = prisma as any
+
+                    // Send welcome email
+                    const html = await welcomeEmailWithOverrides(newUserName, siteUrl).catch(() => null)
+                    if (html) {
+                        await sendEmail({
+                            to: newUserEmail,
+                            subject: `Welcome to AIM Studio, ${newUserName}! 🎬`,
+                            html,
+                        }).catch(() => {})
+                    }
+
+                    // Write welcome in-app notification
+                    await db.userNotification.create({
+                        data: {
+                            userId: newUserId,
+                            type: 'system',
+                            title: `Welcome to AIM Studio, ${newUserName}! 🎬`,
+                            message: 'You\'re now part of our AI-powered filmmaking community. Explore casting calls, track your applications, and more.',
+                            link: '/casting',
+                        },
+                    }).catch(() => {})
+                } catch { /* never crash the login */ }
+            })()
         }
+
 
         // Never allow admins to bypass their password requirement via OAuth
         if (user.role === 'admin' || user.role === 'superadmin') {
