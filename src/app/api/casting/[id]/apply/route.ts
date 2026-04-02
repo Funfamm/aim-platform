@@ -89,6 +89,7 @@ export async function POST(
         if (userId) {
             const existingByUser = await prisma.application.findFirst({
                 where: { castingCallId: id, userId },
+                select: { id: true, status: true },
             })
             if (existingByUser) {
                 // Allow reapply only if previously withdrawn (once only)
@@ -114,6 +115,7 @@ export async function POST(
         // ═══ DUPLICATE CHECK — same email, same role ═══
         const existingApplication = await prisma.application.findFirst({
             where: { castingCallId: id, email, status: { not: 'withdrawn' } },
+            select: { id: true, email: true },
         })
 
         if (existingApplication) {
