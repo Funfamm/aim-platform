@@ -17,7 +17,7 @@ export async function GET() {
             data: {
                 userId: session.id,
                 newRole: true, announcement: true, contentPublish: false, statusChange: true,
-                email: true, inApp: true,
+                email: true, inApp: true, sms: false, // sms column still exists in DB schema
             }
         })
     }
@@ -56,7 +56,7 @@ async function savePreferences(req: Request) {
             create: {
                 userId: session.id,
                 newRole: true, announcement: true, contentPublish: false, statusChange: true,
-                email: true, inApp: true,
+                email: true, inApp: true, sms: false, // sms column still exists in DB schema
                 ...data,
             },
         })
