@@ -140,9 +140,12 @@ export default function AdminAnalyticsPage() {
 
     // Single unified fetch — section=all returns core + traffic + content + dashboard
     const fetchData = useCallback(async () => {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 15000) // 15s timeout
         try {
             setFetchError('')
-            const res = await fetch('/api/admin/analytics')
+            const res = await fetch('/api/admin/analytics', { signal: controller.signal })
+            clearTimeout(timeout)
             if (res.status === 401) { window.location.href = '/admin/login'; return }
             const json = await res.json()
             if (!res.ok) {
@@ -151,9 +154,15 @@ export default function AdminAnalyticsPage() {
             }
             setData(json)
         } catch (err) {
-            setFetchError(err instanceof Error ? err.message : 'Network error')
+            clearTimeout(timeout)
+            if ((err as Error).name === 'AbortError') {
+                setFetchError('Request timed out. The analytics API is taking too long to respond.')
+            } else {
+                setFetchError(err instanceof Error ? err.message : 'Network error')
+            }
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }, [])
 
     useEffect(() => { fetchData() }, [fetchData])
