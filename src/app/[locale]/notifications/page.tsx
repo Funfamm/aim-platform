@@ -60,13 +60,16 @@ export default function NotificationsPage() {
     const [saved, setSaved] = useState(false)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'feed' | 'preferences'>('feed')
+    const [unreadCount, setUnreadCount] = useState(0)
 
     useEffect(() => {
         Promise.all([
             fetch('/api/notifications?limit=50').then(r => r.json()),
             fetch('/api/notifications/preferences').then(r => r.json()),
         ]).then(([notifData, prefData]) => {
-            setNotifications(notifData.notifications ?? [])
+            const notifs = notifData.notifications ?? []
+            setNotifications(notifs)
+            setUnreadCount(notifData.unreadCount ?? notifs.filter(n => !n.read).length)
             const p = prefData.preferences ?? {
                 newRole: true, announcement: true, contentPublish: false,
                 statusChange: true, email: true, inApp: true,
@@ -82,12 +85,14 @@ export default function NotificationsPage() {
             fetch(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => null)
         ))
         setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+        setUnreadCount(0)
     }
 
     function handleNotifClick(n: Notification) {
         if (!n.read) {
             fetch(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => null)
             setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
+            setUnreadCount(prev => Math.max(0, prev - 1))
         }
         if (n.link) router.push(n.link as never)
     }
@@ -118,6 +123,8 @@ export default function NotificationsPage() {
     }
 
     const grouped = groupNotifications(notifications)
+    // Show a badge on the page title when there are unread notifications
+    const titleBadge = unreadCount > 0 ? ` (${unreadCount} new)` : ''
 
     return (
         <>
@@ -138,7 +145,7 @@ export default function NotificationsPage() {
                 {/* ── Header ── */}
                 <div style={{ marginBottom: '32px' }}>
                     <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, marginBottom: '8px' }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>🔔</span> {t('title')}
+                        <span style={{ color: 'var(--accent-gold)' }}>🔔</span> {t('title')}{titleBadge}
                     </h1>
                     <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>
                         {t('subtitle')}
