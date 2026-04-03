@@ -23,7 +23,6 @@ type PrometheusHistogram = { observe: (labels: Record<string, string>, value: nu
 const counters: Record<string, PrometheusCounter> = {}
 const histograms: Record<string, PrometheusHistogram> = {}
 
-function noop() {}
 
 try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -67,27 +66,27 @@ try {
 
 /** Record a successful login */
 export function recordAuthSuccess(role: string) {
-    counters.authSuccess?.inc({ role }) ?? noop()
+    if (counters.authSuccess) counters.authSuccess.inc({ role })
 }
 
 /** Record a failed login */
 export function recordAuthFailure(reason: 'invalid_credentials' | 'mfa_failed' | 'unverified' | 'rate_limited') {
-    counters.authFailure?.inc({ reason }) ?? noop()
+    if (counters.authFailure) counters.authFailure.inc({ reason })
 }
 
 /** Record a notification queue job outcome */
 export function recordNotificationJob(status: 'completed' | 'failed', type: string) {
-    counters.notificationJobs?.inc({ status, type }) ?? noop()
+    if (counters.notificationJobs) counters.notificationJobs.inc({ status, type })
 }
 
 /** Record a CSRF rejection */
 export function recordCsrfRejection() {
-    counters.csrfRejected?.inc() ?? noop()
+    if (counters.csrfRejected) counters.csrfRejected.inc()
 }
 
 /** Observe a request duration */
 export function observeRequestDuration(method: string, path: string, statusCode: number, durationMs: number) {
-    histograms.requestDuration?.observe({ method, path, status: String(statusCode) }, durationMs) ?? noop()
+    if (histograms.requestDuration) histograms.requestDuration.observe({ method, path, status: String(statusCode) }, durationMs)
 }
 
 /** Return Prometheus text format for /api/metrics */
