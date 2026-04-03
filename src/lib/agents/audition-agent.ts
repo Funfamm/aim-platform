@@ -534,22 +534,43 @@ async function loadAudioAsBase64(voiceUrl: string): Promise<{ base64: string; mi
  */
 async function screenPhotosForRelevance(
     photos: { base64: string; mimeType: string; url: string }[],
-    geminiKey: string,
-    geminiModel: string
+    geminiKeys: { id: string; key: string; label: string; model?: string }[],
+    defaultModel: string
 ): Promise<{ approved: { base64: string; mimeType: string }[]; hadIrrelevant: boolean; rejectedCount: number; rejectionReasons: string[] }> {
     if (photos.length === 0) return { approved: [], hadIrrelevant: false, rejectedCount: 0, rejectionReasons: [] }
 
     const { GoogleGenerativeAI } = await import('@google/generative-ai')
-    const genAI = new GoogleGenerativeAI(geminiKey)
-    const model = genAI.getGenerativeModel({ model: geminiModel })
 
     const approved: { base64: string; mimeType: string }[] = []
     const rejectionReasons: string[] = []
     let rejectedCount = 0
 
-    for (const photo of photos) {
+    for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i]
+
+        // ── Key rotation: pick the Gemini key with most RPM headroom ──
+        const availableKeys = geminiKeys
+            .filter(k => !dailyExhaustedKeys.has(k.id) && hasCapacity(k.id, 'gemini'))
+            .sort((a, b) => getRemainingCapacity(b.id, 'gemini') - getRemainingCapacity(a.id, 'gemini'))
+
+        if (availableKeys.length === 0) {
+            // All keys at limit — pass remaining photos through unscreened
+            console.warn(`[AI Audit] All Gemini keys at RPM limit — passing photo ${i + 1} unscreened`)
+            approved.push({ base64: photo.base64, mimeType: photo.mimeType })
+            continue
+        }
+
+        const keyInfo = availableKeys[0]
+        const model = keyInfo.model || defaultModel
+
         try {
-            const result = await model.generateContent([
+            recordKeyUsage(keyInfo.id)
+            console.log(`[AI Audit] Screening photo ${i + 1}/${photos.length} with key: ${keyInfo.label} (RPM left: ${getRemainingCapacity(keyInfo.id, 'gemini')})`)
+
+            const genAI = new GoogleGenerativeAI(keyInfo.key)
+            const aiModel = genAI.getGenerativeModel({ model })
+
+            const result = await aiModel.generateContent([
                 {
                     text: `You are a casting submission validator.
 
@@ -578,12 +599,18 @@ Be strict. An applicant should not be able to pass by submitting a picture of a 
                 console.log(`[AI Audit] ✓ Photo passed screening: ${photo.url}`)
             } else {
                 rejectedCount++
-                // Extract description from first line for the rejection reason
                 const descLine = answer.split('\n')[0]?.replace(/^1\.\s*/, '').trim() || 'Non-human content detected'
                 rejectionReasons.push(descLine)
                 console.warn(`[AI Audit] ✗ Photo REJECTED: ${photo.url} — Gemini: ${descLine}`)
             }
         } catch (err) {
+            const errMsg = err instanceof Error ? err.message : String(err)
+            // If daily quota hit, mark key exhausted and retry this photo with next key
+            if (isDailyQuotaError(errMsg)) {
+                markDailyExhausted(keyInfo.id)
+                i-- // retry this photo with next available key
+                continue
+            }
             // Screening failed — allow through (fail-open) but log
             console.warn(`[AI Audit] Photo screening error for ${photo.url}:`, err)
             approved.push({ base64: photo.base64, mimeType: photo.mimeType })
@@ -709,12 +736,16 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
         const rawPhotos = await loadPhotosAsBase64(input.applicant.photoUrls!)
         console.log(`[AI Audit] Loaded ${rawPhotos.length} photo(s) for screening`)
 
-        const geminiKey = config.keys.find(k => (k as any).provider === 'gemini' || !(k as any).provider)?.key || ''
-        const geminiModel = ((config.keys.find(k => (k as any).provider === 'gemini') as any)?.model as string) || 'gemini-2.5-flash'
-        
+        // Collect ALL Gemini keys for rotation during photo screening
+        type KeyEntry = { id: string; key: string; label: string; provider?: string; model?: string }
+        const geminiKeys = (config.keys as KeyEntry[])
+            .filter(k => (k.provider === 'gemini' || !k.provider) && !dailyExhaustedKeys.has(k.id))
+            .map(k => ({ id: k.id, key: k.key, label: k.label, model: k.model }))
+        const defaultGeminiModel = geminiKeys[0]?.model || 'gemini-2.5-flash'
 
-        if (geminiKey && rawPhotos.length > 0) {
-            const screening = await screenPhotosForRelevance(rawPhotos, geminiKey, geminiModel)
+        if (geminiKeys.length > 0 && rawPhotos.length > 0) {
+            console.log(`[AI Audit] ${geminiKeys.length} Gemini key(s) available for photo screening rotation`)
+            const screening = await screenPhotosForRelevance(rawPhotos, geminiKeys, defaultGeminiModel)
             photos = screening.approved
             irrelevantImageFlag = screening.hadIrrelevant
             rejectedPhotoCount = screening.rejectedCount
@@ -724,7 +755,7 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
             }
         } else {
             photos = rawPhotos.map(p => ({ base64: p.base64, mimeType: p.mimeType }))
-            console.log('[AI Audit] No Gemini key for vision screening — photos passed through unvalidated')
+            console.log('[AI Audit] No Gemini keys for vision screening — photos passed through unvalidated')
             screeningSkipped = true
         }
     }
