@@ -1,0 +1,38 @@
+{
+  "mfa": {
+    "title": "Zwei-Faktor-Authentifizierung",
+    "subtitle": "Geben Sie den Code ein, den wir an Ihre E-Mail-Adresse gesendet haben.",
+    "codePlaceholder": "6-stelliger Code",
+    "submitButton": "Verifizieren",
+    "resendButton": "Code erneut senden",
+    "resendSuccess": "Ein neuer Code wurde an Ihre E-Mail gesendet.",
+    "errorInvalid": "Falscher Code. Bitte versuchen Sie es erneut.",
+    "errorExpired": "Der Code ist abgelaufen. Bitte fordern Sie einen neuen an.",
+    "errorGeneric": "Verifizierung fehlgeschlagen. Bitte versuchen Sie es erneut."
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "markAllRead": "Alle als gelesen markieren",
+    "empty": "Sie haben keine Benachrichtigungen.",
+    "preferences": {
+      "title": "Benachrichtigungseinstellungen",
+      "saved": "Einstellungen gespeichert.",
+      "newRole": "Neue Casting-Rollen",
+      "announcement": "Plattform-Ankündigungen",
+      "contentPublish": "Neue Inhalte veröffentlicht",
+      "statusChange": "Änderungen des Bewerbungsstatus",
+      "email": "E-Mail",
+      "inApp": "In-App-Benachrichtigungen",
+      "sms": "SMS"
+    }
+  },
+  "auth": {
+    "login": "Anmelden",
+    "logout": "Abmelden",
+    "email": "E-Mail-Adresse",
+    "password": "Passwort",
+    "invalidCredentials": "Falsche E-Mail-Adresse oder falsches Passwort.",
+    "verifyEmailFirst": "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
+    "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
+  }
+}

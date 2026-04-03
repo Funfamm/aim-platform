@@ -9,15 +9,15 @@ function getCsrfToken(): string | null {
     const match = document.cookie
         .split('; ')
         .find(row => row.startsWith(`${CSRF_COOKIE_NAME}=`))
-    return match ? match.split('=')[1] : null
+    return match ? decodeURIComponent(match.split('=')[1]) : null
 }
 
 /**
  * Invisible client component that patches the global fetch()
  * to automatically inject the X-CSRF-Token header on all
- * mutation requests to /api/admin/* endpoints.
+ * mutation requests to any /api/* endpoint.
  *
- * Place this once in the admin layout.
+ * Place this once in the root layout (or admin layout).
  */
 export function CsrfProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
@@ -34,12 +34,12 @@ export function CsrfProvider({ children }: { children: React.ReactNode }) {
 
             const method = (init?.method || 'GET').toUpperCase()
 
-            // Only inject on mutation requests to admin API
-            if (MUTATION_METHODS.includes(method) && url.includes('/api/admin')) {
+            // Inject CSRF header on any mutation to /api/*
+            if (MUTATION_METHODS.includes(method) && url.includes('/api/')) {
                 const token = getCsrfToken()
                 if (token) {
                     const headers = new Headers(init?.headers)
-                    if (!headers.has('X-CSRF-Token')) {
+                    if (!headers.has('X-CSRF-Token') && !headers.has('x-csrf-token')) {
                         headers.set('X-CSRF-Token', token)
                     }
                     return originalFetch(input, { ...init, headers })

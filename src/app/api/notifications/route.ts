@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server'
 import { getSessionAndRefresh } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-/** GET /api/notifications – fetch the current user's in-app notifications */
+/** GET /api/notifications – fetch the current user's in-app notifications
+ *  Query params:
+ *    unread  – if "true", return only unread
+ *    limit   – max results (default 20, max 50)
+ *    cursor  – ISO timestamp; return notifications older than this (for pagination)
+ */
 export async function GET(req: Request) {
     const session = await getSessionAndRefresh()
     const userId = (session as { userId?: string; id?: string } | null)?.userId
@@ -13,6 +18,8 @@ export async function GET(req: Request) {
         const { searchParams } = new URL(req.url)
         const unreadOnly = searchParams.get('unread') === 'true'
         const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 50)
+        const cursorStr = searchParams.get('cursor')
+        const cursorDate = cursorStr ? new Date(cursorStr) : null
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
@@ -21,6 +28,7 @@ export async function GET(req: Request) {
                 where: {
                     userId,
                     ...(unreadOnly ? { read: false } : {}),
+                    ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
                 },
                 orderBy: { createdAt: 'desc' },
                 take: limit,
@@ -28,12 +36,18 @@ export async function GET(req: Request) {
             db.userNotification.count({ where: { userId, read: false } }),
         ])
 
-        return NextResponse.json({ notifications, unreadCount })
+        // nextCursor: createdAt of the oldest item returned (for the next page)
+        const nextCursor = notifications.length === limit
+            ? notifications[notifications.length - 1].createdAt.toISOString()
+            : null
+
+        return NextResponse.json({ notifications, unreadCount, nextCursor })
     } catch (err) {
         console.error('[notifications] GET error:', err)
-        return NextResponse.json({ notifications: [], unreadCount: 0 })
+        return NextResponse.json({ notifications: [], unreadCount: 0, nextCursor: null })
     }
 }
+
 
 /** PATCH /api/notifications – mark all (or specific) notifications as read */
 export async function PATCH(req: Request) {

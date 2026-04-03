@@ -46,6 +46,10 @@ model User {
   trainingXp         Int               @default(0)
   trainingStreak     Int               @default(0)
   lastTrainingAt     DateTime?
+  // MFA (Email OTP)
+  mfaEnabled    Boolean   @default(false)
+  mfaTempCode   String?   // 6-digit hashed OTP
+  mfaExpiresAt  DateTime? // OTP expiry (10 minutes)
   // Security
   passwordHistory    PasswordHistory[]
   // Projects owned
@@ -371,6 +375,17 @@ model UserNotificationPreference {
   phoneNumber String? // E.164 format e.g. +15551234567
 
   updatedAt DateTime @updatedAt
+}
+
+// Compliance audit log for notification preference changes
+model PreferenceAudit {
+  id           String   @id @default(cuid())
+  userId       String
+  changedFields Json    // { field: { from, to } }
+  timestamp    DateTime @default(now())
+
+  @@index([userId])
+  @@index([timestamp])
 }
 
 // In‑app notification feed (bell icon)

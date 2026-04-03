@@ -160,6 +160,7 @@ jobs:
           ENCRYPTION_KEY: EVfIUORiZO0/kqfXezW9lGfDe/Sb3a/SfKVQSMX1jJo=
           JWT_SECRET: ci-placeholder-jwt-secret-32-chars-long
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          METRICS_TOKEN: ci-metrics-token
         run: npm run build
       - name: Start production server
         env:
@@ -171,6 +172,7 @@ jobs:
           NEXT_PUBLIC_SITE_URL: http://localhost:3000
           NEXT_TELEMETRY_DISABLED: 1
           NODE_ENV: production
+          METRICS_TOKEN: ci-metrics-token
         run: |
           npm run start > next-server.log 2>&1 &
           SERVER_PID=$!

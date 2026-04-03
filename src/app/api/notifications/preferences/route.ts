@@ -1,83 +1,118 @@
-import { NextResponse } from 'next/server'
-import { getSessionAndRefresh } from '@/lib/auth'
-import { prisma } from '@/lib/db'
+import { NextResponse } from 'next/server';
+import { getSessionAndRefresh } from '@/lib/auth';
+import { prisma } from '@/lib/db';
+import { verifyCsrfToken } from '@/lib/csrf';
+import { logPreferenceChange } from '@/lib/audit-log';
 
-/** GET /api/notifications/preferences */
 export async function GET() {
-    const session = await getSessionAndRefresh()
-    if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const session = await getSessionAndRefresh();
+  if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = prisma as any
-    let pref = await db.userNotificationPreference.findUnique({ where: { userId: session.userId } })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = prisma as any;
+  let pref = await db.userNotificationPreference.findUnique({ where: { userId: session.userId } });
 
-    // Auto-create with defaults if not exists
-    if (!pref) {
-        pref = await db.userNotificationPreference.create({
-            data: {
-                userId: session.userId,
-                newRole: true, announcement: true, contentPublish: false, statusChange: true,
-                email: true, inApp: true
-            }
-        })
-    }
+  if (!pref) {
+    pref = await db.userNotificationPreference.create({
+      data: {
+        userId: session.userId,
+        newRole: true,
+        announcement: true,
+        contentPublish: false,
+        statusChange: true,
+        email: true,
+        inApp: true,
+        sms: false,
+      },
+    });
+  }
 
-    return NextResponse.json({ preferences: pref })
+  return NextResponse.json({ preferences: pref });
 }
 
-/** PUT /api/notifications/preferences */
 export async function PUT(req: Request) {
-    return savePreferences(req)
+  return savePreferences(req);
 }
 
-/** POST /api/notifications/preferences (alias for PUT – used by the UI) */
 export async function POST(req: Request) {
-    return savePreferences(req)
+  return savePreferences(req);
 }
 
 async function savePreferences(req: Request) {
-    const session = await getSessionAndRefresh()
-    if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const csrfResp = verifyCsrfToken(req as any);
+  if (csrfResp) return csrfResp;
 
-    try {
-        const body = await req.json()
-        // Validate request body
-        if (typeof body !== 'object' || body === null) {
-            return NextResponse.json({ error: 'Invalid request payload' }, { status: 400 })
-        }
-        const boolFields = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms']
-        const data: Record<string, boolean> = {}
+  const session = await getSessionAndRefresh();
+  if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        for (const k of boolFields) {
-            const val = body[k]
-            if (typeof val === 'boolean') {
-                data[k] = val
-            } else if (typeof val === 'string') {
-                // Convert common string representations to boolean
-                if (val.toLowerCase() === 'true') data[k] = true
-                else if (val.toLowerCase() === 'false') data[k] = false
-            }
-        }
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const db = prisma as any
-        const pref = await db.userNotificationPreference.upsert({
-            where: { userId: session.userId },
-            update: data,
-            create: {
-                userId: session.userId,
-                newRole: true, announcement: true, contentPublish: false, statusChange: true,
-                email: true, inApp: true,
-                ...data,
-            },
-        })
-
-        return NextResponse.json({ preferences: pref })
-    } catch (err) {
-        console.error('Notification preferences save error:', err)
-        return NextResponse.json(
-            { error: 'Failed to save preferences', details: err instanceof Error ? err.message : String(err) },
-            { status: 500 }
-        )
+  try {
+    const body = await req.json();
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json({ error: 'Invalid request payload' }, { status: 400 });
     }
+
+    const boolFields = ['newRole', 'announcement', 'contentPublish', 'statusChange', 'email', 'inApp', 'sms'];
+    const data: Record<string, boolean> = {};
+
+    for (const k of boolFields) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const val = (body as any)[k];
+      if (typeof val === 'boolean') {
+        data[k] = val;
+      } else if (typeof val === 'string') {
+        if (val.toLowerCase() === 'true') data[k] = true;
+        else if (val.toLowerCase() === 'false') data[k] = false;
+      }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = prisma as any;
+
+    // Load old preferences for compliance diff
+    const oldPref = await db.userNotificationPreference.findUnique({
+      where: { userId: session.userId },
+    });
+
+    const pref = await db.userNotificationPreference.upsert({
+      where: { userId: session.userId },
+      update: data,
+      create: {
+        userId: session.userId,
+        newRole: true,
+        announcement: true,
+        contentPublish: false,
+        statusChange: true,
+        email: true,
+        inApp: true,
+        sms: false,
+        ...data,
+      },
+    });
+
+    // ── Compliance audit: only log if something actually changed ──────────────
+    if (Object.keys(data).length > 0) {
+      const delta: Record<string, { from: unknown; to: unknown }> = {}
+      for (const [key, newVal] of Object.entries(data)) {
+        const oldVal = oldPref ? oldPref[key] : undefined
+        if (oldVal !== newVal) {
+          delta[key] = { from: oldVal, to: newVal }
+        }
+      }
+      if (Object.keys(delta).length > 0) {
+        // fire-and-forget — don't block the response
+        void logPreferenceChange(session.userId, delta).catch(() => {})
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────────
+
+    return NextResponse.json({ preferences: pref });
+  } catch (err) {
+    console.error('Notification preferences save error:', err);
+    return NextResponse.json(
+      { error: 'Failed to save preferences', details: err instanceof Error ? err.message : String(err) },
+      { status: 500 }
+    );
+  }
 }
+

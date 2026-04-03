@@ -336,6 +336,23 @@ export function applicationStatusUpdate(name: string, roleName: string, newStatu
 }
 
 
+export function mfaOtpEmail(name: string, code: string, siteUrl?: string): string {
+    return emailWrapper(`
+        ${heading('Two-Factor Authentication Code 🔐')}
+        ${subtext(`Hi ${name}, use the code below to complete your sign-in.`)}
+        <div style="text-align: center; padding: 28px 0;">
+            <div style="display: inline-block; padding: 20px 48px; background-color: ${BG_DARK}; border-radius: 14px; border: 2px solid ${BRAND_COLOR};">
+                <span style="font-size: 40px; font-weight: 800; letter-spacing: 14px; color: ${BRAND_COLOR}; font-family: 'Courier New', monospace;">${code}</span>
+            </div>
+            <p style="margin: 14px 0 0; font-size: 13px; color: ${TEXT_SECONDARY};">This code expires in <strong style="color: ${TEXT_PRIMARY};">10 minutes</strong>.</p>
+        </div>
+        ${divider()}
+        ${paragraph("Enter this 6-digit code on the login page to complete your sign-in. This code can only be used once.")}
+        ${paragraph(`<strong style="color: ${ACCENT_RED};">If you did not request this code</strong>, please change your password immediately — someone may have your credentials.`)}
+        ${siteUrl ? secondaryButton('Contact Support', `${siteUrl}/contact`) : ''}
+    `, `Your AIM Studio sign-in code is ${code}`)
+}
+
 export function forgotPasswordCode(name: string, code: string, siteUrl?: string): string {
     return emailWrapper(`
         ${heading('Password Reset Code')}

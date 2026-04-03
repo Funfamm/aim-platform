@@ -1,0 +1,38 @@
+{
+  "mfa": {
+    "title": "两步验证",
+    "subtitle": "请输入我们发送到您邮箱的验证码。",
+    "codePlaceholder": "6位验证码",
+    "submitButton": "验证",
+    "resendButton": "重新发送验证码",
+    "resendSuccess": "新的验证码已发送到您的邮箱。",
+    "errorInvalid": "验证码不正确，请重试。",
+    "errorExpired": "验证码已过期，请重新获取。",
+    "errorGeneric": "验证失败，请重试。"
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "全部标为已读",
+    "empty": "暂无通知。",
+    "preferences": {
+      "title": "通知偏好",
+      "saved": "偏好已保存。",
+      "newRole": "新角色招募",
+      "announcement": "平台公告",
+      "contentPublish": "新内容发布",
+      "statusChange": "申请状态变更",
+      "email": "电子邮件",
+      "inApp": "应用内通知",
+      "sms": "短信"
+    }
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "email": "电子邮件地址",
+    "password": "密码",
+    "invalidCredentials": "邮箱或密码不正确。",
+    "verifyEmailFirst": "请在登录前验证您的邮箱。",
+    "loginFailed": "登录失败，请重试。"
+  }
+}

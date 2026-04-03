@@ -1,0 +1,38 @@
+{
+  "mfa": {
+    "title": "Two-Step Verification",
+    "subtitle": "Enter the code we sent to your email address.",
+    "codePlaceholder": "6-digit code",
+    "submitButton": "Verify",
+    "resendButton": "Resend code",
+    "resendSuccess": "A new code has been sent to your email.",
+    "errorInvalid": "Incorrect code. Please try again.",
+    "errorExpired": "The code has expired. Please request a new one.",
+    "errorGeneric": "Verification failed. Please try again."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAllRead": "Mark all as read",
+    "empty": "You have no notifications.",
+    "preferences": {
+      "title": "Notification preferences",
+      "saved": "Preferences saved.",
+      "newRole": "New casting roles",
+      "announcement": "Platform announcements",
+      "contentPublish": "New content published",
+      "statusChange": "Application status changes",
+      "email": "Email",
+      "inApp": "In-app notifications",
+      "sms": "SMS"
+    }
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "email": "Email address",
+    "password": "Password",
+    "invalidCredentials": "Incorrect email or password.",
+    "verifyEmailFirst": "Please verify your email before signing in.",
+    "loginFailed": "Sign in failed. Please try again."
+  }
+}

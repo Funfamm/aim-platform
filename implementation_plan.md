@@ -59,10 +59,12 @@ Add missing security, reliability, and monitoring features to the **aim‑platfo
 - Add a small Node script `scripts/verify-headers.js` to parse the curl output and exit with non‑zero status on failure.
 
 ---
-## Open Questions
-> [!WARNING]
-> - **CSP whitelist:** List any external domains (analytics, fonts, payment providers, etc.) that must be allowed.
-> - **Subdomains for HSTS preload:** Do you have any subdomains (e.g., `api.impactaistudio.com`) that should be included in the preload list?
+## Open Questions (Answered)
+
+> **CSP whitelist:** No additional external domains required beyond those already in the policy.
+
+> **Subdomains for HSTS preload:** `aim-platform-kksd.onrender.com` will be included in the HSTS preload list.
+
 
 ## Verification Plan
 ### Automated Tests

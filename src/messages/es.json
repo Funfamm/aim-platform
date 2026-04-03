@@ -1,1 +1,39 @@
-{}
+{
+  "mfa": {
+    "title": "Verificación en dos pasos",
+    "subtitle": "Ingresa el código que enviamos a tu correo electrónico.",
+    "codePlaceholder": "Código de 6 dígitos",
+    "submitButton": "Verificar",
+    "resendButton": "Reenviar código",
+    "resendSuccess": "Se ha enviado un nuevo código a tu correo.",
+    "errorInvalid": "Código incorrecto. Por favor intenta nuevamente.",
+    "errorExpired": "El código ha expirado. Por favor solicita uno nuevo.",
+    "errorGeneric": "Error de verificación. Por favor intenta de nuevo."
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "empty": "No tienes notificaciones.",
+    "preferences": {
+      "title": "Preferencias de notificación",
+      "saved": "Preferencias guardadas.",
+      "newRole": "Nuevos roles de casting",
+      "announcement": "Anuncios de la plataforma",
+      "contentPublish": "Nuevo contenido publicado",
+      "statusChange": "Cambios de estado de solicitud",
+      "email": "Correo electrónico",
+      "inApp": "Notificaciones en la app",
+      "sms": "SMS"
+    }
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "invalidCredentials": "Correo o contraseña incorrectos.",
+    "verifyEmailFirst": "Por favor verifica tu correo antes de iniciar sesión.",
+    "loginFailed": "Error al iniciar sesión. Intenta de nuevo."
+  }
+}
+

@@ -117,7 +117,7 @@ export async function getSessionAndRefresh(): Promise<TokenPayload | null> {
         cookieStore.set('user_token', newAccess, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'strict',
             maxAge: 15 * 60,
             path: '/',
         })
@@ -183,7 +183,7 @@ export async function setUserCookie(accessToken: string, refreshToken?: string) 
     cookieStore.set('user_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         maxAge: 15 * 60, // 15 minutes
         path: '/',
     })
@@ -191,7 +191,7 @@ export async function setUserCookie(accessToken: string, refreshToken?: string) 
         cookieStore.set('refresh_token', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'strict',
             maxAge: 7 * 24 * 60 * 60, // 7 days
             path: '/',
         })
@@ -205,7 +205,7 @@ export async function clearUserCookie() {
     cookieStore.set('refresh_token', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        sameSite: 'strict',
         maxAge: 0,
         path: '/',
     })

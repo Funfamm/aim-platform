@@ -2,24 +2,27 @@
  * Notification Queue (BullMQ)
  * ---------------------------------------------------------------------------
  * Handles all outbound notification jobs: email + in-app.
- * Each job is retried up to 3 times with exponential back-off.
+ *
+ * Enhancements over v1:
+ *  - 5 retries with exponential back-off (2^attempt * 1_000 ms)
+ *  - Dead-Letter Queue (DLQ): failed jobs moved to "failedNotifications" queue
+ *  - Redis Pub/Sub publish on success (feeds real-time WebSocket / poll clients)
+ *  - Prometheus metrics hooks (recordNotificationJob)
  *
  * Redis: set REDIS_URL to your Upstash rediss:// URL in production.
  * Worker: started via src/instrumentation.ts on server boot (Node runtime only).
  * If REDIS_URL is not set, all queue operations are silently skipped.
- *
- * Usage:
- *   import { addNotificationJob } from '@/lib/queues/notificationQueue'
- *   await addNotificationJob(payload)
  */
 import { Queue, Worker, Job } from 'bullmq'
 import { sendEmail } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
+import { recordNotificationJob } from '@/lib/metrics'
 
 // ─── Job payload types ─────────────────────────────────────────────────────
+
 export interface NotificationJobPayload {
     type: 'email' | 'in_app' | 'both'
-    userId?: string           // target user (for in-app)
+    userId?: string           // target user (for in-app + pub/sub)
     email?: string            // recipient email address
     subject?: string
     html?: string
@@ -27,10 +30,9 @@ export interface NotificationJobPayload {
 }
 
 // ─── Lazy connection factory ───────────────────────────────────────────────
-// We never touch Redis unless REDIS_URL is explicitly set.
-// This prevents ECONNREFUSED errors in CI / local dev without Redis.
+
 function buildConnection() {
-    const redisUrl = process.env.REDIS_URL  // strict opt-in — no localhost fallback
+    const redisUrl = process.env.REDIS_URL
     if (!redisUrl) return null
 
     const parsedUrl = new URL(redisUrl)
@@ -44,6 +46,7 @@ function buildConnection() {
 }
 
 // ─── Queue singleton (lazy) ────────────────────────────────────────────────
+
 let _queue: Queue<NotificationJobPayload> | null = null
 
 export function getNotificationQueue(): Queue<NotificationJobPayload> | null {
@@ -54,13 +57,31 @@ export function getNotificationQueue(): Queue<NotificationJobPayload> | null {
     _queue = new Queue<NotificationJobPayload>('notifications', {
         connection,
         defaultJobOptions: {
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 5_000 },
-            removeOnComplete: { age: 60 * 60 * 24 },       // keep 24 h
-            removeOnFail:     { age: 60 * 60 * 24 * 7 },   // keep 7 days on failure
+            attempts: 5,                                          // ↑ from 3 to 5
+            backoff: { type: 'exponential', delay: 1_000 },      // 1s, 2s, 4s, 8s, 16s
+            removeOnComplete: { age: 60 * 60 * 24 },             // keep 24 h on success
+            removeOnFail: false,                                  // keep ALL failures → DLQ
         },
     })
     return _queue
+}
+
+// ─── Dead-Letter Queue ────────────────────────────────────────────────────
+
+let _dlq: Queue<NotificationJobPayload> | null = null
+
+export function getFailedNotificationsQueue(): Queue<NotificationJobPayload> | null {
+    if (!process.env.REDIS_URL) return null
+    if (_dlq) return _dlq
+
+    const connection = buildConnection()!
+    _dlq = new Queue<NotificationJobPayload>('failedNotifications', {
+        connection,
+        defaultJobOptions: {
+            removeOnComplete: { age: 60 * 60 * 24 * 7 }, // keep 7 days
+        },
+    })
+    return _dlq
 }
 
 /**
@@ -76,14 +97,13 @@ export async function addNotificationJob(payload: NotificationJobPayload): Promi
     await queue.add('notification', payload)
 }
 
-// Keep named export for backwards-compat callers that import notificationQueue directly
+// Keep named export for backwards-compat callers
 export const notificationQueue = {
     add: async (_name: string, payload: NotificationJobPayload) => addNotificationJob(payload),
 }
 
 // ─── Worker ────────────────────────────────────────────────────────────────
-// Started once on server boot via instrumentation.ts (Node runtime only).
-// Guards against double-start across hot-reload cycles.
+
 let workerStarted = false
 
 export function startNotificationWorker() {
@@ -99,31 +119,59 @@ export function startNotificationWorker() {
     const worker = new Worker<NotificationJobPayload>(
         'notifications',
         async (job: Job<NotificationJobPayload>) => {
-            const { type, email, subject, html, notificationId } = job.data
+            const { type, email, subject, html, notificationId, userId } = job.data
 
-            // Email leg
+            // ── Email leg ─────────────────────────────────────────────────
             if ((type === 'email' || type === 'both') && email && subject && html) {
                 const sent = await sendEmail({ to: email, subject, html })
                 if (!sent) throw new Error(`Email delivery failed for job ${job.id}`)
+            }
+
+            // ── Redis Pub/Sub (real-time feed signal) ─────────────────────
+            // Publishes to user-specific channel so poll clients stay fresh.
+            // Using dynamic import so the `redis` package is optional.
+            if (userId && process.env.REDIS_URL) {
+                try {
+                    const { createClient } = await import('redis')
+                    const pub = createClient({ url: process.env.REDIS_URL })
+                    await pub.connect()
+                    await pub.publish(`notifications:${userId}`, JSON.stringify({
+                        notificationId,
+                        type,
+                        ts: new Date().toISOString(),
+                    }))
+                    await pub.disconnect()
+                } catch (pubErr) {
+                    logger.warn('notificationQueue', `Pub/Sub publish failed: ${(pubErr as Error).message}`)
+                }
             }
 
             if (notificationId) {
                 logger.info('notificationQueue', `Job ${job.id} delivered notificationId=${notificationId}`)
             }
         },
-        {
-            connection,
-            concurrency: 5,
-        }
+        { connection, concurrency: 5 }
     )
 
     worker.on('completed', (job) => {
         logger.info('notificationQueue', `Job ${job.id} completed (${job.data.type})`)
-    })
-    worker.on('failed', (job, err) => {
-        logger.error('notificationQueue', `Job ${job?.id} failed: ${err.message}`, { error: err })
+        recordNotificationJob('completed', job.data.type)
     })
 
-    logger.info('notificationQueue', 'Worker started')
+    worker.on('failed', async (job, err) => {
+        logger.error('notificationQueue', `Job ${job?.id} failed: ${err.message}`, { error: err })
+        recordNotificationJob('failed', job?.data.type ?? 'unknown')
+
+        // Move to DLQ after all retries exhausted
+        if (job && (job.attemptsMade ?? 0) >= (job.opts?.attempts ?? 5)) {
+            const dlq = getFailedNotificationsQueue()
+            if (dlq) {
+                await dlq.add('dlq', job.data).catch(() => {})
+                logger.warn('notificationQueue', `Job ${job.id} moved to DLQ after ${job.attemptsMade} attempts`)
+            }
+        }
+    })
+
+    logger.info('notificationQueue', 'Worker started (5 retries, DLQ enabled)')
     return worker
 }

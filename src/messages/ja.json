@@ -1,0 +1,38 @@
+{
+  "mfa": {
+    "title": "2段階認証",
+    "subtitle": "メールアドレスに送信したコードを入力してください。",
+    "codePlaceholder": "6桁のコード",
+    "submitButton": "認証する",
+    "resendButton": "コードを再送する",
+    "resendSuccess": "新しいコードをメールに送信しました。",
+    "errorInvalid": "コードが正しくありません。もう一度お試しください。",
+    "errorExpired": "コードの有効期限が切れています。新しいコードをリクエストしてください。",
+    "errorGeneric": "認証に失敗しました。もう一度お試しください。"
+  },
+  "notifications": {
+    "title": "通知",
+    "markAllRead": "すべて既読にする",
+    "empty": "通知はありません。",
+    "preferences": {
+      "title": "通知設定",
+      "saved": "設定が保存されました。",
+      "newRole": "新しいキャスティング役",
+      "announcement": "プラットフォームのお知らせ",
+      "contentPublish": "新しいコンテンツの公開",
+      "statusChange": "応募ステータスの変更",
+      "email": "メール",
+      "inApp": "アプリ内通知",
+      "sms": "SMS"
+    }
+  },
+  "auth": {
+    "login": "サインイン",
+    "logout": "サインアウト",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
+    "verifyEmailFirst": "サインインする前にメールアドレスを確認してください。",
+    "loginFailed": "サインインに失敗しました。もう一度お試しください。"
+  }
+}

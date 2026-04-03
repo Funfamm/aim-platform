@@ -1,0 +1,112 @@
+{
+  "_comment": "Cloudflare Page Rules & Settings for impactaistudio.com — import via Cloudflare Dashboard or Terraform provider.",
+
+  "zone_settings": {
+    "ssl": "full_strict",
+    "always_use_https": true,
+    "min_tls_version": "1.2",
+    "tls_1_3": "on",
+    "automatic_https_rewrites": true,
+    "security_level": "high",
+    "browser_cache_ttl": 14400,
+    "cache_level": "aggressive",
+    "rocket_loader": "off",
+    "email_obfuscation": "on",
+    "server_side_exclude": "on",
+    "hotlink_protection": "off",
+    "websockets": "on",
+    "http2": "on",
+    "http3": "on"
+  },
+
+  "page_rules": [
+    {
+      "_comment": "Force HTTPS on all traffic (belt-and-suspenders alongside HSTS)",
+      "targets": [{ "target": "url", "constraint": { "operator": "matches", "value": "http://impactaistudio.com/*" } }],
+      "actions": [{ "id": "always_use_https" }],
+      "priority": 1,
+      "status": "active"
+    },
+    {
+      "_comment": "Force HTTPS on www variant",
+      "targets": [{ "target": "url", "constraint": { "operator": "matches", "value": "http://www.impactaistudio.com/*" } }],
+      "actions": [{ "id": "always_use_https" }],
+      "priority": 2,
+      "status": "active"
+    },
+    {
+      "_comment": "Redirect www to apex domain",
+      "targets": [{ "target": "url", "constraint": { "operator": "matches", "value": "www.impactaistudio.com/*" } }],
+      "actions": [
+        {
+          "id": "forwarding_url",
+          "value": {
+            "url": "https://impactaistudio.com/$1",
+            "status_code": 301
+          }
+        }
+      ],
+      "priority": 3,
+      "status": "active"
+    },
+    {
+      "_comment": "Long-lived cache for static assets served by Next.js (_next/static)",
+      "targets": [{ "target": "url", "constraint": { "operator": "matches", "value": "impactaistudio.com/_next/static/*" } }],
+      "actions": [
+        { "id": "cache_level", "value": "cache_everything" },
+        { "id": "edge_cache_ttl", "value": 2592000 },
+        { "id": "browser_cache_ttl", "value": 2592000 }
+      ],
+      "priority": 4,
+      "status": "active"
+    },
+    {
+      "_comment": "Cache public media / uploads with a moderate TTL",
+      "targets": [{ "target": "url", "constraint": { "operator": "matches", "value": "impactaistudio.com/uploads/*" } }],
+      "actions": [
+        { "id": "cache_level", "value": "cache_everything" },
+        { "id": "edge_cache_ttl", "value": 86400 },
+        { "id": "browser_cache_ttl", "value": 86400 }
+      ],
+      "priority": 5,
+      "status": "active"
+    },
+    {
+      "_comment": "Never cache API responses — always pass through to origin",
+      "targets": [{ "target": "url", "constraint": { "operator": "matches", "value": "impactaistudio.com/api/*" } }],
+      "actions": [
+        { "id": "cache_level", "value": "bypass" }
+      ],
+      "priority": 6,
+      "status": "active"
+    }
+  ],
+
+  "firewall_rules": [
+    {
+      "_comment": "Block known bad bots",
+      "description": "Block bad bots",
+      "expression": "(cf.client.bot) and not (cf.verified_bot_category in {\"Search Engine Crawlers\" \"Monitoring & Analytics\"})",
+      "action": "block"
+    },
+    {
+      "_comment": "Challenge requests from countries with high bot traffic (optional, tune as needed)",
+      "description": "JS challenge high-risk countries",
+      "expression": "(ip.geoip.country in {\"CN\" \"RU\" \"KP\" \"IR\"}) and not (cf.verified_bot_category in {\"Search Engine Crawlers\"})",
+      "action": "js_challenge"
+    }
+  ],
+
+  "rate_limiting": [
+    {
+      "_comment": "Protect login endpoint from brute-force (mirrors server-side rate limiter)",
+      "description": "Auth login rate limit",
+      "match": {
+        "request": { "url_pattern": "impactaistudio.com/api/auth/login", "methods": ["POST"] }
+      },
+      "threshold": 10,
+      "period": 60,
+      "action": { "mode": "challenge" }
+    }
+  ]
+}
