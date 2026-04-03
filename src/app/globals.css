@@ -1295,10 +1295,10 @@ select::placeholder {
 .footer {
   border-top: 1px solid var(--border-subtle);
   padding: var(--space-2xl) 0 var(--space-xl);
-  margin-top: 0;
+  margin-top: auto;
   position: relative;
   background: var(--bg-primary);
-  z-index: 10001;
+  z-index: 1;
 }
 
 .footer::before {
@@ -2689,9 +2689,9 @@ textarea:focus:not(:focus-visible) {
     height: 36px;
   }
 
-  /* Footer padding to clear the bottom tab bar — snug, no wasted space */
+  /* Footer: respect device safe area (home indicator) but don't add extra padding */
   .footer {
-    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0px)) !important;
     padding-top: var(--space-lg) !important;
   }
 

@@ -2,6 +2,7 @@
     position: relative;
     display: flex;
     align-items: center;
+    z-index: 1000;  /* Establish a stacking context above the footer */
 }
 
 .bellBtn {
@@ -51,18 +52,18 @@
 /* ─── Dropdown ─────────────────────────────────────────────────────────────── */
 
 .dropdown {
-    position: absolute;
-    top: calc(100% + 12px);
-    right: 0;
+    position: fixed;         /* fixed = out of document flow, never clipped by footer */
+    top: 60px;               /* just below the navbar */
+    right: 16px;
     width: 360px;
-    max-height: 500px;
+    max-height: calc(100vh - 80px); /* never taller than viewport */
     display: flex;
     flex-direction: column;
     background: var(--bg-card, #1a1d23);
     border: 1px solid var(--border, #2a2d35);
     border-radius: 12px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    z-index: 9999;
+    z-index: 99999;          /* above everything including footer */
     overflow: hidden;
     animation: slideDown 0.2s ease;
 }
@@ -206,9 +207,23 @@
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 
-@media (max-width: 480px) {
+/* ─── Tablet ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
     .dropdown {
         width: calc(100vw - 32px);
-        right: -8px;
+        right: 16px;
+        left: 16px;          /* stretch edge-to-edge with padding */
+        top: 56px;           /* mobile navbar is slightly shorter */
+    }
+}
+
+/* ─── Small mobile ────────────────────────────────────────── */
+@media (max-width: 480px) {
+    .dropdown {
+        width: calc(100vw - 24px);
+        right: 12px;
+        left: 12px;
+        top: 52px;
+        max-height: calc(100vh - 70px); /* more room on short screens */
     }
 }
