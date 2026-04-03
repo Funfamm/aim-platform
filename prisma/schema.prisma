@@ -291,6 +291,7 @@ model SiteSettings {
   requireVoice        Boolean @default(false) // Require voice recording
   maxPhotoUploads     Int     @default(6)
   audioUploadEnabled  Boolean @default(true) // Enable/disable audio upload feature
+  resultRevealDelayHours Int  @default(6)    // Hours before AI audition results are visible to applicant
 
   // Content Access
   requireLoginForFilms    Boolean @default(true)

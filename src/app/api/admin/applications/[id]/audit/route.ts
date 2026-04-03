@@ -79,8 +79,9 @@ export async function POST(
             newStatus = 'under_review' as import('@prisma/client').ApplicationStatus
         }
 
-        // ═══ DELAYED REVEAL — results visible after 5 hours ═══
-        const REVEAL_DELAY_HOURS = 5
+        // ═══ DELAYED REVEAL — results visible after admin-configured delay ═══
+        const settings = await prisma.siteSettings.findFirst().catch(() => null)
+        const REVEAL_DELAY_HOURS = (settings as any)?.resultRevealDelayHours ?? 6
         const resultVisibleAt = new Date(Date.now() + REVEAL_DELAY_HOURS * 60 * 60 * 1000)
 
         // Update the application with AI results (stored immediately, revealed later)

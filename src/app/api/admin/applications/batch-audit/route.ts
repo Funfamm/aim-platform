@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No valid applications found' }, { status: 404 })
     }
 
-    const REVEAL_DELAY_HOURS = 5
+    // Admin-configurable reveal delay (default 6 hours)
+    const settings = await prisma.siteSettings.findFirst().catch(() => null)
+    const REVEAL_DELAY_HOURS = (settings as any)?.resultRevealDelayHours ?? 6
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
