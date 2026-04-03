@@ -2,16 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
-const NAV = [
-    { href: '/admin/analytics', label: '📊 Analytics' },{ href: '/admin/projects', label: '🎬 Projects' },
-    { href: '/admin/casting', label: '🎭 Casting' },{ href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Page Media' },{ href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },{ href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/training', label: '🎓 Training' },
-    { href: '/admin/settings', label: '⚙️ Settings' },
-]
 
 const TIERS: Record<string, { color: string; bg: string; icon: string; glow: string }> = {
     platinum: { color: '#e5e7eb', bg: 'rgba(229,231,235,0.08)', icon: '💎', glow: '0 0 20px rgba(229,231,235,0.08)' },
@@ -210,17 +202,7 @@ export default function AdminSponsorsPage() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    {NAV.map(n => <li key={n.href}><Link href={n.href} className={n.href === '/admin/sponsors' ? 'active' : ''}>{n.label}</Link></li>)}
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 {/* Header */}
@@ -246,7 +228,7 @@ export default function AdminSponsorsPage() {
                 </div>
 
                 {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                     {[
                         { label: 'Total', value: sponsors.length, icon: '🤝', color: 'var(--accent-gold)', bg: 'rgba(212,168,83,0.04)' },
                         { label: 'Active', value: sponsors.filter(s => s.active).length, icon: '✅', color: '#22c55e', bg: 'rgba(34,197,94,0.04)' },

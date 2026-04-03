@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
 import { transcribeVideo } from '@/lib/transcribe-client'
 import { translateToAllLanguages, LANGUAGE_NAMES } from '@/lib/subtitle-translator'
@@ -31,19 +32,6 @@ const EMPTY_FORM: FormData = {
 
 const STATUSES = ['upcoming', 'in-production', 'completed']
 
-const SIDEBAR_LINKS = [
-    { href: '/admin/analytics', label: '📊 Analytics' },
-    { href: '/admin/projects', label: '🎬 Projects', active: true },
-    { href: '/admin/casting', label: '🎭 Casting' },
-    { href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Page Media' },
-    { href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },
-    { href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/training', label: '🎓 Training' },
-    { href: '/admin/settings', label: '⚙️ Settings' },
-]
 
 const statusConfig: Record<string, { label: string; className: string }> = {
     completed: { label: 'Completed', className: 'badge-green' },
@@ -175,24 +163,7 @@ export default function AdminProjectsPage() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    {SIDEBAR_LINKS.map(link => (
-                        <li key={link.href}>
-                            <Link href={link.href} className={link.active ? 'active' : ''}>{link.label}</Link>
-                        </li>
-                    ))}
-                    <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)' }}>
-                        <Link href="/" style={{ color: 'var(--text-tertiary)' }}>← Back to Site</Link>
-                    </li>
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <div className="admin-header">

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import AdminSidebar from '@/components/AdminSidebar'
 
 /* ── Types ── */
 type SocialLinks = { youtube: string; instagram: string; tiktok: string; x: string; imdb: string }
@@ -985,25 +986,7 @@ export default function AdminSettingsPage() {
 
     return (
         <div className="admin-layout">
-            {/* Sidebar */}
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    {SIDEBAR_LINKS.map(link => (
-                        <li key={link.href}>
-                            <Link href={link.href} className={link.active ? 'active' : ''}>{link.label}</Link>
-                        </li>
-                    ))}
-                    <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)' }}>
-                        <Link href="/" style={{ color: 'var(--text-tertiary)' }}>← Back to Site</Link>
-                    </li>
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             {/* Main */}
             <main className="admin-main">

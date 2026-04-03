@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import AdminSidebar from '@/components/AdminSidebar'
 
 // Custom dark dropdown to avoid native white popups
 function DarkDropdown({ value, onChange, options, style }: {
@@ -58,15 +59,6 @@ function DarkDropdown({ value, onChange, options, style }: {
     )
 }
 
-const NAV = [
-    { href: '/admin/analytics', label: '📊 Analytics' },{ href: '/admin/projects', label: '🎬 Projects' },
-    { href: '/admin/casting', label: '🎭 Casting' },{ href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Page Media' },{ href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },{ href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/training', label: '🎓 Training' },
-    { href: '/admin/settings', label: '⚙️ Settings' },
-]
 
 interface Application {
     id: string; fullName: string; email: string; phone: string | null
@@ -257,17 +249,7 @@ export default function AdminApplicationsPage() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    {NAV.map(n => <li key={n.href}><Link href={n.href} className={n.href === '/admin/applications' ? 'active' : ''}>{n.label}</Link></li>)}
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 16px' }}>📋 Applications</h1>

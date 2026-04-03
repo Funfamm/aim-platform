@@ -2,20 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
-const NAV = [
-    { href: '/admin/analytics', label: '📊 Analytics' },
-    { href: '/admin/projects', label: '🎬 Projects' },
-    { href: '/admin/casting', label: '🎭 Casting' },
-    { href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Page Media' },
-    { href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },
-    { href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/training', label: '🎓 Training' },
-    { href: '/admin/settings', label: '⚙️ Settings' },
-]
 
 interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; authProvider: 'email' | 'google' | 'apple' | 'multiple' }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
@@ -108,25 +96,13 @@ export default function AdminUsersPage() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    {NAV.map(n => (
-                        <li key={n.href}><Link href={n.href} className={n.href === '/admin/users' ? 'active' : ''}>{n.label}</Link></li>
-                    ))}
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 16px' }}>👥 Users</h1>
 
                 {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '8px', marginBottom: '16px' }}>
                     {[
                         { label: 'Total Users', value: stats.total, color: 'var(--accent-gold)', icon: '👥' },
                         { label: 'Members', value: stats.members, color: '#34d399', icon: '🧑' },

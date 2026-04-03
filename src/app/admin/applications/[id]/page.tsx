@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { getSessionAndRefresh } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import ApplicationDetailClient from '@/components/ApplicationDetailClient'
+import AdminSidebar from '@/components/AdminSidebar'
 
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getSessionAndRefresh()
@@ -35,26 +36,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    <li><Link href="/admin/analytics">📊 Analytics</Link></li>
-                    <li><Link href="/admin/projects">🎬 Projects</Link></li>
-                    <li><Link href="/admin/casting">🎭 Casting</Link></li>
-                    <li><Link href="/admin/applications" className="active">📋 Applications</Link></li>
-                    <li><Link href="/admin/media">🖼️ Page Media</Link></li>
-                    <li><Link href="/admin/sponsors">🤝 Sponsors</Link></li>
-                    <li><Link href="/admin/donations">💰 Donations</Link></li>
-                    <li><Link href="/admin/users">👥 Users</Link></li>
-                    <li><Link href="/admin/scripts">✍️ Scripts</Link></li>
-                    <li><Link href="/admin/settings">⚙️ Settings</Link></li>
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 <div style={{ marginBottom: 'var(--space-md)' }}>

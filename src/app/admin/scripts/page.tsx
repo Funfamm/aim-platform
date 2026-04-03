@@ -2,46 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
-interface ScriptCall {
-    id: string
-    title: string
-    description: string
-    genre: string | null
-    targetLength: string | null
-    status: string
-    isPublic: boolean
-    deadline: string | null
-    maxSubmissions: number
-    toneKeywords: string | null
-    projectId: string | null
-    project: { title: string } | null
-    _count: { submissions: number }
-    createdAt: string
-}
-
-interface Project { id: string; title: string }
-
-const STATUS_META: Record<string, { color: string; bg: string; icon: string }> = {
-    draft: { color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', icon: '📝' },
-    open: { color: '#34d399', bg: 'rgba(52,211,153,0.08)', icon: '📖' },
-    closed: { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', icon: '🔒' },
-    archived: { color: '#64748b', bg: 'rgba(100,116,139,0.08)', icon: '📦' },
-}
-
-const NAV = [
-    { href: '/admin/analytics', label: '📊 Analytics' },
-    { href: '/admin/projects', label: '🎬 Projects' },
-    { href: '/admin/casting', label: '🎭 Casting' },
-    { href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Page Media' },
-    { href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },
-    { href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/training', label: '🎓 Training' },
-    { href: '/admin/settings', label: '⚙️ Settings' },
-]
 
 export default function AdminScriptsPage() {
     const [calls, setCalls] = useState<ScriptCall[]>([])
@@ -121,19 +83,7 @@ export default function AdminScriptsPage() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    {NAV.map(n => (
-                        <li key={n.href}><Link href={n.href} className={n.href === '/admin/scripts' ? 'active' : ''}>{n.label}</Link></li>
-                    ))}
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 {/* ─── HEADER ─── */}
@@ -183,7 +133,7 @@ export default function AdminScriptsPage() {
                 </div>
 
                 {/* ─── STATS BAR ─── */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '8px', marginBottom: '16px' }}>
                     {[
                         { label: 'Total Calls', value: calls.length, icon: '📜', color: 'var(--accent-gold)' },
                         { label: 'Open', value: openCount, icon: '📖', color: '#34d399' },

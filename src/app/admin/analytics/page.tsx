@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import AdminSidebar from '@/components/AdminSidebar'
 import VoiceConversation from '@/components/analytics/VoiceConversation'
 import { Sparkline, VitalityRing, DonutChart, AreaChart, HourlyHeatmap, TrendArrow, ActivityItem, getRelativeTime } from '@/components/analytics/Charts'
 
@@ -33,20 +34,6 @@ function getGreeting() {
     return '🌙 Good Night'
 }
 
-const SIDEBAR = [
-    { href: '/admin/analytics', label: '📊 Analytics', active: true },
-    { href: '/admin/projects', label: '🎬 Projects' },
-    { href: '/admin/casting', label: '🎭 Casting' },
-    { href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Media Manager' },
-    { href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },
-    { href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/training', label: '🎓 Training' },
-    { href: '/admin/announcements', label: '📣 Announcements' },
-    { href: '/admin/settings', label: '⚙️ Settings' },
-]
 
 interface DashboardData {
     projectCount: number
@@ -306,20 +293,7 @@ export default function AdminAnalyticsPage() {
 
     return (
         <div className="admin-layout">
-            <aside className="admin-sidebar">
-                <div className="admin-sidebar-logo">
-                    <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>Admin Panel</div>
-                </div>
-                <ul className="admin-sidebar-nav">
-                    {SIDEBAR.map(l => <li key={l.href}><Link href={l.href} className={l.active ? 'active' : ''}>{l.label}</Link></li>)}
-                    <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)' }}>
-                        <Link href="/" style={{ color: 'var(--text-tertiary)' }}>← Back to Site</Link>
-                    </li>
-                </ul>
-            </aside>
+            <AdminSidebar />
 
             <main className="admin-main">
                 {/* ── Cinematic Header ── */}
