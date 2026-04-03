@@ -209,21 +209,23 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                             border: 'none',
                             background: isWithdrawn
                                 ? 'linear-gradient(135deg, rgba(228,185,90,0.15), rgba(228,185,90,0.08))'
-                                : 'linear-gradient(135deg, #e4b95a, #c49b3a, #a8832e)',
+                                : 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold), var(--accent-gold-dark))',
                             color: isWithdrawn ? 'var(--accent-gold)' : '#0f1115',
                             transition: 'all 0.3s ease',
-                            boxShadow: isWithdrawn ? 'none' : '0 4px 16px rgba(228,185,90,0.25)',
+                            boxShadow: isWithdrawn ? 'none' : '0 4px 16px rgba(228,185,90,0.3)',
                         }}
                         onMouseEnter={e => {
                             if (!isWithdrawn) {
-                                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 6px 24px rgba(228,185,90,0.4)'
+                                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 6px 28px rgba(228,185,90,0.5)'
                                 ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)'
+                                ;(e.currentTarget as HTMLAnchorElement).style.filter = 'brightness(1.08)'
                             }
                         }}
                         onMouseLeave={e => {
                             if (!isWithdrawn) {
-                                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px rgba(228,185,90,0.25)'
+                                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px rgba(228,185,90,0.3)'
                                 ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'
+                                ;(e.currentTarget as HTMLAnchorElement).style.filter = 'none'
                             }
                         }}
                         onClick={() => {

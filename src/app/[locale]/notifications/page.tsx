@@ -151,6 +151,9 @@ export default function NotificationsPage() {
                 .notif-group { animation: fadeInUp 0.35s ease both; }
                 .notif-row:hover { background: rgba(212,168,83,0.06) !important; }
                 .tab-btn:hover { color: var(--accent-gold) !important; }
+                @media (max-width: 768px) {
+                    #notifications-page { padding-top: 100px !important; }
+                }
             `}</style>
 
             <div
