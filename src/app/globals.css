@@ -2689,10 +2689,25 @@ textarea:focus:not(:focus-visible) {
     height: 36px;
   }
 
-  /* Footer: respect device safe area (home indicator) but don't add extra padding */
+  /* Footer: background fills behind the iOS pill/home-indicator bar */
   .footer {
     padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom, 0px)) !important;
     padding-top: var(--space-lg) !important;
+  }
+
+  /* Extend the footer background colour into the browser chrome safe-area.
+     This makes the page background seamlessly cover the pill bar area. */
+  .footer::after {
+    content: '';
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-bottom, 0px);
+    background: var(--bg-primary);
+    z-index: 0;
+    pointer-events: none;
   }
 
   /* Featured projects */

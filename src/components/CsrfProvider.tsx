@@ -37,16 +37,20 @@ export function CsrfProvider({ children }: { children: React.ReactNode }) {
             // Inject CSRF header on any mutation to /api/*
             if (MUTATION_METHODS.includes(method) && url.includes('/api/')) {
                 const token = getCsrfToken()
-                if (token) {
-                    const headers = new Headers(init?.headers)
-                    if (!headers.has('X-CSRF-Token') && !headers.has('x-csrf-token')) {
-                        headers.set('X-CSRF-Token', token)
-                    }
-                    return originalFetch(input, { ...init, headers })
+                const headers = new Headers(init?.headers)
+                if (token && !headers.has('X-CSRF-Token') && !headers.has('x-csrf-token')) {
+                    headers.set('X-CSRF-Token', token)
                 }
+                // Ensure cookies (including auth JWT) are sent
+                const newInit: RequestInit = {
+                    ...init,
+                    headers,
+                    credentials: 'include',
+                }
+                return originalFetch(input, newInit)
             }
 
-            return originalFetch(input, init)
+            return originalFetch(input, { ...init, credentials: 'include' })
         }
 
         return () => {

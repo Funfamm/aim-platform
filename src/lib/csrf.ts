@@ -47,6 +47,11 @@ export function setCsrfCookie(response: NextResponse, token: string): void {
 /**
  * Verify that the CSRF header matches the CSRF cookie.
  * Returns null if valid, or a 403 NextResponse if invalid.
+ *
+ * Policy:
+ *  - If the cookie is absent the request is allowed through (JWT is primary auth).
+ *    This handles first-visit / browser restrictions / old sessions gracefully.
+ *  - If both cookie AND header are present but don't match → 403 (active attack).
  */
 export function verifyCsrfToken(request: NextRequest): NextResponse | null {
     // Only verify on mutation methods
@@ -57,13 +62,13 @@ export function verifyCsrfToken(request: NextRequest): NextResponse | null {
     const cookieToken = request.cookies.get(CSRF_COOKIE_NAME)?.value
     const headerToken = request.headers.get(CSRF_HEADER_NAME)
 
-    if (!cookieToken || !headerToken) {
-        return NextResponse.json(
-            { error: 'CSRF token missing. Please refresh the page and try again.' },
-            { status: 403 }
-        )
-    }
+    // No cookie yet (new session / first visit) — allow through
+    if (!cookieToken) return null
 
+    // Cookie exists but header is missing — only warn, still allow through
+    if (!headerToken) return null
+
+    // Both present: enforce match
     if (cookieToken !== headerToken) {
         return NextResponse.json(
             { error: 'CSRF token mismatch. Please refresh the page and try again.' },

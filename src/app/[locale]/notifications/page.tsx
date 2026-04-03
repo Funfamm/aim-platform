@@ -88,16 +88,24 @@ export default function NotificationsPage() {
     async function markAllRead() {
         const unread = notifications.filter(n => !n.read)
         if (!unread.length) return
-        await Promise.all(unread.map(n =>
-            fetch(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => null)
-        ))
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })))
-        setUnreadCount(0)
+        try {
+            await fetch('/api/notifications', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({}),  // empty ids = mark ALL as read
+            })
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+            setUnreadCount(0)
+        } catch { /* ignore */ }
     }
 
     function handleNotifClick(n: Notification) {
         if (!n.read) {
-            fetch(`/api/notifications/${n.id}/read`, { method: 'POST' }).catch(() => null)
+            fetch('/api/notifications', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [n.id] }),
+            }).catch(() => null)
             setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
             setUnreadCount(prev => Math.max(0, prev - 1))
         }
@@ -147,7 +155,7 @@ export default function NotificationsPage() {
 
             <div
                 id="notifications-page"
-                style={{ maxWidth: '720px', margin: '0 auto', padding: '0 16px 80px' }}
+                style={{ maxWidth: '720px', margin: '0 auto', padding: '88px 16px 80px' }}
             >
                 {/* ── Header ── */}
                 <div style={{ marginBottom: '32px' }}>

@@ -8,26 +8,37 @@ export async function GET() {
   const session = await getSessionAndRefresh();
   if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const db = prisma as any;
-  let pref = await db.userNotificationPreference.findUnique({ where: { userId: session.userId } });
+  const defaults = {
+    newRole: true,
+    announcement: true,
+    contentPublish: false,
+    statusChange: true,
+    email: true,
+    inApp: true,
+    sms: false,
+  };
 
-  if (!pref) {
-    pref = await db.userNotificationPreference.create({
-      data: {
-        userId: session.userId,
-        newRole: true,
-        announcement: true,
-        contentPublish: false,
-        statusChange: true,
-        email: true,
-        inApp: true,
-        sms: false,
-      },
-    });
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = prisma as any;
+    let pref = await db.userNotificationPreference.findUnique({ where: { userId: session.userId } });
+
+    if (!pref) {
+      pref = await db.userNotificationPreference.create({
+        data: {
+          userId: session.userId,
+          ...defaults,
+        },
+      });
+    }
+
+    return NextResponse.json({ preferences: pref });
+  } catch (err) {
+    // Graceful fallback: if the table/columns don't exist yet (migration drift),
+    // return defaults so the UI still works.
+    console.error('Notification preferences GET error:', err);
+    return NextResponse.json({ preferences: { userId: session.userId, ...defaults } });
   }
-
-  return NextResponse.json({ preferences: pref });
 }
 
 export async function PUT(req: Request) {
