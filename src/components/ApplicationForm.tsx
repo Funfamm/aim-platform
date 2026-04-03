@@ -164,6 +164,11 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         }
     }
 
+    const goToStep = (nextStep: number) => {
+        setStep(nextStep)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+
     const handleSubmit = async () => {
         if (!canProceed(5)) return
         setSubmitting(true)
@@ -537,7 +542,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                 borderTop: '1px solid var(--border-subtle)',
             }}>
                 {step > 1 ? (
-                    <button className="btn btn-secondary" onClick={() => setStep((s) => s - 1)}>
+                    <button className="btn btn-secondary" onClick={() => goToStep(step - 1)}>
                         ← {t('back').replace('← ', '')}
                     </button>
                 ) : (
@@ -547,7 +552,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                 {step < totalSteps ? (
                     <button
                         className="btn btn-primary"
-                        onClick={() => setStep((s) => s + 1)}
+                        onClick={() => goToStep(step + 1)}
                         disabled={!canProceed(step)}
                         style={{ opacity: canProceed(step) ? 1 : 0.5 }}
                     >

@@ -10,9 +10,9 @@ import { checkMagicBytes, guardPathTraversal } from '@/lib/upload-safety'
 import { logUploadEvent } from '@/lib/upload-audit'
 
 // ═══ FILE UPLOAD SECURITY ═══
-const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const ALLOWED_PHOTO_EXTS = ['.jpg', '.jpeg', '.png', '.webp']
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024 // 5 MB
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
+const ALLOWED_PHOTO_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif']
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024 // 10 MB (mobile cameras produce large files)
 
 const ALLOWED_VOICE_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/x-m4a', 'audio/mp3', 'audio/flac', 'audio/x-wav']
 const ALLOWED_VOICE_TYPE_PREFIXES = ['audio/']
@@ -158,7 +158,7 @@ export async function POST(
                         userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
                         reason: `Invalid photo extension: ${ext}`, code: 'EXT_REJECTED',
                     })
-                    return NextResponse.json({ error: `Invalid photo format for ${key}. Allowed: JPG, PNG, WebP.` }, { status: 400 })
+                    return NextResponse.json({ error: `Invalid photo format for ${key}. Allowed: JPG, PNG, WebP, HEIC.` }, { status: 400 })
                 }
                 if (file.type && !ALLOWED_PHOTO_TYPES.includes(file.type)) {
                     logUploadEvent({
@@ -166,10 +166,10 @@ export async function POST(
                         userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
                         reason: `Invalid photo MIME: ${file.type}`, code: 'MIME_REJECTED',
                     })
-                    return NextResponse.json({ error: `Invalid photo type for ${key}. Allowed: JPEG, PNG, WebP.` }, { status: 400 })
+                    return NextResponse.json({ error: `Invalid photo type for ${key}. Allowed: JPEG, PNG, WebP, HEIC.` }, { status: 400 })
                 }
                 if (file.size > MAX_PHOTO_SIZE) {
-                    return NextResponse.json({ error: `Photo ${key} is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum 5 MB.` }, { status: 400 })
+                    return NextResponse.json({ error: `Photo ${key} is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum 10 MB.` }, { status: 400 })
                 }
 
                 const fileName = `${key}${ext}`

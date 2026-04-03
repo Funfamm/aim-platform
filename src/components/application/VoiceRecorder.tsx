@@ -34,11 +34,28 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
         setIsRecording(false)
     }, [])
 
+    // Detect best supported audio MIME type (Safari/iOS doesn't support webm)
+    const getSupportedMimeType = (): string => {
+        const types = ['audio/webm', 'audio/webm;codecs=opus', 'audio/mp4', 'audio/ogg', '']
+        for (const t of types) {
+            if (t === '' || (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(t))) return t
+        }
+        return '' // empty string = browser default
+    }
+
     const startRecording = useCallback(async () => {
         setMicError('')
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-            const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+            const supportedMime = getSupportedMimeType()
+            const options: MediaRecorderOptions = supportedMime ? { mimeType: supportedMime } : {}
+            const mediaRecorder = new MediaRecorder(stream, options)
+            const actualMime = mediaRecorder.mimeType || supportedMime || 'audio/webm'
+            // Determine file extension from actual MIME
+            const ext = actualMime.includes('mp4') ? 'mp4'
+                : actualMime.includes('ogg') ? 'ogg'
+                : 'webm'
+
             mediaRecorderRef.current = mediaRecorder
             chunksRef.current = []
 
@@ -48,11 +65,11 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
 
             mediaRecorder.onstop = () => {
                 stream.getTracks().forEach(t => t.stop())
-                const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+                const blob = new Blob(chunksRef.current, { type: actualMime })
                 setRecordedBlob(blob)
                 const url = URL.createObjectURL(blob)
                 setRecordedUrl(url)
-                const file = new File([blob], 'voice-recording.webm', { type: 'audio/webm' })
+                const file = new File([blob], `voice-recording.${ext}`, { type: actualMime })
                 onAudioChange(file)
             }
 
@@ -72,7 +89,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                 })
             }, 1000)
         } catch {
-            setMicError('Microphone access denied. Please allow microphone access in your browser settings.')
+            setMicError('Microphone access denied. Please allow microphone access in your browser settings, or use the "Upload File" option instead.')
         }
     }, [stopRecording, onAudioChange])
 

@@ -92,6 +92,12 @@ const MAGIC_SIGNATURES: Record<string, Array<{ bytes: number[]; offset: number }
     'image/gif': [
         { bytes: [0x47, 0x49, 0x46, 0x38], offset: 0 },   // GIF8 (covers GIF87a and GIF89a)
     ],
+    'image/heic': [
+        { bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 },   // ftyp box (ISO BMFF container)
+    ],
+    'image/heif': [
+        { bytes: [0x66, 0x74, 0x79, 0x70], offset: 4 },   // ftyp box (ISO BMFF container)
+    ],
 
     // ── Audio ──
     'audio/mpeg': [
