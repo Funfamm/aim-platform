@@ -216,7 +216,7 @@ const LOCALE_NAMES: Record<string, string> = {
     hi: 'Hindi', pt: 'Portuguese', ru: 'Russian', ja: 'Japanese', de: 'German', ko: 'Korean',
 }
 
-function buildPrompt(input: AuditInput, customPrompt: string, hasPhotos: boolean, preCheck: PreCheckResult): string {
+function buildPrompt(input: AuditInput, customPrompt: string, hasPhotos: boolean, preCheck: PreCheckResult, hasAudioAttached: boolean): string {
     const lang = LOCALE_NAMES[input.locale || 'en'] || 'English'
     const hasVoice = !!input.applicant.voiceUrl && !preCheck.voiceMissing
 
@@ -246,7 +246,7 @@ Your task is to analyze a casting applicant's submission and generate a structur
 - **Age**: ${input.applicant.age || 'Not specified'}${preCheck.ageMismatch ? ' ⚠️ OUTSIDE ROLE AGE RANGE' : ''}
 - **Gender**: ${input.applicant.gender || 'Not specified'}${preCheck.genderMismatch ? ' ⚠️ DOES NOT MATCH ROLE GENDER REQUIREMENT' : ''}
 - **Special Skills**: ${input.applicant.specialSkills || 'Not specified'}
-- **Voice/Self-Tape**: ${hasVoice ? 'Submitted ✓' : 'NOT SUBMITTED ⚠️'}
+- **Voice/Self-Tape**: ${hasVoice ? (hasAudioAttached ? 'Submitted ✓ (audio attached below — LISTEN to it)' : 'Submitted ✓ (file on server but not attached)') : 'NOT SUBMITTED ⚠️'}
 
 ## PERSONALITY INSIGHTS (from their answers)
 - **Self-Description**: ${input.applicant.personality.describe_yourself || 'Not provided'}
@@ -271,6 +271,18 @@ Based ONLY on what was submitted, assess:
    - Expressiveness shown in their photos
    - Flag any photos that seem suspicious or irrelevant
    Be respectful and professional. Focus on casting compatibility, not personal appearance judgments.`
+    }
+
+    if (hasAudioAttached) {
+        const nextNum = hasPhotos ? 7 : 6
+        prompt += `
+${nextNum}. **VOICE/AUDIO ASSESSMENT** (audio recording is attached — LISTEN to it carefully):
+   - Vocal quality: clarity, tone, warmth, energy
+   - Delivery: confidence, expressiveness, emotional range
+   - How their voice fits the character they're auditioning for
+   - Any accent or speech patterns relevant to the role
+   - Overall impression of their vocal presence and charisma
+   Factor this voice assessment into your overallScore and roleFitScore. A strong voice performance should boost scores.`
     }
 
     if (preCheck.preNotes.length > 0) {
@@ -303,6 +315,11 @@ Respond ONLY with valid JSON in this exact format (no markdown, no code blocks):
     if (hasPhotos) {
         prompt += `,
   "visualAssessment": "Assessment of the applicant's photos: confirm they appear to be the real applicant, comment on screen presence, look match for the role, and any concerns."`
+    }
+
+    if (hasAudioAttached) {
+        prompt += `,
+  "voiceAssessment": "Assessment of the applicant's voice recording: vocal quality, delivery, expressiveness, accent, and how well their voice fits this character."`
     }
 
     prompt += `\n}`
@@ -480,6 +497,36 @@ async function loadPhotosAsBase64(photoUrls: string[]): Promise<{ base64: string
     return photos
 }
 
+// Read voice/audio file from disk and return as base64 for Gemini audio analysis
+const AUDIO_MIME_MAP: Record<string, string> = {
+    '.mp3': 'audio/mpeg', '.mp4': 'audio/mp4', '.m4a': 'audio/mp4',
+    '.wav': 'audio/wav', '.webm': 'audio/webm', '.ogg': 'audio/ogg',
+}
+const MAX_AUDIO_INLINE_SIZE = 18 * 1024 * 1024 // 18 MB — leave headroom for the 20 MB API limit
+
+async function loadAudioAsBase64(voiceUrl: string): Promise<{ base64: string; mimeType: string } | null> {
+    try {
+        const filePath = path.join(process.cwd(), 'public', voiceUrl)
+        const fileStat = await stat(filePath)
+        if (fileStat.size < 1024) {
+            console.log(`[AI Audit] Audio file too small (${fileStat.size} bytes), skipping: ${voiceUrl}`)
+            return null
+        }
+        if (fileStat.size > MAX_AUDIO_INLINE_SIZE) {
+            console.log(`[AI Audit] Audio file too large for inline (${Math.round(fileStat.size / 1024 / 1024)} MB), skipping: ${voiceUrl}`)
+            return null
+        }
+        const buffer = await readFile(filePath)
+        const ext = path.extname(voiceUrl).toLowerCase()
+        const mimeType = AUDIO_MIME_MAP[ext] || 'audio/webm'
+        console.log(`[AI Audit] Loaded audio for analysis: ${voiceUrl} (${Math.round(fileStat.size / 1024)} KB, ${mimeType})`)
+        return { base64: buffer.toString('base64'), mimeType }
+    } catch (err) {
+        console.warn(`[AI Audit] Could not load audio file: ${voiceUrl}`, err)
+        return null
+    }
+}
+
 /**
  * Vision pre-screen: asks Gemini to describe each image and classify it.
  * Uses a rich prompt asking for a description + verdict to prevent easy bypass.
@@ -600,17 +647,31 @@ async function callOpenAI(apiKey: string, model: string, prompt: string): Promis
     return data.choices?.[0]?.message?.content || ''
 }
 
-// ═══ GEMINI PROVIDER (with vision support) ═══
-async function callGemini(apiKey: string, model: string, prompt: string, photos?: { base64: string; mimeType: string }[]): Promise<string> {
+// ═══ GEMINI PROVIDER (with vision + audio support) ═══
+async function callGemini(
+    apiKey: string,
+    model: string,
+    prompt: string,
+    photos?: { base64: string; mimeType: string }[],
+    audio?: { base64: string; mimeType: string } | null
+): Promise<string> {
     const genAI = new GoogleGenerativeAI(apiKey)
     const aiModel = genAI.getGenerativeModel({ model })
 
-    if (photos && photos.length > 0) {
-        // Multimodal: text + images
+    const hasMedia = (photos && photos.length > 0) || audio
+
+    if (hasMedia) {
+        // Multimodal: text + images + audio
         const parts: Array<{ text: string } | { inlineData: { data: string; mimeType: string } }> = [
             { text: prompt },
-            ...photos.map(p => ({ inlineData: { data: p.base64, mimeType: p.mimeType } })),
         ]
+        if (photos) {
+            parts.push(...photos.map(p => ({ inlineData: { data: p.base64, mimeType: p.mimeType } })))
+        }
+        if (audio) {
+            parts.push({ inlineData: { data: audio.base64, mimeType: audio.mimeType } })
+            console.log(`[AI Audit] Sending audio to Gemini (${audio.mimeType})`)
+        }
         const result = await aiModel.generateContent(parts)
         return result.response.text()
     }
@@ -665,6 +726,17 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
             photos = rawPhotos.map(p => ({ base64: p.base64, mimeType: p.mimeType }))
             console.log('[AI Audit] No Gemini key for vision screening — photos passed through unvalidated')
             screeningSkipped = true
+        }
+    }
+
+    // ── Load voice/audio recording for AI analysis (Gemini only) ──
+    let audioData: { base64: string; mimeType: string } | null = null
+    if (input.applicant.voiceUrl && !preCheck.voiceMissing) {
+        audioData = await loadAudioAsBase64(input.applicant.voiceUrl)
+        if (audioData) {
+            console.log(`[AI Audit] Audio loaded for AI analysis (${audioData.mimeType})`)
+        } else {
+            console.log(`[AI Audit] Audio file could not be loaded — AI will evaluate without it`)
         }
     }
 
@@ -728,7 +800,8 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
             }
 
             // Build prompt — pre-check alerts are baked into the prompt itself
-            const prompt = buildPrompt(input, config.customPrompt, photos.length > 0, preCheck)
+            const hasAudioForAI = !!audioData && keyProvider === 'gemini'
+            const prompt = buildPrompt(input, config.customPrompt, photos.length > 0, preCheck, hasAudioForAI)
 
             try {
                 console.log(`[AI Audit] Trying key: ${keyInfo.label} | provider: ${keyProvider} | model: ${keyModel} | RPM left: ${remaining}`)
@@ -738,14 +811,21 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
 
                 let responseText: string
                 if (keyProvider === 'groq') {
-                    const textPrompt = photos.length > 0
-                        ? prompt + '\n\n(Note: Applicant uploaded photos but this model cannot analyze images. Evaluate based on text data only and mention photos were not analyzed.)'
-                        : prompt
+                    let textPrompt = prompt
+                    if (photos.length > 0) textPrompt += '\n\n(Note: Applicant uploaded photos but this model cannot analyze images. Evaluate based on text data only and mention photos were not analyzed.)'
+                    if (audioData) textPrompt += '\n\n(Note: Applicant uploaded a voice/self-tape recording but this model cannot analyze audio. Evaluate based on text data only.)'
                     responseText = await callGroq(keyInfo.key, keyModel, textPrompt)
                 } else if (keyProvider === 'openai') {
-                    responseText = await callOpenAI(keyInfo.key, keyModel, prompt)
+                    let textPrompt = prompt
+                    if (audioData) textPrompt += '\n\n(Note: Applicant uploaded a voice/self-tape recording but this model cannot analyze audio. Evaluate based on text data only.)'
+                    responseText = await callOpenAI(keyInfo.key, keyModel, textPrompt)
                 } else {
-                    responseText = await callGemini(keyInfo.key, keyModel, prompt, photos.length > 0 ? photos : undefined)
+                    // Gemini: send photos + audio as multimodal inline data
+                    responseText = await callGemini(
+                        keyInfo.key, keyModel, prompt,
+                        photos.length > 0 ? photos : undefined,
+                        audioData
+                    )
                 }
 
                 // Record success in DB
