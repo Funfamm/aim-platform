@@ -4,6 +4,33 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 
+interface Project {
+    id: string
+    title: string
+}
+
+interface ScriptCall {
+    id: string
+    title: string
+    description: string
+    genre: string | null
+    status: string
+    isPublic: boolean
+    projectId: string | null
+    deadline: string | null
+    targetLength: string | null
+    toneKeywords: string | null
+    project: { title: string } | null
+    _count: { submissions: number }
+}
+
+const STATUS_META: Record<string, { color: string; bg: string; icon: string }> = {
+    draft:    { color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', icon: '📝' },
+    open:     { color: '#34d399', bg: 'rgba(52,211,153,0.08)',  icon: '📖' },
+    closed:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', icon: '🔒' },
+    archived: { color: '#ef4444', bg: 'rgba(239,68,68,0.08)',   icon: '🗃️' },
+}
+
 
 export default function AdminScriptsPage() {
     const [calls, setCalls] = useState<ScriptCall[]>([])
