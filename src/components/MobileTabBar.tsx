@@ -452,6 +452,7 @@ export default function MobileTabBar() {
                         <Link
                             key={tab.href}
                             href={tab.href}
+                            prefetch={false}
                             className={`tab-item ${isActive(tab.href) ? 'tab-active' : ''} ${index === 0 ? 'tab-home' : 'tab-collapsible'}`}
                             onClick={index === 0 ? handleHomeTap : undefined}
                         >

@@ -26,6 +26,7 @@ export default function FeaturedProjects3D({ projects }: { projects: ProjectData
                 <ScrollReveal3D key={project.id} delay={i * 150} direction="up" distance={50} rotate={6}>
                     <Link
                         href={`/works/${project.slug}`}
+                        prefetch={false}
                         className="project-card"
                         style={{ display: 'block' }}
                     >

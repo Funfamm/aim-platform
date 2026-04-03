@@ -49,7 +49,7 @@ export default function Footer() {
                 }}>
                     {/* Brand */}
                     <div className="footer-brand">
-                        <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
+                        <Link href="/" prefetch={false} style={{ textDecoration: 'none', color: 'inherit' }}>
                             <h3>
                                 <span style={{ color: 'var(--accent-gold)' }}>{brand.name.split(' ')[0]}</span> {brand.name.split(' ').slice(1).join(' ')}
                             </h3>
@@ -65,10 +65,10 @@ export default function Footer() {
                         <div className="footer-col">
                             <h4>{t('explore')}</h4>
                             <ul>
-                                <li><Link href="/works">{t('ourWorks')}</Link></li>
-                                <li><Link href="/upcoming">{t('comingSoon')}</Link></li>
-                                <li><Link href="/casting">{t('castingCalls')}</Link></li>
-                                <li><Link href="/about">{t('about')}</Link></li>
+                                <li><Link href="/works" prefetch={false}>{t('ourWorks')}</Link></li>
+                                <li><Link href="/upcoming" prefetch={false}>{t('comingSoon')}</Link></li>
+                                <li><Link href="/casting" prefetch={false}>{t('castingCalls')}</Link></li>
+                                <li><Link href="/about" prefetch={false}>{t('about')}</Link></li>
                             </ul>
                         </div>
 
@@ -76,8 +76,8 @@ export default function Footer() {
                         <div className="footer-col">
                             <h4>{t('support')}</h4>
                             <ul>
-                                <li><Link href="/donate">{t('donateLink')}</Link></li>
-                                <li><Link href="/contact">{t('contact')}</Link></li>
+                                <li><Link href="/donate" prefetch={false}>{t('donateLink')}</Link></li>
+                                <li><Link href="/contact" prefetch={false}>{t('contact')}</Link></li>
                             </ul>
                         </div>
                     </div>

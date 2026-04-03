@@ -75,7 +75,7 @@ export default function Navbar() {
         <>
             <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} aria-label="Main navigation">
                 <div className="navbar-inner">
-                    <Link href="/" className="navbar-logo">
+                    <Link href="/" className="navbar-logo" prefetch={false}>
                         {logoUrl && (
                             <img
                                 src={logoUrl}
@@ -95,6 +95,7 @@ export default function Navbar() {
                                 <Link
                                     href={link.href}
                                     className={pathname === link.href ? 'active' : ''}
+                                    prefetch={false}
                                 >
                                     {link.label}
                                 </Link>
@@ -187,7 +188,7 @@ export default function Navbar() {
                                         boxShadow: 'var(--shadow-lg)',
                                         zIndex: 100,
                                     }}>
-                                        <Link href="/dashboard" style={{
+                                        <Link href="/dashboard" prefetch={false} style={{
                                             display: 'block', padding: '0.6rem 1rem',
                                             fontSize: '0.85rem', borderRadius: 'var(--radius-md)',
                                             transition: 'background 0.2s',
@@ -209,7 +210,7 @@ export default function Navbar() {
                                 )}
                             </div>
                         ) : (
-                            <Link href={`/${currentLocale}/login`} style={{
+                            <Link href={`/${currentLocale}/login`} prefetch={false} style={{
                                 padding: '0.4rem 1.2rem',
                                 background: 'var(--bg-glass-light)',
                                 border: '1px solid var(--border-medium)',
@@ -331,7 +332,7 @@ export default function Navbar() {
                             </div>
                             <div className="drawer-user-info">
                                 <span className="drawer-user-name">{t('guest')}</span>
-                                <Link href={`/${currentLocale}/login`} onClick={() => setMobileOpen(false)}
+                                <Link href={`/${currentLocale}/login`} prefetch={false} onClick={() => setMobileOpen(false)}
                                     className="drawer-sign-in-link">
                                     {t('signIn')} →
                                 </Link>
@@ -381,7 +382,7 @@ export default function Navbar() {
                     return (
                         <div className="drawer-quick-actions">
                             {/* Slot 1: Home — Always */}
-                            <Link href="/" onClick={() => setMobileOpen(false)}
+                            <Link href="/" prefetch={false} onClick={() => setMobileOpen(false)}
                                 className={`drawer-quick-card ${pathname === '/' ? 'active-page' : ''}`}>
                                 <span className="quick-icon">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -393,7 +394,7 @@ export default function Navbar() {
                             </Link>
                             {/* Slots 2 & 3: Dynamic priority */}
                             {slots.map((card) => (
-                                <Link key={card.href} href={card.href} onClick={() => setMobileOpen(false)}
+                                <Link key={card.href} href={card.href} prefetch={false} onClick={() => setMobileOpen(false)}
                                     className={`drawer-quick-card ${pathname === card.path ? 'active-page' : ''}`}>
                                     <span className="quick-icon">{card.icon}</span>
                                     <span className="quick-label">{card.label}</span>
@@ -406,7 +407,7 @@ export default function Navbar() {
                 {/* ── Account Actions ── */}
                 {user && (
                     <div className="drawer-section">
-                        <Link href="/dashboard" onClick={() => setMobileOpen(false)}
+                        <Link href="/dashboard" prefetch={false} onClick={() => setMobileOpen(false)}
                             className={`drawer-item ${pathname === '/dashboard' ? 'active-page' : ''}`}>
                             <span className="drawer-icon-badge">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -424,7 +425,7 @@ export default function Navbar() {
                 {/* ── Discover Section ── */}
                 <div className="drawer-section">
                     <span className="drawer-section-label">{t('discover')}</span>
-                    <Link href="/about" onClick={() => setMobileOpen(false)}
+                    <Link href="/about" prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/about' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -437,7 +438,7 @@ export default function Navbar() {
                     </Link>
 
                     {sections.donations && (
-                        <Link href="/donate" onClick={() => setMobileOpen(false)}
+                        <Link href="/donate" prefetch={false} onClick={() => setMobileOpen(false)}
                             className={`drawer-item ${pathname === '/donate' ? 'active-page' : ''}`}>
                             <span className="drawer-icon-glow">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -448,7 +449,7 @@ export default function Navbar() {
                         </Link>
                     )}
 
-                    <Link href="/contact" onClick={() => setMobileOpen(false)}
+                    <Link href="/contact" prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/contact' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -458,7 +459,7 @@ export default function Navbar() {
                         </span>
                         {t('contact')}
                     </Link>
-                    <Link href="/sponsors" onClick={() => setMobileOpen(false)}
+                    <Link href="/sponsors" prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/sponsors' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -467,7 +468,7 @@ export default function Navbar() {
                         </span>
                         {t('sponsors')}
                     </Link>
-                    <Link href={`/${locale}/notifications`} onClick={() => setMobileOpen(false)}
+                    <Link href={`/${locale}/notifications`} prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/notifications' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow" style={{ position: 'relative' }}>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

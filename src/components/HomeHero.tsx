@@ -255,13 +255,13 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
                     </h1>
 
                     <div className="hero-actions hero-cta-row animate-fade-in-up delay-2" style={{ marginBottom: 'var(--space-xl)' }}>
-                        <Link href="/works" className="btn btn-primary btn-lg">
+                        <Link href="/works" prefetch={false} className="btn btn-primary btn-lg">
                             {t('cta')}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
                         </Link>
-                        <Link href="/casting" className="btn btn-secondary btn-lg">
+                        <Link href="/casting" prefetch={false} className="btn btn-secondary btn-lg">
                             {t('ctaCasting')}
                         </Link>
                     </div>
