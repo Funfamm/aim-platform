@@ -199,16 +199,32 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                         )}
                     </div>
                 ) : (
-                    /* Apply / Re-apply button */
+                    /* Apply / Re-apply button — solid gold gradient */
                     <Link
                         href={`/casting/${call.id}/apply`}
                         style={{
-                            display: 'block', width: '100%', padding: '0.5rem 1rem',
-                            fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.02em', textAlign: 'center',
+                            display: 'block', width: '100%', padding: '0.65rem 1rem',
+                            fontSize: '0.85rem', fontWeight: 700, letterSpacing: '0.03em', textAlign: 'center',
                             borderRadius: 'var(--radius-full)', textDecoration: 'none',
-                            border: '1px solid rgba(228,185,90,0.35)',
-                            background: isWithdrawn ? 'rgba(228,185,90,0.04)' : 'rgba(228,185,90,0.08)',
-                            color: 'var(--accent-gold)', transition: 'all 0.2s ease',
+                            border: 'none',
+                            background: isWithdrawn
+                                ? 'linear-gradient(135deg, rgba(228,185,90,0.15), rgba(228,185,90,0.08))'
+                                : 'linear-gradient(135deg, #e4b95a, #c49b3a, #a8832e)',
+                            color: isWithdrawn ? 'var(--accent-gold)' : '#0f1115',
+                            transition: 'all 0.3s ease',
+                            boxShadow: isWithdrawn ? 'none' : '0 4px 16px rgba(228,185,90,0.25)',
+                        }}
+                        onMouseEnter={e => {
+                            if (!isWithdrawn) {
+                                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 6px 24px rgba(228,185,90,0.4)'
+                                ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(-1px)'
+                            }
+                        }}
+                        onMouseLeave={e => {
+                            if (!isWithdrawn) {
+                                (e.currentTarget as HTMLAnchorElement).style.boxShadow = '0 4px 16px rgba(228,185,90,0.25)'
+                                ;(e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'
+                            }
                         }}
                         onClick={() => {
                             if (isWithdrawn) {
