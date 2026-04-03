@@ -292,12 +292,11 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         </h1>
 
                         {/* Stats-style capsule row — matching Works page pattern */}
-                        <div className="animate-fade-in-up delay-2" style={{
+                        <div className="animate-fade-in-up delay-2 glass-panel" style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             gap: '6px',
                             flexWrap: 'wrap',
                             padding: '10px 20px',
-                            background: 'rgba(13,15,20,0.6)',
                             backdropFilter: 'blur(16px)',
                             WebkitBackdropFilter: 'blur(16px)',
                             borderRadius: 'var(--radius-full)',
@@ -372,15 +371,13 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                 }}>
                     <div className="container">
                         {/* Section Header — clean, no frame */}
-                        <div style={{
+                        <div className="glass-panel" style={{
                             textAlign: 'center',
                             marginBottom: 'var(--space-xl)',
                             position: 'relative',
-                            background: 'rgba(13,15,20,0.6)',
                             backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
                             borderRadius: 'var(--radius-xl)',
                             padding: 'var(--space-xl)',
-                            border: '1px solid rgba(255,255,255,0.06)',
                         }}>
                             {/* Decorative gold accent line */}
                             <div style={{

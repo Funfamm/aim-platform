@@ -176,6 +176,147 @@
   border-color: rgba(0, 0, 0, 0.08);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   REUSABLE THEME-AWARE CLASSES
+   Dark-mode defaults, light-mode overrides
+   ═══════════════════════════════════════════════════════════ */
+
+/* Glass panel — semi-transparent section panels */
+.glass-panel {
+  background: rgba(13, 15, 20, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme='light'] .glass-panel {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 2px 16px rgba(90, 80, 60, 0.08);
+}
+
+/* Feature cards — colored gradient cards */
+.feature-card-gold {
+  background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(13,15,20,0.7));
+}
+.feature-card-purple {
+  background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(13,15,20,0.7));
+}
+.feature-card-blue {
+  background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(13,15,20,0.7));
+}
+
+[data-theme='light'] .feature-card-gold {
+  background: linear-gradient(135deg, rgba(212,168,83,0.12), rgba(250,248,244,0.95)) !important;
+}
+[data-theme='light'] .feature-card-purple {
+  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(250,248,244,0.95)) !important;
+}
+[data-theme='light'] .feature-card-blue {
+  background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(250,248,244,0.95)) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIGHT THEME — COMPREHENSIVE CONTRAST FIXES
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Home stats pill (hero area) ── */
+[data-theme='light'] .hero-stats-pill {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ── Home stats row (100%, ∞, 24fps) ── */
+[data-theme='light'] .home-stats-row {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ── Hero secondary button ("View Casting Calls") ── */
+[data-theme='light'] .btn-secondary {
+  border-color: rgba(0, 0, 0, 0.25);
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .btn-secondary:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+/* ── Project cards ── */
+[data-theme='light'] .project-card {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Footer — ensure readability ── */
+[data-theme='light'] .footer {
+  background: var(--bg-secondary);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme='light'] .footer h3,
+[data-theme='light'] .footer h4 {
+  color: var(--text-primary);
+}
+
+[data-theme='light'] .footer p,
+[data-theme='light'] .footer a,
+[data-theme='light'] .footer li {
+  color: var(--text-secondary);
+}
+
+[data-theme='light'] .footer a:hover {
+  color: var(--accent-gold);
+}
+
+[data-theme='light'] .footer-bottom {
+  border-top-color: rgba(0, 0, 0, 0.08);
+  color: var(--text-tertiary);
+}
+
+/* ── Notification cards ── */
+[data-theme='light'] .notif-row:hover {
+  background: rgba(196, 154, 40, 0.06) !important;
+}
+
+/* ── Mobile drawer ── */
+[data-theme='light'] .mobile-drawer {
+  background: var(--bg-primary);
+  border-right-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme='light'] .drawer-quick-card {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .drawer-item {
+  color: var(--text-primary);
+}
+
+/* ── Hero sections: text stays light on dark video backgrounds ── */
+[data-theme='light'] .hero-content,
+[data-theme='light'] .hero-content h1,
+[data-theme='light'] .hero-content p,
+[data-theme='light'] .hero-content span,
+[data-theme='light'] .casting-hero h1,
+[data-theme='light'] .casting-hero span,
+[data-theme='light'] .casting-hero p {
+  color: #f3efe8 !important;
+}
+
+[data-theme='light'] .hero-content .text-label,
+[data-theme='light'] .casting-hero .text-label {
+  color: #e4b95a !important;
+}
+
+[data-theme='light'] .hero-stats-pill {
+  background: rgba(13, 15, 20, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme='light'] .hero-stats-pill span {
+  color: inherit !important;
+}
+
 /* Light-mode: form inputs */
 [data-theme='light'] .form-input,
 [data-theme='light'] .form-textarea,
@@ -1299,6 +1440,12 @@ select::placeholder {
   position: relative;
   background: var(--bg-primary);
   z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .footer {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 100px) !important;
+  }
 }
 
 .footer::before {

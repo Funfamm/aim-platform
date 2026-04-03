@@ -194,7 +194,7 @@ export default function DonatePage() {
     const inputStyle = {
         width: '100%',
         padding: '0.75rem 1rem',
-        background: 'rgba(5,5,8,0.8)',
+        background: 'var(--bg-glass-light)',
         border: '1px solid var(--border-subtle)',
         borderRadius: 'var(--radius-md)',
         color: 'var(--text-primary)',
@@ -251,9 +251,8 @@ export default function DonatePage() {
                         </ScrollReveal3D>
 
                         <ScrollReveal3D direction="up" delay={150} distance={30}>
-                            <div style={{
-                                background: 'rgba(10,10,16,0.85)', backdropFilter: 'blur(20px)',
-                                border: '1px solid var(--border-subtle)',
+                            <div className="glass-panel" style={{
+                                backdropFilter: 'blur(20px)',
                                 borderRadius: 'var(--radius-xl)', padding: 'var(--space-xl)', textAlign: 'left',
                             }}>
                                 {/* Donations Disabled State */}
@@ -299,7 +298,7 @@ export default function DonatePage() {
                                                     style={{
                                                         padding: '0.7rem', borderRadius: 'var(--radius-md)',
                                                         border: selectedAmount === amt ? '2px solid var(--accent-gold)' : '1px solid var(--border-subtle)',
-                                                        background: selectedAmount === amt ? 'rgba(212,168,83,0.12)' : 'rgba(5,5,8,0.6)',
+                                                        background: selectedAmount === amt ? 'rgba(212,168,83,0.12)' : 'var(--bg-glass-light)',
                                                         color: selectedAmount === amt ? 'var(--accent-gold)' : 'var(--text-primary)',
                                                         fontWeight: 700, fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s',
                                                     }}>
@@ -320,7 +319,7 @@ export default function DonatePage() {
                                         <div style={{
                                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                             padding: '0.7rem 1rem', marginBottom: 'var(--space-md)',
-                                            background: anonymous ? 'rgba(139,92,246,0.08)' : 'rgba(5,5,8,0.4)',
+                                            background: anonymous ? 'rgba(139,92,246,0.08)' : 'var(--bg-glass-light)',
                                             border: `1px solid ${anonymous ? 'rgba(139,92,246,0.2)' : 'var(--border-subtle)'}`,
                                             borderRadius: 'var(--radius-md)', cursor: 'pointer',
                                             transition: 'all 0.2s',

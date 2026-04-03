@@ -276,10 +276,9 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                 )}
 
                 {/* ── CTA ── */}
-                <div style={{
+                <div className="glass-panel" style={{
                     textAlign: 'center',
                     padding: 'var(--space-2xl) var(--space-xl)',
-                    background: 'linear-gradient(135deg, rgba(212,168,83,0.08), rgba(13,15,20,0.75))',
                     backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
                     border: '1px solid rgba(212,168,83,0.15)',
                     borderRadius: 'var(--radius-xl)',

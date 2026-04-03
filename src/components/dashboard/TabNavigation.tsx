@@ -66,7 +66,7 @@ export default function TabNavigation({ activeTab, onTabChange, tabs }: TabNavig
                 }
                 .dash-tab-btn:hover {
                     color: var(--text-secondary);
-                    background: rgba(255,255,255,0.03);
+                    background: var(--bg-glass-light);
                 }
                 .dash-tab-btn.active {
                     color: var(--accent-gold);
@@ -101,12 +101,10 @@ export default function TabNavigation({ activeTab, onTabChange, tabs }: TabNavig
                 }
             `}</style>
 
-            <div style={{
+            <div className="glass-panel" style={{
                 position: 'relative',
                 marginBottom: 'var(--space-xl)',
-                background: 'rgba(10,10,16,0.4)',
                 borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border-subtle)',
                 padding: '0 4px',
             }}>
                 <div className="dash-tabs-scroll" ref={scrollRef}>

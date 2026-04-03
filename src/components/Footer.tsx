@@ -36,9 +36,7 @@ export default function Footer() {
     }, [])
 
     return (
-        <footer className="footer" aria-label="Site footer" style={{
-            paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
-        }}>
+        <footer className="footer" aria-label="Site footer">
             {/* Footer Sponsor Strip */}
             
 

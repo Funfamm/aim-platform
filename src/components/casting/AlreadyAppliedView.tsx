@@ -100,8 +100,7 @@ export default function AlreadyAppliedView({ application }: { application: Appli
             display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)',
         }}>
             {/* ── Banner ── */}
-            <div style={{
-                background: 'rgba(13,15,20,0.75)',
+            <div className="glass-panel" style={{
                 border: '1px solid rgba(228,185,90,0.18)',
                 borderRadius: 'var(--radius-xl)',
                 padding: 'var(--space-xl)',
@@ -168,9 +167,7 @@ export default function AlreadyAppliedView({ application }: { application: Appli
             </div>
 
             {/* ── Submitted Info ── */}
-            <div style={{
-                background: 'rgba(13,15,20,0.65)',
-                border: '1px solid rgba(255,255,255,0.07)',
+            <div className="glass-panel" style={{
                 borderRadius: 'var(--radius-xl)',
                 padding: 'var(--space-xl)',
                 backdropFilter: 'blur(24px)',

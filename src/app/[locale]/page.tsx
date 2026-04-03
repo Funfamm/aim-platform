@@ -93,13 +93,11 @@ export default async function HomePage() {
           pointerEvents: 'none',
         }} />
         <div className="container">
-          <div style={{
+          <div className="glass-panel" style={{
             textAlign: 'center', marginBottom: 'var(--space-xl)',
-            background: 'rgba(13,15,20,0.6)',
             backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
             borderRadius: 'var(--radius-xl)',
             padding: 'var(--space-xl)',
-            border: '1px solid rgba(255,255,255,0.06)',
           }}>
             <span className="text-label" style={{ display: 'block', marginBottom: '6px' }}>{t('portfolio')}</span>
             <h2 style={{
@@ -157,13 +155,11 @@ export default async function HomePage() {
         <div className="container">
           {/* Section header — centered */}
           <ScrollReveal3D direction="up" delay={100} distance={30}>
-            <div style={{
+            <div className="glass-panel" style={{
               textAlign: 'center', marginBottom: 'var(--space-3xl)',
-              background: 'rgba(13,15,20,0.6)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
               borderRadius: 'var(--radius-xl)',
               padding: 'var(--space-xl)',
-              border: '1px solid rgba(255,255,255,0.06)',
             }}>
               <span className="text-label">{t('ourVision')}</span>
               <h2 style={{
@@ -203,29 +199,28 @@ export default async function HomePage() {
                 icon: '🎯',
                 value: t('zeroCompromise'),
                 desc: t('visionP2'),
-                gradient: 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(13,15,20,0.7))',
+                cardClass: 'feature-card-gold',
                 border: 'rgba(212,168,83,0.25)',
               },
               {
                 icon: '✨',
                 value: t('limitless'),
                 desc: t('limitlessDesc'),
-                gradient: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(13,15,20,0.7))',
+                cardClass: 'feature-card-purple',
                 border: 'rgba(139,92,246,0.25)',
               },
               {
                 icon: '🎬',
                 value: t('cinematic'),
                 desc: t('cinematicDesc'),
-                gradient: 'linear-gradient(135deg, rgba(59,130,246,0.15), rgba(13,15,20,0.7))',
+                cardClass: 'feature-card-blue',
                 border: 'rgba(59,130,246,0.25)',
               },
             ].map((card, i) => (
               <ScrollReveal3D key={i} direction="up" delay={200 + i * 150} distance={30} rotate={3}>
-                <div style={{
+                <div className={card.cardClass} style={{
                   padding: 'var(--space-xl)',
                   borderRadius: 'var(--radius-xl)',
-                  background: card.gradient,
                   border: `1px solid ${card.border}`,
                   backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
                   transition: 'transform 0.3s ease, box-shadow 0.3s ease',
@@ -251,16 +246,14 @@ export default async function HomePage() {
 
           {/* Stats row */}
           <ScrollReveal3D direction="up" delay={600} distance={20}>
-            <div className="home-stats-row" tabIndex={0} role="region" aria-label="Production statistics" style={{
+            <div className="home-stats-row glass-panel" tabIndex={0} role="region" aria-label="Production statistics" style={{
               display: 'flex',
               justifyContent: 'center',
               gap: 'var(--space-3xl)',
               marginTop: 'var(--space-3xl)',
               padding: 'var(--space-xl)',
-              background: 'rgba(13,15,20,0.6)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
               borderRadius: 'var(--radius-xl)',
-              border: '1px solid rgba(255,255,255,0.06)',
             }}>
               {[
                 { value: '100%', label: t('zeroCompromise') },
