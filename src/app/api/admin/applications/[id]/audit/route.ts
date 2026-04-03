@@ -5,6 +5,9 @@ import { runAuditionAgent } from '@/lib/agents/audition-agent'
 import { getAutoAdvanceStatus, notifyApplicantStatusChange } from '@/lib/notifications'
 import { aiLimiter } from '@/lib/rate-limit'
 
+// Internal secret for server-to-server auto-audit calls (no admin session required)
+const INTERNAL_SECRET = process.env.JWT_SECRET || ''
+
 export async function POST(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -12,7 +15,13 @@ export async function POST(
     const blocked = aiLimiter.check(request)
     if (blocked) return blocked
 
-    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    // Check for internal auto-audit bypass OR require admin session
+    const internalToken = request.headers.get('x-internal-secret')
+    const isInternalCall = internalToken && INTERNAL_SECRET && internalToken === INTERNAL_SECRET
+
+    if (!isInternalCall) {
+        try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    }
 
     const { id } = await params
     const application = await prisma.application.findUnique({
@@ -26,6 +35,12 @@ export async function POST(
 
     if (!application) {
         return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+    }
+
+    // Idempotency: skip if already audited (prevents double auto-audit)
+    if (isInternalCall && application.aiScore !== null) {
+        console.log(`[Auto-Audit] Skipping ${id} — already audited (score: ${application.aiScore})`)
+        return NextResponse.json({ success: true, skipped: true, reason: 'already_audited' })
     }
 
     // Get locale from request body (auto-audit) or from stored application locale

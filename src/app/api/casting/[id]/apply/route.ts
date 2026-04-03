@@ -339,11 +339,24 @@ export async function POST(
         if (siteSettings?.aiAutoAudit) {
             // Fire-and-forget — don't block the response
             const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+            const internalSecret = process.env.JWT_SECRET || ''
             fetch(`${baseUrl}/api/admin/applications/${application.id}/audit`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Internal-Secret': internalSecret,
+                },
                 body: JSON.stringify({ locale }),
-            }).catch(err => console.error('Auto-audit trigger failed:', err))
+            })
+                .then(async (res) => {
+                    if (!res.ok) {
+                        const err = await res.text().catch(() => 'unknown')
+                        console.error(`[Auto-Audit] Failed for ${application.id}: ${res.status} — ${err}`)
+                    } else {
+                        console.log(`[Auto-Audit] Triggered successfully for ${application.id}`)
+                    }
+                })
+                .catch(err => console.error(`[Auto-Audit] Network error for ${application.id}:`, err))
         }
 
         // Fire-and-forget: confirmation email to applicant + admin notification
