@@ -2801,44 +2801,7 @@ textarea:focus:not(:focus-visible) {
     gap: var(--space-md);
   }
 
-  /* Admin layout — stack sidebar */
-  .admin-layout {
-    flex-direction: column !important;
-  }
 
-  .admin-sidebar {
-    width: 100% !important;
-    min-width: unset !important;
-    min-height: auto !important;
-    border-right: none !important;
-    border-bottom: 1px solid var(--border-subtle) !important;
-    position: relative !important;
-  }
-
-  .admin-sidebar-nav {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-  }
-
-  .admin-sidebar-nav li {
-    flex: none;
-  }
-
-  .admin-sidebar-nav a {
-    font-size: 0.7rem !important;
-    padding: 0.35rem 0.6rem !important;
-    white-space: nowrap;
-  }
-
-  .admin-main {
-    margin-left: 0 !important;
-    padding: var(--space-md) !important;
-  }
-
-  .admin-page-title {
-    font-size: 1.2rem !important;
-  }
 
   /* Admin grids responsive */
   .grid-4 {
