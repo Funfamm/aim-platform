@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "Início",
     "works": "Obras",
@@ -834,16 +834,25 @@
     "email": "Email",
     "emailDesc": "Enviado para seu endereço de email registrado",
     "newRole": "Novo papel de casting",
-    "newRoleDesc": "Quando uma nova audi\u00e7\u00e3o \u00e9 aberta na plataforma",
-    "announcement": "An\u00fancios",
-    "announcementDesc": "Not\u00edcias e atualiza\u00e7\u00f5es da equipe AIM Studio",
-    "newContent": "Novo conte\u00fado",
-    "newContentDesc": "Quando novos filmes, treinamentos ou posts s\u00e3o publicados",
-    "appUpdates": "Atualiza\u00e7\u00f5es de candidaturas",
+    "newRoleDesc": "Quando uma nova audição é aberta na plataforma",
+    "announcement": "Anúncios",
+    "announcementDesc": "Notícias e atualizações da equipe AIM Studio",
+    "newContent": "Novo conteúdo",
+    "newContentDesc": "Quando novos filmes, treinamentos ou posts são publicados",
+    "appUpdates": "Atualizações de candidaturas",
     "appUpdatesDesc": "Quando o status da sua candidatura muda",
     "saving": "Salvando…",
     "saved": "✅ Preferências salvas",
     "savePreferences": "Salvar preferências",
-    "preferencesSaved": "Preferências salvas"
+    "preferencesSaved": "Preferências salvas",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "selectAll": "Selecionar tudo",
+    "deselectAll": "Desmarcar tudo",
+    "deleteSelected": "Excluir selecionados",
+    "deleteAll": "Limpar tudo",
+    "bulkEdit": "Edição em massa",
+    "confirmDeleteSelected": "Excluir {count} notificações selecionadas?",
+    "confirmDeleteAll": "Tem certeza de que deseja excluir TODAS as notificações? Isso não pode ser desfeito."
   }
 }

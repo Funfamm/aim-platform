@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "होम",
     "works": "कार्य",
@@ -833,17 +833,26 @@
     "inAppDesc": "प्लेटफ़ॉर्म के भीतर सूचनाएं",
     "email": "ईमेल",
     "emailDesc": "आपके पंजीकृत ईमेल पते पर भेजा गया",
-    "newRole": "\u0928\u0908 \u0915\u093e\u0938\u094d\u091f\u093f\u0902\u0917 \u092d\u0942\u092e\u093f\u0915\u093e",
-    "newRoleDesc": "\u091c\u092c \u092a\u094d\u0932\u0947\u091f\u092b\u093c\u0949\u0930\u094d\u092e \u092a\u0930 \u0928\u092f\u093e \u0911\u0921\u093f\u0936\u0928 \u0916\u0941\u0932\u0924\u093e \u0939\u0948",
-    "announcement": "\u0918\u094b\u0937\u0923\u093e\u090f\u0902",
-    "announcementDesc": "AIM Studio \u091f\u0940\u092e \u0938\u0947 \u092a\u094d\u0932\u0947\u091f\u092b\u093c\u0949\u0930\u094d\u092e \u0938\u092e\u093e\u091a\u093e\u0930",
-    "newContent": "\u0928\u0908 \u0938\u093e\u092e\u0917\u094d\u0930\u0940",
-    "newContentDesc": "\u091c\u092c \u0928\u0908 \u092b\u093c\u093f\u0932\u094d\u092e \u092f\u093e \u092c\u094d\u0932\u0949\u0917 \u092a\u094d\u0930\u0915\u093e\u0936\u093f\u0924 \u0939\u094b\u0924\u0940 \u0939\u0948",
-    "appUpdates": "\u0906\u0935\u0947\u0926\u0928 \u0905\u092a\u0921\u0947\u091f",
-    "appUpdatesDesc": "\u091c\u092c \u0906\u0935\u0947\u0926\u0928 \u0938\u094d\u0925\u093f\u0924\u093f \u092c\u0926\u0932\u0924\u0940 \u0939\u0948",
+    "newRole": "नई कास्टिंग भूमिका",
+    "newRoleDesc": "जब प्लेटफ़ॉर्म पर नया ऑडिशन खुलता है",
+    "announcement": "घोषणाएं",
+    "announcementDesc": "AIM Studio टीम से प्लेटफ़ॉर्म समाचार",
+    "newContent": "नई सामग्री",
+    "newContentDesc": "जब नई फ़िल्म या ब्लॉग प्रकाशित होती है",
+    "appUpdates": "आवेदन अपडेट",
+    "appUpdatesDesc": "जब आवेदन स्थिति बदलती है",
     "saving": "सहेजा जा रहा है…",
     "saved": "✅ प्राथमिकताएं सहेजी गईं",
     "savePreferences": "प्राथमिकताएं सहेजें",
-    "preferencesSaved": "प्राथमिकताएं सहेजी गईं"
+    "preferencesSaved": "प्राथमिकताएं सहेजी गईं",
+    "edit": "संपादित करें",
+    "cancel": "रद्द करें",
+    "selectAll": "सभी का चयन करें",
+    "deselectAll": "सभी से चयन हटाएं",
+    "deleteSelected": "चयनित को हटाएं",
+    "deleteAll": "सभी हटाएं",
+    "bulkEdit": "थोक संपादन",
+    "confirmDeleteSelected": "क्या आप {count} चयनित सूचनाओं को हटाना चाहते हैं?",
+    "confirmDeleteAll": "क्या आप वाकई सभी सूचनाओं को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
   }
 }

@@ -62,6 +62,10 @@ export default function NotificationsPage() {
     const [activeTab, setActiveTab] = useState<'feed' | 'preferences'>('feed')
     const [unreadCount, setUnreadCount] = useState(0)
 
+    const [selectMode, setSelectMode] = useState(false)
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const [deleting, setDeleting] = useState(false)
+
     useEffect(() => {
         // Fetch independently — a preferences error must NOT blank the feed
         const fetchNotifs = fetch('/api/notifications?limit=50')
@@ -110,6 +114,35 @@ export default function NotificationsPage() {
             setUnreadCount(prev => Math.max(0, prev - 1))
         }
         if (n.link) router.push(n.link as never)
+    }
+
+    async function deleteSelected() {
+        if (selectedIds.size === 0) return
+        if (!confirm('Delete selected notifications?')) return
+        setDeleting(true)
+        try {
+            await fetch('/api/notifications', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: Array.from(selectedIds) })
+            })
+            setNotifications(prev => prev.filter(n => !selectedIds.has(n.id)))
+            setUnreadCount(notifications.filter(n => !n.read && !selectedIds.has(n.id)).length)
+            setSelectedIds(new Set())
+            setSelectMode(false)
+        } catch { /* ignore */ } finally { setDeleting(false) }
+    }
+
+    async function deleteAll() {
+        if (!confirm(t('confirmDeleteAll'))) return
+        setDeleting(true)
+        try {
+            await fetch('/api/notifications', { method: 'DELETE' })
+            setNotifications([])
+            setUnreadCount(0)
+            setSelectedIds(new Set())
+            setSelectMode(false)
+        } catch { /* ignore */ } finally { setDeleting(false) }
     }
 
     async function savePrefs() {
@@ -212,19 +245,84 @@ export default function NotificationsPage() {
                             padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)',
                         }}>
                             <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                                {t('recentNotifications')}
+                                {selectMode ? t('bulkEdit') : t('recentNotifications')}
                             </span>
-                            {notifications.some(n => !n.read) && (
-                                <button
-                                    onClick={markAllRead}
-                                    style={{
-                                        fontSize: '0.8rem', color: 'var(--accent-gold)',
-                                        background: 'none', border: 'none', cursor: 'pointer',
-                                    }}
-                                >
-                                    {t('markAllRead')}
-                                </button>
-                            )}
+                            
+                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                {selectMode ? (
+                                    <>
+                                        <button
+                                            onClick={() => {
+                                                if (selectedIds.size === notifications.length) {
+                                                    setSelectedIds(new Set())
+                                                } else {
+                                                    setSelectedIds(new Set(notifications.map(n => n.id)))
+                                                }
+                                            }}
+                                            style={{
+                                                fontSize: '0.8rem', color: 'var(--text-secondary)',
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                            }}
+                                        >
+                                            {selectedIds.size === notifications.length ? t('deselectAll') : t('selectAll')}
+                                        </button>
+                                        <button
+                                            onClick={deleteSelected}
+                                            disabled={selectedIds.size === 0 || deleting}
+                                            style={{
+                                                fontSize: '0.8rem', color: selectedIds.size > 0 ? '#ef4444' : 'var(--text-tertiary)',
+                                                background: 'none', border: 'none', cursor: selectedIds.size > 0 ? 'pointer' : 'default',
+                                            }}
+                                        >
+                                            {t('deleteSelected')}
+                                        </button>
+                                        <button
+                                            onClick={deleteAll}
+                                            disabled={deleting}
+                                            style={{
+                                                fontSize: '0.8rem', color: '#ef4444',
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                            }}
+                                        >
+                                            {t('deleteAll')}
+                                        </button>
+                                        <button
+                                            onClick={() => { setSelectMode(false); setSelectedIds(new Set()); }}
+                                            style={{
+                                                fontSize: '0.8rem', color: 'var(--text-primary)',
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                            }}
+                                        >
+                                            {t('cancel')}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        {notifications.some(n => !n.read) && (
+                                            <button
+                                                onClick={markAllRead}
+                                                style={{
+                                                    fontSize: '0.8rem', color: 'var(--accent-gold)',
+                                                    background: 'none', border: 'none', cursor: 'pointer',
+                                                }}
+                                            >
+                                                {t('markAllRead')}
+                                            </button>
+                                        )}
+                                        {notifications.length > 0 && (
+                                            <button
+                                                onClick={() => setSelectMode(true)}
+                                                style={{
+                                                    fontSize: '0.8rem', color: 'var(--text-secondary)',
+                                                    background: 'none', border: 'none', cursor: 'pointer',
+                                                }}
+                                            >
+                                                {t('edit')}
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
 
                         {/* Empty state */}
@@ -254,17 +352,34 @@ export default function NotificationsPage() {
                                         <button
                                             key={n.id}
                                             className="notif-row"
-                                            onClick={() => handleNotifClick(n)}
+                                            onClick={() => {
+                                                if (selectMode) {
+                                                    const next = new Set(selectedIds)
+                                                    if (next.has(n.id)) next.delete(n.id)
+                                                    else next.add(n.id)
+                                                    setSelectedIds(next)
+                                                } else {
+                                                    handleNotifClick(n)
+                                                }
+                                            }}
                                             style={{
                                                 width: '100%', display: 'flex', alignItems: 'flex-start',
                                                 gap: '14px', padding: '16px 20px',
-                                                background: n.read ? 'transparent' : 'rgba(212,168,83,0.04)',
+                                                background: selectMode && selectedIds.has(n.id) ? 'rgba(212,168,83,0.1)' : (n.read ? 'transparent' : 'rgba(212,168,83,0.04)'),
                                                 border: 'none', borderBottom: '1px solid var(--border-subtle)',
                                                 cursor: 'pointer', textAlign: 'left',
                                                 transition: 'background 0.15s, opacity 0.3s',
-                                                opacity: n.read ? 0.6 : 1,
+                                                opacity: n.read && !selectMode ? 0.6 : 1,
                                             }}
                                         >
+                                            {selectMode && (
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={selectedIds.has(n.id)} 
+                                                    readOnly 
+                                                    style={{ width: '18px', height: '18px', flexShrink: 0, accentColor: 'var(--accent-gold)', marginTop: '4px' }}
+                                                />
+                                            )}
                                             <span style={{ fontSize: '22px', flexShrink: 0, marginTop: '1px' }}>
                                                 {({'new_role':'🎭','announcement':'📣','content_publish':'✨','status_change':'📋','system':'⚙️'} as Record<string,string>)[n.type] ?? '🔔'}
                                             </span>
@@ -285,7 +400,7 @@ export default function NotificationsPage() {
                                                     {timeAgo(n.createdAt)}
                                                 </span>
                                             </span>
-                                            {!n.read && (
+                                            {!n.read && !selectMode && (
                                                 <span style={{
                                                     width: '8px', height: '8px', borderRadius: '50%',
                                                     background: 'var(--accent-gold)', flexShrink: 0, marginTop: '5px',

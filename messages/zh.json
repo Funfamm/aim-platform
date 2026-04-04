@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "首页",
     "works": "作品",
@@ -844,6 +844,15 @@
     "saving": "保存中…",
     "saved": "✅ 偏好设置已保存",
     "savePreferences": "保存偏好设置",
-    "preferencesSaved": "偏好设置已保存"
+    "preferencesSaved": "偏好设置已保存",
+    "edit": "编辑",
+    "cancel": "取消",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "deleteSelected": "删除所选",
+    "deleteAll": "清除所有",
+    "bulkEdit": "批量编辑",
+    "confirmDeleteSelected": "是否确认删除选中的 {count} 条通知？",
+    "confirmDeleteAll": "您确定要删除所有通知吗？此操作无法撤销。"
   }
 }

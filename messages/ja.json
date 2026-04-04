@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "ホーム",
     "works": "作品",
@@ -834,17 +834,26 @@
     "inAppDesc": "プラットフォーム内で表示される通知",
     "email": "メール",
     "emailDesc": "登録済みのメールアドレスに送信",
-    "newRole": "\u65b0\u3057\u3044\u30ad\u30e3\u30b9\u30c6\u30a3\u30f3\u30b0\u30ed\u30fc\u30eb",
-    "newRoleDesc": "\u30d7\u30e9\u30c3\u30c8\u30d5\u30a9\u30fc\u30e0\u3067\u65b0\u3057\u3044\u30aa\u30fc\u30c7\u30a3\u30b7\u30e7\u30f3\u304c\u958b\u59cb\u3055\u308c\u305f\u3068\u304d",
-    "announcement": "\u304a\u77e5\u3089\u305b",
-    "announcementDesc": "AIM Studio\u30c1\u30fc\u30e0\u304b\u3089\u306e\u30d7\u30e9\u30c3\u30c8\u30d5\u30a9\u30fc\u30e0\u30cb\u30e5\u30fc\u30b9\u3068\u66f4\u65b0",
-    "newContent": "\u65b0\u3057\u3044\u30b3\u30f3\u30c6\u30f3\u30c4",
-    "newContentDesc": "\u65b0\u3057\u3044\u6620\u753b\u3001\u30c8\u30ec\u30fc\u30cb\u30f3\u30b0\u307e\u305f\u306f\u30b3\u30f3\u30c6\u30f3\u30c4\u304c\u516c\u958b\u3055\u308c\u305f\u3068\u304d",
-    "appUpdates": "\u5fdc\u52df\u66f4\u65b0",
-    "appUpdatesDesc": "\u30ad\u30e3\u30b9\u30c6\u30a3\u30f3\u30b0\u5fdc\u52df\u306e\u30b9\u30c6\u30fc\u30bf\u30b9\u304c\u5909\u66f4\u3055\u308c\u305f\u3068\u304d",
+    "newRole": "新しいキャスティングロール",
+    "newRoleDesc": "プラットフォームで新しいオーディションが開始されたとき",
+    "announcement": "お知らせ",
+    "announcementDesc": "AIM Studioチームからのプラットフォームニュースと更新",
+    "newContent": "新しいコンテンツ",
+    "newContentDesc": "新しい映画、トレーニングまたはコンテンツが公開されたとき",
+    "appUpdates": "応募更新",
+    "appUpdatesDesc": "キャスティング応募のステータスが変更されたとき",
     "saving": "保存中…",
     "saved": "✅ 設定が保存されました",
     "savePreferences": "設定を保存",
-    "preferencesSaved": "設定が保存されました"
+    "preferencesSaved": "設定が保存されました",
+    "edit": "編集",
+    "cancel": "キャンセル",
+    "selectAll": "すべて選択",
+    "deselectAll": "選択解除",
+    "deleteSelected": "選択した項目を削除",
+    "deleteAll": "すべてクリア",
+    "bulkEdit": "一括編集",
+    "confirmDeleteSelected": "選択した{count}件の通知を削除しますか？",
+    "confirmDeleteAll": "本当にすべての通知を削除してもよろしいですか？この操作は元に戻せません。"
   }
 }

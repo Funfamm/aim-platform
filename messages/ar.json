@@ -846,6 +846,15 @@
     "saving": "جارٍ الحفظ…",
     "saved": "✅ تم حفظ التفضيلات",
     "savePreferences": "حفظ التفضيلات",
-    "preferencesSaved": "تم حفظ التفضيلات"
+    "preferencesSaved": "تم حفظ التفضيلات",
+    "edit": "تعديل",
+    "cancel": "إلغاء",
+    "selectAll": "تحديد الكل",
+    "deselectAll": "إلغاء تحديد الكل",
+    "deleteSelected": "حذف المحدد",
+    "deleteAll": "مسح الكل",
+    "bulkEdit": "تحرير مجمع",
+    "confirmDeleteSelected": "هل تريد حذف {count} من الإشعارات المحددة؟",
+    "confirmDeleteAll": "هل أنت متأكد أنك تريد حذف جميع الإشعارات؟ لا يمكن التراجع عن هذا الإجراء."
   }
 }

@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "Inicio",
     "works": "Obras",
@@ -834,16 +834,25 @@
     "email": "Email",
     "emailDesc": "Enviado a tu dirección de email registrada",
     "newRole": "Nuevo rol de casting",
-    "newRoleDesc": "Cuando se abre una nueva audici\u00f3n en la plataforma",
+    "newRoleDesc": "Cuando se abre una nueva audición en la plataforma",
     "announcement": "Anuncios",
     "announcementDesc": "Noticias y actualizaciones del equipo AIM Studio",
     "newContent": "Nuevo contenido",
-    "newContentDesc": "Cuando se publican nuevas pel\u00edculas, cursos o art\u00edculos",
+    "newContentDesc": "Cuando se publican nuevas películas, cursos o artículos",
     "appUpdates": "Actualizaciones de solicitudes",
     "appUpdatesDesc": "Cuando cambia el estado de tu solicitud de casting",
     "saving": "Guardando…",
     "saved": "✅ Preferencias guardadas",
     "savePreferences": "Guardar preferencias",
-    "preferencesSaved": "Preferencias guardadas"
+    "preferencesSaved": "Preferencias guardadas",
+    "edit": "Editar",
+    "cancel": "Cancelar",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "deleteSelected": "Borrar seleccionados",
+    "deleteAll": "Borrar todo",
+    "bulkEdit": "Edición masiva",
+    "confirmDeleteSelected": "¿Borrar {count} notificaciones seleccionadas?",
+    "confirmDeleteAll": "¿Estás seguro de que quieres borrar TODAS las notificaciones? Esto no se puede deshacer."
   }
 }

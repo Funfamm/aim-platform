@@ -844,6 +844,15 @@
     "saving": "Enregistrement…",
     "saved": "✅ Préférences sauvegardées",
     "savePreferences": "Sauvegarder les préférences",
-    "preferencesSaved": "Préférences sauvegardées"
+    "preferencesSaved": "Préférences sauvegardées",
+    "edit": "Modifier",
+    "cancel": "Annuler",
+    "selectAll": "Tout sélectionner",
+    "deselectAll": "Tout désélectionner",
+    "deleteSelected": "Supprimer la sélection",
+    "deleteAll": "Tout effacer",
+    "bulkEdit": "Modification en masse",
+    "confirmDeleteSelected": "Supprimer {count} notifications sélectionnées ?",
+    "confirmDeleteAll": "Êtes-vous sûr de vouloir TOUTES les supprimer ? Cette action est irréversible."
   }
 }

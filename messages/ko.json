@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "홈",
     "works": "작품",
@@ -833,17 +833,26 @@
     "inAppDesc": "플랫폼 내부에서 표시되는 알림",
     "email": "이메일",
     "emailDesc": "등록된 이메일 주소로 전달",
-    "newRole": "\uc0c8 \uce90\uc2a4\ud305 \uc5ed\ud560",
-    "newRoleDesc": "\ud50c\ub7ab\ud3fc\uc5d0\uc11c \uc0c8 \uc624\ub514\uc158\uc774 \uc5f4\ub838\uc744 \ub54c",
-    "announcement": "\uacf5\uc9c0\uc0ac\ud56d",
-    "announcementDesc": "AIM Studio \ud300\uc758 \ud50c\ub7ab\ud3fc \ub274\uc2a4 \ubc0f \uc5c5\ub370\uc774\ud2b8",
-    "newContent": "\uc0c8 \ucf58\ud150\uce20",
-    "newContentDesc": "\uc0c8 \uc601\ud654\ub098 \ucf58\ud150\uce20\uac00 \uac8c\uc2dc\ub418\uc5c8\uc744 \ub54c",
-    "appUpdates": "\uc9c0\uc6d0 \uc5c5\ub370\uc774\ud2b8",
-    "appUpdatesDesc": "\uc9c0\uc6d0 \uc0c1\ud0dc\uac00 \ubcc0\uacbd\ub418\uc5c8\uc744 \ub54c",
+    "newRole": "새 캐스팅 역할",
+    "newRoleDesc": "플랫폼에서 새 오디션이 열렸을 때",
+    "announcement": "공지사항",
+    "announcementDesc": "AIM Studio 팀의 플랫폼 뉴스 및 업데이트",
+    "newContent": "새 콘텐츠",
+    "newContentDesc": "새 영화나 콘텐츠가 게시되었을 때",
+    "appUpdates": "지원 업데이트",
+    "appUpdatesDesc": "지원 상태가 변경되었을 때",
     "saving": "저장 중…",
     "saved": "✅ 설정이 저장되었습니다",
     "savePreferences": "설정 저장",
-    "preferencesSaved": "설정이 저장되었습니다"
+    "preferencesSaved": "설정이 저장되었습니다",
+    "edit": "편집",
+    "cancel": "취소",
+    "selectAll": "모두 선택",
+    "deselectAll": "선택 해제",
+    "deleteSelected": "선택 항목 삭제",
+    "deleteAll": "모두 지우기",
+    "bulkEdit": "일괄 편집",
+    "confirmDeleteSelected": "선택한 알림 {count}개를 삭제하시겠습니까?",
+    "confirmDeleteAll": "모든 알림을 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
   }
 }

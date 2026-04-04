@@ -1,4 +1,4 @@
-﻿{
+{
   "nav": {
     "home": "Startseite",
     "works": "Werke",
@@ -844,6 +844,15 @@
     "saving": "Wird gespeichert…",
     "saved": "✅ Einstellungen gespeichert",
     "savePreferences": "Einstellungen speichern",
-    "preferencesSaved": "Einstellungen gespeichert"
+    "preferencesSaved": "Einstellungen gespeichert",
+    "edit": "Bearbeiten",
+    "cancel": "Abbrechen",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Auswahl aufheben",
+    "deleteSelected": "Ausgewählte löschen",
+    "deleteAll": "Alle löschen",
+    "bulkEdit": "Massenbearbeitung",
+    "confirmDeleteSelected": "{count} ausgewählte Benachrichtigungen löschen?",
+    "confirmDeleteAll": "Bist du sicher, dass du ALLE Benachrichtigungen löschen möchtest? Dies kann nicht rückgängig gemacht werden."
   }
 }

@@ -841,6 +841,15 @@
     "saving": "Saving…",
     "saved": "✅ Preferences Saved",
     "savePreferences": "Save Preferences",
-    "preferencesSaved": "Preferences saved"
+    "preferencesSaved": "Preferences saved",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "deleteSelected": "Delete Selected",
+    "deleteAll": "Clear All",
+    "bulkEdit": "Bulk Edit",
+    "confirmDeleteSelected": "Delete {count} selected notifications?",
+    "confirmDeleteAll": "Are you sure you want to delete ALL notifications? This cannot be undone."
   }
 }

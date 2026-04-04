@@ -82,3 +82,43 @@ export async function PATCH(req: Request) {
     }
 }
 
+
+/** DELETE /api/notifications – delete specific or all notifications for the current user
+ *  Body (optional JSON):
+ *    ids  – string[]  → delete only those IDs (must belong to the user)
+ *    If body is omitted or ids is empty/absent, ALL notifications for the user are deleted.
+ */
+export async function DELETE(req: Request) {
+    const session = await getSessionAndRefresh()
+    const userId = (session as { userId?: string; id?: string } | null)?.userId
+        || (session as { userId?: string; id?: string } | null)?.id
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    try {
+        const body = await req.json().catch(() => ({}))
+        const { ids } = body as { ids?: string[] }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = prisma as any
+
+        let deleted: number
+        if (ids && ids.length > 0) {
+            // Scoped to userId so users can't delete other users' notifications
+            const result = await db.userNotification.deleteMany({
+                where: { id: { in: ids }, userId },
+            })
+            deleted = result.count
+        } else {
+            const result = await db.userNotification.deleteMany({
+                where: { userId },
+            })
+            deleted = result.count
+        }
+
+        return NextResponse.json({ success: true, deleted })
+    } catch (err) {
+        console.error('[notifications] DELETE error:', err)
+        return NextResponse.json({ error: 'Failed to delete notifications' }, { status: 500 })
+    }
+}
+
