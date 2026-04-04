@@ -240,90 +240,100 @@ export default function NotificationsPage() {
                         border: '1px solid var(--border-subtle)', overflow: 'hidden',
                     }}>
                         {/* Feed header */}
-                        <div style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)',
-                        }}>
-                            <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
-                                {selectMode ? t('bulkEdit') : t('recentNotifications')}
-                            </span>
-                            
-                            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                                {selectMode ? (
-                                    <>
+                        {selectMode ? (
+                            <div style={{
+                                display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(212,168,83,0.03)',
+                                width: '100%'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <button 
+                                        onClick={() => { setSelectMode(false); setSelectedIds(new Set()); }}
+                                        style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', cursor: 'pointer', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
+                                        aria-label="Close bulk edit"
+                                    >
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                    </button>
+                                    <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                                        {t('bulkEdit')}
+                                        <span style={{ opacity: selectedIds.size > 0 ? 1 : 0, transition: 'opacity 0.2s', background: 'var(--accent-gold)', color: '#0f1115', padding: '2px 8px', borderRadius: '12px', fontSize: '0.75rem', marginLeft: '8px', fontWeight: 800 }}>
+                                            {selectedIds.size}
+                                        </span>
+                                    </span>
+                                </div>
+                                
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1, justifyContent: 'flex-end' }}>
+                                    <button
+                                        onClick={() => {
+                                            if (selectedIds.size === notifications.length) setSelectedIds(new Set())
+                                            else setSelectedIds(new Set(notifications.map(n => n.id)))
+                                        }}
+                                        style={{
+                                            fontSize: '0.75rem', fontWeight: 600, padding: '8px 14px', borderRadius: '8px',
+                                            color: 'var(--text-primary)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', cursor: 'pointer', transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {selectedIds.size === notifications.length ? t('deselectAll') : t('selectAll')}
+                                    </button>
+                                    <button
+                                        onClick={deleteAll}
+                                        disabled={deleting}
+                                        style={{
+                                            fontSize: '0.75rem', fontWeight: 600, padding: '8px 14px', borderRadius: '8px',
+                                            color: '#f87171', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', cursor: 'pointer', transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {t('deleteAll')}
+                                    </button>
+                                    {selectedIds.size > 0 && (
                                         <button
-                                            onClick={() => {
-                                                if (selectedIds.size === notifications.length) {
-                                                    setSelectedIds(new Set())
-                                                } else {
-                                                    setSelectedIds(new Set(notifications.map(n => n.id)))
-                                                }
+                                            onClick={deleteSelected}
+                                            disabled={selectedIds.size === 0 || deleting}
+                                            style={{
+                                                fontSize: '0.75rem', fontWeight: 600, padding: '8px 14px', borderRadius: '8px',
+                                                color: '#fff', background: '#ef4444', border: '1px solid #dc2626', cursor: 'pointer',
+                                                boxShadow: '0 2px 8px rgba(239, 68, 68, 0.25)', transition: 'all 0.2s', animation: 'fadeInUp 0.2s ease'
                                             }}
+                                        >
+                                            {t('deleteSelected')}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)',
+                            }}>
+                                <span style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                                    {t('recentNotifications')}
+                                </span>
+                                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                                    {notifications.some(n => !n.read) && (
+                                        <button
+                                            onClick={markAllRead}
+                                            style={{
+                                                fontSize: '0.8rem', color: 'var(--accent-gold)',
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                            }}
+                                        >
+                                            {t('markAllRead')}
+                                        </button>
+                                    )}
+                                    {notifications.length > 0 && (
+                                        <button
+                                            onClick={() => setSelectMode(true)}
                                             style={{
                                                 fontSize: '0.8rem', color: 'var(--text-secondary)',
                                                 background: 'none', border: 'none', cursor: 'pointer',
                                             }}
                                         >
-                                            {selectedIds.size === notifications.length ? t('deselectAll') : t('selectAll')}
+                                            {t('edit')}
                                         </button>
-                                        <button
-                                            onClick={deleteSelected}
-                                            disabled={selectedIds.size === 0 || deleting}
-                                            style={{
-                                                fontSize: '0.8rem', color: selectedIds.size > 0 ? '#ef4444' : 'var(--text-tertiary)',
-                                                background: 'none', border: 'none', cursor: selectedIds.size > 0 ? 'pointer' : 'default',
-                                            }}
-                                        >
-                                            {t('deleteSelected')}
-                                        </button>
-                                        <button
-                                            onClick={deleteAll}
-                                            disabled={deleting}
-                                            style={{
-                                                fontSize: '0.8rem', color: '#ef4444',
-                                                background: 'none', border: 'none', cursor: 'pointer',
-                                            }}
-                                        >
-                                            {t('deleteAll')}
-                                        </button>
-                                        <button
-                                            onClick={() => { setSelectMode(false); setSelectedIds(new Set()); }}
-                                            style={{
-                                                fontSize: '0.8rem', color: 'var(--text-primary)',
-                                                background: 'none', border: 'none', cursor: 'pointer',
-                                            }}
-                                        >
-                                            {t('cancel')}
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        {notifications.some(n => !n.read) && (
-                                            <button
-                                                onClick={markAllRead}
-                                                style={{
-                                                    fontSize: '0.8rem', color: 'var(--accent-gold)',
-                                                    background: 'none', border: 'none', cursor: 'pointer',
-                                                }}
-                                            >
-                                                {t('markAllRead')}
-                                            </button>
-                                        )}
-                                        {notifications.length > 0 && (
-                                            <button
-                                                onClick={() => setSelectMode(true)}
-                                                style={{
-                                                    fontSize: '0.8rem', color: 'var(--text-secondary)',
-                                                    background: 'none', border: 'none', cursor: 'pointer',
-                                                }}
-                                            >
-                                                {t('edit')}
-                                            </button>
-                                        )}
-                                    </>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
+                        )}
 
                         {/* Empty state */}
                         {notifications.length === 0 ? (
