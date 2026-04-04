@@ -44,15 +44,38 @@ export default function DonatePage() {
     // Load PayPal JS SDK
     useEffect(() => {
         const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
-        if (!clientId || document.getElementById('paypal-sdk')) {
-            if (window.paypal) setPaypalReady(true)
+        if (!clientId) {
+            setErrorMsg('PayPal configuration is missing (Client ID not found). Ensure NEXT_PUBLIC_PAYPAL_CLIENT_ID is set in your environment.')
+            setStatus('error')
+            setShowPaypal(false)
+            return
+        }
+        if (document.getElementById('paypal-sdk')) {
+            if (window.paypal) {
+                setPaypalReady(true)
+            } else {
+                const checkTimer = setInterval(() => {
+                    if (window.paypal) {
+                        setPaypalReady(true)
+                        clearInterval(checkTimer)
+                    }
+                }, 200)
+                // Fallback timeout in case it never loads
+                setTimeout(() => clearInterval(checkTimer), 10000)
+            }
             return
         }
         const script = document.createElement('script')
         script.id = 'paypal-sdk'
+        // Use test environment if configured via env vars, otherwise default live endpoint (PayPal auto-routes sandbox IDs but it's better to be explicit if needed, however the standard URL works for both)
         script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`
         script.async = true
         script.onload = () => setPaypalReady(true)
+        script.onerror = () => {
+            setErrorMsg('Failed to load PayPal secure checkout. Please check your network connection, disable adblockers, or verify your Sandbox/Live Client ID is valid.')
+            setStatus('error')
+            setShowPaypal(false)
+        }
         document.head.appendChild(script)
     }, [])
 

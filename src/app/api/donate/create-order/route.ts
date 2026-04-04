@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 
-const PAYPAL_API = 'https://api-m.paypal.com' // Live
+const PAYPAL_API = process.env.PAYPAL_MODE === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID!
 const PAYPAL_SECRET = process.env.PAYPAL_SECRET!
 

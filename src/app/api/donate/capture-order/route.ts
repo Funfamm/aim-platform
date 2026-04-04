@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { donationThankYouWithOverrides, donationAdminNotification } from '@/lib/email-templates'
 
-const PAYPAL_API = 'https://api-m.paypal.com'
+const PAYPAL_API = process.env.PAYPAL_MODE === 'sandbox' ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
 const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID!
 const PAYPAL_SECRET = process.env.PAYPAL_SECRET!
 
