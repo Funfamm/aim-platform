@@ -5,13 +5,7 @@ import { NextResponse } from 'next/server';
  * Returns a NextResponse with status 400 if validation fails, otherwise
  * returns the original request (so the handler can continue).
  */
-export async function validateAudio(request: Request): Promise<NextResponse | null> {
-  const contentType = request.headers.get('content-type') || '';
-  if (!contentType.includes('multipart/form-data')) {
-    return NextResponse.json({ error: 'Invalid content type. Expected multipart/form-data.' }, { status: 400 });
-  }
-
-  const form = await request.formData();
+export async function validateAudio(form: FormData): Promise<NextResponse | null> {
   const audioFile = form.get('audio') as File | null;
   if (!audioFile) {
     return NextResponse.json({ error: 'Missing audio file.' }, { status: 400 });

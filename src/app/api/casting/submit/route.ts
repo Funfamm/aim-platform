@@ -13,11 +13,22 @@ export async function POST(request: NextRequest) {
   const rateResult = await rateLimitCasting(request);
   if (rateResult) return rateResult;
 
+  const contentType = request.headers.get('content-type') || '';
+  if (!contentType.includes('multipart/form-data')) {
+    return NextResponse.json({ error: 'Invalid content type. Expected multipart/form-data.' }, { status: 400 });
+  }
+
+  let form: FormData;
+  try {
+    form = await request.formData();
+  } catch (err) {
+    return NextResponse.json({ error: 'Failed to parse form data.' }, { status: 400 });
+  }
+
   // Validate audio upload
-  const validationResult = await validateAudio(request);
+  const validationResult = await validateAudio(form);
   if (validationResult) return validationResult;
 
-  const form = await request.formData();
   const audioFile = form.get('audio') as File;
 
   // Extract other fields
