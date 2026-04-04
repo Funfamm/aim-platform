@@ -47,6 +47,7 @@ export default async function AboutPage() {
     const bgUrls = pageMedia.map(m => m.url)
 
     const t = await getTranslations('about')
+    const tHome = await getTranslations('home')
     const mission = settings?.mission || t('missionText' as any) || DEFAULT_MISSION
     const studioStory = settings?.studioStory || t('storyText' as any) || DEFAULT_STORY
     const storyParagraphs = studioStory.split('\n').filter((p: string) => p.trim())
@@ -176,6 +177,138 @@ export default async function AboutPage() {
                                 <AnimatedCounter end={stats.distinctCountries} suffix="+" label={v('stat2Label', 'statsCountries')} />
                                 <AnimatedCounter end={stats.distinctCreators} suffix="+" label={v('stat3Label', 'statsCreators')} />
                                 <AnimatedCounter end={stats.awards} label={v('stat4Label', 'statsAwards')} />
+                            </div>
+                        </ScrollReveal3D>
+                    </div>
+                </section>
+
+                {/* ═══════════════════ OUR VISION ═══════════════════ */}
+                <section style={{ padding: 'var(--space-3xl) 0', position: 'relative' }}>
+                    <div className="container" style={{ maxWidth: '1000px' }}>
+                        <ScrollReveal3D direction="up" delay={100} distance={30}>
+                            <div style={{
+                                ...glassCard,
+                                textAlign: 'center', marginBottom: 'var(--space-3xl)',
+                                padding: 'var(--space-xl)',
+                            }}>
+                                <span className="text-label">{tHome('ourVision')}</span>
+                                <h2 style={{
+                                    marginTop: 'var(--space-sm)',
+                                    marginBottom: 'var(--space-md)',
+                                    fontSize: 'clamp(1.8rem, 4.5vw, 2.8rem)',
+                                    fontWeight: 800,
+                                    lineHeight: 1.15,
+                                }}>
+                                    {tHome('redefining')}{' '}
+                                    <span style={{
+                                        fontFamily: '"Playfair Display", Georgia, serif', fontStyle: 'italic',
+                                        background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                                    }}>{tHome('redefiningAccent')}</span>
+                                </h2>
+                                <div className="divider divider-center" />
+                                <p style={{
+                                    fontSize: 'clamp(0.88rem, 2vw, 1rem)',
+                                    color: 'var(--text-secondary)',
+                                    maxWidth: '600px',
+                                    margin: '0 auto',
+                                    lineHeight: 1.75,
+                                    marginTop: 'var(--space-md)',
+                                }}>
+                                    {tHome('visionP1')}
+                                </p>
+                            </div>
+                        </ScrollReveal3D>
+
+                        {/* Feature cards grid */}
+                        <div className="grid-3col" tabIndex={0} role="region" aria-label="Feature highlights" style={{
+                            gap: 'var(--space-lg)',
+                        }}>
+                            {[
+                                {
+                                    icon: '🎯',
+                                    value: tHome('zeroCompromise'),
+                                    desc: tHome('visionP2'),
+                                    cardClass: 'feature-card-gold',
+                                    border: 'rgba(212,168,83,0.25)',
+                                },
+                                {
+                                    icon: '✨',
+                                    value: tHome('limitless'),
+                                    desc: tHome('limitlessDesc'),
+                                    cardClass: 'feature-card-purple',
+                                    border: 'rgba(139,92,246,0.25)',
+                                },
+                                {
+                                    icon: '🎬',
+                                    value: tHome('cinematic'),
+                                    desc: tHome('cinematicDesc'),
+                                    cardClass: 'feature-card-blue',
+                                    border: 'rgba(59,130,246,0.25)',
+                                },
+                            ].map((card, i) => (
+                                <ScrollReveal3D key={i} direction="up" delay={200 + i * 150} distance={30} rotate={3}>
+                                    <div className={card.cardClass} style={{
+                                        padding: 'var(--space-xl)',
+                                        borderRadius: 'var(--radius-xl)',
+                                        border: `1px solid ${card.border}`,
+                                        backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+                                        transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                                        height: '100%',
+                                    }}>
+                                        <div style={{ fontSize: '2.2rem', marginBottom: 'var(--space-md)' }}>{card.icon}</div>
+                                        <h3 style={{
+                                            fontSize: '1.05rem',
+                                            fontWeight: 700,
+                                            marginBottom: 'var(--space-sm)',
+                                            fontFamily: 'Outfit, sans-serif',
+                                        }}>{card.value}</h3>
+                                        <p style={{
+                                            fontSize: '0.85rem',
+                                            color: 'var(--text-secondary)',
+                                            lineHeight: 1.7,
+                                            margin: 0,
+                                        }}>{card.desc}</p>
+                                    </div>
+                                </ScrollReveal3D>
+                            ))}
+                        </div>
+
+                        {/* Stats row */}
+                        <ScrollReveal3D direction="up" delay={600} distance={20}>
+                            <div tabIndex={0} role="region" aria-label="Production pillars" style={{
+                                ...glassCard,
+                                display: 'flex',
+                                justifyContent: 'center',
+                                gap: 'var(--space-3xl)',
+                                marginTop: 'var(--space-3xl)',
+                                padding: 'var(--space-xl)',
+                            }}>
+                                {[
+                                    { value: '100%', label: tHome('zeroCompromise') },
+                                    { value: '∞', label: tHome('limitless') },
+                                    { value: '24fps', label: tHome('cinematic') },
+                                ].map((stat, i) => (
+                                    <div key={i} style={{ textAlign: 'center' }}>
+                                        <div style={{
+                                            fontFamily: 'Outfit, sans-serif',
+                                            fontSize: '2.2rem',
+                                            fontWeight: 800,
+                                            background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            backgroundClip: 'text',
+                                            letterSpacing: '-0.02em',
+                                        }}>
+                                            {stat.value}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '0.72rem', color: 'var(--text-tertiary)',
+                                            letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+                                            marginTop: '4px',
+                                        }}>{stat.label}</div>
+                                    </div>
+                                ))}
                             </div>
                         </ScrollReveal3D>
                     </div>
