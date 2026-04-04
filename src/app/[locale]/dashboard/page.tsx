@@ -142,7 +142,9 @@ export default function DashboardPage() {
             .catch(() => setLoadingWatchlist(false))
         fetch('/api/dashboard/history').then(r => r.json())
             .then(data => {
-                setHistory(data.history || [])
+                const fetched: HistoryItem[] = data.history || [];
+                const uniqueHistory = fetched.filter((v, i, a) => a.findIndex(t => t.project.id === v.project.id) === i);
+                setHistory(uniqueHistory)
                 setPagination(p => ({ ...p, historyCursor: data.nextCursor, historyHasMore: data.hasMore ?? false }))
                 setLoadingHistory(false)
             })
@@ -171,7 +173,10 @@ export default function DashboardPage() {
                 setWatchlist(prev => [...prev, ...(data.watchlist || [])])
                 setPagination(p => ({ ...p, watchCursor: data.nextCursor, watchHasMore: data.hasMore ?? false, loadingMore: null }))
             } else if (tab === 'history') {
-                setHistory(prev => [...prev, ...(data.history || [])])
+                setHistory(prev => {
+                    const combined = [...prev, ...(data.history || [])];
+                    return combined.filter((v, i, a) => a.findIndex(t => t.project.id === v.project.id) === i);
+                })
                 setPagination(p => ({ ...p, historyCursor: data.nextCursor, historyHasMore: data.hasMore ?? false, loadingMore: null }))
             } else {
                 setDonations(prev => [...prev, ...(data.donations || [])])

@@ -53,13 +53,32 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Missing projectId' }, { status: 400 })
     }
 
-    const entry = await prisma.watchHistory.create({
-        data: {
+    const existingHistory = await prisma.watchHistory.findFirst({
+        where: {
             userId: session.userId,
             projectId,
-            progress: progress || 0,
         },
+        orderBy: { watchedAt: 'desc' },
     })
+
+    let entry;
+    if (existingHistory) {
+        entry = await prisma.watchHistory.update({
+            where: { id: existingHistory.id },
+            data: {
+                watchedAt: new Date(),
+                progress: progress !== undefined ? progress : existingHistory.progress,
+            },
+        })
+    } else {
+        entry = await prisma.watchHistory.create({
+            data: {
+                userId: session.userId,
+                projectId,
+                progress: progress || 0,
+            },
+        })
+    }
 
     return NextResponse.json(entry)
 }
