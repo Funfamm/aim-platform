@@ -43,7 +43,11 @@ export default function DonatePage() {
 
     // Load PayPal JS SDK
     useEffect(() => {
-        const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+        const isSandbox = process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
+        const clientId = isSandbox 
+            ? process.env.NEXT_PUBLIC_PAYPAL_SANDBOX_CLIENT_ID 
+            : process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
+            
         if (!clientId) {
             setErrorMsg('PayPal configuration is missing (Client ID not found). Ensure NEXT_PUBLIC_PAYPAL_CLIENT_ID is set in your environment.')
             setStatus('error')
