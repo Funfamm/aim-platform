@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { generateDeletedEmail } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
@@ -65,6 +66,8 @@ export async function GET(request: NextRequest) {
     })
 }
 
+
+
 export async function DELETE(request: NextRequest) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
@@ -72,38 +75,60 @@ export async function DELETE(request: NextRequest) {
         const { ids } = await request.json() as { ids: string[] }
         if (!ids || ids.length === 0) return NextResponse.json({ error: 'No IDs provided' }, { status: 400 })
 
-        // Never delete superadmins via bulk delete
+        // Fetch users to delete including their email for anonymization
         const usersToDelete = await prisma.user.findMany({
             where: { id: { in: ids }, role: { not: 'superadmin' } },
-            select: { id: true },
+            select: { id: true, email: true },
         })
         const safeIds = usersToDelete.map(u => u.id)
         if (safeIds.length === 0) return NextResponse.json({ error: 'No eligible users to delete' }, { status: 400 })
 
-        // Cascade-clear all user data systematically
-        // 1. Unlink applications (set userId to null — preserve application data for admin records)
-        await prisma.application.updateMany({
-            where: { userId: { in: safeIds } },
-            data: { userId: null },
+        // Map user id -> anonymized email
+        const anonMap = new Map<string, string>()
+        usersToDelete.forEach(u => anonMap.set(u.id, generateDeletedEmail(u.id, u.email)))
+
+        // Cascade-clear and anonymize all user data systematically in a transaction
+        await prisma.$transaction(async (tx) => {
+            // 1a. Guest applications: anonymise email based on original email (no userId)
+            for (const u of usersToDelete) {
+                const anonEmail = anonMap.get(u.id)!;
+                await tx.application.updateMany({
+                    where: { email: u.email },
+                    data: { email: anonEmail },
+                });
+            }
+            // 1. Applications: Unlink user and anonymize email for linked records
+            for (const [uid, anonEmail] of anonMap.entries()) {
+                await tx.application.updateMany({
+                    where: { userId: uid },
+                    data: { userId: null, email: anonEmail },
+                });
+            }
+
+            // 2. Donations: Preserve financial records, unlink user and anonymize
+            for (const [uid, anonEmail] of anonMap.entries()) {
+                await tx.donation.updateMany({
+                    where: { userId: uid },
+                    data: { userId: null, email: anonEmail },
+                })
+            }
+
+            // 3. Script Submissions: Anonymize based on original email
+            for (const u of usersToDelete) {
+                const anonEmail = anonMap.get(u.id)!
+                await tx.scriptSubmission.updateMany({
+                    where: { authorEmail: u.email },
+                    data: { authorEmail: anonEmail },
+                })
+            }
+
+            // 4. Delete users — this triggers Cascade for all related models with onDelete: Cascade
+            await tx.user.deleteMany({
+                where: { id: { in: safeIds } },
+            })
         })
 
-        // 2. Anonymize donations (preserve financial records, unlink user)
-        await prisma.donation.updateMany({
-            where: { userId: { in: safeIds } },
-            data: { userId: null },
-        })
-
-        // 3. Delete all cascading user activity (Prisma onDelete: Cascade handles most)
-        // The following are NOT Cascade in schema so we delete them explicitly:
-        // (Watchlist, WatchHistory, Enrollments, LessonProgress, TrainingBadges,
-        //  QuizAttempts, ReviewActivities, PasswordHistory are all Cascade — handled automatically)
-
-        // 4. Delete users — this triggers Cascade for all related models with onDelete: Cascade
-        const deleted = await prisma.user.deleteMany({
-            where: { id: { in: safeIds } },
-        })
-
-        return NextResponse.json({ deleted: deleted.count, message: `${deleted.count} user(s) and all their data have been permanently deleted.` })
+        return NextResponse.json({ deleted: safeIds.length, message: `${safeIds.length} user(s) and all related records have been permanently anonymized and removed.` })
     } catch (err) {
         console.error('Bulk delete users error:', err)
         return NextResponse.json({ error: 'Delete failed' }, { status: 500 })

@@ -78,47 +78,40 @@ export async function POST(
             return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
         }
 
-        // Try to link to a logged-in user (resolved early so it can be used in duplicate checks)
+        // Try to link to a logged-in user
         let userId: string | null = null
         try {
             const session = await getUserSession()
             if (session?.userId) userId = session.userId
         } catch { /* guest application is fine */ }
 
-        // ═══ DUPLICATE / REAPPLY CHECK ═══
-        if (userId) {
-            const existingByUser = await prisma.application.findFirst({
-                where: { castingCallId: id, userId },
-                select: { id: true, status: true },
-            })
-            if (existingByUser) {
-                // Allow reapply only if previously withdrawn (once only)
-                if (existingByUser.status === 'withdrawn') {
-                    // Update existing record back to submitted — counts as reapplication
-                    await prisma.application.update({
-                        where: { id: existingByUser.id },
-                        data: { status: 'submitted', updatedAt: new Date() },
-                    })
-                    return NextResponse.json({
-                        success: true,
-                        applicationId: existingByUser.id,
-                        message: 'Application resubmitted successfully',
-                        reapplied: true,
-                    })
-                }
-                return NextResponse.json({
-                    error: `You've already submitted an application for this role.`,
-                }, { status: 409 })
-            }
-        }
-
-        // ═══ DUPLICATE CHECK — same email, same role ═══
+        // ═══ DUPLICATE / REAPPLY CHECK (By Email) ═══
+        // The database enforcing @@unique([castingCallId, email]) means we MUST check by email.
         const existingApplication = await prisma.application.findFirst({
-            where: { castingCallId: id, email, status: { not: 'withdrawn' } },
-            select: { id: true, email: true },
+            where: { castingCallId: id, email },
+            select: { id: true, status: true },
         })
 
         if (existingApplication) {
+            // Allow reapply only if previously withdrawn
+            if (existingApplication.status === 'withdrawn') {
+                // Update existing record back to submitted — counts as reapplication
+                await prisma.application.update({
+                    where: { id: existingApplication.id },
+                    data: { 
+                        status: 'submitted', 
+                        updatedAt: new Date(),
+                        // Always update userId if they are logged in now
+                        ...(userId && { userId })
+                    },
+                })
+                return NextResponse.json({
+                    success: true,
+                    applicationId: existingApplication.id,
+                    message: 'Application resubmitted successfully',
+                    reapplied: true,
+                })
+            }
             return NextResponse.json({
                 error: `You've already applied for this role! You can apply for other roles in different projects. Check your email (${email}) for confirmation.`,
             }, { status: 409 })
@@ -131,11 +124,9 @@ export async function POST(
         })
         if (recentApplications >= 5) {
             return NextResponse.json({
-                error: 'You\'ve submitted too many applications today. Please try again tomorrow. This limit is to ensure fair review for all applicants.',
+                error: "You've submitted too many applications today. Please try again tomorrow. This limit is to ensure fair review for all applicants.",
             }, { status: 429 })
         }
-
-        // userId already resolved above for duplicate checks
 
         // Create upload directory for this application
         const timestamp = Date.now()
@@ -397,8 +388,8 @@ export async function POST(
             applicationId: application.id,
             message: 'Application submitted successfully',
         })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Application submission error:', error)
-        return NextResponse.json({ error: 'Failed to submit application' }, { status: 500 })
+        return NextResponse.json({ error: error.message || 'Failed to submit application' }, { status: 500 })
     }
 }
