@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
@@ -171,6 +171,8 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
     const scrollRef = useRef<HTMLDivElement>(null)
     const [canScrollLeft, setCanScrollLeft] = useState(false)
     const [canScrollRight, setCanScrollRight] = useState(false)
+    const [isPaused, setIsPaused] = useState(false)
+    const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
     const checkScroll = () => {
         if (!scrollRef.current) return
@@ -179,16 +181,56 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
         setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5)
     }
 
+    // Determine if auto-scroll should be active based on sponsor count & viewport
+    const shouldAutoScroll = useCallback(() => {
+        if (typeof window === 'undefined') return false
+        const isMobile = window.innerWidth <= 768
+        const threshold = isMobile ? 2 : 4
+        return sponsors.length > threshold
+    }, [sponsors.length])
+
+    // Auto-scroll logic
     useEffect(() => {
-        checkScroll()
         const el = scrollRef.current
-        if (el) el.addEventListener('scroll', checkScroll)
-        window.addEventListener('resize', checkScroll)
-        return () => {
-            if (el) el.removeEventListener('scroll', checkScroll)
-            window.removeEventListener('resize', checkScroll)
+        if (!el) return
+
+        const startAutoScroll = () => {
+            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current)
+            if (!shouldAutoScroll()) return
+
+            autoScrollTimer.current = setInterval(() => {
+                if (isPaused || !el) return
+                const { scrollLeft, scrollWidth, clientWidth } = el
+                const atEnd = scrollLeft >= scrollWidth - clientWidth - 5
+                if (atEnd) {
+                    // Loop back to start smoothly
+                    el.scrollTo({ left: 0, behavior: 'smooth' })
+                } else {
+                    el.scrollBy({ left: 1, behavior: 'auto' })
+                }
+            }, 20) // Smooth pixel-by-pixel scroll
         }
-    }, [sponsors])
+
+        startAutoScroll()
+
+        const handleResize = () => {
+            checkScroll()
+            // Restart auto-scroll with potentially new threshold
+            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current)
+            startAutoScroll()
+        }
+
+        window.addEventListener('resize', handleResize)
+        el.addEventListener('scroll', checkScroll)
+
+        return () => {
+            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current)
+            window.removeEventListener('resize', handleResize)
+            el.removeEventListener('scroll', checkScroll)
+        }
+    }, [sponsors, isPaused, shouldAutoScroll])
+
+    useEffect(() => { checkScroll() }, [sponsors])
 
     const scroll = (dir: number) => {
         scrollRef.current?.scrollBy({ left: dir * 340, behavior: 'smooth' })
@@ -251,13 +293,17 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                             )}
                         </div>
 
-                        {/* Cards strip */}
+                        {/* Cards strip — auto-rotating carousel */}
                         <div
                             ref={scrollRef}
+                            onMouseEnter={() => setIsPaused(true)}
+                            onMouseLeave={() => setIsPaused(false)}
+                            onTouchStart={() => setIsPaused(true)}
+                            onTouchEnd={() => setIsPaused(false)}
                             style={{
                                 display: 'flex', gap: '14px', overflowX: 'auto',
                                 scrollbarWidth: 'none', paddingBottom: '4px',
-                                scrollSnapType: 'x mandatory',
+                                scrollSnapType: shouldAutoScroll() ? 'none' : 'x mandatory',
                                 maskImage: sponsors.length > 3
                                     ? 'linear-gradient(to right, black 90%, transparent 100%)'
                                     : 'none',
@@ -332,3 +378,4 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
         </section>
     )
 }
+
