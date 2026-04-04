@@ -80,7 +80,7 @@ export default async function HomePage() {
       <div style={{ position: 'relative', zIndex: 2 }} tabIndex={0} role="region" aria-label="Page content">
 
       {/* ═══ FEATURED WORKS ═══ */}
-      <section className="section" style={{ position: 'relative' }}>
+      <section className="section" style={{ position: 'relative', paddingBottom: 'var(--space-lg)' }}>
         {/* Subtle section background */}
         <div style={{
           position: 'absolute',
