@@ -359,6 +359,7 @@ html {
      scrollable region that axe (WCAG scrollable-region-focusable) flags
      on mobile browsers. scrollbar-gutter:stable preserves the layout. */
   overflow-y: auto;
+  overscroll-behavior: none;
   scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;  
@@ -374,6 +375,7 @@ body {
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-x pan-y;
+  overscroll-behavior: none;
 }
 
 /* Ultra-fine grain texture overlay */
