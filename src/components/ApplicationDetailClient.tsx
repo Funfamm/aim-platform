@@ -52,6 +52,7 @@ interface Props {
         recommendation: string
         notes: string
         screeningSkipped?: boolean
+        warnings?: string[]
     } | null
 }
 
@@ -255,6 +256,25 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                 }}>
                     <span style={{ fontSize: '1rem' }}>⚠️</span>
                     <span>Vision screening was skipped — photos were not validated by AI. A <strong>−5 point</strong> penalty has been applied.</span>
+                </div>
+            )}
+
+            {/* ─── AUDIT WARNINGS ─── */}
+            {currentReport?.warnings && currentReport.warnings.length > 0 && (
+                <div style={{
+                    display: 'flex', flexDirection: 'column', gap: '4px',
+                    padding: '8px 14px', marginBottom: '16px', borderRadius: '8px',
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.25)',
+                    fontSize: '0.75rem', fontWeight: 600,
+                    color: 'var(--color-error)',
+                }}>
+                    {currentReport.warnings.map((warning, idx) => (
+                        <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '1rem' }}>⚠️</span>
+                            <span>{warning}</span>
+                        </div>
+                    ))}
                 </div>
             )}
 

@@ -133,6 +133,7 @@ export async function POST(
         return NextResponse.json({
             success: true,
             report,
+            warnings: report.warnings ?? [],
             autoAdvanced: autoStatus !== null,
             newStatus,
         })

@@ -2,6 +2,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { prisma } from '@/lib/db'
 import { readFile, stat } from 'fs/promises'
 import path from 'path'
+import { PUBLIC_BASE_URL, ENABLE_HTTP_FALLBACK } from '@/lib/config'
+import { fetchWithTimeout } from '@/lib/http-utils'
+import { getAvailableGeminiKey } from './gemini-key'
 
 interface AuditInput {
     applicant: {
@@ -55,6 +58,7 @@ export interface AuditReport {
     applicantFeedback: string
     visualAssessment?: string  // AI assessment of applicant photos
     screeningSkipped?: boolean // true when Gemini vision key is missing and photos are unvalidated
+    warnings?: string[]        // Fallback or file loading warnings
 }
 
 // ═══ IN-MEMORY RATE LIMITER ═══
@@ -401,7 +405,7 @@ export function applyPreCheckPenalties(
 }
 
 /** Run all pre-checks and return a consolidated result */
-async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
+async function runPreChecks(input: AuditInput, warnings: string[]): Promise<PreCheckResult> {
     const result: PreCheckResult = {
         ageMismatch: false, ageDetails: '',
         genderMismatch: false, genderDetails: '',
@@ -445,16 +449,36 @@ async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
     // ── Voice / self-tape check ──
     if (input.applicant.voiceUrl) {
         try {
-            const filePath = path.join(process.cwd(), 'public', input.applicant.voiceUrl)
-            const fileStat = await stat(filePath)
-            if (fileStat.size < 1024) { // < 1 KB — essentially empty
-                result.voiceMissing = true
-                result.voiceDetails = 'Voice/self-tape file appears to be empty or corrupt'
-                result.totalPenalty += requireVoice ? 25 : 8
-                result.preNotes.push(`VOICE ISSUE: ${result.voiceDetails}`)
-                result.preConcerns.push('Voice recording appears to be empty — please resubmit')
+            if (input.applicant.voiceUrl.startsWith('http')) {
+                result.voiceDetails = `Voice file present (remote URL)`
             } else {
-                result.voiceDetails = `Voice file present (${Math.round(fileStat.size / 1024)} KB)`
+                const filePath = path.join(process.cwd(), 'public', input.applicant.voiceUrl)
+                let fileSize = 0
+                try {
+                    const fileStat = await stat(filePath)
+                    fileSize = fileStat.size
+                } catch (err) {
+                    if (ENABLE_HTTP_FALLBACK) {
+                        const fullUrl = PUBLIC_BASE_URL + (input.applicant.voiceUrl.startsWith('/') ? '' : '/') + input.applicant.voiceUrl
+                        const res = await fetchWithTimeout(fullUrl, { method: 'HEAD' })
+                        if (!res.ok) throw err
+                        fileSize = parseInt(res.headers.get('content-length') || '2048', 10)
+                        console.log(`[AI Audit] HTTP Fallback succeeded for voice file: ${fullUrl}`)
+                    } else {
+                        throw err
+                    }
+                }
+
+                if (fileSize < 1024) { // < 1 KB — essentially empty
+                    result.voiceMissing = true
+                    result.voiceDetails = 'Voice/self-tape file appears to be empty or corrupt'
+                    result.totalPenalty += requireVoice ? 25 : 8
+                    result.preNotes.push(`VOICE ISSUE: ${result.voiceDetails}`)
+                    result.preConcerns.push('Voice recording appears to be empty — please resubmit')
+                    warnings.push(`Voice file is empty or corrupt`)
+                } else {
+                    result.voiceDetails = `Voice file present (${Math.round(fileSize / 1024)} KB)`
+                }
             }
         } catch {
             result.voiceMissing = true
@@ -462,6 +486,7 @@ async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
             result.totalPenalty += requireVoice ? 25 : 8
             result.preNotes.push(`VOICE MISSING: ${result.voiceDetails}`)
             result.preConcerns.push('Voice/self-tape recording could not be located')
+            warnings.push(`Voice/self-tape recording could not be located`)
         }
     } else {
         result.voiceMissing = true
@@ -478,12 +503,28 @@ async function runPreChecks(input: AuditInput): Promise<PreCheckResult> {
 }
 
 // Read photo files from disk and return as base64 for vision APIs
-async function loadPhotosAsBase64(photoUrls: string[]): Promise<{ base64: string; mimeType: string; url: string }[]> {
+async function loadPhotosAsBase64(photoUrls: string[], warnings: string[]): Promise<{ base64: string; mimeType: string; url: string }[]> {
     const photos: { base64: string; mimeType: string; url: string }[] = []
     for (const url of photoUrls.slice(0, 4)) {
         try {
-            const filePath = path.join(process.cwd(), 'public', url)
-            const buffer = await readFile(filePath)
+            let buffer: Buffer
+            if (url.startsWith('http')) {
+                const res = await fetchWithTimeout(url)
+                if (!res.ok) throw new Error('Failed to fetch remote photo')
+                buffer = Buffer.from(await res.arrayBuffer())
+            } else {
+                const filePath = path.join(process.cwd(), 'public', url)
+                try {
+                    buffer = await readFile(filePath)
+                } catch (err) {
+                    if (!ENABLE_HTTP_FALLBACK) throw err
+                    const fullUrl = PUBLIC_BASE_URL + (url.startsWith('/') ? '' : '/') + url
+                    const res = await fetchWithTimeout(fullUrl)
+                    if (!res.ok) throw err
+                    buffer = Buffer.from(await res.arrayBuffer())
+                    console.log(`[AI Audit] HTTP Fallback succeeded for photo: ${fullUrl}`)
+                }
+            }
             const ext = path.extname(url).toLowerCase()
             const mimeType = ext === '.png' ? 'image/png'
                 : ext === '.webp' ? 'image/webp'
@@ -491,7 +532,8 @@ async function loadPhotosAsBase64(photoUrls: string[]): Promise<{ base64: string
                 : 'image/jpeg'
             photos.push({ base64: buffer.toString('base64'), mimeType, url })
         } catch {
-            console.log(`[AI Audit] Could not read photo: ${url}`)
+            console.warn(`[AI Audit] Could not read photo: ${url}`)
+            warnings.push(`Photo ${url.split('/').pop()} could not be located`)
         }
     }
     return photos
@@ -504,21 +546,44 @@ const AUDIO_MIME_MAP: Record<string, string> = {
 }
 const MAX_AUDIO_INLINE_SIZE = 18 * 1024 * 1024 // 18 MB — leave headroom for the 20 MB API limit
 
-async function loadAudioAsBase64(voiceUrl: string): Promise<{ base64: string; mimeType: string } | null> {
+async function loadAudioAsBase64(voiceUrl: string, warnings: string[]): Promise<{ base64: string; mimeType: string } | null> {
     try {
-        const filePath = path.join(process.cwd(), 'public', voiceUrl)
-        const fileStat = await stat(filePath)
-        if (fileStat.size < 1024) {
-            console.log(`[AI Audit] Audio file too small (${fileStat.size} bytes), skipping: ${voiceUrl}`)
-            return null
+        let buffer: Buffer
+        let fileStat: { size: number } | null = null
+        let mimeType = 'audio/webm'
+
+        if (voiceUrl.startsWith('http')) {
+            const res = await fetchWithTimeout(voiceUrl)
+            if (!res.ok) throw new Error('Failed to fetch audio url')
+            const arrayBuffer = await res.arrayBuffer()
+            buffer = Buffer.from(arrayBuffer)
+            fileStat = { size: buffer.length }
+            mimeType = res.headers.get('content-type') || 'audio/webm'
+        } else {
+            const filePath = path.join(process.cwd(), 'public', voiceUrl)
+            try {
+                fileStat = await stat(filePath)
+                if (fileStat.size < 1024) throw new Error(`Audio file too small (${fileStat.size} bytes)`)
+                buffer = await readFile(filePath)
+            } catch (err) {
+                if (!ENABLE_HTTP_FALLBACK) throw err
+                const fullUrl = PUBLIC_BASE_URL + (voiceUrl.startsWith('/') ? '' : '/') + voiceUrl
+                const res = await fetchWithTimeout(fullUrl)
+                if (!res.ok) throw err
+                const arrayBuffer = await res.arrayBuffer()
+                buffer = Buffer.from(arrayBuffer)
+                fileStat = { size: buffer.length }
+                console.log(`[AI Audit] HTTP Fallback succeeded for audio: ${fullUrl}`)
+            }
         }
+
         if (fileStat.size > MAX_AUDIO_INLINE_SIZE) {
             console.log(`[AI Audit] Audio file too large for inline (${Math.round(fileStat.size / 1024 / 1024)} MB), skipping: ${voiceUrl}`)
+            warnings.push(`Voice recording is too large for AI analysis`)
             return null
         }
-        const buffer = await readFile(filePath)
         const ext = path.extname(voiceUrl).toLowerCase()
-        const mimeType = AUDIO_MIME_MAP[ext] || 'audio/webm'
+        if (AUDIO_MIME_MAP[ext]) mimeType = AUDIO_MIME_MAP[ext]
         console.log(`[AI Audit] Loaded audio for analysis: ${voiceUrl} (${Math.round(fileStat.size / 1024)} KB, ${mimeType})`)
         return { base64: buffer.toString('base64'), mimeType }
     } catch (err) {
@@ -709,6 +774,8 @@ async function callGemini(
 
 // ═══ MAIN AGENT WITH RATE-LIMITED ROUND-ROBIN + DAILY QUOTA AWARENESS ═══
 export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> {
+    const warnings: string[] = []
+
     // Reset daily exhaustion tracking if we crossed midnight
     checkDailyReset()
 
@@ -719,7 +786,7 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
     }
 
     // ── Run pre-checks (age, gender, voice) before any AI call ──
-    const preCheck = await runPreChecks(input)
+    const preCheck = await runPreChecks(input, warnings)
     if (preCheck.totalPenalty > 0) {
         console.warn(`[AI Audit] Pre-checks flagged issues: penalty=${preCheck.totalPenalty}pts | ${preCheck.preNotes.join('; ')}`)
     }
@@ -733,7 +800,7 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
 
     let screeningSkipped = false
     if (hasPhotos) {
-        const rawPhotos = await loadPhotosAsBase64(input.applicant.photoUrls!)
+        const rawPhotos = await loadPhotosAsBase64(input.applicant.photoUrls!, warnings)
         console.log(`[AI Audit] Loaded ${rawPhotos.length} photo(s) for screening`)
 
         // Collect ALL Gemini keys for rotation during photo screening
@@ -741,7 +808,17 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
         const geminiKeys = (config.keys as KeyEntry[])
             .filter(k => (k.provider === 'gemini' || !k.provider) && !dailyExhaustedKeys.has(k.id))
             .map(k => ({ id: k.id, key: k.key, label: k.label, model: k.model }))
+        
         const defaultGeminiModel = geminiKeys[0]?.model || 'gemini-2.5-flash'
+
+        if (geminiKeys.length === 0) {
+            console.log(`[AI Audit] No Gemini keys explicitly assigned to 'audition'. Querying fallback keys...`)
+            const fallbackKey = await getAvailableGeminiKey(dailyExhaustedKeys)
+            if (fallbackKey) {
+                geminiKeys.push(fallbackKey)
+                console.log(`[AI Audit] Used fallback Gemini key: ${fallbackKey.label}`)
+            }
+        }
 
         if (geminiKeys.length > 0 && rawPhotos.length > 0) {
             console.log(`[AI Audit] ${geminiKeys.length} Gemini key(s) available for photo screening rotation`)
@@ -755,15 +832,16 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
             }
         } else {
             photos = rawPhotos.map(p => ({ base64: p.base64, mimeType: p.mimeType }))
-            console.log('[AI Audit] No Gemini keys for vision screening — photos passed through unvalidated')
+            console.log('[AI Audit] No Gemini keys (or no photos) for vision screening — photos passed through unvalidated')
             screeningSkipped = true
+            warnings.push('Vision screening was skipped — photos were not validated by AI')
         }
     }
 
     // ── Load voice/audio recording for AI analysis (Gemini only) ──
     let audioData: { base64: string; mimeType: string } | null = null
     if (input.applicant.voiceUrl && !preCheck.voiceMissing) {
-        audioData = await loadAudioAsBase64(input.applicant.voiceUrl)
+        audioData = await loadAudioAsBase64(input.applicant.voiceUrl, warnings)
         if (audioData) {
             console.log(`[AI Audit] Audio loaded for AI analysis (${audioData.mimeType})`)
         } else {
@@ -928,6 +1006,8 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
                 if (!['STRONG_FIT', 'GOOD_FIT', 'MODERATE', 'WEAK_FIT'].includes(report.recommendation)) {
                     report.recommendation = 'MODERATE'
                 }
+
+                report.warnings = warnings
 
                 return report
 
