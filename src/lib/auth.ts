@@ -117,9 +117,10 @@ export async function getSessionAndRefresh(): Promise<TokenPayload | null> {
         cookieStore.set('user_token', newAccess, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax',
             maxAge: 15 * 60,
             path: '/',
+            ...(process.env.NEXT_PUBLIC_COOKIE_DOMAIN ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {}),
         })
         return refreshPayload
     } catch {
@@ -180,34 +181,39 @@ export function isAuthError(result: TokenPayload | NextResponse): result is Next
 
 export async function setUserCookie(accessToken: string, refreshToken?: string) {
     const cookieStore = await cookies()
+    const domainConfig = process.env.NEXT_PUBLIC_COOKIE_DOMAIN ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {}
     cookieStore.set('user_token', accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 15 * 60, // 15 minutes
         path: '/',
+        ...domainConfig,
     })
     if (refreshToken) {
         cookieStore.set('refresh_token', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60, // 7 days
             path: '/',
+            ...domainConfig,
         })
     }
 }
 
 export async function clearUserCookie() {
     const cookieStore = await cookies()
+    const domainConfig = process.env.NEXT_PUBLIC_COOKIE_DOMAIN ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN } : {}
     cookieStore.delete('user_token')
     // Must specify path to match how the cookie was set, otherwise browsers ignore the deletion
     cookieStore.set('refresh_token', '', {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         maxAge: 0,
         path: '/',
+        ...domainConfig,
     })
     // Also clear legacy admin_token if it exists
     cookieStore.delete('admin_token')

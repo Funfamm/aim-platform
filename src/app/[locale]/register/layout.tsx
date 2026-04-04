@@ -9,6 +9,14 @@ export const metadata: Metadata = {
     },
 }
 
-export default function RegisterLayout({ children }: { children: React.ReactNode }) {
+import { getSession } from '@/lib/auth'
+import { redirect } from 'next/navigation'
+
+export default async function RegisterLayout({ children, params }: { children: React.ReactNode, params: Promise<{ locale: string }> }) {
+    const session = await getSession()
+    if (session) {
+        const p = await params
+        redirect(`/${p.locale}/dashboard`)
+    }
     return children
 }
