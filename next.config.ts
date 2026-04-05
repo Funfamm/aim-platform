@@ -28,6 +28,35 @@ const nextConfig: NextConfig = {
     'bcrypt',
     'nodemailer',
   ],
+
+  // outputFileTracingExcludes: Tells Vercel's file tracer to PHYSICALLY exclude
+  // these packages from the deployment bundle. serverExternalPackages alone is
+  // not enough — Vercel still traces and includes the files. This is the real fix
+  // for the 250MB serverless function size limit.
+  outputFileTracingExcludes: {
+    '*': [
+      // Massive ML framework with ONNX binaries (~300MB)
+      'node_modules/@huggingface/transformers/**',
+      'node_modules/onnxruntime-node/**',
+      'node_modules/onnxruntime-web/**',
+      // FFmpeg WASM binaries (~50MB)
+      'node_modules/@ffmpeg/ffmpeg/**',
+      'node_modules/@ffmpeg/util/**',
+      'node_modules/@ffmpeg/core/**',
+      // Playwright (only needed for E2E tests, not runtime)
+      'node_modules/@playwright/**',
+      'node_modules/playwright/**',
+      'node_modules/playwright-core/**',
+      // Dev/test tools
+      'node_modules/vitest/**',
+      'node_modules/@vitest/**',
+      // Prisma local binary engines (keep only linux-openssl for Vercel)
+      'node_modules/.prisma/client/libquery_engine-darwin*',
+      'node_modules/.prisma/client/libquery_engine-windows*',
+      'node_modules/.prisma/client/query_engine-windows*',
+    ],
+  },
+
   webpack: (config, { isServer, dev }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
