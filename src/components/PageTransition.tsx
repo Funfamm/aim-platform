@@ -38,7 +38,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
             style={{
                 opacity: stage === 'out' ? 0 : 1,
                 transition: stage === 'out' ? 'opacity 80ms ease-out' : 'opacity 200ms ease-in',
-                minHeight: '100vh',
+                minHeight: '100dvh',
                 background: 'var(--bg-primary)',
             }}
         >

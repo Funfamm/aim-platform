@@ -374,6 +374,12 @@ body {
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-x pan-y;
+  /* Prevent elastic/bounce scrolling on iOS while keeping normal scroll */
+  overscroll-behavior-y: contain;
+}
+
+html {
+  overscroll-behavior-y: contain;
 }
 
 @media (max-width: 768px) {
@@ -1119,6 +1125,7 @@ select::placeholder {
 .hero {
   position: relative;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -1566,6 +1573,7 @@ select::placeholder {
 .admin-layout {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .admin-sidebar {
@@ -1618,6 +1626,7 @@ select::placeholder {
   margin-left: 260px;
   padding: var(--space-xl) var(--space-2xl);
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
   max-width: 100vw;
   box-sizing: border-box;
@@ -2085,6 +2094,7 @@ select::placeholder {
   padding-top: 8rem;
   padding-bottom: 4rem;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .apply-form-container {
@@ -2215,6 +2225,7 @@ select::placeholder {
    ═══════════════════════════════════════════════════════════ */
 .login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
