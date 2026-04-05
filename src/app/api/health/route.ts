@@ -14,8 +14,12 @@ export async function GET() {
       const { getNotificationQueue } = await import('@/lib/queues/notificationQueue')
       const q = getNotificationQueue()
       // BullMQ Queue exposes a client property; a simple isPaused() ping is enough
+      // We wrap it in a timeout because if Upstash Redis quota is reached, ioredis connects forever and hangs.
       if (q) {
-        await q.isPaused()
+        await Promise.race([
+          q.isPaused(),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Redis timeout')), 2000))
+        ])
         redis = 'up'
       }
     } catch {
