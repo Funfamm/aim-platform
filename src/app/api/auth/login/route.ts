@@ -102,7 +102,11 @@ export async function POST(request: Request) {
             preferredLanguage: (user as any).preferredLanguage ?? 'en',
         })
     } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error)
         logger.error('auth/login', 'Login failed', { error })
-        return NextResponse.json({ error: 'Login failed' }, { status: 500 })
+        return NextResponse.json({
+            error: 'Login failed',
+            _debug: process.env.NODE_ENV !== 'production' ? msg : msg, // temp: expose in prod for diagnosis
+        }, { status: 500 })
     }
 }
