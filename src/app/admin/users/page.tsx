@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import { locales, localeNames } from '@/i18n/routing'
 
 
-interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; authProvider: 'email' | 'google' | 'apple' | 'multiple' }
+interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; preferredLanguage: string; authProvider: 'email' | 'google' | 'apple' | 'multiple' }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
 
 export default function AdminUsersPage() {
@@ -15,6 +16,7 @@ export default function AdminUsersPage() {
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [role, setRole] = useState('all')
+    const [language, setLanguage] = useState('all')
     const [sort, setSort] = useState('newest')
     const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
     const [selected, setSelected] = useState<Set<string>>(new Set())
@@ -27,13 +29,14 @@ export default function AdminUsersPage() {
         const params = new URLSearchParams({ page: String(page), limit: '25', sort })
         if (search) params.set('search', search)
         if (role !== 'all') params.set('role', role)
+        if (language !== 'all') params.set('language', language)
         const res = await fetch(`/api/admin/users?${params}`)
         if (res.ok) {
             const data = await res.json()
             setUsers(data.users); setPagination(data.pagination); setStats(data.stats)
         }
         setLoading(false)
-    }, [search, role, sort])
+    }, [search, role, language, sort])
 
     useEffect(() => { fetchUsers(1) }, [fetchUsers])
 
@@ -134,6 +137,12 @@ export default function AdminUsersPage() {
                         <option value="member">Members</option>
                         <option value="admin">Power Admins</option>
                         <option value="superadmin">Super Admins</option>
+                    </select>
+                    <select style={inp} value={language} onChange={e => { setLanguage(e.target.value) }}>
+                        <option value="all">All Languages</option>
+                        {locales.map(loc => (
+                            <option key={loc} value={loc}>{localeNames[loc]} ({loc.toUpperCase()})</option>
+                        ))}
                     </select>
                     <select style={inp} value={sort} onChange={e => { setSort(e.target.value) }}>
                         <option value="newest">Newest First</option>
@@ -243,7 +252,7 @@ export default function AdminUsersPage() {
                                             style={{ cursor: 'pointer', accentColor: 'var(--accent-gold)', width: '14px', height: '14px' }}
                                         />
                                     </th>
-                                    {['Name', 'Email', 'Role', 'Via', 'Apps', 'Donations', 'Joined'].map(h => (
+                                    {['Name', 'Email', 'Role', 'Via', 'Apps', 'Donations', 'Joined', 'Language'].map(h => (
                                         <th key={h} style={{ padding: '8px 12px', fontWeight: 700, fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', textAlign: 'left' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -331,6 +340,9 @@ export default function AdminUsersPage() {
                                             <td style={{ padding: '8px 12px' }}>{u.donations}</td>
                                             <td style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                                 {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </td>
+                                            <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                                                {u.preferredLanguage?.toUpperCase() || 'EN'}
                                             </td>
                                         </tr>
                                     )

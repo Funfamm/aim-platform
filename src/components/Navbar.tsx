@@ -88,9 +88,10 @@ export default function Navbar() {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ locale: newLocale }),
-            }).catch(() => {/* non-critical */})
+            }).catch(() => {/* non-critical */ })
         }
     }
+
 
     return (
         <>
@@ -137,7 +138,7 @@ export default function Navbar() {
                                 src={logoUrl}
                                 alt="logo"
                                 style={{ height: '28px', width: 'auto', objectFit: 'contain', display: 'block' }}
-                                onError={() => {}}
+                                onError={() => { }}
                             />
                         )}
                         <span className="logo-accent">{brandName.accent}</span>
@@ -161,9 +162,9 @@ export default function Navbar() {
 
                     {/* Desktop Search Bar */}
                     {settings?.searchBetaEnabled && (
-                      <div className="navbar-desktop-only mr-4">
-                        <SearchBar />
-                      </div>
+                        <div className="navbar-desktop-only mr-4">
+                            <SearchBar />
+                        </div>
                     )}
 
                     {/* Right actions — Bell + Language hidden on mobile via CSS */}
@@ -174,23 +175,23 @@ export default function Navbar() {
                         </div>
                         {/* Mobile Search Button */}
                         {settings?.searchBetaEnabled && (
-                          <button
-                            onClick={() => setSearchOpen(true)}
-                            className="navbar-mobile-only"
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text-primary)',
-                              fontSize: '1.2rem',
-                              cursor: 'pointer',
-                            }}
-                            aria-label="Search"
-                          >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <circle cx="11" cy="11" r="8" />
-                              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                            </svg>
-                          </button>
+                            <button
+                                onClick={() => setSearchOpen(true)}
+                                className="navbar-mobile-only"
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '1.2rem',
+                                    cursor: 'pointer',
+                                }}
+                                aria-label="Search"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="11" cy="11" r="8" />
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                                </svg>
+                            </button>
                         )}
                         {/* Auth — always visible (avatar on mobile, full pill on desktop) */}
                         {loading ? null : user ? (

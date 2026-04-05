@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '25')))
     const search = (url.searchParams.get('search') || '').trim()
     const role = url.searchParams.get('role') || ''
+    const language = url.searchParams.get('language') || ''
     const sort = url.searchParams.get('sort') || 'newest'
 
     const where: Record<string, unknown> = {}
@@ -21,18 +22,20 @@ export async function GET(request: NextRequest) {
         ]
     }
     if (role && role !== 'all') where.role = role
+    if (language && language !== 'all') where.preferredLanguage = language
 
     const orderBy = sort === 'oldest' ? { createdAt: 'asc' as const }
         : sort === 'name' ? { name: 'asc' as const }
         : { createdAt: 'desc' as const }
 
-    const [users, total, totalMembers, totalAdmins, totalSuperadmins, totalWithApps] = await Promise.all([
-        prisma.user.findMany({
+    const [usersRaw, total, totalMembers, totalAdmins, totalSuperadmins, totalWithApps] = await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma as any).user.findMany({
             where, orderBy,
             skip: (page - 1) * limit, take: limit,
             select: {
                 id: true, name: true, email: true, role: true, createdAt: true,
-                passwordHash: true, googleId: true, appleId: true,
+                passwordHash: true, googleId: true, appleId: true, preferredLanguage: true,
                 _count: { select: { applications: true, donations: true } },
             },
         }),
@@ -42,6 +45,9 @@ export async function GET(request: NextRequest) {
         prisma.user.count({ where: { role: 'superadmin' } }),
         prisma.user.count({ where: { applications: { some: {} } } }),
     ])
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const users = usersRaw as any[];
 
     return NextResponse.json({
         users: users.map(u => {
@@ -58,6 +64,7 @@ export async function GET(request: NextRequest) {
                 id: u.id, name: u.name, email: u.email, role: u.role,
                 applications: u._count.applications, donations: u._count.donations,
                 createdAt: u.createdAt.toISOString(),
+                preferredLanguage: u.preferredLanguage,
                 authProvider,
             }
         }),
