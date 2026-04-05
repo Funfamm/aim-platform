@@ -38,10 +38,10 @@ export async function POST(request: Request) {
 
         // Block login if email not yet verified
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userDetail = await (prisma as any).user.findUnique({
+        const userDetail = await withDbRetry(() => (prisma as any).user.findUnique({
             where: { id: user.id },
             select: { emailVerified: true, tokenVersion: true, mfaEnabled: true },
-        }) as { emailVerified: boolean; tokenVersion: number; mfaEnabled: boolean } | null
+        }), 'login_get_user_detail') as { emailVerified: boolean; tokenVersion: number; mfaEnabled: boolean } | null
         const isVerified = userDetail?.emailVerified === true
         const tokenVersion = userDetail?.tokenVersion ?? 0
         const mfaEnabled = userDetail?.mfaEnabled === true

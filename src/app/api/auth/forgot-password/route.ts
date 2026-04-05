@@ -128,11 +128,11 @@ export async function POST(request: Request) {
             }
 
             // Check against recent password history
-            const recentPasswords = await prisma.passwordHistory.findMany({
+            const recentPasswords = await withDbRetry(() => prisma.passwordHistory.findMany({
                 where: { userId: user.id },
                 orderBy: { createdAt: 'desc' },
                 take: PASSWORD_HISTORY_LIMIT,
-            })
+            }), 'forgot_password_history_find')
 
             for (const entry of recentPasswords) {
                 const matchesOld = await compare(password, entry.passwordHash)
@@ -145,20 +145,20 @@ export async function POST(request: Request) {
 
             // ── Save current password to history before changing ──
             if (user.passwordHash) {
-                await prisma.passwordHistory.create({
-                    data: { userId: user.id, passwordHash: user.passwordHash },
-                })
+                await withDbRetry(() => prisma.passwordHistory.create({
+                    data: { userId: user.id, passwordHash: user.passwordHash! },
+                }), 'forgot_password_history_create')
 
                 // Clean up old entries — keep only the last N
-                const allHistory = await prisma.passwordHistory.findMany({
+                const allHistory = await withDbRetry(() => prisma.passwordHistory.findMany({
                     where: { userId: user.id },
                     orderBy: { createdAt: 'desc' },
-                })
+                }), 'forgot_password_history_all')
                 if (allHistory.length > PASSWORD_HISTORY_LIMIT) {
                     const toDelete = allHistory.slice(PASSWORD_HISTORY_LIMIT).map((h: { id: string }) => h.id)
-                    await prisma.passwordHistory.deleteMany({
+                    await withDbRetry(() => prisma.passwordHistory.deleteMany({
                         where: { id: { in: toDelete } },
-                    })
+                    }), 'forgot_password_history_cleanup')
                 }
             }
 
@@ -167,10 +167,10 @@ export async function POST(request: Request) {
             // user owns this inbox (they received and entered the 6-digit code),
             // so blocking login afterward with an email-verification error is wrong.
             const passwordHash = await hash(password, 12)
-            await prisma.user.update({
+            await withDbRetry(() => prisma.user.update({
                 where: { email: normalizedEmail },
                 data: { passwordHash, tokenVersion: { increment: 1 }, emailVerified: true },
-            })
+            }), 'forgot_password_reset_update')
 
             // Clean up used code
             resetCodes.delete(normalizedEmail)

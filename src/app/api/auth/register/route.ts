@@ -24,7 +24,7 @@ export async function POST(request: Request) {
         }
 
         // Check if user exists
-        const existing = await prisma.user.findUnique({ where: { email } })
+        const existing = await withDbRetry(() => prisma.user.findUnique({ where: { email } }), 'register_check_existing')
         if (existing) {
             // If they exist but never verified, resend a new code
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
