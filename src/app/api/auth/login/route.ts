@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { compare } from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { withDbRetry } from '@/lib/db-retry'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { authLimiter } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -21,9 +22,9 @@ export async function POST(request: Request) {
 
         const normalizedEmail = email.toLowerCase().trim()
 
-        const user = await prisma.user.findUnique({
+        const user = await withDbRetry(() => prisma.user.findUnique({
             where: { email: normalizedEmail },
-        })
+        }), 'login_find_user')
         if (!user || !user.passwordHash) {
             recordAuthFailure('invalid_credentials')
             return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })

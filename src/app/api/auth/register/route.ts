@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { withDbRetry } from '@/lib/db-retry'
 import { authLimiter } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/mailer'
 import { verificationEmail, welcomeEmailWithOverrides } from '@/lib/email-templates'
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
                 const code = Math.floor(100000 + Math.random() * 900000).toString()
                 const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString()
                 const passwordHash = await hash(password, 12)
-                await prisma.user.update({
+                await withDbRetry(() => prisma.user.update({
                     where: { email },
                     data: {
                         name,                              // ← use the NEW submitted name
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
                         verificationCode: code,
                         verificationExpiry: new Date(expiry),
                     } as any,
-                })
+                }), 'register_update_existing')
                 void sendEmail({ to: email, subject: 'Verify your AIM Studio account', html: verificationEmail(name, code) }).catch(() => {})
                 if (process.env.NODE_ENV !== 'production') {
                     console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
@@ -55,24 +56,24 @@ export async function POST(request: Request) {
 
         // Create user with core fields (avoids stale type-cache issues with new columns)
         const passwordHash = await hash(password, 12)
-        const newUser = await prisma.user.create({
+        const newUser = await withDbRetry(() => prisma.user.create({
             data: {
                 name,
                 email,
                 passwordHash,
                 role: 'member',
             },
-        })
+        }), 'register_create_user')
 
         // Set verification fields via Prisma update
-        await prisma.user.update({
+        await withDbRetry(() => prisma.user.update({
             where: { id: newUser.id },
             data: {
                 emailVerified: false,
                 verificationCode: code,
                 verificationExpiry: new Date(expiry),
             } as any,
-        })
+        }), 'register_set_verification')
 
         // Send verification email (fire-and-forget)
         sendEmail({

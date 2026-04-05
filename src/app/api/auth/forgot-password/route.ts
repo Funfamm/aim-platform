@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { hash, compare } from 'bcryptjs'
 import { prisma } from '@/lib/db'
+import { withDbRetry } from '@/lib/db-retry'
 import { sendEmail } from '@/lib/mailer'
 import { forgotPasswordCode, passwordChangedEmail } from '@/lib/email-templates'
 
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
 
         // ─── Step 1: Verify email exists and send 6-digit code ───
         if (action === 'verify') {
-            const user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+            const user = await withDbRetry(() => prisma.user.findUnique({ where: { email: normalizedEmail } }), 'forgot_password_find')
             if (!user) {
                 return NextResponse.json({ error: 'No account found with that email' }, { status: 404 })
             }
@@ -107,7 +108,7 @@ export async function POST(request: Request) {
                 return NextResponse.json({ error: 'Invalid or expired code. Please start over.' }, { status: 400 })
             }
 
-            const user = await prisma.user.findUnique({ where: { email: normalizedEmail } })
+            const user = await withDbRetry(() => prisma.user.findUnique({ where: { email: normalizedEmail } }), 'forgot_password_reset_find')
             if (!user) {
                 return NextResponse.json({ error: 'No account found with that email' }, { status: 404 })
             }
