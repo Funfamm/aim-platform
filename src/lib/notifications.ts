@@ -136,9 +136,15 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
             if (opts.translations && locale !== 'en') {
                 subject = displayTitle // Use localized subject
                 if (opts.type === 'announcement') {
-                    // We must generate the localized HTML dynamically using the localized text
+                    // Rebuild with fully-localized text including badge, button & footer strings
                     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-                    html = announcementEmail(displayTitle, displayMessage, opts.link, siteUrl)
+                    const lt = opts.translations[locale] as Record<string, string> | undefined
+                    html = announcementEmail(displayTitle, displayMessage, opts.link, siteUrl, {
+                        badgeText:   lt?.badgeText   || undefined,
+                        buttonText:  lt?.buttonText  || undefined,
+                        footerOptIn: lt?.footerOptIn || undefined,
+                        managePrefs: lt?.managePrefs || undefined,
+                    })
                 } else if (!opts.emailHtml) {
                     html = buildPlainHtml(displayTitle, displayMessage, opts.link)
                 }
@@ -358,15 +364,22 @@ export async function notifyAnnouncement(title: string, message: string, link?: 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/notifications'
 
-    // Attempt to translate — but cap at 10 s so a slow/hung AI call
-    // never blocks the entire broadcast from going out.
+    // Translate the content text AND the static email template strings so the
+    // entire email (badge, button, footer) renders in the recipient's language.
     const translationTimeout = new Promise<null>(resolve => setTimeout(() => {
         logger.warn('notifications', 'translateContent timed out after 10s — broadcasting in English only')
         resolve(null)
     }, 10_000))
 
     const translations = await Promise.race([
-        translateContent({ title, message }, 'all').catch((err) => {
+        translateContent({
+            title,
+            message,
+            badgeText: 'Platform Announcement',
+            buttonText: link ? 'View Announcement →' : 'View in Notifications →',
+            footerOptIn: "You're receiving this because you opted in to platform announcements.",
+            managePrefs: 'Manage preferences',
+        }, 'all').catch((err) => {
             logger.warn('notifications', 'translateContent failed', { error: err })
             return null
         }),

@@ -597,25 +597,40 @@ export function newCastingRoleEmail(roleName: string, projectTitle: string, appl
 }
 
 /** Sent to all opted-in users for platform announcements */
-export function announcementEmail(title: string, message: string, link?: string, siteUrl?: string): string {
+export function announcementEmail(
+    title: string,
+    message: string,
+    link?: string,
+    siteUrl?: string,
+    i18n?: {
+        badgeText?: string
+        buttonText?: string
+        footerOptIn?: string
+        managePrefs?: string
+    }
+): string {
     const ctaUrl = link
         ? (link.startsWith('http') ? link : `${siteUrl || 'https://impactaistudio.com'}${link}`)
         : `${siteUrl || 'https://impactaistudio.com'}/notifications`
-    const ctaText = link ? 'View Announcement →' : 'View in Notifications →'
+    const ctaText  = i18n?.buttonText  ?? (link ? 'View Announcement →' : 'View in Notifications →')
+    const badge    = i18n?.badgeText   ?? 'Platform Announcement'
+    const footerOptIn  = i18n?.footerOptIn  ?? "You're receiving this because you opted in to platform announcements."
+    const managePrefs  = i18n?.managePrefs  ?? 'Manage preferences'
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
             <div style="font-size:52px;margin-bottom:12px;">📣</div>
             <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid #8b5cf6;">
-                <span style="font-size:12px;font-weight:700;color:#8b5cf6;letter-spacing:1.5px;text-transform:uppercase;">Platform Announcement</span>
+                <span style="font-size:12px;font-weight:700;color:#8b5cf6;letter-spacing:1.5px;text-transform:uppercase;">${badge}</span>
             </div>
         </div>
         ${heading(title)}
         ${paragraph(message)}
         ${button(ctaText, ctaUrl)}
         ${divider()}
-        ${paragraph(`<span style="font-size:12px;color:#6b7280;">You're receiving this because you opted in to platform announcements. <a href="${siteUrl || 'https://impactaistudio.com'}/notifications" style="color:#6b7280;text-decoration:underline;">Manage preferences</a></span>`)}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerOptIn} <a href="${siteUrl || 'https://impactaistudio.com'}/notifications" style="color:#6b7280;text-decoration:underline;">${managePrefs}</a></span>`)}
     `, title)
 }
+
 
 /** Sent to opted-in users when admin publishes new content */
 export function contentPublishEmail(contentTitle: string, contentType: string, link: string): string {
