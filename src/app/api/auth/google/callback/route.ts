@@ -46,6 +46,13 @@ export async function GET(req: Request) {
     // Clear the state cookie immediately after use
     cookieStore.set('oauth_state', '', { maxAge: 0, path: '/' })
 
+    // Capture the visitor's locale BEFORE login so we can localise the welcome message.
+    // next-intl sets a NEXT_LOCALE cookie on every page visit. The Google OAuth
+    // redirect_uri is not under /[locale]/ so we must read it from cookies here.
+    const supportedLocales = ['es', 'fr', 'ar', 'zh', 'hi', 'pt', 'ru', 'ja', 'de', 'ko']
+    const rawLocale = cookieStore.get('NEXT_LOCALE')?.value || 'en'
+    const detectedLocale = supportedLocales.includes(rawLocale) ? rawLocale : 'en'
+
     try {
         // Get Google OAuth credentials from env or DB settings
         const settings = await prisma.siteSettings.findFirst()
@@ -120,6 +127,8 @@ export async function GET(req: Request) {
                     googleId: googleUser.sub,
                     avatar: googleUser.picture,
                     role: 'member',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ...(detectedLocale !== 'en' ? { preferredLanguage: detectedLocale } as any : {}),
                 },
             })
 
@@ -146,8 +155,7 @@ export async function GET(req: Request) {
                     }
 
                     // Write welcome in-app notification (localized if non-English)
-                    const newUserLang = await db.user.findUnique({ where: { id: newUserId }, select: { preferredLanguage: true } }).catch(() => null)
-                    const locale = newUserLang?.preferredLanguage || 'en'
+                    const locale = detectedLocale  // already known — no extra DB query needed
                     let welcomeTitle = `Welcome to AIM Studio, ${newUserName}! 🎬`
                     let welcomeMsg = "You're now part of our AI-powered filmmaking community. Explore casting calls, track your applications, and more."
                     if (locale !== 'en') {

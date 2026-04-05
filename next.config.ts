@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
     'better-sqlite3',
     'pino',
     'pino-pretty',
+    '@google/generative-ai',
   ],
   webpack: (config, { isServer, dev }) => {
     config.resolve.alias = {
