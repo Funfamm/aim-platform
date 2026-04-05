@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
@@ -19,7 +19,7 @@ interface HomeHeroProps {
 export default function HomeHero({ completedCount, upcomingCount, openCastings }: HomeHeroProps) {
     const t = useTranslations('hero')
     const th = useTranslations('home')
-    const ROTATING_WORDS = [t('word1'), t('word2'), t('word3'), t('word4'), t('word5')]
+    const ROTATING_WORDS = useMemo(() => [t('word1'), t('word2'), t('word3'), t('word4'), t('word5')], [t])
     const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
     const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
@@ -120,7 +120,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
             }, 400)
         }, 3000)
         return () => clearInterval(interval)
-    }, [])
+    }, [ROTATING_WORDS])
 
     return (
         <>
@@ -233,7 +233,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
                             verticalAlign: 'baseline',
                         }}>
                             {/* All words in same grid cell — container sizes to widest */}
-                            {ROTATING_WORDS.map((word, i) => (
+                            {ROTATING_WORDS.map((word: string, i: number) => (
                                 <span key={i} style={{
                                     gridRow: 1,
                                     gridColumn: 1,
