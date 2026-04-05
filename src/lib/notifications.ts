@@ -342,11 +342,22 @@ export async function notifyNewRole(roleId: string, roleName: string, projectTit
 export async function notifyAnnouncement(title: string, message: string, link?: string): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/notifications'
-    
-    // Background translation to all 10 non-English locales
-    // Fails safely (returns null) on error, gracefully defaulting to English for all users.
-    const translations = await translateContent({ title, message }, 'all').catch(() => null)
-    
+
+    // Attempt to translate — but cap at 10 s so a slow/hung AI call
+    // never blocks the entire broadcast from going out.
+    const translationTimeout = new Promise<null>(resolve => setTimeout(() => {
+        logger.warn('notifications', 'translateContent timed out after 10s — broadcasting in English only')
+        resolve(null)
+    }, 10_000))
+
+    const translations = await Promise.race([
+        translateContent({ title, message }, 'all').catch((err) => {
+            logger.warn('notifications', 'translateContent failed', { error: err })
+            return null
+        }),
+        translationTimeout,
+    ])
+
     await broadcastNotification({
         type: 'announcement',
         preferenceKey: 'announcement',
@@ -354,7 +365,7 @@ export async function notifyAnnouncement(title: string, message: string, link?: 
         message,
         link: inAppLink,
         emailSubject: `📣 ${title} | AIM Studio`,
-        // The default English HTML template. It gets dynamically rebuilt in notifyUser 
+        // The default English HTML template. It gets dynamically rebuilt in notifyUser
         // for non-English users using their specific translation.
         emailHtml: announcementEmail(title, message, link, siteUrl),
         translations,
