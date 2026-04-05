@@ -169,71 +169,14 @@ function SponsorCard({ s }: { s: HomeSponsor }) {
 export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSponsor[] }) {
     const t = useTranslations('sponsorCta')
     const scrollRef = useRef<HTMLDivElement>(null)
-    const [canScrollLeft, setCanScrollLeft] = useState(false)
-    const [canScrollRight, setCanScrollRight] = useState(false)
     const [isPaused, setIsPaused] = useState(false)
-    const autoScrollTimer = useRef<ReturnType<typeof setInterval> | null>(null)
-
-    const checkScroll = () => {
-        if (!scrollRef.current) return
-        const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current
-        setCanScrollLeft(scrollLeft > 5)
-        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5)
-    }
 
     // Determine if auto-scroll should be active based on sponsor count & viewport
-    const shouldAutoScroll = useCallback(() => {
+    const shouldAutoScroll = () => {
         if (typeof window === 'undefined') return false
         const isMobile = window.innerWidth <= 768
-        const threshold = isMobile ? 2 : 4
+        const threshold = isMobile ? 1 : 3
         return sponsors.length > threshold
-    }, [sponsors.length])
-
-    // Auto-scroll logic
-    useEffect(() => {
-        const el = scrollRef.current
-        if (!el) return
-
-        const startAutoScroll = () => {
-            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current)
-            if (!shouldAutoScroll()) return
-
-            autoScrollTimer.current = setInterval(() => {
-                if (isPaused || !el) return
-                const { scrollLeft, scrollWidth, clientWidth } = el
-                const atEnd = scrollLeft >= scrollWidth - clientWidth - 5
-                if (atEnd) {
-                    // Loop back to start smoothly
-                    el.scrollTo({ left: 0, behavior: 'smooth' })
-                } else {
-                    el.scrollBy({ left: 1, behavior: 'auto' })
-                }
-            }, 20) // Smooth pixel-by-pixel scroll
-        }
-
-        startAutoScroll()
-
-        const handleResize = () => {
-            checkScroll()
-            // Restart auto-scroll with potentially new threshold
-            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current)
-            startAutoScroll()
-        }
-
-        window.addEventListener('resize', handleResize)
-        el.addEventListener('scroll', checkScroll)
-
-        return () => {
-            if (autoScrollTimer.current) clearInterval(autoScrollTimer.current)
-            window.removeEventListener('resize', handleResize)
-            el.removeEventListener('scroll', checkScroll)
-        }
-    }, [sponsors, isPaused, shouldAutoScroll])
-
-    useEffect(() => { checkScroll() }, [sponsors])
-
-    const scroll = (dir: number) => {
-        scrollRef.current?.scrollBy({ left: dir * 340, behavior: 'smooth' })
     }
 
     const hasSponsors = sponsors.length > 0
@@ -270,30 +213,9 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                                     fontWeight: 800, color: 'var(--accent-gold)',
                                 }}>{sponsors.length}</div>
                             </div>
-                            {/* Nav arrows */}
-                            {sponsors.length > 3 && (
-                                <div style={{ display: 'flex', gap: '4px' }}>
-                                    <button onClick={() => scroll(-1)} disabled={!canScrollLeft} style={{
-                                        width: '28px', height: '28px', borderRadius: '8px', border: 'none',
-                                        background: canScrollLeft ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                        color: canScrollLeft ? 'var(--text-secondary)' : 'rgba(255,255,255,0.08)',
-                                        cursor: canScrollLeft ? 'pointer' : 'default', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
-                                        transition: 'all 0.2s',
-                                    }}>‹</button>
-                                    <button onClick={() => scroll(1)} disabled={!canScrollRight} style={{
-                                        width: '28px', height: '28px', borderRadius: '8px', border: 'none',
-                                        background: canScrollRight ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                        color: canScrollRight ? 'var(--text-secondary)' : 'rgba(255,255,255,0.08)',
-                                        cursor: canScrollRight ? 'pointer' : 'default', display: 'flex',
-                                        alignItems: 'center', justifyContent: 'center', fontSize: '1rem',
-                                        transition: 'all 0.2s',
-                                    }}>›</button>
-                                </div>
-                            )}
                         </div>
 
-                        {/* Cards strip — auto-rotating carousel */}
+                        {/* Continuous 360 Marquee */}
                         <div
                             ref={scrollRef}
                             onMouseEnter={() => setIsPaused(true)}
@@ -301,22 +223,38 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                             onTouchStart={() => setIsPaused(true)}
                             onTouchEnd={() => setIsPaused(false)}
                             style={{
-                                display: 'flex', gap: '14px', overflowX: 'auto',
-                                scrollbarWidth: 'none', paddingBottom: '4px',
-                                scrollSnapType: shouldAutoScroll() ? 'none' : 'x mandatory',
-                                maskImage: sponsors.length > 3
-                                    ? 'linear-gradient(to right, black 90%, transparent 100%)'
-                                    : 'none',
-                                WebkitMaskImage: sponsors.length > 3
-                                    ? 'linear-gradient(to right, black 90%, transparent 100%)'
-                                    : 'none',
+                                display: 'flex', gap: '14px', overflow: 'hidden', paddingBottom: '4px',
+                                maskImage: shouldAutoScroll() ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
+                                WebkitMaskImage: shouldAutoScroll() ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
                             }}
                         >
-                            {sponsors.map(s => (
-                                <div key={s.id} style={{ scrollSnapAlign: 'start' }}>
-                                    <SponsorCard s={s} />
+                            <div style={{
+                                display: 'flex', gap: '14px', flexShrink: 0,
+                                animation: shouldAutoScroll() ? `marqueeScroll ${sponsors.length * 6}s linear infinite` : 'none',
+                                animationPlayState: isPaused ? 'paused' : 'running',
+                            }}>
+                                {sponsors.map(s => <div key={s.id}><SponsorCard s={s} /></div>)}
+                            </div>
+                            
+                            {shouldAutoScroll() && (
+                                <div style={{
+                                    display: 'flex', gap: '14px', flexShrink: 0,
+                                    animation: `marqueeScroll ${sponsors.length * 6}s linear infinite`,
+                                    animationPlayState: isPaused ? 'paused' : 'running',
+                                }}>
+                                    {sponsors.map(s => <div key={`${s.id}-clone1`}><SponsorCard s={s} /></div>)}
                                 </div>
-                            ))}
+                            )}
+
+                            {shouldAutoScroll() && (
+                                <div style={{
+                                    display: 'flex', gap: '14px', flexShrink: 0,
+                                    animation: `marqueeScroll ${sponsors.length * 6}s linear infinite`,
+                                    animationPlayState: isPaused ? 'paused' : 'running',
+                                }}>
+                                    {sponsors.map(s => <div key={`${s.id}-clone2`}><SponsorCard s={s} /></div>)}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -373,7 +311,10 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
             </div>
 
             <style>{`
-                div::-webkit-scrollbar { display: none; }
+                @keyframes marqueeScroll {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(calc(-100% - 14px)); }
+                }
             `}</style>
         </section>
     )
