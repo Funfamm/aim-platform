@@ -65,7 +65,6 @@ interface NotifyAllOptions {
  */
 export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
     try {
-        console.log(`[DEBUG notifyUser] called for userId=${opts.userId} type=${opts.type}`)
         // Load user + preference record in one query
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = await (prisma as any).user.findUnique({
@@ -87,8 +86,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 },
             },
         })
-        if (!user) { console.log(`[DEBUG notifyUser] user ${opts.userId} not found`); return }
-        console.log(`[DEBUG notifyUser] user=${user.email} pref=${JSON.stringify(user.notificationPreference)}`)
+        if (!user) return
 
         // Safe defaults: email + inApp on
         const pref = user.notificationPreference ?? {
@@ -112,7 +110,6 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
 
         // ── In-App ──────────────────────────────────────────────────────────
         if (pref.inApp) {
-            console.log(`[DEBUG notifyUser] creating in-app notification for ${user.email}`)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (prisma as any).userNotification.create({
                 data: {
@@ -123,20 +120,16 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                     link: opts.link ?? null,
                 },
             })
-            console.log(`[DEBUG notifyUser] in-app notification created for ${user.email}`)
         }
 
         // ── Email ────────────────────────────────────────────────────────────
         if (pref.email) {
-            console.log(`[DEBUG notifyUser] sending email to ${user.email}`)
             let subject = opts.emailSubject ?? displayTitle
             let html = opts.emailHtml   
 
-            // If translations exist and we are sending an announcement, rebuild the email HTML
             if (opts.translations && locale !== 'en') {
-                subject = displayTitle // Use localized subject
+                subject = displayTitle
                 if (opts.type === 'announcement') {
-                    // Rebuild with fully-localized text including badge, button & footer strings
                     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
                     const lt = opts.translations[locale] as Record<string, string> | undefined
                     html = announcementEmail(displayTitle, displayMessage, opts.link, siteUrl, {
@@ -152,12 +145,10 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 html = buildPlainHtml(displayTitle, displayMessage, opts.link)
             }
                 
-            const sent = await sendEmail({ to: user.email, subject, html: html as string })
-            console.log(`[DEBUG notifyUser] email to ${user.email} result: ${sent}`)
+            await sendEmail({ to: user.email, subject, html: html as string })
         }
     } catch (err) {
         logger.error('notifications', `notifyUser failed for ${opts.userId}`, { error: err })
-        console.error(`[DEBUG notifyUser] CAUGHT ERROR for ${opts.userId}:`, err)
     }
 }
 
@@ -212,7 +203,6 @@ export async function mirrorToNotificationBoard(
  */
 export async function broadcastNotification(opts: NotifyAllOptions): Promise<void> {
     try {
-        // Check the platform-level kill switch first
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const settings = await (prisma as any).siteSettings.findFirst({
             select: {
@@ -223,15 +213,10 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             },
         })
 
-        console.log('[DEBUG broadcast] settings:', JSON.stringify(settings))
+        if (opts.type === 'new_role'         && !settings?.notifyOnNewRole)        return
+        if (opts.type === 'announcement'     && !settings?.notifyOnAnnouncement)   return
+        if (opts.type === 'content_publish'  && !settings?.notifyOnContentPublish) return
 
-        // Respect platform toggles
-        if (opts.type === 'new_role'         && !settings?.notifyOnNewRole)        { console.log('[DEBUG broadcast] EARLY EXIT: notifyOnNewRole disabled'); return }
-        if (opts.type === 'announcement'     && !settings?.notifyOnAnnouncement)   { console.log('[DEBUG broadcast] EARLY EXIT: notifyOnAnnouncement disabled'); return }
-        if (opts.type === 'content_publish'  && !settings?.notifyOnContentPublish) { console.log('[DEBUG broadcast] EARLY EXIT: notifyOnContentPublish disabled'); return }
-
-        // Fetch ALL users along with their preference record (may be null)
-        // We must not filter by preference here — users with no record default to opted-in
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
         const users: { id: string; notificationPreference: Record<string, boolean> | null }[] =
@@ -244,32 +229,24 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
                 },
             })
 
-        console.log(`[DEBUG broadcast] Total users found: ${users.length}`)
-
-        // Filter locally: users with no preference record are treated as opted-in (safe defaults)
         const prefKey = opts.preferenceKey
         const targeted = users.filter((u) => {
-            if (!u.notificationPreference) return true          // no record → default = opted-in
-            if (prefKey) return u.notificationPreference[prefKey] !== false  // explicit false = opted-out
+            if (!u.notificationPreference) return true
+            if (prefKey) return u.notificationPreference[prefKey] !== false
             return true
         })
 
-        console.log(`[DEBUG broadcast] Targeted users: ${targeted.length}/${users.length}`)
         logger.info('notifications', `Broadcasting "${opts.type}" to ${targeted.length}/${users.length} users`)
 
-        // Process in batches of 50 to avoid DB overload
         const BATCH = 50
         for (let i = 0; i < targeted.length; i += BATCH) {
             const batch = targeted.slice(i, i + BATCH)
-            console.log(`[DEBUG broadcast] Processing batch of ${batch.length} users`)
             await Promise.allSettled(
                 batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id }))
             )
         }
-        console.log('[DEBUG broadcast] Done.')
     } catch (err) {
         logger.error('notifications', 'broadcastNotification failed', { error: err })
-        console.error('[DEBUG broadcast] CAUGHT ERROR:', err)
     }
 }
 
@@ -300,7 +277,38 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
 
         const siteName = settings?.siteName || 'AIM Studio'
         const siteUrl  = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || ''
-        const subject  = `[${siteName}] ${template.subject}`
+
+        // Fetch the user's preferred language if userId is available
+        let locale = 'en'
+        if (opts.userId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const userLang = await (prisma as any).user.findUnique({
+                where: { id: opts.userId },
+                select: { preferredLanguage: true },
+            }).catch(() => null)
+            locale = userLang?.preferredLanguage || 'en'
+        }
+
+        let subject  = `[${siteName}] ${template.subject}`
+        let inAppTitle   = template.subject
+        let inAppMessage = `Your application for "${opts.roleName}" has been updated.`
+
+        // AI-translate for non-English users (10s timeout fallback to English)
+        if (locale !== 'en') {
+            const translationTimeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
+            const tx = await Promise.race([
+                translateContent({
+                    title: inAppTitle,
+                    message: inAppMessage,
+                }, locale).catch(() => null),
+                translationTimeout,
+            ])
+            if (tx?.[locale]) {
+                inAppTitle   = tx[locale].title   || inAppTitle
+                inAppMessage = tx[locale].message || inAppMessage
+                subject = `[${siteName}] ${inAppTitle}`
+            }
+        }
 
         const html = applicationStatusUpdate(
             opts.recipientName,
@@ -324,14 +332,15 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
             },
         })
 
-        // In-app notification if userId is known
+        // In-app notification if userId is known (localized title & message)
         if (opts.userId) {
-            await prisma.userNotification.create({
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (prisma as any).userNotification.create({
                 data: {
                     userId: opts.userId,
                     type: 'status_change',
-                    title: template.subject,
-                    message: `Your application for "${opts.roleName}" has been updated.`,
+                    title: inAppTitle,
+                    message: inAppMessage,
                     link: `/dashboard/applications`,
                 },
             })
@@ -348,14 +357,27 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
 /** Call this when admin publishes a new casting role */
 export async function notifyNewRole(roleId: string, roleName: string, projectTitle: string): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+    const roleUrl = `${siteUrl}/casting/${roleId}`
+
+    const titleEn   = `New Audition: ${roleName}`
+    const messageEn = `A new casting call for "${roleName}" in "${projectTitle}" is now open. Apply before it closes!`
+
+    // Pre-translate title & message for all supported locales (10s timeout)
+    const translationTimeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
+    const translations = await Promise.race([
+        translateContent({ title: titleEn, message: messageEn }, 'all').catch(() => null),
+        translationTimeout,
+    ])
+
     await broadcastNotification({
         type: 'new_role',
         preferenceKey: 'newRole',
-        title: `New Audition: ${roleName}`,
-        message: `A new casting call for "${roleName}" in "${projectTitle}" is now open. Apply before it closes!`,
-        link: `${siteUrl}/casting/${roleId}`,
+        title: titleEn,
+        message: messageEn,
+        link: roleUrl,
         emailSubject: `🎭 New Audition Open: ${roleName} | AIM Studio`,
-        emailHtml: newCastingRoleEmail(roleName, projectTitle, `${siteUrl}/casting/${roleId}`),
+        emailHtml: newCastingRoleEmail(roleName, projectTitle, roleUrl),
+        translations,
     })
 }
 

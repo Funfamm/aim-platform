@@ -19,6 +19,7 @@ export default function Navbar() {
     const [langMenuOpen, setLangMenuOpen] = useState(false)
     const settings = useSiteSettings();
     const locale = useLocale();
+    const tBanner = useTranslations('langBanner')
     const brandName = settings?.siteName ? (() => {
         const parts = settings.siteName.split(' ');
         return { accent: parts[0] || 'AIM', rest: parts.slice(1).join(' ') || 'Studio' };
@@ -106,7 +107,7 @@ export default function Navbar() {
                     gap: '12px', padding: '8px 16px', fontSize: '0.8rem',
                     color: 'var(--text-secondary)',
                 }}>
-                    <span>🌐 This site was translated to your browser language.</span>
+                    <span>🌐 {tBanner('message')}</span>
                     <button
                         onClick={() => switchLocale('en')}
                         style={{
@@ -116,7 +117,7 @@ export default function Navbar() {
                             cursor: 'pointer', whiteSpace: 'nowrap',
                         }}
                     >
-                        Continue in English?
+                        {tBanner('continueInEnglish')}
                     </button>
                     <button
                         onClick={() => { localStorage.setItem('aim_locale_chosen', currentLocale); setShowEnglishBanner(false) }}

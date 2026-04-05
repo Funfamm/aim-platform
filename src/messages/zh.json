@@ -34,5 +34,9 @@
     "invalidCredentials": "邮箱或密码不正确。",
     "verifyEmailFirst": "请在登录前验证您的邮箱。",
     "loginFailed": "登录失败，请重试。"
+  },
+  "langBanner": {
+    "message": "此网站已翻译为您的浏览器语言。",
+    "continueInEnglish": "继续使用英语？"
   }
 }

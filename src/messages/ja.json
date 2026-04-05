@@ -34,5 +34,9 @@
     "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
     "verifyEmailFirst": "サインインする前にメールアドレスを確認してください。",
     "loginFailed": "サインインに失敗しました。もう一度お試しください。"
+  },
+  "langBanner": {
+    "message": "このサイトはブラウザの言語に翻訳されました。",
+    "continueInEnglish": "英語で続けますか？"
   }
 }

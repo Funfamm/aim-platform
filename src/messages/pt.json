@@ -34,5 +34,9 @@
     "invalidCredentials": "E-mail ou senha incorretos.",
     "verifyEmailFirst": "Por favor, verifique seu e-mail antes de entrar.",
     "loginFailed": "Falha ao entrar. Por favor, tente novamente."
+  },
+  "langBanner": {
+    "message": "Este site foi traduzido para o idioma do seu navegador.",
+    "continueInEnglish": "Continuar em inglês?"
   }
 }

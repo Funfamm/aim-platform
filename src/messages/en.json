@@ -34,5 +34,9 @@
     "invalidCredentials": "Incorrect email or password.",
     "verifyEmailFirst": "Please verify your email before signing in.",
     "loginFailed": "Sign in failed. Please try again."
+  },
+  "langBanner": {
+    "message": "This site was translated to your browser language.",
+    "continueInEnglish": "Continue in English?"
   }
 }

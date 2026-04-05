@@ -34,6 +34,9 @@
     "invalidCredentials": "Correo o contraseña incorrectos.",
     "verifyEmailFirst": "Por favor verifica tu correo antes de iniciar sesión.",
     "loginFailed": "Error al iniciar sesión. Intenta de nuevo."
+  },
+  "langBanner": {
+    "message": "Este sitio fue traducido al idioma de tu navegador.",
+    "continueInEnglish": "¿Continuar en inglés?"
   }
 }
-

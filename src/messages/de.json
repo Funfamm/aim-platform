@@ -34,5 +34,9 @@
     "invalidCredentials": "Falsche E-Mail-Adresse oder falsches Passwort.",
     "verifyEmailFirst": "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
+  },
+  "langBanner": {
+    "message": "Diese Website wurde in Ihre Browsersprache übersetzt.",
+    "continueInEnglish": "Auf Englisch fortfahren?"
   }
 }
