@@ -65,6 +65,7 @@ interface NotifyAllOptions {
  */
 export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
     try {
+        console.log(`[DEBUG notifyUser] called for userId=${opts.userId} type=${opts.type}`)
         // Load user + preference record in one query
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = await (prisma as any).user.findUnique({
@@ -86,7 +87,8 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 },
             },
         })
-        if (!user) return
+        if (!user) { console.log(`[DEBUG notifyUser] user ${opts.userId} not found`); return }
+        console.log(`[DEBUG notifyUser] user=${user.email} pref=${JSON.stringify(user.notificationPreference)}`)
 
         // Safe defaults: email + inApp on
         const pref = user.notificationPreference ?? {
@@ -110,6 +112,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
 
         // ── In-App ──────────────────────────────────────────────────────────
         if (pref.inApp) {
+            console.log(`[DEBUG notifyUser] creating in-app notification for ${user.email}`)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             await (prisma as any).userNotification.create({
                 data: {
@@ -120,10 +123,12 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                     link: opts.link ?? null,
                 },
             })
+            console.log(`[DEBUG notifyUser] in-app notification created for ${user.email}`)
         }
 
         // ── Email ────────────────────────────────────────────────────────────
         if (pref.email) {
+            console.log(`[DEBUG notifyUser] sending email to ${user.email}`)
             let subject = opts.emailSubject ?? displayTitle
             let html = opts.emailHtml   
 
@@ -141,10 +146,12 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 html = buildPlainHtml(displayTitle, displayMessage, opts.link)
             }
                 
-            await sendEmail({ to: user.email, subject, html: html as string })
+            const sent = await sendEmail({ to: user.email, subject, html: html as string })
+            console.log(`[DEBUG notifyUser] email to ${user.email} result: ${sent}`)
         }
     } catch (err) {
         logger.error('notifications', `notifyUser failed for ${opts.userId}`, { error: err })
+        console.error(`[DEBUG notifyUser] CAUGHT ERROR for ${opts.userId}:`, err)
     }
 }
 
@@ -210,10 +217,12 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             },
         })
 
+        console.log('[DEBUG broadcast] settings:', JSON.stringify(settings))
+
         // Respect platform toggles
-        if (opts.type === 'new_role'         && !settings?.notifyOnNewRole)        return
-        if (opts.type === 'announcement'     && !settings?.notifyOnAnnouncement)   return
-        if (opts.type === 'content_publish'  && !settings?.notifyOnContentPublish) return
+        if (opts.type === 'new_role'         && !settings?.notifyOnNewRole)        { console.log('[DEBUG broadcast] EARLY EXIT: notifyOnNewRole disabled'); return }
+        if (opts.type === 'announcement'     && !settings?.notifyOnAnnouncement)   { console.log('[DEBUG broadcast] EARLY EXIT: notifyOnAnnouncement disabled'); return }
+        if (opts.type === 'content_publish'  && !settings?.notifyOnContentPublish) { console.log('[DEBUG broadcast] EARLY EXIT: notifyOnContentPublish disabled'); return }
 
         // Fetch ALL users along with their preference record (may be null)
         // We must not filter by preference here — users with no record default to opted-in
@@ -229,6 +238,8 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
                 },
             })
 
+        console.log(`[DEBUG broadcast] Total users found: ${users.length}`)
+
         // Filter locally: users with no preference record are treated as opted-in (safe defaults)
         const prefKey = opts.preferenceKey
         const targeted = users.filter((u) => {
@@ -237,18 +248,22 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             return true
         })
 
+        console.log(`[DEBUG broadcast] Targeted users: ${targeted.length}/${users.length}`)
         logger.info('notifications', `Broadcasting "${opts.type}" to ${targeted.length}/${users.length} users`)
 
         // Process in batches of 50 to avoid DB overload
         const BATCH = 50
         for (let i = 0; i < targeted.length; i += BATCH) {
             const batch = targeted.slice(i, i + BATCH)
+            console.log(`[DEBUG broadcast] Processing batch of ${batch.length} users`)
             await Promise.allSettled(
                 batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id }))
             )
         }
+        console.log('[DEBUG broadcast] Done.')
     } catch (err) {
         logger.error('notifications', 'broadcastNotification failed', { error: err })
+        console.error('[DEBUG broadcast] CAUGHT ERROR:', err)
     }
 }
 
