@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { withDbRetry } from '@/lib/db-retry'
 import { uploadLimiter } from '@/lib/rate-limit'
 import { uploadBufferToR2 } from '@/lib/r2Upload'
 import { sanitizeFilename, validateFileType, validateFileSize, checkMagicBytes, IMAGE_TYPES, MAX_IMAGE_SIZE } from '@/lib/upload-safety'
@@ -71,10 +72,10 @@ export async function POST(request: NextRequest) {
             userId: session.userId as string, fileName: file.name, mimeType: file.type, fileSize: file.size,
         })
 
-        await prisma.user.update({
+        await withDbRetry(() => prisma.user.update({
             where: { id: session.userId as string },
             data: { bannerUrl },
-        })
+        }), 'banner_save_url')
 
         return NextResponse.json({ success: true, bannerUrl })
     } catch (error) {
@@ -94,10 +95,10 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-        await prisma.user.update({
+        await withDbRetry(() => prisma.user.update({
             where: { id: session.userId as string },
             data: { bannerUrl: null },
-        })
+        }), 'banner_remove_url')
         return NextResponse.json({ success: true })
     } catch (error) {
         console.error('Banner remove error:', error)

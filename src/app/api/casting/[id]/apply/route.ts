@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { withDbRetry } from '@/lib/db-retry'
 import { getUserSession } from '@/lib/auth'
 import { sendEmail } from '@/lib/mailer'
 import { applicationConfirmationWithOverrides, applicationAdminNotification } from '@/lib/email-templates'
@@ -31,7 +32,7 @@ export async function POST(
         const { id } = await params
 
         // Verify casting call exists and is open
-        const castingCall = await prisma.castingCall.findUnique({ where: { id } })
+        const castingCall = await withDbRetry(() => prisma.castingCall.findUnique({ where: { id } }), 'apply_find_casting')
         if (!castingCall || castingCall.status !== 'open') {
             return NextResponse.json({ error: 'Casting call not found or closed' }, { status: 404 })
         }
@@ -87,10 +88,10 @@ export async function POST(
 
         // ═══ DUPLICATE / REAPPLY CHECK (By Email) ═══
         // The database enforcing @@unique([castingCallId, email]) means we MUST check by email.
-        const existingApplication = await prisma.application.findFirst({
+        const existingApplication = await withDbRetry(() => prisma.application.findFirst({
             where: { castingCallId: id, email },
             select: { id: true, status: true },
-        })
+        }), 'apply_check_duplicate')
 
         if (existingApplication) {
             // Allow reapply only if previously withdrawn
@@ -119,9 +120,9 @@ export async function POST(
 
         // ═══ RATE LIMIT — max 5 applications per email per day ═══
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-        const recentApplications = await prisma.application.count({
+        const recentApplications = await withDbRetry(() => prisma.application.count({
             where: { email, createdAt: { gte: oneDayAgo } },
-        })
+        }), 'apply_rate_limit_count')
         if (recentApplications >= 5) {
             return NextResponse.json({
                 error: "You've submitted too many applications today. Please try again tomorrow. This limit is to ensure fair review for all applicants.",
@@ -261,7 +262,7 @@ export async function POST(
             })
         }
         // ═══ MAX APPLICATION CHECK — prevent overflow ═══
-        const currentCount = await prisma.application.count({ where: { castingCallId: id } })
+        const currentCount = await withDbRetry(() => prisma.application.count({ where: { castingCallId: id } }), 'apply_max_count')
         if (castingCall.maxApplications && currentCount >= castingCall.maxApplications) {
             return NextResponse.json({
                 error: `This role has reached its maximum number of applications (${castingCall.maxApplications}). The casting team is reviewing current submissions.`,
@@ -269,7 +270,7 @@ export async function POST(
         }
 
         // Create the application record
-        const application = await prisma.application.create({
+        const application = await withDbRetry(() => prisma.application.create({
             data: {
                 castingCallId: id,
                 userId,
@@ -293,7 +294,7 @@ export async function POST(
             },
             // Explicit select avoids fetching non-existent columns (e.g. audioUrl)
             select: { id: true, status: true },
-        })
+        }), 'apply_create_application')
 
         // ═══ AUTO-CLOSE — close casting when limit reached ═══
         const newCount = currentCount + 1
