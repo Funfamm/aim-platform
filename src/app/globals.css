@@ -378,7 +378,7 @@ body {
 
 @media (max-width: 768px) {
   html, body {
-    overscroll-behavior-y: none;
+    overscroll-behavior-y: contain;
   }
 }
 
