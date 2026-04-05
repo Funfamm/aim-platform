@@ -8,6 +8,7 @@ export const routing = defineRouting({
     locales,
     defaultLocale,
     localePrefix: 'as-needed', // /casting → English (default), /es/casting → Spanish
+    localeDetection: true,     // Auto-detect from Accept-Language header on first visit
 })
 
 export const localeNames: Record<Locale, string> = {

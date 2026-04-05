@@ -66,14 +66,70 @@ export default function Navbar() {
     // Get current locale from next-intl
     const currentLocale = useLocale()
 
+    // Show "Continue in English?" banner if user was auto-detected to a non-English locale
+    // and hasn't manually chosen yet (no explicit localStorage choice)
+    const [showEnglishBanner, setShowEnglishBanner] = useState(false)
+    useEffect(() => {
+        if (currentLocale !== 'en') {
+            const saved = localStorage.getItem('aim_locale_chosen')
+            if (!saved) setShowEnglishBanner(true)
+        }
+    }, [currentLocale])
+
     const switchLocale = (newLocale: Locale) => {
+        // Mark as manually chosen so the banner never shows again
+        localStorage.setItem('aim_locale_chosen', newLocale)
+        setShowEnglishBanner(false)
         router.replace(pathname, { locale: newLocale })
         setLangMenuOpen(false)
+        // Persist to DB if user is logged in (fire-and-forget)
+        if (user) {
+            fetch('/api/user/language', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ locale: newLocale }),
+            }).catch(() => {/* non-critical */})
+        }
     }
 
     return (
         <>
-            <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} aria-label="Main navigation">
+            {/* ── Auto-Detect Language Banner ── */}
+            {showEnglishBanner && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+                    background: 'linear-gradient(90deg, rgba(212,168,83,0.12), rgba(212,168,83,0.06))',
+                    borderBottom: '1px solid rgba(212,168,83,0.25)',
+                    backdropFilter: 'blur(12px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '12px', padding: '8px 16px', fontSize: '0.8rem',
+                    color: 'var(--text-secondary)',
+                }}>
+                    <span>🌐 This site was translated to your browser language.</span>
+                    <button
+                        onClick={() => switchLocale('en')}
+                        style={{
+                            padding: '4px 14px', fontSize: '0.75rem', fontWeight: 700,
+                            borderRadius: '20px', border: '1px solid rgba(212,168,83,0.4)',
+                            background: 'rgba(212,168,83,0.12)', color: 'var(--accent-gold)',
+                            cursor: 'pointer', whiteSpace: 'nowrap',
+                        }}
+                    >
+                        Continue in English?
+                    </button>
+                    <button
+                        onClick={() => { localStorage.setItem('aim_locale_chosen', currentLocale); setShowEnglishBanner(false) }}
+                        style={{
+                            background: 'none', border: 'none', color: 'var(--text-tertiary)',
+                            cursor: 'pointer', fontSize: '1rem', lineHeight: 1,
+                        }}
+                        aria-label="Dismiss"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+            <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${showEnglishBanner ? 'has-lang-banner' : ''}`} aria-label="Main navigation">
                 <div className="navbar-inner">
                     <Link href="/" className="navbar-logo" prefetch={false}>
                         {logoUrl && (

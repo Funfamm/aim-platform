@@ -70,7 +70,20 @@ export default function LoginPage() {
                 // destination page (e.g. /dashboard) sees an authenticated
                 // user and doesn't immediately bounce back to /login.
                 await refreshUser()
-                router.push(data.redirectTo || redirectTo)
+
+                // Build a locale-aware redirect path using the user's
+                // saved preferredLanguage. Defaults to 'en' if not set.
+                const lang: string = data.preferredLanguage || 'en'
+                const dest: string = data.redirectTo || redirectTo
+                // If the destination already has a locale prefix leave it
+                // as-is, otherwise prepend the user's preferred locale.
+                const localePath =
+                    lang === 'en'
+                        ? dest
+                        : dest.startsWith(`/${lang}/`) || dest === `/${lang}`
+                        ? dest
+                        : `/${lang}${dest.startsWith('/') ? dest : `/${dest}`}`
+                router.push(localePath)
             } else if (data.requiresVerification) {
                 // Email not verified — send to the verify page
                 router.push(`/verify-email?email=${encodeURIComponent(email)}`)

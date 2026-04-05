@@ -15,6 +15,7 @@
 // them over the default template field values before rendering.
 
 import { prisma } from './db'
+import { t as emailT } from './email-i18n'
 
 type TemplateFields = Record<string, string>
 type AllOverrides = Record<string, TemplateFields>
@@ -447,19 +448,21 @@ export function newDeviceLoginEmail(name: string, deviceInfo: { ip: string; ua: 
 // Use these instead of the plain functions when sending real emails
 // ──────────────────────────────────────────────────────────────
 
-export async function welcomeEmailWithOverrides(name: string, siteUrl?: string): Promise<string> {
+export async function welcomeEmailWithOverrides(name: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('welcome', {
-        heading: `Welcome to AIM Studio, ${name}! 🎬`,
-        body: 'You now have access to our exclusive AI-powered filmmaking platform. Explore our films, apply for casting calls, track your applications, and more.',
-        buttonText: 'Explore AIM Studio →',
-        buttonUrl: siteUrl || '',
+        heading:    emailT('welcome', locale, 'heading') || `Welcome to AIM Studio, ${name}! 🎬`,
+        subtext:    emailT('welcome', locale, 'subtext') || 'Your account has been created successfully.',
+        body:       emailT('welcome', locale, 'body') || 'You now have access to our exclusive AI-powered filmmaking platform. Explore our films, apply for casting calls, track your applications, and more.',
+        buttonText: emailT('welcome', locale, 'buttonText') || 'Explore AIM Studio →',
+        footer:     emailT('welcome', locale, 'footer') || 'If you have any questions, feel free to reach out through our contact page.',
+        buttonUrl:  siteUrl || '',
     })
     return emailWrapper(`
-        ${heading(f.heading)}
-        ${subtext('Your account has been created successfully.')}
+        ${heading(f.heading.replace('{name}', name))}
+        ${subtext(f.subtext)}
         ${paragraph(f.body)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
-        ${paragraph('If you have any questions, feel free to reach out through our contact page.')}
+        ${paragraph(f.footer)}
     `, `Welcome to AIM Studio, ${name}!`)
 }
 
@@ -479,55 +482,58 @@ export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?
     `, 'Subscription confirmed! Welcome to AIM Studio')
 }
 
-export async function contactAcknowledgmentWithOverrides(name: string, subject: string, siteUrl?: string): Promise<string> {
+export async function contactAcknowledgmentWithOverrides(name: string, subject: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('contact', {
-        heading: 'Message Received ✓',
-        body: 'Typical response time is 1 to 3 business days.',
-        buttonText: 'Back to Homepage',
-        buttonUrl: siteUrl || '',
+        heading:    emailT('contactAcknowledgment', locale, 'heading') || 'Message Received ✓',
+        body:       emailT('contactAcknowledgment', locale, 'body') || 'Typical response time is 1 to 3 business days.',
+        buttonText: emailT('contactAcknowledgment', locale, 'buttonText') || 'Back to Homepage',
+        buttonUrl:  siteUrl || '',
     })
     return emailWrapper(`
         ${heading(f.heading)}
-        ${subtext(`Hi ${name}, we got your message.`)}
+        ${subtext(`Hi ${name}, ${emailT('contactAcknowledgment', locale, 'subtext') || 'we got your message.'}`)}
         ${paragraph(`Your message regarding "<strong>${subject}</strong>" has been received. Our team will review it and get back to you as soon as possible.`)}
         ${paragraph(f.body)}
         ${f.buttonUrl ? `${divider()}${secondaryButton(f.buttonText, f.buttonUrl)}` : ''}
     `, `We received your message about "${subject}"`)
 }
 
-export async function donationThankYouWithOverrides(name: string, amount: number, siteUrl?: string): Promise<string> {
+export async function donationThankYouWithOverrides(name: string, amount: number, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('donation', {
-        heading: 'Thank You for Your Generosity! 💛',
-        body: 'Your contribution directly supports independent AI-powered filmmaking. Every dollar helps us push the boundaries of visual storytelling.',
-        buttonText: 'Visit AIM Studio',
-        buttonUrl: siteUrl || '',
+        heading:          emailT('donationThankYou', locale, 'heading') || 'Thank You for Your Generosity! 💛',
+        donationReceived: emailT('donationThankYou', locale, 'donationReceived') || 'Donation received',
+        body:             emailT('donationThankYou', locale, 'body') || 'Your contribution directly supports independent AI-powered filmmaking. Every dollar helps us push the boundaries of visual storytelling.',
+        receipt:          emailT('donationThankYou', locale, 'receipt') || 'This email serves as your donation receipt for your records.',
+        buttonText:       emailT('donationThankYou', locale, 'buttonText') || 'Visit AIM Studio',
+        buttonUrl:        siteUrl || '',
     })
     return emailWrapper(`
         ${heading(f.heading)}
-        ${subtext(`Dear ${name}, your support means the world to us.`)}
+        ${subtext(`Dear ${name}, ${emailT('donationThankYou', locale, 'subtext') || 'your support means the world to us.'}`)}
         <div style="text-align: center; padding: 24px 0;">
             <div style="display: inline-block; padding: 20px 40px; background-color: ${BG_DARK}; border-radius: 12px; border: 2px solid ${BRAND_COLOR};">
                 <div style="font-size: 42px; font-weight: 800; color: ${BRAND_COLOR};">$${amount.toFixed(2)}</div>
-                <div style="font-size: 13px; color: ${TEXT_SECONDARY}; margin-top: 6px;">Donation received</div>
+                <div style="font-size: 13px; color: ${TEXT_SECONDARY}; margin-top: 6px;">${f.donationReceived}</div>
             </div>
         </div>
         ${divider()}
         ${paragraph(f.body)}
-        ${paragraph('This email serves as your donation receipt for your records.')}
+        ${paragraph(f.receipt)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
     `, `Thank you for your $${amount.toFixed(2)} donation`)
 }
 
-export async function applicationConfirmationWithOverrides(name: string, roleName: string, projectTitle?: string, siteUrl?: string): Promise<string> {
+export async function applicationConfirmationWithOverrides(name: string, roleName: string, projectTitle?: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('application', {
-        heading: 'Application Received! 🎭',
-        body: "Your application has been submitted successfully. Our casting team will review it carefully. You'll receive updates as your application progresses through our review process.",
-        buttonText: 'View Your Dashboard',
-        buttonUrl: siteUrl ? `${siteUrl}/dashboard` : '',
+        heading:    emailT('applicationConfirmation', locale, 'heading') || 'Application Received! 🎭',
+        body:       emailT('applicationConfirmation', locale, 'body') || "Your application has been submitted successfully. Our casting team will review it carefully. You'll receive updates as your application progresses through our review process.",
+        luck:       emailT('applicationConfirmation', locale, 'luck') || 'Good luck! 🤞',
+        buttonText: emailT('applicationConfirmation', locale, 'buttonText') || 'View Your Dashboard',
+        buttonUrl:  siteUrl ? `${siteUrl}/dashboard` : '',
     })
     return emailWrapper(`
         ${heading(f.heading)}
-        ${subtext(`Hi ${name}, thanks for applying.`)}
+        ${subtext(`Hi ${name}, ${emailT('applicationConfirmation', locale, 'subtext') || 'thanks for applying.'}`)}
         ${infoCard(`
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 ${infoRow('Role', roleName)}
@@ -536,21 +542,22 @@ export async function applicationConfirmationWithOverrides(name: string, roleNam
             </table>
         `, BRAND_COLOR)}
         ${paragraph(f.body)}
-        ${paragraph('Good luck! 🤞')}
+        ${paragraph(f.luck)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
     `, `Application received for ${roleName}`)
 }
 
-export async function scriptSubmissionConfirmationWithOverrides(name: string, title: string, siteUrl?: string): Promise<string> {
+export async function scriptSubmissionConfirmationWithOverrides(name: string, title: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('scriptSubmission', {
-        heading: 'Script Submitted! ✍️',
-        body: 'Our team will review your screenplay submission. If selected, we may reach out for further discussion.',
-        buttonText: 'View Your Dashboard',
-        buttonUrl: siteUrl ? `${siteUrl}/dashboard` : '',
+        heading:    emailT('scriptSubmission', locale, 'heading') || 'Script Submitted! ✍️',
+        body:       emailT('scriptSubmission', locale, 'body') || 'Our team will review your screenplay submission. If selected, we may reach out for further discussion.',
+        thanks:     emailT('scriptSubmission', locale, 'thanks') || 'Thank you for sharing your creative work with us!',
+        buttonText: emailT('scriptSubmission', locale, 'buttonText') || 'View Your Dashboard',
+        buttonUrl:  siteUrl ? `${siteUrl}/dashboard` : '',
     })
     return emailWrapper(`
         ${heading(f.heading)}
-        ${subtext(`Hi ${name}, your submission has been received.`)}
+        ${subtext(`Hi ${name}, ${emailT('scriptSubmission', locale, 'subtext') || 'your submission has been received.'}`)}
         ${infoCard(`
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
                 ${infoRow('Script', title)}
@@ -558,8 +565,8 @@ export async function scriptSubmissionConfirmationWithOverrides(name: string, ti
             </table>
         `, BRAND_COLOR)}
         ${paragraph(f.body)}
-        ${paragraph('Thank you for sharing your creative work with us!')}
-        ${f.buttonUrl ? `${divider()}${button(f.buttonText, f.buttonUrl)}${secondaryButton('Visit Homepage', siteUrl || '')}` : ''}
+        ${paragraph(f.thanks)}
+        ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
     `, `Script "${title}" submitted successfully`)
 }
 

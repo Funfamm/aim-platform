@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { scriptSubmissionConfirmationWithOverrides } from '@/lib/email-templates'
+import { mirrorToNotificationBoard } from '@/lib/notifications'
 
 // POST — public submission (no auth required)
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -42,12 +43,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         },
     })
 
-    // Fire-and-forget: confirmation email to author
+    // Fire-and-forget: confirmation email to author + mirror to notification board
     sendEmail({
         to: authorEmail,
         subject: `Script "${title}" submitted successfully ✍️`,
         html: await scriptSubmissionConfirmationWithOverrides(authorName, title),
     })
+
+    // Mirror to notification board if author has an account
+    void (async () => {
+        try {
+            const authorUser = await prisma.user.findUnique({ where: { email: authorEmail }, select: { id: true } })
+            if (authorUser) {
+                await mirrorToNotificationBoard(
+                    authorUser.id,
+                    'system',
+                    `Script Submitted ✍️ "${title}"`,
+                    `Your screenplay "${title}" has been submitted. Our team will review it and reach out if selected.`,
+                    '/dashboard',
+                    `script-confirm-${submission.id}`,
+                )
+            }
+        } catch { /* non-critical */ }
+    })()
 
     return NextResponse.json({ success: true, id: submission.id })
 }

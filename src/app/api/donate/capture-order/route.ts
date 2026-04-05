@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { donationThankYouWithOverrides, donationAdminNotification } from '@/lib/email-templates'
+import { mirrorToNotificationBoard } from '@/lib/notifications'
 
 const isSandbox = process.env.PAYPAL_MODE === 'sandbox' || process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
 const PAYPAL_API = isSandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
@@ -77,12 +78,29 @@ export async function POST(request: Request) {
 
         console.log(`✅ Donation ${donationId} completed via PayPal — $${donation.amount}`)
 
-        // Send thank-you email to donor
+        // Send thank-you email to donor + mirror to notification board
         sendEmail({
             to: donation.email,
             subject: `Thank you for your $${donation.amount.toFixed(2)} donation! 💛`,
             html: await donationThankYouWithOverrides(donation.name, donation.amount),
         }).catch(err => console.error('Failed to send thank-you email:', err))
+
+        // Mirror to notification board if donor has an account
+        void (async () => {
+            try {
+                const donorUser = await prisma.user.findUnique({ where: { email: donation.email }, select: { id: true } })
+                if (donorUser) {
+                    await mirrorToNotificationBoard(
+                        donorUser.id,
+                        'system',
+                        `Donation Received 💛 $${donation.amount.toFixed(2)}`,
+                        `Thank you for your generous $${donation.amount.toFixed(2)} donation! Your support makes a real difference.`,
+                        '/dashboard',
+                        `donation-confirm-${donation.id}`,
+                    )
+                }
+            } catch { /* non-critical */ }
+        })()
 
         // Notify admin
         const settings = await prisma.siteSettings.findFirst()

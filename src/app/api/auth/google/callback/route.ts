@@ -165,12 +165,14 @@ export async function GET(req: Request) {
             return r('/login?error=admin_oauth_disallowed')
         }
 
-        // Fetch tokenVersion via Prisma (not raw SQL)
-        const userWithVersion = await prisma.user.findUnique({
+        // Fetch tokenVersion + preferredLanguage via Prisma
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userWithExtras = await (prisma as any).user.findUnique({
             where: { id: user.id },
-            select: { tokenVersion: true },
+            select: { tokenVersion: true, preferredLanguage: true },
         })
-        const tokenVersion = userWithVersion?.tokenVersion ?? 0
+        const tokenVersion = userWithExtras?.tokenVersion ?? 0
+        const preferredLanguage: string = userWithExtras?.preferredLanguage || 'en'
 
         const tokenPayload = {
             userId: user.id,
@@ -186,12 +188,22 @@ export async function GET(req: Request) {
         void handleDeviceFingerprint(req, user.id, user.name, user.email, tokenVersion).catch(() => {})
 
         // Redirect to where the user was trying to go, or dashboard
+        // Build a locale-aware path so the user lands in their preferred language.
         const returnTo = cookieStore.get('oauth_return_to')?.value || '/dashboard'
         cookieStore.set('oauth_return_to', '', { maxAge: 0, path: '/' })
 
         // Ensure returnTo is a relative path to prevent open redirect attacks
         const safePath = returnTo.startsWith('/') ? returnTo : '/dashboard'
-        return r(safePath)
+
+        // Prepend preferred locale prefix (skip for English — it's the default)
+        const localePath =
+            preferredLanguage === 'en'
+                ? safePath
+                : safePath.startsWith(`/${preferredLanguage}/`) || safePath === `/${preferredLanguage}`
+                ? safePath
+                : `/${preferredLanguage}${safePath}`
+
+        return r(localePath)
     } catch (err) {
         console.error('[Google OAuth] Unexpected error:', err)
         return r('/login?error=oauth_failed')

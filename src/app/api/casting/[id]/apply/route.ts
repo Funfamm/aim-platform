@@ -5,6 +5,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import path from 'path'
 import { sendEmail } from '@/lib/mailer'
 import { applicationConfirmationWithOverrides, applicationAdminNotification } from '@/lib/email-templates'
+import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { uploadLimiter } from '@/lib/rate-limit'
 import { checkMagicBytes, guardPathTraversal } from '@/lib/upload-safety'
 import { logUploadEvent } from '@/lib/upload-audit'
@@ -355,7 +356,7 @@ export async function POST(
             }, staggerMs)
         }
 
-        // Fire-and-forget: confirmation email to applicant + admin notification
+        // Fire-and-forget: confirmation email to applicant + admin notification + in-app mirror
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || ''
         Promise.resolve().then(async () => {
             try {
@@ -364,6 +365,17 @@ export async function POST(
                     subject: `Application received for ${castingCall.roleName} 🎭`,
                     html: await applicationConfirmationWithOverrides(fullName, castingCall.roleName, undefined, siteUrl),
                 })
+                // Mirror to notification board if user is logged in
+                if (userId) {
+                    await mirrorToNotificationBoard(
+                        userId,
+                        'status_change',
+                        `Application Received: ${castingCall.roleName} 🎭`,
+                        `Your application for "${castingCall.roleName}" has been submitted successfully. Our team will be in touch!`,
+                        '/dashboard/applications',
+                        `app-confirm-${application.id}`,
+                    )
+                }
             } catch (emailErr) {
                 console.error('[apply] Confirmation email failed:', emailErr)
             }

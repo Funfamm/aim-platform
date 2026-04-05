@@ -14,6 +14,7 @@
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
+import { translateContent } from '@/lib/translate'
 import {
     applicationStatusUpdate,
     newCastingRoleEmail,
@@ -40,6 +41,8 @@ interface NotifyUserOptions {
     emailHtml?: string
     /** Email subject. Defaults to title. */
     emailSubject?: string
+    /** Optional map of locale -> localized title/message */
+    translations?: Record<string, Record<string, string>> | null
 }
 
 interface NotifyAllOptions {
@@ -51,6 +54,8 @@ interface NotifyAllOptions {
     emailSubject?: string
     /** Only notify users who have this preference flag set to true */
     preferenceKey?: 'newRole' | 'announcement' | 'contentPublish' | 'statusChange'
+    /** Optional map of locale -> localized title/message */
+    translations?: Record<string, Record<string, string>> | null
 }
 
 // ─── Core: notify a single user ───────────────────────────────────────────────
@@ -68,6 +73,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 id: true,
                 name: true,
                 email: true,
+                preferredLanguage: true,
                 notificationPreference: {
                     select: {
                         email: true,
@@ -91,6 +97,16 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
             contentPublish: false,
             statusChange: true,
         }
+        const locale: string = user.preferredLanguage || 'en'
+        
+        let displayTitle = opts.title
+        let displayMessage = opts.message
+        
+        // Apply AI translations if available for the user's non-English locale
+        if (locale !== 'en' && opts.translations && opts.translations[locale]) {
+            displayTitle = opts.translations[locale].title || displayTitle
+            displayMessage = opts.translations[locale].message || displayMessage
+        }
 
         // ── In-App ──────────────────────────────────────────────────────────
         if (pref.inApp) {
@@ -99,8 +115,8 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 data: {
                     userId: opts.userId,
                     type: opts.type,
-                    title: opts.title,
-                    message: opts.message,
+                    title: displayTitle,
+                    message: displayMessage,
                     link: opts.link ?? null,
                 },
             })
@@ -108,12 +124,70 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
 
         // ── Email ────────────────────────────────────────────────────────────
         if (pref.email) {
-            const subject = opts.emailSubject ?? opts.title
-            const html    = opts.emailHtml   ?? buildPlainHtml(opts.title, opts.message, opts.link)
-            await sendEmail({ to: user.email, subject, html })
+            let subject = opts.emailSubject ?? displayTitle
+            let html = opts.emailHtml   
+
+            // If translations exist and we are sending an announcement, rebuild the email HTML
+            if (opts.translations && locale !== 'en') {
+                subject = displayTitle // Use localized subject
+                if (opts.type === 'announcement') {
+                    // We must generate the localized HTML dynamically using the localized text
+                    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+                    html = announcementEmail(displayTitle, displayMessage, opts.link, siteUrl)
+                } else if (!opts.emailHtml) {
+                    html = buildPlainHtml(displayTitle, displayMessage, opts.link)
+                }
+            } else if (!html) {
+                html = buildPlainHtml(displayTitle, displayMessage, opts.link)
+            }
+                
+            await sendEmail({ to: user.email, subject, html: html as string })
         }
     } catch (err) {
         logger.error('notifications', `notifyUser failed for ${opts.userId}`, { error: err })
+    }
+}
+
+// ─── Mirror: write a transactional event to the notification board ─────────────
+
+/**
+ * Creates a UserNotification row for a transactional event (welcome, donation, etc.).
+ * Security events (OTP, password reset, new device) must NEVER be passed here.
+ *
+ * @param userId   The user's DB id
+ * @param type     Notification type: 'system' | 'status_change' | 'new_role' | etc.
+ * @param title    Short heading shown in the bell panel
+ * @param message  Body text
+ * @param link     Optional deep-link for the "View" button
+ * @param eventId  Optional deterministic dedup key — if supplied and already exists, insert is skipped
+ */
+export async function mirrorToNotificationBoard(
+    userId: string,
+    type: NotificationType,
+    title: string,
+    message: string,
+    link?: string,
+    eventId?: string,
+): Promise<void> {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = prisma as any
+
+        if (eventId) {
+            // Upsert — skip if already created (idempotent retry-safe)
+            await db.userNotification.upsert({
+                where: { eventId },
+                update: {},  // never overwrite an existing entry
+                create: { userId, type, title, message, link: link ?? null, eventId },
+            })
+        } else {
+            await db.userNotification.create({
+                data: { userId, type, title, message, link: link ?? null },
+            })
+        }
+    } catch (err) {
+        // Non-critical — log but never crash the calling flow
+        logger.error('notifications', `mirrorToNotificationBoard failed for ${userId}`, { error: err })
     }
 }
 
@@ -268,6 +342,11 @@ export async function notifyNewRole(roleId: string, roleName: string, projectTit
 export async function notifyAnnouncement(title: string, message: string, link?: string): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/notifications'
+    
+    // Background translation to all 10 non-English locales
+    // Fails safely (returns null) on error, gracefully defaulting to English for all users.
+    const translations = await translateContent({ title, message }, 'all').catch(() => null)
+    
     await broadcastNotification({
         type: 'announcement',
         preferenceKey: 'announcement',
@@ -275,7 +354,10 @@ export async function notifyAnnouncement(title: string, message: string, link?: 
         message,
         link: inAppLink,
         emailSubject: `📣 ${title} | AIM Studio`,
+        // The default English HTML template. It gets dynamically rebuilt in notifyUser 
+        // for non-English users using their specific translation.
         emailHtml: announcementEmail(title, message, link, siteUrl),
+        translations,
     })
 }
 

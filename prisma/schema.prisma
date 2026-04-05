@@ -57,6 +57,8 @@ model User {
   // Notifications
   notificationPreference UserNotificationPreference?
   notifications          UserNotification[]
+  // Language preference – stored BCP-47 locale code (en, es, fr, zh, …)
+  preferredLanguage      String  @default("en")
 
   @@index([role])
   @@index([createdAt])
@@ -399,6 +401,7 @@ model UserNotification {
   message   String
   link      String?  // deep-link e.g. /roles/[id]
   read      Boolean  @default(false)
+  eventId   String?  @unique // deterministic dedup key e.g. "welcome-{userId}"
   createdAt DateTime @default(now())
 
   @@index([userId, read])

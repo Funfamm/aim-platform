@@ -97,6 +97,8 @@ export async function POST(request: Request) {
                 avatar: user.avatar, bannerUrl: user.bannerUrl, role: user.role,
             },
             redirectTo,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            preferredLanguage: (user as any).preferredLanguage ?? 'en',
         })
     } catch (error) {
         logger.error('auth/login', 'Login failed', { error })
