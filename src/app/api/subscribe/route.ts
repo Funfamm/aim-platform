@@ -5,7 +5,7 @@ import { subscribeConfirmationWithOverrides } from '@/lib/email-templates'
 
 export async function POST(request: Request) {
     try {
-        const { email, name } = await request.json()
+        const { email, name, locale } = await request.json()
 
         if (!email) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
@@ -18,11 +18,13 @@ export async function POST(request: Request) {
             create: { email, name: name || null },
         })
 
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+
         // Fire-and-forget confirmation email
         sendEmail({
             to: email,
             subject: "You're subscribed to AIM Studio! 🎬",
-            html: await subscribeConfirmationWithOverrides(name || undefined),
+            html: await subscribeConfirmationWithOverrides(name || undefined, siteUrl, locale || 'en'),
         })
 
         return NextResponse.json({ success: true })

@@ -61,7 +61,7 @@ export async function callGemini(
             try {
                 const defaultModels: Record<string, string> = {
                     groq: 'llama-3.3-70b-versatile',
-                    gemini: 'gemini-2.5-flash',
+                    gemini: 'gemini-2.0-flash',
                     openai: 'gpt-4o-mini',
                 }
                 const useModel = (detectProvider(model) === key.provider && model) ? model : defaultModels[key.provider]
@@ -131,7 +131,7 @@ async function callGroqProvider(apiKey: string, model: string, prompt: string): 
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            model, temperature: 0.7, max_tokens: 2048,
+            model, temperature: 0.7, max_tokens: 4096,
             messages: [{ role: 'user', content: prompt }],
         }),
     })
@@ -149,7 +149,7 @@ async function callOpenAIProvider(apiKey: string, model: string, prompt: string)
         method: 'POST',
         headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            model, temperature: 0.7, max_tokens: 2048,
+            model, temperature: 0.7, max_tokens: 4096,
             messages: [{ role: 'user', content: prompt }],
         }),
     })

@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 export default function SubscribeForm() {
     const t = useTranslations('footer')
+    const locale = useLocale()
     const [email, setEmail] = useState('')
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
 
@@ -15,7 +16,7 @@ export default function SubscribeForm() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, locale }),
             })
             if (res.ok) {
                 setStatus('sent')

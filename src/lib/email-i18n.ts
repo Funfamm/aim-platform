@@ -482,6 +482,87 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: '홈페이지로 돌아가기',
         },
     },
+
+    // ── Subscription Confirmation ──────────────────────────────────────────────
+    subscribe: {
+        en: {
+            heading:    "You're In! 🎉",
+            subtext:    'Thanks for subscribing!',
+            body:       "You'll be the first to know about our upcoming projects, casting calls, behind-the-scenes content, and exclusive announcements.",
+            noSpam:     "We don't spam. Only meaningful updates when we have something worth sharing.",
+            buttonText: 'Visit AIM Studio',
+        },
+        es: {
+            heading:    '¡Estás dentro! 🎉',
+            subtext:    '¡Gracias por suscribirte!',
+            body:       'Serás el primero en conocer nuestros próximos proyectos, convocatorias de casting, contenido entre bastidores y anuncios exclusivos.',
+            noSpam:     'No enviamos spam. Solo actualizaciones importantes cuando tenemos algo que vale la pena compartir.',
+            buttonText: 'Visitar AIM Studio',
+        },
+        fr: {
+            heading:    'Vous êtes inscrit ! 🎉',
+            subtext:    'Merci de vous être abonné !',
+            body:       "Vous serez le premier à connaître nos prochains projets, castings, contenus en coulisses et annonces exclusives.",
+            noSpam:     "Nous ne spammons pas. Seulement des mises à jour importantes quand nous avons quelque chose à partager.",
+            buttonText: 'Visiter AIM Studio',
+        },
+        ar: {
+            heading:    'أنت الآن معنا! 🎉',
+            subtext:    'شكراً على اشتراكك!',
+            body:       'ستكون أول من يعلم بمشاريعنا القادمة، ومكالمات الكاستينج، والمحتوى خلف الكواليس، والإعلانات الحصرية.',
+            noSpam:     'لا نرسل بريداً عشوائياً. فقط تحديثات مهمة عندما يكون لدينا ما يستحق المشاركة.',
+            buttonText: 'زيارة AIM Studio',
+        },
+        zh: {
+            heading:    '您已加入！🎉',
+            subtext:    '感谢您的订阅！',
+            body:       '您将第一个了解我们即将推出的项目、选角信息、幕后内容和独家公告。',
+            noSpam:     '我们不发送垃圾邮件。只有当我们有值得分享的内容时才会发出有意义的更新。',
+            buttonText: '访问 AIM Studio',
+        },
+        hi: {
+            heading:    'आप अंदर हैं! 🎉',
+            subtext:    'सब्सक्राइब करने के लिए धन्यवाद!',
+            body:       'आप हमारे आगामी प्रोजेक्ट्स, कास्टिंग कॉल्स, बैकस्टेज कंटेंट और एक्सक्लूसिव घोषणाओं के बारे में सबसे पहले जानेंगे।',
+            noSpam:     'हम स्पैम नहीं भेजते। केवल तब अपडेट जब हमारे पास साझा करने लायक कुछ हो।',
+            buttonText: 'AIM Studio पर जाएं',
+        },
+        pt: {
+            heading:    'Você está dentro! 🎉',
+            subtext:    'Obrigado por se inscrever!',
+            body:       'Você será o primeiro a saber sobre nossos próximos projetos, castings, conteúdo dos bastidores e anúncios exclusivos.',
+            noSpam:     'Não enviamos spam. Apenas atualizações importantes quando temos algo a compartilhar.',
+            buttonText: 'Visitar AIM Studio',
+        },
+        ru: {
+            heading:    'Вы с нами! 🎉',
+            subtext:    'Спасибо за подписку!',
+            body:       'Вы будете первым узнавать о наших проектах, кастингах, закулисном контенте и эксклюзивных анонсах.',
+            noSpam:     'Мы не спамим. Только важные обновления, когда нам есть что сказать.',
+            buttonText: 'Посетить AIM Studio',
+        },
+        ja: {
+            heading:    '登録完了！🎉',
+            subtext:    'ご登録ありがとうございます！',
+            body:       '今後のプロジェクト、キャスティング募集、舞台裏コンテンツ、限定発表をいち早くお届けします。',
+            noSpam:     'スパムは送りません。共有する価値があるものがある時だけお知らせします。',
+            buttonText: 'AIM Studioを訪問する',
+        },
+        de: {
+            heading:    'Sie sind dabei! 🎉',
+            subtext:    'Danke für Ihre Anmeldung!',
+            body:       'Sie erfahren als Erster von unseren kommenden Projekten, Casting-Aufrufen, Behind-the-Scenes-Inhalten und exklusiven Ankündigungen.',
+            noSpam:     'Wir spammen nicht. Nur wichtige Updates, wenn wir etwas Wertvolles zu teilen haben.',
+            buttonText: 'AIM Studio Besuchen',
+        },
+        ko: {
+            heading:    '등록되었습니다! 🎉',
+            subtext:    '구독해 주셔서 감사합니다!',
+            body:       '다가오는 프로젝트, 캐스팅 공고, 비하인드 콘텐츠 및 독점 발표를 가장 먼저 받아보세요.',
+            noSpam:     '스팸을 보내지 않습니다. 공유할 가치있는 내용이 있을 때만 업데이트를 드립니다.',
+            buttonText: 'AIM Studio 방문하기',
+        },
+    },
 }
 
 /**

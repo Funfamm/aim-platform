@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 const DEFAULT_IMAGES = [
     '/images/notify-bg-1.png',
@@ -13,6 +13,7 @@ const DEFAULT_IMAGES = [
 
 export default function SubscribePage() {
     const t = useTranslations('subscribe')
+    const locale = useLocale()
     const [email, setEmail] = useState('')
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [bgImages, setBgImages] = useState<string[]>(DEFAULT_IMAGES)
@@ -43,7 +44,7 @@ export default function SubscribePage() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
+                body: JSON.stringify({ email, locale }),
             })
             if (res.ok) { setStatus('sent'); setEmail('') }
             else setStatus('error')

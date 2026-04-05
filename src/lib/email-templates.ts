@@ -466,18 +466,22 @@ export async function welcomeEmailWithOverrides(name: string, siteUrl?: string, 
     `, `Welcome to AIM Studio, ${name}!`)
 }
 
-export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?: string): Promise<string> {
+export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('subscribe', {
-        heading: "You're In! 🎉",
-        body: "You'll be the first to know about our upcoming projects, casting calls, behind-the-scenes content, and exclusive announcements.",
-        buttonText: 'Visit AIM Studio',
-        buttonUrl: siteUrl || '',
+        heading:    emailT('subscribe', locale, 'heading')    || "You're In! 🎉",
+        body:       emailT('subscribe', locale, 'body')       || "You'll be the first to know about our upcoming projects, casting calls, behind-the-scenes content, and exclusive announcements.",
+        noSpam:     emailT('subscribe', locale, 'noSpam')     || "We don't spam. Only meaningful updates when we have something worth sharing.",
+        buttonText: emailT('subscribe', locale, 'buttonText') || 'Visit AIM Studio',
+        buttonUrl:  siteUrl || '',
     })
+    const subtextStr = name
+        ? (emailT('subscribe', locale, 'subtext') || 'Thanks for subscribing!').replace('{name}', name)
+        : (emailT('subscribe', locale, 'subtext') || 'Thanks for subscribing!')
     return emailWrapper(`
         ${heading(f.heading)}
-        ${subtext(name ? `Hey ${name}, thanks for subscribing!` : 'Thanks for subscribing!')}
+        ${subtext(name ? `Hey ${name}, ${subtextStr.toLowerCase()}` : subtextStr)}
         ${paragraph(f.body)}
-        ${paragraph("We don't spam. Only meaningful updates when we have something worth sharing.")}
+        ${paragraph(f.noSpam)}
         ${f.buttonUrl ? `${divider()}${button(f.buttonText, f.buttonUrl)}` : ''}
     `, 'Subscription confirmed! Welcome to AIM Studio')
 }
