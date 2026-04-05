@@ -1,0 +1,32 @@
+# Large local files — never deploy these to Vercel
+public/uploads/
+public/videos/
+
+# Local test & debug scripts
+check-dons.js
+check-prod-dons.js
+test-db.js
+test-graph-email.js
+
+# Local database files
+*.db
+dev.db
+
+# Coverage & test artifacts
+coverage/
+playwright-report/
+test-results/
+
+# Prisma scripts (not needed at runtime on Vercel)
+prisma/check-user.cjs
+prisma/enable-email.cjs
+prisma/seed-admin.cjs
+prisma/seed-pg-superadmin.mjs
+prisma/seed-superadmin.js
+prisma/seed-superadmin.ts
+prisma/seed-superadmin2.js
+prisma/seed-superadmin3.js
+prisma/seed.cjs
+prisma/test-graph-email.mjs
+prisma/test-raw-update.cjs
+prisma/test-register.cjs

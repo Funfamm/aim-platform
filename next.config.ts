@@ -5,16 +5,28 @@ import { withSentryConfig } from '@sentry/nextjs';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // NOTE: 'standalone' output removed — it is for Docker/Render only.
+  // Vercel handles bundling natively; standalone mode causes >250MB function sizes.
   productionBrowserSourceMaps: false,
 
   serverExternalPackages: [
+    // Prisma — needs native binaries, must stay external
     '@prisma/client',
     '.prisma/client',
+    // Heavy ML/WASM libraries — client-only, must NOT be bundled into server functions
+    '@huggingface/transformers',
+    '@ffmpeg/ffmpeg',
+    '@ffmpeg/util',
+    // Redis / queue — server-only but very large
+    'bullmq',
+    'ioredis',
+    // Misc server packages
     'better-sqlite3',
     'pino',
     'pino-pretty',
     '@google/generative-ai',
+    'bcrypt',
+    'nodemailer',
   ],
   webpack: (config, { isServer, dev }) => {
     config.resolve.alias = {
