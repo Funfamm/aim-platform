@@ -145,13 +145,25 @@ export async function GET(req: Request) {
                         }).catch(() => {})
                     }
 
-                    // Write welcome in-app notification
+                    // Write welcome in-app notification (localized if non-English)
+                    const newUserLang = await db.user.findUnique({ where: { id: newUserId }, select: { preferredLanguage: true } }).catch(() => null)
+                    const locale = newUserLang?.preferredLanguage || 'en'
+                    let welcomeTitle = `Welcome to AIM Studio, ${newUserName}! 🎬`
+                    let welcomeMsg = "You're now part of our AI-powered filmmaking community. Explore casting calls, track your applications, and more."
+                    if (locale !== 'en') {
+                        const { translateContent } = await import('@/lib/translate')
+                        const tx = await translateContent({ title: welcomeTitle, message: welcomeMsg }, 'all').catch(() => null)
+                        if (tx?.[locale]) {
+                            welcomeTitle = tx[locale].title || welcomeTitle
+                            welcomeMsg   = tx[locale].message || welcomeMsg
+                        }
+                    }
                     await db.userNotification.create({
                         data: {
                             userId: newUserId,
                             type: 'system',
-                            title: `Welcome to AIM Studio, ${newUserName}! 🎬`,
-                            message: 'You\'re now part of our AI-powered filmmaking community. Explore casting calls, track your applications, and more.',
+                            title: welcomeTitle,
+                            message: welcomeMsg,
                             link: '/casting',
                         },
                     }).catch(() => {})
