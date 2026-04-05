@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import SubscribeForm from './SubscribeForm'
 import { useTranslations } from 'next-intl'
 
@@ -63,10 +63,10 @@ export default function Footer() {
                         <div className="footer-col">
                             <h4>{t('explore')}</h4>
                             <ul>
-                                <li><Link href="/works" prefetch={false}>{t('ourWorks')}</Link></li>
-                                <li><Link href="/upcoming" prefetch={false}>{t('comingSoon')}</Link></li>
-                                <li><Link href="/casting" prefetch={false}>{t('castingCalls')}</Link></li>
-                                <li><Link href="/about" prefetch={false}>{t('about')}</Link></li>
+                                <li><Link href="/works" prefetch={false}>{t('ourWorks') || 'Our Works'}</Link></li>
+                                <li><Link href="/upcoming" prefetch={false}>{t('comingSoon') || 'Coming Soon'}</Link></li>
+                                <li><Link href="/casting" prefetch={false}>{t('castingCalls') || 'Casting Calls'}</Link></li>
+                                <li><Link href="/about" prefetch={false}>{t('about') || 'About Studio'}</Link></li>
                             </ul>
                         </div>
 
@@ -74,8 +74,8 @@ export default function Footer() {
                         <div className="footer-col">
                             <h4>{t('support')}</h4>
                             <ul>
-                                <li><Link href="/donate" prefetch={false}>{t('donateLink')}</Link></li>
-                                <li><Link href="/contact" prefetch={false}>{t('contact')}</Link></li>
+                                <li><Link href="/donate" prefetch={false}>{t('donateLink') || 'Donate'}</Link></li>
+                                <li><Link href="/contact" prefetch={false}>{t('contact') || 'Contact'}</Link></li>
                             </ul>
                         </div>
                     </div>

@@ -145,7 +145,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
             <div style={{
                 position: 'fixed',
                 top: 0, left: 0,
-                width: '100%', height: '100vh',
+                width: '100%', height: '100dvh',
                 zIndex: 0,
                 background: '#0d0f14',
             }}>
@@ -196,7 +196,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
             <div style={{
                 position: 'fixed',
                 top: 0, left: 0,
-                width: '100%', height: '100vh',
+                width: '100%', height: '100dvh',
                 zIndex: 0,
                 background: 'linear-gradient(180deg, rgba(13,15,20,0.25) 0%, rgba(13,15,20,0.1) 25%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.5) 75%, rgba(13,15,20,0.8) 100%)',
                 pointerEvents: 'none',
@@ -205,7 +205,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
             {/* ═══ HERO CONTENT — scrolls away as user scrolls ═══ */}
             <section style={{
                 position: 'relative',
-                height: '100vh',
+                height: '100dvh',
                 overflow: 'hidden',
                 zIndex: 1,
             }}>
