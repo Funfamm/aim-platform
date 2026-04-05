@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 import { randomUUID } from 'crypto'
-import { checkMagicBytes, guardPathTraversal } from '@/lib/upload-safety'
+import { checkMagicBytes } from '@/lib/upload-safety'
 import { logUploadEvent } from '@/lib/upload-audit'
+import { uploadBufferToR2 } from '@/lib/r2Upload'
 
 // Route segment config (App Router)
 export const runtime = 'nodejs'
@@ -30,7 +29,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 })
         }
 
-        const ext = path.extname(file.name).toLowerCase() || '.png'
+        const fileName = file.name
+        const extMatch = fileName.match(/\.[0-9a-z]+$/i)
+        const ext = extMatch ? extMatch[0].toLowerCase() : '.png'
+        
         const isImage = IMAGE_EXTS.includes(ext)
         const isVideo = VIDEO_EXTS.includes(ext)
         const isDoc = DOC_EXTS.includes(ext)
@@ -117,33 +119,25 @@ export async function POST(req: NextRequest) {
 
         // Organize uploads by type
         const subDir = isVideo ? 'videos' : isDoc ? 'documents' : 'images'
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', subDir, category)
-        await mkdir(uploadDir, { recursive: true })
 
         // Clean filename: timestamp + sanitized name
         const safeName = file.name
             .replace(/[^a-zA-Z0-9._-]/g, '-')
             .replace(/-+/g, '-')
             .toLowerCase()
-        const fileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${safeName}`
-        const filePath = path.join(uploadDir, fileName)
+        
+        const generatedFileName = `${Date.now()}-${randomUUID().slice(0, 8)}-${safeName}`
+        const r2Key = `uploads/${subDir}/${category}/${generatedFileName}`
 
-        // ═══ PATH TRAVERSAL GUARD ═══
-        let resolvedPath: string
+        // ═══ CLOUDFLARE R2 UPLOAD ═══
+        let url: string
         try {
-            resolvedPath = guardPathTraversal(filePath, uploadDir)
-        } catch {
-            logUploadEvent({
-                action: 'upload_rejected', route: '/api/admin/upload',
-                fileName: file.name, mimeType: file.type, fileSize: file.size,
-                reason: 'Path traversal attempt', code: 'PATH_TRAVERSAL',
-            })
-            return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+            url = await uploadBufferToR2(buffer, r2Key, file.type || 'application/octet-stream')
+        } catch (err) {
+            console.error('[uploadBufferToR2 Admin Error]', err)
+            return NextResponse.json({ error: 'Failed to securely store file' }, { status: 500 })
         }
 
-        await writeFile(resolvedPath, buffer)
-
-        const url = `/uploads/${subDir}/${category}/${fileName}`
         const fileType = isVideo ? 'video' : isDoc ? 'document' : 'image'
 
         logUploadEvent({
@@ -153,7 +147,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({
             url,
-            fileName,
+            fileName: generatedFileName,
             type: fileType,
             size: file.size,
             originalName: file.name,

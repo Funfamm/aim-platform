@@ -50,7 +50,8 @@ export async function getSignedVideoUrl(key: string, ttl = SIGNED_URL_TTL): Prom
   // Fast path: if public URL is configured, just return a direct link
   if (R2_PUBLIC_URL) {
     const base = R2_PUBLIC_URL.replace(/\/$/, '');
-    return `${base}/${encodeURIComponent(key)}`;
+    const encodedPath = key.split('/').map(encodeURIComponent).join('/');
+    return `${base}/${encodedPath}`;
   }
 
   if (!R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {

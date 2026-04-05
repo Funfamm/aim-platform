@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 import { uploadLimiter } from '@/lib/rate-limit'
-import { sanitizeFilename, validateFileType, validateFileSize, checkMagicBytes, guardPathTraversal, IMAGE_TYPES, MAX_IMAGE_SIZE } from '@/lib/upload-safety'
+import { uploadBufferToR2 } from '@/lib/r2Upload'
+import { sanitizeFilename, validateFileType, validateFileSize, checkMagicBytes, IMAGE_TYPES, MAX_IMAGE_SIZE } from '@/lib/upload-safety'
 import { logUploadEvent } from '@/lib/upload-audit'
 
 export async function POST(request: NextRequest) {
@@ -41,25 +40,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: sizeCheck.error }, { status: 400 })
         }
 
-        // Save with sanitized filename
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'banners')
-        await mkdir(uploadDir, { recursive: true })
-
         const safeFilename = sanitizeFilename(file.name)
-        const filePath = path.join(uploadDir, safeFilename)
-
-        // ═══ PATH TRAVERSAL GUARD ═══
-        let resolvedPath: string
-        try {
-            resolvedPath = guardPathTraversal(filePath, uploadDir)
-        } catch {
-            logUploadEvent({
-                action: 'upload_rejected', route: '/api/auth/banner',
-                userId: session.userId as string, fileName: file.name, mimeType: file.type, fileSize: file.size,
-                reason: 'Path traversal attempt', code: 'PATH_TRAVERSAL',
-            })
-            return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
-        }
+        const r2Key = `banners/${session.userId}_${Date.now()}_${safeFilename}`
 
         const buffer = Buffer.from(await file.arrayBuffer())
 
@@ -76,14 +58,18 @@ export async function POST(request: NextRequest) {
             }, { status: 400 })
         }
 
-        await writeFile(resolvedPath, buffer)
+        let bannerUrl: string
+        try {
+            bannerUrl = await uploadBufferToR2(buffer, r2Key, file.type)
+        } catch (err) {
+            console.error('[uploadBufferToR2 Banner Error]', err)
+            return NextResponse.json({ error: 'Failed to securely store banner image' }, { status: 500 })
+        }
 
         logUploadEvent({
             action: 'upload_accepted', route: '/api/auth/banner',
             userId: session.userId as string, fileName: file.name, mimeType: file.type, fileSize: file.size,
         })
-
-        const bannerUrl = `/uploads/banners/${safeFilename}`
 
         await prisma.user.update({
             where: { id: session.userId as string },

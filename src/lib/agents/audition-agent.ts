@@ -5,6 +5,7 @@ import path from 'path'
 import { PUBLIC_BASE_URL, ENABLE_HTTP_FALLBACK } from '@/lib/config'
 import { fetchWithTimeout } from '@/lib/http-utils'
 import { getAvailableGeminiKey } from './gemini-key'
+import { resolveVideoUrl } from '@/lib/videoStorage'
 
 interface AuditInput {
     applicant: {
@@ -508,17 +509,19 @@ async function loadPhotosAsBase64(photoUrls: string[], warnings: string[]): Prom
     for (const url of photoUrls.slice(0, 4)) {
         try {
             let buffer: Buffer
-            if (url.startsWith('http')) {
-                const res = await fetchWithTimeout(url)
+            const resolvedUrl = await resolveVideoUrl(url)
+            
+            if (resolvedUrl.startsWith('http')) {
+                const res = await fetchWithTimeout(resolvedUrl)
                 if (!res.ok) throw new Error('Failed to fetch remote photo')
                 buffer = Buffer.from(await res.arrayBuffer())
             } else {
-                const filePath = path.join(process.cwd(), 'public', url)
+                const filePath = path.join(process.cwd(), 'public', resolvedUrl)
                 try {
                     buffer = await readFile(filePath)
                 } catch (err) {
                     if (!ENABLE_HTTP_FALLBACK) throw err
-                    const fullUrl = PUBLIC_BASE_URL + (url.startsWith('/') ? '' : '/') + url
+                    const fullUrl = PUBLIC_BASE_URL + (resolvedUrl.startsWith('/') ? '' : '/') + resolvedUrl
                     const res = await fetchWithTimeout(fullUrl)
                     if (!res.ok) throw err
                     buffer = Buffer.from(await res.arrayBuffer())
@@ -551,23 +554,24 @@ async function loadAudioAsBase64(voiceUrl: string, warnings: string[]): Promise<
         let buffer: Buffer
         let fileStat: { size: number } | null = null
         let mimeType = 'audio/webm'
+        const resolvedUrl = await resolveVideoUrl(voiceUrl)
 
-        if (voiceUrl.startsWith('http')) {
-            const res = await fetchWithTimeout(voiceUrl)
+        if (resolvedUrl.startsWith('http')) {
+            const res = await fetchWithTimeout(resolvedUrl)
             if (!res.ok) throw new Error('Failed to fetch audio url')
             const arrayBuffer = await res.arrayBuffer()
             buffer = Buffer.from(arrayBuffer)
             fileStat = { size: buffer.length }
             mimeType = res.headers.get('content-type') || 'audio/webm'
         } else {
-            const filePath = path.join(process.cwd(), 'public', voiceUrl)
+            const filePath = path.join(process.cwd(), 'public', resolvedUrl)
             try {
                 fileStat = await stat(filePath)
                 if (fileStat.size < 1024) throw new Error(`Audio file too small (${fileStat.size} bytes)`)
                 buffer = await readFile(filePath)
             } catch (err) {
                 if (!ENABLE_HTTP_FALLBACK) throw err
-                const fullUrl = PUBLIC_BASE_URL + (voiceUrl.startsWith('/') ? '' : '/') + voiceUrl
+                const fullUrl = PUBLIC_BASE_URL + (resolvedUrl.startsWith('/') ? '' : '/') + resolvedUrl
                 const res = await fetchWithTimeout(fullUrl)
                 if (!res.ok) throw err
                 const arrayBuffer = await res.arrayBuffer()

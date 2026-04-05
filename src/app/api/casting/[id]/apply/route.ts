@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
 import { sendEmail } from '@/lib/mailer'
 import { applicationConfirmationWithOverrides, applicationAdminNotification } from '@/lib/email-templates'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { uploadLimiter } from '@/lib/rate-limit'
-import { checkMagicBytes, guardPathTraversal } from '@/lib/upload-safety'
+import { checkMagicBytes } from '@/lib/upload-safety'
 import { logUploadEvent } from '@/lib/upload-audit'
+import { uploadBufferToR2 } from '@/lib/r2Upload'
 
 // ═══ FILE UPLOAD SECURITY ═══
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
@@ -129,11 +128,10 @@ export async function POST(
             }, { status: 429 })
         }
 
-        // Create upload directory for this application
+        // Cloudflare R2 Prefixing Logic (Unique directory for this application)
         const timestamp = Date.now()
         const safeName = fullName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads', `${safeName}_${timestamp}`)
-        await mkdir(uploadDir, { recursive: true })
+        const r2Prefix = `uploads/${safeName}_${timestamp}`
 
         // Save photos
         const photoPaths: string[] = []
@@ -165,7 +163,7 @@ export async function POST(
                 }
 
                 const fileName = `${key}${ext}`
-                const filePath = path.join(uploadDir, fileName)
+                const r2Key = `${r2Prefix}/${fileName}`
                 const buffer = Buffer.from(await file.arrayBuffer())
 
                 // ═══ MAGIC-BYTE CHECK ═══
@@ -183,27 +181,21 @@ export async function POST(
                     }
                 }
 
-                // ═══ PATH TRAVERSAL GUARD ═══
-                let resolvedPath: string
+                // ═══ CLOUDFLARE R2 UPLOAD ═══
+                let r2Url: string
                 try {
-                    resolvedPath = guardPathTraversal(filePath, uploadDir)
-                } catch {
-                    logUploadEvent({
-                        action: 'upload_rejected', route: '/api/casting/apply',
-                        userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
-                        reason: 'Path traversal attempt', code: 'PATH_TRAVERSAL',
-                    })
-                    return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+                    r2Url = await uploadBufferToR2(buffer, r2Key, file.type)
+                } catch (err) {
+                    console.error('[uploadBufferToR2 Error]', err)
+                    return NextResponse.json({ error: 'Failed to securely store uploaded image. Please try again later.' }, { status: 500 })
                 }
-
-                await writeFile(resolvedPath, buffer)
 
                 logUploadEvent({
                     action: 'upload_accepted', route: '/api/casting/apply',
                     userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
                 })
 
-                photoPaths.push(`/uploads/${safeName}_${timestamp}/${fileName}`)
+                photoPaths.push(r2Url)
             }
         }
 
@@ -236,7 +228,7 @@ export async function POST(
             }
 
             const fileName = `voice_recording${vExt}`
-            const filePath = path.join(uploadDir, fileName)
+            const r2Key = `${r2Prefix}/${fileName}`
             const buffer = Buffer.from(await voiceFile.arrayBuffer())
 
             // Magic-byte check — skip for WebM since browser-recorded blobs don't have standard magic bytes
@@ -255,27 +247,18 @@ export async function POST(
                 }
             }
 
-            // ═══ PATH TRAVERSAL GUARD ═══
-            let resolvedPath: string
+            // ═══ CLOUDFLARE R2 UPLOAD ═══
             try {
-                resolvedPath = guardPathTraversal(filePath, uploadDir)
-            } catch {
-                logUploadEvent({
-                    action: 'upload_rejected', route: '/api/casting/apply',
-                    userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
-                    reason: 'Path traversal attempt', code: 'PATH_TRAVERSAL',
-                })
-                return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+                voicePath = await uploadBufferToR2(buffer, r2Key, baseMime)
+            } catch (err) {
+                console.error('[uploadBufferToR2 Voice Error]', err)
+                return NextResponse.json({ error: 'Failed to securely store uploaded audio. Please try again later.' }, { status: 500 })
             }
-
-            await writeFile(resolvedPath, buffer)
 
             logUploadEvent({
                 action: 'upload_accepted', route: '/api/casting/apply',
                 userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
             })
-
-            voicePath = `/uploads/${safeName}_${timestamp}/${fileName}`
         }
         // ═══ MAX APPLICATION CHECK — prevent overflow ═══
         const currentCount = await prisma.application.count({ where: { castingCallId: id } })

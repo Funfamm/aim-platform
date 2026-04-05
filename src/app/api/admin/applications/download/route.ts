@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import archiver from 'archiver'
-import { createReadStream, existsSync } from 'fs'
 import path from 'path'
 import { PassThrough } from 'stream'
+import { resolveVideoUrl } from '@/lib/videoStorage'
+import { fetchWithTimeout } from '@/lib/http-utils'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -30,19 +31,18 @@ export async function POST(req: Request) {
         }
 
         // Buffer the ZIP in memory
-        const zipBuffer = await new Promise<Buffer>((resolve, reject) => {
-            const archive = archiver('zip', { zlib: { level: 5 } })
-            const chunks: Buffer[] = []
-            const passThrough = new PassThrough()
+        const zipBuffer = await new Promise<Buffer>(async (resolve, reject) => {
+            try {
+                const archive = archiver('zip', { zlib: { level: 5 } })
+                const chunks: Buffer[] = []
+                const passThrough = new PassThrough()
 
-            passThrough.on('data', (chunk: Buffer) => chunks.push(chunk))
-            passThrough.on('end', () => resolve(Buffer.concat(chunks)))
-            passThrough.on('error', reject)
-            archive.on('error', reject)
+                passThrough.on('data', (chunk: Buffer) => chunks.push(chunk))
+                passThrough.on('end', () => resolve(Buffer.concat(chunks)))
+                passThrough.on('error', reject)
+                archive.on('error', reject)
 
-            archive.pipe(passThrough)
-
-            const uploadsDir = path.join(process.cwd(), 'public')
+                archive.pipe(passThrough)
 
             for (const app of applications) {
                 const safeName = app.fullName.replace(/[^a-zA-Z0-9\s-]/g, '').trim()
@@ -78,32 +78,48 @@ export async function POST(req: Request) {
                     try {
                         const photoPaths: string[] = JSON.parse(app.headshotPath)
                         for (const photoPath of photoPaths) {
-                            // Strip leading slash — path.join treats absolute-looking paths as root on POSIX
-                            const normalizedPath = photoPath.replace(/^\/+/, '')
-                            const fullPath = path.join(uploadsDir, normalizedPath)
-                            if (existsSync(fullPath)) {
-                                archive.append(createReadStream(fullPath), { name: `${folderName}/photos/${path.basename(fullPath)}` })
-                            } else {
-                                console.warn(`[download] Photo not found: ${fullPath}`)
+                            const url = await resolveVideoUrl(photoPath)
+                            if (url) {
+                                try {
+                                    const res = await fetchWithTimeout(url.startsWith('http') ? url : `http://localhost:${process.env.PORT || 3000}${url}`)
+                                    if (res.ok) {
+                                        const buffer = Buffer.from(await res.arrayBuffer())
+                                        archive.append(buffer, { name: `${folderName}/photos/${path.basename(photoPath)}` })
+                                    }
+                                } catch (e) {
+                                    console.warn(`[download] Photo fetch failed: ${photoPath}`, e)
+                                }
                             }
                         }
                     } catch {
-                        const normalizedPath = app.headshotPath.replace(/^\/+/, '')
-                        const fullPath = path.join(uploadsDir, normalizedPath)
-                        if (existsSync(fullPath)) {
-                            archive.append(createReadStream(fullPath), { name: `${folderName}/photos/${path.basename(fullPath)}` })
+                        const url = await resolveVideoUrl(app.headshotPath)
+                        if (url) {
+                            try {
+                                const res = await fetchWithTimeout(url.startsWith('http') ? url : `http://localhost:${process.env.PORT || 3000}${url}`)
+                                if (res.ok) {
+                                    const buffer = Buffer.from(await res.arrayBuffer())
+                                    archive.append(buffer, { name: `${folderName}/photos/${path.basename(app.headshotPath)}` })
+                                }
+                            } catch (e) {
+                                console.warn(`[download] Photo fetch failed: ${app.headshotPath}`, e)
+                            }
                         }
                     }
                 }
 
                 // Voice recording
                 if (app.selfTapePath) {
-                    const normalizedPath = app.selfTapePath.replace(/^\/+/, '')
-                    const voicePath = path.join(uploadsDir, normalizedPath)
-                    if (existsSync(voicePath)) {
-                        archive.append(createReadStream(voicePath), { name: `${folderName}/voice/${path.basename(voicePath)}` })
-                    } else {
-                        console.warn(`[download] Voice not found: ${voicePath}`)
+                    const url = await resolveVideoUrl(app.selfTapePath)
+                    if (url) {
+                        try {
+                            const res = await fetchWithTimeout(url.startsWith('http') ? url : `http://localhost:${process.env.PORT || 3000}${url}`)
+                            if (res.ok) {
+                                const buffer = Buffer.from(await res.arrayBuffer())
+                                archive.append(buffer, { name: `${folderName}/voice/${path.basename(app.selfTapePath)}` })
+                            }
+                        } catch (e) {
+                            console.warn(`[download] Voice fetch failed: ${app.selfTapePath}`, e)
+                        }
                     }
                 }
 
@@ -122,6 +138,9 @@ export async function POST(req: Request) {
             }
 
             archive.finalize()
+            } catch (err) {
+                reject(err)
+            }
         })
 
         const timestamp = new Date().toISOString().slice(0, 10)
