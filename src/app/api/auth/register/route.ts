@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     if (blocked) return blocked
 
     try {
-        const { name, email, password } = await request.json()
+        const { name, email, password, locale } = await request.json()
 
         if (!name || !email || !password) {
             return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
                 email,
                 passwordHash,
                 role: 'member',
+                ...(locale && locale !== 'en' ? { preferredLanguage: locale } : {}),
             },
         }), 'register_create_user')
 

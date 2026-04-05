@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { sendEmail } from '@/lib/mailer'
-import { welcomeEmail, verificationEmail } from '@/lib/email-templates'
+import { verificationEmail, welcomeEmailWithOverrides } from '@/lib/email-templates'
 
 // POST /api/auth/verify-email  { email, code }
 export async function POST(request: Request) {
@@ -13,7 +13,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Email and code are required' }, { status: 400 })
         }
 
-        const user = await prisma.user.findUnique({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const user = await (prisma as any).user.findUnique({
             where: { email },
             select: {
                 id: true,
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
                 emailVerified: true,
                 verificationCode: true,
                 verificationExpiry: true,
+                preferredLanguage: true,
             },
         })
 
@@ -63,12 +65,16 @@ export async function POST(request: Request) {
         const refresh = await createRefreshToken(tokenPayload)
         await setUserCookie(token, refresh)
 
-        // Send a welcome email (fire-and-forget)
-        sendEmail({
-            to: user.email,
-            subject: 'Welcome to AIM Studio! 🎬',
-            html: welcomeEmail(user.name, process.env.NEXT_PUBLIC_SITE_URL),
-        }).catch(() => { /* never block the login response */ })
+        // Send a welcome email in the user's preferred language (fire-and-forget)
+        const locale = (user as any).preferredLanguage || 'en'
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+        welcomeEmailWithOverrides(user.name, siteUrl, locale)
+            .then(html => sendEmail({
+                to: user.email,
+                subject: 'Welcome to AIM Studio! 🎬',
+                html,
+            }))
+            .catch(() => { /* never block the login response */ })
 
         return NextResponse.json({ success: true })
     } catch (error) {
