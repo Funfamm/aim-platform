@@ -36,6 +36,7 @@ export default function DonatePage() {
     const [donationsEnabled, setDonationsEnabled] = useState(true)
     const [minAmount, setMinAmount] = useState(1)
     const [settingsLoaded, setSettingsLoaded] = useState(false)
+    const [checkingAuth, setCheckingAuth] = useState(false)
 
     const finalAmount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0)
 
@@ -92,9 +93,16 @@ export default function DonatePage() {
                 if (typeof data.donationMinAmount === 'number' && data.donationMinAmount > 0) setMinAmount(data.donationMinAmount)
                 if (!data.donationsEnabled) setStatus('disabled')
                 if (data.requireLoginForDonate) {
+                    setCheckingAuth(true)
                     fetch('/api/auth/session').then(r => r.json()).then(session => {
-                        if (!session?.user) window.location.href = `/${locale}/login`
-                    }).catch(() => { window.location.href = `/${locale}/login` })
+                        if (!session?.user) {
+                            window.location.href = `/${locale}/login?redirect=/${locale}/donate`
+                        } else {
+                            setCheckingAuth(false)
+                        }
+                    }).catch(() => {
+                        window.location.href = `/${locale}/login?redirect=/${locale}/donate`
+                    })
                 }
             })
             .catch(() => { /* defaults */ })
@@ -237,6 +245,16 @@ export default function DonatePage() {
         Math.max(minAmount, 250),
         Math.max(minAmount, 500),
     ].filter((v, i, a) => a.indexOf(v) === i)
+
+    // While checking login requirement — show nothing to avoid flash of content before redirect
+    if (checkingAuth) {
+        return (
+            <main style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: '3px solid rgba(212,168,83,0.2)', borderTopColor: 'var(--accent-gold)', animation: 'spin 0.8s linear infinite' }} />
+                <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </main>
+        )
+    }
 
     return (
         <>
