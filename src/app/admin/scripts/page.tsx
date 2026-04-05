@@ -95,6 +95,7 @@ export default function AdminScriptsPage() {
     const filtered = filter === 'all' ? calls : calls.filter(c => c.status === filter)
     const totalSubs = calls.reduce((s, c) => s + c._count.submissions, 0)
     const openCount = calls.filter(c => c.status === 'open').length
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now()
 
     const inp: React.CSSProperties = {

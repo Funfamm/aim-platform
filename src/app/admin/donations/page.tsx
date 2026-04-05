@@ -31,6 +31,7 @@ export default function AdminDonationsPage() {
         setLoading(false)
     }, [search, status, sort])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchDonations(1) }, [fetchDonations])
 
     const handleSearch = (val: string) => {

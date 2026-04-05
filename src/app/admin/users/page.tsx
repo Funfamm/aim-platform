@@ -38,6 +38,7 @@ export default function AdminUsersPage() {
         setLoading(false)
     }, [search, role, language, sort])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchUsers(1) }, [fetchUsers])
 
     const handleSearch = (val: string) => {

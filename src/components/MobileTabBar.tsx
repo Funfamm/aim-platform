@@ -192,6 +192,7 @@ export default function MobileTabBar() {
     /* ── Fetch suggestions ── */
     useEffect(() => {
         if (debouncedQuery.length < 2) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setResults([])
             setLoading(false)
             return

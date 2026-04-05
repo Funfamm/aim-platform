@@ -40,6 +40,7 @@ export default function DonatePage() {
 
     const finalAmount = selectedAmount || (customAmount ? parseFloat(customAmount) : 0)
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setMounted(true) }, [])
 
     // Load PayPal JS SDK
@@ -50,6 +51,7 @@ export default function DonatePage() {
             : process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
             
         if (!clientId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setErrorMsg('PayPal configuration is missing (Client ID not found). Ensure NEXT_PUBLIC_PAYPAL_CLIENT_ID is set in your environment.')
             setStatus('error')
             setShowPaypal(false)
@@ -107,7 +109,8 @@ export default function DonatePage() {
             })
             .catch(() => { /* defaults */ })
             .finally(() => setSettingsLoaded(true))
-    }, [])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [locale])
 
     // Fetch background images
     useEffect(() => {

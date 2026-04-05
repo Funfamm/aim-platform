@@ -92,7 +92,9 @@ export default function AdminMediaPage() {
         setHeroVideos(data)
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchMedia() }, [fetchMedia])
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchHeroVideos() }, [])
 
     // ─── Page Media handlers ───

@@ -24,6 +24,7 @@ export default function AdminSidebar() {
     const [open, setOpen] = useState(false)
 
     // Close nav when route changes (user tapped a link on mobile)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setOpen(false) }, [pathname])
 
     // Close on outside click

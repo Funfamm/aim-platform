@@ -174,6 +174,7 @@ export default function AdminSponsorsPage() {
         : sponsors.filter(s => s.tier === filter)
 
     const isExpired = (s: Sponsor) => s.endDate && new Date(s.endDate) < new Date()
+    // eslint-disable-next-line react-hooks/purity
     const now = Date.now()
     const daysLeft = (s: Sponsor) => {
         if (!s.endDate) return null

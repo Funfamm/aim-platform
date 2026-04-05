@@ -73,6 +73,7 @@ export default function Navbar() {
     useEffect(() => {
         if (currentLocale !== 'en') {
             const saved = localStorage.getItem('aim_locale_chosen')
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             if (!saved) setShowEnglishBanner(true)
         }
     }, [currentLocale])

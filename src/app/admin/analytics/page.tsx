@@ -10,6 +10,7 @@ import { Sparkline, VitalityRing, DonutChart, AreaChart, HourlyHeatmap, TrendArr
 function useAnimatedCounter(target: number, duration = 1200) {
     const [count, setCount] = useState(0)
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (target === 0) { setCount(0); return }
         let start = 0
         const startTime = performance.now()

@@ -75,6 +75,7 @@ export default function AdminTrainingPage() {
             .finally(() => setLoading(false))
     }, [])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { loadCourses() }, [loadCourses])
 
     const handleDelete = async (id: string) => {
