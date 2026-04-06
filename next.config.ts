@@ -35,25 +35,32 @@ const nextConfig: NextConfig = {
   // for the 250MB serverless function size limit.
   outputFileTracingExcludes: {
     '*': [
-      // Massive ML framework with ONNX binaries (~300MB)
-      'node_modules/@huggingface/transformers/**',
+      // #1 OFFENDER: ONNX Runtime native binaries (404 MB in build log!)
       'node_modules/onnxruntime-node/**',
       'node_modules/onnxruntime-web/**',
-      // FFmpeg WASM binaries (~50MB)
+      // ML framework — references onnxruntime, must be excluded too (~3MB JS)
+      'node_modules/@huggingface/transformers/**',
+      // Sharp native image processing binaries (32 MB in build log)
+      'node_modules/@img/**',
+      'node_modules/sharp/**',
+      // FFmpeg WASM binaries
       'node_modules/@ffmpeg/ffmpeg/**',
       'node_modules/@ffmpeg/util/**',
       'node_modules/@ffmpeg/core/**',
-      // Playwright (only needed for E2E tests, not runtime)
+      // Playwright (E2E tests only, not needed at runtime)
       'node_modules/@playwright/**',
       'node_modules/playwright/**',
       'node_modules/playwright-core/**',
       // Dev/test tools
       'node_modules/vitest/**',
       'node_modules/@vitest/**',
-      // Prisma local binary engines (keep only linux-openssl for Vercel)
+      // Prisma: strip wrong-OS binary engines (keep only rhel-openssl for Vercel)
       'node_modules/.prisma/client/libquery_engine-darwin*',
       'node_modules/.prisma/client/libquery_engine-windows*',
       'node_modules/.prisma/client/query_engine-windows*',
+      'node_modules/@prisma/engines/libquery_engine-darwin*',
+      'node_modules/@prisma/engines/libquery_engine-windows*',
+      'node_modules/@prisma/engines/query_engine-windows*',
     ],
   },
 
