@@ -38,7 +38,8 @@ export default function Navbar() {
     const router = useRouter()
     const { user, loading, logout } = useAuth()
     const t = useTranslations('nav')
-
+    // Namespaced hook for the language banner — prevents raw-key fallback on non-English locales
+    const tLang = useTranslations('langBanner')
 
 
     useEffect(() => {
@@ -66,9 +67,8 @@ export default function Navbar() {
         ...(sections.donations ? [{ href: '/donate', label: t('donate') }] : []),
     ]
 
-    // Get current locale from next-intl
-    const currentLocale = useLocale()
-
+    // Get current locale from next-intl (already declared as `locale` above — reuse it)
+    const currentLocale = locale
     // Show "Continue in English?" banner if user was auto-detected to a non-English locale
     // and hasn't manually chosen yet (no explicit localStorage choice)
     const [showEnglishBanner, setShowEnglishBanner] = useState(false)
@@ -110,7 +110,7 @@ export default function Navbar() {
                     gap: '12px', padding: '8px 16px', fontSize: '0.8rem',
                     color: 'var(--text-secondary)',
                 }}>
-                    <span>🌐 {tB('langBanner.message')}</span>
+                    <span>🌐 {tLang('message')}</span>
                     <button
                         onClick={() => switchLocale('en')}
                         style={{
@@ -120,7 +120,7 @@ export default function Navbar() {
                             cursor: 'pointer', whiteSpace: 'nowrap',
                         }}
                     >
-                        {tB('langBanner.continueInEnglish')}
+                        {tLang('continueInEnglish')}
                     </button>
                     <button
                         onClick={() => { localStorage.setItem('aim_locale_chosen', currentLocale); setShowEnglishBanner(false) }}

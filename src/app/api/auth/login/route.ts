@@ -22,9 +22,21 @@ export async function POST(request: Request) {
 
         const normalizedEmail = email.toLowerCase().trim()
 
-        const user = await withDbRetry(() => prisma.user.findUnique({
+        // Single query — include all fields we need so there's no second as-any query
+        const user = await withDbRetry(() => (prisma as any).user.findUnique({
             where: { email: normalizedEmail },
-        }), 'login_find_user')
+            select: {
+                id: true, name: true, email: true, role: true,
+                passwordHash: true, avatar: true, bannerUrl: true,
+                emailVerified: true, tokenVersion: true, mfaEnabled: true,
+                preferredLanguage: true,
+            },
+        }), 'login_find_user') as {
+            id: string; name: string; email: string; role: string;
+            passwordHash: string | null; avatar: string | null; bannerUrl: string | null;
+            emailVerified: boolean; tokenVersion: number; mfaEnabled: boolean;
+            preferredLanguage: string | null;
+        } | null
         if (!user || !user.passwordHash) {
             recordAuthFailure('invalid_credentials')
             return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
@@ -36,15 +48,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
         }
 
-        // Block login if email not yet verified
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userDetail = await withDbRetry(() => (prisma as any).user.findUnique({
-            where: { id: user.id },
-            select: { emailVerified: true, tokenVersion: true, mfaEnabled: true },
-        }), 'login_get_user_detail') as { emailVerified: boolean; tokenVersion: number; mfaEnabled: boolean } | null
-        const isVerified = userDetail?.emailVerified === true
-        const tokenVersion = userDetail?.tokenVersion ?? 0
-        const mfaEnabled = userDetail?.mfaEnabled === true
+        // All fields already included in the initial query — no second round-trip needed
+        const isVerified = user.emailVerified === true
+        const tokenVersion = user.tokenVersion ?? 0
+        const mfaEnabled = user.mfaEnabled === true
 
         if (!isVerified) {
             recordAuthFailure('unverified')
@@ -99,7 +106,7 @@ export async function POST(request: Request) {
             },
             redirectTo,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            preferredLanguage: (user as any).preferredLanguage ?? 'en',
+            preferredLanguage: user.preferredLanguage ?? 'en',
         })
     } catch (error) {
         logger.error('auth/login', 'Login failed', { error })

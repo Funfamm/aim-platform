@@ -52,29 +52,23 @@ export async function POST(request: Request) {
 
         // Generate 6-digit OTP
         const code = Math.floor(100000 + Math.random() * 900000).toString()
-        const expiry = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+        const expiry = new Date(Date.now() + 15 * 60 * 1000)
 
-        // Create user with core fields (avoids stale type-cache issues with new columns)
+        // Single atomic create — all fields in one query so a stale Prisma client
+        // can never leave a half-created user or fail on a second as-any update.
         const passwordHash = await hash(password, 12)
-        const newUser = await withDbRetry(() => prisma.user.create({
+        await withDbRetry(() => (prisma as any).user.create({
             data: {
                 name,
                 email,
                 passwordHash,
                 role: 'member',
+                emailVerified: false,
+                verificationCode: code,
+                verificationExpiry: expiry,
                 ...(locale && locale !== 'en' ? { preferredLanguage: locale } : {}),
             },
         }), 'register_create_user')
-
-        // Set verification fields via Prisma update
-        await withDbRetry(() => prisma.user.update({
-            where: { id: newUser.id },
-            data: {
-                emailVerified: false,
-                verificationCode: code,
-                verificationExpiry: new Date(expiry),
-            } as any,
-        }), 'register_set_verification')
 
         // Send verification email in the user's locale (fire-and-forget)
         void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html =>

@@ -98,42 +98,63 @@ export async function GET(req: Request) {
         const googleUser = await userRes.json() as GoogleUserInfo
 
         // Find or create user by Google ID or matching email
-        let user = await prisma.user.findFirst({
+        // Request all fields we need (tokenVersion, preferredLanguage) in one query
+        // so we never need a second as-any round-trip that fails on stale Prisma clients.
+        let user = await (prisma as any).user.findFirst({
             where: {
                 OR: [
                     { googleId: googleUser.sub },
                     { email: googleUser.email },
                 ],
             },
-        })
+            select: {
+                id: true, name: true, email: true, role: true,
+                googleId: true, avatar: true,
+                tokenVersion: true, preferredLanguage: true,
+            },
+        }) as {
+            id: string; name: string; email: string; role: string;
+            googleId: string | null; avatar: string | null;
+            tokenVersion: number; preferredLanguage: string | null;
+        } | null
 
         if (user) {
             // Ensure Google ID is linked if user registered with email first
             if (!user.googleId) {
-                user = await prisma.user.update({
+                user = await (prisma as any).user.update({
                     where: { id: user.id },
                     data: {
                         googleId: googleUser.sub,
                         avatar: user.avatar || googleUser.picture,
                     },
+                    select: {
+                        id: true, name: true, email: true, role: true,
+                        googleId: true, avatar: true,
+                        tokenVersion: true, preferredLanguage: true,
+                    },
                 })
             }
         } else {
-            // New user — register via Google
-            user = await prisma.user.create({
+            // New user — register via Google (include tokenVersion; preferredLanguage to get all fields back)
+            user = await (prisma as any).user.create({
                 data: {
                     name: googleUser.name,
                     email: googleUser.email,
                     googleId: googleUser.sub,
                     avatar: googleUser.picture,
                     role: 'member',
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    ...(detectedLocale !== 'en' ? { preferredLanguage: detectedLocale } as any : {}),
+                    tokenVersion: 0,
+                    ...(detectedLocale !== 'en' ? { preferredLanguage: detectedLocale } : {}),
+                },
+                select: {
+                    id: true, name: true, email: true, role: true,
+                    googleId: true, avatar: true,
+                    tokenVersion: true, preferredLanguage: true,
                 },
             })
 
             // Fire welcome email + in-app notification (fire-and-forget, never blocks login)
-            const newUserId = user.id
+            const newUserId = user!.id
             const newUserName = googleUser.name
             const newUserEmail = googleUser.email
             void (async () => {
@@ -184,19 +205,17 @@ export async function GET(req: Request) {
         }
 
 
+        // Null-guard: user must be defined at this point (created or found above)
+        if (!user) return r('/login?error=oauth_failed')
+
         // Never allow admins to bypass their password requirement via OAuth
         if (user.role === 'admin' || user.role === 'superadmin') {
             return r('/login?error=admin_oauth_disallowed')
         }
 
-        // Fetch tokenVersion + preferredLanguage via Prisma
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const userWithExtras = await (prisma as any).user.findUnique({
-            where: { id: user.id },
-            select: { tokenVersion: true, preferredLanguage: true },
-        })
-        const tokenVersion = userWithExtras?.tokenVersion ?? 0
-        const preferredLanguage: string = userWithExtras?.preferredLanguage || 'en'
+        // tokenVersion and preferredLanguage already loaded from the single query above.
+        const tokenVersion = user.tokenVersion ?? 0
+        const preferredLanguage: string = user.preferredLanguage || 'en'
 
         const tokenPayload = {
             userId: user.id,
