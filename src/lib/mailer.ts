@@ -149,8 +149,35 @@ async function sendViaSMTP(config: MailConfig, options: EmailOptions): Promise<v
 }
 
 /**
+ * Internal retry helper — 3 attempts with exponential back-off (1 s, 2 s, 4 s).
+ * Throws on exhaustion so callers can log/capture the error.
+ */
+async function sendWithRetry(
+    fn: () => Promise<void>,
+    label: string,
+    maxAttempts = 3,
+): Promise<void> {
+    let lastErr: unknown
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            await fn()
+            return          // success — exit immediately
+        } catch (err) {
+            lastErr = err
+            if (attempt < maxAttempts) {
+                const delay = 1_000 * 2 ** (attempt - 1)  // 1s, 2s, 4s
+                logger.warn('mailer', `Attempt ${attempt}/${maxAttempts} failed for "${label}", retrying in ${delay}ms`, { error: err as Error })
+                await new Promise(r => setTimeout(r, delay))
+            }
+        }
+    }
+    throw lastErr  // all attempts exhausted
+}
+
+/**
  * Send an email via whichever transport the admin has configured.
  * Gracefully no-ops if emails are disabled or not configured.
+ * Retries up to 3 times with exponential back-off before giving up.
  * Errors are logged but never thrown — email sending is fire-and-forget.
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
@@ -168,15 +195,20 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         }
 
         if (config.transport === 'smtp') {
-            await sendViaSMTP(config, finalOptions)
+            await sendWithRetry(() => sendViaSMTP(config, finalOptions), options.subject)
         } else {
-            await sendViaGraph(config, finalOptions)
+            await sendWithRetry(() => sendViaGraph(config, finalOptions), options.subject)
         }
 
         logger.info('mailer', `Email sent to ${options.to}: ${options.subject}`)
         return true
     } catch (err) {
-        logger.error('mailer', `Email to ${options.to} failed: ${options.subject}`, { error: err as Error })
+        logger.error('mailer', `Email to ${options.to} failed after all retries: ${options.subject}`, { error: err as Error })
+        // Surface in Sentry if available
+        try {
+            const { captureException } = await import('@sentry/nextjs')
+            captureException(err, { extra: { to: options.to, subject: options.subject } })
+        } catch { /* Sentry not available */ }
         return false
     }
 }

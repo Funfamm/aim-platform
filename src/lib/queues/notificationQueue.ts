@@ -105,6 +105,23 @@ export const notificationQueue = {
 // ─── Worker ────────────────────────────────────────────────────────────────
 
 let workerStarted = false
+// Shared Redis pub/sub publisher — created once per worker lifetime
+let _publisher: import('redis').RedisClientType | null = null
+
+async function getPubSubClient(): Promise<import('redis').RedisClientType | null> {
+    if (!process.env.REDIS_URL) return null
+    if (_publisher) return _publisher
+    try {
+        const { createClient } = await import('redis')
+        const client = createClient({ url: process.env.REDIS_URL }) as import('redis').RedisClientType
+        await client.connect()
+        _publisher = client
+        return _publisher
+    } catch (err) {
+        logger.warn('notificationQueue', `Pub/Sub client init failed: ${(err as Error).message}`)
+        return null
+    }
+}
 
 export function startNotificationWorker() {
     if (!process.env.REDIS_URL) {
@@ -128,19 +145,17 @@ export function startNotificationWorker() {
             }
 
             // ── Redis Pub/Sub (real-time feed signal) ─────────────────────
-            // Publishes to user-specific channel so poll clients stay fresh.
-            // Using dynamic import so the `redis` package is optional.
+            // Reuses a single shared client instead of creating one per job
             if (userId && process.env.REDIS_URL) {
                 try {
-                    const { createClient } = await import('redis')
-                    const pub = createClient({ url: process.env.REDIS_URL })
-                    await pub.connect()
-                    await pub.publish(`notifications:${userId}`, JSON.stringify({
-                        notificationId,
-                        type,
-                        ts: new Date().toISOString(),
-                    }))
-                    await pub.disconnect()
+                    const pub = await getPubSubClient()
+                    if (pub) {
+                        await pub.publish(`notifications:${userId}`, JSON.stringify({
+                            notificationId,
+                            type,
+                            ts: new Date().toISOString(),
+                        }))
+                    }
                 } catch (pubErr) {
                     logger.warn('notificationQueue', `Pub/Sub publish failed: ${(pubErr as Error).message}`)
                 }
@@ -172,6 +187,14 @@ export function startNotificationWorker() {
         }
     })
 
-    logger.info('notificationQueue', 'Worker started (5 retries, DLQ enabled)')
+    // Gracefully close the shared pub/sub client when worker shuts down
+    worker.on('closing', async () => {
+        if (_publisher) {
+            await _publisher.disconnect().catch(() => {})
+            _publisher = null
+        }
+    })
+
+    logger.info('notificationQueue', 'Worker started (5 retries, DLQ enabled, shared pub/sub client)')
     return worker
 }
