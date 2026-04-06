@@ -819,6 +819,17 @@ select::placeholder {
   }
 }
 
+@keyframes notif-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+  }
+  50% {
+    transform: scale(1.35);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.9);
+  }
+}
+
 @keyframes shimmer {
   0% {
     background-position: -200% 0;
@@ -1072,7 +1083,6 @@ select::placeholder {
 
 .navbar-menu-btn {
   display: none;
-  position: relative;
   flex-direction: column;
   gap: 5px;
   background: none;
@@ -3723,19 +3733,6 @@ img, video, iframe, canvas {
   background: #ef4444;
   border: 2px solid rgba(14, 16, 24, 0.98);
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
-}
-
-.hamburger-notif-dot {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #ef4444;
-  border: 1.5px solid var(--bg-primary);
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
-  z-index: 5;
 }
 
 /* ── Language Grid — Premium Pills ── */

@@ -4,6 +4,7 @@ import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { sendEmail } from '@/lib/mailer'
 import { verificationEmailLocalized, welcomeEmailWithOverrides } from '@/lib/email-templates'
 import { t as emailT } from '@/lib/email-i18n'
+import { notifyUser } from '@/lib/notifications'
 
 // POST /api/auth/verify-email  { email, code }
 export async function POST(request: Request) {
@@ -66,10 +67,10 @@ export async function POST(request: Request) {
         const refresh = await createRefreshToken(tokenPayload)
         await setUserCookie(token, refresh)
 
-        // Send a welcome email in the user's preferred language (fire-and-forget)
+        // Send a welcome email + in-app notification in the user's preferred language (fire-and-forget)
         const locale = (user as any).preferredLanguage || 'en'
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-        const welcomeSubject = emailT('welcome', locale, 'heading') || 'Welcome to AIM Studio! 🎬'
+        const welcomeSubject = emailT('welcome', locale, 'subject') || emailT('welcome', locale, 'heading') || 'Welcome to AIM Studio! 🎬'
         welcomeEmailWithOverrides(user.name, siteUrl, locale)
             .then(html => sendEmail({
                 to: user.email,
@@ -77,6 +78,21 @@ export async function POST(request: Request) {
                 html,
             }))
             .catch(() => { /* never block the login response */ })
+
+        // Write a localized in-app welcome notification (fire-and-forget)
+        const welcomeTitle = emailT('welcome', locale, 'heading')?.replace('{name}', user.name)
+            || `Welcome to AIM Studio, ${user.name}! 🎬`
+        const welcomeMsg = emailT('welcome', locale, 'body')
+            || "You're now part of our AI-powered filmmaking community. Explore casting calls, track your applications, and more."
+        void notifyUser({
+            userId: user.id,
+            type: 'system',
+            title: welcomeTitle,
+            message: welcomeMsg,
+            link: '/casting',
+            // No emailHtml — in-app only; the welcome email was already sent above
+            emailSubject: '',
+        }).catch(() => {})
 
         return NextResponse.json({ success: true })
     } catch (error) {

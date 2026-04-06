@@ -19,6 +19,98 @@ type TemplateStrings = Record<string, LocaleStrings>
 
 export const emailStrings: Record<string, TemplateStrings> = {
 
+    // ── Welcome (account created / Google sign-up) ────────────────────────────
+    welcome: {
+        en: {
+            subject:    'Welcome to AIM Studio! 🎬',
+            heading:    'Welcome to AIM Studio, {name}! 🎬',
+            subtext:    'Your account has been created successfully.',
+            body:       'You now have access to our exclusive AI-powered filmmaking platform. Explore our films, apply for casting calls, track your applications, and more.',
+            buttonText: 'Explore AIM Studio →',
+            footer:     'If you have any questions, feel free to reach out through our contact page.',
+        },
+        es: {
+            subject:    '¡Bienvenido a AIM Studio! 🎬',
+            heading:    '¡Bienvenido a AIM Studio, {name}! 🎬',
+            subtext:    'Tu cuenta ha sido creada exitosamente.',
+            body:       'Ahora tienes acceso a nuestra exclusiva plataforma de cine impulsada por IA. Explora nuestras películas, aplica a castings, sigue tus solicitudes y mucho más.',
+            buttonText: 'Explorar AIM Studio →',
+            footer:     'Si tienes alguna pregunta, no dudes en contactarnos a través de nuestra página de contacto.',
+        },
+        fr: {
+            subject:    'Bienvenue sur AIM Studio ! 🎬',
+            heading:    'Bienvenue sur AIM Studio, {name} ! 🎬',
+            subtext:    'Votre compte a été créé avec succès.',
+            body:       'Vous avez désormais accès à notre plateforme cinématographique exclusive propulsée par l\'IA. Explorez nos films, postulez à des castings, suivez vos candidatures et bien plus encore.',
+            buttonText: 'Explorer AIM Studio →',
+            footer:     'Si vous avez des questions, n\'hésitez pas à nous contacter via notre page de contact.',
+        },
+        ar: {
+            subject:    'مرحباً بك في AIM Studio! 🎬',
+            heading:    'مرحباً بك في AIM Studio، {name}! 🎬',
+            subtext:    'تم إنشاء حسابك بنجاح.',
+            body:       'أصبح بإمكانك الآن الوصول إلى منصتنا السينمائية الحصرية المدعومة بالذكاء الاصطناعي. استعرض أفلامنا، تقدم لطلبات الكاستينج، تتبع طلباتك والمزيد.',
+            buttonText: 'استكشف AIM Studio →',
+            footer:     'إذا كان لديك أي أسئلة، لا تتردد في التواصل معنا عبر صفحة الاتصال.',
+        },
+        zh: {
+            subject:    '欢迎加入 AIM Studio！🎬',
+            heading:    '欢迎加入 AIM Studio，{name}！🎬',
+            subtext:    '您的账户已成功创建。',
+            body:       '您现在可以访问我们专属的 AI 驱动电影制作平台。浏览我们的影片，申请选角，追踪您的申请，探索更多内容。',
+            buttonText: '探索 AIM Studio →',
+            footer:     '如有任何疑问，欢迎通过我们的联系页面与我们取得联系。',
+        },
+        hi: {
+            subject:    'AIM Studio में आपका स्वागत है! 🎬',
+            heading:    'AIM Studio में स्वागत है, {name}! 🎬',
+            subtext:    'आपका खाता सफलतापूर्वक बनाया गया है।',
+            body:       'अब आपको हमारे एक्सक्लूसिव AI-संचालित फिल्म निर्माण प्लेटफ़ॉर्म तक पहुंच मिल गई है। हमारी फिल्में देखें, कास्टिंग के लिए आवेदन करें, अपने आवेदन ट्रैक करें और बहुत कुछ।',
+            buttonText: 'AIM Studio एक्सप्लोर करें →',
+            footer:     'यदि आपके कोई प्रश्न हैं, तो हमारे संपर्क पृष्ठ के माध्यम से बेझिझक हमसे संपर्क करें।',
+        },
+        pt: {
+            subject:    'Bem-vindo ao AIM Studio! 🎬',
+            heading:    'Bem-vindo ao AIM Studio, {name}! 🎬',
+            subtext:    'Sua conta foi criada com sucesso.',
+            body:       'Agora você tem acesso à nossa plataforma exclusiva de cinema com IA. Explore nossos filmes, candidate-se a castings, acompanhe suas candidaturas e muito mais.',
+            buttonText: 'Explorar AIM Studio →',
+            footer:     'Se tiver alguma dúvida, entre em contato conosco através da nossa página de contato.',
+        },
+        ru: {
+            subject:    'Добро пожаловать в AIM Studio! 🎬',
+            heading:    'Добро пожаловать в AIM Studio, {name}! 🎬',
+            subtext:    'Ваш аккаунт успешно создан.',
+            body:       'Теперь вам доступна наша эксклюзивная платформа кинопроизводства на базе ИИ. Просматривайте фильмы, подавайте заявки на кастинг, отслеживайте свои заявки и многое другое.',
+            buttonText: 'Исследовать AIM Studio →',
+            footer:     'Если у вас есть вопросы, свяжитесь с нами через страницу контактов.',
+        },
+        ja: {
+            subject:    'AIM Studioへようこそ！🎬',
+            heading:    'AIM Studioへようこそ、{name}！🎬',
+            subtext:    'アカウントが正常に作成されました。',
+            body:       'AI搭載の映画制作プラットフォームへようこそ。映画を探したり、オーディションに応募したり、応募状況を追跡したりできます。',
+            buttonText: 'AIM Studioを探索する →',
+            footer:     'ご不明な点がございましたら、お問い合わせページからいつでもご連絡ください。',
+        },
+        de: {
+            subject:    'Willkommen bei AIM Studio! 🎬',
+            heading:    'Willkommen bei AIM Studio, {name}! 🎬',
+            subtext:    'Ihr Konto wurde erfolgreich erstellt.',
+            body:       'Sie haben jetzt Zugang zu unserer exklusiven KI-gestützten Filmproduktionsplattform. Entdecken Sie unsere Filme, bewerben Sie sich für Castings, verfolgen Sie Ihre Bewerbungen und vieles mehr.',
+            buttonText: 'AIM Studio erkunden →',
+            footer:     'Wenn Sie Fragen haben, können Sie uns jederzeit über unsere Kontaktseite erreichen.',
+        },
+        ko: {
+            subject:    'AIM Studio에 오신 것을 환영합니다! 🎬',
+            heading:    'AIM Studio에 오신 것을 환영합니다, {name}! 🎬',
+            subtext:    '계정이 성공적으로 생성되었습니다.',
+            body:       '이제 AI 기반 영화 제작 플랫폼에 액세스할 수 있습니다. 영화를 탐색하고, 캐스팅에 지원하고, 지원 현황을 추적하고, 그 이상을 경험해 보세요.',
+            buttonText: 'AIM Studio 탐색하기 →',
+            footer:     '궁금한 점이 있으시면 언제든지 문의 페이지를 통해 연락해 주세요.',
+        },
+    },
+
     // ── Security: Email Verification ─────────────────────────────────────────
     securityVerification: {
         en: {
@@ -410,87 +502,6 @@ export const emailStrings: Record<string, TemplateStrings> = {
             warning:    'このログインに心当たりがない場合は、すぐにパスワードを変更してアカウントを保護してください。',
             button:     'パスワードを変更',
             buttonHome: 'ホームページへ',
-        },
-    },
-
-    // ── Welcome ───────────────────────────────────────────────────────────────
-    welcome: {
-        en: {
-            heading:  'Welcome to AIM Studio! 🎬',
-            subtext:  'Your account has been created successfully.',
-            body:     'You now have access to our exclusive AI-powered filmmaking platform. Explore our films, apply for casting calls, track your applications, and more.',
-            buttonText: 'Explore AIM Studio →',
-            footer:   'If you have any questions, feel free to reach out through our contact page.',
-        },
-        es: {
-            heading:  '¡Bienvenido a AIM Studio! 🎬',
-            subtext:  'Tu cuenta ha sido creada exitosamente.',
-            body:     'Ahora tienes acceso a nuestra plataforma exclusiva de cine impulsada por IA. Explora nuestras películas, aplica a convocatorias de casting, rastrea tus solicitudes y mucho más.',
-            buttonText: 'Explorar AIM Studio →',
-            footer:   'Si tienes alguna pregunta, no dudes en contactarnos a través de nuestra página de contacto.',
-        },
-        fr: {
-            heading:  'Bienvenue sur AIM Studio ! 🎬',
-            subtext:  'Votre compte a été créé avec succès.',
-            body:     'Vous avez maintenant accès à notre plateforme cinématographique exclusive propulsée par l\'IA. Explorez nos films, postulez aux castings, suivez vos candidatures et bien plus encore.',
-            buttonText: 'Explorer AIM Studio →',
-            footer:   'Si vous avez des questions, n\'hésitez pas à nous contacter via notre page de contact.',
-        },
-        ar: {
-            heading:  'مرحباً بك في AIM Studio! 🎬',
-            subtext:  'تم إنشاء حسابك بنجاح.',
-            body:     'لديك الآن وصول إلى منصتنا الحصرية لصناعة الأفلام بالذكاء الاصطناعي. استكشف أفلامنا، وتقدم لمكالمات الكاستينج، وتتبع طلباتك والمزيد.',
-            buttonText: 'استكشف AIM Studio →',
-            footer:   'إذا كان لديك أي أسئلة، لا تتردد في التواصل معنا عبر صفحة الاتصال.',
-        },
-        zh: {
-            heading:  '欢迎来到 AIM Studio！🎬',
-            subtext:  '您的账户已成功创建。',
-            body:     '您现在可以访问我们的专属AI电影制作平台。探索我们的影片、申请试镜、跟踪申请进度等更多功能。',
-            buttonText: '探索 AIM Studio →',
-            footer:   '如有任何问题，请通过我们的联系页面随时联系我们。',
-        },
-        hi: {
-            heading:  'AIM Studio में आपका स्वागत है! 🎬',
-            subtext:  'आपका खाता सफलतापूर्वक बनाया गया है।',
-            body:     'अब आपके पास हमारे एक्सक्लूसिव AI-संचालित फिल्म निर्माण प्लेटफॉर्म तक पहुंच है। हमारी फिल्में देखें, कास्टिंग के लिए आवेदन करें, अपने आवेदन ट्रैक करें और बहुत कुछ।',
-            buttonText: 'AIM Studio एक्सप्लोर करें →',
-            footer:   'यदि आपके कोई प्रश्न हैं, तो हमारे संपर्क पृष्ठ के माध्यम से हमसे संपर्क करें।',
-        },
-        pt: {
-            heading:  'Bem-vindo ao AIM Studio! 🎬',
-            subtext:  'Sua conta foi criada com sucesso.',
-            body:     'Você agora tem acesso à nossa plataforma exclusiva de cinema com IA. Explore nossos filmes, candidate-se a castings, acompanhe suas candidaturas e muito mais.',
-            buttonText: 'Explorar AIM Studio →',
-            footer:   'Se tiver dúvidas, entre em contato conosco pela nossa página de contato.',
-        },
-        ru: {
-            heading:  'Добро пожаловать в AIM Studio! 🎬',
-            subtext:  'Ваш аккаунт успешно создан.',
-            body:     'Теперь у вас есть доступ к нашей эксклюзивной платформе кинопроизводства на основе ИИ. Исследуйте наши фильмы, подавайте заявки на кастинг, отслеживайте заявки и многое другое.',
-            buttonText: 'Исследовать AIM Studio →',
-            footer:   'Если у вас есть вопросы, свяжитесь с нами через страницу контактов.',
-        },
-        ja: {
-            heading:  'AIM Studioへようこそ！🎬',
-            subtext:  'アカウントが正常に作成されました。',
-            body:     'AIを活用した映画制作プラットフォームにアクセスできるようになりました。映画を探したり、オーディションに応募したり、申請状況を追跡したりできます。',
-            buttonText: 'AIM Studioを探索する →',
-            footer:   'ご質問がある場合は、お問い合わせページからご連絡ください。',
-        },
-        de: {
-            heading:  'Willkommen bei AIM Studio! 🎬',
-            subtext:  'Ihr Konto wurde erfolgreich erstellt.',
-            body:     'Sie haben jetzt Zugang zu unserer exklusiven KI-gestützten Filmplattform. Entdecken Sie Filme, bewerben Sie sich für Castings, verfolgen Sie Ihre Bewerbungen und vieles mehr.',
-            buttonText: 'AIM Studio erkunden →',
-            footer:   'Bei Fragen können Sie uns gerne über unsere Kontaktseite erreichen.',
-        },
-        ko: {
-            heading:  'AIM Studio에 오신 것을 환영합니다! 🎬',
-            subtext:  '계정이 성공적으로 생성되었습니다.',
-            body:     '이제 AI 기반 영화 제작 플랫폼에 액세스할 수 있습니다. 영화를 탐색하고, 캐스팅에 지원하고, 지원 현황을 추적하세요.',
-            buttonText: 'AIM Studio 탐색하기 →',
-            footer:   '궁금한 점이 있으시면 문의 페이지를 통해 연락해 주세요.',
         },
     },
 

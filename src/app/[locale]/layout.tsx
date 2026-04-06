@@ -10,6 +10,7 @@ import Navbar from "@/components/Navbar";
 import MobileTabBar from "@/components/MobileTabBar";
 import PageTransition from "@/components/PageTransition";
 import SiteSettingsWrapper from "@/components/SiteSettingsWrapper";
+import { NotificationProvider } from "@/context/NotificationContext";
 import type { Metadata } from 'next';
 
 const RTL_LOCALES = ['ar', 'he', 'fa', 'ur'];
@@ -65,11 +66,13 @@ export default async function LocaleLayout({
           <AnalyticsTracker />
           <div dir={isRtl ? 'rtl' : 'ltr'} style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
             <SiteSettingsWrapper>
-              <Navbar />
-              <MobileTabBar />
-              <PageTransition>
-                {children}
-              </PageTransition>
+              <NotificationProvider>
+                <Navbar />
+                <MobileTabBar />
+                <PageTransition>
+                  {children}
+                </PageTransition>
+              </NotificationProvider>
             </SiteSettingsWrapper>
           </div>
         </AuthProvider>

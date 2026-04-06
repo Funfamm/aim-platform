@@ -148,7 +148,9 @@ export async function GET(req: Request) {
                     const html = await welcomeEmailWithOverrides(newUserName, siteUrl, detectedLocale).catch(() => null)
                     if (html) {
                         const { t: emailT } = await import('@/lib/email-i18n')
-                        const welcomeSubject = emailT('welcome', detectedLocale, 'heading') || `Welcome to AIM Studio, ${newUserName}! 🎬`
+                        const welcomeSubject = emailT('welcome', detectedLocale, 'subject')
+                            || emailT('welcome', detectedLocale, 'heading')
+                            || `Welcome to AIM Studio, ${newUserName}! 🎬`
                         await sendEmail({
                             to: newUserEmail,
                             subject: welcomeSubject,

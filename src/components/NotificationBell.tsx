@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { useNotifications } from '@/context/NotificationContext'
 import styles from './NotificationBell.module.css'
-import { useUnreadNotifications } from '@/lib/use-unread-notifications'
 
 interface Notification {
     id: string
@@ -38,8 +38,8 @@ function timeAgo(dateStr: string): string {
 export function NotificationBell() {
     const { user } = useAuth()
     const router = useRouter()
-    const { unreadCount, setUnreadCount, refresh: refreshUnreadCount } = useUnreadNotifications()
     const t = useTranslations('notificationBell')
+    const { unreadCount, refresh, markAllRead: ctxMarkAllRead } = useNotifications()
     const [open, setOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [loading, setLoading] = useState(false)
@@ -52,25 +52,9 @@ export function NotificationBell() {
             const res = await fetch('/api/notifications?limit=15')
             const data = await res.json()
             setNotifications(data.notifications ?? [])
-            setUnreadCount(data.unreadCount ?? 0)
         } catch { /* silently fail */ }
         finally { setLoading(false) }
-    }, [user, setUnreadCount])
-
-    // Fetch initial list when opened
-    useEffect(() => {
-        if (open && notifications.length === 0) {
-            fetchNotifications()
-        }
-    }, [open, notifications.length, fetchNotifications])
-
-    // Initial setup — unreadCount hook already handles the frequency and auth logic
-    // so we only need to catch-up if there are unread items but no list yet
-    useEffect(() => {
-        if (unreadCount > 0 && notifications.length === 0) {
-            fetchNotifications()
-        }
-    }, [unreadCount, notifications.length, fetchNotifications])
+    }, [user])
 
     // Close on outside click
     useEffect(() => {
@@ -86,14 +70,16 @@ export function NotificationBell() {
     async function markAllRead() {
         await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
         setNotifications(n => n.map(x => ({ ...x, read: true })))
-        setUnreadCount(0)
+        ctxMarkAllRead() // update global context badge too
     }
 
     async function handleNotificationClick(n: Notification) {
         if (!n.read) {
             await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [n.id] }) })
             setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
-            setUnreadCount(c => Math.max(0, c - 1))
+            // trigger a context refresh so the hamburger badge updates too
+            refresh()
+
         }
         if (n.link) {
             setOpen(false)

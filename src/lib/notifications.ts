@@ -74,6 +74,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 name: true,
                 email: true,
                 preferredLanguage: true,
+                receiveLocalizedEmails: true,
                 notificationPreference: {
                     select: {
                         email: true,
@@ -97,7 +98,10 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
             contentPublish: false,
             statusChange: true,
         }
-        const locale: string = user.preferredLanguage || 'en'
+        // If the user opted out of localized emails, force English for all channels
+        const locale: string = (user.receiveLocalizedEmails !== false && user.preferredLanguage)
+            ? user.preferredLanguage
+            : 'en'
         
         let displayTitle = opts.title
         let displayMessage = opts.message
@@ -123,29 +127,40 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
         }
 
         // ── Email ────────────────────────────────────────────────────────────
-        if (pref.email) {
+        // If emailSubject is explicitly '' the caller wants in-app only — skip email channel
+        if (pref.email && user.email && opts.emailSubject !== '') {
             let subject = opts.emailSubject ?? displayTitle
-            let html = opts.emailHtml   
+            let html = opts.emailHtml
 
-            if (opts.translations && locale !== 'en') {
-                subject = displayTitle
+            // Rebuild HTML using the user's localized strings
+            if (locale !== 'en') {
+                subject = opts.emailSubject
+                    ? opts.emailSubject.replace(/(^[^|]+\|)/, `${displayTitle} |`)
+                    : displayTitle
+                const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+                const lt = opts.translations?.[locale] as Record<string, string> | undefined
+
                 if (opts.type === 'announcement') {
-                    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-                    const lt = opts.translations[locale] as Record<string, string> | undefined
                     html = announcementEmail(displayTitle, displayMessage, opts.link, siteUrl, {
                         badgeText:   lt?.badgeText   || undefined,
                         buttonText:  lt?.buttonText  || undefined,
                         footerOptIn: lt?.footerOptIn || undefined,
                         managePrefs: lt?.managePrefs || undefined,
                     })
-                } else if (!opts.emailHtml) {
+                } else if (opts.type === 'new_role') {
+                    html = newCastingRoleEmail(displayTitle, displayMessage, opts.link ?? '')
+                } else if (opts.type === 'content_publish') {
+                    html = contentPublishEmail(displayTitle, displayMessage, opts.link ?? '')
+                } else {
+                    // Generic fallback: rebuild plain HTML with localized text
                     html = buildPlainHtml(displayTitle, displayMessage, opts.link)
                 }
-            } else if (!html) {
-                html = buildPlainHtml(displayTitle, displayMessage, opts.link)
             }
-                
-            await sendEmail({ to: user.email, subject, html: html as string })
+
+            // Final safety net — ensure html is always a string
+            if (!html) html = buildPlainHtml(displayTitle, displayMessage, opts.link)
+
+            await sendEmail({ to: user.email, subject, html })
         }
     } catch (err) {
         logger.error('notifications', `notifyUser failed for ${opts.userId}`, { error: err })
@@ -425,14 +440,25 @@ export async function notifyAnnouncement(title: string, message: string, link?: 
 
 /** Call this when admin publishes new content (project, blog, video) */
 export async function notifyContentPublish(contentTitle: string, contentType: string, link: string): Promise<void> {
+    const titleEn   = `New ${contentType}: ${contentTitle}`
+    const messageEn = `We just published "${contentTitle}". Check it out!`
+
+    // Pre-translate so non-English users get localized in-app notifications & emails
+    const translationTimeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
+    const translations = await Promise.race([
+        translateContent({ title: titleEn, message: messageEn }, 'all').catch(() => null),
+        translationTimeout,
+    ])
+
     await broadcastNotification({
         type: 'content_publish',
         preferenceKey: 'contentPublish',
-        title: `New ${contentType}: ${contentTitle}`,
-        message: `We just published "${contentTitle}". Check it out!`,
+        title: titleEn,
+        message: messageEn,
         link,
         emailSubject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`,
         emailHtml: contentPublishEmail(contentTitle, contentType, link),
+        translations,
     })
 }
 

@@ -10,7 +10,7 @@ import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/routing'
 import { NotificationBell } from '@/components/NotificationBell'
-import { useUnreadNotifications } from '@/lib/use-unread-notifications'
+import { useNotifications } from '@/context/NotificationContext'
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false)
@@ -20,8 +20,8 @@ export default function Navbar() {
     const [langMenuOpen, setLangMenuOpen] = useState(false)
     const settings = useSiteSettings();
     const locale = useLocale();
-    const { unreadCount } = useUnreadNotifications()
     const tB = useTranslations()
+    const { unreadCount: navUnread } = useNotifications()
     const brandName = settings?.siteName ? (() => {
         const parts = settings.siteName.split(' ');
         return { accent: parts[0] || 'AIM', rest: parts.slice(1).join(' ') || 'Studio' };
@@ -345,12 +345,29 @@ export default function Navbar() {
                     <button
                         className="navbar-menu-btn"
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        aria-label="Toggle menu"
+                        aria-label={`Toggle menu${navUnread > 0 ? ` (${navUnread} unread notifications)` : ''}`}
+                        style={{ position: 'relative' }}
                     >
                         <span></span>
                         <span></span>
                         <span></span>
-                        {unreadCount > 0 && <span className="hamburger-notif-dot" />}
+                        {navUnread > 0 && (
+                            <span
+                                aria-hidden="true"
+                                style={{
+                                    position: 'absolute',
+                                    top: '-3px',
+                                    right: '-3px',
+                                    width: '10px',
+                                    height: '10px',
+                                    borderRadius: '50%',
+                                    background: '#ef4444',
+                                    border: '2px solid var(--bg-primary)',
+                                    boxShadow: '0 0 6px rgba(239,68,68,0.8)',
+                                    animation: 'notif-pulse 1.8s ease-in-out infinite',
+                                }}
+                            />
+                        )}
                     </button>
                 </div>
             </nav>
@@ -537,7 +554,7 @@ export default function Navbar() {
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                             </svg>
-                            {unreadCount > 0 && <span className="drawer-notif-dot" />}
+                            <span className="drawer-notif-dot" />
                         </span>
                         {t('notifications')}
                     </Link>

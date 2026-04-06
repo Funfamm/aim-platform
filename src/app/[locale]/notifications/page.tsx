@@ -61,6 +61,7 @@ export default function NotificationsPage() {
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'feed' | 'preferences'>('feed')
     const [unreadCount, setUnreadCount] = useState(0)
+    const [receiveLocalizedEmails, setReceiveLocalizedEmails] = useState(true)
 
     const [selectMode, setSelectMode] = useState(false)
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -76,7 +77,11 @@ export default function NotificationsPage() {
             .then(r => r.ok ? r.json() : Promise.reject(r.status))
             .catch(() => ({ preferences: null }))
 
-        Promise.all([fetchNotifs, fetchPrefs]).then(([notifData, prefData]) => {
+        const fetchEmailLang = fetch('/api/user/email-language')
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .catch(() => ({ receiveLocalizedEmails: true }))
+
+        Promise.all([fetchNotifs, fetchPrefs, fetchEmailLang]).then(([notifData, prefData, langData]) => {
             const notifs = notifData.notifications ?? []
             setNotifications(notifs)
             setUnreadCount(notifData.unreadCount ?? notifs.filter((n: Notification) => !n.read).length)
@@ -85,6 +90,7 @@ export default function NotificationsPage() {
                 statusChange: true, email: true, inApp: true,
             }
             setPrefs(p)
+            setReceiveLocalizedEmails(langData.receiveLocalizedEmails ?? true)
         }).finally(() => setLoading(false))
     }, [])
 
@@ -149,11 +155,18 @@ export default function NotificationsPage() {
         if (!prefs) return
         setSaving(true)
         try {
-            const res = await fetch('/api/notifications/preferences', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(prefs),
-            })
+            const [res] = await Promise.all([
+                fetch('/api/notifications/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(prefs),
+                }),
+                fetch('/api/user/email-language', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ receiveLocalizedEmails }),
+                }),
+            ])
             if (!res.ok) throw new Error('Save failed')
             const data = await res.json()
             if (data.preferences) setPrefs(data.preferences)
@@ -492,6 +505,35 @@ export default function NotificationsPage() {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+
+                        {/* Email Language */}
+                        <div style={{
+                            background: 'var(--bg-secondary)', borderRadius: '16px',
+                            border: '1px solid var(--border-subtle)', overflow: 'hidden',
+                        }}>
+                            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
+                                <div style={{ fontWeight: 700, marginBottom: '2px' }}>🌐 Email Language</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Choose whether you receive emails in your saved language.</div>
+                            </div>
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '16px',
+                                padding: '14px 20px',
+                            }}>
+                                <span style={{ fontSize: '24px', flexShrink: 0 }}>📧</span>
+                                <span style={{ flex: 1 }}>
+                                    <span style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem' }}>Receive emails in my language</span>
+                                    <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                                        {receiveLocalizedEmails
+                                            ? 'Emails will be sent in your selected language.'
+                                            : 'All emails will be sent in English.'}
+                                    </span>
+                                </span>
+                                <ToggleSwitch
+                                    checked={receiveLocalizedEmails}
+                                    onChange={() => setReceiveLocalizedEmails(v => !v)}
+                                />
+                            </div>
                         </div>
 
                         {/* Save */}

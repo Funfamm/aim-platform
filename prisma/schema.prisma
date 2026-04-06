@@ -60,6 +60,8 @@ model User {
   notifications          UserNotification[]
   // Language preference – stored BCP-47 locale code (en, es, fr, zh, …)
   preferredLanguage      String  @default("en")
+  // When false, all emails are sent in English regardless of preferredLanguage
+  receiveLocalizedEmails Boolean @default(true)
 
   @@index([role])
   @@index([createdAt])
