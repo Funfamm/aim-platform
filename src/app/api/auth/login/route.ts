@@ -110,6 +110,7 @@ export async function POST(request: Request) {
         })
     } catch (error) {
         logger.error('auth/login', 'Login failed', { error })
-        return NextResponse.json({ error: 'Login failed' }, { status: 500 })
+        const msg = error instanceof Error ? error.message : String(error)
+        return NextResponse.json({ error: 'Login failed', debug: msg }, { status: 500 })
     }
 }
