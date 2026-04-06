@@ -10,6 +10,7 @@ import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/routing'
 import { NotificationBell } from '@/components/NotificationBell'
+import { useUnreadNotifications } from '@/lib/use-unread-notifications'
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false)
@@ -19,7 +20,8 @@ export default function Navbar() {
     const [langMenuOpen, setLangMenuOpen] = useState(false)
     const settings = useSiteSettings();
     const locale = useLocale();
-    const tBanner = useTranslations('langBanner')
+    const { unreadCount } = useUnreadNotifications()
+    const tB = useTranslations()
     const brandName = settings?.siteName ? (() => {
         const parts = settings.siteName.split(' ');
         return { accent: parts[0] || 'AIM', rest: parts.slice(1).join(' ') || 'Studio' };
@@ -108,7 +110,7 @@ export default function Navbar() {
                     gap: '12px', padding: '8px 16px', fontSize: '0.8rem',
                     color: 'var(--text-secondary)',
                 }}>
-                    <span>🌐 {tBanner('message')}</span>
+                    <span>🌐 {tB('langBanner.message')}</span>
                     <button
                         onClick={() => switchLocale('en')}
                         style={{
@@ -118,7 +120,7 @@ export default function Navbar() {
                             cursor: 'pointer', whiteSpace: 'nowrap',
                         }}
                     >
-                        {tBanner('continueInEnglish')}
+                        {tB('langBanner.continueInEnglish')}
                     </button>
                     <button
                         onClick={() => { localStorage.setItem('aim_locale_chosen', currentLocale); setShowEnglishBanner(false) }}
@@ -348,6 +350,7 @@ export default function Navbar() {
                         <span></span>
                         <span></span>
                         <span></span>
+                        {unreadCount > 0 && <span className="hamburger-notif-dot" />}
                     </button>
                 </div>
             </nav>
@@ -534,7 +537,7 @@ export default function Navbar() {
                                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                             </svg>
-                            <span className="drawer-notif-dot" />
+                            {unreadCount > 0 && <span className="drawer-notif-dot" />}
                         </span>
                         {t('notifications')}
                     </Link>

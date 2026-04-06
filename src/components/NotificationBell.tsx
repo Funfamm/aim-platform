@@ -5,6 +5,7 @@ import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import styles from './NotificationBell.module.css'
+import { useUnreadNotifications } from '@/lib/use-unread-notifications'
 
 interface Notification {
     id: string
@@ -37,10 +38,10 @@ function timeAgo(dateStr: string): string {
 export function NotificationBell() {
     const { user } = useAuth()
     const router = useRouter()
+    const { unreadCount, setUnreadCount, refresh: refreshUnreadCount } = useUnreadNotifications()
     const t = useTranslations('notificationBell')
     const [open, setOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
-    const [unreadCount, setUnreadCount] = useState(0)
     const [loading, setLoading] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -54,15 +55,22 @@ export function NotificationBell() {
             setUnreadCount(data.unreadCount ?? 0)
         } catch { /* silently fail */ }
         finally { setLoading(false) }
-    }, [user])
+    }, [user, setUnreadCount])
 
-    // Poll every 60 seconds for unread count
+    // Fetch initial list when opened
     useEffect(() => {
-        if (!user) return
-        fetchNotifications()
-        const interval = setInterval(fetchNotifications, 60_000)
-        return () => clearInterval(interval)
-    }, [user, fetchNotifications])
+        if (open && notifications.length === 0) {
+            fetchNotifications()
+        }
+    }, [open, notifications.length, fetchNotifications])
+
+    // Initial setup — unreadCount hook already handles the frequency and auth logic
+    // so we only need to catch-up if there are unread items but no list yet
+    useEffect(() => {
+        if (unreadCount > 0 && notifications.length === 0) {
+            fetchNotifications()
+        }
+    }, [unreadCount, notifications.length, fetchNotifications])
 
     // Close on outside click
     useEffect(() => {
