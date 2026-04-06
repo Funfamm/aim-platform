@@ -354,12 +354,8 @@
 html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
-  overflow-y: scroll; /* scroll instead of auto ensures desktop scrollbar always available */
-  scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
-  overscroll-behavior-y: none; /* prevent rubber-band on html root */
 }
 
 body {
@@ -371,14 +367,6 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
-  touch-action: pan-x pan-y;
-  overscroll-behavior-y: contain;
-}
-
-@media (max-width: 768px) {
-  html, body {
-    overscroll-behavior-y: contain;
-  }
 }
 
 /* Ultra-fine grain texture overlay */
