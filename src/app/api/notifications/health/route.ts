@@ -8,7 +8,7 @@
  * Secured: requires admin JWT or CRON_SECRET header in production.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthUser } from '@/lib/auth'
+import { getUserSession } from '@/lib/auth'
 
 export async function GET(req: NextRequest) {
     // Allow requests with CRON_SECRET OR a logged-in admin user
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         authorized = true
     } else {
         try {
-            const user = await getAuthUser(req)
+            const user = await getUserSession()
             if (user?.role === 'admin' || user?.role === 'superadmin') authorized = true
         } catch { /* not logged in */ }
     }
