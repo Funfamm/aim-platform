@@ -268,7 +268,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         </div>
                         <div className="form-group">
                             <label className="form-label">{t('email')}</label>
-                            <input className="form-input" type="email" placeholder={t('emailPlaceholder')} value={formData.email} onChange={(e) => updateField('email', e.target.value)} />
+                            <input className="form-input" type="text" inputMode="email" autoComplete="email" placeholder={t('emailPlaceholder')} value={formData.email} onChange={(e) => updateField('email', e.target.value)} />
                         </div>
                     </div>
 
