@@ -1101,7 +1101,24 @@ select::placeholder {
 
 /* Old mobile-menu class removed — replaced by .mobile-drawer (side drawer) */
 
-@media (max-width: 768px) {
+/* Medium screens: shrink nav links so they don't crowd the logo */
+@media (max-width: 1150px) and (min-width: 1025px) {
+  .navbar-links {
+    gap: 2px;
+    padding: 3px 4px;
+  }
+  .navbar-links a {
+    font-size: 0.62rem;
+    padding: 0.35rem 0.55rem;
+    letter-spacing: 0.05em;
+  }
+  .navbar-logo {
+    font-size: 1.15rem;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 1024px) {
   .navbar-links {
     display: none;
   }
@@ -3080,7 +3097,7 @@ img, video, iframe, canvas {
 }
 
 /* ── Navbar: hide bell + globe on mobile, hamburger to left ── */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .navbar-desktop-only {
     display: none !important;
   }
