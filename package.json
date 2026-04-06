@@ -37,7 +37,7 @@
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
     "@google/generative-ai": "^0.24.1",
-    "@huggingface/transformers": "^3.8.1",
+    "@huggingface/transformers": "^4.0.1",
     "@prisma/client": "^6.19.2",
     "@sentry/nextjs": "^9.9.0",
     "@swc/helpers": "^0.5.19",
