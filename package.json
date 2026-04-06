@@ -39,7 +39,7 @@
     "@google/generative-ai": "^0.24.1",
     "@huggingface/transformers": "^3.8.1",
     "@prisma/client": "^6.19.2",
-    "@sentry/nextjs": "^9.9.0",
+    "@sentry/nextjs": "^10.47.0",
     "@swc/helpers": "^0.5.19",
     "@types/archiver": "^7.0.0",
     "@types/bcryptjs": "^2.4.6",
