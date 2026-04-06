@@ -356,6 +356,8 @@ html {
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
+  overflow-x: hidden;
+  touch-action: pan-y;
 }
 
 body {
@@ -364,9 +366,11 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
+  touch-action: pan-y;
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-x: none;
 }
 
 /* Ultra-fine grain texture overlay */

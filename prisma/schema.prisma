@@ -5,6 +5,9 @@ generator client {
 
 datasource db {
   // PRODUCTION: Neon PostgreSQL via pooler
+  // DATABASE_URL  = pooler URL (required on all platforms)
+  // DIRECT_URL    = direct (non-pooler) URL — only needed for migrations.
+  //                 Set this on Render/CI. On Vercel it is optional.
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")

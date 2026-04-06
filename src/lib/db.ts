@@ -8,7 +8,18 @@ import { PrismaClient } from '@prisma/client'
  * - Configured with pool timeout and connection limit to handle
  *   Neon's idle connection reaping gracefully
  * - The `datasourceUrl` override appends pool settings if not present
+ *
+ * DIRECT_URL note:
+ * - On Vercel (serverless), migrations never run, so DIRECT_URL is not required.
+ * - We set it to DATABASE_URL as a fallback so Prisma's schema env() lookup never fails.
+ * - On Render/CI, set DIRECT_URL explicitly for reliable migrations.
  */
+
+// Ensure DIRECT_URL is always set so Prisma's schema env("DIRECT_URL") never throws.
+// On Vercel the direct URL is optional — the pooler URL is used for all runtime queries.
+if (!process.env.DIRECT_URL && process.env.DATABASE_URL) {
+    process.env.DIRECT_URL = process.env.DATABASE_URL
+}
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 
