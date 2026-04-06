@@ -61,7 +61,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#0d0f14" />
         <meta name="msapplication-TileColor" content="#0d0f14" />
       </head>
-      <body className="antigravity-scroll-lock">
+      <body>
         <a href="#main-content" className="skip-to-content">
           Skip to main content
         </a>

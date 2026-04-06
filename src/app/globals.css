@@ -355,13 +355,11 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-  /* Use auto instead of scroll: scroll creates a keyboard-inaccessible
-     scrollable region that axe (WCAG scrollable-region-focusable) flags
-     on mobile browsers. scrollbar-gutter:stable preserves the layout. */
-  overflow-y: auto;
+  overflow-y: scroll; /* scroll instead of auto ensures desktop scrollbar always available */
   scrollbar-gutter: stable;
   -webkit-text-size-adjust: 100%;
-  -ms-text-size-adjust: 100%;  
+  -ms-text-size-adjust: 100%;
+  overscroll-behavior-y: none; /* prevent rubber-band on html root */
 }
 
 body {
@@ -374,11 +372,6 @@ body {
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-x pan-y;
-  /* Prevent elastic/bounce scrolling on iOS while keeping normal scroll */
-  overscroll-behavior-y: contain;
-}
-
-html {
   overscroll-behavior-y: contain;
 }
 
