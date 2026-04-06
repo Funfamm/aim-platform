@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
-import { newDeviceLoginEmail } from '@/lib/email-templates'
+import { newDeviceLoginEmailLocalized } from '@/lib/email-templates'
+import { t as emailT } from '@/lib/email-i18n'
 import { sendEmail } from '@/lib/mailer'
 import crypto from 'crypto'
 import { getCachedSettings } from '@/lib/cached-settings'
@@ -23,9 +24,10 @@ export async function handleDeviceFingerprint(
   // Load current known devices (JSON string → array) and creation timestamp
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { knownDevices: true, lastLoginAt: true, createdAt: true } as any,
+    select: { knownDevices: true, lastLoginAt: true, createdAt: true, preferredLanguage: true } as any,
   }) as any
   const known: string[] = user?.knownDevices ? JSON.parse(user.knownDevices) : []
+  const userLocale: string = user?.preferredLanguage || 'en'
 
   // Detect first login (no known devices and no prior login timestamp)
   const isFirstLogin = known.length === 0 && !user?.lastLoginAt
@@ -46,11 +48,13 @@ export async function handleDeviceFingerprint(
   if (shouldNotify) {
     const settings = await getCachedSettings()
     if (settings && (settings as any).notifyOnNewDevice) {
-      void sendEmail({
-        to: userEmail,
-        subject: 'New device login detected on your account',
-        html: newDeviceLoginEmail(userName, { ip, ua }, process.env.NEXT_PUBLIC_SITE_URL),
-      }).catch(() => {})
+      void newDeviceLoginEmailLocalized(userName, { ip, ua }, process.env.NEXT_PUBLIC_SITE_URL, userLocale)
+        .then(html => sendEmail({
+            to: userEmail,
+            subject: emailT('securityNewDevice', userLocale, 'subject') || 'New device login detected on your account',
+            html,
+        }))
+        .catch(() => {})
     }
   }
 

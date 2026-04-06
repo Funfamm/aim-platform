@@ -144,12 +144,14 @@ export async function GET(req: Request) {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const db = prisma as any
 
-                    // Send welcome email
-                    const html = await welcomeEmailWithOverrides(newUserName, siteUrl).catch(() => null)
+                    // Send welcome email in the user's locale
+                    const html = await welcomeEmailWithOverrides(newUserName, siteUrl, detectedLocale).catch(() => null)
                     if (html) {
+                        const { t: emailT } = await import('@/lib/email-i18n')
+                        const welcomeSubject = emailT('welcome', detectedLocale, 'heading') || `Welcome to AIM Studio, ${newUserName}! 🎬`
                         await sendEmail({
                             to: newUserEmail,
-                            subject: `Welcome to AIM Studio, ${newUserName}! 🎬`,
+                            subject: welcomeSubject,
                             html,
                         }).catch(() => {})
                     }

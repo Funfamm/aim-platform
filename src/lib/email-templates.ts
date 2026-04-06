@@ -354,6 +354,30 @@ export function mfaOtpEmail(name: string, code: string, siteUrl?: string): strin
     `, `Your AIM Studio sign-in code is ${code}`)
 }
 
+/** Locale-aware async version — use this in all routes */
+export async function forgotPasswordCodeLocalized(name: string, code: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const heading_str    = emailT('securityForgotPassword', locale, 'heading')    || 'Password Reset Code'
+    const subtext_str    = emailT('securityForgotPassword', locale, 'subtext')    || 'you requested a password reset.'
+    const expiry_str     = emailT('securityForgotPassword', locale, 'expiry')     || 'This code expires in'
+    const expiryTime_str = emailT('securityForgotPassword', locale, 'expiryTime') || '10 minutes'
+    const body_str       = emailT('securityForgotPassword', locale, 'body')       || "Enter this code on the password reset page to set a new password."
+    const button_str     = emailT('securityForgotPassword', locale, 'button')     || 'Back to Homepage'
+    return emailWrapper(`
+        ${heading(heading_str)}
+        ${subtext(`Hi ${name}, ${subtext_str}`)}
+        <div style="text-align: center; padding: 24px 0;">
+            <div style="display: inline-block; padding: 18px 44px; background-color: ${BG_DARK}; border-radius: 12px; border: 2px solid ${BRAND_COLOR};">
+                <span style="font-size: 36px; font-weight: 800; letter-spacing: 12px; color: ${BRAND_COLOR}; font-family: 'Courier New', monospace;">${code}</span>
+            </div>
+            <p style="margin: 12px 0 0; font-size: 13px; color: ${TEXT_SECONDARY};">${expiry_str} <strong style="color: ${TEXT_PRIMARY};">${expiryTime_str}</strong>.</p>
+        </div>
+        ${divider()}
+        ${paragraph(body_str)}
+        ${siteUrl ? secondaryButton(button_str, siteUrl) : ''}
+    `, `Your AIM Studio password reset code is ${code}`)
+}
+
+/** Sync English-only shim — kept for backward compatibility */
 export function forgotPasswordCode(name: string, code: string, siteUrl?: string): string {
     return emailWrapper(`
         ${heading('Password Reset Code')}
@@ -386,6 +410,32 @@ export function scriptSubmissionConfirmation(name: string, title: string, siteUr
     `, `Script "${title}" submitted successfully`)
 }
 
+/** Locale-aware async version — use this in all routes */
+export async function verificationEmailLocalized(name: string, code: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const h   = emailT('securityVerification', locale, 'heading')    || 'Confirm Your Email Address 📧'
+    const sub = emailT('securityVerification', locale, 'subtext')    || 'enter this code to activate your account.'
+    const exp = emailT('securityVerification', locale, 'expiry')     || 'This code expires in'
+    const tm  = emailT('securityVerification', locale, 'expiryTime') || '15 minutes'
+    const bod = emailT('securityVerification', locale, 'body')       || 'Enter this 6-digit code on the verification page to confirm your email and activate your AIM Studio account.'
+    const ign = emailT('securityVerification', locale, 'ignore')     || 'If you did not create this account, you can safely ignore this email.'
+    const btn = emailT('securityVerification', locale, 'button')     || 'Visit AIM Studio'
+    return emailWrapper(`
+        ${heading(h)}
+        ${subtext(`Hi ${name}, ${sub}`)}
+        <div style="text-align: center; padding: 28px 0;">
+            <div style="display: inline-block; padding: 20px 48px; background-color: ${BG_DARK}; border-radius: 14px; border: 2px solid ${BRAND_COLOR};">
+                <span style="font-size: 40px; font-weight: 800; letter-spacing: 14px; color: ${BRAND_COLOR}; font-family: 'Courier New', monospace;">${code}</span>
+            </div>
+            <p style="margin: 14px 0 0; font-size: 13px; color: ${TEXT_SECONDARY};">${exp} <strong style="color: ${TEXT_PRIMARY};">${tm}</strong>.</p>
+        </div>
+        ${divider()}
+        ${paragraph(bod)}
+        ${paragraph(ign)}
+        ${siteUrl ? secondaryButton(btn, siteUrl) : ''}
+    `, `Your AIM Studio verification code is ${code}`)
+}
+
+/** Sync English-only shim — kept for backward compatibility */
 export function verificationEmail(name: string, code: string, siteUrl?: string): string {
     return emailWrapper(`
         ${heading('Confirm Your Email Address 📧')}
@@ -403,6 +453,31 @@ export function verificationEmail(name: string, code: string, siteUrl?: string):
     `, `Your AIM Studio verification code is ${code}`)
 }
 
+/** Locale-aware async version — use this in all routes */
+export async function passwordChangedEmailLocalized(name: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const localeStr = locale === 'en' ? 'en-US' : locale
+    const changedAt = new Date().toLocaleString(localeStr, { dateStyle: 'long', timeStyle: 'short' })
+    const h    = emailT('securityPasswordChanged', locale, 'heading')       || 'Your Password Was Changed 🔐'
+    const sub  = emailT('securityPasswordChanged', locale, 'subtext')       || 'this is a security notice for your AIM Studio account.'
+    const chOn = emailT('securityPasswordChanged', locale, 'changedOn')     || 'Changed on'
+    const safe = emailT('securityPasswordChanged', locale, 'safe')          || 'If you made this change, you are all set.'
+    const warn = emailT('securityPasswordChanged', locale, 'warning')       || 'If you did NOT make this change, someone may have accessed your account. Please contact us immediately.'
+    const btn1 = emailT('securityPasswordChanged', locale, 'buttonContact') || 'Contact Us Now'
+    const btn2 = emailT('securityPasswordChanged', locale, 'buttonHome')    || 'Visit Homepage'
+    return emailWrapper(`
+        ${heading(h)}
+        ${subtext(`Hi ${name}, ${sub}`)}
+        ${infoCard(`
+            <p style="margin: 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">${chOn}</p>
+            <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${changedAt}</p>
+        `, BRAND_COLOR)}
+        ${paragraph(safe)}
+        ${paragraph(`<strong style="color: ${ACCENT_RED};">${warn}</strong>`)}
+        ${siteUrl ? `${button(btn1, `${siteUrl}/contact`)}${secondaryButton(btn2, siteUrl)}` : ''}
+    `, emailT('securityPasswordChanged', locale, 'subject') || 'Your AIM Studio password was changed')
+}
+
+/** Sync English-only shim — kept for backward compatibility */
 export function passwordChangedEmail(name: string, siteUrl?: string): string {
     const changedAt = new Date().toLocaleString('en-US', {
         dateStyle: 'long',
@@ -422,7 +497,39 @@ export function passwordChangedEmail(name: string, siteUrl?: string): string {
 }
 
 /**
- * Email sent when a login occurs from an unrecognized device.
+ * Locale-aware async version — use this in all routes
+ */
+export async function newDeviceLoginEmailLocalized(name: string, deviceInfo: { ip: string; ua: string }, siteUrl?: string, locale = 'en'): Promise<string> {
+    const localeStr = locale === 'en' ? 'en-US' : locale
+    const loginTime = new Date().toLocaleString(localeStr, { dateStyle: 'long', timeStyle: 'short' })
+    const h    = emailT('securityNewDevice', locale, 'heading')    || 'New Device Login Detected 🚨'
+    const sub  = emailT('securityNewDevice', locale, 'subtext')    || 'we noticed a login to your account from a new device.'
+    const date = emailT('securityNewDevice', locale, 'date')       || 'Date'
+    const dev  = emailT('securityNewDevice', locale, 'device')     || 'Device'
+    const ip   = emailT('securityNewDevice', locale, 'ipAddress')  || 'IP Address'
+    const unk  = emailT('securityNewDevice', locale, 'unknown')    || 'Unknown'
+    const safe = emailT('securityNewDevice', locale, 'safe')       || 'If this was you, you can safely ignore this email.'
+    const warn = emailT('securityNewDevice', locale, 'warning')    || 'If you did NOT recognize this login, please change your password immediately.'
+    const btn1 = emailT('securityNewDevice', locale, 'button')     || 'Change Password'
+    const btn2 = emailT('securityNewDevice', locale, 'buttonHome') || 'Visit Homepage'
+    return emailWrapper(`
+        ${heading(h)}
+        ${subtext(`Hi ${name}, ${sub}`)}
+        ${infoCard(`
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${infoRow(date, loginTime)}
+                ${infoRow(dev, deviceInfo.ua || unk)}
+                ${infoRow(ip, deviceInfo.ip || unk)}
+            </table>
+        `, ACCENT_RED)}
+        ${paragraph(safe)}
+        ${paragraph(`<strong style="color: ${ACCENT_RED};">${warn}</strong>`)}
+        ${siteUrl ? `${divider()}${button(btn1, `${siteUrl}/forgot-password`)}${secondaryButton(btn2, siteUrl)}` : ''}
+    `, emailT('securityNewDevice', locale, 'subject') || 'New device login alert for your AIM Studio account')
+}
+
+/**
+ * Sync English-only shim — kept for backward compatibility.
  * Includes a "Change Password" button linking to the forgot-password page.
  */
 export function newDeviceLoginEmail(name: string, deviceInfo: { ip: string; ua: string }, siteUrl?: string): string {

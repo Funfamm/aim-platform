@@ -3,7 +3,8 @@ import { hash, compare } from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { withDbRetry } from '@/lib/db-retry'
 import { sendEmail } from '@/lib/mailer'
-import { forgotPasswordCode, passwordChangedEmail } from '@/lib/email-templates'
+import { forgotPasswordCodeLocalized, passwordChangedEmailLocalized } from '@/lib/email-templates'
+import { t as emailT } from '@/lib/email-i18n'
 
 // In-memory code store (in production, use Redis or DB)
 // Format: { email: { code: string, expiresAt: number, attempts: number } }
@@ -36,7 +37,10 @@ export async function POST(request: Request) {
 
         // ─── Step 1: Verify email exists and send 6-digit code ───
         if (action === 'verify') {
-            const user = await withDbRetry(() => prisma.user.findUnique({ where: { email: normalizedEmail } }), 'forgot_password_find')
+            const user = await withDbRetry(() => prisma.user.findUnique({
+                where: { email: normalizedEmail },
+                select: { name: true, preferredLanguage: true } as any,
+            }), 'forgot_password_find') as any
             if (!user) {
                 return NextResponse.json({ error: 'No account found with that email' }, { status: 404 })
             }
@@ -54,11 +58,13 @@ export async function POST(request: Request) {
                 attempts: (existing?.attempts || 0) + 1,
             })
 
+            const fpLocale = user.preferredLanguage || 'en'
+            const fpHtml = await forgotPasswordCodeLocalized(user.name || 'there', newCode, undefined, fpLocale)
             // Send the code via email
             const sent = await sendEmail({
                 to: normalizedEmail,
-                subject: 'Password Reset Code | AIM Studio',
-                html: forgotPasswordCode(user.name || 'there', newCode),
+                subject: emailT('securityForgotPassword', fpLocale, 'subject') || 'Password Reset Code | AIM Studio',
+                html: fpHtml,
             })
 
             if (!sent) {
@@ -175,13 +181,16 @@ export async function POST(request: Request) {
             // Clean up used code
             resetCodes.delete(normalizedEmail)
 
-            // Send password change notification email (fire-and-forget)
+            // Send password change notification email in the user's locale (fire-and-forget)
             const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || ''
-            sendEmail({
-                to: normalizedEmail,
-                subject: 'Your AIM Studio Password Was Changed',
-                html: passwordChangedEmail(user.name || 'there', siteUrl),
-            }).catch(() => { /* silent — never block the response */ })
+            const pcLocale = (user as any).preferredLanguage || 'en'
+            passwordChangedEmailLocalized(user.name || 'there', siteUrl, pcLocale)
+                .then(html => sendEmail({
+                    to: normalizedEmail,
+                    subject: emailT('securityPasswordChanged', pcLocale, 'subject') || 'Your AIM Studio Password Was Changed',
+                    html,
+                }))
+                .catch(() => { /* silent — never block the response */ })
 
             return NextResponse.json({ success: true, message: 'Password reset successfully' })
         }

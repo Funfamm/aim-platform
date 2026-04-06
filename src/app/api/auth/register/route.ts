@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { withDbRetry } from '@/lib/db-retry'
 import { authLimiter } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/mailer'
-import { verificationEmail, welcomeEmailWithOverrides } from '@/lib/email-templates'
+import { verificationEmailLocalized, welcomeEmailWithOverrides } from '@/lib/email-templates'
 import { validatePassword } from '@/lib/validation'
 
 export async function POST(request: Request) {
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
                         verificationExpiry: new Date(expiry),
                     } as any,
                 }), 'register_update_existing')
-                void sendEmail({ to: email, subject: 'Verify your AIM Studio account', html: verificationEmail(name, code) }).catch(() => {})
+                void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html => sendEmail({ to: email, subject: 'Verify your AIM Studio account', html })).catch(() => {})
                 if (process.env.NODE_ENV !== 'production') {
                     console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
                 }
@@ -76,12 +76,10 @@ export async function POST(request: Request) {
             } as any,
         }), 'register_set_verification')
 
-        // Send verification email (fire-and-forget)
-        sendEmail({
-            to: email,
-            subject: 'Verify your AIM Studio account',
-            html: verificationEmail(name, code),
-        })
+        // Send verification email in the user's locale (fire-and-forget)
+        void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html =>
+            sendEmail({ to: email, subject: 'Verify your AIM Studio account', html })
+        ).catch(() => {})
 
         // Log verification code in development so it works without SMTP
         if (process.env.NODE_ENV !== 'production') {

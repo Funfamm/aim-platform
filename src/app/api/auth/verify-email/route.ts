@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { sendEmail } from '@/lib/mailer'
-import { verificationEmail, welcomeEmailWithOverrides } from '@/lib/email-templates'
+import { verificationEmailLocalized, welcomeEmailWithOverrides } from '@/lib/email-templates'
+import { t as emailT } from '@/lib/email-i18n'
 
 // POST /api/auth/verify-email  { email, code }
 export async function POST(request: Request) {
@@ -68,10 +69,11 @@ export async function POST(request: Request) {
         // Send a welcome email in the user's preferred language (fire-and-forget)
         const locale = (user as any).preferredLanguage || 'en'
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+        const welcomeSubject = emailT('welcome', locale, 'heading') || 'Welcome to AIM Studio! 🎬'
         welcomeEmailWithOverrides(user.name, siteUrl, locale)
             .then(html => sendEmail({
                 to: user.email,
-                subject: 'Welcome to AIM Studio! 🎬',
+                subject: welcomeSubject,
                 html,
             }))
             .catch(() => { /* never block the login response */ })
@@ -89,12 +91,13 @@ export async function PUT(request: Request) {
         const { email } = await request.json()
         if (!email) return NextResponse.json({ error: 'Email required' }, { status: 400 })
 
-        const user = await prisma.user.findUnique({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userForResend = await prisma.user.findUnique({
             where: { email },
-            select: { name: true, emailVerified: true },
-        })
-        if (!user) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
-        if (user.emailVerified) return NextResponse.json({ error: 'Email already verified' }, { status: 400 })
+            select: { name: true, emailVerified: true, preferredLanguage: true } as any,
+        }) as any
+        if (!userForResend) return NextResponse.json({ error: 'Account not found' }, { status: 404 })
+        if (userForResend.emailVerified) return NextResponse.json({ error: 'Email already verified' }, { status: 400 })
 
         // Generate a fresh 6-digit code
         const code = Math.floor(100000 + Math.random() * 900000).toString()
@@ -108,10 +111,12 @@ export async function PUT(request: Request) {
             },
         })
 
+        const resendLocale = userForResend.preferredLanguage || 'en'
+        const html = await verificationEmailLocalized(userForResend.name, code, undefined, resendLocale)
         await sendEmail({
             to: email,
-            subject: 'Your AIM Studio verification code',
-            html: verificationEmail(user.name, code),
+            subject: emailT('securityVerification', resendLocale, 'subject') || 'Verify your AIM Studio account',
+            html,
         })
 
         console.log(`[DEV] Resent verification code for ${email}: ${code}`)
