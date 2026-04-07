@@ -7,40 +7,49 @@ import { prisma } from '@/lib/db'
 async function isAdmin() {
     try { await requireAdmin(); return true } catch { return false }
 }
-
-// ─── Daily quota tracking (resets at UTC midnight) ───────────────────────────
-const dailyExhaustedKeys = new Set<string>()
-let lastResetDay = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
-
-function checkDailyReset() {
-    const today = new Date().toISOString().slice(0, 10)
-    if (today !== lastResetDay) {
-        dailyExhaustedKeys.clear()
-        lastResetDay = today
-        console.log('[Training AI] Daily quota reset — all keys eligible again')
-    }
-}
-
-function isDailyQuotaError(msg: string): boolean {
-    return (
-        msg.includes('429') &&
-        (msg.includes('quota') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('rate limit'))
-    )
-}
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Fetch all API keys for the training agent
+// Cool-down durations (ms)
+const RATE_LIMIT_COOLDOWN_MS = 65_000      // 65 s for 429 rate-limit errors
+const ERROR_COOLDOWN_MS      = 5 * 60_000  // 5 min for connection/auth/unknown errors
+
+function is429(msg: string): boolean {
+    return (
+        msg.includes('429') ||
+        msg.toLowerCase().includes('quota') ||
+        msg.toLowerCase().includes('rate limit') ||
+        msg.toLowerCase().includes('resource_exhausted') ||
+        msg.toLowerCase().includes('too many requests')
+    )
+}
+
+// Fetch all API keys for the training agent — respects cooledDownUntil
 async function getTrainingKey() {
     const settings = await prisma.siteSettings.findFirst()
-    // Try training-scoped keys first
+    const now = new Date()
+
+    // Try training-scoped keys first, exclude keys still on cooldown
     let keys = await prisma.apiKey.findMany({
-        where: { isActive: true, assignedAgent: { in: ['training', 'all'] } },
+        where: {
+            isActive: true,
+            assignedAgent: { in: ['training', 'all'] },
+            OR: [
+                { cooledDownUntil: null },
+                { cooledDownUntil: { lt: now } },
+            ],
+        },
         orderBy: [{ lastUsed: 'asc' }, { usageCount: 'asc' }],
     })
-    // Fallback: any active key
+    // Fallback: any active non-cooled key
     if (keys.length === 0) {
         keys = await prisma.apiKey.findMany({
-            where: { isActive: true },
+            where: {
+                isActive: true,
+                OR: [
+                    { cooledDownUntil: null },
+                    { cooledDownUntil: { lt: now } },
+                ],
+            },
             orderBy: [{ lastUsed: 'asc' }, { usageCount: 'asc' }],
         })
     }
@@ -48,34 +57,36 @@ async function getTrainingKey() {
     if (keys.length === 0 && settings?.geminiApiKey) {
         keys = [{ id: 'settings', key: settings.geminiApiKey, label: 'Settings Key', provider: 'gemini' } as any]
     }
-    console.log(`[Training AI] Found ${keys.length} key(s):`, keys.map(k => `${k.label} (${k.assignedAgent}, used=${k.usageCount}, lastUsed=${k.lastUsed})`))
+
+    // Count how many keys are currently cooling down (for logging)
+    const coolingCount = await prisma.apiKey.count({
+        where: { isActive: true, cooledDownUntil: { gte: now } },
+    })
+
+    console.log(`[Training AI] ${keys.length} key(s) available, ${coolingCount} cooling down`)
     return { keys, model: settings?.aiModel || 'gemini-2.5-flash' }
 }
 
-// Call AI provider with key rotation + daily quota awareness
+// Call AI provider with smart key rotation + DB-backed cooldowns
 async function callAI(prompt: string): Promise<string> {
-    checkDailyReset()
     const { keys, model } = await getTrainingKey()
-    if (keys.length === 0) throw new Error('No API keys configured. Go to Admin > Settings > API Keys.')
-
-    // Filter out keys exhausted today
-    const freshKeys = keys.filter((k: any) => !dailyExhaustedKeys.has(k.id))
-    if (freshKeys.length === 0) {
-        throw new Error(
-            `All ${keys.length} API key(s) have hit their daily quota. They reset at midnight UTC.`
-        )
+    if (keys.length === 0) {
+        throw new Error('All API keys are cooling down or unavailable. Try again in a few minutes, or add more keys in Admin > Settings > API Keys.')
     }
 
-    console.log(`[Training AI] ${freshKeys.length}/${keys.length} keys available (${dailyExhaustedKeys.size} daily-exhausted)`)
-
     const errors: string[] = []
-    for (const keyInfo of freshKeys) {
-        // Skip any key exhausted mid-loop
-        if (dailyExhaustedKeys.has(keyInfo.id)) continue
-
+    for (const keyInfo of keys) {
         try {
             let responseText = ''
             const provider = keyInfo.provider || 'gemini'
+
+            // Pre-touch lastUsed to prevent concurrent requests from picking the same key
+            if (keyInfo.id !== 'settings') {
+                prisma.apiKey.update({
+                    where: { id: keyInfo.id },
+                    data: { lastUsed: new Date() },
+                }).catch(() => {})
+            }
 
             if (provider === 'gemini') {
                 const res = await fetch(
@@ -89,18 +100,11 @@ async function callAI(prompt: string): Promise<string> {
                         }),
                     }
                 )
-                const resText = await res.text()
                 if (!res.ok) {
-                    const msg = `Gemini "${keyInfo.label}" error (${res.status}) model=${model}: ${resText.slice(0, 200)}`
-                    console.error(msg)
-                    errors.push(msg)
-                    if (isDailyQuotaError(`${res.status} ${resText}`)) {
-                        dailyExhaustedKeys.add(keyInfo.id)
-                        console.log(`[Training AI] Key ${keyInfo.label} exhausted for today — skipping`)
-                    }
-                    await trackError(keyInfo, msg)
-                    continue
+                    const resText = await res.text()
+                    throw new Error(`Gemini error (${res.status}) model=${model}: ${resText.slice(0, 200)}`)
                 }
+                const resText = await res.text()
                 const data = JSON.parse(resText)
                 responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
             } else if (provider === 'groq') {
@@ -117,13 +121,7 @@ async function callAI(prompt: string): Promise<string> {
                 })
                 if (!res.ok) {
                     const resText = await res.text()
-                    const msg = `Groq "${keyInfo.label}" error (${res.status})`
-                    errors.push(msg)
-                    if (isDailyQuotaError(`${res.status} ${resText}`)) {
-                        dailyExhaustedKeys.add(keyInfo.id)
-                    }
-                    await trackError(keyInfo, msg)
-                    continue
+                    throw new Error(`Groq error (${res.status}): ${resText.slice(0, 200)}`)
                 }
                 const data = await res.json()
                 responseText = data.choices?.[0]?.message?.content || ''
@@ -141,13 +139,7 @@ async function callAI(prompt: string): Promise<string> {
                 })
                 if (!res.ok) {
                     const resText = await res.text()
-                    const msg = `OpenAI "${keyInfo.label}" error (${res.status})`
-                    errors.push(msg)
-                    if (isDailyQuotaError(`${res.status} ${resText}`)) {
-                        dailyExhaustedKeys.add(keyInfo.id)
-                    }
-                    await trackError(keyInfo, msg)
-                    continue
+                    throw new Error(`OpenAI error (${res.status}): ${resText.slice(0, 200)}`)
                 }
                 const data = await res.json()
                 responseText = data.choices?.[0]?.message?.content || ''
@@ -155,40 +147,42 @@ async function callAI(prompt: string): Promise<string> {
 
             if (!responseText) { errors.push(`${provider} "${keyInfo.label}": empty response`); continue }
 
-            // Track success
+            // Success — clear cooldown and increment usage
             if (keyInfo.id !== 'settings') {
                 await prisma.apiKey.update({
                     where: { id: keyInfo.id },
-                    data: { usageCount: { increment: 1 }, lastUsed: new Date(), lastError: null },
+                    data: { usageCount: { increment: 1 }, lastUsed: new Date(), lastError: null, cooledDownUntil: null },
                 }).catch(() => {})
             }
 
             return responseText
         } catch (err) {
-            const msg = `${keyInfo.provider || 'gemini'} "${keyInfo.label}": ${err instanceof Error ? err.message : String(err)}`
-            errors.push(msg)
-            if (isDailyQuotaError(msg)) {
-                dailyExhaustedKeys.add(keyInfo.id)
-                console.log(`[Training AI] Key ${keyInfo.label} exhausted (catch) — skipping`)
+            const errMsg = err instanceof Error ? err.message : String(err)
+            errors.push(`${keyInfo.label}: ${errMsg}`)
+
+            // Cool down on ANY error — rate-limit gets short cooldown, other errors get longer
+            if (keyInfo.id !== 'settings') {
+                const isRateLimit = is429(errMsg)
+                const cooldownMs = isRateLimit ? RATE_LIMIT_COOLDOWN_MS : ERROR_COOLDOWN_MS
+
+                await prisma.apiKey.update({
+                    where: { id: keyInfo.id },
+                    data: {
+                        lastError: `${errMsg.slice(0, 150)} — cooling ${cooldownMs / 1000}s`,
+                        lastUsed: new Date(),
+                        cooledDownUntil: new Date(Date.now() + cooldownMs),
+                    },
+                }).catch(() => {})
             }
-            await trackError(keyInfo, msg)
+
+            continue
         }
     }
-    console.error('All AI keys failed:', errors)
-    const exhaustedCount = dailyExhaustedKeys.size
-    throw new Error(
-        `All API keys failed for AI generation.${exhaustedCount > 0 ? ` ${exhaustedCount} key(s) hit daily quota (reset at midnight UTC).` : ''} Last errors: ${errors.slice(-3).join(' | ')}`
-    )
+
+    console.error('[Training AI] All keys failed:', errors)
+    throw new Error(`All API keys failed. Last errors: ${errors.slice(-3).join(' | ')}`)
 }
 
-async function trackError(keyInfo: any, error: string) {
-    if (keyInfo.id !== 'settings') {
-        await prisma.apiKey.update({
-            where: { id: keyInfo.id },
-            data: { lastError: error.slice(0, 200), lastUsed: new Date() },
-        }).catch(() => {})
-    }
-}
 
 
 // POST — generate lesson content or quiz questions

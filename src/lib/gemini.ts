@@ -1,9 +1,9 @@
 import { prisma } from '@/lib/db'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
-// How long to cool a key down after a 429 (ms).
-// Gemini free tier resets every minute; Groq resets vary.
-const COOLDOWN_MS = 65_000 // 65 seconds
+// Cool-down durations (ms)
+const RATE_LIMIT_COOLDOWN_MS = 65_000    // 65 s for 429 rate-limit errors
+const ERROR_COOLDOWN_MS      = 5 * 60_000 // 5 min for connection/auth/unknown errors
 
 /**
  * Returns true if an error message is a 429 rate-limit response.
@@ -159,20 +159,19 @@ export async function callGemini(
                 lastKeyError = `${errMsg} (key: ${key.label})`
 
                 if (key.id !== 'env' && key.id !== 'settings') {
-                    const cooldownData = is429(errMsg)
-                        ? {
-                              lastError: `Rate limited (429) — cooling down for ${COOLDOWN_MS / 1000}s`,
-                              lastUsed: new Date(),
-                              cooledDownUntil: new Date(Date.now() + COOLDOWN_MS),
-                          }
-                        : {
-                              lastError: errMsg.slice(0, 200),
-                              lastUsed: new Date(),
-                          }
+                    // Cool down on ANY error — rate-limit gets short cooldown, other errors get longer
+                    const isRateLimit = is429(errMsg)
+                    const cooldownMs = isRateLimit ? RATE_LIMIT_COOLDOWN_MS : ERROR_COOLDOWN_MS
 
                     await prisma.apiKey.update({
                         where: { id: key.id },
-                        data: cooldownData,
+                        data: {
+                            lastError: isRateLimit
+                                ? `Rate limited (429) — cooling down for ${cooldownMs / 1000}s`
+                                : `${errMsg.slice(0, 150)} — cooling down for ${cooldownMs / 1000}s`,
+                            lastUsed: new Date(),
+                            cooledDownUntil: new Date(Date.now() + cooldownMs),
+                        },
                     }).catch(() => { /* non-critical */ })
                 }
 
