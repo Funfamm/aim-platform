@@ -764,7 +764,7 @@ export default function AdminSettingsPage() {
     const [createAdminMsg, setCreateAdminMsg] = useState('')
 
     // API Keys state
-    interface ApiKeyItem { id: string; label: string; provider: string; key: string; isActive: boolean; assignedAgent: string; usageCount: number; lastUsed: string | null; lastError: string | null; createdAt: string }
+    interface ApiKeyItem { id: string; label: string; provider: string; key: string; isActive: boolean; assignedAgent: string; usageCount: number; lastUsed: string | null; lastError: string | null; cooledDownUntil: string | null; createdAt: string }
     const [apiKeys, setApiKeys] = useState<ApiKeyItem[]>([])
     const [newKeyLabel, setNewKeyLabel] = useState('')
     const [newKeyValue, setNewKeyValue] = useState('')
@@ -1825,15 +1825,49 @@ export default function AdminSettingsPage() {
                                                                                     <div style={{ fontSize: '0.65rem' }}>
                                                                                         <strong style={{ color: 'var(--text-secondary)' }}>{k.usageCount}</strong> calls {k.lastUsed ? `• Used ${new Date(k.lastUsed).toLocaleDateString()}` : '✨ Never used'}
                                                                                     </div>
-                                                                                    {k.lastError && (
-                                                                                        <div style={{ color: '#ef4444', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                                            ❌ {k.lastError.slice(0, 45)}{k.lastError.length > 45 ? '...' : ''}
-                                                                                            <button type="button" onClick={async () => {
-                                                                                                await fetch('/api/admin/api-keys', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: k.id, clearError: true }) })
-                                                                                                setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, lastError: null } : pk))
-                                                                                            }} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', textDecoration: 'underline' }}>clear</button>
-                                                                                        </div>
-                                                                                    )}
+                                                                                    {(() => {
+                                                                                        const now = Date.now()
+                                                                                        const cooling = k.cooledDownUntil && new Date(k.cooledDownUntil).getTime() > now
+                                                                                        const recovering = !cooling && k.lastError
+                                                                                        if (cooling) {
+                                                                                            const secsLeft = Math.ceil((new Date(k.cooledDownUntil!).getTime() - now) / 1000)
+                                                                                            return (
+                                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.6rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.08)', padding: '2px 7px', borderRadius: '10px', border: '1px solid rgba(239,68,68,0.2)' }}>
+                                                                                                        🔴 Cooling down · {secsLeft}s left
+                                                                                                    </span>
+                                                                                                    <div style={{ color: '#ef4444', fontSize: '0.6rem', lineHeight: 1.4, opacity: 0.8 }}>
+                                                                                                        {k.lastError?.slice(0, 60)}{(k.lastError?.length ?? 0) > 60 ? '…' : ''}
+                                                                                                    </div>
+                                                                                                    <button type="button" onClick={async () => {
+                                                                                                        await fetch('/api/admin/api-keys', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: k.id, clearError: true }) })
+                                                                                                        setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, lastError: null, cooledDownUntil: null } : pk))
+                                                                                                    }} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '0.6rem', padding: 0, textDecoration: 'underline' }}>Force clear cooldown</button>
+                                                                                                </div>
+                                                                                            )
+                                                                                        }
+                                                                                        if (recovering) {
+                                                                                            return (
+                                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.6rem', fontWeight: 700, color: '#f59e0b', background: 'rgba(245,158,11,0.08)', padding: '2px 7px', borderRadius: '10px', border: '1px solid rgba(245,158,11,0.2)' }}>
+                                                                                                        🟡 Recovering — clears on next success
+                                                                                                    </span>
+                                                                                                    <div style={{ color: '#f59e0b', fontSize: '0.6rem', lineHeight: 1.4, opacity: 0.8 }}>
+                                                                                                        Last error: {k.lastError?.slice(0, 60)}{(k.lastError?.length ?? 0) > 60 ? '…' : ''}
+                                                                                                    </div>
+                                                                                                    <button type="button" onClick={async () => {
+                                                                                                        await fetch('/api/admin/api-keys', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: k.id, clearError: true }) })
+                                                                                                        setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, lastError: null, cooledDownUntil: null } : pk))
+                                                                                                    }} style={{ alignSelf: 'flex-start', background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '0.6rem', padding: 0, textDecoration: 'underline' }}>Mark resolved</button>
+                                                                                                </div>
+                                                                                            )
+                                                                                        }
+                                                                                        return (
+                                                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.6rem', fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.07)', padding: '2px 7px', borderRadius: '10px', border: '1px solid rgba(52,211,153,0.15)' }}>
+                                                                                                🟢 Healthy
+                                                                                            </span>
+                                                                                        )
+                                                                                    })()}
                                                                                 </div>
                                                                             </td>
                                                                             <td style={{ padding: '10px 14px', textAlign: 'right' }}>

@@ -74,7 +74,17 @@ interface AnalyticsData {
         totalApps: number; appsMonth: number
         totalDonations: number; donationsMonth: number
         subscribers: number
+        trailerCount: number
+        trailerViews: number
         conversionRate: number; castingViews: number
+    }
+    email?: {
+        total: number
+        today: number
+        thisMonth: number
+        failedMonth: number
+        successRate: number
+        byType: { type: string; count: number }[]
     }
     sparklines: { views: number[]; users: number[]; apps: number[] }
     recentActivity: { id: string; path: string; device: string | null; createdAt: string; referrer: string | null }[]
@@ -583,17 +593,18 @@ export default function AdminAnalyticsPage() {
                                         <StatCard label="Page Views" value={data.traffic.monthViews} sublabel={<><TrendArrow current={data.realTime.todayViews} previous={data.realTime.yesterdayViews} /> <span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>{data.realTime.todayViews} today</span></>} sparkData={data.sparklines.views} color="var(--accent-gold)" delay={0} />
                                         <StatCard label="Users" value={data.engagement.totalUsers} sublabel={<span style={{ color: '#22c55e', fontSize: '0.65rem', fontWeight: 600 }}>+{data.engagement.newUsersMonth} this month</span>} sparkData={data.sparklines.users} color="#22c55e" delay={1} />
                                         <StatCard label="Applications" value={data.engagement.totalApps} sublabel={<span style={{ color: '#3b82f6', fontSize: '0.65rem', fontWeight: 600 }}>+{data.engagement.appsMonth} this month</span>} sparkData={data.sparklines.apps} color="#3b82f6" delay={2} />
-                                        <StatCard label="Subscribers" value={data.engagement.subscribers} sublabel={<span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>{data.engagement.conversionRate}% conversion</span>} sparkData={[]} color="#a855f7" delay={3} />
+                                        <StatCard label="Subscribers" value={data.engagement.subscribers} sublabel={<span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>newsletter · {data.engagement.conversionRate}% cast. conv.</span>} sparkData={[]} color="#a855f7" delay={3} />
                                     </div>
                                 </div>
 
                                 {/* ── Engagement Metrics Strip ── */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
                                     {[
                                         { label: 'This Week', value: data.traffic.weekViews, icon: '📅', color: 'var(--accent-gold)', glow: 'rgba(212,168,83,0.08)' },
                                         { label: 'Casting Views', value: data.engagement.castingViews, icon: '🎭', color: '#f59e0b', glow: 'rgba(245,158,11,0.06)' },
                                         { label: 'Donations', value: data.engagement.totalDonations, icon: '💰', color: '#22c55e', glow: 'rgba(34,197,94,0.06)' },
                                         { label: 'Film Views', value: data.content.totalFilmViews, icon: '🎬', color: '#3b82f6', glow: 'rgba(59,130,246,0.06)' },
+                                        { label: 'Trailers', value: data.engagement.trailerCount, icon: '🎞️', color: '#e879f9', glow: 'rgba(232,121,249,0.06)', sublabel: data.engagement.trailerViews > 0 ? `${data.engagement.trailerViews} views/mo` : 'No views yet' },
                                     ].map((stat, i) => (
                                         <div key={stat.label} className="cmd-card" style={{
                                             ...glassCard, padding: '14px 16px',
@@ -612,10 +623,94 @@ export default function AdminAnalyticsPage() {
                                                     <AnimatedNumber value={stat.value} />
                                                 </div>
                                                 <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, marginTop: '2px' }}>{stat.label}</div>
+                                                {'sublabel' in stat && stat.sublabel && (
+                                                    <div style={{ fontSize: '0.52rem', color: stat.color, opacity: 0.7, marginTop: '2px', fontWeight: 600 }}>{stat.sublabel}</div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* ── Email Delivery Panel ── */}
+                                {data.email && (
+                                    <div style={{ ...glassCard, marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.42s both' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
+                                            <h4 style={{ ...sectionLabel, margin: 0 }}>✉️ Email Delivery</h4>
+                                            <span style={{
+                                                fontSize: '0.62rem', fontWeight: 800,
+                                                padding: '3px 10px', borderRadius: 'var(--radius-full)',
+                                                background: data.email.successRate >= 95 ? 'rgba(52,211,153,0.1)' : data.email.successRate >= 80 ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                                                color: data.email.successRate >= 95 ? '#34d399' : data.email.successRate >= 80 ? '#f59e0b' : '#ef4444',
+                                                border: `1px solid ${data.email.successRate >= 95 ? 'rgba(52,211,153,0.2)' : data.email.successRate >= 80 ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}`,
+                                            }}>
+                                                {data.email.successRate}% delivery rate
+                                            </span>
+                                        </div>
+
+                                        {/* Stats row */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
+                                            {[
+                                                { label: 'All Time', value: data.email.total, color: '#a855f7' },
+                                                { label: 'Today', value: data.email.today, color: 'var(--accent-gold)' },
+                                                { label: 'This Month', value: data.email.thisMonth, color: '#3b82f6' },
+                                                { label: 'Failed (30d)', value: data.email.failedMonth, color: data.email.failedMonth > 0 ? '#ef4444' : '#34d399' },
+                                            ].map(s => (
+                                                <div key={s.label} style={{
+                                                    background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-md)',
+                                                    border: '1px solid var(--border-subtle)', padding: '10px 12px', textAlign: 'center',
+                                                }}>
+                                                    <div style={{ fontSize: '1.3rem', fontWeight: 900, color: s.color, lineHeight: 1 }}>
+                                                        <AnimatedNumber value={s.value} />
+                                                    </div>
+                                                    <div style={{ fontSize: '0.52rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, marginTop: '4px' }}>{s.label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Type breakdown bars */}
+                                        {data.email.byType.length > 0 && (
+                                            <div>
+                                                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, marginBottom: '8px' }}>By Type (This Month)</div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    {(() => {
+                                                        const typeColors: Record<string, string> = {
+                                                            authentication: '#3b82f6',
+                                                            application: '#f59e0b',
+                                                            notification: '#22c55e',
+                                                            subscribe: '#a855f7',
+                                                            general: '#6b7280',
+                                                        }
+                                                        const typeIcons: Record<string, string> = {
+                                                            authentication: '🔐', application: '🎭',
+                                                            notification: '🔔', subscribe: '📮', general: '📧',
+                                                        }
+                                                        const maxCount = Math.max(...data.email!.byType.map(t => t.count), 1)
+                                                        return data.email!.byType.map(t => (
+                                                            <div key={t.type} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                <span style={{ fontSize: '0.75rem', width: '16px', textAlign: 'center' }}>{typeIcons[t.type] || '📧'}</span>
+                                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', fontWeight: 600, width: '90px', textTransform: 'capitalize' }}>{t.type}</div>
+                                                                <div style={{ flex: 1, height: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                                                                    <div style={{
+                                                                        height: '100%', borderRadius: '3px',
+                                                                        width: `${(t.count / maxCount) * 100}%`,
+                                                                        background: typeColors[t.type] || '#6b7280',
+                                                                        transition: 'width 0.8s ease',
+                                                                    }} />
+                                                                </div>
+                                                                <div style={{ fontSize: '0.65rem', fontWeight: 800, color: typeColors[t.type] || '#6b7280', minWidth: '28px', textAlign: 'right' }}>{t.count}</div>
+                                                            </div>
+                                                        ))
+                                                    })()}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {data.email.total === 0 && (
+                                            <div style={{ textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.75rem', padding: 'var(--space-md)' }}>
+                                                📭 No emails logged yet — tracking begins with the next send
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* ── Funnel & Activity ── */}
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', animation: 'cardCascade 0.6s ease 0.5s both' }}>

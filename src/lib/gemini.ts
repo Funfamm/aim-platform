@@ -122,12 +122,18 @@ export async function callGemini(
                 }
                 const useModel = (detectProvider(model) === key.provider && model) ? model : defaultModels[key.provider]
 
-                // Pre-emptively mark lastUsed so concurrent requests skip this key
+                // Pre-emptively mark lastUsed and clear the expired cooldown timer so
+                // concurrent requests don't all pick the same key. We deliberately
+                // DO NOT clear lastError here — that stays visible until a successful
+                // call clears it, so the admin dashboard can see the key had trouble.
                 if (key.id !== 'env' && key.id !== 'settings') {
                     prisma.apiKey.update({
                         where: { id: key.id },
-                        data: { lastUsed: new Date() },
-                    }).catch(() => { /* fire-and-forget pre-touch lock */ })
+                        data: {
+                            lastUsed: new Date(),
+                            cooledDownUntil: null, // expire the cooldown timer now
+                        },
+                    }).catch(() => { /* fire-and-forget pre-touch */ })
                 }
 
                 let text = ''

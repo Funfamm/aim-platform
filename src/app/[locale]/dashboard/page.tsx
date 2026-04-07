@@ -232,7 +232,10 @@ export default function DashboardPage() {
         { key: 'applications', label: t('applications'), icon: '📋', count: applications.length },
         { key: 'watchlist', label: t('watchlist'), icon: '🎬', count: watchlist.length },
         { key: 'activity', label: t('watchHistory'), icon: '📺', count: history.length },
-        { key: 'donations', label: t('donations'), icon: '💛', count: donations.length },
+        // Only show donations tab once user has made at least one donation
+        ...(!loadingDonations && donations.length > 0
+            ? [{ key: 'donations' as TabType, label: t('donations'), icon: '💛', count: donations.length }]
+            : []),
         { key: 'profile', label: t('profile'), icon: '👤' },
     ]
 
@@ -298,7 +301,8 @@ export default function DashboardPage() {
                             applications={applications.length}
                             saved={watchlist.length}
                             watched={history.length}
-                            donated={donations.reduce((sum, d) => sum + (d.amount || 0), 0)}
+                            // Only pass donated amount when user has actual donations
+                            donated={donations.length > 0 ? donations.reduce((sum, d) => sum + (d.amount || 0), 0) : undefined}
                         />
                     </ScrollReveal3D>
 

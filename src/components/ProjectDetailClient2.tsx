@@ -142,11 +142,12 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                     }
                 } else {
                     // Not logged in, redirect to login
-                    router.push(`/${locale}/login?redirect=/works/${project.slug}/watch`)
+                    // Note: useRouter from @/i18n/navigation auto-prefixes locale
+                    router.push(`/login?redirect=/works/${project.slug}/watch`)
                 }
             })
             .catch(() => {
-                router.push(`/${locale}/login?redirect=/works/${project.slug}/watch`)
+                router.push(`/login?redirect=/works/${project.slug}/watch`)
             })
             .finally(() => setCheckingAuth(false))
     }
@@ -344,7 +345,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                             <button
                                 onClick={async () => {
                                     if (!user) {
-                                        router.push(`/${locale}/login?redirect=/works/${project.slug}`)
+                                        router.push(`/login?redirect=/works/${project.slug}`)
                                         return
                                     }
                                     if (isSaved) {

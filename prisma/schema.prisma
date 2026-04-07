@@ -4,67 +4,50 @@ generator client {
 }
 
 datasource db {
-  // PRODUCTION: Neon PostgreSQL via pooler
-  // DATABASE_URL  = pooler URL (required on all platforms)
-  // DIRECT_URL    = direct (non-pooler) URL — only needed for migrations.
-  //                 Set this on Render/CI. On Vercel it is optional.
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
-enum EmailTransport {
-  graph
-  smtp
-}
-
 model User {
-  id                 String            @id @default(cuid())
-  name               String
-  email              String            @unique
-  passwordHash       String? // null for Google/Apple-only users
-  googleId           String?           @unique
-  appleId            String?           @unique
-  avatar             String?
-  bannerUrl          String? // Custom dashboard banner image
-  role               String            @default("member") // member | admin | superadmin
-  tokenVersion       Int               @default(0) // incremented on credential changes
-  knownDevices       String? // JSON array of hashed device fingerprints
-  lastLoginAt        DateTime?
-  // Email verification
-  emailVerified      Boolean           @default(false)
-  verificationCode   String? // 6-digit OTP
-  verificationExpiry DateTime? // Code expires after 15 minutes
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-  applications       Application[]
-  donations          Donation[]
-  watchlist          Watchlist[]
-  watchHistory       WatchHistory[]
-  // Training
-  enrollments        Enrollment[]
-  lessonProgress     LessonProgress[]
-  trainingBadges     TrainingBadge[]
-  quizAttempts       QuizAttempt[]
-  reviewActivities   ReviewActivity[]
-  trainingXp         Int               @default(0)
-  trainingStreak     Int               @default(0)
-  lastTrainingAt     DateTime?
-  // MFA (Email OTP)
-  mfaEnabled    Boolean   @default(false)
-  mfaTempCode   String?   // 6-digit hashed OTP
-  mfaExpiresAt  DateTime? // OTP expiry (10 minutes)
-  // Security
-  passwordHistory    PasswordHistory[]
-  // Projects owned
-  ownedProjects      Project[]
-  // Notifications
-  notificationPreference UserNotificationPreference?
+  id                     String                      @id @default(cuid())
+  name                   String
+  email                  String                      @unique
+  passwordHash           String?
+  googleId               String?                     @unique
+  appleId                String?                     @unique
+  avatar                 String?
+  bannerUrl              String?
+  role                   String                      @default("member")
+  tokenVersion           Int                         @default(0)
+  knownDevices           String?
+  lastLoginAt            DateTime?
+  emailVerified          Boolean                     @default(false)
+  verificationCode       String?
+  verificationExpiry     DateTime?
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+  trainingXp             Int                         @default(0)
+  trainingStreak         Int                         @default(0)
+  lastTrainingAt         DateTime?
+  mfaEnabled             Boolean                     @default(false)
+  mfaTempCode            String?
+  mfaExpiresAt           DateTime?
+  preferredLanguage      String                      @default("en")
+  receiveLocalizedEmails Boolean                     @default(true)
+  applications           Application[]
+  donations              Donation[]
+  enrollments            Enrollment[]
+  lessonProgress         LessonProgress[]
+  passwordHistory        PasswordHistory[]
+  ownedProjects          Project[]
+  quizAttempts           QuizAttempt[]
+  reviewActivities       ReviewActivity[]
+  trainingBadges         TrainingBadge[]
   notifications          UserNotification[]
-  // Language preference – stored BCP-47 locale code (en, es, fr, zh, …)
-  preferredLanguage      String  @default("en")
-  // When false, all emails are sent in English regardless of preferredLanguage
-  receiveLocalizedEmails Boolean @default(true)
+  notificationPreference UserNotificationPreference?
+  watchHistory           WatchHistory[]
+  watchlist              Watchlist[]
 
   @@index([role])
   @@index([createdAt])
@@ -76,33 +59,32 @@ model Project {
   slug         String         @unique
   tagline      String         @default("")
   description  String
-  status       String         @default("upcoming") // upcoming | in-production | completed
-  projectType  String         @default("movie") // movie | series
+  status       String         @default("upcoming")
+  projectType  String         @default("movie")
   coverImage   String?
   trailerUrl   String?
-  filmUrl      String? // Full film — member-only access
-  country      String? // ISO country code for reach metric
-  ownerId      String? // reference to User who created the project
-  owner        User?          @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  filmUrl      String?
   genre        String?
   year         String?
   duration     String?
-  gallery      String? // JSON array of image paths
-  translations String? // JSON: { "zh": { "title": "...", "tagline": "...", ... }, ... }
-  credits      String? // JSON: { director, producer, cast, etc. }
+  gallery      String?
+  translations String?
+  credits      String?
   featured     Boolean        @default(false)
   sortOrder    Int            @default(0)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  country      String?
+  ownerId      String?
   castingCalls CastingCall[]
   donations    Donation[]
   episodes     Episode[]
-  scriptCalls  ScriptCall[]
-  watchlist    Watchlist[]
-  watchHistory WatchHistory[]
   subtitles    FilmSubtitle[]
+  owner        User?          @relation(fields: [ownerId], references: [id])
+  scriptCalls  ScriptCall[]
+  watchHistory WatchHistory[]
+  watchlist    Watchlist[]
 
-  // Index for fast title/tagline search
   @@index([title, tagline])
 }
 
@@ -110,9 +92,9 @@ model Watchlist {
   id        String   @id @default(cuid())
   userId    String
   projectId String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, projectId])
   @@index([userId])
@@ -122,10 +104,10 @@ model WatchHistory {
   id        String   @id @default(cuid())
   userId    String
   projectId String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   watchedAt DateTime @default(now())
-  progress  Float    @default(0) // 0-100 percentage watched
+  progress  Float    @default(0)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, watchedAt])
 }
@@ -133,13 +115,13 @@ model WatchHistory {
 model Episode {
   id        String   @id @default(cuid())
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   title     String
-  number    Int // Episode number
+  number    Int
   season    Int      @default(1)
-  videoUrl  String? // Episode video URL
+  videoUrl  String?
   duration  String?
   createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, season, number])
   @@index([projectId])
@@ -148,14 +130,14 @@ model Episode {
 model FilmSubtitle {
   id           String   @id @default(cuid())
   projectId    String
-  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  episodeId    String? // null for movies, set for series episodes
-  language     String   @default("en") // original transcription language
-  segments     String // JSON: [{ start, end, text }]
-  translations String? // JSON: { "es": [{ start, end, text }], "fr": [...], ... }
-  status       String   @default("pending") // pending | transcribing | translating | completed | error
+  episodeId    String?
+  language     String   @default("en")
+  segments     String
+  translations String?
+  status       String   @default("pending")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, episodeId])
   @@index([projectId])
@@ -164,24 +146,23 @@ model FilmSubtitle {
 model CastingCall {
   id              String        @id @default(cuid())
   projectId       String
-  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
   roleName        String
-  roleType        String        @default("lead") // lead | supporting | extra | voice
+  roleType        String        @default("lead")
   roleDescription String
   ageRange        String?
   gender          String?
   ethnicity       String?
-  requirements    String // Detailed requirements for the role
+  requirements    String
   compensation    String?
   deadline        String?
-  translations    String? // JSON: { "zh": { "roleName": "...", "roleDescription": "..." }, ... }
-  maxApplications Int           @default(50) // Auto-close after this many applications
-  status          String        @default("open") // open | closed | filled
-  applications    Application[]
+  translations    String?
+  maxApplications Int           @default(50)
+  status          String        @default("open")
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  applications    Application[]
+  project         Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  // Index for role name/description search
   @@index([roleName, roleDescription])
   @@index([status])
   @@index([projectId])
@@ -190,60 +171,43 @@ model CastingCall {
 model Application {
   id                     String                    @id @default(cuid())
   castingCallId          String
-  castingCall            CastingCall               @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
-  userId                 String? // linked when applicant is logged in
-  user                   User?                     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId                 String?
   fullName               String
   email                  String
   phone                  String?
   age                    Int?
   gender                 String?
   location               String?
-  experience             String // Resume/bio text
-  audioUrl               String? // URL of uploaded audio recording
+  experience             String
   specialSkills          String?
   agencyName             String?
   headshotPath           String?
   selfTapePath           String?
   portfolioUrl           String?
-  locale                 String                    @default("en") // User's locale at time of application
-  status                 ApplicationStatus         @default(submitted)
+  locale                 String                    @default("en")
   aiScore                Float?
-  aiFitLevel             String? // STRONG_FIT | GOOD_FIT | MODERATE | WEAK_FIT
-  aiReport               String? // JSON: { overallScore, roleFitScore, strengths, concerns, recommendation, notes }
-  resultVisibleAt        DateTime? // When AI result becomes visible to applicant (delayed reveal)
+  aiFitLevel             String?
+  aiReport               String?
+  resultVisibleAt        DateTime?
   adminNotes             String?
-  statusNote             String? // AI-generated note shown to the applicant explaining the decision
-  statusNoteTranslations String? // JSON: { "ar": "...", "fr": "..." } ??? cached translations of statusNote
-  photoScreeningStatus   String? // 'skipped' | 'completed'
+  statusNote             String?
   reviewedAt             DateTime?
   createdAt              DateTime                  @default(now())
   updatedAt              DateTime                  @updatedAt
+  photoScreeningStatus   String?
+  statusNoteTranslations String?
+  status                 ApplicationStatus         @default(submitted)
+  audioUrl               String?
+  castingCall            CastingCall               @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
+  user                   User?                     @relation(fields: [userId], references: [id])
   notifications          ApplicationNotification[]
 
-  @@unique([castingCallId, email]) // Prevent duplicate applications for same role
+  @@unique([castingCallId, email])
   @@index([email])
   @@index([castingCallId])
   @@index([status])
   @@index([createdAt])
   @@index([aiScore])
-}
-
-enum ApplicationStatus {
-  submitted
-  under_review
-  reviewed
-  shortlisted
-  contacted
-  audition
-  callback
-  final_review
-  selected
-  not_selected
-  rejected
-  withdrawn
-  pending
-  approved
 }
 
 model Admin {
@@ -256,9 +220,9 @@ model Admin {
 model HeroVideo {
   id        String   @id @default(cuid())
   title     String   @default("")
-  url       String // path like /videos/1.mp4
-  duration  Int      @default(10) // seconds to show before switching
-  page      String   @default("all") // all | home | works | casting
+  url       String
+  duration  Int      @default(10)
+  page      String   @default("all")
   active    Boolean  @default(true)
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
@@ -266,149 +230,117 @@ model HeroVideo {
 }
 
 model SiteSettings {
-  // Feature flag for premium mobile search UI
-  searchBetaEnabled Boolean @default(false) // toggle search UI
-  id                String  @id @default("default")
-  siteName          String  @default("AIM Studio")
-  tagline           String  @default("AI-Powered Filmmaking")
-  aboutText         String  @default("")
-  studioStory       String  @default("") // Rich about page content
-  mission           String  @default("")
-  aboutPageData     String? // JSON: all About page section overrides
-  logoUrl           String?
-  socialLinks       String? // JSON: { youtube, instagram, tiktok, x, imdb }
-  contactEmail      String?
-  contactPhone      String?
-  address           String?
-
-  // AI Audition Config
-  geminiApiKey   String?
-  aiModel        String  @default("gemini-2.5-flash")
-  aiCustomPrompt String? // Additional instructions appended to audit prompt
-  aiAutoAudit    Boolean @default(false) // Auto-run AI audit on new applications
-
-  // Pipeline Automation
-  autoShortlistThreshold        Int     @default(75) // AI score >= this ??? auto-shortlist
-  autoRejectThreshold           Int     @default(25) // AI score <= this ??? auto-reject
-  pipelineAutoAdvance           Boolean @default(true) // Enable AI-driven auto-advance
-  notifyApplicantOnStatusChange Boolean @default(true) // Email applicant on status change
-
-  // Casting Defaults
-  defaultDeadlineDays Int     @default(30)
-  castingAutoClose    Boolean @default(false) // Auto-close casting when filled
-  requireVoice        Boolean @default(false) // Require voice recording
-  maxPhotoUploads     Int     @default(6)
-  audioUploadEnabled  Boolean @default(true) // Enable/disable audio upload feature
-  resultRevealDelayHours Int  @default(6)    // Hours before AI audition results are visible to applicant
-
-  // Content Access
-  requireLoginForFilms    Boolean @default(true)
-  allowPublicTrailers     Boolean @default(true)
-  requireLoginForCasting  Boolean @default(false) // require login to view casting listings
-  requireLoginForDonate   Boolean @default(false) // require login to access donate page
-  requireLoginForSponsors Boolean @default(false) // require login to view sponsor wall
-  allowPublicProjectPages Boolean @default(true) // allow project detail pages without login
-
-  // Donations
-  donationsEnabled  Boolean @default(true)
-  donationMinAmount Float   @default(5.0)
-
-  // Notifications
-  notifyOnApplication    Boolean @default(true)
-  notifyOnDonation       Boolean @default(true)
-  notifyEmail            String? // Override email for notifications
-  notifyOnNewDevice      Boolean @default(true) // toggle for new device login alerts
-  emailTemplateOverrides String? // JSON map of {templateKey: customHTML} for admin-edited templates
-  // Broadcast triggers: admin-initiated notifications
-  notifyOnNewRole          Boolean @default(true)  // email+in-app when a new casting role is published
-  notifyOnAnnouncement     Boolean @default(true)  // email+in-app when admin posts an announcement
-  notifyOnContentPublish   Boolean @default(false) // email+in-app when new content goes live
-
-  // Section Visibility
-  scriptCallsEnabled  Boolean @default(false) // master toggle for script call system
-  castingCallsEnabled Boolean @default(true) // master toggle ??? hide all casting calls from platform
-  trainingEnabled     Boolean @default(false) // master toggle for training hub
-  sponsorsPageEnabled Boolean @default(true) // master toggle ??? show/hide public sponsors page
-
-  // OAuth Configuration
-  googleClientId     String?
-  googleClientSecret String?
-  appleClientId      String?
-  appleTeamId        String?
-  appleKeyId         String?
-  applePrivateKey    String? // PEM format private key
-
-  // Email / SMTP Configuration
-  smtpHost       String?
-  smtpPort       Int            @default(587)
-  smtpUser       String? // SMTP login email
-  smtpPass       String? // SMTP password / app password
-  smtpFromName   String? // Display name e.g. "AIM Studio"
-  smtpFromEmail  String? // From address e.g. aimstudio@impactaistudio.com
-  smtpSecure     Boolean        @default(false) // true = SSL (465), false = STARTTLS (587)
-  emailsEnabled  Boolean        @default(false) // master kill switch
-  emailTransport EmailTransport @default(graph) // enum
-  emailReplyTo   String? // Optional reply-to override e.g. noreply@impactaistudio.com
+  id                            String         @id @default("default")
+  siteName                      String         @default("AIM Studio")
+  tagline                       String         @default("AI-Powered Filmmaking")
+  aboutText                     String         @default("")
+  studioStory                   String         @default("")
+  mission                       String         @default("")
+  aboutPageData                 String?
+  logoUrl                       String?
+  socialLinks                   String?
+  contactEmail                  String?
+  contactPhone                  String?
+  address                       String?
+  geminiApiKey                  String?
+  aiModel                       String         @default("gemini-2.5-flash")
+  aiCustomPrompt                String?
+  aiAutoAudit                   Boolean        @default(false)
+  autoShortlistThreshold        Int            @default(75)
+  autoRejectThreshold           Int            @default(25)
+  pipelineAutoAdvance           Boolean        @default(true)
+  notifyApplicantOnStatusChange Boolean        @default(true)
+  defaultDeadlineDays           Int            @default(30)
+  castingAutoClose              Boolean        @default(false)
+  requireVoice                  Boolean        @default(false)
+  maxPhotoUploads               Int            @default(6)
+  requireLoginForFilms          Boolean        @default(true)
+  allowPublicTrailers           Boolean        @default(true)
+  requireLoginForCasting        Boolean        @default(false)
+  requireLoginForDonate         Boolean        @default(false)
+  requireLoginForSponsors       Boolean        @default(false)
+  allowPublicProjectPages       Boolean        @default(true)
+  donationsEnabled              Boolean        @default(true)
+  donationMinAmount             Float          @default(5.0)
+  notifyOnApplication           Boolean        @default(true)
+  notifyOnDonation              Boolean        @default(true)
+  notifyEmail                   String?
+  notifyOnNewDevice             Boolean        @default(true)
+  emailTemplateOverrides        String?
+  scriptCallsEnabled            Boolean        @default(false)
+  castingCallsEnabled           Boolean        @default(true)
+  trainingEnabled               Boolean        @default(false)
+  sponsorsPageEnabled           Boolean        @default(true)
+  googleClientId                String?
+  googleClientSecret            String?
+  appleClientId                 String?
+  appleTeamId                   String?
+  appleKeyId                    String?
+  applePrivateKey               String?
+  smtpHost                      String?
+  smtpPort                      Int            @default(587)
+  smtpUser                      String?
+  smtpPass                      String?
+  smtpFromName                  String?
+  smtpFromEmail                 String?
+  smtpSecure                    Boolean        @default(false)
+  emailsEnabled                 Boolean        @default(false)
+  searchBetaEnabled             Boolean        @default(false)
+  emailTransport                EmailTransport @default(graph)
+  audioUploadEnabled            Boolean        @default(true)
+  notifyOnNewRole               Boolean        @default(true)
+  notifyOnAnnouncement          Boolean        @default(true)
+  notifyOnContentPublish        Boolean        @default(false)
+  emailReplyTo                  String?
+  resultRevealDelayHours        Int            @default(6)
 }
-
-// Password history for reuse prevention
 
 model PasswordHistory {
   id           String   @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   passwordHash String
   createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-// Per-user notification channel & type preferences
 model UserNotificationPreference {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Type opt-ins
-  newRole        Boolean @default(true)  // new casting role published
-  announcement   Boolean @default(true)  // platform announcement
-  contentPublish Boolean @default(false) // new content published
-  statusChange   Boolean @default(true)  // casting application status change
-
-  // Channel opt-ins
-  email Boolean @default(true)
-  inApp Boolean @default(true)
-  sms   Boolean @default(false) // future: SMS via Twilio
-
-  // Phone number for SMS delivery (optional, required if sms=true)
-  phoneNumber String? // E.164 format e.g. +15551234567
-
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  newRole        Boolean  @default(true)
+  announcement   Boolean  @default(true)
+  contentPublish Boolean  @default(false)
+  statusChange   Boolean  @default(true)
+  email          Boolean  @default(true)
+  inApp          Boolean  @default(true)
+  sms            Boolean  @default(false)
+  updatedAt      DateTime @updatedAt
+  phoneNumber    String?
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Compliance audit log for notification preference changes
 model PreferenceAudit {
-  id           String   @id @default(cuid())
-  userId       String
-  changedFields Json    // { field: { from, to } }
-  timestamp    DateTime @default(now())
+  id            String   @id @default(cuid())
+  userId        String
+  changedFields Json
+  timestamp     DateTime @default(now())
 
   @@index([userId])
   @@index([timestamp])
 }
 
-// In‑app notification feed (bell icon)
 model UserNotification {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String   // new_role | announcement | content_publish | status_change | system
+  type      String
   title     String
   message   String
-  link      String?  // deep-link e.g. /roles/[id]
+  link      String?
   read      Boolean  @default(false)
-  eventId   String?  @unique // deterministic dedup key e.g. "welcome-{userId}"
   createdAt DateTime @default(now())
+  eventId   String?  @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, read])
   @@index([userId, createdAt])
@@ -421,20 +353,18 @@ model SearchAnalytics {
   resultsCount Int
   device       String   @default("desktop")
   timestamp    DateTime @default(now())
-  // No relation to User to simplify migration
 }
 
-// Notification log for applicant communications
 model ApplicationNotification {
   id             String      @id @default(cuid())
   applicationId  String
-  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
-  type           String // status_change | ai_result | reminder
+  type           String
   subject        String
   body           String
   recipientEmail String
-  status         String      @default("sent") // sent | failed
+  status         String      @default("sent")
   createdAt      DateTime    @default(now())
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
 model Subscriber {
@@ -445,20 +375,35 @@ model Subscriber {
   active       Boolean  @default(true)
 }
 
+model EmailLog {
+  id        String   @id @default(cuid())
+  to        String
+  subject   String
+  type      String   @default("general")
+  transport String   @default("unknown")
+  success   Boolean
+  error     String?
+  sentAt    DateTime @default(now())
+
+  @@index([sentAt])
+  @@index([success])
+  @@index([type])
+}
+
 model Donation {
   id        String   @id @default(cuid())
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   projectId String?
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   name      String
   email     String
   amount    Float
   message   String?
   anonymous Boolean  @default(false)
-  method    String   @default("card") // card | paypal | other
-  status    String   @default("completed") // pending | completed | failed
+  method    String   @default("card")
+  status    String   @default("completed")
   createdAt DateTime @default(now())
+  project   Project? @relation(fields: [projectId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id])
 
   @@index([email])
   @@index([status])
@@ -470,23 +415,22 @@ model Donation {
 model Sponsor {
   id                  String    @id @default(cuid())
   name                String
-  description         String? // About the sponsor
+  description         String?
   logoUrl             String?
-  bannerUrl           String? // Banner image for featured display
-  website             String? // Clickable link for visitors
-  tier                String    @default("bronze") // gold | silver | bronze | platinum
+  bannerUrl           String?
+  website             String?
+  tier                String    @default("bronze")
   active              Boolean   @default(true)
-  featured            Boolean   @default(false) // Show prominently on homepage
-  displayOn           String    @default("sponsors") // sponsors | homepage | footer | all
+  featured            Boolean   @default(false)
+  displayOn           String    @default("sponsors")
   contactEmail        String?
-  startDate           DateTime? // Sponsorship start
-  endDate             DateTime? // Sponsorship end (null = indefinite)
+  startDate           DateTime?
+  endDate             DateTime?
   sortOrder           Int       @default(0)
-  bannerDurationHours Int       @default(24) // How many hours this banner displays before rotating
+  bannerDurationHours Int       @default(24)
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  // Index for sponsor name search
   @@index([name])
   @@index([active])
   @@index([tier])
@@ -505,12 +449,12 @@ model ContactMessage {
 
 model PageMedia {
   id        String   @id @default(cuid())
-  page      String // donate | subscribe | about | contact | home | works | casting | upcoming
-  type      String   @default("background") // background | gallery | hero | video | hero-video
-  url       String // file path like /images/uploads/xxx.png
+  page      String
+  type      String   @default("background")
+  url       String
   title     String   @default("")
   sortOrder Int      @default(0)
-  duration  Int      @default(10) // seconds (used for hero-video type)
+  duration  Int      @default(10)
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -519,46 +463,43 @@ model PageMedia {
   @@index([active])
 }
 
-// ????????? Script Call System ?????????
-
 model ScriptCall {
   id             String             @id @default(cuid())
   title          String
   description    String
   genre          String?
-  toneKeywords   String? // comma-separated: "dark, suspenseful, poetic"
-  targetLength   String? // e.g. "short film 10-15 min"
+  toneKeywords   String?
+  targetLength   String?
   projectId      String?
-  project        Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  status         String             @default("draft") // draft | open | closed | archived
-  isPublic       Boolean            @default(false) // admin controls visibility
+  status         String             @default("draft")
+  isPublic       Boolean            @default(false)
   deadline       String?
   maxSubmissions Int                @default(100)
-  submissions    ScriptSubmission[]
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
+  project        Project?           @relation(fields: [projectId], references: [id])
+  submissions    ScriptSubmission[]
 
-  // Index for script title search
   @@index([title])
 }
 
 model ScriptSubmission {
   id                String          @id @default(cuid())
   scriptCallId      String
-  scriptCall        ScriptCall      @relation(fields: [scriptCallId], references: [id], onDelete: Cascade)
   authorName        String
   authorEmail       String
   authorBio         String?
   title             String
-  logline           String // one-line pitch
-  synopsis          String // full synopsis
-  scriptText        String? // pasted full script
-  scriptFilePath    String? // uploaded PDF path
+  logline           String
+  synopsis          String
+  scriptText        String?
+  scriptFilePath    String?
   genre             String?
   estimatedDuration String?
-  status            String          @default("submitted") // submitted | analyzing | analyzed | shortlisted | selected | rejected
-  analysis          ScriptAnalysis?
+  status            String          @default("submitted")
   createdAt         DateTime        @default(now())
+  analysis          ScriptAnalysis?
+  scriptCall        ScriptCall      @relation(fields: [scriptCallId], references: [id], onDelete: Cascade)
 
   @@index([scriptCallId])
 }
@@ -566,7 +507,6 @@ model ScriptSubmission {
 model ScriptAnalysis {
   id                   String           @id @default(cuid())
   submissionId         String           @unique
-  submission           ScriptSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   originalityScore     Float            @default(0)
   structureScore       Float            @default(0)
   dialogueScore        Float            @default(0)
@@ -577,11 +517,10 @@ model ScriptAnalysis {
   strengths            String?
   concerns             String?
   recommendation       String?
-  rawReport            String? // full JSON from AI
+  rawReport            String?
   analyzedAt           DateTime         @default(now())
+  submission           ScriptSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 }
-
-// ?????? Analytics ??????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????
 
 model PageView {
   id        String   @id @default(cuid())
@@ -589,7 +528,7 @@ model PageView {
   userId    String?
   userAgent String?
   referrer  String?
-  device    String? // desktop | mobile | tablet
+  device    String?
   createdAt DateTime @default(now())
 
   @@index([createdAt])
@@ -602,7 +541,7 @@ model FilmView {
   id            String   @id @default(cuid())
   projectId     String
   userId        String?
-  watchDuration Int      @default(0) // seconds watched
+  watchDuration Int      @default(0)
   completed     Boolean  @default(false)
   createdAt     DateTime @default(now())
 
@@ -613,19 +552,17 @@ model FilmView {
 model ApiKey {
   id              String    @id @default(cuid())
   label           String    @default("API Key")
-  provider        String    @default("gemini") // gemini | groq | openai
+  provider        String    @default("gemini")
   key             String
   isActive        Boolean   @default(true)
-  assignedAgent   String    @default("all") // all | audition | analytics | scripts | training
+  assignedAgent   String    @default("all")
   usageCount      Int       @default(0)
   lastUsed        DateTime?
   lastError       String?
-  cooledDownUntil DateTime? // set on 429 — key is skipped until this time passes
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  cooledDownUntil DateTime?
 }
-
-// ????????? Training System ?????????
 
 model Course {
   id            String         @id @default(cuid())
@@ -633,15 +570,15 @@ model Course {
   slug          String         @unique
   description   String
   thumbnail     String?
-  category      String         @default("acting") // acting | cinematography | directing | writing | ai | production | vfx
-  level         String         @default("beginner") // beginner | intermediate | advanced | all
-  translations  String? // JSON: { "zh": { "title": "...", "description": "..." }, ... }
-  sourceContent String? // Raw course material pasted by admin for AI generation
-  duration      String?        // Estimated duration e.g. "2h 30m" or "45m"
+  category      String         @default("acting")
+  level         String         @default("beginner")
+  translations  String?
+  sourceContent String?
   published     Boolean        @default(false)
   sortOrder     Int            @default(0)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  duration      String?
   modules       CourseModule[]
   enrollments   Enrollment[]
 
@@ -652,14 +589,14 @@ model Course {
 model CourseModule {
   id           String             @id @default(cuid())
   courseId     String
-  course       Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
   title        String
   description  String?
   translations String?
   sortOrder    Int                @default(0)
+  course       Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  materials    LearningMaterial[]
   lessons      Lesson[]
   quiz         Quiz?
-  materials    LearningMaterial[]
 
   @@index([courseId])
 }
@@ -667,17 +604,17 @@ model CourseModule {
 model Lesson {
   id                  String           @id @default(cuid())
   moduleId            String
-  module              CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   title               String
-  contentType         String           @default("video") // video | document | link | quiz | audio | slides
-  contentUrl          String? // external video URL or link
-  uploadPath          String? // uploaded file path
+  contentType         String           @default("video")
+  contentUrl          String?
+  uploadPath          String?
   description         String?
-  duration            Int? // minutes
+  duration            Int?
   translations        String?
   sortOrder           Int              @default(0)
-  completionThreshold Float            @default(0.95) // 0.95 for video = 95% watched
-  minTimeSeconds      Int? // minimum time to spend on reading/content
+  completionThreshold Float            @default(0.95)
+  minTimeSeconds      Int?
+  module              CourseModule     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   progress            LessonProgress[]
   transcript          Transcript?
 
@@ -687,27 +624,27 @@ model Lesson {
 model Transcript {
   id           String   @id @default(cuid())
   lessonId     String   @unique
-  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   language     String   @default("en")
-  segments     String // JSON: [{ start, end, text, words: [{ word, start, end }] }]
-  translations String? // JSON: { "zh": [{ start, end, text }], "es": [...] }
-  status       String   @default("pending") // pending | processing | completed | error
+  segments     String
+  translations String?
+  status       String   @default("pending")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  lesson       Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 }
 
 model Enrollment {
   id              String    @id @default(cuid())
   userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   courseId        String
-  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
   completedAt     DateTime?
   certificateId   String?
-  currentModuleId String? // tracks where the student is
-  currentLessonId String? // tracks the current lesson
-  mode            String    @default("learning") // learning | review
+  currentModuleId String?
+  currentLessonId String?
+  mode            String    @default("learning")
   enrolledAt      DateTime  @default(now())
+  course          Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, courseId])
   @@index([courseId])
@@ -717,17 +654,17 @@ model Enrollment {
 model LessonProgress {
   id             String    @id @default(cuid())
   userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   lessonId       String
-  lesson         Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
   completed      Boolean   @default(false)
   completedAt    DateTime?
-  timeSpent      Int       @default(0) // seconds
-  videoTimestamp Float? // seconds into the video
-  pdfPage        Int? // current PDF page
-  scrollDepth    Float? // 0.0 - 1.0 scroll percentage
-  mode           String    @default("first_time") // first_time | review
+  timeSpent      Int       @default(0)
+  videoTimestamp Float?
+  pdfPage        Int?
+  scrollDepth    Float?
+  mode           String    @default("first_time")
   updatedAt      DateTime  @updatedAt
+  lesson         Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, lessonId])
   @@index([userId])
@@ -736,54 +673,52 @@ model LessonProgress {
 model TrainingBadge {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  badgeType String // first_lesson | first_course | streak_7 | streak_30 | completionist | top_performer
+  badgeType String
   earnedAt  DateTime @default(now())
   courseId  String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeType])
   @@index([userId])
 }
 
-// ????????? Quiz Engine ?????????
-
 model Quiz {
   id           String         @id @default(cuid())
-  moduleId     String         @unique // one quiz per module
-  module       CourseModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  moduleId     String         @unique
   title        String
-  passMark     Int            @default(80) // percentage
-  maxAttempts  Int            @default(1) // per cycle
+  passMark     Int            @default(80)
+  maxAttempts  Int            @default(1)
   translations String?
-  questions    QuizQuestion[]
-  attempts     QuizAttempt[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+  module       CourseModule   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  attempts     QuizAttempt[]
+  questions    QuizQuestion[]
 }
 
 model EmailAuditLog {
   id           String         @id @default(cuid())
   createdAt    DateTime       @default(now())
-  userId       String? // admin who triggered the email
+  userId       String?
   transport    EmailTransport
   to           String
   subject      String
-  status       String // success, failed, retry
-  errorMessage String? // populated on failure
+  status       String
+  errorMessage String?
 }
 
 model QuizQuestion {
   id            String  @id @default(cuid())
   quizId        String
-  quiz          Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
   questionText  String
-  questionType  String  @default("single") // single | multiple | truefalse
-  options       String // JSON: [{ "id": "a", "text": "..." }, ...]
-  correctAnswer String // JSON: "a" or ["a","c"] for multiple
-  explanation   String? // admin-only: why this is correct
-  sourceRef     String? // JSON: { "lessonId": "...", "timestamp": 120, "section": "..." }
+  questionType  String  @default("single")
+  options       String
+  correctAnswer String
+  explanation   String?
+  sourceRef     String?
   translations  String?
   sortOrder     Int     @default(0)
+  quiz          Quiz    @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
   @@index([quizId])
 }
@@ -791,48 +726,66 @@ model QuizQuestion {
 model QuizAttempt {
   id            String   @id @default(cuid())
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   quizId        String
-  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
-  score         Int // percentage
+  score         Int
   passed        Boolean
-  answers       String // JSON: { "questionId": "selectedAnswer", ... }
+  answers       String
   attemptNumber Int      @default(1)
   createdAt     DateTime @default(now())
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, quizId])
   @@index([quizId])
 }
 
-// ????????? Learning Materials ?????????
-
 model LearningMaterial {
   id        String       @id @default(cuid())
   moduleId  String
-  module    CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
   fileName  String
-  fileType  String // video | pdf | docx | pptx | audio | image | url
+  fileType  String
   filePath  String
-  fileSize  Int? // bytes
-  metadata  String? // JSON: extracted metadata (duration, pages, etc.)
+  fileSize  Int?
+  metadata  String?
   createdAt DateTime     @default(now())
+  module    CourseModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 
   @@index([moduleId])
 }
 
-// ????????? Review Activity ?????????
-
 model ReviewActivity {
   id           String   @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   moduleId     String
-  lessonId     String? // optional: specific lesson reviewed
-  activityType String // lesson_viewed | video_watched | reading_reviewed | quiz_reviewed
-  duration     Int      @default(0) // seconds spent
-  metadata     String? // JSON: { "timestamp": 120, "scrollDepth": 0.8 }
+  lessonId     String?
+  activityType String
+  duration     Int      @default(0)
+  metadata     String?
   createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, moduleId])
   @@index([moduleId])
+}
+
+enum EmailTransport {
+  graph
+  smtp
+}
+
+enum ApplicationStatus {
+  submitted
+  under_review
+  reviewed
+  shortlisted
+  contacted
+  audition
+  callback
+  final_review
+  selected
+  not_selected
+  rejected
+  withdrawn
+  pending
+  approved
 }

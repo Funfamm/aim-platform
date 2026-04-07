@@ -52,6 +52,7 @@ export async function GET(req: NextRequest) {
             totalApps, appsMonth,
             totalDonations, donationsMonth,
             subscribers, filmViews, castingPageViews,
+            trailerCount, trailerViews,
             // Dashboard data (merged from separate endpoint)
             projectCount, castingCount, pendingCount, reviewedCount,
             recentApplications,
@@ -69,10 +70,16 @@ export async function GET(req: NextRequest) {
             prisma.application.count({ where: { createdAt: { gte: month } } }),
             prisma.donation.count({ where: { status: 'completed' } }),
             prisma.donation.count({ where: { status: 'completed', createdAt: { gte: month } } }),
-            prisma.subscriber.count(),
+            // Active newsletter subscribers only (not unsubscribed ones)
+            prisma.subscriber.count({ where: { active: true } }),
             prisma.filmView.count(),
             prisma.pageView.count({
                 where: { createdAt: { gte: month }, path: { startsWith: '/casting' } },
+            }),
+            // Trailer analytics
+            prisma.project.count({ where: { trailerUrl: { not: null } } }),
+            prisma.pageView.count({
+                where: { createdAt: { gte: month }, path: { contains: 'trailer' } },
             }),
             // Dashboard counts
             prisma.project.count(),
@@ -125,7 +132,9 @@ export async function GET(req: NextRequest) {
             appsMonth,
             totalDonations,
             donationsMonth,
-            subscribers,
+            subscribers,       // active newsletter subscribers only
+            trailerCount,      // projects that have a trailer
+            trailerViews,      // trailer-related page views this month
             conversionRate: Math.round(conversionRate * 10) / 10,
             castingViews: castingPageViews,
         }
@@ -159,6 +168,33 @@ export async function GET(req: NextRequest) {
                     project: { title: app.castingCall.project.title },
                 },
             })),
+        }
+
+        // ── Email delivery stats ──
+        try {
+            const [emailTotal, emailToday, emailMonth, emailFailed, emailByType] = await Promise.all([
+                prisma.emailLog.count(),
+                prisma.emailLog.count({ where: { sentAt: { gte: today } } }),
+                prisma.emailLog.count({ where: { sentAt: { gte: month } } }),
+                prisma.emailLog.count({ where: { success: false, sentAt: { gte: month } } }),
+                prisma.emailLog.groupBy({
+                    by: ['type'],
+                    where: { sentAt: { gte: month } },
+                    _count: { type: true },
+                    orderBy: { _count: { type: 'desc' } },
+                }),
+            ])
+            result.email = {
+                total: emailTotal,
+                today: emailToday,
+                thisMonth: emailMonth,
+                failedMonth: emailFailed,
+                successRate: emailMonth > 0 ? Math.round(((emailMonth - emailFailed) / emailMonth) * 100) : 100,
+                byType: emailByType.map(r => ({ type: r.type, count: r._count.type })),
+            }
+        } catch {
+            // EmailLog table not yet in DB (first deploy) — provide empty stats
+            result.email = { total: 0, today: 0, thisMonth: 0, failedMonth: 0, successRate: 100, byType: [] }
         }
     }
 

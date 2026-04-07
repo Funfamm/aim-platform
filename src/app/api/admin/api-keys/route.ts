@@ -20,6 +20,7 @@ export async function GET() {
                 usageCount: true,
                 lastUsed: true,
                 lastError: true,
+                cooledDownUntil: true,
                 createdAt: true,
             },
         })

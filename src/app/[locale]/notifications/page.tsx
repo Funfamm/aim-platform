@@ -173,7 +173,7 @@ export default function NotificationsPage() {
             setSaved(true)
             setTimeout(() => setSaved(false), 3000)
         } catch {
-            alert('Failed to save notification preferences. Please try again.')
+            alert(t('saveError'))
         } finally {
             setSaving(false)
         }
@@ -513,8 +513,8 @@ export default function NotificationsPage() {
                             border: '1px solid var(--border-subtle)', overflow: 'hidden',
                         }}>
                             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
-                                <div style={{ fontWeight: 700, marginBottom: '2px' }}>🌐 Email Language</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Choose whether you receive emails in your saved language.</div>
+                                <div style={{ fontWeight: 700, marginBottom: '2px' }}>🌐 {t('emailLangTitle')}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{t('emailLangDesc')}</div>
                             </div>
                             <div style={{
                                 display: 'flex', alignItems: 'center', gap: '16px',
@@ -522,11 +522,11 @@ export default function NotificationsPage() {
                             }}>
                                 <span style={{ fontSize: '24px', flexShrink: 0 }}>📧</span>
                                 <span style={{ flex: 1 }}>
-                                    <span style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem' }}>Receive emails in my language</span>
+                                    <span style={{ display: 'block', fontWeight: 600, fontSize: '0.88rem' }}>{t('emailLangToggleLabel')}</span>
                                     <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
                                         {receiveLocalizedEmails
-                                            ? 'Emails will be sent in your selected language.'
-                                            : 'All emails will be sent in English.'}
+                                            ? t('emailLangOn')
+                                            : t('emailLangOff')}
                                     </span>
                                 </span>
                                 <ToggleSwitch

@@ -7,10 +7,10 @@ interface DashboardStatsProps {
     applications: number
     saved: number
     watched: number
-    donated: number
+    donated?: number
 }
 
-export default function DashboardStats({ applications, saved, watched, donated }: DashboardStatsProps) {
+export default function DashboardStats({ applications, saved, watched, donated = 0 }: DashboardStatsProps) {
     const t = useTranslations('dashboard')
     // Praise words come from translations — pipe-delimited string split at runtime
     const PRAISE_WORDS = (t('praiseWords') || "You're amazing! 🌟|True supporter! 💫|Film hero! 🎬").split('|')

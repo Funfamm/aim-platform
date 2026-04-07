@@ -175,6 +175,19 @@ async function sendWithRetry(
 }
 
 /**
+ * Classify an outgoing email into a category based on its subject line.
+ * Used for email analytics breakdowns.
+ */
+function detectEmailType(subject: string): string {
+    const s = subject.toLowerCase()
+    if (s.includes('verify') || s.includes('confirm') || s.includes('reset') || s.includes('login') || s.includes('password') || s.includes('welcome')) return 'authentication'
+    if (s.includes('application') || s.includes('casting') || s.includes('audition') || s.includes('role') || s.includes('shortlist') || s.includes('selected') || s.includes('rejected')) return 'application'
+    if (s.includes('subscri')) return 'subscribe'
+    if (s.includes('notification') || s.includes('update') || s.includes('news') || s.includes('announcement')) return 'notification'
+    return 'general'
+}
+
+/**
  * Send an email via whichever transport the admin has configured.
  * Gracefully no-ops if emails are disabled or not configured.
  * Retries up to 3 times with exponential back-off before giving up.
@@ -201,9 +214,34 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         }
 
         logger.info('mailer', `Email sent to ${options.to}: ${options.subject}`)
+
+        // Fire-and-forget delivery log
+        prisma.emailLog.create({
+            data: {
+                to: options.to,
+                subject: options.subject,
+                type: detectEmailType(options.subject),
+                transport: config.transport,
+                success: true,
+            },
+        }).catch(() => { /* non-critical log failure */ })
+
         return true
     } catch (err) {
         logger.error('mailer', `Email to ${options.to} failed after all retries: ${options.subject}`, { error: err as Error })
+
+        // Log failure too
+        prisma.emailLog.create({
+            data: {
+                to: options.to,
+                subject: options.subject,
+                type: detectEmailType(options.subject),
+                transport: 'unknown',
+                success: false,
+                error: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+            },
+        }).catch(() => { /* non-critical */ })
+
         // Surface in Sentry if available
         try {
             const { captureException } = await import('@sentry/nextjs')
