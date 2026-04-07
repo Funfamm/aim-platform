@@ -164,7 +164,7 @@ export async function requireSuperAdmin(): Promise<TokenPayload> {
 // Safe version of requireAdmin that returns a NextResponse on failure
 // Use this in API routes for cleaner error handling
 export async function requireAdminResponse(): Promise<TokenPayload | NextResponse> {
-    const session = await getSession()
+    const session = await getSessionAndRefresh()
     if (!session) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
