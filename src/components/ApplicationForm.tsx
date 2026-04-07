@@ -228,17 +228,24 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             data.append('castingCallId', castingCall.id)
             data.append('locale', locale)
 
+            // Build an applicant-specific folder so all files are grouped in R2:
+            //   applications/{applicant-name}-{YYYY-MM-DD}/photos/...
+            //   applications/{applicant-name}-{YYYY-MM-DD}/voice/...
+            const safeName = formData.fullName.trim().replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').toLowerCase()
+            const dateTag = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+            const applicantFolder = `applications/${safeName}-${dateTag}`
+
             // Photos - Upload to R2 and pass URLs
             for (const [key, file] of Object.entries(photos)) {
                 if (file) {
-                    const r2Url = await uploadFileToR2(file, 'applications/photos');
+                    const r2Url = await uploadFileToR2(file, `${applicantFolder}/photos`);
                     data.append(`photo_${key}`, r2Url);
                 }
             }
 
             // Audio - Upload to R2 and pass URL
             if (audioFile) {
-                const r2Url = await uploadFileToR2(audioFile, 'applications/voice');
+                const r2Url = await uploadFileToR2(audioFile, `${applicantFolder}/voice`);
                 data.append('voiceRecording', r2Url);
             }
 
