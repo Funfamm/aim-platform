@@ -170,38 +170,27 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     }
 
     const uploadFileToR2 = async (file: File, folder: string): Promise<string> => {
-        // Step 1: Get presigned URL from our backend
-        let presignRes: Response;
-        try {
-            presignRes = await fetch('/api/upload/presign', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: file.name, fileType: file.type, folder }),
-            });
-        } catch {
-            throw new Error(`[Step 1 failed] Could not reach presign API for ${file.name}`);
-        }
-        if (!presignRes.ok) {
-            const errText = await presignRes.text().catch(() => 'unknown');
-            throw new Error(`[Presign API error ${presignRes.status}] ${errText}`);
-        }
-        const { presignedUrl, finalUrl } = await presignRes.json();
+        // Upload via our server-side proxy — no CORS issues since it's same-origin
+        const uploadForm = new FormData();
+        uploadForm.append('file', file);
+        uploadForm.append('folder', folder);
 
-        // Step 2: Upload directly to Cloudflare R2 using the presigned URL
         let uploadRes: Response;
         try {
-            uploadRes = await fetch(presignedUrl, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type },
+            uploadRes = await fetch('/api/upload/file', {
+                method: 'POST',
+                body: uploadForm,
             });
         } catch {
-            throw new Error(`[Step 2 failed] CORS or network error uploading ${file.name} to R2`);
-        }
-        if (!uploadRes.ok) {
-            throw new Error(`[R2 upload error ${uploadRes.status}] Failed uploading ${file.name}`);
+            throw new Error(`Network error uploading ${file.name}`);
         }
 
+        if (!uploadRes.ok) {
+            const errText = await uploadRes.text().catch(() => 'unknown');
+            throw new Error(`Upload failed (${uploadRes.status}): ${errText}`);
+        }
+
+        const { finalUrl } = await uploadRes.json();
         return finalUrl;
     };
 
