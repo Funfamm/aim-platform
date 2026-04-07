@@ -1,35 +1,35 @@
 {
   "mfa": {
-    "title": "VerificaÃ§Ã£o em dois passos",
-    "subtitle": "Digite o cÃ³digo que enviamos para o seu e-mail.",
-    "codePlaceholder": "CÃ³digo de 6 dÃ­gitos",
+    "title": "Verificação em dois passos",
+    "subtitle": "Digite o código que enviamos para o seu e-mail.",
+    "codePlaceholder": "Código de 6 dígitos",
     "submitButton": "Verificar",
-    "resendButton": "Reenviar cÃ³digo",
-    "resendSuccess": "Um novo cÃ³digo foi enviado para o seu e-mail.",
-    "errorInvalid": "CÃ³digo incorreto. Por favor, tente novamente.",
-    "errorExpired": "O cÃ³digo expirou. Por favor, solicite um novo.",
-    "errorGeneric": "Falha na verificaÃ§Ã£o. Por favor, tente novamente."
+    "resendButton": "Reenviar código",
+    "resendSuccess": "Um novo código foi enviado para o seu e-mail.",
+    "errorInvalid": "Código incorreto. Por favor, tente novamente.",
+    "errorExpired": "O código expirou. Por favor, solicite um novo.",
+    "errorGeneric": "Falha na verificação. Por favor, tente novamente."
   },
   "notifications": {
-    "title": "NotificaÃ§Ãµes",
+    "title": "Notificações",
     "markAllRead": "Marcar tudo como lido",
-    "empty": "VocÃª nÃ£o tem notificaÃ§Ãµes.",
+    "empty": "Você não tem notificações.",
     "preferences": {
-      "title": "PreferÃªncias de notificaÃ§Ã£o",
-      "saved": "PreferÃªncias salvas.",
-      "newRole": "Novos papÃ©is de elenco",
-      "announcement": "AnÃºncios da plataforma",
-      "contentPublish": "Novo conteÃºdo publicado",
-      "statusChange": "MudanÃ§as de status da candidatura",
+      "title": "Preferências de notificação",
+      "saved": "Preferências salvas.",
+      "newRole": "Novos papéis de elenco",
+      "announcement": "Anúncios da plataforma",
+      "contentPublish": "Novo conteúdo publicado",
+      "statusChange": "Mudanças de status da candidatura",
       "email": "E-mail",
-      "inApp": "NotificaÃ§Ãµes no aplicativo",
+      "inApp": "Notificações no aplicativo",
       "sms": "SMS"
     }
   },
   "auth": {
     "login": "Entrar",
     "logout": "Sair",
-    "email": "EndereÃ§o de e-mail",
+    "email": "Endereço de e-mail",
     "password": "Senha",
     "invalidCredentials": "E-mail ou senha incorretos.",
     "verifyEmailFirst": "Por favor, verifique seu e-mail antes de entrar.",

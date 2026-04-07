@@ -18,9 +18,9 @@
       "title": "Benachrichtigungseinstellungen",
       "saved": "Einstellungen gespeichert.",
       "newRole": "Neue Casting-Rollen",
-      "announcement": "Plattform-AnkÃ¼ndigungen",
-      "contentPublish": "Neue Inhalte verÃ¶ffentlicht",
-      "statusChange": "Ã„nderungen des Bewerbungsstatus",
+      "announcement": "Plattform-Ankündigungen",
+      "contentPublish": "Neue Inhalte veröffentlicht",
+      "statusChange": "Änderungen des Bewerbungsstatus",
       "email": "E-Mail",
       "inApp": "In-App-Benachrichtigungen",
       "sms": "SMS"
@@ -32,7 +32,7 @@
     "email": "E-Mail-Adresse",
     "password": "Passwort",
     "invalidCredentials": "Falsche E-Mail-Adresse oder falsches Passwort.",
-    "verifyEmailFirst": "Bitte bestÃ¤tigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
+    "verifyEmailFirst": "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "langBanner": {
