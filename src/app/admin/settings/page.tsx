@@ -771,6 +771,45 @@ export default function AdminSettingsPage() {
     const [newKeyProvider, setNewKeyProvider] = useState('gemini')
     const [newKeyAgent, setNewKeyAgent] = useState('all')
     const [keysLoading, setKeysLoading] = useState(false)
+    
+    // API Keys advanced filtering & bulk actions
+    const [keySearch, setKeySearch] = useState('')
+    const [keyFilterProvider, setKeyFilterProvider] = useState('all')
+    const [keyFilterAgent, setKeyFilterAgent] = useState('all')
+    const [keyFilterStatus, setKeyFilterStatus] = useState('all')
+    const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
+    const [bulkActionLoading, setBulkActionLoading] = useState(false)
+
+    const handleBulkAction = async (action: 'enable' | 'disable' | 'delete' | 'clearErrors') => {
+        if (selectedKeys.size === 0) return
+        if (action === 'delete' && !confirm(`Are you sure you want to delete ${selectedKeys.size} selected keys? This cannot be undone.`)) return
+        
+        setBulkActionLoading(true)
+        try {
+            const promises = Array.from(selectedKeys).map(id => {
+                if (action === 'delete') {
+                    return fetch(`/api/admin/api-keys?id=${id}`, { method: 'DELETE' })
+                } else {
+                    const body: any = { id }
+                    if (action === 'enable') body.isActive = true
+                    if (action === 'disable') body.isActive = false
+                    if (action === 'clearErrors') body.clearError = true
+                    return fetch('/api/admin/api-keys', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(body),
+                    })
+                }
+            })
+            await Promise.all(promises)
+            
+            // Reload keys list
+            const freshKeys = await fetch('/api/admin/api-keys').then(r => r.json())
+            setApiKeys(freshKeys)
+            setSelectedKeys(new Set())
+        } catch { alert('Bulk action failed') }
+        finally { setBulkActionLoading(false) }
+    }
 
     useEffect(() => {
         fetch('/api/admin/settings')
@@ -1619,135 +1658,209 @@ export default function AdminSettingsPage() {
                                         </div>
                                     )}
 
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        {apiKeys.map(k => {
-                                            const agentLabels: Record<string, { icon: string; label: string; color: string }> = {
-                                                all: { icon: '🌐', label: 'All', color: 'var(--accent-gold)' },
-                                                audition: { icon: '🎭', label: 'Audition', color: '#f59e0b' },
-                                                analytics: { icon: '📊', label: 'Analytics', color: '#3b82f6' },
-                                                scripts: { icon: '✍️', label: 'Scripts', color: '#10b981' },
-                                                training: { icon: '📚', label: 'Training', color: '#a855f7' },
+                                    {(() => {
+                                        const filteredKeys = apiKeys.filter(k => {
+                                            if (keyFilterProvider !== 'all' && k.provider !== keyFilterProvider) return false
+                                            if (keyFilterAgent === 'all_agents' && k.assignedAgent !== 'all') return false
+                                            if (keyFilterAgent !== 'all' && keyFilterAgent !== 'all_agents' && k.assignedAgent !== keyFilterAgent) return false
+                                            if (keyFilterStatus === 'active' && !k.isActive) return false
+                                            if (keyFilterStatus === 'inactive' && k.isActive) return false
+                                            if (keyFilterStatus === 'error' && !k.lastError) return false
+                                            if (keySearch) {
+                                                const s = keySearch.toLowerCase()
+                                                if (!k.label.toLowerCase().includes(s) && !k.key.toLowerCase().includes(s)) return false
                                             }
-                                            const agentInfo = agentLabels[k.assignedAgent] || agentLabels.all
-                                            const providerIcons: Record<string, string> = { gemini: '🔷', groq: '⚡', openai: '🟢', elevenlabs: '🎙️' }
-                                            return (
-                                                <div key={k.id} style={{
-                                                    display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
-                                                    padding: '10px 14px',
-                                                    background: k.isActive ? 'rgba(52,211,153,0.03)' : 'var(--bg-secondary)',
-                                                    border: `1px solid ${k.isActive ? 'rgba(52,211,153,0.12)' : 'var(--border-subtle)'}`,
-                                                    borderRadius: 'var(--radius-md)',
-                                                    opacity: k.isActive ? 1 : 0.5,
-                                                }}>
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                                                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{k.label}</span>
-                                                            <span style={{
-                                                                fontSize: '0.58rem', padding: '1px 5px', borderRadius: '3px',
-                                                                background: k.isActive ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
-                                                                color: k.isActive ? 'var(--success)' : '#ef4444',
-                                                                fontWeight: 600,
-                                                            }}>{k.isActive ? 'Active' : 'Off'}</span>
-                                                            <span style={{
-                                                                fontSize: '0.55rem', padding: '1px 5px', borderRadius: '3px',
-                                                                background: `${agentInfo.color}12`,
-                                                                color: agentInfo.color,
-                                                                fontWeight: 700,
-                                                            }}>{agentInfo.icon} {agentInfo.label}</span>
-                                                            <span style={{
-                                                                fontSize: '0.55rem', padding: '1px 5px', borderRadius: '3px',
-                                                                background: 'rgba(255,255,255,0.03)',
-                                                                color: 'var(--text-tertiary)',
-                                                            }}>{providerIcons[k.provider] || ''} {k.provider}</span>
+                                            return true
+                                        })
+
+                                        const agentLabels: Record<string, { icon: string; label: string; color: string }> = {
+                                            all: { icon: '🌐', label: 'All', color: 'var(--accent-gold)' },
+                                            audition: { icon: '🎭', label: 'Audition', color: '#f59e0b' },
+                                            analytics: { icon: '📊', label: 'Analytics', color: '#3b82f6' },
+                                            scripts: { icon: '✍️', label: 'Scripts', color: '#10b981' },
+                                            training: { icon: '📚', label: 'Training', color: '#a855f7' },
+                                        }
+                                        const providerIcons: Record<string, string> = { gemini: '🔷', groq: '⚡', openai: '🟢', elevenlabs: '🎙️' }
+
+                                        return (
+                                            <>
+                                                {/* Advanced Filtering & Bulk Actions */}
+                                                {apiKeys.length > 0 && (
+                                                    <div style={{
+                                                        padding: '12px 16px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
+                                                        borderRadius: 'var(--radius-md)', marginBottom: 'var(--space-md)',
+                                                        display: 'flex', flexDirection: 'column', gap: '12px',
+                                                    }}>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                                                            <input
+                                                                className="admin-input" placeholder="🔍 Search labels or keys..."
+                                                                value={keySearch} onChange={e => setKeySearch(e.target.value)}
+                                                                style={{ flex: 1, minWidth: '200px' }}
+                                                            />
+                                                            <select className="admin-input" value={keyFilterProvider} onChange={e => setKeyFilterProvider(e.target.value)} style={{ width: 'auto' }}>
+                                                                <option value="all">All Providers</option>
+                                                                <option value="gemini">🔷 Gemini</option>
+                                                                <option value="groq">⚡ Groq</option>
+                                                                <option value="openai">🟢 OpenAI</option>
+                                                                <option value="elevenlabs">🎙️ ElevenLabs</option>
+                                                            </select>
+                                                            <select className="admin-input" value={keyFilterAgent} onChange={e => setKeyFilterAgent(e.target.value)} style={{ width: 'auto' }}>
+                                                                <option value="all">All Agents</option>
+                                                                <option value="all_agents">🌐 "All" Only</option>
+                                                                <option value="audition">🎭 Audition</option>
+                                                                <option value="analytics">📊 Analytics</option>
+                                                                <option value="scripts">✍️ Scripts</option>
+                                                                <option value="training">📚 Training</option>
+                                                            </select>
+                                                            <select className="admin-input" value={keyFilterStatus} onChange={e => setKeyFilterStatus(e.target.value)} style={{ width: 'auto' }}>
+                                                                <option value="all">Status: All</option>
+                                                                <option value="active">Active</option>
+                                                                <option value="inactive">Inactive</option>
+                                                                <option value="error">Has Errors</option>
+                                                            </select>
                                                         </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{k.key}</span>
-                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>· {k.usageCount} calls</span>
-                                                            {k.lastUsed && <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>· Used {new Date(k.lastUsed).toLocaleDateString()}</span>}
-                                                            {k.lastError && (
-                                                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                                    <span style={{ fontSize: '0.65rem', color: '#ef4444' }}>· {k.lastError.slice(0, 80)}{k.lastError.length > 80 ? '…' : ''}</span>
-                                                                    <button type="button" title="Clear error" onClick={async () => {
-                                                                        const res = await fetch('/api/admin/api-keys', {
-                                                                            method: 'PUT',
-                                                                            headers: { 'Content-Type': 'application/json' },
-                                                                            body: JSON.stringify({ id: k.id, clearError: true }),
-                                                                        })
-                                                                        if (res.ok) setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, lastError: null } : pk))
-                                                                    }} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.7rem', padding: '0 2px', lineHeight: 1 }}>✕</button>
-                                                                </span>
-                                                            )}
+
+                                                        {/* Bulk Action Toolbar */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={selectedKeys.size > 0 && selectedKeys.size === filteredKeys.length}
+                                                                        onChange={e => {
+                                                                            if (e.target.checked) setSelectedKeys(new Set(filteredKeys.map(k => k.id)))
+                                                                            else setSelectedKeys(new Set())
+                                                                        }}
+                                                                    />
+                                                                    Select All
+                                                                </label>
+                                                                {selectedKeys.size > 0 && (
+                                                                    <span style={{ fontSize: '0.7rem', color: 'var(--accent-gold)' }}>
+                                                                        {selectedKeys.size} selected
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                                <button type="button" disabled={selectedKeys.size === 0 || bulkActionLoading} onClick={() => handleBulkAction('enable')}
+                                                                    style={{ padding: '4px 10px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(52,211,153,0.1)', color: 'var(--success)', border: '1px solid rgba(52,211,153,0.2)', cursor: selectedKeys.size ? 'pointer' : 'not-allowed', opacity: selectedKeys.size ? 1 : 0.5 }}>
+                                                                    ▶ Enable
+                                                                </button>
+                                                                <button type="button" disabled={selectedKeys.size === 0 || bulkActionLoading} onClick={() => handleBulkAction('disable')}
+                                                                    style={{ padding: '4px 10px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', cursor: selectedKeys.size ? 'pointer' : 'not-allowed', opacity: selectedKeys.size ? 1 : 0.5 }}>
+                                                                    ⏸ Disable
+                                                                </button>
+                                                                <button type="button" disabled={selectedKeys.size === 0 || bulkActionLoading} onClick={() => handleBulkAction('clearErrors')}
+                                                                    style={{ padding: '4px 10px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(168,85,247,0.1)', color: '#a855f7', border: '1px solid rgba(168,85,247,0.2)', cursor: selectedKeys.size ? 'pointer' : 'not-allowed', opacity: selectedKeys.size ? 1 : 0.5 }}>
+                                                                    ✨ Clear Errors
+                                                                </button>
+                                                                <button type="button" disabled={selectedKeys.size === 0 || bulkActionLoading} onClick={() => handleBulkAction('delete')}
+                                                                    style={{ padding: '4px 10px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.4)', cursor: selectedKeys.size ? 'pointer' : 'not-allowed', opacity: selectedKeys.size ? 1 : 0.5 }}>
+                                                                    🗑 Delete
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    {/* Agent reassignment */}
-                                                    <select
-                                                        value={k.assignedAgent}
-                                                        onChange={async (e) => {
-                                                            const newAgent = e.target.value
-                                                            const res = await fetch('/api/admin/api-keys', {
-                                                                method: 'PUT',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ id: k.id, assignedAgent: newAgent }),
-                                                            })
-                                                            if (res.ok) {
-                                                                setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, assignedAgent: newAgent } : pk))
-                                                            }
-                                                        }}
-                                                        style={{
-                                                            padding: '3px 8px', fontSize: '0.65rem', borderRadius: 'var(--radius-sm)',
-                                                            border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)',
-                                                            color: 'var(--text-secondary)', cursor: 'pointer', appearance: 'auto',
-                                                        }}
-                                                    >
-                                                        <option value="all">🌐 All</option>
-                                                        <option value="audition">🎭 Audition</option>
-                                                        <option value="analytics">📊 Analytics</option>
-                                                        <option value="scripts">✍️ Scripts</option>
-                                                        <option value="training">📚 Training</option>
-                                                    </select>
-                                                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                                        <button
-                                                            type="button"
-                                                            onClick={async () => {
-                                                                const res = await fetch('/api/admin/api-keys', {
-                                                                    method: 'PUT',
-                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ id: k.id, isActive: !k.isActive }),
+                                                )}
+
+                                                <div style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', overflowX: 'auto' }}>
+                                                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.75rem' }}>
+                                                        <thead style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-subtle)', fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-tertiary)' }}>
+                                                            <tr>
+                                                                <th style={{ padding: '10px 14px', width: '30px' }}></th>
+                                                                <th style={{ padding: '10px 0' }}>Label & Key</th>
+                                                                <th style={{ padding: '10px 0' }}>Provider</th>
+                                                                <th style={{ padding: '10px 0' }}>Assigned Agent</th>
+                                                                <th style={{ padding: '10px 0' }}>Usage / Health</th>
+                                                                <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {filteredKeys.length === 0 ? (
+                                                                <tr>
+                                                                    <td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                                                                        No keys match the current filters.
+                                                                    </td>
+                                                                </tr>
+                                                            ) : (
+                                                                filteredKeys.map(k => {
+                                                                    const aInfo = agentLabels[k.assignedAgent] || agentLabels.all
+                                                                    return (
+                                                                        <tr key={k.id} style={{
+                                                                            borderBottom: '1px solid var(--border-subtle)',
+                                                                            background: k.isActive ? 'transparent' : 'rgba(0,0,0,0.2)',
+                                                                            opacity: k.isActive ? 1 : 0.6,
+                                                                        }}>
+                                                                            <td style={{ padding: '10px 14px' }}>
+                                                                                <input type="checkbox" checked={selectedKeys.has(k.id)} onChange={e => {
+                                                                                    const next = new Set(selectedKeys)
+                                                                                    if (e.target.checked) next.add(k.id)
+                                                                                    else next.delete(k.id)
+                                                                                    setSelectedKeys(next)
+                                                                                }} />
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 0', minWidth: '160px' }}>
+                                                                                <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>{k.label}</div>
+                                                                                <div style={{ fontFamily: 'monospace', color: 'var(--text-tertiary)', fontSize: '0.65rem' }}>{k.key}</div>
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 0' }}>
+                                                                                <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }}>
+                                                                                    {providerIcons[k.provider]} <span style={{ textTransform: 'capitalize' }}>{k.provider}</span>
+                                                                                </span>
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 0' }}>
+                                                                                <select
+                                                                                    value={k.assignedAgent}
+                                                                                    onChange={async (e) => {
+                                                                                        const newAgent = e.target.value
+                                                                                        const res = await fetch('/api/admin/api-keys', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: k.id, assignedAgent: newAgent }) })
+                                                                                        if (res.ok) setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, assignedAgent: newAgent } : pk))
+                                                                                    }}
+                                                                                    style={{ padding: '2px 6px', fontSize: '0.7rem', borderRadius: '4px', border: '1px solid var(--border-subtle)', background: `${aInfo.color}15`, color: aInfo.color, fontWeight: 600, cursor: 'pointer' }}
+                                                                                >
+                                                                                    {Object.keys(agentLabels).map(key => <option key={key} value={key}>{agentLabels[key].icon} {agentLabels[key].label}</option>)}
+                                                                                </select>
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 0' }}>
+                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                                    <div style={{ fontSize: '0.65rem' }}>
+                                                                                        <strong style={{ color: 'var(--text-secondary)' }}>{k.usageCount}</strong> calls {k.lastUsed ? `• Used ${new Date(k.lastUsed).toLocaleDateString()}` : '✨ Never used'}
+                                                                                    </div>
+                                                                                    {k.lastError && (
+                                                                                        <div style={{ color: '#ef4444', fontSize: '0.65rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                                            ❌ {k.lastError.slice(0, 45)}{k.lastError.length > 45 ? '...' : ''}
+                                                                                            <button type="button" onClick={async () => {
+                                                                                                await fetch('/api/admin/api-keys', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: k.id, clearError: true }) })
+                                                                                                setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, lastError: null } : pk))
+                                                                                            }} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', textDecoration: 'underline' }}>clear</button>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </td>
+                                                                            <td style={{ padding: '10px 14px', textAlign: 'right' }}>
+                                                                                <button type="button" title="Toggle Active" onClick={async () => {
+                                                                                    await fetch('/api/admin/api-keys', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: k.id, isActive: !k.isActive }) })
+                                                                                    setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, isActive: !pk.isActive } : pk))
+                                                                                }} style={{ padding: '4px', fontSize: '0.8rem', background: 'transparent', border: 'none', cursor: 'pointer', opacity: 0.8 }}>
+                                                                                    {k.isActive ? '⏸' : '▶'}
+                                                                                </button>
+                                                                                <button type="button" title="Delete Key" onClick={async () => {
+                                                                                    if (!confirm(`Delete key "${k.label}"?`)) return
+                                                                                    await fetch(`/api/admin/api-keys?id=${k.id}`, { method: 'DELETE' })
+                                                                                    setApiKeys(prev => prev.filter(pk => pk.id !== k.id))
+                                                                                }} style={{ padding: '4px', fontSize: '0.8rem', background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', opacity: 0.8 }}>
+                                                                                    🗑
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                    )
                                                                 })
-                                                                if (res.ok) {
-                                                                    setApiKeys(prev => prev.map(pk => pk.id === k.id ? { ...pk, isActive: !pk.isActive } : pk))
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                padding: '3px 8px', fontSize: '0.65rem', borderRadius: 'var(--radius-sm)',
-                                                                border: '1px solid var(--border-subtle)', background: 'transparent',
-                                                                color: 'var(--text-secondary)', cursor: 'pointer',
-                                                            }}
-                                                        >
-                                                            {k.isActive ? '⏸' : '▶'}
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            onClick={async () => {
-                                                                if (!confirm(`Delete key "${k.label}"?`)) return
-                                                                const res = await fetch(`/api/admin/api-keys?id=${k.id}`, { method: 'DELETE' })
-                                                                if (res.ok) {
-                                                                    setApiKeys(prev => prev.filter(pk => pk.id !== k.id))
-                                                                }
-                                                            }}
-                                                            style={{
-                                                                padding: '3px 8px', fontSize: '0.65rem', borderRadius: 'var(--radius-sm)',
-                                                                border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.05)',
-                                                                color: '#ef4444', cursor: 'pointer',
-                                                            }}
-                                                        >
-                                                            🗑
-                                                        </button>
-                                                    </div>
+                                                            )}
+                                                        </tbody>
+                                                    </table>
                                                 </div>
-                                            )
-                                        })}
-                                    </div>
+                                            </>
+                                        )
+                                    })()}
 
                                     <div style={{
                                         marginTop: 'var(--space-lg)', padding: 'var(--space-md)',
