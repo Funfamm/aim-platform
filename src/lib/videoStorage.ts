@@ -24,8 +24,8 @@ const {
   R2_PUBLIC_URL,
 } = process.env;
 
-/** Expiry duration for signed URLs (seconds). Default: 2 hours. */
-const SIGNED_URL_TTL = 60 * 60 * 2;
+/** Expiry duration for signed URLs (seconds). 7 days — ensures the audition agent can access files long after submission. */
+const SIGNED_URL_TTL = 60 * 60 * 24 * 7;
 
 function getR2Endpoint(): string {
   if (!R2_ACCOUNT_ID) throw new Error('[videoStorage] R2_ACCOUNT_ID is not set');
