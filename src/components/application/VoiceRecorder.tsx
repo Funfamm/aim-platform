@@ -93,7 +93,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
         } catch {
             setMicError(t('micError'))
         }
-    }, [stopRecording, onAudioChange])
+    }, [stopRecording, onAudioChange, t])
 
     useEffect(() => {
         return () => {
