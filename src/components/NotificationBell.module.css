@@ -54,7 +54,7 @@
 .dropdown {
     position: fixed;         /* fixed = out of document flow, never clipped by footer */
     top: 60px;               /* just below the navbar */
-    right: 16px;
+    inset-inline-end: 16px;  /* RTL-aware: right in LTR, left in RTL */
     width: 360px;
     max-height: calc(100vh - 80px); /* never taller than viewport */
     display: flex;
@@ -120,7 +120,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    text-align: left;
+    text-align: start;       /* RTL-aware: left in LTR, right in RTL */
     transition: background 0.15s;
     position: relative;
 }
@@ -211,8 +211,8 @@
 @media (max-width: 768px) {
     .dropdown {
         width: calc(100vw - 32px);
-        right: 16px;
-        left: 16px;          /* stretch edge-to-edge with padding */
+        inset-inline-start: 16px;
+        inset-inline-end: 16px; /* stretch edge-to-edge with padding */
         top: 56px;           /* mobile navbar is slightly shorter */
     }
 }
@@ -221,8 +221,8 @@
 @media (max-width: 480px) {
     .dropdown {
         width: calc(100vw - 24px);
-        right: 12px;
-        left: 12px;
+        inset-inline-start: 12px;
+        inset-inline-end: 12px;
         top: 52px;
         max-height: calc(100vh - 70px); /* more room on short screens */
     }

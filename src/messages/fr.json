@@ -36,8 +36,8 @@
     "loginFailed": "Ã‰chec de la connexion. Veuillez rÃ©essayer."
   },
   "langBanner": {
-    "message": "Ce site a Ã©tÃ© traduit dans la langue de votre navigateur.",
-    "continueInEnglish": "Continuer en anglais ?"
+    "message": "Votre navigateur préfère une autre langue.",
+    "continueInEnglish": "Changer"
   },
   "dashboard": {
     "applications": "Candidatures",

@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     if (blocked) return blocked
 
     try {
-        const { email, password } = await request.json()
+        const { email, password, locale } = await request.json()
 
         if (!email || !password) {
             return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
@@ -99,6 +99,24 @@ export async function POST(request: Request) {
 
         const redirectTo = (['admin', 'superadmin'].includes(user.role)) ? '/admin' : '/dashboard'
 
+        // If the user logged in from a non-English locale page and their
+        // stored preferredLanguage differs, update it automatically.
+        // This keeps email/notification language in sync with browsing preference.
+        const validLocales = ['en', 'es', 'fr', 'ar', 'zh', 'hi', 'pt', 'ru', 'ja', 'de', 'ko']
+        const browsingLocale = (locale && validLocales.includes(locale)) ? locale : null
+        const storedLocale = user.preferredLanguage ?? 'en'
+
+        if (browsingLocale && browsingLocale !== storedLocale) {
+            // Fire-and-forget — don't block the login response
+            void (prisma as any).user.update({
+                where: { id: user.id },
+                data: { preferredLanguage: browsingLocale },
+            }).catch(() => {})
+        }
+
+        // Return the active locale: browsing locale takes priority (user actively chose it)
+        const activeLocale = browsingLocale || storedLocale
+
         return NextResponse.json({
             user: {
                 id: user.id, name: user.name, email: user.email,
@@ -106,7 +124,7 @@ export async function POST(request: Request) {
             },
             redirectTo,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            preferredLanguage: user.preferredLanguage ?? 'en',
+            preferredLanguage: activeLocale,
         })
     } catch (error) {
         logger.error('auth/login', 'Login failed', { error })

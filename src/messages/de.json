@@ -36,8 +36,8 @@
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "langBanner": {
-    "message": "Diese Website wurde in Ihre Browsersprache Ã¼bersetzt.",
-    "continueInEnglish": "Auf Englisch fortfahren?"
+    "message": "Ihr Browser bevorzugt eine andere Sprache.",
+    "continueInEnglish": "Wechseln"
   },
   "dashboard": {
     "applications": "Bewerbungen",

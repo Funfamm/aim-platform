@@ -36,8 +36,8 @@
     "loginFailed": "Sign in failed. Please try again."
   },
   "langBanner": {
-    "message": "This site was translated to your browser language.",
-    "continueInEnglish": "Continue in English?"
+    "message": "Your browser prefers a different language.",
+    "continueInEnglish": "Switch"
   },
   "dashboard": {
     "applications": "Applications",

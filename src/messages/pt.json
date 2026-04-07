@@ -36,8 +36,8 @@
     "loginFailed": "Falha ao entrar. Por favor, tente novamente."
   },
   "langBanner": {
-    "message": "Este site foi traduzido para o idioma do seu navegador.",
-    "continueInEnglish": "Continuar em inglÃªs?"
+    "message": "Seu navegador prefere outro idioma.",
+    "continueInEnglish": "Mudar"
   },
   "dashboard": {
     "applications": "Candidaturas",

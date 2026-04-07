@@ -8,10 +8,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 export default function LoginPage() {
     const t = useTranslations('login')
+    const currentLocale = useLocale()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
@@ -62,7 +63,7 @@ export default function LoginPage() {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, locale: currentLocale }),
             })
             const data = await res.json()
             if (res.ok) {

@@ -36,8 +36,8 @@
     "loginFailed": "Error al iniciar sesiÃ³n. Intenta de nuevo."
   },
   "langBanner": {
-    "message": "Este sitio fue traducido al idioma de tu navegador.",
-    "continueInEnglish": "Â¿Continuar en inglÃ©s?"
+    "message": "Tu navegador prefiere otro idioma.",
+    "continueInEnglish": "Cambiar"
   },
   "dashboard": {
     "applications": "Solicitudes",

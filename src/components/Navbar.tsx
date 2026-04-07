@@ -71,19 +71,29 @@ export default function Navbar() {
     const currentLocale = locale
     // Show "Continue in English?" banner if user was auto-detected to a non-English locale
     // and hasn't manually chosen yet (no explicit localStorage choice)
-    const [showEnglishBanner, setShowEnglishBanner] = useState(false)
+    const [showLangBanner, setShowLangBanner] = useState(false)
+    const [detectedLocale, setDetectedLocale] = useState<Locale | null>(null)
     useEffect(() => {
-        if (currentLocale !== 'en') {
-            const saved = localStorage.getItem('aim_locale_chosen')
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            if (!saved) setShowEnglishBanner(true)
+        // Only suggest switching if the user hasn't explicitly chosen a locale
+        const saved = localStorage.getItem('aim_locale_chosen')
+        if (saved) return
+
+        // Detect the browser's preferred language
+        const browserLang = (navigator.language || '').split('-')[0].toLowerCase()
+        // Check if the browser language is one of our supported locales
+        const matchedLocale = locales.find(l => l === browserLang) ?? null
+
+        // Show banner if: browser prefers a DIFFERENT supported locale than the URL
+        if (matchedLocale && matchedLocale !== currentLocale) {
+            setDetectedLocale(matchedLocale)
+            setShowLangBanner(true)
         }
     }, [currentLocale])
 
     const switchLocale = (newLocale: Locale) => {
         // Mark as manually chosen so the banner never shows again
         localStorage.setItem('aim_locale_chosen', newLocale)
-        setShowEnglishBanner(false)
+        setShowLangBanner(false)
         router.replace(pathname, { locale: newLocale })
         setLangMenuOpen(false)
         // Persist to DB if user is logged in (fire-and-forget)
@@ -100,7 +110,7 @@ export default function Navbar() {
     return (
         <>
             {/* ── Auto-Detect Language Banner ── */}
-            {showEnglishBanner && (
+            {showLangBanner && detectedLocale && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
                     background: 'linear-gradient(90deg, rgba(212,168,83,0.12), rgba(212,168,83,0.06))',
@@ -112,7 +122,7 @@ export default function Navbar() {
                 }}>
                     <span>🌐 {tLang('message')}</span>
                     <button
-                        onClick={() => switchLocale('en')}
+                        onClick={() => switchLocale(detectedLocale)}
                         style={{
                             padding: '4px 14px', fontSize: '0.75rem', fontWeight: 700,
                             borderRadius: '20px', border: '1px solid rgba(212,168,83,0.4)',
@@ -120,10 +130,10 @@ export default function Navbar() {
                             cursor: 'pointer', whiteSpace: 'nowrap',
                         }}
                     >
-                        {tLang('continueInEnglish')}
+                        {localeNames[detectedLocale]}
                     </button>
                     <button
-                        onClick={() => { localStorage.setItem('aim_locale_chosen', currentLocale); setShowEnglishBanner(false) }}
+                        onClick={() => { localStorage.setItem('aim_locale_chosen', currentLocale); setShowLangBanner(false) }}
                         style={{
                             background: 'none', border: 'none', color: 'var(--text-tertiary)',
                             cursor: 'pointer', fontSize: '1rem', lineHeight: 1,
@@ -134,7 +144,7 @@ export default function Navbar() {
                     </button>
                 </div>
             )}
-            <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${showEnglishBanner ? 'has-lang-banner' : ''}`} aria-label="Main navigation">
+            <nav className={`navbar ${scrolled ? 'scrolled' : ''} ${showLangBanner ? 'has-lang-banner' : ''}`} aria-label="Main navigation">
                 <div className="navbar-inner">
                     <Link href="/" className="navbar-logo" prefetch={false}>
                         {logoUrl && (
