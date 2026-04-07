@@ -668,8 +668,74 @@ export default function StudyCanvasPage() {
                                             }
 
                                             setModules(newModules)
-                                            setGenProgress('')
-                                            setSuccess(`✨ Course generated! ${newModules.length} modules, ${newModules.reduce((s, m) => s + m.lessons.length, 0)} lessons, ${data.finalQuiz?.questions?.length || 0} quiz questions. Click Save to persist.`)
+
+                                            // ── Auto-save immediately so the AI quiz is never lost ──
+                                            setGenProgress('💾 Auto-saving generated course...')
+                                            try {
+                                                const saveBody = {
+                                                    title, description: data.courseDescription || description,
+                                                    category, level, duration: duration || null,
+                                                    thumbnail: thumbnail || null, published,
+                                                    modules: newModules,
+                                                    sourceContent: sourceContent || null,
+                                                }
+                                                const saveUrl = isNew ? '/api/admin/training' : `/api/admin/training/${realCourseId}`
+                                                const saveMethod = isNew ? 'POST' : 'PUT'
+                                                const saveRes = await fetch(saveUrl, {
+                                                    method: saveMethod,
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(saveBody),
+                                                })
+                                                if (saveRes.ok) {
+                                                    // Drain the NDJSON stream for PUT responses
+                                                    if (saveMethod === 'PUT' && saveRes.body) {
+                                                        const reader = saveRes.body.getReader()
+                                                        const decoder = new TextDecoder()
+                                                        let buf = ''
+                                                        while (true) {
+                                                            const { done, value } = await reader.read()
+                                                            if (done) break
+                                                            buf += decoder.decode(value, { stream: true })
+                                                        }
+                                                        // Parse last done event to refresh module IDs from DB
+                                                        const lines = buf.split('\n').filter(l => l.trim())
+                                                        for (const line of lines.reverse()) {
+                                                            try {
+                                                                const evt = JSON.parse(line)
+                                                                if (evt.type === 'done' && evt.data?.modules) {
+                                                                    // Re-load module/quiz IDs from DB so future saves work correctly
+                                                                    setModules(evt.data.modules.map((m: any, mi: number) => ({
+                                                                        ...newModules[mi],
+                                                                        id: m.id,
+                                                                        quiz: m.quiz ? {
+                                                                            ...newModules[mi]?.quiz,
+                                                                            id: m.quiz.id,
+                                                                            questions: (m.quiz.questions || []).map((q: any, qi: number) => ({
+                                                                                ...newModules[mi]?.quiz?.questions?.[qi],
+                                                                                id: q.id,
+                                                                            })),
+                                                                        } : null,
+                                                                    })))
+                                                                    break
+                                                                }
+                                                            } catch { /* skip */ }
+                                                        }
+                                                    } else if (saveMethod === 'POST') {
+                                                        const saved = await saveRes.json()
+                                                        if (saved.id) {
+                                                            window.history.replaceState(null, '', `/admin/training/${saved.id}/edit`)
+                                                        }
+                                                    }
+                                                    setGenProgress('')
+                                                    setSuccess(`✨ Course generated & saved! ${newModules.length} modules, ${newModules.reduce((s, m) => s + m.lessons.length, 0)} lessons, ${data.finalQuiz?.questions?.length || 0} quiz questions.`)
+                                                } else {
+                                                    setGenProgress('')
+                                                    setSuccess(`✨ Course generated! ${newModules.length} modules — click Save to persist the quiz.`)
+                                                }
+                                            } catch {
+                                                setGenProgress('')
+                                                setSuccess(`✨ Course generated! ${newModules.length} modules — click Save to persist the quiz.`)
+                                            }
                                             setTimeout(() => setSuccess(''), 8000)
                                         } catch (err) {
                                             setError(err instanceof Error ? err.message : 'AI generation failed')

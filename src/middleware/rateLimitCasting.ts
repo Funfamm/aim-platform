@@ -20,7 +20,7 @@ export async function rateLimitCasting(request: Request): Promise<NextResponse |
   // Identify caller – prefer authenticated user ID, fallback to IP
   const ip = request.headers.get('x-forwarded-for') || request.headers.get('client-ip') || '';
   // In a real app you would extract userId from session/jwt; placeholder here
-  const userId = (request as any).user?.id as string | undefined;
+  const userId = (request as Request & { user?: { id?: string } }).user?.id
   const key = userId ?? ip;
 
   if (!key) {

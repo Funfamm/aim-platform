@@ -1,5 +1,4 @@
 import { v4 as uuidv4 } from 'uuid';
-import { encrypt } from '@/lib/secure';
 import { uploadBufferToR2 } from '@/lib/r2Upload';
 
 /**
@@ -21,13 +20,13 @@ export async function saveAudioFile(file: File): Promise<string> {
   const ext = file.type === 'audio/mpeg' ? 'mp3' : 'wav';
   const filename = `${uuidv4()}.${ext}`;
   const date = new Date();
-  
+
   const r2Key = `uploads/audio/${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}/${filename}`;
 
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
   const publicUrl = await uploadBufferToR2(buffer, r2Key, file.type);
-  
+
   return publicUrl;
 }
