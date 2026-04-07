@@ -249,7 +249,6 @@ export async function GET(req: Request) {
         return r(localePath)
     } catch (err) {
         console.error('[Google OAuth] Unexpected error:', err)
-        const msg = err instanceof Error ? err.message : String(err)
-        return r(`/login?error=oauth_failed&debug=${encodeURIComponent(msg)}`)
+        return r('/login?error=oauth_failed')
     }
 }
