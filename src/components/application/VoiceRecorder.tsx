@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface Props {
     audioFile: File | null
@@ -10,6 +11,7 @@ interface Props {
 const MAX_RECORDING_SECS = 120
 
 export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
+    const t = useTranslations('voiceRecorder')
     const [voiceMode, setVoiceMode] = useState<'record' | 'upload'>('record')
     const [isRecording, setIsRecording] = useState(false)
     const [recordingTime, setRecordingTime] = useState(0)
@@ -89,7 +91,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                 })
             }, 1000)
         } catch {
-            setMicError('Microphone access denied. Please allow microphone access in your browser settings, or use the "Upload File" option instead.')
+            setMicError(t('micError'))
         }
     }, [stopRecording, onAudioChange])
 
@@ -112,11 +114,11 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
         // Accept any audio/* including codecs suffix like audio/webm;codecs=opus
         const baseMime = file.type.split(';')[0].trim().toLowerCase()
         if (file.type && !baseMime.startsWith('audio/')) {
-            setUploadError('Please upload an audio file only (MP3, WAV, M4A, WebM, OGG, FLAC)')
+            setUploadError(t('uploadErrorType'))
             return
         }
         if (file.size > 50 * 1024 * 1024) {
-            setUploadError('Audio file must be under 50MB')
+            setUploadError(t('uploadErrorSize'))
             return
         }
         setUploadError('')
@@ -136,14 +138,13 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
                 <span style={{ fontSize: '1.5rem' }}>🎙️</span>
                 <div>
-                    <div style={{ fontWeight: 600 }}>Voice Recording *</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>For voice cloning and character matching</div>
+                    <div style={{ fontWeight: 600 }}>{t('title')} *</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('subtitle')}</div>
                 </div>
             </div>
 
             <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)', lineHeight: 1.7 }}>
-                Record yourself speaking naturally for up to <strong>2 minutes</strong>. You can read a passage, introduce yourself,
-                or perform a short monologue. Clear audio without background noise produces the best results.
+                {t('instructions', { minutes: 2 })}
             </p>
 
             {uploadError && (
@@ -180,7 +181,7 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                             transition: 'all 0.2s',
                         }}
                     >
-                        {mode === 'record' ? '🎤 Record' : '📁 Upload File'}
+                        {mode === 'record' ? `🎙️ ${t('recordTab')}` : `📁 ${t('uploadTab')}`}
                     </button>
                 ))}
             </div>
@@ -267,14 +268,14 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                             )}
                         </button>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-sm)' }}>
-                            {isRecording ? 'Tap to stop recording' : recordedBlob ? 'Tap to re-record' : 'Tap to start recording'}
+                            {isRecording ? t('tapToStop') : recordedBlob ? t('tapToRerecord') : t('tapToStart')}
                         </div>
 
                         {/* Playback preview */}
                         {recordedUrl && !isRecording && (
                             <div style={{ width: '100%', marginTop: 'var(--space-lg)' }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600, marginBottom: '6px' }}>
-                                    ✓ Recording captured — preview below
+                                    ✓ {t('capturedPreview')}
                                 </div>
                                 <audio controls src={recordedUrl} style={{ width: '100%' }} />
                             </div>
@@ -296,15 +297,15 @@ export default function VoiceRecorder({ audioFile, onAudioChange }: Props) {
                             <div>
                                 <div style={{ fontWeight: 600, color: 'var(--success)' }}>✓ {audioFile.name}</div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                    {(audioFile.size / (1024 * 1024)).toFixed(1)}MB • Tap to replace
+                                    {(audioFile.size / (1024 * 1024)).toFixed(1)}MB • {t('tapToReplace')}
                                 </div>
                             </div>
                         </div>
                     ) : (
                         <>
-                            <div className="file-upload-icon">🎤</div>
-                            <div className="file-upload-text">Tap or click to upload your voice recording</div>
-                            <div className="file-upload-hint">MP3, WAV, M4A, OGG, FLAC, WebM • Max 50MB</div>
+                            <div className="file-upload-icon">🎙️</div>
+                            <div className="file-upload-text">{t('uploadPrompt')}</div>
+                            <div className="file-upload-hint">{t('uploadHint')}</div>
                         </>
                     )}
                     <input

@@ -611,17 +611,18 @@ model FilmView {
 }
 
 model ApiKey {
-  id            String    @id @default(cuid())
-  label         String    @default("API Key")
-  provider      String    @default("gemini") // gemini | groq | openai
-  key           String
-  isActive      Boolean   @default(true)
-  assignedAgent String    @default("all") // all | audition | analytics | scripts | training
-  usageCount    Int       @default(0)
-  lastUsed      DateTime?
-  lastError     String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(cuid())
+  label           String    @default("API Key")
+  provider        String    @default("gemini") // gemini | groq | openai
+  key             String
+  isActive        Boolean   @default(true)
+  assignedAgent   String    @default("all") // all | audition | analytics | scripts | training
+  usageCount      Int       @default(0)
+  lastUsed        DateTime?
+  lastError       String?
+  cooledDownUntil DateTime? // set on 429 — key is skipped until this time passes
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
 
 // ????????? Training System ?????????

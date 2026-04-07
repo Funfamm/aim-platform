@@ -1,42 +1,74 @@
 {
   "mfa": {
-    "title": "两步验证",
-    "subtitle": "请输入我们发送到您邮箱的验证码。",
-    "codePlaceholder": "6位验证码",
-    "submitButton": "验证",
-    "resendButton": "重新发送验证码",
-    "resendSuccess": "新的验证码已发送到您的邮箱。",
-    "errorInvalid": "验证码不正确，请重试。",
-    "errorExpired": "验证码已过期，请重新获取。",
-    "errorGeneric": "验证失败，请重试。"
+    "title": "ä¸¤æ­¥éªŒè¯",
+    "subtitle": "è¯·è¾“å…¥æˆ‘ä»¬å‘é€åˆ°æ‚¨é‚®ç®±çš„éªŒè¯ç ã€‚",
+    "codePlaceholder": "6ä½éªŒè¯ç ",
+    "submitButton": "éªŒè¯",
+    "resendButton": "é‡æ–°å‘é€éªŒè¯ç ",
+    "resendSuccess": "æ–°çš„éªŒè¯ç å·²å‘é€åˆ°æ‚¨çš„é‚®ç®±ã€‚",
+    "errorInvalid": "éªŒè¯ç ä¸æ­£ç¡®ï¼Œè¯·é‡è¯•ã€‚",
+    "errorExpired": "éªŒè¯ç å·²è¿‡æœŸï¼Œè¯·é‡æ–°èŽ·å–ã€‚",
+    "errorGeneric": "éªŒè¯å¤±è´¥ï¼Œè¯·é‡è¯•ã€‚"
   },
   "notifications": {
-    "title": "通知",
-    "markAllRead": "全部标为已读",
-    "empty": "暂无通知。",
+    "title": "é€šçŸ¥",
+    "markAllRead": "å…¨éƒ¨æ ‡ä¸ºå·²è¯»",
+    "empty": "æš‚æ— é€šçŸ¥ã€‚",
     "preferences": {
-      "title": "通知偏好",
-      "saved": "偏好已保存。",
-      "newRole": "新角色招募",
-      "announcement": "平台公告",
-      "contentPublish": "新内容发布",
-      "statusChange": "申请状态变更",
-      "email": "电子邮件",
-      "inApp": "应用内通知",
-      "sms": "短信"
+      "title": "é€šçŸ¥åå¥½",
+      "saved": "åå¥½å·²ä¿å­˜ã€‚",
+      "newRole": "æ–°è§’è‰²æ‹›å‹Ÿ",
+      "announcement": "å¹³å°å…¬å‘Š",
+      "contentPublish": "æ–°å†…å®¹å‘å¸ƒ",
+      "statusChange": "ç”³è¯·çŠ¶æ€å˜æ›´",
+      "email": "ç”µå­é‚®ä»¶",
+      "inApp": "åº”ç”¨å†…é€šçŸ¥",
+      "sms": "çŸ­ä¿¡"
     }
   },
   "auth": {
-    "login": "登录",
-    "logout": "退出登录",
-    "email": "电子邮件地址",
-    "password": "密码",
-    "invalidCredentials": "邮箱或密码不正确。",
-    "verifyEmailFirst": "请在登录前验证您的邮箱。",
-    "loginFailed": "登录失败，请重试。"
+    "login": "ç™»å½•",
+    "logout": "é€€å‡ºç™»å½•",
+    "email": "ç”µå­é‚®ä»¶åœ°å€",
+    "password": "å¯†ç ",
+    "invalidCredentials": "é‚®ç®±æˆ–å¯†ç ä¸æ­£ç¡®ã€‚",
+    "verifyEmailFirst": "è¯·åœ¨ç™»å½•å‰éªŒè¯æ‚¨çš„é‚®ç®±ã€‚",
+    "loginFailed": "ç™»å½•å¤±è´¥ï¼Œè¯·é‡è¯•ã€‚"
   },
   "langBanner": {
-    "message": "此网站已翻译为您的浏览器语言。",
-    "continueInEnglish": "继续使用英语？"
+    "message": "æ­¤ç½‘ç«™å·²ç¿»è¯‘ä¸ºæ‚¨çš„æµè§ˆå™¨è¯­è¨€ã€‚",
+    "continueInEnglish": "ç»§ç»­ä½¿ç”¨è‹±è¯­ï¼Ÿ"
+  },
+  "dashboard": {
+    "applications": "ç”³è¯·",
+    "saved": "å·²ä¿å­˜",
+    "watched": "å·²è§‚çœ‹",
+    "donated": "å·²ææ¬¾",
+    "supportUs": "æ”¯æŒæˆ‘ä»¬",
+    "donateNow": "ç«‹å³ææ¬¾ â†’",
+    "exploreCasting": "æŽ¢ç´¢é€‰è§’ â†’",
+    "browseProjects": "æµè§ˆé¡¹ç›® â†’",
+    "watchFilms": "è§‚çœ‹å½±ç‰‡ â†’",
+    "praiseWords": "ä½ å¤ªæ£’äº†ï¼ðŸŒŸ|çœŸæ­£çš„æ”¯æŒè€…ï¼ðŸ’«|ç”µå½±è‹±é›„ï¼ðŸŽ¬|è®©æ¢¦æƒ³æˆçœŸï¼âœ¨|ä½ å¾ˆé‡è¦ï¼ðŸ’›|æ— æ•Œçš„å¿ƒï¼ðŸ«¶|æ•…äº‹å† å†›ï¼ðŸ†|è‰ºæœ¯èµžåŠ©äººï¼ðŸŽ¨|åˆ›æ„å¤©ä½¿ï¼ðŸ‘¼"
+  },
+  "forgotPassword": {
+    "codeSent": "一个6位验证码已发送至您的邮箱。请检查收件箱和垃圾邮件文件夹。",
+    "emailNotConfigured": "邮件发送功能尚未配置。请联系管理员。",
+    "enterAllDigits": "请输入全部6位数字。",
+    "invalidCode": "验证码无效",
+    "sendingCode": "正在发送新验证码...",
+    "newCodeSent": "新验证码已发送！",
+    "resendFailed": "重新发送失败，请稍后再试。",
+    "codeExpiresIn": "验证码将在以下时间后过期",
+    "enterVerificationCode": "输入验证码",
+    "weSentCode": "我们已向 {email} 发送验证码",
+    "enterYourCode": "请输入6位验证码",
+    "resendCode": "没有收到验证码？重新发送",
+    "verifyCodeBtn": "验证码确认",
+    "pwWeak": "弱",
+    "pwFair": "一般",
+    "pwGood": "良好",
+    "pwStrong": "强",
+    "pwExcellent": "极强"
   }
 }

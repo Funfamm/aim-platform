@@ -18,9 +18,9 @@
       "title": "Benachrichtigungseinstellungen",
       "saved": "Einstellungen gespeichert.",
       "newRole": "Neue Casting-Rollen",
-      "announcement": "Plattform-Ankündigungen",
-      "contentPublish": "Neue Inhalte veröffentlicht",
-      "statusChange": "Änderungen des Bewerbungsstatus",
+      "announcement": "Plattform-AnkÃ¼ndigungen",
+      "contentPublish": "Neue Inhalte verÃ¶ffentlicht",
+      "statusChange": "Ã„nderungen des Bewerbungsstatus",
       "email": "E-Mail",
       "inApp": "In-App-Benachrichtigungen",
       "sms": "SMS"
@@ -32,11 +32,43 @@
     "email": "E-Mail-Adresse",
     "password": "Passwort",
     "invalidCredentials": "Falsche E-Mail-Adresse oder falsches Passwort.",
-    "verifyEmailFirst": "Bitte bestätigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
+    "verifyEmailFirst": "Bitte bestÃ¤tigen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte versuchen Sie es erneut."
   },
   "langBanner": {
-    "message": "Diese Website wurde in Ihre Browsersprache übersetzt.",
+    "message": "Diese Website wurde in Ihre Browsersprache Ã¼bersetzt.",
     "continueInEnglish": "Auf Englisch fortfahren?"
+  },
+  "dashboard": {
+    "applications": "Bewerbungen",
+    "saved": "Gespeichert",
+    "watched": "Angesehen",
+    "donated": "Gespendet",
+    "supportUs": "UnterstÃ¼tz uns",
+    "donateNow": "Jetzt spenden â†’",
+    "exploreCasting": "Casting entdecken â†’",
+    "browseProjects": "Projekte durchstÃ¶bern â†’",
+    "watchFilms": "Filme anschauen â†’",
+    "praiseWords": "Du bist fantastisch! ðŸŒŸ|Echter UnterstÃ¼tzer! ðŸ’«|Filmheld! ðŸŽ¬|TrÃ¤ume werden wahr! âœ¨|Du bist wichtig! ðŸ’›|Unglaubliches Herz! ðŸ«¶|Geschichten-Champion! ðŸ†|KunstmÃ¤zen! ðŸŽ¨|Kreativer Engel! ðŸ‘¼"
+  },
+  "forgotPassword": {
+    "codeSent": "Ein 6-stelliger Code wurde an Ihre E-Mail gesendet. Prüfen Sie Ihren Posteingang und Spam-Ordner.",
+    "emailNotConfigured": "Der E-Mail-Versand ist noch nicht konfiguriert. Bitte wenden Sie sich an den Administrator.",
+    "enterAllDigits": "Bitte geben Sie alle 6 Ziffern ein.",
+    "invalidCode": "Ungültiger Code",
+    "sendingCode": "Sende neuen Code...",
+    "newCodeSent": "Ein neuer Code wurde gesendet!",
+    "resendFailed": "Code konnte nicht erneut gesendet werden. Bitte versuchen Sie es später.",
+    "codeExpiresIn": "Code läuft ab in",
+    "enterVerificationCode": "Bestätigungscode eingeben",
+    "weSentCode": "Wir haben einen Code an {email} gesendet",
+    "enterYourCode": "Geben Sie Ihren 6-stelligen Bestätigungscode ein",
+    "resendCode": "Keinen Code erhalten? Erneut senden",
+    "verifyCodeBtn": "Code bestätigen",
+    "pwWeak": "Schwach",
+    "pwFair": "Mäßig",
+    "pwGood": "Gut",
+    "pwStrong": "Stark",
+    "pwExcellent": "Ausgezeichnet"
   }
 }

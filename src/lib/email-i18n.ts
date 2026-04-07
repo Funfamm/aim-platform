@@ -648,12 +648,15 @@ export const emailStrings: Record<string, TemplateStrings> = {
     // ── Donation Thank You ─────────────────────────────────────────────────────
     donationThankYou: {
         en: {
+            subject:    'Thank you for your donation! 💛',
             heading:    'Thank You for Your Generosity! 💛',
             subtext:    'Your support means the world to us.',
             donationReceived: 'Donation received',
             body:       'Your contribution directly supports independent AI-powered filmmaking. Every dollar helps us push the boundaries of visual storytelling.',
             receipt:    'This email serves as your donation receipt for your records.',
             buttonText: 'Visit AIM Studio',
+            notifTitle: 'Donation Received 💛',
+            notifBody:  'Thank you for your generous donation! Your support makes a real difference.',
         },
         es: {
             heading:    '¡Gracias por tu Generosidad! 💛',

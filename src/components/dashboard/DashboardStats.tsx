@@ -3,12 +3,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 
-const PRAISE_WORDS = [
-    "You're amazing! 🌟", "True supporter! 💫", "Film hero! 🎬",
-    "Making dreams real! ✨", "You matter! 💛", "Incredible heart! 🫶",
-    "Story champion! 🏆", "Art patron! 🎨", "Creative angel! 👼",
-]
-
 interface DashboardStatsProps {
     applications: number
     saved: number
@@ -18,9 +12,12 @@ interface DashboardStatsProps {
 
 export default function DashboardStats({ applications, saved, watched, donated }: DashboardStatsProps) {
     const t = useTranslations('dashboard')
+    // Praise words come from translations — pipe-delimited string split at runtime
+    const PRAISE_WORDS = (t('praiseWords') || "You're amazing! 🌟|True supporter! 💫|Film hero! 🎬").split('|')
     const [praiseIdx, setPraiseIdx] = useState(0)
     const [fadeIn, setFadeIn] = useState(true)
     const showDonation = donated > 0
+
 
     useEffect(() => {
         if (!showDonation) return

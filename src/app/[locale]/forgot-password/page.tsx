@@ -116,7 +116,7 @@ function CodeInput({ value, onChange }: { value: string; onChange: (v: string) =
 }
 
 /* ── Countdown Timer ── */
-function CountdownTimer({ seconds }: { seconds: number }) {
+function CountdownTimer({ seconds, expiresLabel }: { seconds: number; expiresLabel: string }) {
     const [remaining, setRemaining] = useState(seconds)
     useEffect(() => {
         const interval = setInterval(() => setRemaining(r => Math.max(0, r - 1)), 1000)
@@ -139,7 +139,7 @@ function CountdownTimer({ seconds }: { seconds: number }) {
                 fontSize: '0.72rem', fontWeight: 600,
                 color: remaining > 60 ? 'var(--text-tertiary)' : remaining > 30 ? '#f59e0b' : '#ef4444',
             }}>
-                Code expires in {mins}:{secs.toString().padStart(2, '0')}
+                {expiresLabel} {mins}:{secs.toString().padStart(2, '0')}
             </span>
         </div>
     )
@@ -179,15 +179,15 @@ export default function ForgotPasswordPage() {
                 setStep('code')
                 setCodeTimerKey(k => k + 1)
                 if (data.emailConfigured) {
-                    setInfo('📧 A 6-digit code has been sent to your email. Check your inbox and spam folder.')
+                    setInfo('📧 ' + t('codeSent'))
                 } else {
-                    setInfo('⚠️ Email sending is not configured yet. Please contact the admin.')
+                    setInfo('⚠️ ' + t('emailNotConfigured'))
                 }
             } else {
                 setError(data.error || t('emailNotFound'))
             }
         } else if (step === 'code') {
-            if (code.length !== 6) { setError('Please enter all 6 digits.'); setLoading(false); return }
+            if (code.length !== 6) { setError(t('enterAllDigits')); setLoading(false); return }
             const res = await fetch('/api/auth/forgot-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -199,7 +199,7 @@ export default function ForgotPasswordPage() {
                 setStep('reset')
                 setInfo('')
             } else {
-                setError(data.error || 'Invalid code')
+                setError(data.error || t('invalidCode'))
             }
         } else if (step === 'reset') {
             if (newPassword.length < 6) { setError(t('minChars')); setLoading(false); return }
@@ -220,7 +220,7 @@ export default function ForgotPasswordPage() {
     }
 
     const handleResendCode = async () => {
-        setError(''); setInfo('Sending a new code...')
+        setError(''); setInfo(t('sendingCode'))
         const res = await fetch('/api/auth/forgot-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -229,10 +229,10 @@ export default function ForgotPasswordPage() {
         if (res.ok) {
             setCode('')
             setCodeTimerKey(k => k + 1)
-            setInfo('📧 A new code has been sent!')
+            setInfo('📧 ' + t('newCodeSent'))
         } else {
             const data = await res.json()
-            setError(data.error || 'Failed to resend code. Try again later.')
+            setError(data.error || t('resendFailed'))
             setInfo('')
         }
     }
@@ -260,7 +260,7 @@ export default function ForgotPasswordPage() {
         return s
     }
     const pwStrength = getPasswordStrength(newPassword)
-    const strengthLabels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Excellent']
+    const strengthLabels = ['', t('pwWeak'), t('pwFair'), t('pwGood'), t('pwStrong'), t('pwExcellent')]
     const strengthColors = ['', '#ef4444', '#f59e0b', '#eab308', '#34d399', '#10b981']
 
     return (
@@ -288,11 +288,11 @@ export default function ForgotPasswordPage() {
                             {t('accountRecovery')}
                         </div>
                         <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2.2rem)', fontWeight: 800, marginBottom: 'var(--space-sm)' }}>
-                            {step === 'done' ? '🎉 ' + t('passwordResetDone') : step === 'code' ? '🔐 Enter Verification Code' : t('resetPassword')}
+                            {step === 'done' ? '🎉 ' + t('passwordResetDone') : step === 'code' ? '🔐 ' + t('enterVerificationCode') : t('resetPassword')}
                         </h1>
                         <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>
                             {step === 'email' && t('enterEmail')}
-                            {step === 'code' && `We sent a code to ${email.replace(/(.{2})(.*)(@.*)/, '$1***$3')}`}
+                            {step === 'code' && t('weSentCode', { email: email.replace(/(.{2})(.*)(@.*)/, '$1***$3') })}
                             {step === 'reset' && t('chooseNew')}
                             {step === 'done' && t('updatedSuccess')}
                         </p>
@@ -350,7 +350,7 @@ export default function ForgotPasswordPage() {
                                 {step === 'code' && (
                                     <div style={{ marginBottom: 'var(--space-lg)' }}>
                                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px', textAlign: 'center' }}>
-                                            Enter your 6-digit verification code
+                                            {t('enterYourCode')}
                                         </label>
                                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '8px' }}>
                                             {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -418,14 +418,14 @@ export default function ForgotPasswordPage() {
                                                 />
                                             ))}
                                         </div>
-                                        <CountdownTimer key={codeTimerKey} seconds={600} />
+                                        <CountdownTimer key={codeTimerKey} seconds={600} expiresLabel={t('codeExpiresIn')} />
                                         <div style={{ marginTop: '12px', textAlign: 'center' }}>
                                             <button
                                                 type="button"
                                                 onClick={handleResendCode}
                                                 style={{ background: 'none', border: 'none', color: 'var(--accent-gold)', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
                                             >
-                                                Didn&apos;t receive the code? Resend
+                                                {t('resendCode')}
                                             </button>
                                         </div>
                                     </div>
@@ -518,7 +518,7 @@ export default function ForgotPasswordPage() {
                                         : step === 'email'
                                             ? '📧 ' + t('continueBtn')
                                             : step === 'code'
-                                                ? '🔓 Verify Code'
+                                                ? '🔓 ' + t('verifyCodeBtn')
                                                 : '🔑 ' + t('resetBtn')
                                     }
                                 </button>

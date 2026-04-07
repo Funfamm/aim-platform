@@ -1,10 +1,34 @@
 import { prisma } from '@/lib/db'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
+// How long to cool a key down after a 429 (ms).
+// Gemini free tier resets every minute; Groq resets vary.
+const COOLDOWN_MS = 65_000 // 65 seconds
+
 /**
- * Universal AI caller with automatic key rotation.
+ * Returns true if an error message is a 429 rate-limit response.
+ */
+function is429(msg: string): boolean {
+    return (
+        msg.includes('429') ||
+        msg.toLowerCase().includes('quota') ||
+        msg.toLowerCase().includes('rate limit') ||
+        msg.toLowerCase().includes('resource_exhausted') ||
+        msg.toLowerCase().includes('too many requests')
+    )
+}
+
+/**
+ * Universal AI caller with smart key rotation.
+ *
+ * Key selection strategy:
+ *  1. Build a pool of active keys ordered by: preferred provider → agent-specific → lastUsed (oldest first)
+ *  2. Skip any key whose cooledDownUntil is in the future (i.e. still on rate-limit cooldown)
+ *  3. Pre-touch the chosen key's lastUsed to prevent concurrent requests from picking the same key
+ *  4. On 429 → set cooledDownUntil = now + 65 s, then try the next key
+ *  5. On success → clear cooledDownUntil, increment usageCount
+ *
  * Works with Gemini, Groq, and OpenAI keys.
- * Tries keys assigned to the given agent first, then falls back to any active key.
  */
 export async function callGemini(
     prompt: string,
@@ -23,36 +47,68 @@ export async function callGemini(
             ? [preferredProvider, ...allProviders.filter(p => p !== preferredProvider)]
             : allProviders
 
-        // Collect all active keys, ordered by provider preference
+        const now = new Date()
+
+        // Collect all active, non-cooled-down keys ordered by provider preference
         let pool: Array<{ id: string; key: string; label: string; provider: string }> = []
 
         for (const p of providerOrder) {
             // Agent-specific keys first
             const specific = await prisma.apiKey.findMany({
-                where: { isActive: true, provider: p, assignedAgent: { in: [agent, 'all'] } },
-                orderBy: { lastUsed: 'asc' },
+                where: {
+                    isActive: true,
+                    provider: p,
+                    assignedAgent: { in: [agent, 'all'] },
+                    OR: [
+                        { cooledDownUntil: null },
+                        { cooledDownUntil: { lt: now } }, // cooldown has expired
+                    ],
+                },
             })
-            if (specific.length > 0) { pool = [...pool, ...specific]; continue }
 
-            // Any active key for this provider
-            const any = await prisma.apiKey.findMany({
-                where: { isActive: true, provider: p },
-                orderBy: { lastUsed: 'asc' },
+            // Sort: unused (null lastUsed) first → then oldest lastUsed
+            const sorted = specific.sort((a, b) => {
+                if (!a.lastUsed && !b.lastUsed) return Math.random() > 0.5 ? 1 : -1
+                if (!a.lastUsed) return -1
+                if (!b.lastUsed) return 1
+                return a.lastUsed.getTime() - b.lastUsed.getTime()
             })
+
+            if (sorted.length > 0) { pool = [...pool, ...sorted]; continue }
+
+            // Fallback: any active key for this provider
+            const any = await prisma.apiKey.findMany({
+                where: {
+                    isActive: true,
+                    provider: p,
+                    OR: [
+                        { cooledDownUntil: null },
+                        { cooledDownUntil: { lt: now } },
+                    ],
+                },
+            })
+
+            any.sort((a, b) => {
+                if (!a.lastUsed && !b.lastUsed) return Math.random() > 0.5 ? 1 : -1
+                if (!a.lastUsed) return -1
+                if (!b.lastUsed) return 1
+                return a.lastUsed.getTime() - b.lastUsed.getTime()
+            })
+
             pool = [...pool, ...any]
         }
 
-        // Env/settings fallbacks if still empty
+        // Env/settings fallbacks (not stored in DB, no cooldown support — last resort)
         if (pool.length === 0) {
             const fbKey = settings?.geminiApiKey
-            if (fbKey) pool = [{ id: 'settings', key: fbKey, label: 'Settings Key', provider: 'gemini' }]
-            else if (process.env.GROQ_API_KEY) pool = [{ id: 'env', key: process.env.GROQ_API_KEY, label: 'Env Groq', provider: 'groq' }]
-            else if (process.env.GEMINI_API_KEY) pool = [{ id: 'env', key: process.env.GEMINI_API_KEY, label: 'Env Gemini', provider: 'gemini' }]
-            else if (process.env.OPENAI_API_KEY) pool = [{ id: 'env', key: process.env.OPENAI_API_KEY, label: 'Env OpenAI', provider: 'openai' }]
+            if (fbKey)                        pool = [{ id: 'settings', key: fbKey,                        label: 'Settings Key', provider: 'gemini' }]
+            else if (process.env.GROQ_API_KEY) pool = [{ id: 'env',      key: process.env.GROQ_API_KEY!,   label: 'Env Groq',    provider: 'groq'   }]
+            else if (process.env.GEMINI_API_KEY) pool = [{ id: 'env',    key: process.env.GEMINI_API_KEY!, label: 'Env Gemini',  provider: 'gemini' }]
+            else if (process.env.OPENAI_API_KEY) pool = [{ id: 'env',    key: process.env.OPENAI_API_KEY!, label: 'Env OpenAI',  provider: 'openai' }]
         }
 
         if (pool.length === 0) {
-            return { error: 'No active API keys configured. Add keys in Admin → Settings → API Keys.' }
+            return { error: 'All API keys are rate-limited or unavailable. Try again in 1 minute, or add more keys in Admin → Settings → API Keys.' }
         }
 
         let lastKeyError = ''
@@ -66,6 +122,14 @@ export async function callGemini(
                 }
                 const useModel = (detectProvider(model) === key.provider && model) ? model : defaultModels[key.provider]
 
+                // Pre-emptively mark lastUsed so concurrent requests skip this key
+                if (key.id !== 'env' && key.id !== 'settings') {
+                    prisma.apiKey.update({
+                        where: { id: key.id },
+                        data: { lastUsed: new Date() },
+                    }).catch(() => { /* fire-and-forget pre-touch lock */ })
+                }
+
                 let text = ''
 
                 if (key.provider === 'groq') {
@@ -76,11 +140,16 @@ export async function callGemini(
                     text = await callGeminiProvider(key.key, useModel, prompt)
                 }
 
-                // Success — update usage
+                // ✅ Success — clear cooldown and increment usage
                 if (key.id !== 'env' && key.id !== 'settings') {
                     await prisma.apiKey.update({
                         where: { id: key.id },
-                        data: { usageCount: { increment: 1 }, lastUsed: new Date(), lastError: null },
+                        data: {
+                            usageCount: { increment: 1 },
+                            lastUsed: new Date(),
+                            lastError: null,
+                            cooledDownUntil: null, // clear any residual cooldown
+                        },
                     }).catch(() => { /* non-critical */ })
                 }
 
@@ -88,12 +157,26 @@ export async function callGemini(
             } catch (err) {
                 const errMsg = err instanceof Error ? err.message : String(err)
                 lastKeyError = `${errMsg} (key: ${key.label})`
+
                 if (key.id !== 'env' && key.id !== 'settings') {
+                    const cooldownData = is429(errMsg)
+                        ? {
+                              lastError: `Rate limited (429) — cooling down for ${COOLDOWN_MS / 1000}s`,
+                              lastUsed: new Date(),
+                              cooledDownUntil: new Date(Date.now() + COOLDOWN_MS),
+                          }
+                        : {
+                              lastError: errMsg.slice(0, 200),
+                              lastUsed: new Date(),
+                          }
+
                     await prisma.apiKey.update({
                         where: { id: key.id },
-                        data: { lastError: errMsg.slice(0, 200), lastUsed: new Date() },
+                        data: cooldownData,
                     }).catch(() => { /* non-critical */ })
                 }
+
+                // Always continue to the next key regardless of error type
                 continue
             }
         }
@@ -104,7 +187,7 @@ export async function callGemini(
     }
 }
 
-// ─── Provider detection ───
+// ─── Provider detection ───────────────────────────────────────────────────────
 const GROQ_PREFIXES = ['llama', 'mixtral', 'gemma', 'qwen', 'deepseek', 'meta-llama']
 const OPENAI_PREFIXES = ['gpt-', 'o1', 'o3', 'o4']
 
@@ -117,7 +200,7 @@ function detectProvider(model: string): 'groq' | 'gemini' | 'openai' | null {
     return null
 }
 
-// ─── Gemini ───
+// ─── Gemini ──────────────────────────────────────────────────────────────────
 async function callGeminiProvider(apiKey: string, model: string, prompt: string): Promise<string> {
     const genAI = new GoogleGenerativeAI(apiKey)
     const aiModel = genAI.getGenerativeModel({ model })
@@ -125,7 +208,7 @@ async function callGeminiProvider(apiKey: string, model: string, prompt: string)
     return result.response.text()
 }
 
-// ─── Groq ───
+// ─── Groq ────────────────────────────────────────────────────────────────────
 async function callGroqProvider(apiKey: string, model: string, prompt: string): Promise<string> {
     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -143,7 +226,7 @@ async function callGroqProvider(apiKey: string, model: string, prompt: string): 
     return data.choices?.[0]?.message?.content || ''
 }
 
-// ─── OpenAI ───
+// ─── OpenAI ──────────────────────────────────────────────────────────────────
 async function callOpenAIProvider(apiKey: string, model: string, prompt: string): Promise<string> {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',

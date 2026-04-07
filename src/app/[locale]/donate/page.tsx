@@ -468,7 +468,7 @@ export default function DonatePage() {
                                                         .edit-icon { transition: transform 0.3s ease; display: inline-block; }
                                                     `}</style>
                                                     <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>
-                                                        Your Donation
+                                                        {t('yourDonation')}
                                                     </div>
                                                     <div style={{
                                                         fontSize: '2rem', fontWeight: 800, color: 'var(--accent-gold)',
@@ -479,12 +479,12 @@ export default function DonatePage() {
                                                     </div>
                                                     {!anonymous && form.name && (
                                                         <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                                            from <strong>{form.name}</strong>
+                                                            {t('from')} <strong>{form.name}</strong>
                                                         </div>
                                                     )}
                                                     {anonymous && (
                                                         <div style={{ fontSize: '0.75rem', color: '#a78bfa', marginTop: '4px' }}>
-                                                            🤫 Anonymous donation
+                                                            🤫 {t('anonymousDonation')}
                                                         </div>
                                                     )}
                                                 </div>
@@ -508,7 +508,7 @@ export default function DonatePage() {
                                                                 animation: 'donateSpin 0.8s linear infinite',
                                                             }} />
                                                             <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
-                                                                Preparing secure payment...
+                                                                {t('preparingPayment')}
                                                             </span>
                                                         </div>
                                                     )}
@@ -521,7 +521,7 @@ export default function DonatePage() {
                                                     onClick={() => { setShowPaypal(false); setErrorMsg('') }}
                                                 >
                                                     <span className="edit-icon">✏️</span>
-                                                    Edit donation details
+                                                    {t('editDonation')}
                                                 </button>
                                             </div>
                                         ) : (

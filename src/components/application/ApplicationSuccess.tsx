@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 interface Props {
     roleName: string
@@ -20,6 +21,7 @@ const confettiPieces = Array.from({ length: 40 }).map((_, i) => ({
 
 export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
     const router = useRouter()
+    const t = useTranslations('applicationSuccess')
 
     return (
         <div style={{
@@ -93,16 +95,16 @@ export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
                     opacity: 0,
                     animationDelay: '0.3s',
                     animationFillMode: 'forwards',
-                }}>You&apos;re In The Spotlight</h2>
+                }}>{t('title')}</h2>
 
                 <p style={{
                     fontSize: '1rem', color: 'var(--text-secondary)',
                     marginBottom: 'var(--space-lg)', lineHeight: 1.7,
                     animation: 'fadeInUp 0.6s ease 0.5s forwards', opacity: 0,
                 }}>
-                    Your application for <strong style={{ color: 'var(--accent-gold)' }}>{roleName}</strong> in{' '}
-                    <em style={{ color: 'var(--text-primary)' }}>{projectTitle}</em> has been received.
-                    Our team is now reviewing your submission.
+                    Your application for <strong style={{ color: 'var(--accent-gold)' }}>{roleName}</strong>{' '}in{' '}
+                    <em style={{ color: 'var(--text-primary)' }}>{projectTitle}</em>{' '}
+                    {t('receivedDesc')}
                 </p>
 
                 <div style={{
@@ -125,12 +127,12 @@ export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
                         fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em',
                         textTransform: 'uppercase', color: 'var(--accent-gold)',
                         marginBottom: 'var(--space-lg)',
-                    }}>What Happens Next</div>
+                    }}>{t('whatsNext')}</div>
 
                     {[
-                        { icon: '🔍', title: 'Review', desc: 'Our casting director analyzes your photos, voice, and profile for character compatibility', time: 'Within 24 hours' },
-                        { icon: '👥', title: 'Team Evaluation', desc: 'Our creative team reviews the submission and makes final casting decisions', time: '1-3 days' },
-                        { icon: '✉️', title: 'Contacted', desc: 'If selected, we\'ll reach out via email with next steps for your role', time: 'If shortlisted' },
+                        { icon: '🔍', title: t('step1Title'), desc: t('step1Desc'), time: t('step1Time') },
+                        { icon: '👥', title: t('step2Title'), desc: t('step2Desc'), time: t('step2Time') },
+                        { icon: '✉️', title: t('step3Title'), desc: t('step3Desc'), time: t('step3Time') },
                     ].map((s, i) => (
                         <div key={i} style={{
                             display: 'flex', gap: 'var(--space-md)',
@@ -168,7 +170,7 @@ export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
                             color: 'var(--accent-gold)', fontWeight: 700,
                         }}
                     >
-                        Explore More Roles
+                        {t('exploreRoles')}
                     </button>
                     <button
                         onClick={() => router.push('/')}
@@ -178,7 +180,7 @@ export default function ApplicationSuccess({ roleName, projectTitle }: Props) {
                             padding: '0.5rem',
                         }}
                     >
-                        Back to Home
+                        {t('backHome')}
                     </button>
                 </div>
             </div>

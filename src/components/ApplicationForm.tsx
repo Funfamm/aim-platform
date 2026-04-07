@@ -19,13 +19,13 @@ interface CastingCallInfo {
     }
 }
 
-const PHOTO_SLOTS = [
-    { key: 'front_headshot', label: 'Front-Facing Headshot', description: 'Clear, well-lit photo of your face straight-on', required: true },
-    { key: 'side_profile', label: 'Side Profile', description: 'Left or right side profile view', required: true },
-    { key: 'full_body', label: 'Full Body Shot', description: 'Standing full body, neutral pose', required: true },
-    { key: 'expression', label: 'Expression Shot', description: 'Smiling, serious, or emotional expression of your choice', required: true },
-    { key: 'optional_1', label: 'Additional Shot (Optional)', description: 'Action pose, close-up, or creative photo', required: false },
-    { key: 'optional_2', label: 'Additional Shot (Optional)', description: 'Another angle or look you want to showcase', required: false },
+const PHOTO_SLOT_KEYS = [
+    { key: 'front_headshot', labelKey: 'photoFrontHeadshot', descKey: 'photoFrontDesc', required: true },
+    { key: 'side_profile', labelKey: 'photoSideProfile', descKey: 'photoSideDesc', required: true },
+    { key: 'full_body', labelKey: 'photoFullBody', descKey: 'photoFullDesc', required: true },
+    { key: 'expression', labelKey: 'photoExpression', descKey: 'photoExpressionDesc', required: true },
+    { key: 'optional_1', labelKey: 'photoOptional1', descKey: 'photoOptional1Desc', required: false },
+    { key: 'optional_2', labelKey: 'photoOptional2', descKey: 'photoOptional2Desc', required: false },
 ]
 
 const SOCIAL_PLATFORMS = [
@@ -142,7 +142,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     }
 
     const requiredPhotosCount = Object.entries(photos).filter(([key, file]) => {
-        const slot = PHOTO_SLOTS.find((s) => s.key === key)
+        const slot = PHOTO_SLOT_KEYS.find((s) => s.key === key)
         return slot?.required && file !== null
     }).length
 
@@ -377,7 +377,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                     </p>
 
                     <div className="photo-upload-grid" style={{ gap: 'var(--space-md)' }}>
-                        {PHOTO_SLOTS.map((slot) => (
+                        {PHOTO_SLOT_KEYS.map((slot) => (
                             <div key={slot.key} style={{ marginBottom: 'var(--space-sm)' }}>
                                 <div
                                     className={`file-upload-zone ${photos[slot.key] ? 'has-file' : ''}`}
@@ -389,7 +389,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                                             {/* eslint-disable-next-line @next/next/no-img-element */}
                                             <img
                                                 src={URL.createObjectURL(photos[slot.key]!)}
-                                                alt={slot.label}
+                                                alt={t(slot.labelKey as Parameters<typeof t>[0])}
                                                 style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-sm)' }}
                                             />
                                             <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>✓ {photos[slot.key]!.name}</div>
@@ -400,9 +400,9 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                                                 📸
                                             </div>
                                             <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '2px' }}>
-                                                {slot.label} {slot.required && <span style={{ color: 'var(--accent-gold)' }}>*</span>}
+                                                {t(slot.labelKey as Parameters<typeof t>[0])} {slot.required && <span style={{ color: 'var(--accent-gold)' }}>*</span>}
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{slot.description}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t(slot.descKey as Parameters<typeof t>[0])}</div>
                                         </>
                                     )}
                                 </div>

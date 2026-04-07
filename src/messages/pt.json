@@ -1,35 +1,35 @@
 {
   "mfa": {
-    "title": "Verificação em dois passos",
-    "subtitle": "Digite o código que enviamos para o seu e-mail.",
-    "codePlaceholder": "Código de 6 dígitos",
+    "title": "VerificaÃ§Ã£o em dois passos",
+    "subtitle": "Digite o cÃ³digo que enviamos para o seu e-mail.",
+    "codePlaceholder": "CÃ³digo de 6 dÃ­gitos",
     "submitButton": "Verificar",
-    "resendButton": "Reenviar código",
-    "resendSuccess": "Um novo código foi enviado para o seu e-mail.",
-    "errorInvalid": "Código incorreto. Por favor, tente novamente.",
-    "errorExpired": "O código expirou. Por favor, solicite um novo.",
-    "errorGeneric": "Falha na verificação. Por favor, tente novamente."
+    "resendButton": "Reenviar cÃ³digo",
+    "resendSuccess": "Um novo cÃ³digo foi enviado para o seu e-mail.",
+    "errorInvalid": "CÃ³digo incorreto. Por favor, tente novamente.",
+    "errorExpired": "O cÃ³digo expirou. Por favor, solicite um novo.",
+    "errorGeneric": "Falha na verificaÃ§Ã£o. Por favor, tente novamente."
   },
   "notifications": {
-    "title": "Notificações",
+    "title": "NotificaÃ§Ãµes",
     "markAllRead": "Marcar tudo como lido",
-    "empty": "Você não tem notificações.",
+    "empty": "VocÃª nÃ£o tem notificaÃ§Ãµes.",
     "preferences": {
-      "title": "Preferências de notificação",
-      "saved": "Preferências salvas.",
-      "newRole": "Novos papéis de elenco",
-      "announcement": "Anúncios da plataforma",
-      "contentPublish": "Novo conteúdo publicado",
-      "statusChange": "Mudanças de status da candidatura",
+      "title": "PreferÃªncias de notificaÃ§Ã£o",
+      "saved": "PreferÃªncias salvas.",
+      "newRole": "Novos papÃ©is de elenco",
+      "announcement": "AnÃºncios da plataforma",
+      "contentPublish": "Novo conteÃºdo publicado",
+      "statusChange": "MudanÃ§as de status da candidatura",
       "email": "E-mail",
-      "inApp": "Notificações no aplicativo",
+      "inApp": "NotificaÃ§Ãµes no aplicativo",
       "sms": "SMS"
     }
   },
   "auth": {
     "login": "Entrar",
     "logout": "Sair",
-    "email": "Endereço de e-mail",
+    "email": "EndereÃ§o de e-mail",
     "password": "Senha",
     "invalidCredentials": "E-mail ou senha incorretos.",
     "verifyEmailFirst": "Por favor, verifique seu e-mail antes de entrar.",
@@ -37,6 +37,38 @@
   },
   "langBanner": {
     "message": "Este site foi traduzido para o idioma do seu navegador.",
-    "continueInEnglish": "Continuar em inglês?"
+    "continueInEnglish": "Continuar em inglÃªs?"
+  },
+  "dashboard": {
+    "applications": "Candidaturas",
+    "saved": "Salvos",
+    "watched": "Assistidos",
+    "donated": "Doado",
+    "supportUs": "Apoie-nos",
+    "donateNow": "Doar agora â†’",
+    "exploreCasting": "Explorar casting â†’",
+    "browseProjects": "Ver projetos â†’",
+    "watchFilms": "Assistir filmes â†’",
+    "praiseWords": "VocÃª Ã© incrivel! ðŸŒŸ|Apoiador verdadeiro! ðŸ’«|HerÃ³i do cinema! ðŸŽ¬|Realizando sonhos! âœ¨|VocÃª importa! ðŸ’›|CoraÃ§Ã£o incrivel! ðŸ«¶|CampeÃ£o de histÃ³rias! ðŸ†|MÃ©cenas da arte! ðŸŽ¨|Anjo criativo! ðŸ‘¼"
+  },
+  "forgotPassword": {
+    "codeSent": "Um código de 6 dígitos foi enviado ao seu e-mail. Verifique sua caixa de entrada e spam.",
+    "emailNotConfigured": "O envio de e-mails ainda não está configurado. Entre em contato com o administrador.",
+    "enterAllDigits": "Por favor, insira todos os 6 dígitos.",
+    "invalidCode": "Código inválido",
+    "sendingCode": "Enviando um novo código...",
+    "newCodeSent": "Um novo código foi enviado!",
+    "resendFailed": "Falha ao reenviar o código. Tente novamente mais tarde.",
+    "codeExpiresIn": "Código expira em",
+    "enterVerificationCode": "Digite o código de verificação",
+    "weSentCode": "Enviamos um código para {email}",
+    "enterYourCode": "Digite seu código de verificação de 6 dígitos",
+    "resendCode": "Não recebeu o código? Reenviar",
+    "verifyCodeBtn": "Verificar código",
+    "pwWeak": "Fraca",
+    "pwFair": "Razoável",
+    "pwGood": "Boa",
+    "pwStrong": "Forte",
+    "pwExcellent": "Excelente"
   }
 }
