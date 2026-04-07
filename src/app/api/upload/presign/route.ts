@@ -3,8 +3,6 @@ import { getS3Client } from '@/lib/r2Upload';
 import { PutObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { getUserSession } from '@/lib/auth';
-import { v4 as uuidv4 } from 'uuid';
-
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
@@ -25,7 +23,7 @@ export async function POST(req: NextRequest) {
 
         // Generate a secure, unique upload path inside the requested folder
         const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_').toLowerCase();
-        const r2Key = `${folder}/${session.userId}/${Date.now()}-${uuidv4().slice(0, 8)}-${safeName}`;
+        const r2Key = `${folder}/${session.userId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}-${safeName}`;
 
         const command = new PutObjectCommand({
             Bucket: process.env.R2_BUCKET_NAME!,
