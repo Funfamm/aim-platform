@@ -50,7 +50,8 @@ export default function LoginPage() {
         } else if (errorCode === 'oauth_not_configured') {
             setError('OAuth login is not configured. Please contact an administrator.')
         } else if (errorCode === 'oauth_failed' || errorCode === 'apple_failed') {
-            setError('OAuth sign-in failed. Please try again or use email and password.')
+            const debugMsg = searchParams.get('debug')
+            setError(`OAuth sign-in failed. ${debugMsg ? `[DEBUG: ${debugMsg}]` : ''} Please try again or use email and password.`)
         }
     }, [searchParams])
 
