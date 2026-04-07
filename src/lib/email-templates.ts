@@ -293,7 +293,11 @@ export function applicationAdminNotification(name: string, email: string, roleNa
     `, `New application for ${roleName} from ${name}`)
 }
 
-export function applicationStatusUpdate(name: string, roleName: string, newStatus: string, note?: string, siteUrl?: string): string {
+export function applicationStatusUpdate(name: string, roleName: string, newStatus: string, note?: string, siteUrl?: string, locale = 'en'): string {
+    // Use localized heading/subtext/buttonText if available
+    const localizedHeading    = emailT('applicationStatusUpdate', locale, 'heading')
+    const localizedSubtext    = emailT('applicationStatusUpdate', locale, 'subtext')
+    const localizedButtonText = emailT('applicationStatusUpdate', locale, 'buttonText')
     const statusLabels: Record<string, { emoji: string; label: string; color: string }> = {
         'under-review':    { emoji: '🔍', label: 'Under Review', color: ACCENT_BLUE },
         'under_review':    { emoji: '🔍', label: 'Under Review', color: ACCENT_BLUE },
@@ -320,8 +324,8 @@ export function applicationStatusUpdate(name: string, roleName: string, newStatu
         : paragraph(`There's an update on your application for the <strong>${roleName}</strong> role.`)
 
     return emailWrapper(`
-        ${heading('Application Update')}
-        ${subtext(`Hi ${name}, we have news for you.`)}
+        ${heading(localizedHeading || 'Application Update')}
+        ${subtext(`Hi ${name}, ${localizedSubtext || 'we have news for you.'}`)}
         <div style="text-align: center; padding: 20px 0;">
             <div style="font-size: 36px; margin-bottom: 8px;">${st.emoji}</div>
             <div style="display: inline-block; padding: 8px 24px; background-color: ${BG_DARK}; border-radius: 20px; border: 1px solid ${st.color};">
@@ -332,11 +336,35 @@ export function applicationStatusUpdate(name: string, roleName: string, newStatu
         ${divider()}
         ${mainMessage}
         ${note ? divider() + paragraph(`<em style="color: ${TEXT_SECONDARY};">${note}</em>`) : ''}
-        ${siteUrl ? button('View More Casting Roles', `${siteUrl}/casting`) : ''}
+        ${siteUrl ? button(localizedButtonText || 'View More Casting Roles', `${siteUrl}/casting`) : ''}
     `, `Application update for ${roleName}`)
 }
 
 
+/** Locale-aware MFA OTP email — use this in all routes */
+export async function mfaOtpEmailLocalized(name: string, code: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const h   = emailT('securityVerification', locale, 'heading')    || 'Two-Factor Authentication Code 🔐'
+    const sub = emailT('securityVerification', locale, 'subtext')    || 'use the code below to complete your sign-in.'
+    const exp = emailT('securityVerification', locale, 'expiry')     || 'This code expires in'
+    const tm  = emailT('securityVerification', locale, 'expiryTime') || '10 minutes'
+    const ign = emailT('securityVerification', locale, 'ignore')     || 'If you did not create this account, you can safely ignore this email.'
+    const btn = emailT('securityVerification', locale, 'button')     || 'Visit AIM Studio'
+    return emailWrapper(`
+        ${heading(h)}
+        ${subtext(`Hi ${name}, ${sub}`)}
+        <div style="text-align: center; padding: 28px 0;">
+            <div style="display: inline-block; padding: 20px 48px; background-color: ${BG_DARK}; border-radius: 14px; border: 2px solid ${BRAND_COLOR};">
+                <span style="font-size: 40px; font-weight: 800; letter-spacing: 14px; color: ${BRAND_COLOR}; font-family: 'Courier New', monospace;">${code}</span>
+            </div>
+            <p style="margin: 14px 0 0; font-size: 13px; color: ${TEXT_SECONDARY};">${exp} <strong style="color: ${TEXT_PRIMARY};">${tm}</strong>.</p>
+        </div>
+        ${divider()}
+        ${paragraph(ign)}
+        ${siteUrl ? secondaryButton(btn, `${siteUrl}/contact`) : ''}
+    `, `Your AIM Studio sign-in code is ${code}`)
+}
+
+/** Sync English-only version — kept for backward compatibility */
 export function mfaOtpEmail(name: string, code: string, siteUrl?: string): string {
     return emailWrapper(`
         ${heading('Two-Factor Authentication Code 🔐')}

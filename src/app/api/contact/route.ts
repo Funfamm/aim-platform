@@ -7,7 +7,7 @@ import { getSessionAndRefresh } from '@/lib/auth'
 
 export async function POST(request: Request) {
     try {
-        const { name, email, subject, message } = await request.json()
+        const { name, email, subject, message, locale } = await request.json()
 
         if (!name || !email || !subject || !message) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         sendEmail({
             to: email,
             subject: `Message received: ${subject}`,
-            html: await contactAcknowledgmentWithOverrides(name, subject),
+            html: await contactAcknowledgmentWithOverrides(name, subject, undefined, locale || 'en'),
         })
 
         // Mirror to notification board — only if the sender has a registered account

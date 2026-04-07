@@ -3,11 +3,12 @@
 import { useState, useEffect, FormEvent } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 
 export default function ContactPage() {
     const t = useTranslations('contact')
+    const locale = useLocale()
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [heroImage, setHeroImage] = useState('')
@@ -19,7 +20,7 @@ export default function ContactPage() {
                 const img = items.find(m => m.type === 'background' || m.type === 'image')
                 if (img) setHeroImage(img.url)
             })
-            .catch(() => {})
+            .catch(() => { })
     }, [])
 
     const handleSubmit = async (e: FormEvent) => {
@@ -29,7 +30,7 @@ export default function ContactPage() {
             const res = await fetch('/api/contact', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify({ ...form, locale }),
             })
             if (res.ok) {
                 setStatus('sent')

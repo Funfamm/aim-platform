@@ -102,10 +102,10 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
         const locale: string = (user.receiveLocalizedEmails !== false && user.preferredLanguage)
             ? user.preferredLanguage
             : 'en'
-        
+
         let displayTitle = opts.title
         let displayMessage = opts.message
-        
+
         // Apply AI translations if available for the user's non-English locale
         if (locale !== 'en' && opts.translations && opts.translations[locale]) {
             displayTitle = opts.translations[locale].title || displayTitle
@@ -142,8 +142,8 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
 
                 if (opts.type === 'announcement') {
                     html = announcementEmail(displayTitle, displayMessage, opts.link, siteUrl, {
-                        badgeText:   lt?.badgeText   || undefined,
-                        buttonText:  lt?.buttonText  || undefined,
+                        badgeText: lt?.badgeText || undefined,
+                        buttonText: lt?.buttonText || undefined,
                         footerOptIn: lt?.footerOptIn || undefined,
                         managePrefs: lt?.managePrefs || undefined,
                     })
@@ -228,9 +228,9 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             },
         })
 
-        if (opts.type === 'new_role'         && !settings?.notifyOnNewRole)        return
-        if (opts.type === 'announcement'     && !settings?.notifyOnAnnouncement)   return
-        if (opts.type === 'content_publish'  && !settings?.notifyOnContentPublish) return
+        if (opts.type === 'new_role' && !settings?.notifyOnNewRole) return
+        if (opts.type === 'announcement' && !settings?.notifyOnAnnouncement) return
+        if (opts.type === 'content_publish' && !settings?.notifyOnContentPublish) return
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
@@ -291,7 +291,7 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
         if (settings && !settings.notifyApplicantOnStatusChange) return
 
         const siteName = settings?.siteName || 'AIM Studio'
-        const siteUrl  = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || ''
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || ''
 
         // Fetch the user's preferred language if userId is available
         let locale = 'en'
@@ -304,8 +304,8 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
             locale = userLang?.preferredLanguage || 'en'
         }
 
-        let subject  = `[${siteName}] ${template.subject}`
-        let inAppTitle   = template.subject
+        let subject = `[${siteName}] ${template.subject}`
+        let inAppTitle = template.subject
         let inAppMessage = `Your application for "${opts.roleName}" has been updated.`
 
         // AI-translate for non-English users (10s timeout fallback to English)
@@ -319,7 +319,7 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
                 translationTimeout,
             ])
             if (tx?.[locale]) {
-                inAppTitle   = tx[locale].title   || inAppTitle
+                inAppTitle = tx[locale].title || inAppTitle
                 inAppMessage = tx[locale].message || inAppMessage
                 subject = `[${siteName}] ${inAppTitle}`
             }
@@ -331,6 +331,7 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
             opts.newStatus,
             opts.statusNote || undefined,
             siteUrl,
+            locale,
         )
 
         const sent = await sendEmail({ to: opts.recipientEmail, subject, html })
@@ -374,7 +375,7 @@ export async function notifyNewRole(roleId: string, roleName: string, projectTit
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
     const roleUrl = `${siteUrl}/casting/${roleId}`
 
-    const titleEn   = `New Audition: ${roleName}`
+    const titleEn = `New Audition: ${roleName}`
     const messageEn = `A new casting call for "${roleName}" in "${projectTitle}" is now open. Apply before it closes!`
 
     // Pre-translate title & message for all supported locales (10s timeout)
@@ -440,7 +441,7 @@ export async function notifyAnnouncement(title: string, message: string, link?: 
 
 /** Call this when admin publishes new content (project, blog, video) */
 export async function notifyContentPublish(contentTitle: string, contentType: string, link: string): Promise<void> {
-    const titleEn   = `New ${contentType}: ${contentTitle}`
+    const titleEn = `New ${contentType}: ${contentTitle}`
     const messageEn = `We just published "${contentTitle}". Check it out!`
 
     // Pre-translate so non-English users get localized in-app notifications & emails
@@ -472,13 +473,13 @@ export async function getAutoAdvanceStatus(
     if (!settings?.pipelineAutoAdvance) return null
 
     const shortlistThreshold = settings.autoShortlistThreshold ?? 75
-    const rejectThreshold    = settings.autoRejectThreshold    ?? 25
+    const rejectThreshold = settings.autoRejectThreshold ?? 25
 
     const autoAdvanceFrom = ['submitted', 'under_review']
     if (!autoAdvanceFrom.includes(currentStatus)) return null
 
     if (aiScore >= shortlistThreshold) return 'shortlisted'
-    if (aiScore <= rejectThreshold)    return 'not_selected'
+    if (aiScore <= rejectThreshold) return 'not_selected'
     return 'under_review'
 }
 

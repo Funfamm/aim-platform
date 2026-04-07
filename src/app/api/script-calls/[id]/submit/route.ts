@@ -43,17 +43,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         },
     })
 
+    // Look up author's preferred language (non-blocking fallback to 'en')
+    const authorUser = await prisma.user.findUnique({
+        where: { email: authorEmail },
+        select: { id: true, preferredLanguage: true },
+    }).catch(() => null)
+    const authorLocale: string = (authorUser as any)?.preferredLanguage || 'en'
+
     // Fire-and-forget: confirmation email to author + mirror to notification board
     sendEmail({
         to: authorEmail,
         subject: `Script "${title}" submitted successfully ✍️`,
-        html: await scriptSubmissionConfirmationWithOverrides(authorName, title),
+        html: await scriptSubmissionConfirmationWithOverrides(authorName, title, undefined, authorLocale),
     })
 
-    // Mirror to notification board if author has an account
     void (async () => {
         try {
-            const authorUser = await prisma.user.findUnique({ where: { email: authorEmail }, select: { id: true } })
             if (authorUser) {
                 await mirrorToNotificationBoard(
                     authorUser.id,

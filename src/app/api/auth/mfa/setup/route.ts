@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
-import { mfaOtpEmail } from '@/lib/email-templates'
+import { mfaOtpEmail, mfaOtpEmailLocalized } from '@/lib/email-templates'
 import { authLimiter } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
 import { getSessionAndRefresh } from '@/lib/auth'
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = await (prisma as any).user.findUnique({
             where: { id: userId },
-            select: { id: true, name: true, email: true, role: true },
+            select: { id: true, name: true, email: true, role: true, preferredLanguage: true },
         })
 
         if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -59,11 +59,15 @@ export async function POST(request: Request) {
             },
         })
 
-        // Send OTP email
-        const html = mfaOtpEmail(user.name, code, SITE_URL)
+        // Send OTP email in user's preferred language
+        const mfaLocale: string = (user as any).preferredLanguage || 'en'
+        const html = await mfaOtpEmailLocalized(user.name, code, SITE_URL, mfaLocale).catch(() => mfaOtpEmail(user.name, code, SITE_URL))
+        const { t: emailT } = await import('@/lib/email-i18n')
+        const mfaSubject = emailT('securityVerification', mfaLocale, 'subject')
+            || `🔐 Your AIM Studio sign-in code: ${code}`
         await sendEmail({
             to: user.email,
-            subject: `🔐 Your AIM Studio sign-in code: ${code}`,
+            subject: mfaSubject,
             html,
         })
 
