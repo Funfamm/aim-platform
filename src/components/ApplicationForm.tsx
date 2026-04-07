@@ -170,29 +170,48 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     }
 
     const uploadFileToR2 = async (file: File, folder: string): Promise<string> => {
-        // Upload via our server-side proxy — no CORS issues since it's same-origin
-        const uploadForm = new FormData();
-        uploadForm.append('file', file);
-        uploadForm.append('folder', folder);
+        // Step 1: Get a presigned URL from our API (tiny JSON request — no file data)
+        let presignRes: Response;
+        try {
+            presignRes = await fetch('/api/upload/presign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileType: file.type,
+                    folder,
+                }),
+            });
+        } catch {
+            throw new Error(`Network error requesting upload URL for ${file.name}`);
+        }
 
+        if (!presignRes.ok) {
+            const errText = await presignRes.text().catch(() => 'unknown');
+            throw new Error(`Failed to get upload URL (${presignRes.status}): ${errText}`);
+        }
+
+        const { presignedUrl, finalUrl } = await presignRes.json();
+
+        // Step 2: Upload the file directly from the browser to R2 (bypasses Vercel's 4.5MB limit)
         let uploadRes: Response;
         try {
-            uploadRes = await fetch('/api/upload/file', {
-                method: 'POST',
-                body: uploadForm,
+            uploadRes = await fetch(presignedUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': file.type },
+                body: file,
             });
         } catch {
             throw new Error(`Network error uploading ${file.name}`);
         }
 
         if (!uploadRes.ok) {
-            const errText = await uploadRes.text().catch(() => 'unknown');
-            throw new Error(`Upload failed (${uploadRes.status}): ${errText}`);
+            throw new Error(`Upload failed (${uploadRes.status})`);
         }
 
-        const { finalUrl } = await uploadRes.json();
         return finalUrl;
     };
+
 
     const handleSubmit = async () => {
         if (!canProceed(5)) return
