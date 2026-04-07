@@ -169,6 +169,27 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
+    const uploadFileToR2 = async (file: File, folder: string): Promise<string> => {
+        // Request presigned URL
+        const res = await fetch('/api/upload/presign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: file.name, fileType: file.type, folder }),
+        });
+        if (!res.ok) throw new Error('Failed to secure upload link');
+        const { presignedUrl, finalUrl } = await res.json();
+
+        // Upload directly to Cloudflare R2
+        const uploadRes = await fetch(presignedUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type },
+        });
+        if (!uploadRes.ok) throw new Error(`Upload failed for ${file.name}`);
+
+        return finalUrl;
+    };
+
     const handleSubmit = async () => {
         if (!canProceed(5)) return
         setSubmitting(true)
@@ -184,14 +205,18 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             data.append('castingCallId', castingCall.id)
             data.append('locale', locale)
 
-            // Photos
-            Object.entries(photos).forEach(([key, file]) => {
-                if (file) data.append(`photo_${key}`, file)
-            })
+            // Photos - Upload to R2 and pass URLs
+            for (const [key, file] of Object.entries(photos)) {
+                if (file) {
+                    const r2Url = await uploadFileToR2(file, 'applications/photos');
+                    data.append(`photo_${key}`, r2Url);
+                }
+            }
 
-            // Audio
+            // Audio - Upload to R2 and pass URL
             if (audioFile) {
-                data.append('voiceRecording', audioFile)
+                const r2Url = await uploadFileToR2(audioFile, 'applications/voice');
+                data.append('voiceRecording', r2Url);
             }
 
             // Consents

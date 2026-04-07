@@ -129,137 +129,49 @@ export async function POST(
             }, { status: 429 })
         }
 
-        // Cloudflare R2 Prefixing Logic (Unique directory for this application)
-        const timestamp = Date.now()
-        const safeName = fullName.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase()
-        const r2Prefix = `uploads/${safeName}_${timestamp}`
+        // ═══ VERIFY PRESIGNED URL UPLOADS ═══
+        const r2PublicUrl = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+        
+        // Helper to validate submitted URLs belong to our R2 bucket
+        const getValidR2Url = (formKey: string): string | null => {
+            const urlStr = formData.get(formKey) as string;
+            if (!urlStr || typeof urlStr !== 'string') return null;
+            
+            try {
+                const url = new URL(urlStr);
+                if (r2PublicUrl && !urlStr.startsWith(r2PublicUrl)) {
+                    console.warn(`[Suspicious Upload] Rejected URL not matching R2_PUBLIC_URL: ${urlStr}`);
+                    return null;
+                }
+                return urlStr;
+            } catch {
+                return null;
+            }
+        };
 
-        // Save photos
-        const photoPaths: string[] = []
-        const photoKeys = ['front_headshot', 'side_profile', 'full_body', 'expression', 'optional_1', 'optional_2']
-
+        // Collect photos
+        const photoPaths: string[] = [];
+        const photoKeys = ['front_headshot', 'side_profile', 'full_body', 'expression', 'optional_1', 'optional_2'];
+        
         for (const key of photoKeys) {
-            const file = formData.get(`photo_${key}`) as File | null
-            if (file && file.size > 0) {
-                // ═══ PHOTO VALIDATION ═══
-                const ext = '.' + (file.name.split('.').pop() || 'jpg').toLowerCase()
-                if (!ALLOWED_PHOTO_EXTS.includes(ext)) {
-                    logUploadEvent({
-                        action: 'upload_rejected', route: '/api/casting/apply',
-                        userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
-                        reason: `Invalid photo extension: ${ext}`, code: 'EXT_REJECTED',
-                    })
-                    return NextResponse.json({ error: `Invalid photo format for ${key}. Allowed: JPG, PNG, WebP, HEIC.` }, { status: 400 })
-                }
-                if (file.type && !ALLOWED_PHOTO_TYPES.includes(file.type)) {
-                    logUploadEvent({
-                        action: 'upload_rejected', route: '/api/casting/apply',
-                        userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
-                        reason: `Invalid photo MIME: ${file.type}`, code: 'MIME_REJECTED',
-                    })
-                    return NextResponse.json({ error: `Invalid photo type for ${key}. Allowed: JPEG, PNG, WebP, HEIC.` }, { status: 400 })
-                }
-                if (file.size > MAX_PHOTO_SIZE) {
-                    return NextResponse.json({ error: `Photo ${key} is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum 10 MB.` }, { status: 400 })
-                }
-
-                const fileName = `${key}${ext}`
-                const r2Key = `${r2Prefix}/${fileName}`
-                const buffer = Buffer.from(await file.arrayBuffer())
-
-                // ═══ MAGIC-BYTE CHECK ═══
-                if (file.type) {
-                    const magicCheck = checkMagicBytes(buffer, file.type)
-                    if (!magicCheck.valid) {
-                        logUploadEvent({
-                            action: 'upload_rejected', route: '/api/casting/apply',
-                            userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
-                            reason: magicCheck.error, code: 'MAGIC_BYTE_MISMATCH',
-                        })
-                        return NextResponse.json({
-                            error: `Photo "${key}" failed content verification: the file does not appear to be a valid image. It may be corrupted or disguised.`,
-                        }, { status: 400 })
-                    }
-                }
-
-                // ═══ CLOUDFLARE R2 UPLOAD ═══
-                let r2Url: string
-                try {
-                    r2Url = await uploadBufferToR2(buffer, r2Key, file.type)
-                } catch (err) {
-                    console.error('[uploadBufferToR2 Error]', err)
-                    return NextResponse.json({ error: 'Failed to securely store uploaded image. Please try again later.' }, { status: 500 })
-                }
-
+            const r2Url = getValidR2Url(`photo_${key}`);
+            if (r2Url) {
+                photoPaths.push(r2Url);
+                
                 logUploadEvent({
-                    action: 'upload_accepted', route: '/api/casting/apply',
-                    userId, fileName: file.name, mimeType: file.type, fileSize: file.size,
-                })
-
-                photoPaths.push(r2Url)
+                    action: 'upload_accepted', route: '/api/casting/apply/presigned',
+                    userId, fileName: r2Url.split('/').pop() || key, mimeType: 'image/presigned', fileSize: 0,
+                });
             }
         }
 
-        // Save voice recording
-        let voicePath: string | null = null
-        const voiceFile = formData.get('voiceRecording') as File | null
-        if (voiceFile && voiceFile.size > 0) {
-            // ═══ VOICE VALIDATION ═══
-            const vExt = '.' + (voiceFile.name.split('.').pop() || 'mp3').toLowerCase()
-            if (!ALLOWED_VOICE_EXTS.includes(vExt)) {
-                logUploadEvent({
-                    action: 'upload_rejected', route: '/api/casting/apply',
-                    userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
-                    reason: `Invalid voice extension: ${vExt}`, code: 'EXT_REJECTED',
-                })
-                return NextResponse.json({ error: `Invalid voice file format. Allowed: MP3, MP4, M4A, WAV, WebM, OGG.` }, { status: 400 })
-            }
-            // Check MIME type — use prefix for flexibility (handles 'audio/webm;codecs=opus' from MediaRecorder)
-            const baseMime = voiceFile.type.split(';')[0].trim().toLowerCase()
-            if (voiceFile.type && !ALLOWED_VOICE_TYPES.includes(baseMime) && !ALLOWED_VOICE_TYPE_PREFIXES.some(p => baseMime.startsWith(p))) {
-                logUploadEvent({
-                    action: 'upload_rejected', route: '/api/casting/apply',
-                    userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
-                    reason: `Invalid voice MIME: ${voiceFile.type}`, code: 'MIME_REJECTED',
-                })
-                return NextResponse.json({ error: `Invalid voice file type. Please upload an audio file (MP3, WAV, WebM, M4A, OGG).` }, { status: 400 })
-            }
-            if (voiceFile.size > MAX_VOICE_SIZE) {
-                return NextResponse.json({ error: `Voice recording is too large (${(voiceFile.size / 1024 / 1024).toFixed(1)} MB). Maximum 25 MB.` }, { status: 400 })
-            }
-
-            const fileName = `voice_recording${vExt}`
-            const r2Key = `${r2Prefix}/${fileName}`
-            const buffer = Buffer.from(await voiceFile.arrayBuffer())
-
-            // Magic-byte check — skip for WebM since browser-recorded blobs don't have standard magic bytes
-            const isWebm = baseMime === 'audio/webm' || vExt === '.webm'
-            if (voiceFile.type && !isWebm) {
-                const magicCheck = checkMagicBytes(buffer, baseMime)
-                if (!magicCheck.valid) {
-                    logUploadEvent({
-                        action: 'upload_rejected', route: '/api/casting/apply',
-                        userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
-                        reason: magicCheck.error, code: 'MAGIC_BYTE_MISMATCH',
-                    })
-                    return NextResponse.json({
-                        error: `Voice recording failed content verification. Please use a standard audio format (MP3, WAV, M4A).`,
-                    }, { status: 400 })
-                }
-            }
-
-            // ═══ CLOUDFLARE R2 UPLOAD ═══
-            try {
-                voicePath = await uploadBufferToR2(buffer, r2Key, baseMime)
-            } catch (err) {
-                console.error('[uploadBufferToR2 Voice Error]', err)
-                return NextResponse.json({ error: 'Failed to securely store uploaded audio. Please try again later.' }, { status: 500 })
-            }
-
+        // Collect voice recording
+        const voicePath = getValidR2Url('voiceRecording');
+        if (voicePath) {
             logUploadEvent({
-                action: 'upload_accepted', route: '/api/casting/apply',
-                userId, fileName: voiceFile.name, mimeType: voiceFile.type, fileSize: voiceFile.size,
-            })
+                action: 'upload_accepted', route: '/api/casting/apply/presigned',
+                userId, fileName: voicePath.split('/').pop() || 'voice', mimeType: 'audio/presigned', fileSize: 0,
+            });
         }
         // ═══ MAX APPLICATION CHECK — prevent overflow ═══
         const currentCount = await withDbRetry(() => prisma.application.count({ where: { castingCallId: id } }), 'apply_max_count')

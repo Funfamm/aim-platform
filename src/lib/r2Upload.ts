@@ -11,7 +11,7 @@ const {
 // Initialize the S3 client lazily so it doesn't crash on build if env vars are missing
 let s3Client: S3Client | null = null;
 
-function getS3Client(): S3Client {
+export function getS3Client(): S3Client {
   if (s3Client) return s3Client;
 
   if (!R2_ACCOUNT_ID || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_BUCKET_NAME) {
