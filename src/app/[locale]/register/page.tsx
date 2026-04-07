@@ -43,7 +43,7 @@ export default function RegisterPage() {
                 // Fallback: already verified (e.g. OAuth)
                 router.push('/dashboard')
             } else {
-                setError(data.error || t('registrationFailed'))
+                setError(data.debug ? `Registration failed: [DEBUG: ${data.debug}]` : (data.error || t('registrationFailed')))
             }
         } catch {
             setError(t('registrationFailed'))
