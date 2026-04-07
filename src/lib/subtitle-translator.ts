@@ -81,18 +81,17 @@ async function loadPipeline(modelId: string) {
 /**
  * Translate an array of segments using a given model.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type TranslatorFn = (texts: string[]) => Promise<Array<{ translation_text?: string; generated_text?: string }>>
 async function runTranslation(
     segments: TranscriptSegment[],
-    translator: any,
+    translator: TranslatorFn,
 ): Promise<TranscriptSegment[]> {
     const translated: TranscriptSegment[] = []
     // Process in batches of 5
     for (let i = 0; i < segments.length; i += 5) {
         const batch = segments.slice(i, i + 5)
         const texts = batch.map(s => s.text)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const results: any[] = await translator(texts)
+        const results = await translator(texts)
         for (let j = 0; j < batch.length; j++) {
             translated.push({
                 start: batch[j].start,

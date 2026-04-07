@@ -136,7 +136,6 @@ export async function transcribeVideo(
         await ffmpeg.deleteFile('audio.wav').catch(() => {})
 
         // 7. Parse result
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const output = Array.isArray(result) ? result[0] : result
         const segments: TranscriptSegment[] = Array.isArray(output.chunks)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

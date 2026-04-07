@@ -5,7 +5,7 @@ declare module 'uuid' {
 }
 
 declare module 'lru-cache' {
-  interface Options<K, V> {
+  interface Options {
     max?: number;
     ttl?: number;
   }
