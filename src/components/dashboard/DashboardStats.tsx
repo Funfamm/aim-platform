@@ -35,7 +35,6 @@ export default function DashboardStats({ applications, saved, watched, donated =
         { label: t('applications'), value: applications, icon: '📋', cta: t('exploreCasting'), href: '/casting' },
         { label: t('saved'), value: saved, icon: '🎬', cta: t('browseProjects'), href: '/works' },
         { label: t('watched'), value: watched, icon: '📺', cta: t('watchFilms'), href: '/works' },
-        ...(!showDonation ? [{ label: t('supportUs') || 'Support Us', value: 0, icon: '💛', cta: t('donateNow') || 'Donate Now →', href: '/donate' }] : []),
     ]
 
     return (
