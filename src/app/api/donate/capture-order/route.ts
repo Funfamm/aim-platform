@@ -7,8 +7,8 @@ import { t as emailT } from '@/lib/email-i18n'
 
 const isSandbox = process.env.PAYPAL_MODE === 'sandbox' || process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
 const PAYPAL_API = isSandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
-const PAYPAL_CLIENT_ID = isSandbox 
-    ? process.env.NEXT_PUBLIC_PAYPAL_SANDBOX_CLIENT_ID! 
+const PAYPAL_CLIENT_ID = isSandbox
+    ? process.env.NEXT_PUBLIC_PAYPAL_SANDBOX_CLIENT_ID!
     : (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID)!
 const PAYPAL_SECRET = isSandbox ? process.env.PAYPAL_SANDBOX_SECRET! : process.env.PAYPAL_SECRET!
 
@@ -37,20 +37,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing orderID' }, { status: 400 })
         }
 
-        // First, get order details to find the donationId from reference_id
         const accessToken = await getAccessToken()
-        const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders/${orderID}`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-        })
-        const orderData = await orderRes.json()
-        const donationId = orderData.purchase_units?.[0]?.reference_id
 
-        if (!donationId) {
-            return NextResponse.json({ error: 'Could not find donation record' }, { status: 400 })
-        }
-
-
-        // Capture the PayPal order (reuse accessToken from above)
+        // Capture the PayPal order
         const captureRes = await fetch(`${PAYPAL_API}/v2/checkout/orders/${orderID}/capture`, {
             method: 'POST',
             headers: {
@@ -63,28 +52,54 @@ export async function POST(request: Request) {
 
         if (!captureRes.ok || captureData.status !== 'COMPLETED') {
             console.error('PayPal capture failed:', captureData)
-            // Mark donation as failed
-            await prisma.donation.update({
-                where: { id: donationId },
-                data: { status: 'failed' },
-            })
             return NextResponse.json({ error: 'Payment capture failed' }, { status: 500 })
         }
 
-        // Update donation to completed
-        const donation = await prisma.donation.update({
-            where: { id: donationId },
-            data: { status: 'completed' },
+        // Extract donor metadata from PayPal's custom_id (set during create-order)
+        const customId = captureData.purchase_units?.[0]?.custom_id
+        if (!customId) {
+            console.error('[capture-order] Missing custom_id in capture response')
+            return NextResponse.json({ error: 'Could not retrieve donation details from payment' }, { status: 500 })
+        }
+
+        let donorMeta: {
+            name: string; email: string; amount: number; message: string | null;
+            anonymous: boolean; userId: string | null; projectId: string | null;
+        }
+        try {
+            donorMeta = JSON.parse(customId)
+        } catch {
+            console.error('[capture-order] Failed to parse custom_id JSON:', customId)
+            return NextResponse.json({ error: 'Could not parse donation details' }, { status: 500 })
+        }
+
+        // ─── Only NOW create the donation record — transaction is confirmed COMPLETED ───
+        const donation = await prisma.donation.create({
+            data: {
+                name: donorMeta.name,
+                email: donorMeta.email,
+                amount: donorMeta.amount,
+                message: donorMeta.message,
+                anonymous: donorMeta.anonymous,
+                userId: donorMeta.userId ?? undefined,
+                projectId: donorMeta.projectId ?? undefined,
+                method: 'paypal',
+                status: 'completed',
+            },
         })
 
-        console.log(`✅ Donation ${donationId} completed via PayPal — $${donation.amount}`)
+        console.log(`✅ Donation ${donation.id} saved — $${donation.amount} from ${donation.name}`)
 
-        // Send thank-you email to donor + mirror to notification board
-        // Look up user to get their preferred locale for localized messages
-        const donorUser = await prisma.user.findUnique({
-            where: { email: donation.email },
-            select: { id: true, preferredLanguage: true },
-        })
+        // Look up user's preferred locale for localized messages
+        const donorUser = donorMeta.userId
+            ? await prisma.user.findUnique({
+                where: { id: donorMeta.userId },
+                select: { id: true, preferredLanguage: true },
+            })
+            : await prisma.user.findUnique({
+                where: { email: donorMeta.email },
+                select: { id: true, preferredLanguage: true },
+            })
         const locale = donorUser?.preferredLanguage || 'en'
 
         const emailSubject = emailT('donationThankYou', locale, 'subject')
@@ -99,7 +114,7 @@ export async function POST(request: Request) {
         // Mirror to notification board if donor has an account
         if (donorUser) {
             const notifTitle = emailT('donationThankYou', locale, 'notifTitle')
-                || `Donation Received 💛 $${donation.amount.toFixed(2)}`
+                || `Donation Received 💛`
             const notifBody = emailT('donationThankYou', locale, 'notifBody')
                 || `Thank you for your generous $${donation.amount.toFixed(2)} donation! Your support makes a real difference.`
             void mirrorToNotificationBoard(

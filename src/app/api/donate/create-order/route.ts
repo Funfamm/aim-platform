@@ -4,8 +4,8 @@ import { getUserSession } from '@/lib/auth'
 
 const isSandbox = process.env.PAYPAL_MODE === 'sandbox' || process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
 const PAYPAL_API = isSandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
-const PAYPAL_CLIENT_ID = isSandbox 
-    ? process.env.NEXT_PUBLIC_PAYPAL_SANDBOX_CLIENT_ID! 
+const PAYPAL_CLIENT_ID = isSandbox
+    ? process.env.NEXT_PUBLIC_PAYPAL_SANDBOX_CLIENT_ID!
     : (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID)!
 const PAYPAL_SECRET = isSandbox ? process.env.PAYPAL_SANDBOX_SECRET! : process.env.PAYPAL_SECRET!
 
@@ -48,22 +48,21 @@ export async function POST(request: Request) {
         const session = await getUserSession()
         const donorName = anonymous ? 'Anonymous Donor' : (name || 'Anonymous Donor')
 
-        // Create pending donation record
-        const donation = await prisma.donation.create({
-            data: {
-                name: donorName,
-                email,
-                amount: parseFloat(amount),
-                message: message || null,
-                anonymous: anonymous ?? false,
-                userId: session?.userId as string | undefined,
-                projectId: projectId || null,
-                method: 'paypal',
-                status: 'pending',
-            },
+        // ─── Do NOT create a DB record yet ───
+        // We only save the donation after PayPal confirms COMPLETED.
+        // Donor details are carried in the PayPal order's custom_id as JSON
+        // so capture-order can create the record without a pre-existing DB row.
+        const donorMeta = JSON.stringify({
+            name: donorName,
+            email,
+            amount: parseFloat(amount),
+            message: message || null,
+            anonymous: anonymous ?? false,
+            userId: session?.userId || null,
+            projectId: projectId || null,
         })
 
-        // Create PayPal order
+        // Create PayPal order — donor details in custom_id
         const accessToken = await getAccessToken()
         const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
             method: 'POST',
@@ -75,7 +74,7 @@ export async function POST(request: Request) {
                 intent: 'CAPTURE',
                 purchase_units: [
                     {
-                        reference_id: donation.id,
+                        custom_id: donorMeta,
                         description: `Donation to AIM Studio from ${donorName}`,
                         amount: {
                             currency_code: 'USD',
@@ -95,15 +94,10 @@ export async function POST(request: Request) {
 
         if (!orderRes.ok) {
             console.error('PayPal create order failed:', orderData)
-            // Clean up the pending donation
-            await prisma.donation.delete({ where: { id: donation.id } })
             return NextResponse.json({ error: 'Failed to create PayPal order' }, { status: 500 })
         }
 
-        return NextResponse.json({
-            orderID: orderData.id,
-            donationId: donation.id,
-        })
+        return NextResponse.json({ orderID: orderData.id })
     } catch (error) {
         console.error('Create order error:', error)
         return NextResponse.json({ error: 'Failed to create payment' }, { status: 500 })
