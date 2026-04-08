@@ -198,6 +198,7 @@ model Application {
   statusNoteTranslations String?
   status                 ApplicationStatus         @default(submitted)
   audioUrl               String?
+  scheduledAuditAt       DateTime?                 // when the cron job should run the AI audit
   castingCall            CastingCall               @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
   user                   User?                     @relation(fields: [userId], references: [id])
   notifications          ApplicationNotification[]
@@ -208,6 +209,7 @@ model Application {
   @@index([status])
   @@index([createdAt])
   @@index([aiScore])
+  @@index([scheduledAuditAt])
 }
 
 model Admin {
@@ -293,6 +295,7 @@ model SiteSettings {
   notifyOnContentPublish        Boolean        @default(false)
   emailReplyTo                  String?
   resultRevealDelayHours        Int            @default(6)
+  auditDelayHours               Int            @default(2)  // hours after submission to run auto-audit
 }
 
 model PasswordHistory {

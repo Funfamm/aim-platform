@@ -217,7 +217,10 @@ export async function POST(
             })
         }
 
-        // ═══ AUTO-AUDIT — run AI analysis if enabled ═══
+        // ═══ AUTO-AUDIT — schedule AI analysis via cron job ═══
+        // We stamp scheduledAuditAt on the record so the hourly cron job
+        // (/api/cron/audit-applications) picks it up reliably — no fragile
+        // setTimeout that dies when the serverless function ends.
         let siteSettings: Awaited<ReturnType<typeof prisma.siteSettings.findFirst>> = null
         try {
             siteSettings = await prisma.siteSettings.findFirst()
@@ -225,31 +228,13 @@ export async function POST(
             console.error('Failed to load SiteSettings (schema drift?):', settingsErr)
         }
         if (siteSettings?.aiAutoAudit) {
-            // Fire-and-forget with staggered delay — prevents burst RPM exhaustion
-            // when multiple applications arrive simultaneously
-            const staggerMs = Math.floor(Math.random() * 25_000) + 5_000 // 5-30s random delay
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
-            const internalSecret = process.env.JWT_SECRET || ''
-            console.log(`[Auto-Audit] Scheduling audit for ${application.id} in ${Math.round(staggerMs / 1000)}s`)
-            setTimeout(() => {
-                fetch(`${baseUrl}/api/admin/applications/${application.id}/audit`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Internal-Secret': internalSecret,
-                    },
-                    body: JSON.stringify({ locale }),
-                })
-                    .then(async (res) => {
-                        if (!res.ok) {
-                            const err = await res.text().catch(() => 'unknown')
-                            console.error(`[Auto-Audit] Failed for ${application.id}: ${res.status} — ${err}`)
-                        } else {
-                            console.log(`[Auto-Audit] Completed successfully for ${application.id}`)
-                        }
-                    })
-                    .catch(err => console.error(`[Auto-Audit] Network error for ${application.id}:`, err))
-            }, staggerMs)
+            const delayHours = (siteSettings as any).auditDelayHours ?? 2
+            const scheduledAuditAt = new Date(Date.now() + delayHours * 60 * 60 * 1000)
+            await prisma.application.update({
+                where: { id: application.id },
+                data: { scheduledAuditAt } as any,
+            })
+            console.log(`[Auto-Audit] Scheduled for ${application.id} at ${scheduledAuditAt.toISOString()} (+${delayHours}h)`)
         }
 
         // Fire-and-forget: confirmation email to applicant + admin notification + in-app mirror

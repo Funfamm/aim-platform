@@ -1,5 +1,11 @@
 {
   "rewrites": [],
+  "crons": [
+    {
+      "path": "/api/cron/audit-applications",
+      "schedule": "0 * * * *"
+    }
+  ],
   "functions": {
     "src/app/api/upload/stream/route.ts": {
       "maxDuration": 60
