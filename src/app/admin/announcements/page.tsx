@@ -172,8 +172,7 @@ export default function AnnouncementsAdminPage() {
                 </button>
 
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.5 }}>
-                    Only users who have opted in to announcements will be notified.
-                    Delivery is asynchronous — emails may take a few seconds.
+                    Only users who have opted in to announcements will be notified. Emails may take a few seconds.
                 </p>
             </form>
         </div>
