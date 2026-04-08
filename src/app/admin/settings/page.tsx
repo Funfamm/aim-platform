@@ -771,7 +771,7 @@ export default function AdminSettingsPage() {
     const [newKeyProvider, setNewKeyProvider] = useState('gemini')
     const [newKeyAgent, setNewKeyAgent] = useState('all')
     const [keysLoading, setKeysLoading] = useState(false)
-    
+
     // API Keys advanced filtering & bulk actions
     const [keySearch, setKeySearch] = useState('')
     const [keyFilterProvider, setKeyFilterProvider] = useState('all')
@@ -783,7 +783,7 @@ export default function AdminSettingsPage() {
     const handleBulkAction = async (action: 'enable' | 'disable' | 'delete' | 'clearErrors') => {
         if (selectedKeys.size === 0) return
         if (action === 'delete' && !confirm(`Are you sure you want to delete ${selectedKeys.size} selected keys? This cannot be undone.`)) return
-        
+
         setBulkActionLoading(true)
         try {
             const promises = Array.from(selectedKeys).map(id => {
@@ -802,7 +802,7 @@ export default function AdminSettingsPage() {
                 }
             })
             await Promise.all(promises)
-            
+
             // Reload keys list
             const freshKeys = await fetch('/api/admin/api-keys').then(r => r.json())
             setApiKeys(freshKeys)
@@ -1207,152 +1207,152 @@ export default function AdminSettingsPage() {
                                     </>
                                 )
                                 return (
-                                <section className="admin-form-section">
-                                    <h3 className="admin-form-section-title">📖 About Page Content</h3>
-                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
-                                        Edit every section of the About page. <strong style={{ color: 'var(--text-secondary)' }}>Leave fields empty to use locale translations.</strong>
-                                    </p>
+                                    <section className="admin-form-section">
+                                        <h3 className="admin-form-section-title">📖 About Page Content</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
+                                            Edit every section of the About page. <strong style={{ color: 'var(--text-secondary)' }}>Leave fields empty to use locale translations.</strong>
+                                        </p>
 
-                                    {/* ── Mission & Story (existing fields) ── */}
-                                    {sectionHeader('🎯', 'Mission & Story', 'Core narrative shown in the Mission and Story cards.')}
-                                    <div className="admin-form-stack">
-                                        <div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <label className="admin-label">About Text <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(elevator pitch)</span></label>
-                                                <span style={{ fontSize: '0.6rem', color: settings.aboutText.length > 300 ? '#f59e0b' : 'var(--text-tertiary)' }}>{settings.aboutText.length}/300 recommended</span>
+                                        {/* ── Mission & Story (existing fields) ── */}
+                                        {sectionHeader('🎯', 'Mission & Story', 'Core narrative shown in the Mission and Story cards.')}
+                                        <div className="admin-form-stack">
+                                            <div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <label className="admin-label">About Text <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(elevator pitch)</span></label>
+                                                    <span style={{ fontSize: '0.6rem', color: settings.aboutText.length > 300 ? '#f59e0b' : 'var(--text-tertiary)' }}>{settings.aboutText.length}/300 recommended</span>
+                                                </div>
+                                                <textarea className="admin-textarea" rows={3} value={settings.aboutText} onChange={e => update('aboutText', e.target.value)} placeholder="Leave empty to use translation" />
                                             </div>
-                                            <textarea className="admin-textarea" rows={3} value={settings.aboutText} onChange={e => update('aboutText', e.target.value)} placeholder="Leave empty to use translation" />
+                                            <div>
+                                                <label className="admin-label">Studio Story <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(origin narrative)</span></label>
+                                                <textarea className="admin-textarea" rows={4} value={settings.studioStory} onChange={e => update('studioStory', e.target.value)} placeholder="Leave empty to use translation" />
+                                            </div>
+                                            <div style={{ padding: 'var(--space-lg)', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(135deg, rgba(168,85,247,0.04), rgba(59,130,246,0.03))', border: '1px solid rgba(168,85,247,0.1)' }}>
+                                                <label className="admin-label" style={{ margin: 0, marginBottom: '6px' }}>Mission Statement</label>
+                                                <textarea className="admin-textarea" rows={3} value={settings.mission} onChange={e => update('mission', e.target.value)} placeholder="Leave empty to use translation" />
+                                                <div style={hintStyle}>Displayed in the Mission card on the About page.</div>
+                                            </div>
                                         </div>
+
+                                        {/* ── Hero ── */}
+                                        {sectionHeader('🎬', 'Hero Section', 'The subtitle shown below the main heading.')}
                                         <div>
-                                            <label className="admin-label">Studio Story <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(origin narrative)</span></label>
-                                            <textarea className="admin-textarea" rows={4} value={settings.studioStory} onChange={e => update('studioStory', e.target.value)} placeholder="Leave empty to use translation" />
+                                            <label className="admin-label">Hero Subtitle</label>
+                                            <textarea className="admin-textarea" rows={2} value={apd.heroSubtitle} onChange={e => ua('heroSubtitle', e.target.value)} placeholder="Leave empty to use translation" />
+                                            <div style={hintStyle}>Appears below the page title on the About page.</div>
                                         </div>
-                                        <div style={{ padding: 'var(--space-lg)', borderRadius: 'var(--radius-lg)', background: 'linear-gradient(135deg, rgba(168,85,247,0.04), rgba(59,130,246,0.03))', border: '1px solid rgba(168,85,247,0.1)' }}>
-                                            <label className="admin-label" style={{ margin: 0, marginBottom: '6px' }}>Mission Statement</label>
-                                            <textarea className="admin-textarea" rows={3} value={settings.mission} onChange={e => update('mission', e.target.value)} placeholder="Leave empty to use translation" />
-                                            <div style={hintStyle}>Displayed in the Mission card on the About page.</div>
+
+                                        {/* ── Stats ── */}
+                                        {sectionHeader('📊', 'Stats Bar', 'Four counters shown below the hero. Set value to 0 to use defaults.')}
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                            {([['stat1', 'e.g. Productions', 12], ['stat2', 'e.g. Countries', 30], ['stat3', 'e.g. Members', 500], ['stat4', 'e.g. Active Projects', 8]] as const).map(([prefix, ph, def]) => (
+                                                <div key={prefix} style={{ padding: '10px 12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
+                                                    <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
+                                                        <div style={{ flex: '0 0 60px' }}>
+                                                            <label className="admin-label" style={{ fontSize: '0.6rem' }}>Value</label>
+                                                            <input className="admin-input" type="number" value={apd[`${prefix}Value` as keyof AboutPageData] as number || ''} onChange={e => ua(`${prefix}Value` as keyof AboutPageData, parseInt(e.target.value) || 0)} placeholder={String(def)} style={{ fontSize: '0.78rem' }} />
+                                                        </div>
+                                                        <div style={{ flex: 1 }}>
+                                                            <label className="admin-label" style={{ fontSize: '0.6rem' }}>Label</label>
+                                                            <input className="admin-input" value={apd[`${prefix}Label` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Label` as keyof AboutPageData, e.target.value)} placeholder={ph} style={{ fontSize: '0.78rem' }} />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
-                                    </div>
 
-                                    {/* ── Hero ── */}
-                                    {sectionHeader('🎬', 'Hero Section', 'The subtitle shown below the main heading.')}
-                                    <div>
-                                        <label className="admin-label">Hero Subtitle</label>
-                                        <textarea className="admin-textarea" rows={2} value={apd.heroSubtitle} onChange={e => ua('heroSubtitle', e.target.value)} placeholder="Leave empty to use translation" />
-                                        <div style={hintStyle}>Appears below the page title on the About page.</div>
-                                    </div>
+                                        {/* ── Philosophy ── */}
+                                        {sectionHeader('💡', 'Philosophy Quote', 'Inspirational quote displayed between sections.')}
+                                        <div className="admin-form-stack">
+                                            <div>
+                                                <label className="admin-label">Quote</label>
+                                                <textarea className="admin-textarea" rows={2} value={apd.philosophyQuote} onChange={e => ua('philosophyQuote', e.target.value)} placeholder="Leave empty to use translation" />
+                                            </div>
+                                            <div className="admin-form-grid">
+                                                <div>
+                                                    <label className="admin-label">Author Name</label>
+                                                    <input className="admin-input" value={apd.philosophyAuthor} onChange={e => ua('philosophyAuthor', e.target.value)} placeholder="Leave empty to use translation" />
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label">Author Role</label>
+                                                    <input className="admin-input" value={apd.philosophyRole} onChange={e => ua('philosophyRole', e.target.value)} placeholder="Leave empty to use translation" />
+                                                </div>
+                                            </div>
+                                        </div>
 
-                                    {/* ── Stats ── */}
-                                    {sectionHeader('📊', 'Stats Bar', 'Four counters shown below the hero. Set value to 0 to use defaults.')}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                        {([['stat1', 'e.g. Productions', 12], ['stat2', 'e.g. Countries', 30], ['stat3', 'e.g. Members', 500], ['stat4', 'e.g. Active Projects', 8]] as const).map(([prefix, ph, def]) => (
-                                            <div key={prefix} style={{ padding: '10px 12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
-                                                <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
-                                                    <div style={{ flex: '0 0 60px' }}>
-                                                        <label className="admin-label" style={{ fontSize: '0.6rem' }}>Value</label>
-                                                        <input className="admin-input" type="number" value={apd[`${prefix}Value` as keyof AboutPageData] as number || ''} onChange={e => ua(`${prefix}Value` as keyof AboutPageData, parseInt(e.target.value) || 0)} placeholder={String(def)} style={{ fontSize: '0.78rem' }} />
+                                        {/* ── Timeline ── */}
+                                        {sectionHeader('🗓️', 'Journey Timeline', 'Three milestones shown on the timeline.')}
+                                        {([1, 2, 3] as const).map(n => (
+                                            <div key={n} style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', marginBottom: '8px' }}>
+                                                <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Milestone {n}</div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '6px', marginBottom: '6px' }}>
+                                                    <div>
+                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Year</label>
+                                                        <input className="admin-input" value={apd[`milestone${n}Year` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Year` as keyof AboutPageData, e.target.value)} placeholder="2025" style={{ fontSize: '0.78rem' }} />
                                                     </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        <label className="admin-label" style={{ fontSize: '0.6rem' }}>Label</label>
-                                                        <input className="admin-input" value={apd[`${prefix}Label` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Label` as keyof AboutPageData, e.target.value)} placeholder={ph} style={{ fontSize: '0.78rem' }} />
+                                                    <div>
+                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Title</label>
+                                                        <input className="admin-input" value={apd[`milestone${n}Title` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Title` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                     </div>
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Description</label>
+                                                    <textarea className="admin-textarea" rows={2} value={apd[`milestone${n}Desc` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Desc` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                 </div>
                                             </div>
                                         ))}
-                                    </div>
 
-                                    {/* ── Philosophy ── */}
-                                    {sectionHeader('💡', 'Philosophy Quote', 'Inspirational quote displayed between sections.')}
-                                    <div className="admin-form-stack">
-                                        <div>
-                                            <label className="admin-label">Quote</label>
-                                            <textarea className="admin-textarea" rows={2} value={apd.philosophyQuote} onChange={e => ua('philosophyQuote', e.target.value)} placeholder="Leave empty to use translation" />
-                                        </div>
-                                        <div className="admin-form-grid">
-                                            <div>
-                                                <label className="admin-label">Author Name</label>
-                                                <input className="admin-input" value={apd.philosophyAuthor} onChange={e => ua('philosophyAuthor', e.target.value)} placeholder="Leave empty to use translation" />
-                                            </div>
-                                            <div>
-                                                <label className="admin-label">Author Role</label>
-                                                <input className="admin-input" value={apd.philosophyRole} onChange={e => ua('philosophyRole', e.target.value)} placeholder="Leave empty to use translation" />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* ── Timeline ── */}
-                                    {sectionHeader('🗓️', 'Journey Timeline', 'Three milestones shown on the timeline.')}
-                                    {([1, 2, 3] as const).map(n => (
-                                        <div key={n} style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', marginBottom: '8px' }}>
-                                            <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Milestone {n}</div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '6px', marginBottom: '6px' }}>
-                                                <div>
-                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Year</label>
-                                                    <input className="admin-input" value={apd[`milestone${n}Year` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Year` as keyof AboutPageData, e.target.value)} placeholder="2025" style={{ fontSize: '0.78rem' }} />
+                                        {/* ── Values ── */}
+                                        {sectionHeader('⭐', 'Value Cards', 'Three value cards displayed in a grid.')}
+                                        {([['value1', 'Showcase'], ['value2', 'Community'], ['value3', 'Open Doors']] as const).map(([prefix, defaultTitle]) => (
+                                            <div key={prefix} style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', marginBottom: '8px' }}>
+                                                <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{defaultTitle}</div>
+                                                <div className="admin-form-grid" style={{ marginBottom: '6px' }}>
+                                                    <div>
+                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Title</label>
+                                                        <input className="admin-input" value={apd[`${prefix}Title` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Title` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Subtitle</label>
+                                                        <input className="admin-input" value={apd[`${prefix}Sub` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Sub` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Title</label>
-                                                    <input className="admin-input" value={apd[`milestone${n}Title` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Title` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Description</label>
+                                                    <textarea className="admin-textarea" rows={2} value={apd[`${prefix}Desc` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Desc` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                 </div>
                                             </div>
-                                            <div>
-                                                <label className="admin-label" style={{ fontSize: '0.58rem' }}>Description</label>
-                                                <textarea className="admin-textarea" rows={2} value={apd[`milestone${n}Desc` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Desc` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
 
-                                    {/* ── Values ── */}
-                                    {sectionHeader('⭐', 'Value Cards', 'Three value cards displayed in a grid.')}
-                                    {([['value1', 'Showcase'], ['value2', 'Community'], ['value3', 'Open Doors']] as const).map(([prefix, defaultTitle]) => (
-                                        <div key={prefix} style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', marginBottom: '8px' }}>
-                                            <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{defaultTitle}</div>
-                                            <div className="admin-form-grid" style={{ marginBottom: '6px' }}>
+                                        {/* ── CTA ── */}
+                                        {sectionHeader('🚀', 'Call to Action', 'Bottom section with heading and buttons.')}
+                                        <div className="admin-form-stack">
+                                            <div className="admin-form-grid">
                                                 <div>
-                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Title</label>
-                                                    <input className="admin-input" value={apd[`${prefix}Title` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Title` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                    <label className="admin-label">CTA Title</label>
+                                                    <input className="admin-input" value={apd.ctaTitle} onChange={e => ua('ctaTitle', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                                 <div>
-                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Subtitle</label>
-                                                    <input className="admin-input" value={apd[`${prefix}Sub` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Sub` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                    <label className="admin-label">Title Accent (gold text)</label>
+                                                    <input className="admin-input" value={apd.ctaTitleAccent} onChange={e => ua('ctaTitleAccent', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                             </div>
                                             <div>
-                                                <label className="admin-label" style={{ fontSize: '0.58rem' }}>Description</label>
-                                                <textarea className="admin-textarea" rows={2} value={apd[`${prefix}Desc` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Desc` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                <label className="admin-label">CTA Description</label>
+                                                <textarea className="admin-textarea" rows={2} value={apd.ctaDesc} onChange={e => ua('ctaDesc', e.target.value)} placeholder="Leave empty to use translation" />
+                                            </div>
+                                            <div className="admin-form-grid">
+                                                <div>
+                                                    <label className="admin-label">Primary Button Text</label>
+                                                    <input className="admin-input" value={apd.ctaButtonText} onChange={e => ua('ctaButtonText', e.target.value)} placeholder="Leave empty to use translation" />
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label">Secondary Button Text</label>
+                                                    <input className="admin-input" value={apd.ctaSecondaryText} onChange={e => ua('ctaSecondaryText', e.target.value)} placeholder="Leave empty to use translation" />
+                                                </div>
                                             </div>
                                         </div>
-                                    ))}
-
-                                    {/* ── CTA ── */}
-                                    {sectionHeader('🚀', 'Call to Action', 'Bottom section with heading and buttons.')}
-                                    <div className="admin-form-stack">
-                                        <div className="admin-form-grid">
-                                            <div>
-                                                <label className="admin-label">CTA Title</label>
-                                                <input className="admin-input" value={apd.ctaTitle} onChange={e => ua('ctaTitle', e.target.value)} placeholder="Leave empty to use translation" />
-                                            </div>
-                                            <div>
-                                                <label className="admin-label">Title Accent (gold text)</label>
-                                                <input className="admin-input" value={apd.ctaTitleAccent} onChange={e => ua('ctaTitleAccent', e.target.value)} placeholder="Leave empty to use translation" />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="admin-label">CTA Description</label>
-                                            <textarea className="admin-textarea" rows={2} value={apd.ctaDesc} onChange={e => ua('ctaDesc', e.target.value)} placeholder="Leave empty to use translation" />
-                                        </div>
-                                        <div className="admin-form-grid">
-                                            <div>
-                                                <label className="admin-label">Primary Button Text</label>
-                                                <input className="admin-input" value={apd.ctaButtonText} onChange={e => ua('ctaButtonText', e.target.value)} placeholder="Leave empty to use translation" />
-                                            </div>
-                                            <div>
-                                                <label className="admin-label">Secondary Button Text</label>
-                                                <input className="admin-input" value={apd.ctaSecondaryText} onChange={e => ua('ctaSecondaryText', e.target.value)} placeholder="Leave empty to use translation" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </section>
+                                    </section>
                                 )
                             })()}
 
@@ -1823,7 +1823,7 @@ export default function AdminSettingsPage() {
                                                                             <td style={{ padding: '10px 0' }}>
                                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                                                                     <div style={{ fontSize: '0.65rem' }}>
-                                                                                        <strong style={{ color: 'var(--text-secondary)' }}>{k.usageCount}</strong> calls {k.lastUsed ? `• Used ${new Date(k.lastUsed).toLocaleDateString()}` : '✨ Never used'}
+                                                                                        <strong style={{ color: 'var(--text-secondary)' }}>{k.usageCount}</strong> calls {k.lastUsed ? `• Last used ${new Date(k.lastUsed).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : '✨ Never used'}
                                                                                     </div>
                                                                                     {(() => {
                                                                                         const now = Date.now()

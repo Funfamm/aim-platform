@@ -56,7 +56,7 @@ Important rules:
 - Return ONLY the JSON object, nothing else.`
 
     try {
-        const result = await callGemini(prompt, agent)
+        const result = await callGemini(prompt, 'audition')
         if ('error' in result) {
             console.error('[translate] AI error:', result.error)
             return null
@@ -113,7 +113,7 @@ const LOCALE_NAME_MAP: Record<string, string> = {
 interface CacheEntry { value: string; expiresAt: number }
 const memCache = new Map<string, CacheEntry>()
 const CACHE_TTL_MS = 60 * 60 * 1000 // 1 hour
-const CACHE_MAX    = 500
+const CACHE_MAX = 500
 
 function memGet(key: string): string | null {
     const entry = memCache.get(key)

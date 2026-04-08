@@ -106,10 +106,24 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
         let displayTitle = opts.title
         let displayMessage = opts.message
 
-        // Apply AI translations if available for the user's non-English locale
-        if (locale !== 'en' && opts.translations && opts.translations[locale]) {
+        // Apply pre-batch translations if available for this locale
+        if (locale !== 'en' && opts.translations?.[locale]) {
             displayTitle = opts.translations[locale].title || displayTitle
             displayMessage = opts.translations[locale].message || displayMessage
+        } else if (locale !== 'en') {
+            // Fallback: pre-batch translation was null or didn't include this locale —
+            // translate on-demand just for this user (10s timeout)
+            try {
+                const fallbackTimeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
+                const tx = await Promise.race([
+                    translateContent({ title: opts.title, message: opts.message }, 'all').catch(() => null),
+                    fallbackTimeout,
+                ])
+                if (tx?.[locale]) {
+                    displayTitle = tx[locale].title || displayTitle
+                    displayMessage = tx[locale].message || displayMessage
+                }
+            } catch { /* non-critical — deliver in English */ }
         }
 
         // ── In-App ──────────────────────────────────────────────────────────
