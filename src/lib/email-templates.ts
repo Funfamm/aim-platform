@@ -789,3 +789,42 @@ export function contentPublishEmail(contentTitle: string, contentType: string, l
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">You’re receiving this because you opted in to content updates.</span>`)}
     `, `New ${contentType}: ${contentTitle}`)
 }
+
+// --- Course Enrollment Email ---
+
+export function courseEnrollmentEmail(
+    userName: string,
+    courseTitle: string,
+    courseUrl: string,
+    overrides?: { heading?: string; body?: string; button?: string; badge?: string }
+): string {
+    const BD = '#0f1115', BC = '#d4a853', BL = '#e8c36a', CARD = '#1a1d23', BORDER = '#2a2d35', TP = '#e8e6e3'
+    const h   = overrides?.heading ?? ('You are enrolled in ' + courseTitle + '!')
+    const b   = overrides?.body    ?? ('Welcome, ' + (userName || 'there') + '! Your journey through ' + courseTitle + ' starts now. Earn XP as you progress through each lesson.')
+    const btn = overrides?.button  ?? 'Start Learning'
+    const badge = overrides?.badge ?? 'New Enrollment'
+    const parts: string[] = []
+    parts.push('<!DOCTYPE html><html><body style="margin:0;padding:0;background:' + BD + '">')
+    parts.push('<table width="100%" style="background:' + BD + '"><tr><td align="center" style="padding:40px 16px">')
+    parts.push('<table width="580" style="max-width:580px;width:100%">')
+    parts.push('<tr><td style="height:4px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:12px 12px 0 0"></td></tr>')
+    parts.push('<tr><td style="padding:28px 36px;text-align:center;background:' + CARD + ';border-left:1px solid ' + BORDER + ';border-right:1px solid ' + BORDER + '">')
+    parts.push('<span style="font-size:26px;font-weight:800"><span style="color:' + BC + '">AIM</span><span style="color:' + TP + '"> Studio</span></span>')
+    parts.push('</td></tr>')
+    parts.push('<tr><td style="background:' + CARD + ';border-left:1px solid ' + BORDER + ';border-right:1px solid ' + BORDER + ';padding:36px">')
+    parts.push('<div style="text-align:center;margin-bottom:24px"><div style="font-size:52px;margin-bottom:12px">&#127891;</div>')
+    parts.push('<div style="display:inline-block;padding:6px 18px;background:' + BD + ';border-radius:20px;border:1px solid ' + BC + '">')
+    parts.push('<span style="font-size:12px;font-weight:700;color:' + BC + ';letter-spacing:1.5px;text-transform:uppercase">' + badge + '</span></div></div>')
+    parts.push('<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:' + TP + ';line-height:1.3">' + h + '</h1>')
+    parts.push('<p style="margin:0 0 16px;font-size:15px;color:' + TP + ';line-height:1.7">' + b + '</p>')
+    parts.push('<table cellpadding="0" cellspacing="0" style="margin:24px 0"><tr>')
+    parts.push('<td style="background:linear-gradient(135deg,' + BC + ',#c49b3a);border-radius:8px">')
+    parts.push('<a href="' + courseUrl + '" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">' + btn + '</a>')
+    parts.push('</td></tr></table>')
+    parts.push('<p style="margin:0;font-size:12px;color:#6b7280">You received this because you enrolled in a course on AIM Studio.</p>')
+    parts.push('</td></tr>')
+    parts.push('<tr><td style="height:3px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:0 0 12px 12px"></td></tr>')
+    parts.push('<tr><td style="padding-top:28px;text-align:center"><p style="margin:0;font-size:12px;color:#6b7280">&copy; ' + new Date().getFullYear() + ' AIM Studio</p></td></tr>')
+    parts.push('</table></td></tr></table></body></html>')
+    return parts.join('')
+}
