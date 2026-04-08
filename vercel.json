@@ -1,3 +1,8 @@
 {
-  "rewrites": []
+  "rewrites": [],
+  "functions": {
+    "src/app/api/upload/stream/route.ts": {
+      "maxDuration": 60
+    }
+  }
 }

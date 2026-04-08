@@ -170,45 +170,35 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     }
 
     const uploadFileToR2 = async (file: File, folder: string): Promise<string> => {
-        // Step 1: Get a presigned URL from our API (tiny JSON request — no file data)
-        let presignRes: Response;
+        // Stream the file directly through our server-side proxy to R2.
+        // The /api/upload/stream route reads request.body as a ReadableStream,
+        // bypassing Vercel's 4.5MB body-parser limit entirely.
+        const params = new URLSearchParams({
+            fileName: file.name,
+            fileType: file.type,
+            folder,
+            fileSize: String(file.size),
+        });
+
+        let res: Response;
         try {
-            presignRes = await fetch('/api/upload/presign', {
+            res = await fetch(`/api/upload/stream?${params}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fileName: file.name,
-                    fileType: file.type,
-                    folder,
-                }),
-            });
-        } catch {
-            throw new Error(`Network error requesting upload URL for ${file.name}`);
-        }
-
-        if (!presignRes.ok) {
-            const errText = await presignRes.text().catch(() => 'unknown');
-            throw new Error(`Failed to get upload URL (${presignRes.status}): ${errText}`);
-        }
-
-        const { presignedUrl, finalUrl } = await presignRes.json();
-
-        // Step 2: Upload the file directly from the browser to R2 (bypasses Vercel's 4.5MB limit)
-        let uploadRes: Response;
-        try {
-            uploadRes = await fetch(presignedUrl, {
-                method: 'PUT',
                 headers: { 'Content-Type': file.type },
                 body: file,
+                // @ts-expect-error — duplex is required for streaming bodies in some environments
+                duplex: 'half',
             });
         } catch {
             throw new Error(`Network error uploading ${file.name}`);
         }
 
-        if (!uploadRes.ok) {
-            throw new Error(`Upload failed (${uploadRes.status})`);
+        if (!res.ok) {
+            const errText = await res.text().catch(() => 'unknown');
+            throw new Error(`Upload failed (${res.status}): ${errText}`);
         }
 
+        const { finalUrl } = await res.json();
         return finalUrl;
     };
 
