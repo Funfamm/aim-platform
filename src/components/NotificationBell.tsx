@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from '@/i18n/navigation'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useNotifications } from '@/context/NotificationContext'
 import styles from './NotificationBell.module.css'
 
@@ -38,7 +38,6 @@ function timeAgo(dateStr: string): string {
 export function NotificationBell() {
     const { user } = useAuth()
     const router = useRouter()
-    const locale = useLocale()
     const t = useTranslations('notificationBell')
     const { unreadCount, refresh, markAllRead: ctxMarkAllRead } = useNotifications()
     const [open, setOpen] = useState(false)
@@ -88,7 +87,7 @@ export function NotificationBell() {
         }
         // Always navigate to the full notifications page (tap 1)
         setOpen(false)
-        router.push(`/${locale}/notifications`)
+        router.push('/notifications')
     }
 
     if (!user) return null
