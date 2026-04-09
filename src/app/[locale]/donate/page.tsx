@@ -546,7 +546,7 @@ export default function DonatePage() {
                                         )}
 
                                         <p style={{ textAlign: 'center', fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>
-                                            🔒 Secured by PayPal — {t('donateFooter')}
+                                            🔒 {t('securedByPaypal')} — {t('donateFooter')}
                                         </p>
                                     </div>
                                 )}

@@ -112,7 +112,7 @@
     "inProduction": "In Produktion",
     "upcoming": "Demnächst",
     "watchNow": "Jetzt Ansehen",
-    "watchTrailer": "Trailer Ansehen",
+    "watchTrailer": "Trailer ansehen",
     "viewDetails": "Details",
     "film": "Film",
     "series": "Serie",
@@ -173,7 +173,8 @@
     "errPaypalLoad": "PayPal konnte nicht geladen werden. Überprüfe deine Verbindung.",
     "errPaymentFailed": "Zahlung fehlgeschlagen. Bitte erneut versuchen.",
     "errPaymentProcessing": "Zahlungsverarbeitungsfehler. Bitte erneut versuchen.",
-    "errPaymentCanceled": "Zahlung wurde abgebrochen. Du kannst es erneut versuchen."
+    "errPaymentCanceled": "Zahlung wurde abgebrochen. Du kannst es erneut versuchen.",
+    "securedByPaypal": "Gesichert durch PayPal"
   },
   "footer": {
     "tagline": "Pioniere der Zukunft des Kinos durch künstliche Intelligenz.",

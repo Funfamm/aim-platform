@@ -173,7 +173,8 @@
     "errPaypalLoad": "Failed to load PayPal. Check your connection or try again.",
     "errPaymentFailed": "Payment failed. Please try again.",
     "errPaymentProcessing": "Payment processing error. Please try again.",
-    "errPaymentCanceled": "Payment was cancelled. You can try again."
+    "errPaymentCanceled": "Payment was cancelled. You can try again.",
+    "securedByPaypal": "Secured by PayPal"
   },
   "footer": {
     "tagline": "Pioneering the future of cinema through artificial intelligence. Every frame crafted, every story told.",

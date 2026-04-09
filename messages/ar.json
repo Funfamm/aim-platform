@@ -175,7 +175,8 @@
     "errPaypalLoad": "فشل تحميل PayPal. تحقق من اتصالك أو أعد المحاولة.",
     "errPaymentFailed": "فشلت عملية الدفع. يرجى المحاولة مجدداً.",
     "errPaymentProcessing": "خطأ في معالجة الدفع. يرجى المحاولة مجدداً.",
-    "errPaymentCanceled": "تم إلغاء الدفع. يمكنك المحاولة مجدداً."
+    "errPaymentCanceled": "تم إلغاء الدفع. يمكنك المحاولة مجدداً.",
+    "securedByPaypal": "محمي بواسطة PayPal"
   },
   "footer": {
     "tagline": "رواد مستقبل السينما من خلال الذكاء الاصطناعي.",
@@ -700,7 +701,7 @@
     "fullName": "الاسم الكامل",
     "fullNamePlaceholder": "اسمك الكامل",
     "email": "البريد الإلكتروني",
-    "emailPlaceholder": "بريدك@email.com",
+    "emailPlaceholder": "بريدك@الإلكتروني.com",
     "password": "كلمة المرور",
     "passwordPlaceholder": "6 أحرف كحد أدنى",
     "confirmPassword": "تأكيد كلمة المرور",
@@ -724,7 +725,7 @@
     "signIn": "تسجيل الدخول",
     "description": "الوصول إلى لوحة التحكم.",
     "email": "البريد الإلكتروني",
-    "emailPlaceholder": "بريدك@email.com",
+    "emailPlaceholder": "بريدك@الإلكتروني.com",
     "password": "كلمة المرور",
     "forgotPassword": "نسيت كلمة المرور؟",
     "signInBtn": "تسجيل الدخول",
@@ -769,7 +770,7 @@
     "chooseNew": "اختر كلمة مرور جديدة.",
     "updatedSuccess": "تم تحديث كلمة المرور.",
     "email": "البريد",
-    "emailPlaceholder": "بريدك@email.com",
+    "emailPlaceholder": "بريدك@الإلكتروني.com",
     "newPassword": "كلمة مرور جديدة",
     "minCharsPlaceholder": "6 أحرف كحد أدنى",
     "confirmNew": "تأكيد كلمة المرور",

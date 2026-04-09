@@ -112,7 +112,7 @@
     "inProduction": "В Производстве",
     "upcoming": "Скоро",
     "watchNow": "Смотреть",
-    "watchTrailer": "Трейлер",
+    "watchTrailer": "Смотреть трейлер",
     "viewDetails": "Детали",
     "film": "Фильм",
     "series": "Сериал",
@@ -173,7 +173,8 @@
     "errPaypalLoad": "Не удалось загрузить PayPal. Проверьте соединение.",
     "errPaymentFailed": "Оплата не удалась. Пожалуйста, попробуйте ещё раз.",
     "errPaymentProcessing": "Ошибка обработки платежа. Попробуйте ещё раз.",
-    "errPaymentCanceled": "Платеж отменён. Вы можете попробовать снова."
+    "errPaymentCanceled": "Платеж отменён. Вы можете попробовать снова.",
+    "securedByPaypal": "Защищено PayPal"
   },
   "footer": {
     "tagline": "Пионеры будущего кино через ИИ.",

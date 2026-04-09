@@ -112,7 +112,7 @@
     "inProduction": "En Production",
     "upcoming": "À Venir",
     "watchNow": "Regarder",
-    "watchTrailer": "Bande-Annonce",
+    "watchTrailer": "Voir la bande-annonce",
     "viewDetails": "Voir détails",
     "film": "Film",
     "series": "Série",
@@ -173,7 +173,8 @@
     "errPaypalLoad": "Impossible de charger PayPal. Vérifiez votre connexion.",
     "errPaymentFailed": "Le paiement a échoué. Veuillez réessayer.",
     "errPaymentProcessing": "Erreur de traitement du paiement. Veuillez réessayer.",
-    "errPaymentCanceled": "Le paiement a été annulé. Vous pouvez réessayer."
+    "errPaymentCanceled": "Le paiement a été annulé. Vous pouvez réessayer.",
+    "securedByPaypal": "Sécurisé par PayPal"
   },
   "footer": {
     "tagline": "Pionniers du futur du cinéma grâce à l'intelligence artificielle. Chaque image créée, chaque histoire raconte.",

@@ -173,7 +173,8 @@
     "errPaypalLoad": "PayPal लोड नहीं हो सका। कनेक्शन जाँचें।",
     "errPaymentFailed": "भुगतान विफल हुआ। कृपया पुनः प्रयास करें।",
     "errPaymentProcessing": "भुगतान प्रसंस्करण त्रुटि। कृपया पुनः प्रयास करें।",
-    "errPaymentCanceled": "भुगतान रद्द किया गया। आप पुनः प्रयास कर सकते हैं।"
+    "errPaymentCanceled": "भुगतान रद्द किया गया। आप पुनः प्रयास कर सकते हैं।",
+    "securedByPaypal": "PayPal द्वारा सुरक्षित"
   },
   "footer": {
     "tagline": "कृत्रिम बुद्धिमत्ता से सिनेमा का भविष्य।",
@@ -698,7 +699,7 @@
     "fullName": "पूरा नाम",
     "fullNamePlaceholder": "आपका पूरा नाम",
     "email": "ईमेल",
-    "emailPlaceholder": "your@email.com",
+    "emailPlaceholder": "आपका@ईमेल.com",
     "password": "पासवर्ड",
     "passwordPlaceholder": "न्यूनतम 6 अक्षर",
     "confirmPassword": "पासवर्ड पुष्टि",
@@ -722,7 +723,7 @@
     "signIn": "साइन इन",
     "description": "अपने डैशबोर्ड तक पहुँचें।",
     "email": "ईमेल",
-    "emailPlaceholder": "your@email.com",
+    "emailPlaceholder": "आपका@ईमेल.com",
     "password": "पासवर्ड",
     "forgotPassword": "पासवर्ड भूल गए?",
     "signInBtn": "साइन इन",
@@ -767,7 +768,7 @@
     "chooseNew": "नया पासवर्ड चुनें।",
     "updatedSuccess": "आपका पासवर्ड अपडेट हो गया।",
     "email": "ईमेल",
-    "emailPlaceholder": "your@email.com",
+    "emailPlaceholder": "आपका@ईमेल.com",
     "newPassword": "नया पासवर्ड",
     "minCharsPlaceholder": "न्यूनतम 6 अक्षर",
     "confirmNew": "नया पासवर्ड पुष्टि",

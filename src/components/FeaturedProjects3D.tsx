@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import ScrollReveal3D from './ScrollReveal3D'
-import { useLocale } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 
 interface ProjectData {
@@ -17,6 +17,7 @@ interface ProjectData {
 }
 
 export default function FeaturedProjects3D({ projects }: { projects: ProjectData[] }) {
+    const t = useTranslations('works')
     const locale = useLocale()
     return (
         <div className="grid-3">
@@ -57,7 +58,7 @@ export default function FeaturedProjects3D({ projects }: { projects: ProjectData
                                     textTransform: 'uppercase', color: 'var(--accent-gold)',
                                     marginTop: 'var(--space-sm)',
                                 }}>
-                                    ▶ Watch Trailer
+                                    ▶ {t('watchTrailer')}
                                 </span>
                             )}
                         </div>

@@ -112,7 +112,7 @@
     "inProduction": "Em Produção",
     "upcoming": "Em Breve",
     "watchNow": "Assistir",
-    "watchTrailer": "Ver Trailer",
+    "watchTrailer": "Assistir ao trailer",
     "viewDetails": "Ver Detalhes",
     "film": "Filme",
     "series": "Série",
@@ -173,7 +173,8 @@
     "errPaypalLoad": "Não foi possível carregar o PayPal. Verifique sua conexão.",
     "errPaymentFailed": "O pagamento falhou. Por favor, tente novamente.",
     "errPaymentProcessing": "Erro ao processar o pagamento. Por favor, tente novamente.",
-    "errPaymentCanceled": "O pagamento foi cancelado. Você pode tentar novamente."
+    "errPaymentCanceled": "O pagamento foi cancelado. Você pode tentar novamente.",
+    "securedByPaypal": "Protegido pelo PayPal"
   },
   "footer": {
     "tagline": "Pioneiros do futuro do cinema através da inteligência artificial.",
