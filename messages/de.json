@@ -710,7 +710,12 @@
     "alreadyHaveAccount": "Bereits ein Konto?",
     "signIn": "Anmelden",
     "passwordsNoMatch": "Passwörter stimmen nicht überein",
-    "registrationFailed": "Registrierung fehlgeschlagen"
+    "registrationFailed": "Registrierung fehlgeschlagen",
+    "fillRequired": "Bitte füllen Sie dieses Feld aus.",
+    "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    "pwTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein.",
+    "hidePassword": "Passwort verbergen",
+    "showPassword": "Passwort anzeigen"
   },
   "login": {
     "welcomeBack": "Willkommen Zurück",
@@ -729,7 +734,9 @@
     "createOne": "Erstellen",
     "loginFailed": "Anmeldung fehlgeschlagen",
     "hidePassword": "Verbergen",
-    "showPassword": "Anzeigen"
+    "showPassword": "Anzeigen",
+    "fillRequired": "Bitte füllen Sie dieses Feld aus.",
+    "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
   },
   "contact": {
     "label": "Kontakt",
@@ -787,7 +794,10 @@
     "errPwTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein",
     "errSamePassword": "Du kannst dein aktuelles Passwort nicht wiederverwenden.",
     "errReusedPassword": "Dieses Passwort wurde kürzlich verwendet. Bitte wähle ein anderes.",
-    "errResetFailed": "Passwort zurücksetzen fehlgeschlagen. Bitte versuche es erneut."
+    "errResetFailed": "Passwort zurücksetzen fehlgeschlagen. Bitte versuche es erneut.",
+    "fillRequired": "Bitte füllen Sie dieses Feld aus.",
+    "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    "pwTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein."
   },
   "sponsors": {
     "label": "Unsere Unterstützer",

@@ -360,7 +360,10 @@ export default function ForgotPasswordPage() {
                                 {step === 'email' && (
                                     <div style={{ marginBottom: 'var(--space-lg)' }}>
                                         <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('email')}</label>
-                                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder={t('emailPlaceholder')} style={inputStyle} autoFocus />
+                                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder={t('emailPlaceholder')} style={inputStyle} autoFocus
+                                            onInvalid={(e) => { const el = e.target as HTMLInputElement; el.setCustomValidity(el.validity.valueMissing ? t('fillRequired') : t('emailInvalid')) }}
+                                            onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                                        />
                                     </div>
                                 )}
 
@@ -461,6 +464,8 @@ export default function ForgotPasswordPage() {
                                                     minLength={6}
                                                     placeholder={t('minCharsPlaceholder')}
                                                     style={{ ...inputStyle, paddingRight: '2.8rem' }}
+                                                    onInvalid={(e) => { const el = e.target as HTMLInputElement; el.setCustomValidity(el.validity.valueMissing ? t('fillRequired') : t('pwTooShort')) }}
+                                                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                                                     autoFocus
                                                 />
                                                 <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? t('hidePassword') : t('showPassword')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center' }}>
@@ -498,6 +503,8 @@ export default function ForgotPasswordPage() {
                                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                                     required
                                                     placeholder={t('confirmPlaceholder')}
+                                                    onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity(t('fillRequired'))}
+                                                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
                                                     style={{
                                                         ...inputStyle,
                                                         paddingRight: '2.8rem',

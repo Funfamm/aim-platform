@@ -694,7 +694,12 @@
     "alreadyHaveAccount": "アカウントをお持ち？",
     "signIn": "サインイン",
     "passwordsNoMatch": "パスワードが一致しません",
-    "registrationFailed": "登録失敗"
+    "registrationFailed": "登録失敗",
+    "fillRequired": "このフィールドを入力してください。",
+    "emailInvalid": "有効なメールアドレスを入力してください。",
+    "pwTooShort": "パスワードは6文字以上でなければなりません。",
+    "hidePassword": "パスワードを隠す",
+    "showPassword": "パスワードを表示"
   },
   "login": {
     "welcomeBack": "おかえりなさい",
@@ -713,7 +718,9 @@
     "createOne": "作成する",
     "loginFailed": "ログイン失敗",
     "hidePassword": "非表示",
-    "showPassword": "表示"
+    "showPassword": "表示",
+    "fillRequired": "このフィールドを入力してください。",
+    "emailInvalid": "有効なメールアドレスを入力してください。"
   },
   "contact": {
     "label": "お問合せ",
@@ -771,7 +778,10 @@
     "errPwTooShort": "パスワードは6文字以上必要です",
     "errSamePassword": "現在のパスワードを再利用することはできません。",
     "errReusedPassword": "このパスワードは最近使用されました。別のものを選択してください。",
-    "errResetFailed": "パスワードのリセットに失敗しました。もう一度お試しください。"
+    "errResetFailed": "パスワードのリセットに失敗しました。もう一度お試しください。",
+    "fillRequired": "このフィールドを入力してください。",
+    "emailInvalid": "有効なメールアドレスを入力してください。",
+    "pwTooShort": "パスワードは6文字以上でなければなりません。"
   },
   "sponsors": {
     "label": "サポーター",

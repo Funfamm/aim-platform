@@ -155,12 +155,18 @@ export default function LoginPage() {
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: 'var(--space-md)' }}>
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('email')}</label>
-                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder={t('emailPlaceholder')} style={inputStyle} />
+                                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required placeholder={t('emailPlaceholder')} style={inputStyle}
+                                    onInvalid={(e) => { const el = e.target as HTMLInputElement; el.setCustomValidity(el.validity.valueMissing ? t('fillRequired') : t('emailInvalid')) }}
+                                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                                />
                             </div>
                             <div style={{ marginBottom: 'var(--space-lg)' }}>
                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('password')}</label>
                                 <div style={{ position: 'relative' }}>
-                                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" style={{ ...inputStyle, paddingRight: '2.8rem' }} />
+                                    <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required placeholder="••••••••" style={{ ...inputStyle, paddingRight: '2.8rem' }}
+                                        onInvalid={(e) => (e.target as HTMLInputElement).setCustomValidity(t('fillRequired'))}
+                                        onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                                    />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}

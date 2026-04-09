@@ -710,7 +710,12 @@
     "alreadyHaveAccount": "¿Ya tienes cuenta?",
     "signIn": "Iniciar sesión",
     "passwordsNoMatch": "Las contraseñas no coinciden",
-    "registrationFailed": "Error de registro"
+    "registrationFailed": "Error de registro",
+    "fillRequired": "Por favor, complete este campo.",
+    "emailInvalid": "Por favor, ingrese un correo válido.",
+    "pwTooShort": "La contraseña debe tener al menos 6 caracteres.",
+    "hidePassword": "Ocultar contraseña",
+    "showPassword": "Mostrar contraseña"
   },
   "login": {
     "welcomeBack": "Bienvenido",
@@ -729,7 +734,9 @@
     "createOne": "Crear una",
     "loginFailed": "Error de inicio de sesión",
     "hidePassword": "Ocultar",
-    "showPassword": "Mostrar"
+    "showPassword": "Mostrar",
+    "fillRequired": "Por favor, complete este campo.",
+    "emailInvalid": "Por favor, ingrese un correo válido."
   },
   "contact": {
     "label": "Contáctenos",
@@ -787,7 +794,10 @@
     "errPwTooShort": "La contraseña debe tener al menos 6 caracteres",
     "errSamePassword": "No puedes reutilizar tu contraseña actual.",
     "errReusedPassword": "Esta contraseña se usó recientemente. Elige una diferente.",
-    "errResetFailed": "Error al restablecer la contraseña. Inténtalo de nuevo."
+    "errResetFailed": "Error al restablecer la contraseña. Inténtalo de nuevo.",
+    "fillRequired": "Por favor, complete este campo.",
+    "emailInvalid": "Por favor, ingrese un correo válido.",
+    "pwTooShort": "La contraseña debe tener al menos 6 caracteres."
   },
   "sponsors": {
     "label": "Nuestros Patrocinadores",

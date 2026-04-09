@@ -710,7 +710,12 @@
     "alreadyHaveAccount": "已有账户？",
     "signIn": "登录",
     "passwordsNoMatch": "密码不匹配",
-    "registrationFailed": "注册失败"
+    "registrationFailed": "注册失败",
+    "fillRequired": "请填写此字段。",
+    "emailInvalid": "请输入有效的电子邮件地址。",
+    "pwTooShort": "密码必须至少6个字符。",
+    "hidePassword": "隐藏密码",
+    "showPassword": "显示密码"
   },
   "login": {
     "welcomeBack": "欢迎回来",
@@ -729,7 +734,9 @@
     "createOne": "创建一个",
     "loginFailed": "登录失败",
     "hidePassword": "隐藏",
-    "showPassword": "显示"
+    "showPassword": "显示",
+    "fillRequired": "请填写此字段。",
+    "emailInvalid": "请输入有效的电子邮件地址。"
   },
   "contact": {
     "label": "联系我们",
@@ -787,7 +794,10 @@
     "errPwTooShort": "密码必须至少包含6个字符",
     "errSamePassword": "您不能重复使用当前密码。",
     "errReusedPassword": "该密码最近已使用，请选择其他密码。",
-    "errResetFailed": "密码重置失败，请重试。"
+    "errResetFailed": "密码重置失败，请重试。",
+    "fillRequired": "请填写此字段。",
+    "emailInvalid": "请输入有效的电子邮件地址。",
+    "pwTooShort": "密码必须至少6个字符。"
   },
   "sponsors": {
     "label": "我们的支持者",

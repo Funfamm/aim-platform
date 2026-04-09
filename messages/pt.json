@@ -710,7 +710,12 @@
     "alreadyHaveAccount": "Já tem conta?",
     "signIn": "Entrar",
     "passwordsNoMatch": "Senhas não coincidem",
-    "registrationFailed": "Falha no registro"
+    "registrationFailed": "Falha no registro",
+    "fillRequired": "Por favor, preencha este campo.",
+    "emailInvalid": "Por favor, insira um endereço de e-mail válido.",
+    "pwTooShort": "A senha deve ter pelo menos 6 caracteres.",
+    "hidePassword": "Ocultar senha",
+    "showPassword": "Mostrar senha"
   },
   "login": {
     "welcomeBack": "Bem-vindo",
@@ -729,7 +734,9 @@
     "createOne": "Criar uma",
     "loginFailed": "Falha no login",
     "hidePassword": "Ocultar",
-    "showPassword": "Mostrar"
+    "showPassword": "Mostrar",
+    "fillRequired": "Por favor, preencha este campo.",
+    "emailInvalid": "Por favor, insira um endereço de e-mail válido."
   },
   "contact": {
     "label": "Entre em Contato",
@@ -787,7 +794,10 @@
     "errPwTooShort": "A senha deve ter pelo menos 6 caracteres",
     "errSamePassword": "Você não pode reutilizar sua senha atual.",
     "errReusedPassword": "Esta senha foi usada recentemente. Escolha uma diferente.",
-    "errResetFailed": "Falha ao redefinir a senha. Tente novamente."
+    "errResetFailed": "Falha ao redefinir a senha. Tente novamente.",
+    "fillRequired": "Por favor, preencha este campo.",
+    "emailInvalid": "Por favor, insira um endereço de e-mail válido.",
+    "pwTooShort": "A senha deve ter pelo menos 6 caracteres."
   },
   "sponsors": {
     "label": "Nossos Apoiadores",

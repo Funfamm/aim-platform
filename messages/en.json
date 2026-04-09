@@ -707,7 +707,12 @@
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign in",
     "passwordsNoMatch": "Passwords do not match",
-    "registrationFailed": "Registration failed"
+    "registrationFailed": "Registration failed",
+    "fillRequired": "Please fill out this field.",
+    "emailInvalid": "Please enter a valid email address.",
+    "pwTooShort": "Password must be at least 6 characters.",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password"
   },
   "login": {
     "welcomeBack": "Welcome Back",
@@ -726,7 +731,9 @@
     "createOne": "Create one",
     "loginFailed": "Login failed",
     "hidePassword": "Hide password",
-    "showPassword": "Show password"
+    "showPassword": "Show password",
+    "fillRequired": "Please fill out this field.",
+    "emailInvalid": "Please enter a valid email address."
   },
   "contact": {
     "label": "Get in Touch",
@@ -784,7 +791,10 @@
     "errPwTooShort": "Password must be at least 6 characters",
     "errSamePassword": "You cannot reuse your current password.",
     "errReusedPassword": "This password was recently used. Please choose a different one.",
-    "errResetFailed": "Password reset failed. Please try again."
+    "errResetFailed": "Password reset failed. Please try again.",
+    "fillRequired": "Please fill out this field.",
+    "emailInvalid": "Please enter a valid email address.",
+    "pwTooShort": "Password must be at least 6 characters."
   },
   "sponsors": {
     "label": "Our Supporters",

@@ -710,7 +710,12 @@
     "alreadyHaveAccount": "Vous avez un compte?",
     "signIn": "Se connecter",
     "passwordsNoMatch": "Les mots de passe ne correspondent pas",
-    "registrationFailed": "Échec de l'inscription"
+    "registrationFailed": "Échec de l'inscription",
+    "fillRequired": "Veuillez remplir ce champ.",
+    "emailInvalid": "Veuillez entrer une adresse email valide.",
+    "pwTooShort": "Le mot de passe doit comporter au moins 6 caractères.",
+    "hidePassword": "Masquer le mot de passe",
+    "showPassword": "Afficher le mot de passe"
   },
   "login": {
     "welcomeBack": "Bon Retour",
@@ -729,7 +734,9 @@
     "createOne": "En créer un",
     "loginFailed": "Échec de la connexion",
     "hidePassword": "Masquer le mot de passe",
-    "showPassword": "Afficher le mot de passe"
+    "showPassword": "Afficher le mot de passe",
+    "fillRequired": "Veuillez remplir ce champ.",
+    "emailInvalid": "Veuillez entrer une adresse email valide."
   },
   "contact": {
     "label": "Nous contacter",
@@ -787,7 +794,10 @@
     "errPwTooShort": "Le mot de passe doit contenir au moins 6 caractères",
     "errSamePassword": "Vous ne pouvez pas réutiliser votre mot de passe actuel.",
     "errReusedPassword": "Ce mot de passe a été utilisé récemment. Veuillez en choisir un autre.",
-    "errResetFailed": "Échec de la réinitialisation. Veuillez réessayer."
+    "errResetFailed": "Échec de la réinitialisation. Veuillez réessayer.",
+    "fillRequired": "Veuillez remplir ce champ.",
+    "emailInvalid": "Veuillez entrer une adresse email valide.",
+    "pwTooShort": "Le mot de passe doit comporter au moins 6 caractères."
   },
   "sponsors": {
     "label": "Nos soutiens",

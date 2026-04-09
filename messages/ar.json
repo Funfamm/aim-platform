@@ -712,7 +712,12 @@
     "alreadyHaveAccount": "لديك حساب؟",
     "signIn": "تسجيل الدخول",
     "passwordsNoMatch": "كلمات المرور غير متطابقة",
-    "registrationFailed": "فشل التسجيل"
+    "registrationFailed": "فشل التسجيل",
+    "fillRequired": "يرجى ملء هذا الحقل.",
+    "emailInvalid": "يرجى إدخال بريد إلكتروني صالح.",
+    "pwTooShort": "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
+    "hidePassword": "إخفاء كلمة المرور",
+    "showPassword": "إظهار كلمة المرور"
   },
   "login": {
     "welcomeBack": "مرحباً بعودتك",
@@ -731,7 +736,9 @@
     "createOne": "إنشاء حساب",
     "loginFailed": "فشل تسجيل الدخول",
     "hidePassword": "إخفاء",
-    "showPassword": "إظهار"
+    "showPassword": "إظهار",
+    "fillRequired": "يرجى ملء هذا الحقل.",
+    "emailInvalid": "يرجى إدخال بريد إلكتروني صالح."
   },
   "contact": {
     "label": "تواصل معنا",
@@ -789,7 +796,10 @@
     "errPwTooShort": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
     "errSamePassword": "لا يمكنك إعادة استخدام كلمة المرور الحالية.",
     "errReusedPassword": "كلمة المرور هذه مستخدمة مؤخراً. يرجى اختيار كلمة مختلفة.",
-    "errResetFailed": "فشل إعادة تعيين كلمة المرور. يرجى المحاولة مجدداً."
+    "errResetFailed": "فشل إعادة تعيين كلمة المرور. يرجى المحاولة مجدداً.",
+    "fillRequired": "يرجى ملء هذا الحقل.",
+    "emailInvalid": "يرجى إدخال بريد إلكتروني صالح.",
+    "pwTooShort": "يجب أن تكون كلمة المرور 6 أحرف على الأقل."
   },
   "sponsors": {
     "label": "داعمونا",

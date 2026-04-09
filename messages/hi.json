@@ -710,7 +710,12 @@
     "alreadyHaveAccount": "पहले से खाता है?",
     "signIn": "साइन इन",
     "passwordsNoMatch": "पासवर्ड मेल नहीं खाते",
-    "registrationFailed": "पंजीकरण विफल"
+    "registrationFailed": "पंजीकरण विफल",
+    "fillRequired": "कृपया यह फ़ील्ड भरें।",
+    "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें।",
+    "pwTooShort": "पासवर्ड कम से कम 6 अक्षर का होना चाहिए।",
+    "hidePassword": "पासवर्ड छुपाएं",
+    "showPassword": "पासवर्ड दिखाएं"
   },
   "login": {
     "welcomeBack": "फिर से स्वागत है",
@@ -729,7 +734,9 @@
     "createOne": "बनाएं",
     "loginFailed": "लॉगिन विफल",
     "hidePassword": "छिपाएं",
-    "showPassword": "दिखाएं"
+    "showPassword": "दिखाएं",
+    "fillRequired": "कृपया यह फ़ील्ड भरें।",
+    "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें।"
   },
   "contact": {
     "label": "संपर्क करें",
@@ -787,7 +794,10 @@
     "errPwTooShort": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
     "errSamePassword": "आप अपना वर्तमान पासवर्ड दोबारा उपयोग नहीं कर सकते।",
     "errReusedPassword": "यह पासवर्ड हाल ही में उपयोग किया गया था। कोई अलग चुनें।",
-    "errResetFailed": "पासवर्ड रीसेट विफल। कृपया पुनः प्रयास करें।"
+    "errResetFailed": "पासवर्ड रीसेट विफल। कृपया पुनः प्रयास करें।",
+    "fillRequired": "कृपया यह फ़ील्ड भरें।",
+    "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें।",
+    "pwTooShort": "पासवर्ड कम से कम 6 अक्षर का होना चाहिए।"
   },
   "sponsors": {
     "label": "हमारे समर्थक",
