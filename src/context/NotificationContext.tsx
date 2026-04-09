@@ -33,7 +33,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     // Poll every 60 s when logged in
     useEffect(() => {
         if (!user) { queueMicrotask(() => setUnreadCount(0)); return }
-        refresh()
+        queueMicrotask(() => refresh())
         const id = setInterval(refresh, 60_000)
         return () => clearInterval(id)
     }, [user, refresh])

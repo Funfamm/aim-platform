@@ -31,7 +31,7 @@ const WITHDRAWABLE_STATUSES = ['submitted', 'under_review', 'pending']
 
 // ── Countdown hook ────────────────────────────────────────────────────────────
 function useCountdown(targetIso: string | null) {
-    const [diff, setDiff] = useState<number>(targetIso ? Math.max(0, new Date(targetIso).getTime() - Date.now()) : 0)
+    const [diff, setDiff] = useState<number>(() => targetIso ? Math.max(0, new Date(targetIso).getTime() - Date.now()) : 0)
 
     useEffect(() => {
         if (!targetIso) return

@@ -85,8 +85,10 @@ export default function Navbar() {
 
         // Show banner if: browser prefers a DIFFERENT supported locale than the URL
         if (matchedLocale && matchedLocale !== currentLocale) {
-            setDetectedLocale(matchedLocale)
-            setShowLangBanner(true)
+            queueMicrotask(() => {
+                setDetectedLocale(matchedLocale)
+                setShowLangBanner(true)
+            })
         }
     }, [currentLocale])
 
