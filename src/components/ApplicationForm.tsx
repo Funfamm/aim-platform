@@ -171,44 +171,39 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
-    /**
-     * Upload a single file directly to R2 via a presigned PUT URL.
-     * Zero bytes pass through Vercel — permanently fixes FUNCTION_PAYLOAD_TOO_LARGE.
-     */
     const uploadFileDirect = async (
         file: File,
         kind: 'image' | 'audio',
         castingCallId: string,
         email: string,
     ): Promise<string> => {
-        // 1. Get a short-lived presigned PUT URL from our server route
-        const signRes = await fetch('/api/upload/presign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fileName: file.name,
-                fileType: file.type,
-                kind,
-                castingCallId,
-                email,
-            }),
-        })
-        if (!signRes.ok) {
-            const err = await signRes.json().catch(() => ({}))
-            throw new Error(err.error || `Failed to sign upload for ${file.name}`)
-        }
-        const { presignedUrl, finalUrl } = await signRes.json()
+        // Build the same folder structure the presign route used, server-side
+        const emailSlug = email.toLowerCase().replace('@', '-').replace(/\./g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40) || 'guest'
+        const category  = kind === 'image' ? 'photos' : 'audio'
+        const safeId    = castingCallId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30) || 'draft'
+        const folder    = `casting/applications/${safeId}-${emailSlug}/${category}`
 
-        // 2. PUT the raw file directly to R2 — browser → R2, no Vercel in the path
-        const putRes = await fetch(presignedUrl, {
-            method: 'PUT',
+        const params = new URLSearchParams({
+            fileName: file.name,
+            fileType: file.type,
+            folder,
+            fileSize: String(file.size),
+        })
+
+        // POST raw file bytes to the server-side stream proxy.
+        // The proxy uploads to R2 directly — no CORS issue, no Vercel body limit.
+        const res = await fetch(`/api/upload/stream?${params}`, {
+            method: 'POST',
             headers: { 'Content-Type': file.type },
             body: file,
         })
-        if (!putRes.ok) {
-            throw new Error(`Upload failed (${putRes.status}): ${file.name}`)
+
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.error || `Upload failed for ${file.name}`)
         }
 
+        const { finalUrl } = await res.json()
         return finalUrl
     }
 
