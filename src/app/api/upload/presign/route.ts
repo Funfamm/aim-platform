@@ -61,14 +61,12 @@ export async function POST(req: NextRequest) {
             fileName,
             fileType,
             kind,
-            castingCallId = 'unknown',
-            email = '',
+            name = '',
         } = body as {
             fileName: string
             fileType: string
             kind: 'image' | 'audio'
-            castingCallId?: string
-            email?: string
+            name?: string
         }
 
         if (!fileName || !fileType || !kind) {
@@ -83,19 +81,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: `Unsupported audio type: ${fileType}` }, { status: 400 })
         }
 
-        // ── Build collision-safe folder path ────────────────────────────────
-        // Pattern: casting/applications/{castingCallId}-{emailSlug}-{emailHash}/{photos|audio}/
-        // - castingCallId: unique per role × applicant combo after DB insert (or 'draft' pre-submit)
-        // - emailSlug: human-readable (e.g. "samuel-aderemi-gmail-com")
-        // - emailHash: first 8 chars of SHA256(email) — prevents collision without exposing PII
-        const emailSlug = email ? slugify(email.replace('@', '-').replace(/\./g, '-')) : 'guest'
-        const hash      = email ? shortHash(email) : crypto.randomUUID().slice(0, 8)
-        const category  = kind === 'image' ? 'photos' : 'audio'
-        const safeId    = castingCallId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30) || 'draft'
-
-        const folder = `casting/applications/${safeId}-${emailSlug}-${hash}/${category}`
-        const ext    = extFrom(fileName)
-        const r2Key  = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`
+        // ── Build folder path ────────────────────────────────────────────────
+        // Pattern: casting/{applicant-name}/{photos|audio}/{timestamp}-{uuid}.ext
+        const nameSlug   = name ? slugify(name) : 'applicant'
+        const category   = kind === 'image' ? 'photos' : 'audio'
+        const folder     = `casting/${nameSlug}/${category}`
+        const ext        = extFrom(fileName)
+        const r2Key      = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`
 
         // ── Generate presigned PUT URL (10-minute window) ────────────────────
         const command = new PutObjectCommand({

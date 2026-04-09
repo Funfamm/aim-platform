@@ -171,39 +171,43 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
+    /**
+     * Upload a single file directly to R2 via a presigned PUT URL.
+     * Browser → R2 directly — no Vercel body limit, supports files up to GBs.
+     * Requires R2 CORS to allow PUT from the app's domain.
+     */
     const uploadFileDirect = async (
         file: File,
         kind: 'image' | 'audio',
-        castingCallId: string,
-        email: string,
+        name: string,
     ): Promise<string> => {
-        // Build the same folder structure the presign route used, server-side
-        const emailSlug = email.toLowerCase().replace('@', '-').replace(/\./g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40) || 'guest'
-        const category  = kind === 'image' ? 'photos' : 'audio'
-        const safeId    = castingCallId.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 30) || 'draft'
-        const folder    = `casting/applications/${safeId}-${emailSlug}/${category}`
-
-        const params = new URLSearchParams({
-            fileName: file.name,
-            fileType: file.type,
-            folder,
-            fileSize: String(file.size),
-        })
-
-        // POST raw file bytes to the server-side stream proxy.
-        // The proxy uploads to R2 directly — no CORS issue, no Vercel body limit.
-        const res = await fetch(`/api/upload/stream?${params}`, {
+        // 1. Get a short-lived presigned PUT URL from our server route
+        const signRes = await fetch('/api/upload/presign', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fileName: file.name,
+                fileType: file.type,
+                kind,
+                name,
+            }),
+        })
+        if (!signRes.ok) {
+            const err = await signRes.json().catch(() => ({}))
+            throw new Error(err.error || `Failed to sign upload for ${file.name}`)
+        }
+        const { presignedUrl, finalUrl } = await signRes.json()
+
+        // 2. PUT the raw file directly to R2 — browser → R2, bypasses Vercel entirely
+        const putRes = await fetch(presignedUrl, {
+            method: 'PUT',
             headers: { 'Content-Type': file.type },
             body: file,
         })
-
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}))
-            throw new Error(err.error || `Upload failed for ${file.name}`)
+        if (!putRes.ok) {
+            throw new Error(`Upload failed (${putRes.status}): ${file.name}`)
         }
 
-        const { finalUrl } = await res.json()
         return finalUrl
     }
 
@@ -221,10 +225,10 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
 
             setUploadProgress({ current: 0, total: totalUploads })
 
-            // Upload photos directly to R2 (browser → R2, zero bytes through Vercel)
+            // Upload photos directly to R2 (browser → R2, bypasses Vercel — no size limit)
             const photoUrls: Record<string, string> = {}
             for (const [key, file] of photoEntries) {
-                photoUrls[key] = await uploadFileDirect(file, 'image', castingCall.id, formData.email)
+                photoUrls[key] = await uploadFileDirect(file, 'image', formData.fullName)
                 completed++
                 setUploadProgress({ current: completed, total: totalUploads })
             }
@@ -232,7 +236,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             // Upload audio directly to R2
             let voiceUrl: string | null = null
             if (audioFile) {
-                voiceUrl = await uploadFileDirect(audioFile, 'audio', castingCall.id, formData.email)
+                voiceUrl = await uploadFileDirect(audioFile, 'audio', formData.fullName)
                 completed++
                 setUploadProgress({ current: completed, total: totalUploads })
             }
