@@ -24,11 +24,11 @@ export function buildCsp(): string {
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.paypal.com https://www.paypalobjects.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // R2 / S3 / Cloudinary / Google avatars + Sentry CDN resources
-    "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudinary.com https://*.unsplash.com https://lh3.googleusercontent.com https://*.r2.dev https://*.cloudflare.com",
+    "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudinary.com https://*.unsplash.com https://lh3.googleusercontent.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.cloudflare.com",
     "font-src 'self' https://fonts.gstatic.com data:",
     // API calls: Sentry, Google OAuth, PayPal, R2 storage, Microsoft Graph
-    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com",
-    "media-src 'self' blob: https://*.r2.dev https://*.amazonaws.com",
+    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com",
+    "media-src 'self' blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com",
     "frame-src 'self' https://accounts.google.com https://www.paypal.com https://www.sandbox.paypal.com",
     "frame-ancestors 'self'",
     "base-uri 'self'",
