@@ -894,6 +894,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
     // ── Subscription Confirmation ──────────────────────────────────────────────
     subscribe: {
         en: {
+            subject:    "You're subscribed to AIM Studio! 🎬",
             heading:    "You're In! 🎉",
             subtext:    'Thanks for subscribing!',
             body:       "You'll be the first to know about our upcoming projects, casting calls, behind-the-scenes content, and exclusive announcements.",
@@ -901,6 +902,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visit AIM Studio',
         },
         es: {
+            subject:    '¡Estás suscrito a AIM Studio! 🎬',
             heading:    '¡Estás dentro! 🎉',
             subtext:    '¡Gracias por suscribirte!',
             body:       'Serás el primero en conocer nuestros próximos proyectos, convocatorias de casting, contenido entre bastidores y anuncios exclusivos.',
@@ -908,6 +910,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visitar AIM Studio',
         },
         fr: {
+            subject:    'Vous êtes abonné à AIM Studio ! 🎬',
             heading:    'Vous êtes inscrit ! 🎉',
             subtext:    'Merci de vous être abonné !',
             body:       "Vous serez le premier à connaître nos prochains projets, castings, contenus en coulisses et annonces exclusives.",
@@ -915,6 +918,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visiter AIM Studio',
         },
         ar: {
+            subject:    'أنت مشترك في AIM Studio! 🎬',
             heading:    'أنت الآن معنا! 🎉',
             subtext:    'شكراً على اشتراكك!',
             body:       'ستكون أول من يعلم بمشاريعنا القادمة، ومكالمات الكاستينج، والمحتوى خلف الكواليس، والإعلانات الحصرية.',
@@ -922,6 +926,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'زيارة AIM Studio',
         },
         zh: {
+            subject:    '您已订阅 AIM Studio！🎬',
             heading:    '您已加入！🎉',
             subtext:    '感谢您的订阅！',
             body:       '您将第一个了解我们即将推出的项目、选角信息、幕后内容和独家公告。',
@@ -929,6 +934,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: '访问 AIM Studio',
         },
         hi: {
+            subject:    'आप AIM Studio के सदस्य बन गए! 🎬',
             heading:    'आप अंदर हैं! 🎉',
             subtext:    'सब्सक्राइब करने के लिए धन्यवाद!',
             body:       'आप हमारे आगामी प्रोजेक्ट्स, कास्टिंग कॉल्स, बैकस्टेज कंटेंट और एक्सक्लूसिव घोषणाओं के बारे में सबसे पहले जानेंगे।',
@@ -936,6 +942,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'AIM Studio पर जाएं',
         },
         pt: {
+            subject:    'Você está inscrito no AIM Studio! 🎬',
             heading:    'Você está dentro! 🎉',
             subtext:    'Obrigado por se inscrever!',
             body:       'Você será o primeiro a saber sobre nossos próximos projetos, castings, conteúdo dos bastidores e anúncios exclusivos.',
@@ -943,6 +950,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visitar AIM Studio',
         },
         ru: {
+            subject:    'Вы подписаны на AIM Studio! 🎬',
             heading:    'Вы с нами! 🎉',
             subtext:    'Спасибо за подписку!',
             body:       'Вы будете первым узнавать о наших проектах, кастингах, закулисном контенте и эксклюзивных анонсах.',
@@ -950,6 +958,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Посетить AIM Studio',
         },
         ja: {
+            subject:    'AIM Studioへの登録が完了しました！🎬',
             heading:    '登録完了！🎉',
             subtext:    'ご登録ありがとうございます！',
             body:       '今後のプロジェクト、キャスティング募集、舞台裏コンテンツ、限定発表をいち早くお届けします。',
@@ -957,6 +966,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'AIM Studioを訪問する',
         },
         de: {
+            subject:    'Sie haben AIM Studio abonniert! 🎬',
             heading:    'Sie sind dabei! 🎉',
             subtext:    'Danke für Ihre Anmeldung!',
             body:       'Sie erfahren als Erster von unseren kommenden Projekten, Casting-Aufrufen, Behind-the-Scenes-Inhalten und exklusiven Ankündigungen.',
@@ -964,6 +974,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'AIM Studio Besuchen',
         },
         ko: {
+            subject:    'AIM Studio를 구독했습니다! 🎬',
             heading:    '등록되었습니다! 🎉',
             subtext:    '구독해 주셔서 감사합니다!',
             body:       '다가오는 프로젝트, 캐스팅 공고, 비하인드 콘텐츠 및 독점 발표를 가장 먼저 받아보세요.',

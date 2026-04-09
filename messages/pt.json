@@ -970,5 +970,11 @@
     "notifyConfirmedDesc": "Vamos te notificar assim que essa chamada abrir.",
     "comingSoonLabel": "Em breve",
     "comingSoonBadge": "Em breve"
+  },
+  "notFound": {
+    "title": "Cena não encontrada",
+    "desc": "Parece que esta cena não passou pelo corte final. A página que você procura pode ter sido movida, renomeada ou ainda estar em pré-produção.",
+    "backHome": "Voltar ao início",
+    "viewCasting": "Ver castings"
   }
 }

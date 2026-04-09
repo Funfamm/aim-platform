@@ -970,5 +970,11 @@
     "notifyConfirmedDesc": "Nous te notifierons dès que cet appel sera ouvert.",
     "comingSoonLabel": "Bientôt disponible",
     "comingSoonBadge": "Bientôt"
+  },
+  "notFound": {
+    "title": "Scène introuvable",
+    "desc": "Il semble que cette scène n'ait pas survécu au montage final. La page que vous cherchez a peut-être été déplacée, renommée ou est encore en pré-production.",
+    "backHome": "Retour à l'accueil",
+    "viewCasting": "Voir les castings"
   }
 }

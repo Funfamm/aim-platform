@@ -971,5 +971,11 @@
     "notifyConfirmedDesc": "このコールが開いたらすぐにお知らせします。",
     "comingSoonLabel": "もうすぐ公開",
     "comingSoonBadge": "まもなく"
+  },
+  "notFound": {
+    "title": "シーンが見つかりません",
+    "desc": "このシーンは最終カットに残らなかったようです。お探しのページは移動、名前変更、またはまだプリプロダクション中の可能性があります。",
+    "backHome": "ホームに戻る",
+    "viewCasting": "キャスティングを見る"
   }
 }

@@ -54,13 +54,13 @@ async function sendEnrollmentNotification(userId: string, courseId: string) {
 
     const course = await prisma.course.findUnique({
         where: { id: courseId },
-        select: { title: true },
+        select: { title: true, slug: true },
     })
     if (!course) return
 
     const locale: string = (user.receiveLocalizedEmails !== false && user.preferredLanguage) ? user.preferredLanguage : 'en'
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-    const courseUrl = `${siteUrl}/training/${courseId}`
+    const courseUrl = `${siteUrl}/${locale}/training/${course.slug}`
 
     // All strings resolved from static i18n — no runtime translate call needed
     const subject = et('trainingEnrollment', locale, 'subject').replace('{title}', course.title)
@@ -80,7 +80,7 @@ async function sendEnrollmentNotification(userId: string, courseId: string) {
         'system',
         notifTitle,
         notifMessage,
-        `/training/${courseId}`,
+        `/${locale}/training/${course.slug}`,
         `enroll-${userId}-${courseId}`,
     )
 }
@@ -152,6 +152,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         const course = await prisma.course.findUnique({
             where: { id: courseId },
             include: { modules: { include: { lessons: { select: { id: true } } } } },
+            // slug needed for the completion email/notification link
         })
         if (course) {
             const allCoursePreLessons = course.modules.flatMap(m => m.lessons.map(l => l.id))
@@ -167,7 +168,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 })
 
                 // Fire-and-forget: completion email + notification
-                sendCompletionNotification(userId, courseId, course.title, locale, user?.email || '', user?.name || '').catch(err =>
+                sendCompletionNotification(userId, courseId, course.title, course.slug, locale, user?.email || '', user?.name || '').catch(err =>
                     console.error('[completion] notification failed:', err)
                 )
             }
@@ -231,11 +232,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 async function sendCompletionNotification(
-    userId: string, courseId: string, courseTitle: string,
+    userId: string, courseId: string, courseTitle: string, courseSlug: string,
     locale: string, userEmail: string, userName: string
 ) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-    const courseUrl = `${siteUrl}/training/${courseId}`
+    const courseUrl = `${siteUrl}/${locale}/training/${courseSlug}`
 
     const subject = et('trainingCompletion', locale, 'subject').replace('{title}', courseTitle)
     const notifTitle = et('trainingCompletion', locale, 'notifTitle').replace('{title}', courseTitle)
@@ -256,7 +257,7 @@ async function sendCompletionNotification(
         'system',
         notifTitle,
         notifMessage,
-        `/training/${courseId}`,
+        `/${locale}/training/${courseSlug}`,
         `course-complete-${userId}-${courseId}`,
     )
 }
@@ -266,7 +267,7 @@ async function sendBadgeNotification(
     locale: string, userEmail: string, userName: string
 ) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-    const trainingUrl = `${siteUrl}/training`
+    const trainingUrl = `${siteUrl}/${locale}/training`
 
     const i18nKeyMap: Record<string, string> = {
         first_lesson: 'trainingBadgeFirstLesson',
@@ -295,7 +296,7 @@ async function sendBadgeNotification(
         'system',
         notifTitle,
         notifMessage,
-        `/training/${courseId}`,
+        `/${locale}/training/${courseId}`,
         `badge-${badgeType}-${userId}`,
     )
 }

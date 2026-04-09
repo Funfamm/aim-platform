@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
 import NotifyMeButton from '@/components/scripts/NotifyMeButton'
+import NotifyNewCallsButton from '@/components/scripts/NotifyNewCallsButton'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -59,6 +60,16 @@ export default async function ScriptCallsPage() {
         }).catch(() => [])
         subscribedIds = new Set(subs.map((s: { scriptCallId: string }) => s.scriptCallId))
     }
+
+    // Is this user already subscribed to general new-call notifications?
+    let alreadySubscribed = false
+    try {
+        const userEmail = (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email
+        if (userEmail) {
+            const sub = await prisma.subscriber.findUnique({ where: { email: userEmail }, select: { active: true } })
+            alreadySubscribed = sub?.active === true
+        }
+    } catch { /* ignore */ }
 
     return (
         <>
@@ -250,9 +261,7 @@ export default async function ScriptCallsPage() {
                                 <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)', maxWidth: '480px', margin: '0 auto var(--space-lg)' }}>
                                     {t('closedDesc')}
                                 </p>
-                                <Link href="/subscribe" className="btn btn-primary" style={{ display: 'inline-block' }}>
-                                    {t('notifyCta')}
-                                </Link>
+                                <NotifyNewCallsButton initialSubscribed={alreadySubscribed} />
                             </div>
 
                         ) : calls.length === 0 ? (
@@ -271,9 +280,7 @@ export default async function ScriptCallsPage() {
                                 <p style={{ color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto var(--space-lg)' }}>
                                     {t('noCallsDesc')}
                                 </p>
-                                <Link href="/subscribe" className="btn btn-primary" style={{ display: 'inline-block' }}>
-                                    {t('notifyCta')}
-                                </Link>
+                                <NotifyNewCallsButton initialSubscribed={alreadySubscribed} />
                             </div>
 
                         ) : (

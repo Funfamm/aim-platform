@@ -970,5 +970,11 @@
     "notifyConfirmedDesc": "Wir benachrichtigen dich, sobald dieser Aufruf öffnet.",
     "comingSoonLabel": "Demnächst",
     "comingSoonBadge": "Demnächst"
+  },
+  "notFound": {
+    "title": "Szene nicht gefunden",
+    "desc": "Es sieht aus, als hätte diese Szene den finalen Schnitt nicht überlebt. Die gesuchte Seite wurde möglicherweise verschoben, umbenannt oder befindet sich noch in der Vorproduktion.",
+    "backHome": "Zurück zur Startseite",
+    "viewCasting": "Castings ansehen"
   }
 }

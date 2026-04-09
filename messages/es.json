@@ -970,5 +970,11 @@
     "notifyConfirmedDesc": "Te notificaremos en cuanto esta convocatoria abra.",
     "comingSoonLabel": "Próximamente",
     "comingSoonBadge": "Próximamente"
+  },
+  "notFound": {
+    "title": "Escena no encontrada",
+    "desc": "Parece que esta escena no llegó al corte final. La página que buscas puede haberse movido, renombrado, o aún estar en preproducción.",
+    "backHome": "Volver al inicio",
+    "viewCasting": "Ver convocatorias"
   }
 }

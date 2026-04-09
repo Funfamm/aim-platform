@@ -1,25 +1,11 @@
+'use client'
+
 import Link from 'next/link'
-import { cookies } from 'next/headers'
+import { useTranslations, useLocale } from 'next-intl'
 
-const TRANSLATIONS: Record<string, { title: string; desc: string; backHome: string; viewCasting: string }> = {
-    en: { title: 'Scene Not Found', desc: "Looks like this scene didn't make the final cut. The page you're looking for may have been moved, renamed, or is still in pre-production.", backHome: 'Back to Home', viewCasting: 'View Casting Calls' },
-    ar: { title: 'المشهد غير موجود', desc: 'قد تكون الصفحة التي تبحث عنها قد نُقلت أو أُعيدت تسميتها أو لا تزال في مرحلة الإنتاج المسبق.', backHome: 'العودة إلى الرئيسية', viewCasting: 'عرض نداءات التمثيل' },
-    de: { title: 'Szene nicht gefunden', desc: 'Die gesuchte Seite wurde möglicherweise verschoben, umbenannt oder befindet sich noch in der Vorproduktion.', backHome: 'Zurück zur Startseite', viewCasting: 'Castings ansehen' },
-    es: { title: 'Escena no encontrada', desc: 'La página que buscas puede haberse movido, renombrado, o aún estar en preproducción.', backHome: 'Volver al inicio', viewCasting: 'Ver convocatorias' },
-    fr: { title: 'Scène introuvable', desc: "La page que vous cherchez a peut-être été déplacée, renommée ou est encore en pré-production.", backHome: "Retour à l'accueil", viewCasting: 'Voir les castings' },
-    hi: { title: 'दृश्य नहीं मिला', desc: 'जो पेज आप ढूंढ रहे हैं वह शायद स्थानांतरित, नाम बदला गया, या अभी प्री-प्रोडक्शन में है।', backHome: 'होम पर वापस जाएं', viewCasting: 'कास्टिंग कॉल देखें' },
-    ja: { title: 'シーンが見つかりません', desc: 'お探しのページは移動、名前変更、またはまだプリプロダクション中の可能性があります。', backHome: 'ホームに戻る', viewCasting: 'キャスティングを見る' },
-    ko: { title: '씬을 찾을 수 없습니다', desc: '찾고 계신 페이지가 이동되거나, 이름이 변경되었거나, 아직 프리프로덕션 중일 수 있습니다.', backHome: '홈으로 돌아가기', viewCasting: '캐스팅 보기' },
-    pt: { title: 'Cena não encontrada', desc: 'A página que você procura pode ter sido movida, renomeada ou ainda estar em pré-produção.', backHome: 'Voltar ao início', viewCasting: 'Ver castings' },
-    ru: { title: 'Сцена не найдена', desc: 'Страница, которую вы ищете, могла быть перемещена, переименована или всё ещё находится в разработке.', backHome: 'На главную', viewCasting: 'Кастинги' },
-    zh: { title: '找不到该场景', desc: '您正在寻找的页面可能已被移动、重命名，或仍在制作前期。', backHome: '返回首页', viewCasting: '查看试镜' },
-}
-
-export default async function NotFound() {
-    const cookieStore = await cookies()
-    const localeCookie = cookieStore.get('NEXT_LOCALE')?.value || 'en'
-    const locale = TRANSLATIONS[localeCookie] ? localeCookie : 'en'
-    const t = TRANSLATIONS[locale]
+export default function LocaleNotFound() {
+    const t = useTranslations('notFound')
+    const locale = useLocale()
 
     return (
         <main style={{
@@ -64,7 +50,7 @@ export default async function NotFound() {
                     color: 'var(--text-primary)',
                     marginBottom: '1rem',
                 }}>
-                    {t.title}
+                    {t('title')}
                 </h2>
 
                 <p style={{
@@ -73,7 +59,7 @@ export default async function NotFound() {
                     lineHeight: 1.7,
                     marginBottom: '2.5rem',
                 }}>
-                    {t.desc}
+                    {t('desc')}
                 </p>
 
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -84,8 +70,9 @@ export default async function NotFound() {
                         color: '#000', fontWeight: 700, fontSize: '0.9rem',
                         borderRadius: 'var(--radius-md)',
                         textDecoration: 'none',
+                        transition: 'transform 0.2s, box-shadow 0.2s',
                     }}>
-                        ← {t.backHome}
+                        ← {t('backHome')}
                     </Link>
                     <Link href={`/${locale}/casting`} style={{
                         display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -95,8 +82,9 @@ export default async function NotFound() {
                         color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.9rem',
                         borderRadius: 'var(--radius-md)',
                         textDecoration: 'none',
+                        transition: 'all 0.2s',
                     }}>
-                        {t.viewCasting}
+                        {t('viewCasting')}
                     </Link>
                 </div>
 
@@ -119,4 +107,3 @@ export default async function NotFound() {
         </main>
     )
 }
-

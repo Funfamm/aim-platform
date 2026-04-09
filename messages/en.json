@@ -967,5 +967,11 @@
     "notifyConfirmedDesc": "We'll notify you the moment this call opens.",
     "comingSoonLabel": "Coming Soon",
     "comingSoonBadge": "Coming Soon"
+  },
+  "notFound": {
+    "title": "Scene Not Found",
+    "desc": "Looks like this scene didn't make the final cut. The page you're looking for may have been moved, renamed, or is still in pre-production.",
+    "backHome": "Back to Home",
+    "viewCasting": "View Casting Calls"
   }
 }

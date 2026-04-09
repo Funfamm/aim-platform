@@ -123,7 +123,15 @@ export default function NotificationsPage() {
             setUnreadCount(prev => Math.max(0, prev - 1))
             ctxRefresh() // update bell badge + hamburger dot instantly
         }
-        if (n.link) router.push(n.link as never)
+        if (n.link) {
+            // Links stored with locale prefix (e.g. /fr/training/slug) must use
+            // window.location to avoid next-intl router double-prefixing the locale
+            if (n.link.match(/^\/[a-z]{2}(\/|$)/)) {
+                window.location.href = n.link
+            } else {
+                router.push(n.link as never)
+            }
+        }
     }
 
     async function deleteSelected() {

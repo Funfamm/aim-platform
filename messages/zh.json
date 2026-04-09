@@ -970,5 +970,11 @@
     "notifyConfirmedDesc": "一旦此征集开放，我们会立即通知您。",
     "comingSoonLabel": "即将推出",
     "comingSoonBadge": "即将推出"
+  },
+  "notFound": {
+    "title": "找不到该场景",
+    "desc": "看来这个场景没有进入最终剪辑。您正在寻找的页面可能已被移动、重命名，或仍在制作前期。",
+    "backHome": "返回首页",
+    "viewCasting": "查看试镜"
   }
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { subscribeConfirmationWithOverrides } from '@/lib/email-templates'
+import { t as et } from '@/lib/email-i18n'
 
 // Simple in-memory rate limiter: max 3 subscribe attempts per IP per hour
 const ipAttempts = new Map<string, number[]>()
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
         // Fire-and-forget confirmation email
         sendEmail({
             to: normalizedEmail,
-            subject: "You're subscribed to AIM Studio! 🎬",
+            subject: et('subscribe', locale || 'en', 'subject'),
             html: await subscribeConfirmationWithOverrides(name || undefined, siteUrl, locale || 'en'),
         }).catch(err => console.error('[subscribe] Confirmation email failed:', err))
 
