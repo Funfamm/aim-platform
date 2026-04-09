@@ -117,6 +117,8 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
 
     const [audioFile, setAudioFile] = useState<File | null>(null)
     const [consents, setConsents] = useState({ consent_media: false, consent_voluntary: false, consent_privacy: false })
+    // Track per-file upload progress (0–100)
+    const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
 
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
@@ -169,77 +171,89 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
-    const uploadFileToR2 = async (file: File, folder: string): Promise<string> => {
-        // Stream the file directly through our server-side proxy to R2.
-        // The /api/upload/stream route reads request.body as a ReadableStream,
-        // bypassing Vercel's 4.5MB body-parser limit entirely.
-        const params = new URLSearchParams({
-            fileName: file.name,
-            fileType: file.type,
-            folder,
-            fileSize: String(file.size),
-        });
+    /**
+     * Upload a single file directly to R2 via a presigned PUT URL.
+     * Zero bytes pass through Vercel — permanently fixes FUNCTION_PAYLOAD_TOO_LARGE.
+     */
+    const uploadFileDirect = async (
+        file: File,
+        kind: 'image' | 'audio',
+        castingCallId: string,
+        email: string,
+    ): Promise<string> => {
+        // 1. Get a short-lived presigned PUT URL from our server route
+        const signRes = await fetch('/api/upload/presign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                fileName: file.name,
+                fileType: file.type,
+                kind,
+                castingCallId,
+                email,
+            }),
+        })
+        if (!signRes.ok) {
+            const err = await signRes.json().catch(() => ({}))
+            throw new Error(err.error || `Failed to sign upload for ${file.name}`)
+        }
+        const { presignedUrl, finalUrl } = await signRes.json()
 
-        let res: Response;
-        try {
-            res = await fetch(`/api/upload/stream?${params}`, {
-                method: 'POST',
-                headers: { 'Content-Type': file.type },
-                body: file,
-                // @ts-expect-error — duplex is required for streaming bodies in some environments
-                duplex: 'half',
-            });
-        } catch {
-            throw new Error(`Network error uploading ${file.name}`);
+        // 2. PUT the raw file directly to R2 — browser → R2, no Vercel in the path
+        const putRes = await fetch(presignedUrl, {
+            method: 'PUT',
+            headers: { 'Content-Type': file.type },
+            body: file,
+        })
+        if (!putRes.ok) {
+            throw new Error(`Upload failed (${putRes.status}): ${file.name}`)
         }
 
-        if (!res.ok) {
-            const errText = await res.text().catch(() => 'unknown');
-            throw new Error(`Upload failed (${res.status}): ${errText}`);
-        }
-
-        const { finalUrl } = await res.json();
-        return finalUrl;
-    };
+        return finalUrl
+    }
 
 
     const handleSubmit = async () => {
         if (!canProceed(5)) return
         setSubmitting(true)
         setError('')
+        setUploadProgress(null)
 
         try {
-            const data = new FormData()
+            const photoEntries = Object.entries(photos).filter(([, f]) => f !== null) as [string, File][]
+            const totalUploads = photoEntries.length + (audioFile ? 1 : 0)
+            let completed = 0
 
-            // Text fields
-            Object.entries(formData).forEach(([key, value]) => {
-                if (value) data.append(key, value)
-            })
+            setUploadProgress({ current: 0, total: totalUploads })
+
+            // Upload photos directly to R2 (browser → R2, zero bytes through Vercel)
+            const photoUrls: Record<string, string> = {}
+            for (const [key, file] of photoEntries) {
+                photoUrls[key] = await uploadFileDirect(file, 'image', castingCall.id, formData.email)
+                completed++
+                setUploadProgress({ current: completed, total: totalUploads })
+            }
+
+            // Upload audio directly to R2
+            let voiceUrl: string | null = null
+            if (audioFile) {
+                voiceUrl = await uploadFileDirect(audioFile, 'audio', castingCall.id, formData.email)
+                completed++
+                setUploadProgress({ current: completed, total: totalUploads })
+            }
+
+            setUploadProgress(null)
+
+            // Submit — only metadata + R2 URLs, no file bytes
+            const data = new FormData()
+            Object.entries(formData).forEach(([key, value]) => { if (value) data.append(key, value) })
             data.append('castingCallId', castingCall.id)
             data.append('locale', locale)
 
-            // Build an applicant-specific folder so all files are grouped in R2:
-            //   applications/{applicant-name}-{YYYY-MM-DD}/photos/...
-            //   applications/{applicant-name}-{YYYY-MM-DD}/voice/...
-            const safeName = formData.fullName.trim().replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, '-').toLowerCase()
-            const dateTag = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-            const applicantFolder = `applications/${safeName}-${dateTag}`
-
-            // Photos - Upload to R2 and pass URLs
-            for (const [key, file] of Object.entries(photos)) {
-                if (file) {
-                    const r2Url = await uploadFileToR2(file, `${applicantFolder}/photos`);
-                    data.append(`photo_${key}`, r2Url);
-                }
+            for (const [key, url] of Object.entries(photoUrls)) {
+                data.append(`photo_${key}`, url)
             }
-
-            // Audio - Upload to R2 and pass URL
-            if (audioFile) {
-                const r2Url = await uploadFileToR2(audioFile, `${applicantFolder}/voice`);
-                data.append('voiceRecording', r2Url);
-            }
-
-            // Consents
+            if (voiceUrl) data.append('voiceRecording', voiceUrl)
             data.append('consents', JSON.stringify(consents))
 
             const res = await fetch(`/api/casting/${castingCall.id}/apply`, {
@@ -254,6 +268,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
 
             setSubmitted(true)
         } catch (err: unknown) {
+            setUploadProgress(null)
             setError(err instanceof Error ? err.message : t('genericError'))
         } finally {
             setSubmitting(false)
@@ -291,6 +306,30 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             <div style={{ marginBottom: 'var(--space-sm)', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
                 {t('step')} {step} {t('of')} {totalSteps}: {[t('stepPersonal'), t('stepAbout'), t('stepPhotos'), t('stepVoice'), t('stepReview')][step - 1]}
             </div>
+
+            {uploadProgress && (
+                <div style={{
+                    marginBottom: 'var(--space-lg)',
+                    padding: 'var(--space-md) var(--space-lg)',
+                    background: 'rgba(212,168,83,0.08)',
+                    border: '1px solid rgba(212,168,83,0.25)',
+                    borderRadius: 'var(--radius-md)',
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.82rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
+                        <span>⬆️ Uploading files to secure storage…</span>
+                        <span>{uploadProgress.current} / {uploadProgress.total}</span>
+                    </div>
+                    <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{
+                            height: '100%',
+                            width: `${Math.round((uploadProgress.current / uploadProgress.total) * 100)}%`,
+                            background: 'linear-gradient(90deg, var(--accent-gold), #e8c36a)',
+                            borderRadius: '4px',
+                            transition: 'width 0.3s ease',
+                        }} />
+                    </div>
+                </div>
+            )}
 
             {error && (
                 <div className="toast error" style={{ position: 'relative', bottom: 'auto', right: 'auto', marginBottom: 'var(--space-lg)' }}>
@@ -610,15 +649,18 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         disabled={!canProceed(5) || submitting}
                         style={{ opacity: canProceed(5) && !submitting ? 1 : 0.5 }}
                     >
-                        {submitting ? (
+                        {uploadProgress ? (
+                            <>
+                                <div className="loading-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
+                                Uploading {uploadProgress.current}/{uploadProgress.total}…
+                            </>
+                        ) : submitting ? (
                             <>
                                 <div className="loading-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
                                 {t('submitting')}
                             </>
                         ) : (
-                            <>
-                                {t('submit')}
-                            </>
+                            <>{t('submit')}</>
                         )}
                     </button>
                 )}
