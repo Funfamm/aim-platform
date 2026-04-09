@@ -308,7 +308,18 @@
     "statusNotSelected": "Не выбран",
     "statusWithdrawn": "Отозвано",
     "resultPending": "Ваша заявка рассматривается. Результаты будут раскрыты в ближайшее время.",
-    "resultAvailableOn": "Результаты доступны с {date}"
+    "resultAvailableOn": "Результаты доступны с {date}",
+    "auditQueued": "Ваша заявка находится в очереди на проверку ИИ.",
+    "auditProcessing": "Ваш кастинг проверяется нашей системой ИИ.",
+    "auditScoredHidden": "Проверка завершена. Результат будет опубликован {date}.",
+    "auditScoredVisible": "Ваш результат проверки ИИ теперь доступен.",
+    "auditFailed": "При проверке возникла ошибка. Наша команда уведомлена.",
+    "resultCountdownLabel": "До вашего результата осталось:",
+    "resultCountdownExpired": "Ваш результат теперь доступен!",
+    "resultDays": "{days} дн.",
+    "resultHours": "{hours} ч.",
+    "resultMinutes": "{min} мин.",
+    "resultSeconds": "{sec} с."
   },
   "encouragement": {
     "label": "Зачем ждать?",

@@ -308,7 +308,18 @@
     "statusNotSelected": "Nicht ausgewählt",
     "statusWithdrawn": "Zurückgezogen",
     "resultPending": "Ihre Bewerbung wird geprüft. Die Ergebnisse werden in Kürze bekannt gegeben.",
-    "resultAvailableOn": "Ergebnisse verfügbar ab {date}"
+    "resultAvailableOn": "Ergebnisse verfügbar ab {date}",
+    "auditQueued": "Deine Bewerbung wartet auf die KI-Überprüfung.",
+    "auditProcessing": "Dein Vorsprechen wird gerade von unserem KI-System überprüft.",
+    "auditScoredHidden": "Überprüfung abgeschlossen! Dein Ergebnis wird am {date} veröffentlicht.",
+    "auditScoredVisible": "Dein KI-Überprüfungsergebnis ist jetzt verfügbar.",
+    "auditFailed": "Bei deiner Überprüfung ist ein Problem aufgetreten. Unser Team wurde benachrichtigt.",
+    "resultCountdownLabel": "Zeit bis zu deinem Ergebnis:",
+    "resultCountdownExpired": "Dein Ergebnis ist jetzt verfügbar!",
+    "resultDays": "{days} T",
+    "resultHours": "{hours} Std",
+    "resultMinutes": "{min} Min",
+    "resultSeconds": "{sec} Sek"
   },
   "encouragement": {
     "label": "Warum Warten?",

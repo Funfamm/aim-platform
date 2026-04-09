@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { runAuditionAgent } from '@/lib/agents/audition-agent'
-import { getAutoAdvanceStatus, notifyApplicantStatusChange } from '@/lib/notifications'
+import { getAutoAdvanceStatus, notifyAuditResultRevealed } from '@/lib/notifications'
 import {
     getNextBatch,
     markProcessing,
@@ -150,14 +150,15 @@ export async function GET(req: NextRequest) {
     for (const app of dueForReveal) {
         await markScoredVisible(app.id)
 
-        // Send notification now that result is public
-        notifyApplicantStatusChange({
+        // Fire the dedicated reveal notification with localized email + in-app
+        notifyAuditResultRevealed({
             applicationId: app.id,
+            userId: app.user?.id ?? null,
             recipientEmail: app.email,
             recipientName: app.fullName,
-            newStatus: app.status,
             roleName: app.castingCall.roleName,
             projectTitle: app.castingCall.project.title,
+            newStatus: app.status,
             aiScore: app.aiScore,
             statusNote: app.statusNote,
         }).catch(err => console.error('[Cron/Reveal] Notification error:', err))

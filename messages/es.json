@@ -308,7 +308,18 @@
     "statusNotSelected": "No seleccionado",
     "statusWithdrawn": "Retirado",
     "resultPending": "Tu solicitud está siendo revisada. Los resultados se revelarán en breve.",
-    "resultAvailableOn": "Resultados disponibles desde el {date}"
+    "resultAvailableOn": "Resultados disponibles desde el {date}",
+    "auditQueued": "Tu solicitud está en cola para revisión por IA.",
+    "auditProcessing": "Tu audición está siendo revisada por nuestro sistema de IA.",
+    "auditScoredHidden": "Revisión completada. Tu resultado estará disponible el {date}.",
+    "auditScoredVisible": "Tu resultado de revisión por IA ya está disponible.",
+    "auditFailed": "Tu revisión encontró un problema. Nuestro equipo ha sido notificado.",
+    "resultCountdownLabel": "Tiempo hasta tu resultado:",
+    "resultCountdownExpired": "Tu resultado ya está disponible.",
+    "resultDays": "{days} d",
+    "resultHours": "{hours} h",
+    "resultMinutes": "{min} min",
+    "resultSeconds": "{sec} s"
   },
   "encouragement": {
     "label": "¿Por qué esperar?",

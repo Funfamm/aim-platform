@@ -686,6 +686,124 @@ export async function applicationConfirmationWithOverrides(name: string, roleNam
     `, `Application received for ${roleName}`)
 }
 
+/**
+ * Sent when an applicant's AI audit result is revealed (resultVisibleAt has passed
+ * or admin triggered "Reveal Now"). Locale-aware, no symbols — inline CSS only.
+ */
+export function auditResultRevealEmail(
+    name: string,
+    roleName: string,
+    projectTitle: string,
+    newStatus: string,
+    statusNote: string | null | undefined,
+    aiScore: number | null | undefined,
+    siteUrl: string,
+    locale = 'en'
+): string {
+    const statusLabels: Record<string, { emoji: string; label: string; color: string }> = {
+        submitted:    { emoji: '📋', label: 'Submitted',           color: ACCENT_BLUE },
+        under_review: { emoji: '🔍', label: 'Under Review',        color: ACCENT_BLUE },
+        shortlisted:  { emoji: '⭐', label: 'Shortlisted',          color: '#f59e0b' },
+        callback:     { emoji: '✉️', label: 'Callback',             color: '#8b5cf6' },
+        final_review: { emoji: '🎯', label: 'Final Review',         color: '#ec4899' },
+        selected:     { emoji: '🎉', label: 'Selected for the Role!', color: ACCENT_GREEN },
+        not_selected: { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
+        rejected:     { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
+    }
+    const st = statusLabels[newStatus] ?? { emoji: '📋', label: newStatus.replace(/_/g, ' '), color: TEXT_SECONDARY }
+    const isNotSelected = ['rejected', 'not_selected'].includes(newStatus)
+
+    // Locale-aware subject lines (keep short, no special chars)
+    const subjectMap: Record<string, string> = {
+        en: `Your audition result for ${roleName} is ready`,
+        ar: `نتيجة الأداء الخاصة بك لدور ${roleName} متاحة`,
+        de: `Dein Vorsprechen-Ergebnis für ${roleName} ist bereit`,
+        es: `Tu resultado de audición para ${roleName} está listo`,
+        fr: `Votre résultat d'audition pour ${roleName} est disponible`,
+        hi: `${roleName} भूमिका के लिए आपका ऑडिशन परिणाम तैयार है`,
+        ja: `${roleName} のオーディション結果をご確認ください`,
+        ko: `${roleName} 오디션 결과가 준비되었습니다`,
+        pt: `Seu resultado de audição para ${roleName} está disponível`,
+        ru: `Результат вашего кастинга на роль ${roleName} готов`,
+        zh: `您参加 ${roleName} 试镜的结果已公布`,
+    }
+
+    // Locale-aware intro salutations (natural-sounding, no machine symbols)
+    const introMap: Record<string, string> = {
+        en: `your AI review for the <strong>${roleName}</strong> role in <em>${projectTitle}</em> is complete and ready to view.`,
+        ar: `اكتملت مراجعة الذكاء الاصطناعي لطلبك على دور <strong>${roleName}</strong> في <em>${projectTitle}</em> وأصبحت متاحة للعرض.`,
+        de: `deine KI-Überprüfung für die Rolle <strong>${roleName}</strong> in <em>${projectTitle}</em> ist abgeschlossen und kann eingesehen werden.`,
+        es: `tu revisión de IA para el papel de <strong>${roleName}</strong> en <em>${projectTitle}</em> ha finalizado y está lista para ver.`,
+        fr: `votre examen IA pour le rôle de <strong>${roleName}</strong> dans <em>${projectTitle}</em> est terminé et disponible.`,
+        hi: `<em>${projectTitle}</em> में <strong>${roleName}</strong> भूमिका के लिए आपकी AI समीक्षा पूरी हो गई है।`,
+        ja: `<em>${projectTitle}</em> の <strong>${roleName}</strong> 役のAI審査が完了しました。`,
+        ko: `<em>${projectTitle}</em>의 <strong>${roleName}</strong> 역할에 대한 AI 심사가 완료되었습니다.`,
+        pt: `sua revisão de IA para o papel de <strong>${roleName}</strong> em <em>${projectTitle}</em> está concluída e disponível.`,
+        ru: `ваша AI-проверка для роли <strong>${roleName}</strong> в <em>${projectTitle}</em> завершена и готова к просмотру.`,
+        zh: `您在 <em>${projectTitle}</em> 中 <strong>${roleName}</strong> 角色的AI审核已完成，可以查看结果。`,
+    }
+
+    const ctaMap: Record<string, string> = {
+        en: 'View My Result',
+        ar: 'عرض نتيجتي',
+        de: 'Mein Ergebnis anzeigen',
+        es: 'Ver mi resultado',
+        fr: 'Voir mon résultat',
+        hi: 'मेरा परिणाम देखें',
+        ja: '結果を確認する',
+        ko: '내 결과 보기',
+        pt: 'Ver meu resultado',
+        ru: 'Просмотреть результат',
+        zh: '查看我的结果',
+    }
+
+    const noteIntroMap: Record<string, string> = {
+        en: 'Feedback from the team:',
+        ar: 'ملاحظات من الفريق:',
+        de: 'Feedback vom Team:',
+        es: 'Comentarios del equipo:',
+        fr: "Commentaires de l'équipe :",
+        hi: 'हमारी टीम की प्रतिक्रिया:',
+        ja: 'チームからのフィードバック:',
+        ko: '팀의 피드백:',
+        pt: 'Feedback da equipe:',
+        ru: 'Отзыв команды:',
+        zh: '团队反馈：',
+    }
+
+    const intro = introMap[locale] ?? introMap['en']
+    const cta   = ctaMap[locale]   ?? ctaMap['en']
+    const noteIntro = noteIntroMap[locale] ?? noteIntroMap['en']
+    const subject   = subjectMap[locale]   ?? subjectMap['en']
+    const dashUrl   = `${siteUrl}/dashboard`
+
+    return emailWrapper(`
+        <div style="text-align: center; padding: 20px 0 28px;">
+            <div style="font-size: 52px; margin-bottom: 12px;">🎭</div>
+            <div style="display: inline-block; padding: 6px 18px; background: ${BG_DARK}; border-radius: 20px; border: 1px solid ${st.color};">
+                <span style="font-size: 12px; font-weight: 700; color: ${st.color}; letter-spacing: 1.5px; text-transform: uppercase;">AI Review Ready</span>
+            </div>
+        </div>
+        ${heading(`${st.emoji} ${st.label}`)}
+        ${subtext(`Hi ${name}, ${intro}`)}
+        ${infoCard(`
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${infoRow('Role', roleName)}
+                ${infoRow('Project', projectTitle)}
+                ${infoRow('Status', `<span style="color: ${st.color}; font-weight: 700;">${st.label}</span>`)}
+                ${aiScore != null ? infoRow('AI Score', `<span style="color: ${BRAND_COLOR}; font-weight: 800; font-size: 16px;">${aiScore}<span style="font-size: 11px; font-weight: 400; color: ${TEXT_SECONDARY};">/100</span></span>`) : ''}
+            </table>
+        `, st.color)}
+        ${statusNote
+            ? `${divider()}<p style="margin: 0 0 6px; font-size: 12px; font-weight: 600; color: ${TEXT_SECONDARY}; text-transform: uppercase; letter-spacing: 0.5px;">${noteIntro}</p><p style="margin: 0; font-size: 14px; color: ${TEXT_PRIMARY}; line-height: 1.7; font-style: italic;">${statusNote}</p>`
+            : ''}
+        ${isNotSelected
+            ? `${divider()}<p style="margin: 0 0 12px; font-size: 14px; color: ${TEXT_SECONDARY}; line-height: 1.7;">We appreciate your interest and the time you invested in your application. We encourage you to explore other casting opportunities on our platform.</p>`
+            : ''}
+        ${button(cta, dashUrl)}
+    `, subject)
+}
+
 export async function scriptSubmissionConfirmationWithOverrides(name: string, title: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('scriptSubmission', {
         heading:    emailT('scriptSubmission', locale, 'heading') || 'Script Submitted! ✍️',

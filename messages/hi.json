@@ -308,7 +308,18 @@
     "statusNotSelected": "नहीं चुना गया",
     "statusWithdrawn": "वापस लिया",
     "resultPending": "आपका आवेदन समीक्षाधीन है। परिणाम जल्द ही सामने आएंगे।",
-    "resultAvailableOn": "परिणाम {date} से उपलब्ध"
+    "resultAvailableOn": "परिणाम {date} से उपलब्ध",
+    "auditQueued": "आपका आवेदन AI समीक्षा कतार में है।",
+    "auditProcessing": "आपके ऑडिशन की हमारी AI प्रणाली द्वारा समीक्षा की जा रही है।",
+    "auditScoredHidden": "समीक्षा पूरी हुई! आपका परिणाम {date} को जारी किया जाएगा।",
+    "auditScoredVisible": "आपका AI समीक्षा परिणाम अब उपलब्ध है।",
+    "auditFailed": "आपकी समीक्षा में कोई समस्या आई। हमारी टीम को सूचित कर दिया गया है।",
+    "resultCountdownLabel": "परिणाम तक शेष समय:",
+    "resultCountdownExpired": "आपका परिणाम अब उपलब्ध है!",
+    "resultDays": "{days} दिन",
+    "resultHours": "{hours} घंटे",
+    "resultMinutes": "{min} मिनट",
+    "resultSeconds": "{sec} सेकंड"
   },
   "encouragement": {
     "label": "क्यों इंतज़ार करें?",

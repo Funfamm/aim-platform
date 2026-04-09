@@ -20,6 +20,8 @@ interface Props {
         createdAt: string
         resultVisibleAt: string | null
         statusNote: string | null
+        auditState?: string | null
+        adminRevealOverride?: boolean
     }
     castingCall: {
         roleName: string
@@ -129,17 +131,18 @@ export default function ApplicationDetailClient({ application, castingCall, phot
         finally { setSavingFeedback(false) }
     }
 
-    const runAIAudit = async () => {
+    const runAIAudit = async (action?: 'process_now' | 'reveal_now') => {
         setRunningAI(true); setAiError('')
         try {
-            const res = await fetch(`/api/admin/applications/${application.id}/audit`, { method: 'POST' })
+            const res = await fetch(`/api/admin/applications/${application.id}/audit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action }),
+            })
             const data = await res.json()
             if (res.ok) {
-                setCurrentReport(data.report)
-                // Update the editable feedback with the new AI-generated message
-                if (data.report?.applicantFeedback) {
-                    setEditingFeedback(data.report.applicantFeedback)
-                }
+                if (data.report) setCurrentReport(data.report)
+                if (data.report?.applicantFeedback) setEditingFeedback(data.report.applicantFeedback)
                 router.refresh()
             }
             else setAiError(data.error || 'AI analysis failed.')
@@ -177,21 +180,66 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         · Applied {new Date(application.createdAt).toLocaleDateString()}
                     </div>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {isRejected && (
                         <span style={{ padding: '4px 14px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '20px', background: 'rgba(239,68,68,0.12)', color: 'var(--color-error)', border: '1px solid rgba(239,68,68,0.2)' }}>
                             NOT SELECTED
                         </span>
                     )}
-                    <button onClick={runAIAudit} disabled={runningAI}
-                        style={{
-                            padding: '6px 16px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
-                            border: '1px solid rgba(212,168,83,0.3)', cursor: 'pointer',
-                            background: 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))',
-                            color: 'var(--accent-gold)', transition: 'all 0.2s',
+
+                    {/* auditState badge */}
+                    {(application as any).auditState && (
+                        <span style={{
+                            padding: '3px 10px', fontSize: '0.66rem', fontWeight: 700,
+                            borderRadius: '20px', letterSpacing: '0.04em',
+                            background: {
+                                queued: 'rgba(59,130,246,0.12)',
+                                processing: 'rgba(245,158,11,0.12)',
+                                scored_hidden: 'rgba(228,185,90,0.12)',
+                                scored_visible: 'rgba(34,197,94,0.12)',
+                                failed: 'rgba(239,68,68,0.12)',
+                            }[(application as any).auditState as string] ?? 'rgba(255,255,255,0.06)',
+                            color: {
+                                queued: 'var(--color-info)',
+                                processing: 'var(--color-warning)',
+                                scored_hidden: 'var(--accent-gold)',
+                                scored_visible: 'var(--color-success)',
+                                failed: 'var(--color-error)',
+                            }[(application as any).auditState as string] ?? 'var(--text-tertiary)',
+                            border: '1px solid currentColor',
+                            opacity: 0.9,
                         }}>
-                        {runningAI ? '⏳ Analyzing...' : '🤖 AI Audit'}
-                    </button>
+                            {String((application as any).auditState).replace('_', ' ').toUpperCase()}
+                        </span>
+                    )}
+
+                    {/* Process Now — when queued, null, or failed */}
+                    {(!(application as any).auditState ||
+                      ['queued','failed',null].includes((application as any).auditState)) && (
+                        <button onClick={() => runAIAudit('process_now')} disabled={runningAI}
+                            style={{
+                                padding: '6px 16px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
+                                border: '1px solid rgba(212,168,83,0.3)', cursor: 'pointer',
+                                background: 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))',
+                                color: 'var(--accent-gold)', transition: 'all 0.2s',
+                            }}>
+                            {runningAI ? '⏳ Processing...' : '🤖 Process Now'}
+                        </button>
+                    )}
+
+                    {/* Reveal Now — only when scored_hidden */}
+                    {(application as any).auditState === 'scored_hidden' && (
+                        <button onClick={() => runAIAudit('reveal_now')} disabled={runningAI}
+                            style={{
+                                padding: '6px 16px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
+                                border: '1px solid rgba(34,197,94,0.3)', cursor: 'pointer',
+                                background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04))',
+                                color: 'var(--color-success)', transition: 'all 0.2s',
+                            }}>
+                            {runningAI ? '⏳ Revealing...' : '📬 Reveal Now'}
+                        </button>
+                    )}
+
                     {!isRejected && (
                         <button onClick={() => updateStatus('not_selected')} disabled={updatingStatus}
                             style={{

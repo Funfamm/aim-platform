@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -22,11 +22,213 @@ interface ApplicationInfo {
     roleName: string
     projectTitle: string
     projectSlug: string
+    auditState?: string | null
+    adminRevealOverride?: boolean
 }
 
 // Statuses that are still withdrawable (before AI audition is complete)
 const WITHDRAWABLE_STATUSES = ['submitted', 'under_review', 'pending']
 
+// ── Countdown hook ────────────────────────────────────────────────────────────
+function useCountdown(targetIso: string | null) {
+    const [diff, setDiff] = useState<number>(targetIso ? Math.max(0, new Date(targetIso).getTime() - Date.now()) : 0)
+
+    useEffect(() => {
+        if (!targetIso) return
+        const tick = () => setDiff(Math.max(0, new Date(targetIso).getTime() - Date.now()))
+        tick()
+        const id = setInterval(tick, 1000)
+        return () => clearInterval(id)
+    }, [targetIso])
+
+    const days    = Math.floor(diff / 86400000)
+    const hours   = Math.floor((diff % 86400000) / 3600000)
+    const minutes = Math.floor((diff % 3600000) / 60000)
+    const seconds = Math.floor((diff % 60000) / 1000)
+    const expired = diff === 0
+
+    return { days, hours, minutes, seconds, expired }
+}
+
+// ── Countdown Display ─────────────────────────────────────────────────────────
+function CountdownDisplay({ targetIso, t }: { targetIso: string; t: ReturnType<typeof useTranslations> }) {
+    const { days, hours, minutes, seconds, expired } = useCountdown(targetIso)
+    const locale = useLocale()
+
+    if (expired) {
+        return (
+            <div style={{
+                marginTop: '12px',
+                padding: '10px 16px',
+                background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.3)',
+                borderRadius: 'var(--radius-md)',
+                textAlign: 'center',
+                color: 'var(--color-success)',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+            }}>
+                {t('resultCountdownExpired')}
+            </div>
+        )
+    }
+
+    const revealDate = new Date(targetIso).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
+
+    const units = [
+        { value: days,    label: t('resultDays',    { days })    },
+        { value: hours,   label: t('resultHours',   { hours })   },
+        { value: minutes, label: t('resultMinutes', { min: minutes }) },
+        { value: seconds, label: t('resultSeconds', { sec: seconds }) },
+    ].filter((u, i) => i > 0 || u.value > 0) // hide leading zero days
+
+    return (
+        <div style={{ marginTop: '12px' }}>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textAlign: 'center', marginBottom: '8px' }}>
+                {t('resultCountdownLabel')}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '8px' }}>
+                {units.map(({ value, label }) => (
+                    <div key={label} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        minWidth: '52px',
+                        padding: '8px 6px',
+                        background: 'rgba(228,185,90,0.07)',
+                        border: '1px solid rgba(228,185,90,0.18)',
+                        borderRadius: 'var(--radius-md)',
+                    }}>
+                        <span style={{
+                            fontSize: '1.4rem', fontWeight: 800, lineHeight: 1,
+                            color: 'var(--accent-gold)',
+                            fontVariantNumeric: 'tabular-nums',
+                        }}>
+                            {String(value).padStart(2, '0')}
+                        </span>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '3px', letterSpacing: '0.04em' }}>
+                            {label}
+                        </span>
+                    </div>
+                ))}
+            </div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textAlign: 'center', marginTop: '8px' }}>
+                {t('resultAvailableOn', { date: revealDate })}
+            </div>
+        </div>
+    )
+}
+
+// ── Audit state banner ────────────────────────────────────────────────────────
+function AuditStateBanner({ auditState, resultVisibleAt, adminRevealOverride, t }: {
+    auditState: string | null | undefined
+    resultVisibleAt: string | null
+    adminRevealOverride: boolean
+    t: ReturnType<typeof useTranslations>
+}) {
+    const locale = useLocale()
+
+    // If admin forced reveal or result is actually visible, show nothing extra
+    if (adminRevealOverride || auditState === 'scored_visible') return null
+    // Legacy: no auditState set yet — fall back to resultVisibleAt logic
+    if (!auditState) {
+        if (!resultVisibleAt || new Date(resultVisibleAt) <= new Date()) return null
+        return (
+            <div style={{
+                marginTop: 'var(--space-md)',
+                padding: '0.85rem 1rem',
+                background: 'rgba(228,185,90,0.06)',
+                border: '1px solid rgba(228,185,90,0.15)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '0.85rem', color: 'var(--text-secondary)',
+                lineHeight: 1.5, textAlign: 'center',
+            }}>
+                {t('resultPending')}
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                    {t('resultAvailableOn', {
+                        date: new Date(resultVisibleAt).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }),
+                    })}
+                </div>
+            </div>
+        )
+    }
+
+    const stateConfig: Record<string, { icon: string; color: string; bg: string; border: string; key: string }> = {
+        queued: {
+            icon: '🕐',
+            color: 'var(--color-info)',
+            bg: 'rgba(59,130,246,0.07)',
+            border: 'rgba(59,130,246,0.2)',
+            key: 'auditQueued',
+        },
+        processing: {
+            icon: '🤖',
+            color: 'var(--color-warning)',
+            bg: 'rgba(245,158,11,0.08)',
+            border: 'rgba(245,158,11,0.25)',
+            key: 'auditProcessing',
+        },
+        scored_hidden: {
+            icon: '⏳',
+            color: 'var(--accent-gold)',
+            bg: 'rgba(228,185,90,0.06)',
+            border: 'rgba(228,185,90,0.2)',
+            key: 'auditScoredHidden',
+        },
+        failed: {
+            icon: '⚠️',
+            color: 'var(--color-error)',
+            bg: 'rgba(239,68,68,0.07)',
+            border: 'rgba(239,68,68,0.2)',
+            key: 'auditFailed',
+        },
+    }
+
+    const cfg = stateConfig[auditState]
+    if (!cfg) return null
+
+    const revealDateFmt = resultVisibleAt
+        ? new Date(resultVisibleAt).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })
+        : ''
+
+    const message = cfg.key === 'auditScoredHidden'
+        ? t('auditScoredHidden', { date: revealDateFmt })
+        : t(cfg.key as any)
+
+    return (
+        <div style={{
+            marginTop: 'var(--space-md)',
+            padding: '0.9rem 1.1rem',
+            background: cfg.bg,
+            border: `1px solid ${cfg.border}`,
+            borderRadius: 'var(--radius-md)',
+            textAlign: 'center',
+        }}>
+            <div style={{ fontSize: '1.3rem', marginBottom: '4px' }}>{cfg.icon}</div>
+            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: cfg.color, lineHeight: 1.5 }}>
+                {message}
+            </div>
+            {auditState === 'scored_hidden' && resultVisibleAt && (
+                <CountdownDisplay targetIso={resultVisibleAt} t={t} />
+            )}
+            {(auditState === 'queued' || auditState === 'processing') && (
+                <div style={{
+                    marginTop: '8px',
+                    display: 'flex', justifyContent: 'center', gap: '4px', alignItems: 'center',
+                }}>
+                    {[0, 1, 2].map(i => (
+                        <div key={i} style={{
+                            width: '5px', height: '5px', borderRadius: '50%',
+                            background: cfg.color,
+                            opacity: 0.3,
+                            animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+                        }} />
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function AlreadyAppliedView({ application }: { application: ApplicationInfo }) {
     const router = useRouter()
     const t = useTranslations('alreadyApplied')
@@ -58,7 +260,12 @@ export default function AlreadyAppliedView({ application }: { application: Appli
         withdrawn:    { color: '#9ca3af',              bg: 'rgba(156,163,175,0.1)',  icon: '↩️' },
     }
     const meta   = statusColorMap[application.status] ?? statusColorMap['submitted']
-    const label  = t(statusKeyMap[application.status] ?? 'statusSubmitted')
+    const label  = t(statusKeyMap[application.status] ?? 'statusSubmitted' as any)
+
+    // Determine if result is currently visible
+    const isVisible = application.adminRevealOverride
+        || application.auditState === 'scored_visible'
+        || (!!application.resultVisibleAt && new Date(application.resultVisibleAt) <= new Date())
 
     async function handleWithdraw() {
         if (!confirm(t('withdrawConfirm'))) return
@@ -131,26 +338,16 @@ export default function AlreadyAppliedView({ application }: { application: Appli
                     {meta.icon} {label}
                 </div>
 
-                {/* Pending reveal state */}
-                {!application.statusNote && application.resultVisibleAt && new Date(application.resultVisibleAt) > new Date() && (
-                    <div style={{
-                        marginTop: 'var(--space-md)',
-                        padding: '0.85rem 1rem',
-                        background: 'rgba(228,185,90,0.06)',
-                        border: '1px solid rgba(228,185,90,0.15)',
-                        borderRadius: 'var(--radius-md)',
-                        fontSize: '0.85rem', color: 'var(--text-secondary)',
-                        lineHeight: 1.5, textAlign: 'center',
-                    }}>
-                        ⏳ {t('resultPending')}
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                            {t('resultAvailableOn', { date: new Date(application.resultVisibleAt).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }) })}
-                        </div>
-                    </div>
-                )}
+                {/* Audit queue state banner with countdown */}
+                <AuditStateBanner
+                    auditState={application.auditState}
+                    resultVisibleAt={application.resultVisibleAt}
+                    adminRevealOverride={application.adminRevealOverride ?? false}
+                    t={t}
+                />
 
-                {/* Revealed statusNote */}
-                {application.statusNote && (
+                {/* Revealed statusNote — only shown once result is visible */}
+                {isVisible && application.statusNote && (
                     <div style={{
                         marginTop: 'var(--space-md)',
                         padding: '0.75rem 1rem',

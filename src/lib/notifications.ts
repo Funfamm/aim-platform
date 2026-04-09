@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger'
 import { translateContent } from '@/lib/translate'
 import {
     applicationStatusUpdate,
+    auditResultRevealEmail,
     newCastingRoleEmail,
     announcementEmail,
     contentPublishEmail,
@@ -379,6 +380,127 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
         logger.info('notifications', `${sent ? '📧' : '❌'} Status notification ${sent ? 'sent' : 'failed'} → ${opts.recipientEmail}`)
     } catch (err) {
         logger.error('notifications', 'notifyApplicantStatusChange failed', { error: err })
+    }
+}
+
+/** Call this when Pass 2 of the cron reveals an applicant's audit result. */
+export async function notifyAuditResultRevealed(opts: {
+    applicationId: string
+    userId: string | null
+    recipientEmail: string
+    recipientName: string
+    roleName: string
+    projectTitle: string
+    newStatus: string
+    aiScore?: number | null
+    statusNote?: string | null
+}): Promise<void> {
+    try {
+        const settings = await prisma.siteSettings.findFirst({
+            select: { notifyApplicantOnStatusChange: true, siteName: true },
+        })
+        if (settings && !settings.notifyApplicantOnStatusChange) return
+
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+
+        // Look up user's preferred locale
+        let locale = 'en'
+        if (opts.userId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const user = await (prisma as any).user.findUnique({
+                where: { id: opts.userId },
+                select: { preferredLanguage: true, receiveLocalizedEmails: true },
+            }).catch(() => null)
+            if (user?.receiveLocalizedEmails !== false && user?.preferredLanguage) {
+                locale = user.preferredLanguage
+            }
+        }
+
+        const html = auditResultRevealEmail(
+            opts.recipientName,
+            opts.roleName,
+            opts.projectTitle,
+            opts.newStatus,
+            opts.statusNote,
+            opts.aiScore,
+            siteUrl,
+            locale,
+        )
+
+        const siteName = settings?.siteName || 'AIM Studio'
+        // Build subject from the first line of the per-locale subject map (synced with template)
+        const subjectMap: Record<string, string> = {
+            en: `[${siteName}] Your audition result for ${opts.roleName} is ready`,
+            ar: `[${siteName}] نتيجة الأداء الخاصة بك لدور ${opts.roleName} متاحة`,
+            de: `[${siteName}] Dein Ergebnis für ${opts.roleName} ist bereit`,
+            es: `[${siteName}] Tu resultado de audición para ${opts.roleName} está listo`,
+            fr: `[${siteName}] Votre résultat pour ${opts.roleName} est disponible`,
+            hi: `[${siteName}] ${opts.roleName} का परिणाम तैयार है`,
+            ja: `[${siteName}] ${opts.roleName} の審査結果のお知らせ`,
+            ko: `[${siteName}] ${opts.roleName} 결과 안내`,
+            pt: `[${siteName}] Seu resultado para ${opts.roleName} está disponível`,
+            ru: `[${siteName}] Результат кастинга на роль ${opts.roleName} готов`,
+            zh: `[${siteName}] ${opts.roleName} 的审核结果已公布`,
+        }
+        const subject = subjectMap[locale] ?? subjectMap['en']
+
+        const sent = await sendEmail({ to: opts.recipientEmail, subject, html })
+
+        // Log in ApplicationNotification table
+        await prisma.applicationNotification.create({
+            data: {
+                applicationId: opts.applicationId,
+                type: 'status_change',
+                subject,
+                body: `AI audit result revealed for ${opts.recipientName} — ${opts.roleName}`,
+                recipientEmail: opts.recipientEmail,
+                status: sent ? 'sent' : 'failed',
+            },
+        })
+
+        // In-app notification (localized title/message using locale-specific strings)
+        if (opts.userId) {
+            const inAppTitleMap: Record<string, string> = {
+                en: 'Your audition result is ready',
+                ar: 'نتيجتك في التصفية متاحة',
+                de: 'Dein Vorsprechen-Ergebnis ist da',
+                es: 'Tu resultado de audición está listo',
+                fr: 'Votre résultat d\'audition est disponible',
+                hi: 'आपका ऑडिशन परिणाम तैयार है',
+                ja: 'オーディション結果のお知らせ',
+                ko: '오디션 결과 안내',
+                pt: 'Seu resultado de audição está disponível',
+                ru: 'Результат вашего кастинга готов',
+                zh: '您的试镜结果已公布',
+            }
+            const inAppMsgMap: Record<string, string> = {
+                en: `Your AI review result for "${opts.roleName}" is now available. Tap to view.`,
+                ar: `نتيجة مراجعة الذكاء الاصطناعي لدور "${opts.roleName}" متاحة الآن.`,
+                de: `Dein KI-Überprüfungsergebnis für "${opts.roleName}" ist jetzt verfügbar.`,
+                es: `Tu resultado de revisión de IA para "${opts.roleName}" ya está disponible.`,
+                fr: `Votre résultat d\'examen IA pour "${opts.roleName}" est maintenant disponible.`,
+                hi: `"${opts.roleName}" के लिए AI समीक्षा परिणाम अब उपलब्ध है।`,
+                ja: `"${opts.roleName}" のAI審査結果が確認できます。`,
+                ko: `"${opts.roleName}" AI 심사 결과를 확인하세요.`,
+                pt: `Seu resultado de revisão de IA para "${opts.roleName}" está disponível.`,
+                ru: `Результат AI-проверки для "${opts.roleName}" доступен.`,
+                zh: `"${opts.roleName}" 的AI审核结果现已可查看。`,
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (prisma as any).userNotification.create({
+                data: {
+                    userId: opts.userId,
+                    type: 'status_change',
+                    title: inAppTitleMap[locale] ?? inAppTitleMap['en'],
+                    message: inAppMsgMap[locale] ?? inAppMsgMap['en'],
+                    link: `/dashboard/applications`,
+                },
+            })
+        }
+
+        logger.info('notifications', `${sent ? '📧' : '❌'} Audit result reveal notification ${sent ? 'sent' : 'failed'} → ${opts.recipientEmail} (locale: ${locale})`)
+    } catch (err) {
+        logger.error('notifications', 'notifyAuditResultRevealed failed', { error: err })
     }
 }
 

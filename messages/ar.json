@@ -310,7 +310,18 @@
     "statusNotSelected": "لم يُختر",
     "statusWithdrawn": "مسحوب",
     "resultPending": "طلبك قيد المراجعة. ستُكشف النتائج قريباً.",
-    "resultAvailableOn": "النتائج متاحة من {date}"
+    "resultAvailableOn": "النتائج متاحة من {date}",
+    "auditQueued": "طلبك في قائمة انتظار المراجعة بالذكاء الاصطناعي.",
+    "auditProcessing": "يتم حاليًا مراجعة تجربة التمثيل الخاصة بك من قِبل نظام الذكاء الاصطناعي.",
+    "auditScoredHidden": "اكتملت المراجعة! سيُكشف عن نتيجتك في {date}.",
+    "auditScoredVisible": "نتيجة مراجعة الذكاء الاصطناعي متاحة الآن.",
+    "auditFailed": "واجهت مراجعتك مشكلة. تم إخطار فريقنا.",
+    "resultCountdownLabel": "الوقت المتبقي حتى نتيجتك:",
+    "resultCountdownExpired": "نتيجتك متاحة الآن!",
+    "resultDays": "{days} يوم",
+    "resultHours": "{hours} ساعة",
+    "resultMinutes": "{min} دقيقة",
+    "resultSeconds": "{sec} ثانية"
   },
   "encouragement": {
     "label": "لماذا الانتظار؟",

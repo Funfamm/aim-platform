@@ -292,7 +292,18 @@
     "statusNotSelected": "非選出",
     "statusWithdrawn": "取り下げ済み",
     "resultPending": "応募内容を審査中です。まもなく結果がお知らせできます。",
-    "resultAvailableOn": "{date} 以降に結果が公開されます"
+    "resultAvailableOn": "{date} 以降に結果が公開されます",
+    "auditQueued": "あなたの応募はAI審査の待機中です。",
+    "auditProcessing": "あなたのオーディションはAIシステムによって審査中です。",
+    "auditScoredHidden": "審査が完了しました。結果は{date}に公開されます。",
+    "auditScoredVisible": "AI審査の結果がご確認いただけます。",
+    "auditFailed": "審査中に問題が発生しました。チームへ通知済みです。",
+    "resultCountdownLabel": "結果まで：",
+    "resultCountdownExpired": "結果が公開されました！",
+    "resultDays": "{days}日",
+    "resultHours": "{hours}時間",
+    "resultMinutes": "{min}分",
+    "resultSeconds": "{sec}秒"
   },
   "encouragement": {
     "label": "なぜ待つ？",

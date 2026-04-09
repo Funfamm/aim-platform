@@ -59,6 +59,8 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                         createdAt: application.createdAt.toISOString(),
                         resultVisibleAt: application.resultVisibleAt?.toISOString() || null,
                         statusNote: application.statusNote || null,
+                        auditState: (application as any).auditState ?? null,
+                        adminRevealOverride: (application as any).adminRevealOverride ?? false,
                     }}
                     castingCall={{
                         roleName: application.castingCall.roleName,

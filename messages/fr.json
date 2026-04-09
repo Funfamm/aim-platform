@@ -308,7 +308,18 @@
     "statusNotSelected": "Non sélectionné",
     "statusWithdrawn": "Retiré",
     "resultPending": "Votre candidature est en cours d'examen. Les résultats seront bientôt disponibles.",
-    "resultAvailableOn": "Résultats disponibles à partir du {date}"
+    "resultAvailableOn": "Résultats disponibles à partir du {date}",
+    "auditQueued": "Votre candidature est en attente d'examen par l'IA.",
+    "auditProcessing": "Votre audition est en cours d'examen par notre système d'IA.",
+    "auditScoredHidden": "Examen terminé. Votre résultat sera publié le {date}.",
+    "auditScoredVisible": "Votre résultat d'examen IA est maintenant disponible.",
+    "auditFailed": "Votre examen a rencontré un problème. Notre équipe a été notifiée.",
+    "resultCountdownLabel": "Temps avant votre résultat :",
+    "resultCountdownExpired": "Votre résultat est maintenant disponible.",
+    "resultDays": "{days} j",
+    "resultHours": "{hours} h",
+    "resultMinutes": "{min} min",
+    "resultSeconds": "{sec} s"
   },
   "encouragement": {
     "label": "Pourquoi attendre?",

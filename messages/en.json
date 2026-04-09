@@ -308,7 +308,18 @@
     "statusNotSelected": "Not Selected",
     "statusWithdrawn": "Withdrawn",
     "resultPending": "Your application is being reviewed. Results will be revealed shortly.",
-    "resultAvailableOn": "Results available from {date}"
+    "resultAvailableOn": "Results available from {date}",
+    "auditQueued": "Your application is in the AI review queue.",
+    "auditProcessing": "Your audition is currently being reviewed by our AI system.",
+    "auditScoredHidden": "Review complete! Your result will be released on {date}.",
+    "auditScoredVisible": "Your AI review result is now available.",
+    "auditFailed": "Your review encountered an issue. Our team has been notified.",
+    "resultCountdownLabel": "Time until your result:",
+    "resultCountdownExpired": "Your result is now available!",
+    "resultDays": "{days}d",
+    "resultHours": "{hours}h",
+    "resultMinutes": "{min}m",
+    "resultSeconds": "{sec}s"
   },
   "encouragement": {
     "label": "Why Wait?",
