@@ -122,9 +122,9 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                     </div>
                                     <ul style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
                                         <li>No financial compensation. This is a credit &amp; portfolio opportunity.</li>
-                                        <li>Your script will be analyzed by our AI for production potential.</li>
+                                        <li>Your script will be reviewed by our creative team for production potential.</li>
                                         <li>The top 3 scripts will be reviewed by our creative team.</li>
-                                        <li>Selected scripts may be adapted for AI-powered film production.</li>
+                                        <li>Selected scripts may be adapted for studio film production.</li>
                                         <li>You retain authorship credit on any produced work.</li>
                                     </ul>
                                 </div>

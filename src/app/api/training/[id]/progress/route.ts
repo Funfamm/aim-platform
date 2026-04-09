@@ -2,9 +2,13 @@ import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
-import { courseEnrollmentEmail } from '@/lib/email-templates'
+import {
+    courseEnrollmentEmail,
+    courseCompletionEmail,
+    badgeEarnedEmail,
+} from '@/lib/email-templates'
+import { t as et } from '@/lib/email-i18n'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
-import { translateContent } from '@/lib/translate'
 
 // POST — enroll in course
 // PUT  — mark lesson complete
@@ -28,7 +32,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
         // Only send notifications on fresh enrollment (not on re-visits)
         if (!wasAlreadyEnrolled) {
-            // Fire-and-forget: localized enrollment email + in-app notification
             sendEnrollmentNotification(userId, courseId).catch(err =>
                 console.error('[enrollment] notification failed:', err)
             )
@@ -42,9 +45,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
 async function sendEnrollmentNotification(userId: string, courseId: string) {
     // Load user locale + email + name
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const user = await (prisma as any).user.findUnique({
         where: { id: userId },
-        select: { email: true, name: true, preferredLanguage: true },
+        select: { email: true, name: true, preferredLanguage: true, receiveLocalizedEmails: true },
     })
     if (!user?.email) return
 
@@ -54,62 +58,30 @@ async function sendEnrollmentNotification(userId: string, courseId: string) {
     })
     if (!course) return
 
-    const locale: string = user.preferredLanguage || 'en'
+    const locale: string = (user.receiveLocalizedEmails !== false && user.preferredLanguage) ? user.preferredLanguage : 'en'
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const courseUrl = `${siteUrl}/training/${courseId}`
 
-    let heading = `You're enrolled in ${course.title}!`
-    let body = `Welcome${user.name ? ', ' + user.name : ''}! Your journey through ${course.title} starts now. Earn XP as you progress.`
-    let btnText = 'Start Learning'
-    let badge = 'New Enrollment'
-    let notifTitle = `Enrolled: ${course.title} 🎓`
-    let notifMessage = `You're now enrolled in ${course.title}. Start your first lesson!`
-    let emailSubject = `You're enrolled in ${course.title}! 🎓`
+    // All strings resolved from static i18n — no runtime translate call needed
+    const subject = et('trainingEnrollment', locale, 'subject').replace('{title}', course.title)
+    const notifTitle = et('trainingEnrollment', locale, 'notifTitle').replace('{title}', course.title)
+    const notifMessage = et('trainingEnrollment', locale, 'notifMessage').replace('{title}', course.title)
 
-    // Translate all strings for non-English users (10 s timeout)
-    if (locale !== 'en') {
-        const timeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
-        const tx = await Promise.race([
-            translateContent({
-                heading,
-                body,
-                btnText,
-                badge,
-                notifTitle,
-                notifMessage,
-                emailSubject,
-            }, 'audition').catch(() => null),
-            timeout,
-        ])
-        if (tx?.[locale]) {
-            const t = tx[locale]
-            heading = t.heading || heading
-            body = t.body || body
-            btnText = t.btnText || btnText
-            badge = t.badge || badge
-            notifTitle = t.notifTitle || notifTitle
-            notifMessage = t.notifMessage || notifMessage
-            emailSubject = t.emailSubject || emailSubject
-        }
-    }
-
-    // Send email
+    // Send localized email
     await sendEmail({
         to: user.email,
-        subject: emailSubject,
-        html: courseEnrollmentEmail(user.name || '', course.title, courseUrl, {
-            heading, body, button: btnText, badge,
-        }),
+        subject,
+        html: courseEnrollmentEmail(user.name || '', course.title, courseUrl, locale),
     }).catch(err => console.error('[enrollment] email failed:', err))
 
-    // In-app notification
+    // In-app notification (dedup key — only fires once per enrollment)
     await mirrorToNotificationBoard(
         userId,
         'system',
         notifTitle,
         notifMessage,
         `/training/${courseId}`,
-        `enroll-${userId}-${courseId}`, // dedup key
+        `enroll-${userId}-${courseId}`,
     )
 }
 
@@ -140,7 +112,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         })
 
         // Update streak
-        const user = await prisma.user.findUnique({ where: { id: userId }, select: { lastTrainingAt: true, trainingStreak: true, preferredLanguage: true } })
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { lastTrainingAt: true, trainingStreak: true, preferredLanguage: true, receiveLocalizedEmails: true, email: true, name: true },
+        })
+        const locale: string = (user?.receiveLocalizedEmails !== false && user?.preferredLanguage) ? user.preferredLanguage : 'en'
+
         const now = new Date()
         const lastDate = user?.lastTrainingAt
         const isConsecutiveDay = lastDate && (now.getTime() - lastDate.getTime()) < 48 * 60 * 60 * 1000
@@ -189,8 +166,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                     data: { completedAt: new Date(), certificateId: `CERT-${courseId.slice(0, 6)}-${userId.slice(0, 6)}-${Date.now().toString(36)}` },
                 })
 
-                // Fire-and-forget: encouraging completion notification in user's language
-                sendCompletionNotification(userId, courseId, course.title, user?.preferredLanguage || 'en').catch(err =>
+                // Fire-and-forget: completion email + notification
+                sendCompletionNotification(userId, courseId, course.title, locale, user?.email || '', user?.name || '').catch(err =>
                     console.error('[completion] notification failed:', err)
                 )
             }
@@ -200,21 +177,45 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             await prisma.user.update({ where: { id: userId }, data: { trainingXp: { increment: xpBonus } } })
         }
 
-        // Badge checks
+        // ── Badge checks ──────────────────────────────────────────────────────
         const badges: string[] = []
         const totalCompleted = await prisma.lessonProgress.count({ where: { userId, completed: true } })
-        if (totalCompleted === 1) {
-            try { await prisma.trainingBadge.create({ data: { userId, badgeType: 'first_lesson', courseId } }); badges.push('first_lesson') } catch { /* already earned */ }
-        }
-        if (courseComplete) {
-            try { await prisma.trainingBadge.create({ data: { userId, badgeType: 'first_course', courseId } }); badges.push('first_course') } catch { /* */ }
-        }
         const updatedUser = await prisma.user.findUnique({ where: { id: userId }, select: { trainingStreak: true } })
-        if (updatedUser && updatedUser.trainingStreak >= 7) {
-            try { await prisma.trainingBadge.create({ data: { userId, badgeType: 'streak_7' } }); badges.push('streak_7') } catch { /* */ }
+
+        // first_lesson
+        if (totalCompleted === 1) {
+            try {
+                await prisma.trainingBadge.create({ data: { userId, badgeType: 'first_lesson', courseId } })
+                badges.push('first_lesson')
+                sendBadgeNotification(userId, 'first_lesson', courseId, locale, user?.email || '', user?.name || '').catch(console.error)
+            } catch { /* already earned */ }
         }
+
+        // first_course
+        if (courseComplete) {
+            try {
+                await prisma.trainingBadge.create({ data: { userId, badgeType: 'first_course', courseId } })
+                badges.push('first_course')
+                sendBadgeNotification(userId, 'first_course', courseId, locale, user?.email || '', user?.name || '').catch(console.error)
+            } catch { /* already earned */ }
+        }
+
+        // streak_7
+        if (updatedUser && updatedUser.trainingStreak >= 7) {
+            try {
+                await prisma.trainingBadge.create({ data: { userId, badgeType: 'streak_7' } })
+                badges.push('streak_7')
+                sendBadgeNotification(userId, 'streak_7', courseId, locale, user?.email || '', user?.name || '').catch(console.error)
+            } catch { /* already earned */ }
+        }
+
+        // streak_30
         if (updatedUser && updatedUser.trainingStreak >= 30) {
-            try { await prisma.trainingBadge.create({ data: { userId, badgeType: 'streak_30' } }); badges.push('streak_30') } catch { /* */ }
+            try {
+                await prisma.trainingBadge.create({ data: { userId, badgeType: 'streak_30' } })
+                badges.push('streak_30')
+                sendBadgeNotification(userId, 'streak_30', courseId, locale, user?.email || '', user?.name || '').catch(console.error)
+            } catch { /* already earned */ }
         }
 
         return NextResponse.json({
@@ -229,30 +230,73 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 }
 
-async function sendCompletionNotification(userId: string, courseId: string, courseTitle: string, locale: string) {
-    let title = `You completed ${courseTitle}! 🏆`
-    let message = `Amazing work! You've finished every lesson in ${courseTitle}. Your dedication is paying off — keep going!`
+async function sendCompletionNotification(
+    userId: string, courseId: string, courseTitle: string,
+    locale: string, userEmail: string, userName: string
+) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+    const courseUrl = `${siteUrl}/training/${courseId}`
 
-    // Translate for non-English users
-    if (locale !== 'en') {
-        const timeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
-        const tx = await Promise.race([
-            translateContent({ title, message }, 'audition').catch(() => null),
-            timeout,
-        ])
-        if (tx?.[locale]) {
-            title = tx[locale].title || title
-            message = tx[locale].message || message
-        }
+    const subject = et('trainingCompletion', locale, 'subject').replace('{title}', courseTitle)
+    const notifTitle = et('trainingCompletion', locale, 'notifTitle').replace('{title}', courseTitle)
+    const notifMessage = et('trainingCompletion', locale, 'notifMessage').replace('{title}', courseTitle)
+
+    // Send completion email
+    if (userEmail) {
+        await sendEmail({
+            to: userEmail,
+            subject,
+            html: courseCompletionEmail(userName, courseTitle, courseUrl, locale),
+        }).catch(err => console.error('[completion] email failed:', err))
     }
 
+    // In-app notification (dedup key — only fires once)
     await mirrorToNotificationBoard(
         userId,
         'system',
-        title,
-        message,
+        notifTitle,
+        notifMessage,
         `/training/${courseId}`,
-        `course-complete-${userId}-${courseId}`, // dedup key — only fires once
+        `course-complete-${userId}-${courseId}`,
+    )
+}
+
+async function sendBadgeNotification(
+    userId: string, badgeType: string, courseId: string,
+    locale: string, userEmail: string, userName: string
+) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+    const trainingUrl = `${siteUrl}/training`
+
+    const i18nKeyMap: Record<string, string> = {
+        first_lesson: 'trainingBadgeFirstLesson',
+        first_course: 'trainingBadgeFirstCourse',
+        streak_7: 'trainingBadgeStreak7',
+        streak_30: 'trainingBadgeStreak30',
+    }
+    const i18nKey = i18nKeyMap[badgeType] || 'trainingBadgeFirstLesson'
+
+    const subject = et(i18nKey, locale, 'subject')
+    const notifTitle = et(i18nKey, locale, 'notifTitle')
+    const notifMessage = et(i18nKey, locale, 'notifMessage')
+
+    // Send badge email
+    if (userEmail) {
+        await sendEmail({
+            to: userEmail,
+            subject,
+            html: badgeEarnedEmail(userName, badgeType, trainingUrl, locale),
+        }).catch(err => console.error(`[badge:${badgeType}] email failed:`, err))
+    }
+
+    // In-app notification (dedup key — only fires once per badge per user)
+    await mirrorToNotificationBoard(
+        userId,
+        'system',
+        notifTitle,
+        notifMessage,
+        `/training/${courseId}`,
+        `badge-${badgeType}-${userId}`,
     )
 }
 

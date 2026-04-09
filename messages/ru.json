@@ -166,7 +166,14 @@
     "emailPrivate": "Почта приватна.",
     "namePlaceholder": "Ваше имя",
     "emailPlaceholder": "ваш@email.com",
-    "amountPlaceholder": "Введите сумму (минимум ${min})"
+    "amountPlaceholder": "Введите сумму (минимум ${min})",
+    "errorEmailRequired": "Электронная почта обязательна",
+    "validationRequired": "Пожалуйста, заполните это поле.",
+    "errPaypalMissing": "PayPal не настроен.",
+    "errPaypalLoad": "Не удалось загрузить PayPal. Проверьте соединение.",
+    "errPaymentFailed": "Оплата не удалась. Пожалуйста, попробуйте ещё раз.",
+    "errPaymentProcessing": "Ошибка обработки платежа. Попробуйте ещё раз.",
+    "errPaymentCanceled": "Платеж отменён. Вы можете попробовать снова."
   },
   "footer": {
     "tagline": "Пионеры будущего кино через ИИ.",
@@ -184,7 +191,8 @@
     "rights": "Все права защищены.",
     "emailPlaceholder": "Введите email",
     "subscribe": "Подписаться",
-    "subscribed": "Вы подписаны!"
+    "subscribed": "Вы подписаны!",
+    "validationRequired": "Пожалуйста, заполните это поле."
   },
   "common": {
     "loading": "Загрузка...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "Второстепенная",
     "roleTypeExtra": "Массовка",
     "withdraw": "Отозвать",
-    "applyAgain": "Подать заявку снова"
+    "applyAgain": "Подать заявку снова",
+    "applied": "Подано ✓"
   },
   "alreadyApplied": {
     "pageLabel": "Статус заявки",
@@ -308,7 +317,7 @@
     "statusNotSelected": "Не выбран",
     "statusWithdrawn": "Отозвано",
     "resultPending": "Ваша заявка рассматривается. Результаты будут раскрыты в ближайшее время.",
-    "resultAvailableOn": "Результаты доступны с {date}",
+    "resultAvailableOn": "Результаты доступны с {date}",
     "auditQueued": "Ваша заявка находится в очереди на проверку ИИ.",
     "auditProcessing": "Ваш кастинг проверяется нашей системой ИИ.",
     "auditScoredHidden": "Проверка завершена. Результат будет опубликован {date}.",
@@ -389,7 +398,18 @@
     "statusFinalReview": "Финальный обзор",
     "statusApproved": "Одобрено",
     "statusSelected": "Выбрано",
-    "statusNotSelected": "Не выбрано"
+    "statusNotSelected": "Не выбрано",
+    "praiseWords": "Вы замечательны! 🌟|Настоящий сторонник! 💫|Герой кино! 🎬|Спасибо! ❤️|Легенда! 🏆",
+    "receiptTitle": "Квитанция о пожертвовании",
+    "receiptThankYou": "Спасибо за вашу поддержку",
+    "receiptDate": "Дата",
+    "receiptDonor": "Жертвователь",
+    "receiptMethod": "Метод",
+    "receiptStatus": "Статус",
+    "receiptMessage": "Сообщение",
+    "receiptAnonymous": "Анонимно",
+    "receiptPrint": "Распечатать квитанцию",
+    "receiptFooter": "Эта квитанция подтверждает ваш щедрый вклад. 100% идёт на воплощение историй в жизнь. 🎥"
   },
   "upcomingHero": {
     "label": "Скоро",
@@ -547,7 +567,19 @@
     "genericError": "Ошибка. Повторите.",
     "emailLabel": "Почта:",
     "ageLabel": "Возраст:",
-    "genderLabel": "Пол:"
+    "genderLabel": "Пол:",
+    "photoFrontHeadshot": "Фото анфас",
+    "photoFrontDesc": "Чёткое фото вашего лица при хорошем освещении",
+    "photoSideProfile": "Профиль сбоку",
+    "photoSideDesc": "Вид слева или справа",
+    "photoFullBody": "Фото в полный рост",
+    "photoFullDesc": "Стоя, в полный рост, нейтральная поза",
+    "photoExpression": "Фото с выражением",
+    "photoExpressionDesc": "Улыбка, серьёзное или эмоциональное выражение лица",
+    "photoOptional1": "Дополнительное фото (необязательно)",
+    "photoOptional1Desc": "Активная поза, крупный план или творческое фото",
+    "photoOptional2": "Дополнительное фото (необязательно)",
+    "photoOptional2Desc": "Другой ракурс или образ"
   },
   "training": {
     "hub": "Обучение",
@@ -717,7 +749,8 @@
     "sendAnother": "Отправить ещё",
     "errorMsg": "Ошибка отправки.",
     "sending": "Отправка...",
-    "sendMessage": "Отправить"
+    "sendMessage": "Отправить",
+    "validationRequired": "Пожалуйста, заполните это поле."
   },
   "forgotPassword": {
     "accountRecovery": "Восстановление",
@@ -743,7 +776,18 @@
     "noMatch": "Пароли не совпадают",
     "resetFailed": "Ошибка сброса",
     "hidePassword": "Скрыть",
-    "showPassword": "Показать"
+    "showPassword": "Показать",
+    "errEmailRequired": "Электронная почта обязательна",
+    "errNotFound": "Аккаунт с таким адресом электронной почты не найден",
+    "errTooMany": "Слишком много попыток. Пожалуйста, попробуйте позже.",
+    "errCodeRequired": "Требуется код подтверждения",
+    "errNoCode": "Код сброса не найден. Запросите новый.",
+    "errCodeExpired": "Срок действия кода истёк. Запросите новый.",
+    "errCodeInvalid": "Неверный код. Попробуйте ещё раз.",
+    "errPwTooShort": "Пароль должен содержать не менее 6 символов",
+    "errSamePassword": "Нельзя повторно использовать текущий пароль.",
+    "errReusedPassword": "Этот пароль использовался недавно. Выберите другой.",
+    "errResetFailed": "Не удалось сбросить пароль. Попробуйте ещё раз."
   },
   "sponsors": {
     "label": "Спонсоры",
@@ -816,7 +860,16 @@
       "noResults": "Результаты не найдены.",
       "loading": "Идёт поиск…",
       "suggestionTitle": "Подсказки"
-    }
+    },
+    "oauthNoPassword": "Vy voshli cherez {provider}. U vashego akkaunta poka net parolya. Sozdajte ego nizhe, chtoby takzhe vhodit po e-mail i parolyu.",
+    "createPasswordBtn": "Sozdat parol",
+    "setPasswordBtn": "Ustanovit parol",
+    "passwordSetSuccess": "Parol uspeshno sozdan! Teper vy mozhete vhodit s pomoshchyu e-mail i parolya.",
+    "codeSentToEmail": "Na vashu pochtu otpravlen 6-znachnyj kod podtverzhdeniya.",
+    "verificationCode": "Kod podtverzhdeniya",
+    "minCharsError": "Parol dolzhen soderzhat ne menee 6 simvolov",
+    "theme": "Тема",
+    "accentColour": "Цвет акцента"
   },
   "notificationBell": {
     "title": "Уведомления",
@@ -874,17 +927,17 @@
   },
   "scripts": {
     "metaTitle": "Конкурсы сценариев | AIM Studio",
-    "metaDesc": "Пришлите свой сценарий и получите шанс на производство с помощью ИИ от AIM Studio.",
+    "metaDesc": "Представьте свой сценарий для шанса быть снятым студией AIM Studio.",
     "badge": "Открытые конкурсы",
     "heroTitle": "Подача",
     "heroAccent": "Сценариев",
-    "heroDesc": "Мы ищем оригинальные сценарии. Пришлите скрипт — и наш ИИ оценит его производственный потенциал. Лучшие сценарии будут сняты AIM Studio.",
+    "heroDesc": "Мы ищем оригинальные сценарии. Отправьте свой сценарий, и наша творческая команда оценит его на предмет производственного потенциала.",
     "noCompensation": "Без денежного вознаграждения · Кредиты и портфолио",
     "stepLabel": "Шаг",
     "step1Title": "Отправить сценарий",
     "step1Desc": "Загрузите сценарий в формате PDF или Final Draft через форму открытого конкурса.",
-    "step2Title": "Анализ ИИ",
-    "step2Desc": "Наш ИИ анализирует структуру, оригинальность и производственную пригодность сценария.",
+    "step2Title": "Проверка командой",
+    "step2Desc": "Наша творческая команда оценивает сценарий по структуре, оригинальности и производственной пригодности.",
     "step3Title": "В производство",
     "step3Desc": "Отобранные сценарии поступают в производство AIM Studio с полным творческим признанием.",
     "closedTitle": "Приём сценариев закрыт",
@@ -899,6 +952,12 @@
     "deadlineLabel": "Дедлайн",
     "submission": "заявка",
     "submissions": "заявок",
-    "submitScript": "Отправить сценарий"
+    "submitScript": "Отправить сценарий",
+    "notifyMeBtn": "Уведомить при открытии",
+    "notifyLoading": "Подписка...",
+    "notifyConfirmedTitle": "Вы в списке!",
+    "notifyConfirmedDesc": "Мы уведомим вас, как только этот конкурс откроется.",
+    "comingSoonLabel": "Скоро",
+    "comingSoonBadge": "Скоро"
   }
 }

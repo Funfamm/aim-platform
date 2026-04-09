@@ -7,6 +7,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import ToggleSwitch from '@/components/ToggleSwitch'
 import Toast from '@/components/Toast'
+import { useNotifications } from '@/context/NotificationContext'
 
 interface Prefs {
     newRole: boolean
@@ -53,6 +54,7 @@ function groupNotifications(list: Notification[]): Record<string, Notification[]
 export default function NotificationsPage() {
     const router = useRouter()
     const t = useTranslations('NotificationsPage')
+    const { markAllRead: ctxMarkAllRead, refresh: ctxRefresh } = useNotifications()
 
     const [prefs, setPrefs] = useState<Prefs | null>(null)
     const [notifications, setNotifications] = useState<Notification[]>([])
@@ -106,6 +108,7 @@ export default function NotificationsPage() {
             })
             setNotifications(prev => prev.map(n => ({ ...n, read: true })))
             setUnreadCount(0)
+            ctxMarkAllRead() // instantly clear bell badge + hamburger dot
         } catch { /* ignore */ }
     }
 
@@ -118,6 +121,7 @@ export default function NotificationsPage() {
             }).catch(() => null)
             setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
             setUnreadCount(prev => Math.max(0, prev - 1))
+            ctxRefresh() // update bell badge + hamburger dot instantly
         }
         if (n.link) router.push(n.link as never)
     }
@@ -148,6 +152,7 @@ export default function NotificationsPage() {
             setUnreadCount(0)
             setSelectedIds(new Set())
             setSelectMode(false)
+            ctxMarkAllRead() // clear badges instantly
         } catch { /* ignore */ } finally { setDeleting(false) }
     }
 
@@ -428,6 +433,12 @@ export default function NotificationsPage() {
                                                     width: '8px', height: '8px', borderRadius: '50%',
                                                     background: 'var(--accent-gold)', flexShrink: 0, marginTop: '5px',
                                                 }} />
+                                            )}
+                                            {n.link && !selectMode && (
+                                                <span style={{
+                                                    fontSize: '0.75rem', color: 'var(--text-tertiary)',
+                                                    flexShrink: 0, marginTop: '3px', opacity: 0.6,
+                                                }}>→</span>
                                             )}
                                         </button>
                                     ))}

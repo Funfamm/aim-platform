@@ -18,12 +18,28 @@ interface Sponsor {
     featured: boolean; displayOn: string; contactEmail: string | null
     startDate: string | null; endDate: string | null; sortOrder: number
     bannerDurationHours: number; createdAt: string
+    descriptionI18n: Record<string, string> | null
 }
+
+const LOCALES = [
+    { code: 'en', flag: '🇺🇸', label: 'English' },
+    { code: 'ar', flag: '🇸🇦', label: 'العربية' },
+    { code: 'de', flag: '🇩🇪', label: 'Deutsch' },
+    { code: 'es', flag: '🇪🇸', label: 'Español' },
+    { code: 'fr', flag: '🇫🇷', label: 'Français' },
+    { code: 'hi', flag: '🇮🇳', label: 'हिंदी' },
+    { code: 'ja', flag: '🇯🇵', label: '日本語' },
+    { code: 'ko', flag: '🇰🇷', label: '한국어' },
+    { code: 'pt', flag: '🇧🇷', label: 'Português' },
+    { code: 'ru', flag: '🇷🇺', label: 'Русский' },
+    { code: 'zh', flag: '🇨🇳', label: '中文' },
+]
 
 const emptyForm = {
     name: '', description: '', logoUrl: '', bannerUrl: '', website: '', tier: 'bronze',
     active: true, featured: false, displayOn: 'sponsors', contactEmail: '',
     startDate: '', endDate: '', sortOrder: 0, bannerDurationHours: 24,
+    descriptionI18n: {} as Record<string, string>,
 }
 
 export default function AdminSponsorsPage() {
@@ -39,6 +55,7 @@ export default function AdminSponsorsPage() {
     const [logoPreview, setLogoPreview] = useState('')
     const [bannerPreview, setBannerPreview] = useState('')
     const [filter, setFilter] = useState('all')
+    const [i18nLocale, setI18nLocale] = useState('en')
 
     const fetchSponsors = useCallback(async () => {
         const res = await fetch('/api/admin/sponsors')
@@ -101,7 +118,11 @@ export default function AdminSponsorsPage() {
             if (logoFile) logoUrl = await uploadFile(logoFile)
             if (bannerFile) bannerUrl = await uploadFile(bannerFile)
 
-            const body = { ...form, logoUrl: logoUrl || null, bannerUrl: bannerUrl || null }
+            const body = { ...form, logoUrl: logoUrl || null, bannerUrl: bannerUrl || null,
+                descriptionI18n: Object.fromEntries(
+                    Object.entries(form.descriptionI18n).filter(([, v]) => v.trim())
+                ) || null,
+            }
 
             let res: Response
             if (editing) {
@@ -141,6 +162,7 @@ export default function AdminSponsorsPage() {
             startDate: s.startDate ? s.startDate.split('T')[0] : '',
             endDate: s.endDate ? s.endDate.split('T')[0] : '',
             sortOrder: s.sortOrder, bannerDurationHours: s.bannerDurationHours || 24,
+            descriptionI18n: (s.descriptionI18n as Record<string, string>) || {},
         })
         setLogoPreview(s.logoUrl || ''); setBannerPreview(s.bannerUrl || '')
         setEditing(s.id); setShowForm(true)
@@ -291,10 +313,50 @@ export default function AdminSponsorsPage() {
                                 <input style={inp} value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://example.com" />
                             </div>
 
-                            {/* Row 2: Description */}
+                            {/* Row 2: Description (default) + i18n tabs */}
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={lbl}>Description</label>
+                                <label style={lbl}>Description (Default / English)</label>
                                 <textarea style={{ ...inp, minHeight: '60px', resize: 'vertical' }} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief description of the sponsor..." />
+
+                                {/* i18n translations panel */}
+                                <div style={{ marginTop: '10px', border: '1px solid rgba(212,168,83,0.12)', borderRadius: '10px', overflow: 'hidden' }}>
+                                    <div style={{ padding: '7px 12px', background: 'rgba(212,168,83,0.04)', borderBottom: '1px solid rgba(212,168,83,0.08)', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        🌐 Translations <span style={{ fontWeight: 400, color: 'var(--text-tertiary)' }}>— enter sponsor description in each language</span>
+                                    </div>
+                                    {/* Language selector tabs */}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', padding: '8px 10px', background: 'rgba(0,0,0,0.15)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                        {LOCALES.map(({ code, flag, label }) => (
+                                            <button key={code} type="button"
+                                                onClick={() => setI18nLocale(code)}
+                                                style={{
+                                                    padding: '3px 9px', fontSize: '0.65rem', borderRadius: '6px',
+                                                    border: i18nLocale === code ? '1px solid rgba(212,168,83,0.35)' : '1px solid rgba(255,255,255,0.05)',
+                                                    background: i18nLocale === code ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.02)',
+                                                    color: i18nLocale === code ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                    cursor: 'pointer', fontWeight: i18nLocale === code ? 700 : 400,
+                                                    display: 'flex', alignItems: 'center', gap: '4px',
+                                                }}>
+                                                {flag} {code.toUpperCase()}
+                                                {form.descriptionI18n[code] && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {/* Active locale textarea */}
+                                    <div style={{ padding: '10px' }}>
+                                        <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginBottom: '5px' }}>
+                                            {LOCALES.find(l => l.code === i18nLocale)?.flag} {LOCALES.find(l => l.code === i18nLocale)?.label}
+                                        </div>
+                                        <textarea
+                                            style={{ ...inp, minHeight: '54px', resize: 'vertical' }}
+                                            value={form.descriptionI18n[i18nLocale] || ''}
+                                            onChange={e => setForm(f => ({
+                                                ...f,
+                                                descriptionI18n: { ...f.descriptionI18n, [i18nLocale]: e.target.value },
+                                            }))}
+                                            placeholder={`Description in ${LOCALES.find(l => l.code === i18nLocale)?.label || i18nLocale}...`}
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             {/* Row 3: Logo + Banner with previews */}

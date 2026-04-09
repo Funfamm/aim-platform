@@ -166,7 +166,14 @@
     "emailPrivate": "Your email is kept private and only used for receipts.",
     "namePlaceholder": "Your name",
     "emailPlaceholder": "your@email.com",
-    "amountPlaceholder": "Enter amount (${min} minimum)"
+    "amountPlaceholder": "Enter amount (${min} minimum)",
+    "errorEmailRequired": "Email is required",
+    "validationRequired": "Please fill out this field.",
+    "errPaypalMissing": "PayPal is not configured.",
+    "errPaypalLoad": "Failed to load PayPal. Check your connection or try again.",
+    "errPaymentFailed": "Payment failed. Please try again.",
+    "errPaymentProcessing": "Payment processing error. Please try again.",
+    "errPaymentCanceled": "Payment was cancelled. You can try again."
   },
   "footer": {
     "tagline": "Pioneering the future of cinema through artificial intelligence. Every frame crafted, every story told.",
@@ -184,7 +191,8 @@
     "rights": "All rights reserved.",
     "emailPlaceholder": "Enter your email",
     "subscribe": "Subscribe",
-    "subscribed": "You're subscribed! We'll keep you posted."
+    "subscribed": "You're subscribed! We'll keep you posted.",
+    "validationRequired": "Please fill out this field."
   },
   "common": {
     "loading": "Loading...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "Supporting",
     "roleTypeExtra": "Extra",
     "withdraw": "Withdraw",
-    "applyAgain": "Apply Again"
+    "applyAgain": "Apply Again",
+    "applied": "Applied ✓"
   },
   "alreadyApplied": {
     "pageLabel": "Application Status",
@@ -389,7 +398,18 @@
     "statusFinalReview": "Final Review",
     "statusApproved": "Approved",
     "statusSelected": "Selected",
-    "statusNotSelected": "Not Selected"
+    "statusNotSelected": "Not Selected",
+    "praiseWords": "You're amazing! 🌟|True supporter! 💫|Film hero! 🎬|Thank you! ❤️|Legend! 🏆",
+    "receiptTitle": "Donation Receipt",
+    "receiptThankYou": "Thank you for your support",
+    "receiptDate": "Date",
+    "receiptDonor": "Donor",
+    "receiptMethod": "Method",
+    "receiptStatus": "Status",
+    "receiptMessage": "Message",
+    "receiptAnonymous": "Anonymous",
+    "receiptPrint": "Print Receipt",
+    "receiptFooter": "This receipt confirms your generous contribution. 100% goes toward bringing stories to life. 🎥"
   },
   "upcomingHero": {
     "label": "Coming Soon",
@@ -544,7 +564,19 @@
     "genericError": "Something went wrong. Please try again.",
     "emailLabel": "Email:",
     "ageLabel": "Age:",
-    "genderLabel": "Gender:"
+    "genderLabel": "Gender:",
+    "photoFrontHeadshot": "Front-Facing Headshot",
+    "photoFrontDesc": "Clear, well-lit photo of your face straight-on",
+    "photoSideProfile": "Side Profile",
+    "photoSideDesc": "Left or right side profile view",
+    "photoFullBody": "Full Body Shot",
+    "photoFullDesc": "Standing full body, neutral pose",
+    "photoExpression": "Expression Shot",
+    "photoExpressionDesc": "Smiling, serious, or emotional expression of your choice",
+    "photoOptional1": "Additional Shot (Optional)",
+    "photoOptional1Desc": "Action pose, close-up, or creative photo",
+    "photoOptional2": "Additional Shot (Optional)",
+    "photoOptional2Desc": "Another angle or look you want to showcase"
   },
   "training": {
     "hub": "Training Hub",
@@ -714,7 +746,8 @@
     "sendAnother": "Send Another",
     "errorMsg": "Failed to send. Please try again.",
     "sending": "Sending...",
-    "sendMessage": "Send Message"
+    "sendMessage": "Send Message",
+    "validationRequired": "Please fill out this field."
   },
   "forgotPassword": {
     "accountRecovery": "Account Recovery",
@@ -740,7 +773,18 @@
     "noMatch": "Passwords do not match",
     "resetFailed": "Reset failed",
     "hidePassword": "Hide password",
-    "showPassword": "Show password"
+    "showPassword": "Show password",
+    "errEmailRequired": "Email is required",
+    "errNotFound": "No account found with that email",
+    "errTooMany": "Too many attempts. Please try again later.",
+    "errCodeRequired": "Verification code is required",
+    "errNoCode": "No reset code found. Please request a new one.",
+    "errCodeExpired": "Code expired. Please request a new one.",
+    "errCodeInvalid": "Invalid code. Please try again.",
+    "errPwTooShort": "Password must be at least 6 characters",
+    "errSamePassword": "You cannot reuse your current password.",
+    "errReusedPassword": "This password was recently used. Please choose a different one.",
+    "errResetFailed": "Password reset failed. Please try again."
   },
   "sponsors": {
     "label": "Our Supporters",
@@ -813,7 +857,16 @@
       "noResults": "No results found.",
       "loading": "Searching…",
       "suggestionTitle": "Suggestions"
-    }
+    },
+    "oauthNoPassword": "You signed in with {provider}. Your account does not have a password yet. You can create one below to also log in with email and password.",
+    "createPasswordBtn": "Create Password",
+    "setPasswordBtn": "Set Password",
+    "passwordSetSuccess": "Password created successfully! You can now log in with your email and password.",
+    "codeSentToEmail": "A 6-digit verification code has been sent to your email.",
+    "verificationCode": "Verification Code",
+    "minCharsError": "Password must be at least 6 characters",
+    "theme": "Theme",
+    "accentColour": "Accent Colour"
   },
   "notificationBell": {
     "title": "Notifications",
@@ -871,17 +924,17 @@
   },
   "scripts": {
     "metaTitle": "Script Calls | AIM Studio",
-    "metaDesc": "Submit your screenplay for a chance to have it produced by AIM Studio using AI-powered filmmaking.",
+    "metaDesc": "Submit your screenplay for a chance to have it produced by AIM Studio.",
     "badge": "Open Calls",
     "heroTitle": "Script",
     "heroAccent": "Submissions",
-    "heroDesc": "We're looking for original screenplays. Submit your script and our AI will analyze it for production potential. The best scripts get produced by AIM Studio.",
+    "heroDesc": "We're looking for original screenplays. Submit your script and our creative team will review it for production potential. The best scripts get produced by AIM Studio.",
     "noCompensation": "No financial compensation · Credit & portfolio opportunity",
     "stepLabel": "Step",
     "step1Title": "Submit Your Script",
     "step1Desc": "Upload your screenplay in PDF or Final Draft format through the open call form.",
-    "step2Title": "AI Analysis",
-    "step2Desc": "Our AI reviews your script for structure, originality, and production feasibility.",
+    "step2Title": "Team Review",
+    "step2Desc": "Our creative team reviews your script for structure, originality, and production feasibility.",
     "step3Title": "Get Produced",
     "step3Desc": "Selected scripts enter production at AIM Studio with full creative credit.",
     "closedTitle": "Script Submissions Closed",
@@ -896,6 +949,12 @@
     "deadlineLabel": "Deadline",
     "submission": "submission",
     "submissions": "submissions",
-    "submitScript": "Submit Script"
+    "submitScript": "Submit Script",
+    "notifyMeBtn": "Notify Me When Open",
+    "notifyLoading": "Subscribing...",
+    "notifyConfirmedTitle": "You're on the list!",
+    "notifyConfirmedDesc": "We'll notify you the moment this call opens.",
+    "comingSoonLabel": "Coming Soon",
+    "comingSoonBadge": "Coming Soon"
   }
 }

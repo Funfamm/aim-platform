@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/components/AuthProvider'
 import { useRouter } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useNotifications } from '@/context/NotificationContext'
 import styles from './NotificationBell.module.css'
 
@@ -38,6 +38,7 @@ function timeAgo(dateStr: string): string {
 export function NotificationBell() {
     const { user } = useAuth()
     const router = useRouter()
+    const locale = useLocale()
     const t = useTranslations('notificationBell')
     const { unreadCount, refresh, markAllRead: ctxMarkAllRead } = useNotifications()
     const [open, setOpen] = useState(false)
@@ -73,18 +74,21 @@ export function NotificationBell() {
         ctxMarkAllRead() // update global context badge too
     }
 
-    async function handleNotificationClick(n: Notification) {
+    // Tap 1: clicking a notification in the dropdown → always go to /notifications page.
+    // The notifications page handles tap 2 (following the destination link).
+    function handleNotificationClick(n: Notification) {
+        // Mark as read in background (fire-and-forget)
         if (!n.read) {
-            await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [n.id] }) })
-            setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
-            // trigger a context refresh so the hamburger badge updates too
-            refresh()
-
+            fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ids: [n.id] }) })
+                .then(() => {
+                    setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
+                    refresh()
+                })
+                .catch(() => null)
         }
-        if (n.link) {
-            setOpen(false)
-            router.push(n.link)
-        }
+        // Always navigate to the full notifications page (tap 1)
+        setOpen(false)
+        router.push(`/${locale}/notifications`)
     }
 
     if (!user) return null

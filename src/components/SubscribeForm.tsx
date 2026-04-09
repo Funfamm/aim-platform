@@ -55,6 +55,8 @@ export default function SubscribeForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder={t('emailPlaceholder')}
+                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
+                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
                 style={{
                     flex: 1,
                     minWidth: 0,

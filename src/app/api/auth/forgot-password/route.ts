@@ -30,7 +30,7 @@ export async function POST(request: Request) {
         const { email, password, action, code } = await request.json()
 
         if (!email) {
-            return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+        return NextResponse.json({ error: 'ERR_EMAIL_REQUIRED' }, { status: 400 })
         }
 
         const normalizedEmail = email.toLowerCase().trim()
@@ -42,13 +42,13 @@ export async function POST(request: Request) {
                 select: { name: true, preferredLanguage: true } as any,
             }), 'forgot_password_find') as any
             if (!user) {
-                return NextResponse.json({ error: 'No account found with that email' }, { status: 404 })
+                return NextResponse.json({ error: 'ERR_NOT_FOUND' }, { status: 404 })
             }
 
             // Rate limit: max 3 codes per email per 15 minutes
             const existing = resetCodes.get(normalizedEmail)
             if (existing && existing.attempts >= 3 && existing.expiresAt > Date.now()) {
-                return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 })
+                return NextResponse.json({ error: 'ERR_TOO_MANY' }, { status: 429 })
             }
 
             const newCode = generateCode()
@@ -85,19 +85,19 @@ export async function POST(request: Request) {
         // ─── Step 2: Verify the code ───
         if (action === 'verify-code') {
             if (!code) {
-                return NextResponse.json({ error: 'Verification code is required' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_REQUIRED' }, { status: 400 })
             }
 
             const stored = resetCodes.get(normalizedEmail)
             if (!stored) {
-                return NextResponse.json({ error: 'No reset code found. Please request a new one.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_NO_CODE' }, { status: 400 })
             }
             if (stored.expiresAt < Date.now()) {
                 resetCodes.delete(normalizedEmail)
-                return NextResponse.json({ error: 'Code expired. Please request a new one.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_EXPIRED' }, { status: 400 })
             }
             if (stored.code !== code) {
-                return NextResponse.json({ error: 'Invalid code. Please try again.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_INVALID' }, { status: 400 })
             }
 
             return NextResponse.json({ success: true, message: 'Code verified. You can now set a new password.' })
@@ -106,20 +106,20 @@ export async function POST(request: Request) {
         // ─── Step 3: Reset password (requires valid code) ───
         if (action === 'reset') {
             if (!code) {
-                return NextResponse.json({ error: 'Verification code is required' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_REQUIRED' }, { status: 400 })
             }
 
             const stored = resetCodes.get(normalizedEmail)
             if (!stored || stored.expiresAt < Date.now() || stored.code !== code) {
-                return NextResponse.json({ error: 'Invalid or expired code. Please start over.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_EXPIRED' }, { status: 400 })
             }
 
             const user = await withDbRetry(() => prisma.user.findUnique({ where: { email: normalizedEmail } }), 'forgot_password_reset_find')
             if (!user) {
-                return NextResponse.json({ error: 'No account found with that email' }, { status: 404 })
+                return NextResponse.json({ error: 'ERR_NOT_FOUND' }, { status: 404 })
             }
             if (!password || password.length < 6) {
-                return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_PW_TOO_SHORT' }, { status: 400 })
             }
 
             // ── Password reuse check ──
@@ -127,9 +127,7 @@ export async function POST(request: Request) {
             if (user.passwordHash) {
                 const sameAsCurrent = await compare(password, user.passwordHash)
                 if (sameAsCurrent) {
-                    return NextResponse.json({
-                        error: 'You cannot reuse your current password. Please choose a new one.',
-                    }, { status: 400 })
+                        return NextResponse.json({ error: 'ERR_SAME_PASSWORD' }, { status: 400 })
                 }
             }
 
@@ -143,9 +141,7 @@ export async function POST(request: Request) {
             for (const entry of recentPasswords) {
                 const matchesOld = await compare(password, entry.passwordHash)
                 if (matchesOld) {
-                    return NextResponse.json({
-                        error: `This password was recently used. Please choose a password you haven't used in your last ${PASSWORD_HISTORY_LIMIT} changes.`,
-                    }, { status: 400 })
+                        return NextResponse.json({ error: 'ERR_REUSED_PASSWORD' }, { status: 400 })
                 }
             }
 
@@ -197,7 +193,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     } catch {
-        return NextResponse.json({ error: 'Password reset failed' }, { status: 500 })
+        return NextResponse.json({ error: 'ERR_RESET_FAILED' }, { status: 500 })
     }
 }
 

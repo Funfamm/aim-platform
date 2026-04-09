@@ -150,7 +150,14 @@
     "emailPrivate": "メールは非公開です。",
     "namePlaceholder": "お名前",
     "emailPlaceholder": "your@email.com",
-    "amountPlaceholder": "金額を入力(最低${min})"
+    "amountPlaceholder": "金額を入力(最低${min})",
+    "errorEmailRequired": "メールアドレスは必須です",
+    "validationRequired": "このフィールドを入力してください。",
+    "errPaypalMissing": "PayPalが設定されていません。",
+    "errPaypalLoad": "PayPalを読み込めませんでした。接続を確認してください。",
+    "errPaymentFailed": "支払いに失敗しました。もう一度お試しください。",
+    "errPaymentProcessing": "支払い処理エラー。もう一度お試しください。",
+    "errPaymentCanceled": "支払いがキャンセルされました。もう一度お試しください。"
   },
   "footer": {
     "tagline": "AIで映画の未来を開拓。",
@@ -168,7 +175,8 @@
     "rights": "全著作権所有。",
     "emailPlaceholder": "メールを入力",
     "subscribe": "購読",
-    "subscribed": "購読済み！"
+    "subscribed": "購読済み！",
+    "validationRequired": "このフィールドを入力してください。"
   },
   "common": {
     "loading": "読み込み中...",
@@ -258,7 +266,8 @@
     "roleTypeSupporting": "助演",
     "roleTypeExtra": "エキストラ",
     "withdraw": "取り下げ",
-    "applyAgain": "再応募"
+    "applyAgain": "再応募",
+    "applied": "応募済み ✓"
   },
   "alreadyApplied": {
     "pageLabel": "申請状況",
@@ -292,7 +301,7 @@
     "statusNotSelected": "非選出",
     "statusWithdrawn": "取り下げ済み",
     "resultPending": "応募内容を審査中です。まもなく結果がお知らせできます。",
-    "resultAvailableOn": "{date} 以降に結果が公開されます",
+    "resultAvailableOn": "{date} 以降に結果が公開されます",
     "auditQueued": "あなたの応募はAI審査の待機中です。",
     "auditProcessing": "あなたのオーディションはAIシステムによって審査中です。",
     "auditScoredHidden": "審査が完了しました。結果は{date}に公開されます。",
@@ -373,7 +382,18 @@
     "statusFinalReview": "最終審査",
     "statusApproved": "承認",
     "statusSelected": "選出",
-    "statusNotSelected": "不選出"
+    "statusNotSelected": "不選出",
+    "praiseWords": "素晴らしい！🌟|真のサポーター！💫|映画の英雄！🎬|ありがとう！❤️|伝説！🏆",
+    "receiptTitle": "寄付領収書",
+    "receiptThankYou": "ご支援ありがとうございます",
+    "receiptDate": "日付",
+    "receiptDonor": "寄付者",
+    "receiptMethod": "方法",
+    "receiptStatus": "状態",
+    "receiptMessage": "メッセージ",
+    "receiptAnonymous": "匿名",
+    "receiptPrint": "領収書を印刷",
+    "receiptFooter": "この領収書はあなたの寛大な貢献を確認します。100%が物語を実現するために使われます。🎥"
   },
   "upcomingHero": {
     "label": "近日公開",
@@ -531,7 +551,19 @@
     "genericError": "エラー。再試行してください。",
     "emailLabel": "メール:",
     "ageLabel": "年齢:",
-    "genderLabel": "性別:"
+    "genderLabel": "性別:",
+    "photoFrontHeadshot": "正面顔写真",
+    "photoFrontDesc": "正面から撮影した明るくはっきりした顔写真",
+    "photoSideProfile": "横顔写真",
+    "photoSideDesc": "左または右の横顔",
+    "photoFullBody": "全身写真",
+    "photoFullDesc": "立った状態の全身、自然なポーズ",
+    "photoExpression": "表情写真",
+    "photoExpressionDesc": "笑顔、真剣な表情、または感情的な表情",
+    "photoOptional1": "追加写真（任意）",
+    "photoOptional1Desc": "アクションポーズ、クローズアップ、またはクリエイティブな写真",
+    "photoOptional2": "追加写真（任意）",
+    "photoOptional2Desc": "見せたい別のアングルやルック"
   },
   "training": {
     "hub": "トレーニングハブ",
@@ -701,7 +733,8 @@
     "sendAnother": "もう一通",
     "errorMsg": "送信失敗。再試行してください。",
     "sending": "送信中...",
-    "sendMessage": "メッセージ送信"
+    "sendMessage": "メッセージ送信",
+    "validationRequired": "このフィールドを入力してください。"
   },
   "forgotPassword": {
     "accountRecovery": "アカウント回復",
@@ -727,7 +760,18 @@
     "noMatch": "パスワードが一致しません",
     "resetFailed": "リセット失敗",
     "hidePassword": "非表示",
-    "showPassword": "表示"
+    "showPassword": "表示",
+    "errEmailRequired": "メールアドレスは必須です",
+    "errNotFound": "そのメールアドレスに関連するアカウントは見つかりませんでした",
+    "errTooMany": "試行回数が多すぎます。後でもう一度お試しください。",
+    "errCodeRequired": "認証コードが必要です",
+    "errNoCode": "リセットコードが見つかりません。新しいコードを要求してください。",
+    "errCodeExpired": "コードの有効期限が切れました。新しいコードを要求してください。",
+    "errCodeInvalid": "無効なコードです。もう一度お試しください。",
+    "errPwTooShort": "パスワードは6文字以上必要です",
+    "errSamePassword": "現在のパスワードを再利用することはできません。",
+    "errReusedPassword": "このパスワードは最近使用されました。別のものを選択してください。",
+    "errResetFailed": "パスワードのリセットに失敗しました。もう一度お試しください。"
   },
   "sponsors": {
     "label": "サポーター",
@@ -800,7 +844,16 @@
       "noResults": "結果が見つかりませんでした。",
       "loading": "検索中…",
       "suggestionTitle": "候補"
-    }
+    },
+    "oauthNoPassword": "{provider} でサインインしました。アカウントにはまだパスワードがありません。以下からパスワードを作成して、メールとパスワードでもログインできるようにしましょう。",
+    "createPasswordBtn": "パスワードを作成",
+    "setPasswordBtn": "パスワードを設定",
+    "passwordSetSuccess": "パスワードが正常に作成されました！メールとパスワードでログインできます。",
+    "codeSentToEmail": "6桁の認証コードがメールに送信されました。",
+    "verificationCode": "認証コード",
+    "minCharsError": "パスワードは6文字以上にしてください",
+    "theme": "テーマ",
+    "accentColour": "アクセントカラー"
   },
   "search": {
     "close": "閉じる",
@@ -875,17 +928,17 @@
   },
   "scripts": {
     "metaTitle": "スクリプト募集 | AIM Studio",
-    "metaDesc": "あなたの脚本を応募し、AI映画制作でAIM Studioに制作してもらうチャンスを掴みましょう。",
+    "metaDesc": "AIM Studioによる制作のチャンスをつかむため、脚本を投稿してください。",
     "badge": "募集中",
     "heroTitle": "脚本",
     "heroAccent": "募集",
-    "heroDesc": "オリジナルの脚本を求めています。スクリプトを応募すると、AIが制作可能性を分析します。優秀な脚本はAIM Studioで制作されます。",
+    "heroDesc": "オリジナル脚本を募集しています。スクリプトを提出すると、クリエイティブチームが制作可能性を審査します。",
     "noCompensation": "金銭的補償なし · クレジット＆ポートフォリオの機会",
     "stepLabel": "ステップ",
     "step1Title": "脚本を応募する",
     "step1Desc": "オープンコールフォームからPDFまたはFinal Draft形式で脚本をアップロードしてください。",
-    "step2Title": "AI分析",
-    "step2Desc": "AIが脚本の構成・独自性・制作可能性を審査します。",
+    "step2Title": "チームレビュー",
+    "step2Desc": "クリエイティブチームが構成、独創性、制作可能性の観点からスクリプトをレビューします。",
     "step3Title": "制作へ",
     "step3Desc": "採用された脚本は、クリエイティブクレジット付きでAIM Studioの制作に入ります。",
     "closedTitle": "脚本募集は締め切られています",
@@ -900,6 +953,12 @@
     "deadlineLabel": "締切",
     "submission": "件の応募",
     "submissions": "件の応募",
-    "submitScript": "脚本を応募する"
+    "submitScript": "脚本を応募する",
+    "notifyMeBtn": "開設時に通知する",
+    "notifyLoading": "登録中...",
+    "notifyConfirmedTitle": "リストに登録されました！",
+    "notifyConfirmedDesc": "このコールが開いたらすぐにお知らせします。",
+    "comingSoonLabel": "もうすぐ公開",
+    "comingSoonBadge": "まもなく"
   }
 }

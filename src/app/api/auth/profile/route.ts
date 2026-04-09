@@ -10,7 +10,7 @@ export async function PUT(request: Request) {
   }
 
   const body = await request.json()
-  const { name, currentPassword, newPassword } = body
+  const { name, currentPassword, newPassword, accentColor, themeMode } = body
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId as string },
@@ -20,10 +20,19 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: 'User not found' }, { status: 404 })
   }
 
-  const updateData: { name?: string; passwordHash?: string; tokenVersion?: { increment: number } } = {}
+  const updateData: { name?: string; passwordHash?: string; tokenVersion?: { increment: number }; accentColor?: string; themeMode?: string } = {}
 
   if (name && name.trim()) {
     updateData.name = name.trim()
+  }
+
+  const VALID_ACCENTS = ['gold', 'silver', 'ember', 'jade', 'azure']
+  if (accentColor && VALID_ACCENTS.includes(accentColor)) {
+    updateData.accentColor = accentColor
+  }
+  const VALID_THEMES = ['dark', 'light']
+  if (themeMode && VALID_THEMES.includes(themeMode)) {
+    updateData.themeMode = themeMode
   }
 
   if (newPassword) {

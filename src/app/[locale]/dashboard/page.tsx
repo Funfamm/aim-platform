@@ -112,6 +112,7 @@ export default function DashboardPage() {
         const validTabs: TabType[] = ['applications', 'watchlist', 'activity', 'donations', 'profile']
         return validTabs.includes(tab as TabType) ? (tab as TabType) : 'applications'
     })
+    const [hasCastingCalls, setHasCastingCalls] = useState(false)
     const [pagination, setPagination] = useState<PaginationState>({
         appsCursor: null, appsHasMore: false,
         watchCursor: null, watchHasMore: false,
@@ -156,6 +157,10 @@ export default function DashboardPage() {
                 setLoadingDonations(false)
             })
             .catch(() => setLoadingDonations(false))
+        // Check if any casting calls are published (lightweight count)
+        fetch('/api/casting/active-count').then(r => r.json())
+            .then(data => setHasCastingCalls((data.count || 0) > 0))
+            .catch(() => setHasCastingCalls(false))
     }, [user])
 
     const loadMore = useCallback(async (tab: 'applications' | 'watchlist' | 'history' | 'donations') => {
@@ -199,7 +204,7 @@ export default function DashboardPage() {
         const w = window.open('', '_blank', 'width=500,height=600')
         if (!w) return
         w.document.write(`
-            <html><head><title>Donation Receipt</title>
+            <html><head><title>${t('receiptTitle')}</title>
             <style>body{font-family:system-ui,sans-serif;padding:40px;color:#1a1a2e;max-width:460px;margin:0 auto}
             h1{font-size:20px;margin-bottom:4px}h2{font-size:14px;color:#666;font-weight:400;margin-bottom:24px}
             .line{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee;font-size:13px}
@@ -210,19 +215,19 @@ export default function DashboardPage() {
             hr{border:none;border-top:2px solid #d4a853;margin:16px 0}
             @media print{button{display:none !important}}
             </style></head><body>
-            <h1>🎬 Donation Receipt</h1>
-            <h2>Thank you for your support</h2>
+            <h1>🎬 ${t('receiptTitle')}</h1>
+            <h2>${t('receiptThankYou')}</h2>
             <hr/>
             <div class="id">Receipt #${d.id.slice(0, 12).toUpperCase()}</div>
-            <div class="line"><span>Date</span><span>${new Date(d.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
-            <div class="line"><span>Donor</span><span>${d.anonymous ? 'Anonymous' : d.name}</span></div>
-            <div class="line"><span>Method</span><span style="text-transform:capitalize">${d.method}</span></div>
-            <div class="line"><span>Status</span><span style="text-transform:capitalize">${d.status}</span></div>
-            ${d.message ? `<div class="line"><span>Message</span><span>${d.message}</span></div>` : ''}
+            <div class="line"><span>${t('receiptDate')}</span><span>${new Date(d.createdAt).toLocaleDateString(locale, { year: 'numeric', month: 'long', day: 'numeric' })}</span></div>
+            <div class="line"><span>${t('receiptDonor')}</span><span>${d.anonymous ? t('receiptAnonymous') : d.name}</span></div>
+            <div class="line"><span>${t('receiptMethod')}</span><span style="text-transform:capitalize">${d.method}</span></div>
+            <div class="line"><span>${t('receiptStatus')}</span><span style="text-transform:capitalize">${d.status}</span></div>
+            ${d.message ? `<div class="line"><span>${t('receiptMessage')}</span><span>${d.message}</span></div>` : ''}
             <div class="total">$${d.amount.toFixed(2)}</div>
             <hr/>
-            <div class="footer">This receipt confirms your generous contribution.<br/>100% goes toward bringing stories to life. 🎥</div>
-            <div style="text-align:center;margin-top:16px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:600;background:#d4a853;color:#000;border:none;border-radius:6px;cursor:pointer">🖨️ Print Receipt</button></div>
+            <div class="footer">${t('receiptFooter')}</div>
+            <div style="text-align:center;margin-top:16px"><button onclick="window.print()" style="padding:8px 24px;font-size:13px;font-weight:600;background:#d4a853;color:#000;border:none;border-radius:6px;cursor:pointer">🖨️ ${t('receiptPrint')}</button></div>
             </body></html>
         `)
         w.document.close()
@@ -488,7 +493,7 @@ export default function DashboardPage() {
                                                         )}
                                                     </div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                                        {new Date(d.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        {new Date(d.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         <span style={{ marginLeft: '8px', fontSize: '0.65rem', fontFamily: 'monospace', opacity: 0.5 }}>#{d.id.slice(0, 8)}</span>
                                                     </div>
                                                     {d.message && (
@@ -503,7 +508,7 @@ export default function DashboardPage() {
                                                     background: 'rgba(212,168,83,0.06)', color: 'var(--accent-gold)',
                                                     cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s',
                                                 }}>
-                                                    🧾 Receipt
+                                                    🧾 {t('receipt')}
                                                 </button>
                                             </div>
                                         </ScrollReveal3D>
@@ -519,7 +524,7 @@ export default function DashboardPage() {
                     )}
 
                     {activeTab === 'profile' && (
-                        <ProfileTab user={user} refreshUser={refreshUser} />
+                        <ProfileTab user={user} refreshUser={refreshUser} hasCastingCalls={hasCastingCalls} />
                     )}
                 </div>
             </main>

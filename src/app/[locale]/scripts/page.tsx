@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
+import NotifyMeButton from '@/components/scripts/NotifyMeButton'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -36,6 +37,28 @@ export default async function ScriptCallsPage() {
             _count: { select: { submissions: true } },
         },
     }) : []
+
+    // Coming-soon: published but not yet open
+    const comingSoon = enabled ? await prisma.scriptCall.findMany({
+        where: { isPublic: true, status: { not: 'open' } },
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        include: {
+            project: { select: { title: true, coverImage: true } },
+        },
+    }) : []
+
+    // Which calls this user is already subscribed to
+    const userId = session.userId as string
+    let subscribedIds = new Set<string>()
+    if (comingSoon.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const subs = await (prisma as any).scriptCallNotify.findMany({
+            where: { userId, scriptCallId: { in: comingSoon.map(c => c.id) } },
+            select: { scriptCallId: true },
+        }).catch(() => [])
+        subscribedIds = new Set(subs.map((s: { scriptCallId: string }) => s.scriptCallId))
+    }
 
     return (
         <>
@@ -371,6 +394,127 @@ export default async function ScriptCallsPage() {
                                 </div>
                             </>
                         )}
+
+                        {/* ── COMING SOON section ── */}
+                        {comingSoon.length > 0 && (
+                            <div style={{ marginTop: 'var(--space-4xl)' }}>
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', gap: '12px',
+                                    marginBottom: 'var(--space-xl)',
+                                }}>
+                                    <div style={{
+                                        flex: 1, height: '1px',
+                                        background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.2), transparent)',
+                                    }} />
+                                    <span style={{
+                                        fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em',
+                                        textTransform: 'uppercase', color: 'var(--accent-gold)', opacity: 0.7,
+                                    }}>⏳ {t('comingSoonLabel')}</span>
+                                    <div style={{
+                                        flex: 1, height: '1px',
+                                        background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.2), transparent)',
+                                    }} />
+                                </div>
+
+                                <div className="scripts-grid" style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                    gap: 'var(--space-lg)',
+                                    alignItems: 'start',
+                                }}>
+                                    {comingSoon.map((call, i) => (
+                                        <div
+                                            key={call.id}
+                                            style={{
+                                                position: 'relative',
+                                                padding: 'var(--space-xl)',
+                                                borderRadius: 'var(--radius-xl)',
+                                                background: 'rgba(255,255,255,0.015)',
+                                                border: '1px solid rgba(255,255,255,0.06)',
+                                                backdropFilter: 'blur(20px)',
+                                                animationDelay: `${i * 80}ms`,
+                                                animation: 'fadeInUp 0.5s ease both',
+                                                overflow: 'hidden',
+                                            }}
+                                        >
+                                            {/* Frosted overlay — coming soon */}
+                                            <div style={{
+                                                position: 'absolute', top: '12px', right: '14px',
+                                                fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.1em',
+                                                textTransform: 'uppercase',
+                                                color: 'rgba(212,168,83,0.6)',
+                                                background: 'rgba(212,168,83,0.06)',
+                                                border: '1px solid rgba(212,168,83,0.12)',
+                                                padding: '2px 10px', borderRadius: 'var(--radius-full)',
+                                            }}>
+                                                {t('comingSoonBadge')}
+                                            </div>
+
+                                            {/* Project badge */}
+                                            {call.project && (
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    marginBottom: 'var(--space-md)',
+                                                }}>
+                                                    {call.project.coverImage && (
+                                                        <div style={{
+                                                            width: '24px', height: '24px', borderRadius: '5px',
+                                                            backgroundImage: `url(${call.project.coverImage})`,
+                                                            backgroundSize: 'cover', backgroundPosition: 'center',
+                                                            border: '1px solid rgba(212,168,83,0.15)',
+                                                            flexShrink: 0, opacity: 0.6,
+                                                        }} />
+                                                    )}
+                                                    <span style={{
+                                                        fontSize: '0.62rem', color: 'var(--accent-gold)',
+                                                        textTransform: 'uppercase', letterSpacing: '0.08em',
+                                                        fontWeight: 600, opacity: 0.7,
+                                                    }}>
+                                                        {t('forProject')}: {call.project.title}
+                                                    </span>
+                                                </div>
+                                            )}
+
+                                            {/* Title */}
+                                            <h3 style={{
+                                                fontSize: '1.05rem', fontWeight: 700,
+                                                marginBottom: 'var(--space-sm)',
+                                                color: 'var(--text-primary)', lineHeight: 1.3,
+                                                opacity: 0.8,
+                                            }}>
+                                                {call.title}
+                                            </h3>
+
+                                            {/* Description */}
+                                            <p style={{
+                                                fontSize: '0.82rem', color: 'var(--text-tertiary)',
+                                                marginBottom: 'var(--space-lg)', lineHeight: 1.6,
+                                            }}>
+                                                {call.description.slice(0, 140)}{call.description.length > 140 ? '…' : ''}
+                                            </p>
+
+                                            {/* Genre tag */}
+                                            {call.genre && (
+                                                <div style={{ marginBottom: 'var(--space-md)' }}>
+                                                    <span style={{
+                                                        fontSize: '0.6rem', padding: '3px 10px', fontWeight: 600,
+                                                        background: 'rgba(212,168,83,0.05)', color: 'rgba(212,168,83,0.6)',
+                                                        borderRadius: 'var(--radius-full)', border: '1px solid rgba(212,168,83,0.1)',
+                                                    }}>{call.genre}</span>
+                                                </div>
+                                            )}
+
+                                            {/* Notify Me button */}
+                                            <NotifyMeButton
+                                                scriptCallId={call.id}
+                                                initialSubscribed={subscribedIds.has(call.id)}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </section>
             </main>

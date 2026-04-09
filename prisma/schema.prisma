@@ -35,6 +35,8 @@ model User {
   mfaExpiresAt           DateTime?
   preferredLanguage      String                      @default("en")
   receiveLocalizedEmails Boolean                     @default(true)
+  accentColor            String                      @default("gold")
+  themeMode              String                      @default("dark")
   applications           Application[]
   donations              Donation[]
   enrollments            Enrollment[]
@@ -44,10 +46,11 @@ model User {
   quizAttempts           QuizAttempt[]
   reviewActivities       ReviewActivity[]
   trainingBadges         TrainingBadge[]
-  notifications          UserNotification[]
-  notificationPreference UserNotificationPreference?
-  watchHistory           WatchHistory[]
-  watchlist              Watchlist[]
+  notifications              UserNotification[]
+  notificationPreference     UserNotificationPreference?
+  scriptCallNotifications    ScriptCallNotify[]
+  watchHistory               WatchHistory[]
+  watchlist                  Watchlist[]
 
   @@index([role])
   @@index([createdAt])
@@ -430,6 +433,7 @@ model Sponsor {
   id                  String    @id @default(cuid())
   name                String
   description         String?
+  descriptionI18n     Json?
   logoUrl             String?
   bannerUrl           String?
   website             String?
@@ -493,8 +497,21 @@ model ScriptCall {
   updatedAt      DateTime           @updatedAt
   project        Project?           @relation(fields: [projectId], references: [id])
   submissions    ScriptSubmission[]
+  notifications  ScriptCallNotify[]
 
   @@index([title])
+}
+
+model ScriptCallNotify {
+  id           String    @id @default(cuid())
+  scriptCallId String
+  userId       String
+  createdAt    DateTime  @default(now())
+  scriptCall   ScriptCall @relation(fields: [scriptCallId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([scriptCallId, userId])
+  @@index([userId])
 }
 
 model ScriptSubmission {

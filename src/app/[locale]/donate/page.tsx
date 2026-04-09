@@ -52,7 +52,7 @@ export default function DonatePage() {
             
         if (!clientId) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setErrorMsg('PayPal configuration is missing (Client ID not found). Ensure NEXT_PUBLIC_PAYPAL_CLIENT_ID is set in your environment.')
+            setErrorMsg(t('errPaypalMissing'))
             setStatus('error')
             setShowPaypal(false)
             return
@@ -79,7 +79,7 @@ export default function DonatePage() {
         script.async = true
         script.onload = () => setPaypalReady(true)
         script.onerror = () => {
-            setErrorMsg('Failed to load PayPal secure checkout. Please check your network connection, disable adblockers, or verify your Sandbox/Live Client ID is valid.')
+            setErrorMsg(t('errPaypalLoad'))
             setStatus('error')
             setShowPaypal(false)
         }
@@ -178,21 +178,21 @@ export default function DonatePage() {
                         setStatus('sent')
                     } else {
                         const errData = await res.json()
-                        setErrorMsg(errData.error || 'Payment failed')
+                        setErrorMsg(errData.error || t('errPaymentFailed'))
                         setStatus('error')
                     }
                 } catch {
-                    setErrorMsg('Payment processing error')
+                    setErrorMsg(t('errPaymentProcessing'))
                     setStatus('error')
                 }
             },
             onError: (err: Error) => {
                 console.error('PayPal error:', err)
-                setErrorMsg('Payment failed. Please try again.')
+                setErrorMsg(t('errPaymentFailed'))
                 setStatus('error')
             },
             onCancel: () => {
-                setErrorMsg('Payment was canceled. You can try again.')
+                setErrorMsg(t('errPaymentCanceled'))
                 setStatus('error')
                 setShowPaypal(false)
             },
@@ -223,7 +223,7 @@ export default function DonatePage() {
             return
         }
         if (!form.email) {
-            setErrorMsg(t('emailLabel') + ' is required')
+            setErrorMsg(t('errorEmailRequired'))
             return
         }
         setShowPaypal(true)
@@ -405,12 +405,18 @@ export default function DonatePage() {
                                             {!anonymous && (
                                                 <div>
                                                     <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('nameLabel')} *</label>
-                                                    <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required={!anonymous} placeholder={t('namePlaceholder')} style={inputStyle} />
+                                                    <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required={!anonymous} placeholder={t('namePlaceholder')} style={inputStyle}
+                                                        onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
+                                                        onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                                                    />
                                                 </div>
                                             )}
                                             <div style={anonymous ? { gridColumn: '1 / -1' } : {}}>
                                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('emailLabel')} *</label>
-                                                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required placeholder={t('emailPlaceholder')} style={inputStyle} />
+                                                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required placeholder={t('emailPlaceholder')} style={inputStyle}
+                                                    onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
+                                                    onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                                                />
                                                 {anonymous && <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>{t('emailPrivate')}</p>}
                                             </div>
                                         </div>

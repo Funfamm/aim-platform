@@ -24,6 +24,7 @@ export async function PUT(
         const update: Record<string, unknown> = {}
         if (data.name !== undefined) update.name = data.name
         if (data.description !== undefined) update.description = data.description || null
+        if (data.descriptionI18n !== undefined) update.descriptionI18n = data.descriptionI18n || null
         if (data.logoUrl !== undefined) update.logoUrl = data.logoUrl || null
         if (data.bannerUrl !== undefined) update.bannerUrl = data.bannerUrl || null
         if (data.website !== undefined) update.website = data.website || null

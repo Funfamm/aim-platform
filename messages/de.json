@@ -166,7 +166,14 @@
     "emailPrivate": "Ihre E-Mail ist privat.",
     "namePlaceholder": "Ihr Name",
     "emailPlaceholder": "ihre@email.com",
-    "amountPlaceholder": "Betrag eingeben (Minimum ${min})"
+    "amountPlaceholder": "Betrag eingeben (Minimum ${min})",
+    "errorEmailRequired": "E-Mail ist erforderlich",
+    "validationRequired": "Bitte füllen Sie dieses Feld aus.",
+    "errPaypalMissing": "PayPal ist nicht konfiguriert.",
+    "errPaypalLoad": "PayPal konnte nicht geladen werden. Überprüfe deine Verbindung.",
+    "errPaymentFailed": "Zahlung fehlgeschlagen. Bitte erneut versuchen.",
+    "errPaymentProcessing": "Zahlungsverarbeitungsfehler. Bitte erneut versuchen.",
+    "errPaymentCanceled": "Zahlung wurde abgebrochen. Du kannst es erneut versuchen."
   },
   "footer": {
     "tagline": "Pioniere der Zukunft des Kinos durch künstliche Intelligenz.",
@@ -184,7 +191,8 @@
     "rights": "Alle Rechte vorbehalten.",
     "emailPlaceholder": "Ihre E-Mail",
     "subscribe": "Abonnieren",
-    "subscribed": "Sie sind abonniert!"
+    "subscribed": "Sie sind abonniert!",
+    "validationRequired": "Bitte füllen Sie dieses Feld aus."
   },
   "common": {
     "loading": "Laden...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "Nebenrolle",
     "roleTypeExtra": "Statist",
     "withdraw": "Zurückziehen",
-    "applyAgain": "Erneut bewerben"
+    "applyAgain": "Erneut bewerben",
+    "applied": "Beworben ✓"
   },
   "alreadyApplied": {
     "pageLabel": "Bewerbungsstatus",
@@ -308,7 +317,7 @@
     "statusNotSelected": "Nicht ausgewählt",
     "statusWithdrawn": "Zurückgezogen",
     "resultPending": "Ihre Bewerbung wird geprüft. Die Ergebnisse werden in Kürze bekannt gegeben.",
-    "resultAvailableOn": "Ergebnisse verfügbar ab {date}",
+    "resultAvailableOn": "Ergebnisse verfügbar ab {date}",
     "auditQueued": "Deine Bewerbung wartet auf die KI-Überprüfung.",
     "auditProcessing": "Dein Vorsprechen wird gerade von unserem KI-System überprüft.",
     "auditScoredHidden": "Überprüfung abgeschlossen! Dein Ergebnis wird am {date} veröffentlicht.",
@@ -389,7 +398,18 @@
     "statusFinalReview": "Endprüfung",
     "statusApproved": "Genehmigt",
     "statusSelected": "Ausgewählt",
-    "statusNotSelected": "Nicht Ausgewählt"
+    "statusNotSelected": "Nicht Ausgewählt",
+    "praiseWords": "Du bist großartig! 🌟|Echter Unterstützer! 💫|Filmheld! 🎬|Danke! ❤️|Legende! 🏆",
+    "receiptTitle": "Spendenquittung",
+    "receiptThankYou": "Danke für deine Unterstützung",
+    "receiptDate": "Datum",
+    "receiptDonor": "Spender",
+    "receiptMethod": "Methode",
+    "receiptStatus": "Status",
+    "receiptMessage": "Nachricht",
+    "receiptAnonymous": "Anonym",
+    "receiptPrint": "Quittung drucken",
+    "receiptFooter": "Diese Quittung bestätigt deinen großzügigen Beitrag. 100% fließt in die Verwirklichung von Geschichten. 🎥"
   },
   "upcomingHero": {
     "label": "Demnächst",
@@ -547,7 +567,19 @@
     "genericError": "Fehler. Erneut versuchen.",
     "emailLabel": "E-Mail:",
     "ageLabel": "Alter:",
-    "genderLabel": "Geschlecht:"
+    "genderLabel": "Geschlecht:",
+    "photoFrontHeadshot": "Frontalaufnahme",
+    "photoFrontDesc": "Klares, gut beleuchtetes Foto deines Gesichts von vorne",
+    "photoSideProfile": "Seitenprofilaufnahme",
+    "photoSideDesc": "Ansicht von links oder rechts",
+    "photoFullBody": "Ganzkörperaufnahme",
+    "photoFullDesc": "Stehend, ganzer Körper, neutrale Pose",
+    "photoExpression": "Ausdrucksaufnahme",
+    "photoExpressionDesc": "Lächelnder, ernster oder emotionaler Gesichtsausdruck nach Wahl",
+    "photoOptional1": "Zusätzliche Aufnahme (Optional)",
+    "photoOptional1Desc": "Aktionspose, Nahaufnahme oder kreatives Foto",
+    "photoOptional2": "Zusätzliche Aufnahme (Optional)",
+    "photoOptional2Desc": "Ein anderer Winkel oder Look"
   },
   "training": {
     "hub": "Ausbildungszentrum",
@@ -717,7 +749,8 @@
     "sendAnother": "Weitere Senden",
     "errorMsg": "Fehler. Bitte erneut versuchen.",
     "sending": "Wird gesendet...",
-    "sendMessage": "Nachricht Senden"
+    "sendMessage": "Nachricht Senden",
+    "validationRequired": "Bitte füllen Sie dieses Feld aus."
   },
   "forgotPassword": {
     "accountRecovery": "Kontowiederherstellung",
@@ -743,7 +776,18 @@
     "noMatch": "Passwörter stimmen nicht überein",
     "resetFailed": "Zurücksetzen fehlgeschlagen",
     "hidePassword": "Verbergen",
-    "showPassword": "Anzeigen"
+    "showPassword": "Anzeigen",
+    "errEmailRequired": "E-Mail-Adresse ist erforderlich",
+    "errNotFound": "Kein Konto mit dieser E-Mail-Adresse gefunden",
+    "errTooMany": "Zu viele Versuche. Bitte versuche es später erneut.",
+    "errCodeRequired": "Verifizierungscode ist erforderlich",
+    "errNoCode": "Kein Reset-Code gefunden. Bitte fordere einen neuen an.",
+    "errCodeExpired": "Code abgelaufen. Bitte fordere einen neuen an.",
+    "errCodeInvalid": "Ungültiger Code. Bitte versuche es erneut.",
+    "errPwTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein",
+    "errSamePassword": "Du kannst dein aktuelles Passwort nicht wiederverwenden.",
+    "errReusedPassword": "Dieses Passwort wurde kürzlich verwendet. Bitte wähle ein anderes.",
+    "errResetFailed": "Passwort zurücksetzen fehlgeschlagen. Bitte versuche es erneut."
   },
   "sponsors": {
     "label": "Unsere Unterstützer",
@@ -816,7 +860,16 @@
       "noResults": "Keine Ergebnisse gefunden.",
       "loading": "Suche läuft…",
       "suggestionTitle": "Vorschläge"
-    }
+    },
+    "oauthNoPassword": "Sie haben sich mit {provider} angemeldet. Ihr Konto hat noch kein Passwort. Sie koennen unten eines erstellen, um sich auch mit E-Mail und Passwort anzumelden.",
+    "createPasswordBtn": "Passwort erstellen",
+    "setPasswordBtn": "Passwort festlegen",
+    "passwordSetSuccess": "Passwort erfolgreich erstellt! Sie koennen sich jetzt mit E-Mail und Passwort anmelden.",
+    "codeSentToEmail": "Ein 6-stelliger Verifizierungscode wurde an Ihre E-Mail gesendet.",
+    "verificationCode": "Verifizierungscode",
+    "minCharsError": "Passwort muss mindestens 6 Zeichen lang sein",
+    "theme": "Design",
+    "accentColour": "Akzentfarbe"
   },
   "notificationBell": {
     "title": "Benachrichtigungen",
@@ -874,17 +927,17 @@
   },
   "scripts": {
     "metaTitle": "Drehbuch-Einreichungen | AIM Studio",
-    "metaDesc": "Reiche dein Drehbuch ein und erhalte die Chance, es mit KI-gestützter Filmproduktion von AIM Studio produzieren zu lassen.",
+    "metaDesc": "Reiche dein Drehbuch ein für eine Chance, von AIM Studio produziert zu werden.",
     "badge": "Offene Ausschreibungen",
     "heroTitle": "Drehbuch-",
     "heroAccent": "Einreichungen",
-    "heroDesc": "Wir suchen nach originellen Drehbüchern. Reiche dein Skript ein und unsere KI analysiert es auf Produktionspotenzial. Die besten Skripte werden von AIM Studio produziert.",
+    "heroDesc": "Wir suchen originelle Drehbücher. Reiche dein Skript ein und unser Kreativteam prüft es auf Produktionspotenzial.",
     "noCompensation": "Keine finanzielle Vergütung · Kredit & Portfoliomöglichkeit",
     "stepLabel": "Schritt",
     "step1Title": "Skript einreichen",
     "step1Desc": "Lade dein Drehbuch im PDF- oder Final Draft-Format über das Einreichungsformular hoch.",
-    "step2Title": "KI-Analyse",
-    "step2Desc": "Unsere KI prüft dein Skript auf Struktur, Originalität und Produktionsmachbarkeit.",
+    "step2Title": "Team-Prüfung",
+    "step2Desc": "Unser Kreativteam bewertet dein Skript auf Struktur, Originalität und Produktionsfähigkeit.",
     "step3Title": "Produktion sichern",
     "step3Desc": "Ausgewählte Skripte gehen mit vollem kreativem Kredit in die Produktion bei AIM Studio.",
     "closedTitle": "Drehbuch-Einreichungen geschlossen",
@@ -899,6 +952,12 @@
     "deadlineLabel": "Deadline",
     "submission": "Einreichung",
     "submissions": "Einreichungen",
-    "submitScript": "Skript einreichen"
+    "submitScript": "Skript einreichen",
+    "notifyMeBtn": "Benachrichtigen wenn offen",
+    "notifyLoading": "Wird abonniert...",
+    "notifyConfirmedTitle": "Du bist auf der Liste!",
+    "notifyConfirmedDesc": "Wir benachrichtigen dich, sobald dieser Aufruf öffnet.",
+    "comingSoonLabel": "Demnächst",
+    "comingSoonBadge": "Demnächst"
   }
 }

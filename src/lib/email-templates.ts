@@ -294,50 +294,63 @@ export function applicationAdminNotification(name: string, email: string, roleNa
 }
 
 export function applicationStatusUpdate(name: string, roleName: string, newStatus: string, note?: string, siteUrl?: string, locale = 'en'): string {
-    // Use localized heading/subtext/buttonText if available
-    const localizedHeading    = emailT('applicationStatusUpdate', locale, 'heading')
-    const localizedSubtext    = emailT('applicationStatusUpdate', locale, 'subtext')
-    const localizedButtonText = emailT('applicationStatusUpdate', locale, 'buttonText')
-    const statusLabels: Record<string, { emoji: string; label: string; color: string }> = {
-        'under-review':    { emoji: '🔍', label: 'Under Review', color: ACCENT_BLUE },
-        'under_review':    { emoji: '🔍', label: 'Under Review', color: ACCENT_BLUE },
-        'shortlisted':     { emoji: '⭐', label: 'Shortlisted', color: '#f59e0b' },
-        'callback':        { emoji: '✉️', label: 'Contacted', color: '#8b5cf6' },
-        'contacted':       { emoji: '✉️', label: 'Contacted', color: '#8b5cf6' },
-        'audition':        { emoji: '🎭', label: 'Moving to Next Round', color: '#8b5cf6' },
-        'final-review':    { emoji: '🎯', label: 'Final Review', color: '#ec4899' },
-        'final_review':    { emoji: '🎯', label: 'Final Review', color: '#ec4899' },
-        'selected':        { emoji: '🎉', label: 'Selected for the Role!', color: ACCENT_GREEN },
-        // All non-selection variants use professional, compassionate language
-        'not-selected':    { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
-        'not_selected':    { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
-        'rejected':        { emoji: '🎬', label: 'Not Selected at This Time', color: '#6b7280' },
-        'withdrawn':       { emoji: '📋', label: 'Application Withdrawn', color: '#6b7280' },
+    // Normalise status key (both 'under-review' and 'under_review' map to 'under_review')
+    const normStatus = newStatus.replace(/-/g, '_')
+    // Map status -> i18n section key
+    const i18nKeyMap: Record<string, string> = {
+        under_review: 'castingStatus_under_review',
+        shortlisted:  'castingStatus_shortlisted',
+        callback:     'castingStatus_callback',
+        contacted:    'castingStatus_callback',
+        audition:     'castingStatus_callback',
+        final_review: 'castingStatus_shortlisted',
+        selected:     'castingStatus_selected',
+        not_selected: 'castingStatus_not_selected',
+        rejected:     'castingStatus_not_selected',
+        withdrawn:    'castingStatus_not_selected',
     }
-    const st = statusLabels[newStatus] || { emoji: '📋', label: newStatus.replace(/_/g, ' ').replace(/-/g, ' '), color: TEXT_SECONDARY }
-
-    // For non-selection, use a special compassionate message body
-    const isNotSelected = ['rejected', 'not_selected', 'not-selected'].includes(newStatus)
-    const mainMessage = isNotSelected
-        ? paragraph(`We wanted to reach out with an update on your application for the <strong>${roleName}</strong> role. After thoughtful review, we've decided to move forward with other candidates for this particular role.`)
-        + paragraph(`Please know that this is never an easy decision, and we truly appreciate your interest and the time you invested in your application. We encourage you to explore other roles on our platform — your passion for this craft is exactly what we look for.`)
-        : paragraph(`There's an update on your application for the <strong>${roleName}</strong> role.`)
-
+    const i18nKey = i18nKeyMap[normStatus] || 'castingStatus_under_review'
+    // Pull fully localized strings from static map
+    const localizedSubject  = (emailT(i18nKey, locale, 'subject')  || 'Application Update').replace('{role}', roleName)
+    const localizedHeading  =  emailT(i18nKey, locale, 'heading')  || emailT('applicationStatusUpdate', locale, 'heading') || 'Application Update'
+    const localizedBody     =  emailT(i18nKey, locale, 'body')     || ''
+    const localizedLabel    =  emailT(i18nKey, locale, 'label')    || normStatus.replace(/_/g, ' ')
+    const localizedButton   =  emailT('applicationStatusUpdate', locale, 'buttonText') || 'View More Casting Roles'
+    const localizedSubtext  =  emailT('applicationStatusUpdate', locale, 'subtext')   || 'we have news for you.'
+    // Status display colours
+    const colorMap: Record<string, string> = {
+        under_review: ACCENT_BLUE, shortlisted: '#f59e0b',
+        callback: '#8b5cf6', contacted: '#8b5cf6', audition: '#8b5cf6',
+        final_review: '#ec4899', selected: ACCENT_GREEN,
+        not_selected: '#6b7280', rejected: '#6b7280', withdrawn: '#6b7280',
+    }
+    const emojiMap: Record<string, string> = {
+        under_review: '🔍', shortlisted: '⭐', callback: '✉️', contacted: '✉️',
+        audition: '🎭', final_review: '🎯', selected: '🎉',
+        not_selected: '🎬', rejected: '🎬', withdrawn: '📋',
+    }
+    const color = colorMap[normStatus] || TEXT_SECONDARY
+    const emoji = emojiMap[normStatus] || '📋'
+    const isNotSelected = ['rejected', 'not_selected', 'withdrawn'].includes(normStatus)
+    const mainMessage = localizedBody
+        ? paragraph(localizedBody)
+        : (isNotSelected
+            ? paragraph(`We appreciate your interest and the time you invested in your application for <strong>${roleName}</strong>. We encourage you to explore other roles.`)
+            : paragraph(`There's an update on your application for the <strong>${roleName}</strong> role.`))
     return emailWrapper(`
-        ${heading(localizedHeading || 'Application Update')}
-        ${subtext(`Hi ${name}, ${localizedSubtext || 'we have news for you.'}`)}
+        ${heading(localizedHeading)}
+        ${subtext(`Hi ${name}, ${localizedSubtext}`)}
         <div style="text-align: center; padding: 20px 0;">
-            <div style="font-size: 36px; margin-bottom: 8px;">${st.emoji}</div>
-            <div style="display: inline-block; padding: 8px 24px; background-color: ${BG_DARK}; border-radius: 20px; border: 1px solid ${st.color};">
-                <span style="font-size: 16px; font-weight: 700; color: ${st.color};">${st.label}</span>
+            <div style="font-size: 36px; margin-bottom: 8px;">${emoji}</div>
+            <div style="display: inline-block; padding: 8px 24px; background-color: ${BG_DARK}; border-radius: 20px; border: 1px solid ${color};">
+                <span style="font-size: 16px; font-weight: 700; color: ${color};">${localizedLabel}</span>
             </div>
-            <div style="font-size: 13px; color: ${TEXT_SECONDARY}; margin-top: 10px;">Role: ${roleName}</div>
         </div>
         ${divider()}
         ${mainMessage}
         ${note ? divider() + paragraph(`<em style="color: ${TEXT_SECONDARY};">${note}</em>`) : ''}
-        ${siteUrl ? button(localizedButtonText || 'View More Casting Roles', `${siteUrl}/casting`) : ''}
-    `, `Application update for ${roleName}`)
+        ${siteUrl ? button(localizedButton, `${siteUrl}/casting`) : ''}
+    `, localizedSubject)
 }
 
 
@@ -665,25 +678,32 @@ export async function donationThankYouWithOverrides(name: string, amount: number
 export async function applicationConfirmationWithOverrides(name: string, roleName: string, projectTitle?: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('application', {
         heading:    emailT('applicationConfirmation', locale, 'heading') || 'Application Received! 🎭',
-        body:       emailT('applicationConfirmation', locale, 'body') || "Your application has been submitted successfully. Our casting team will review it carefully. You'll receive updates as your application progresses through our review process.",
+        body:       emailT('applicationConfirmation', locale, 'body') || "Your application has been submitted successfully. Our casting team will review it carefully. You'll receive updates as your application progresses.",
         luck:       emailT('applicationConfirmation', locale, 'luck') || 'Good luck! 🤞',
         buttonText: emailT('applicationConfirmation', locale, 'buttonText') || 'View Your Dashboard',
         buttonUrl:  siteUrl ? `${siteUrl}/dashboard` : '',
     })
+    const roleLabel    = emailT('castingConfirmation', locale, 'roleLabel')      || 'Role'
+    const projectLabel = emailT('castingConfirmation', locale, 'projectLabel')   || 'Project'
+    const statusLabel  = emailT('castingConfirmation', locale, 'statusLabel')    || 'Status'
+    const statusVal    = emailT('castingConfirmation', locale, 'statusSubmitted') || '📋 Submitted'
+    const footer       = emailT('castingConfirmation', locale, 'footer') || 'You received this because you applied for a casting role on AIM Studio.'
+    const subject      = (emailT('castingConfirmation', locale, 'subject') || 'Application received for {role} 🎭').replace('{role}', roleName)
     return emailWrapper(`
         ${heading(f.heading)}
         ${subtext(`Hi ${name}, ${emailT('applicationConfirmation', locale, 'subtext') || 'thanks for applying.'}`)}
         ${infoCard(`
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                ${infoRow('Role', roleName)}
-                ${projectTitle ? infoRow('Project', projectTitle) : ''}
-                ${infoRow('Status', '📋 Submitted')}
+                ${infoRow(roleLabel, roleName)}
+                ${projectTitle ? infoRow(projectLabel, projectTitle) : ''}
+                ${infoRow(statusLabel, statusVal)}
             </table>
         `, BRAND_COLOR)}
         ${paragraph(f.body)}
         ${paragraph(f.luck)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
-    `, `Application received for ${roleName}`)
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footer}</span>`)}
+    `, subject)
 }
 
 /**
@@ -829,28 +849,61 @@ export async function scriptSubmissionConfirmationWithOverrides(name: string, ti
 
 // ── Broadcast Notification Templates ─────────────────────────────────────────
 
-/** Sent to all opted-in users when admin publishes a new casting role */
-export function newCastingRoleEmail(roleName: string, projectTitle: string, applyUrl: string): string {
+/** Sent to all opted-in users when admin publishes a new casting role — fully localized */
+export function newCastingRoleEmail(roleName: string, projectTitle: string, applyUrl: string, locale = 'en'): string {
+    const r = (s: string) => s.replace('{role}', roleName).replace('{project}', projectTitle)
+    const badge       = emailT('castingNewRole', locale, 'badge')      || 'New Casting Call'
+    const h           = r(emailT('castingNewRole', locale, 'heading')  || 'Now Open: {role}')
+    const sub         = r(emailT('castingNewRole', locale, 'subtext')  || 'A new audition in {project} is now live.')
+    const bodyTxt     =   emailT('castingNewRole', locale, 'body')     || 'Applications reviewed on a rolling basis.'
+    const statusOpen  =   emailT('castingNewRole', locale, 'statusOpen') || 'Open'
+    const btnTxt      =   emailT('castingNewRole', locale, 'buttonText') || 'Apply Now'
+    const footerTxt   =   emailT('castingNewRole', locale, 'footer')   || 'Roles close once filled.'
+    const roleLabel   =   emailT('castingConfirmation', locale, 'roleLabel')    || 'Role'
+    const projLabel   =   emailT('castingConfirmation', locale, 'projectLabel') || 'Project'
+    const statusLabel =   emailT('castingConfirmation', locale, 'statusLabel')  || 'Status'
+    const subject     = r(emailT('castingNewRole', locale, 'subject') || 'New Audition Open: {role} | AIM Studio')
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
-            <div style="font-size:52px;margin-bottom:12px;">🎭</div>
+            <div style="font-size:52px;margin-bottom:12px;">&#127917;</div>
             <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid ${BRAND_COLOR};">
-                <span style="font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1.5px;text-transform:uppercase;">New Casting Call</span>
+                <span style="font-size:12px;font-weight:700;color:${BRAND_COLOR};letter-spacing:1.5px;text-transform:uppercase;">${badge}</span>
             </div>
         </div>
-        ${heading(`Now Open: ${roleName}`)}
-        ${subtext(`A new audition opportunity in <strong style="color:${BRAND_COLOR};">${projectTitle}</strong> is now live.`)}
-        ${paragraph('Our casting team has just opened a new role. Applications are reviewed on a rolling basis — early applicants get priority attention.')}
+        ${heading(h)}
+        ${subtext(sub)}
+        ${paragraph(bodyTxt)}
         ${infoCard(`
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                ${infoRow('Role', roleName)}
-                ${infoRow('Project', projectTitle)}
-                ${infoRow('Status', '<span style="color:#10b981;font-weight:700;">● Open</span>')}
+                ${infoRow(roleLabel, roleName)}
+                ${infoRow(projLabel, projectTitle)}
+                ${infoRow(statusLabel, `<span style="color:#10b981;font-weight:700;">${statusOpen}</span>`)}
             </table>
         `, BRAND_COLOR)}
-        ${button('Apply Now →', applyUrl)}
-        ${paragraph(`<span style="font-size:12px;color:#6b7280;">Roles close once filled. Don’t miss your chance.</span>`)}
-    `, `New audition open: ${roleName} — Apply now`)
+        ${button(btnTxt, applyUrl)}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerTxt}</span>`)}
+    `, subject)
+}
+
+/** Sent to applicant when they withdraw their application — fully localized */
+export function applicationWithdrawalEmail(name: string, roleName: string, castingUrl: string, locale = 'en'): string {
+    const r = (s: string) => s.replace('{role}', roleName)
+    const h       = emailT('castingWithdrawal', locale, 'heading')    || 'Application Withdrawn'
+    const sub     = emailT('castingWithdrawal', locale, 'subtext')    || 'your application has been withdrawn.'
+    const bodyTxt = r(emailT('castingWithdrawal', locale, 'body')     || 'Your application for the role has been withdrawn.')
+    const btnTxt  = emailT('castingWithdrawal', locale, 'buttonText') || 'Browse Other Roles'
+    const footer  = emailT('castingWithdrawal', locale, 'footer')     || 'You received this because you withdrew a casting application on AIM Studio.'
+    const subject = r(emailT('castingWithdrawal', locale, 'subject')  || 'Application Withdrawn: {role}')
+    return emailWrapper(`
+        <div style="text-align:center;padding:16px 0 24px;">
+            <div style="font-size:52px;margin-bottom:12px;">&#128203;</div>
+        </div>
+        ${heading(h)}
+        ${subtext(`Hi ${name}, ${sub}`)}
+        ${paragraph(bodyTxt)}
+        ${castingUrl ? button(btnTxt, castingUrl) : ''}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footer}</span>`)}
+    `, subject)
 }
 
 /** Sent to all opted-in users for platform announcements */
@@ -908,19 +961,19 @@ export function contentPublishEmail(contentTitle: string, contentType: string, l
     `, `New ${contentType}: ${contentTitle}`)
 }
 
-// --- Course Enrollment Email ---
-
 export function courseEnrollmentEmail(
     userName: string,
     courseTitle: string,
     courseUrl: string,
+    locale: string = 'en',
     overrides?: { heading?: string; body?: string; button?: string; badge?: string }
 ): string {
     const BD = '#0f1115', BC = '#d4a853', BL = '#e8c36a', CARD = '#1a1d23', BORDER = '#2a2d35', TP = '#e8e6e3'
-    const h   = overrides?.heading ?? ('You are enrolled in ' + courseTitle + '!')
-    const b   = overrides?.body    ?? ('Welcome, ' + (userName || 'there') + '! Your journey through ' + courseTitle + ' starts now. Earn XP as you progress through each lesson.')
-    const btn = overrides?.button  ?? 'Start Learning'
-    const badge = overrides?.badge ?? 'New Enrollment'
+    const h   = overrides?.heading ?? emailT('trainingEnrollment', locale, 'heading').replace('{title}', courseTitle)
+    const b   = overrides?.body    ?? emailT('trainingEnrollment', locale, 'body').replace('{title}', courseTitle).replace('{name}', userName ? ', ' + userName : '')
+    const btn = overrides?.button  ?? emailT('trainingEnrollment', locale, 'buttonText')
+    const badge = overrides?.badge ?? emailT('trainingEnrollment', locale, 'badge')
+    const footer = emailT('trainingEnrollment', locale, 'footer')
     const parts: string[] = []
     parts.push('<!DOCTYPE html><html><body style="margin:0;padding:0;background:' + BD + '">')
     parts.push('<table width="100%" style="background:' + BD + '"><tr><td align="center" style="padding:40px 16px">')
@@ -939,10 +992,110 @@ export function courseEnrollmentEmail(
     parts.push('<td style="background:linear-gradient(135deg,' + BC + ',#c49b3a);border-radius:8px">')
     parts.push('<a href="' + courseUrl + '" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">' + btn + '</a>')
     parts.push('</td></tr></table>')
-    parts.push('<p style="margin:0;font-size:12px;color:#6b7280">You received this because you enrolled in a course on AIM Studio.</p>')
+    parts.push('<p style="margin:0;font-size:12px;color:#6b7280">' + footer + '</p>')
     parts.push('</td></tr>')
     parts.push('<tr><td style="height:3px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:0 0 12px 12px"></td></tr>')
     parts.push('<tr><td style="padding-top:28px;text-align:center"><p style="margin:0;font-size:12px;color:#6b7280">&copy; ' + new Date().getFullYear() + ' AIM Studio</p></td></tr>')
     parts.push('</table></td></tr></table></body></html>')
     return parts.join('')
 }
+
+// --- Course Completion Email ---
+
+export function courseCompletionEmail(
+    userName: string,
+    courseTitle: string,
+    courseUrl: string,
+    locale: string = 'en',
+): string {
+    const BD = '#0f1115', BC = '#d4a853', BL = '#e8c36a', CARD = '#1a1d23', BORDER = '#2a2d35', TP = '#e8e6e3'
+    const h      = emailT('trainingCompletion', locale, 'heading')
+    const b      = emailT('trainingCompletion', locale, 'body').replace('{title}', courseTitle)
+    const btn    = emailT('trainingCompletion', locale, 'buttonText')
+    const badge  = emailT('trainingCompletion', locale, 'badge')
+    const footer = emailT('trainingCompletion', locale, 'footer')
+    const parts: string[] = []
+    parts.push('<!DOCTYPE html><html><body style="margin:0;padding:0;background:' + BD + '">')
+    parts.push('<table width="100%" style="background:' + BD + '"><tr><td align="center" style="padding:40px 16px">')
+    parts.push('<table width="580" style="max-width:580px;width:100%">')
+    parts.push('<tr><td style="height:4px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:12px 12px 0 0"></td></tr>')
+    parts.push('<tr><td style="padding:28px 36px;text-align:center;background:' + CARD + ';border-left:1px solid ' + BORDER + ';border-right:1px solid ' + BORDER + '">')
+    parts.push('<span style="font-size:26px;font-weight:800"><span style="color:' + BC + '">AIM</span><span style="color:' + TP + '"> Studio</span></span>')
+    parts.push('</td></tr>')
+    parts.push('<tr><td style="background:' + CARD + ';border-left:1px solid ' + BORDER + ';border-right:1px solid ' + BORDER + ';padding:36px">')
+    parts.push('<div style="text-align:center;margin-bottom:24px"><div style="font-size:60px;margin-bottom:12px">🏆</div>')
+    parts.push('<div style="display:inline-block;padding:6px 18px;background:' + BD + ';border-radius:20px;border:1px solid ' + BC + '">')
+    parts.push('<span style="font-size:12px;font-weight:700;color:' + BC + ';letter-spacing:1.5px;text-transform:uppercase">' + badge + '</span></div></div>')
+    parts.push('<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:' + TP + ';line-height:1.3">' + h + '</h1>')
+    parts.push('<p style="margin:4px 0 4px;font-size:13px;font-weight:600;color:' + BC + '">' + courseTitle + (userName ? ' · ' + userName : '') + '</p>')
+    parts.push('<p style="margin:12px 0 16px;font-size:15px;color:' + TP + ';line-height:1.7">' + b + '</p>')
+    parts.push('<table cellpadding="0" cellspacing="0" style="margin:24px 0"><tr>')
+    parts.push('<td style="background:linear-gradient(135deg,' + BC + ',#c49b3a);border-radius:8px">')
+    parts.push('<a href="' + courseUrl + '" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">' + btn + '</a>')
+    parts.push('</td></tr></table>')
+    parts.push('<p style="margin:0;font-size:12px;color:#6b7280">' + footer + '</p>')
+    parts.push('</td></tr>')
+    parts.push('<tr><td style="height:3px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:0 0 12px 12px"></td></tr>')
+    parts.push('<tr><td style="padding-top:28px;text-align:center"><p style="margin:0;font-size:12px;color:#6b7280">&copy; ' + new Date().getFullYear() + ' AIM Studio</p></td></tr>')
+    parts.push('</table></td></tr></table></body></html>')
+    return parts.join('')
+}
+
+// --- Badge Earned Email ---
+
+const BADGE_EMOJI: Record<string, string> = {
+    first_lesson: '🌟',
+    first_course: '🏅',
+    streak_7: '🔥',
+    streak_30: '💪',
+}
+
+const BADGE_I18N_KEY: Record<string, string> = {
+    first_lesson: 'trainingBadgeFirstLesson',
+    first_course: 'trainingBadgeFirstCourse',
+    streak_7: 'trainingBadgeStreak7',
+    streak_30: 'trainingBadgeStreak30',
+}
+
+export function badgeEarnedEmail(
+    userName: string,
+    badgeType: string,
+    courseUrl: string,
+    locale: string = 'en',
+): string {
+    const BD = '#0f1115', BC = '#d4a853', BL = '#e8c36a', CARD = '#1a1d23', BORDER = '#2a2d35', TP = '#e8e6e3'
+    const i18nKey = BADGE_I18N_KEY[badgeType] || 'trainingBadgeFirstLesson'
+    const emoji  = BADGE_EMOJI[badgeType] || '🌟'
+    const h      = emailT(i18nKey, locale, 'heading')
+    const b      = emailT(i18nKey, locale, 'body')
+    const btn    = emailT(i18nKey, locale, 'buttonText')
+    const badge  = emailT(i18nKey, locale, 'badge')
+    const footer = emailT(i18nKey, locale, 'footer')
+    const parts: string[] = []
+    parts.push('<!DOCTYPE html><html><body style="margin:0;padding:0;background:' + BD + '">')
+    parts.push('<table width="100%" style="background:' + BD + '"><tr><td align="center" style="padding:40px 16px">')
+    parts.push('<table width="580" style="max-width:580px;width:100%">')
+    parts.push('<tr><td style="height:4px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:12px 12px 0 0"></td></tr>')
+    parts.push('<tr><td style="padding:28px 36px;text-align:center;background:' + CARD + ';border-left:1px solid ' + BORDER + ';border-right:1px solid ' + BORDER + '">')
+    parts.push('<span style="font-size:26px;font-weight:800"><span style="color:' + BC + '">AIM</span><span style="color:' + TP + '"> Studio</span></span>')
+    parts.push('</td></tr>')
+    parts.push('<tr><td style="background:' + CARD + ';border-left:1px solid ' + BORDER + ';border-right:1px solid ' + BORDER + ';padding:36px">')
+    parts.push('<div style="text-align:center;margin-bottom:24px"><div style="font-size:60px;margin-bottom:12px">' + emoji + '</div>')
+    parts.push('<div style="display:inline-block;padding:6px 18px;background:' + BD + ';border-radius:20px;border:1px solid ' + BC + '">')
+    parts.push('<span style="font-size:12px;font-weight:700;color:' + BC + ';letter-spacing:1.5px;text-transform:uppercase">' + badge + '</span></div></div>')
+    parts.push('<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:' + TP + ';line-height:1.3">' + h + '</h1>')
+    if (userName) parts.push('<p style="margin:4px 0 4px;font-size:13px;color:#9ca3af">' + userName + '</p>')
+    parts.push('<p style="margin:12px 0 16px;font-size:15px;color:' + TP + ';line-height:1.7">' + b + '</p>')
+    parts.push('<table cellpadding="0" cellspacing="0" style="margin:24px 0"><tr>')
+    parts.push('<td style="background:linear-gradient(135deg,' + BC + ',#c49b3a);border-radius:8px">')
+    parts.push('<a href="' + courseUrl + '" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">' + btn + '</a>')
+    parts.push('</td></tr></table>')
+    parts.push('<p style="margin:0;font-size:12px;color:#6b7280">' + footer + '</p>')
+    parts.push('</td></tr>')
+    parts.push('<tr><td style="height:3px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:0 0 12px 12px"></td></tr>')
+    parts.push('<tr><td style="padding-top:28px;text-align:center"><p style="margin:0;font-size:12px;color:#6b7280">&copy; ' + new Date().getFullYear() + ' AIM Studio</p></td></tr>')
+    parts.push('</table></td></tr></table></body></html>')
+    return parts.join('')
+}
+
+

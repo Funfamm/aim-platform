@@ -61,6 +61,7 @@ export async function POST(request: NextRequest) {
             data: {
                 name: data.name.trim(),
                 description: data.description?.trim() || null,
+                descriptionI18n: data.descriptionI18n || null,
                 logoUrl: data.logoUrl || null,
                 bannerUrl: data.bannerUrl || null,
                 website: data.website?.trim() || null,

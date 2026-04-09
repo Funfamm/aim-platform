@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import SubscribeForm from './SubscribeForm'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface FooterSponsor {
     id: string; name: string; logoUrl: string | null; website: string | null; tier: string
@@ -13,6 +13,7 @@ export default function Footer() {
     const [brand, setBrand] = useState({ name: 'AIM Studio', social: { youtube: '', instagram: '', x: '' } })
     const [footerSponsors, setFooterSponsors] = useState<FooterSponsor[]>([])
     const t = useTranslations('footer')
+    const locale = useLocale()
 
     useEffect(() => {
         fetch('/api/site-settings')
@@ -27,13 +28,13 @@ export default function Footer() {
     }, [])
 
     useEffect(() => {
-        fetch('/api/sponsors?location=footer')
+        fetch(`/api/sponsors?location=footer&locale=${locale}`)
             .then(r => r.ok ? r.json() : [])
             .then(data => {
                 if (Array.isArray(data)) setFooterSponsors(data)
             })
             .catch(() => { /* */ })
-    }, [])
+    }, [locale])
 
     return (
         <footer className="footer" aria-label="Site footer">

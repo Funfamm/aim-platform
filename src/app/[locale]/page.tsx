@@ -12,7 +12,8 @@ import { getTranslations } from 'next-intl/server'
 // ISR: regenerate at most every 60 seconds
 export const revalidate = 60
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
   // Helper to retry a Prisma query once if it fails due to a transient DB error.
   const safeQuery = async (fn: () => Promise<any>, retries = 1, delayMs = 500): Promise<any> => {
     try {
@@ -55,11 +56,18 @@ export default async function HomePage() {
           website: true,
           tier: true,
           description: true,
+          descriptionI18n: true,
           bannerDurationHours: true,
         },
       }),
     ])
   );
+
+  // Resolve localized sponsor descriptions
+  const localizedSponsors = homeSponsors.map((s: { id: string; name: string; logoUrl: string | null; bannerUrl: string | null; website: string | null; tier: string; description: string | null; descriptionI18n: unknown; bannerDurationHours: number }) => {
+    const i18n = s.descriptionI18n as Record<string, string> | null
+    return { ...s, description: i18n?.[locale] || i18n?.['en'] || s.description, descriptionI18n: undefined }
+  })
 
   type Project = typeof featuredProjects[number]
 
@@ -153,7 +161,7 @@ export default async function HomePage() {
 
 
       {/* ═══ SPONSORS & CASTING CTA ═══ */}
-      <SponsorBannerSection sponsors={homeSponsors} />
+      <SponsorBannerSection sponsors={localizedSponsors} />
 
       </div>{/* end scrolling content wrapper */}
 

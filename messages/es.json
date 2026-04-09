@@ -166,7 +166,14 @@
     "emailPrivate": "Tu email es privado.",
     "namePlaceholder": "Tu nombre",
     "emailPlaceholder": "tu@email.com",
-    "amountPlaceholder": "Ingresa monto (mínimo ${min})"
+    "amountPlaceholder": "Ingresa monto (mínimo ${min})",
+    "errorEmailRequired": "El correo electrónico es obligatorio",
+    "validationRequired": "Por favor, completa este campo.",
+    "errPaypalMissing": "PayPal no está configurado.",
+    "errPaypalLoad": "No se pudo cargar PayPal. Verifica tu conexión.",
+    "errPaymentFailed": "El pago falló. Por favor, inténtalo de nuevo.",
+    "errPaymentProcessing": "Error al procesar el pago. Por favor, inténtalo de nuevo.",
+    "errPaymentCanceled": "El pago fue cancelado. Puedes intentarlo de nuevo."
   },
   "footer": {
     "tagline": "Pioneros del futuro del cine a través de la inteligencia artificial.",
@@ -184,7 +191,8 @@
     "rights": "Todos los derechos reservados.",
     "emailPlaceholder": "Tu email",
     "subscribe": "Suscribirse",
-    "subscribed": "¡Estás suscrito!"
+    "subscribed": "¡Estás suscrito!",
+    "validationRequired": "Por favor, completa este campo."
   },
   "common": {
     "loading": "Cargando...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "Secundario",
     "roleTypeExtra": "Extra",
     "withdraw": "Retirar",
-    "applyAgain": "Aplicar de nuevo"
+    "applyAgain": "Aplicar de nuevo",
+    "applied": "Aplicado ✓"
   },
   "alreadyApplied": {
     "pageLabel": "Estado de la solicitud",
@@ -308,7 +317,7 @@
     "statusNotSelected": "No seleccionado",
     "statusWithdrawn": "Retirado",
     "resultPending": "Tu solicitud está siendo revisada. Los resultados se revelarán en breve.",
-    "resultAvailableOn": "Resultados disponibles desde el {date}",
+    "resultAvailableOn": "Resultados disponibles desde el {date}",
     "auditQueued": "Tu solicitud está en cola para revisión por IA.",
     "auditProcessing": "Tu audición está siendo revisada por nuestro sistema de IA.",
     "auditScoredHidden": "Revisión completada. Tu resultado estará disponible el {date}.",
@@ -389,7 +398,18 @@
     "statusFinalReview": "Revisión final",
     "statusApproved": "Aprobado",
     "statusSelected": "Seleccionado",
-    "statusNotSelected": "No seleccionado"
+    "statusNotSelected": "No seleccionado",
+    "praiseWords": "¡Eres increíble! 🌟|¡Verdadero apoyo! 💫|¡Héroe del cine! 🎬|¡Gracias! ❤️|¡Leyenda! 🏆",
+    "receiptTitle": "Recibo de donación",
+    "receiptThankYou": "Gracias por tu apoyo",
+    "receiptDate": "Fecha",
+    "receiptDonor": "Donante",
+    "receiptMethod": "Método",
+    "receiptStatus": "Estado",
+    "receiptMessage": "Mensaje",
+    "receiptAnonymous": "Anónimo",
+    "receiptPrint": "Imprimir recibo",
+    "receiptFooter": "Este recibo confirma tu generosa contribución. El 100% va hacia dar vida a las historias. 🎥"
   },
   "upcomingHero": {
     "label": "Próximamente",
@@ -547,7 +567,19 @@
     "genericError": "Algo salió mal. Intenta de nuevo.",
     "emailLabel": "Email:",
     "ageLabel": "Edad:",
-    "genderLabel": "Género:"
+    "genderLabel": "Género:",
+    "photoFrontHeadshot": "Foto Frontal",
+    "photoFrontDesc": "Foto clara y bien iluminada de tu rostro de frente",
+    "photoSideProfile": "Perfil Lateral",
+    "photoSideDesc": "Vista de perfil izquierdo o derecho",
+    "photoFullBody": "Foto de Cuerpo Completo",
+    "photoFullDesc": "De pie, cuerpo completo, pose neutral",
+    "photoExpression": "Foto de Expresión",
+    "photoExpressionDesc": "Sonriente, serio/a o con expresión emocional a tu elección",
+    "photoOptional1": "Foto Adicional (Opcional)",
+    "photoOptional1Desc": "Pose de acción, primer plano o foto creativa",
+    "photoOptional2": "Foto Adicional (Opcional)",
+    "photoOptional2Desc": "Otro ángulo o look que quieras mostrar"
   },
   "training": {
     "hub": "Centro de Formación",
@@ -717,7 +749,8 @@
     "sendAnother": "Enviar Otro",
     "errorMsg": "Error. Intenta de nuevo.",
     "sending": "Enviando...",
-    "sendMessage": "Enviar Mensaje"
+    "sendMessage": "Enviar Mensaje",
+    "validationRequired": "Por favor, completa este campo."
   },
   "forgotPassword": {
     "accountRecovery": "Recuperación de Cuenta",
@@ -743,7 +776,18 @@
     "noMatch": "Las contraseñas no coinciden",
     "resetFailed": "Error al restablecer",
     "hidePassword": "Ocultar",
-    "showPassword": "Mostrar"
+    "showPassword": "Mostrar",
+    "errEmailRequired": "El correo electrónico es obligatorio",
+    "errNotFound": "No se encontró ninguna cuenta con ese correo electrónico",
+    "errTooMany": "Demasiados intentos. Por favor, inténtalo más tarde.",
+    "errCodeRequired": "Se requiere el código de verificación",
+    "errNoCode": "No se encontró código de restablecimiento. Solicita uno nuevo.",
+    "errCodeExpired": "El código expiró. Solicita uno nuevo.",
+    "errCodeInvalid": "Código inválido. Por favor, inténtalo de nuevo.",
+    "errPwTooShort": "La contraseña debe tener al menos 6 caracteres",
+    "errSamePassword": "No puedes reutilizar tu contraseña actual.",
+    "errReusedPassword": "Esta contraseña se usó recientemente. Elige una diferente.",
+    "errResetFailed": "Error al restablecer la contraseña. Inténtalo de nuevo."
   },
   "sponsors": {
     "label": "Nuestros Patrocinadores",
@@ -816,7 +860,16 @@
       "noResults": "No se encontraron resultados.",
       "loading": "Buscando…",
       "suggestionTitle": "Sugerencias"
-    }
+    },
+    "oauthNoPassword": "Iniciaste sesion con {provider}. Tu cuenta aun no tiene contrasena. Puedes crear una a continuacion para tambien iniciar sesion con correo y contrasena.",
+    "createPasswordBtn": "Crear contrasena",
+    "setPasswordBtn": "Establecer contrasena",
+    "passwordSetSuccess": "Contrasena creada exitosamente! Ahora puedes iniciar sesion con tu correo y contrasena.",
+    "codeSentToEmail": "Se ha enviado un codigo de verificacion de 6 digitos a tu correo.",
+    "verificationCode": "Codigo de verificacion",
+    "minCharsError": "La contrasena debe tener al menos 6 caracteres",
+    "theme": "Tema",
+    "accentColour": "Color de acento"
   },
   "notificationBell": {
     "title": "Notificaciones",
@@ -874,17 +927,17 @@
   },
   "scripts": {
     "metaTitle": "Convocatorias de guiones | AIM Studio",
-    "metaDesc": "Envía tu guion y tendrás la oportunidad de que sea producido por AIM Studio con tecnología de IA.",
+    "metaDesc": "Envía tu guion para tener la oportunidad de que AIM Studio lo produzca.",
     "badge": "Convocatorias abiertas",
     "heroTitle": "Envío de",
     "heroAccent": "Guiones",
-    "heroDesc": "Estamos buscando guiones originales. Envía tu guion y nuestra IA lo analizará para evaluar su potencial de producción. Los mejores guiones son producidos por AIM Studio.",
+    "heroDesc": "Buscamos guiones originales. Envía tu guion y nuestro equipo creativo lo revisará para evaluar su potencial de producción.",
     "noCompensation": "Sin compensación económica · Crédito y oportunidad de portafolio",
     "stepLabel": "Paso",
     "step1Title": "Envía tu guion",
     "step1Desc": "Sube tu guion en formato PDF o Final Draft a través del formulario de convocatoria abierta.",
-    "step2Title": "Análisis con IA",
-    "step2Desc": "Nuestra IA revisa tu guion en cuanto a estructura, originalidad y viabilidad de producción.",
+    "step2Title": "Revisión del equipo",
+    "step2Desc": "Nuestro equipo creativo revisa tu guion en cuanto a estructura, originalidad y viabilidad de producción.",
     "step3Title": "Entra en producción",
     "step3Desc": "Los guiones seleccionados entran en producción en AIM Studio con reconocimiento creativo completo.",
     "closedTitle": "Envío de guiones cerrado",
@@ -899,6 +952,12 @@
     "deadlineLabel": "Fecha límite",
     "submission": "envío",
     "submissions": "envíos",
-    "submitScript": "Enviar guion"
+    "submitScript": "Enviar guion",
+    "notifyMeBtn": "Notificarme cuando abra",
+    "notifyLoading": "Suscribiendo...",
+    "notifyConfirmedTitle": "¡Estás en la lista!",
+    "notifyConfirmedDesc": "Te notificaremos en cuanto esta convocatoria abra.",
+    "comingSoonLabel": "Próximamente",
+    "comingSoonBadge": "Próximamente"
   }
 }

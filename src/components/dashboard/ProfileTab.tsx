@@ -10,8 +10,13 @@ interface ProfileTabProps {
         email: string
         bannerUrl: string | null
         role: string
+        hasPassword?: boolean
+        authProvider?: 'google' | 'apple' | 'credentials'
+        accentColor?: string
+        themeMode?: string
     }
     refreshUser: () => Promise<void>
+    hasCastingCalls?: boolean
 }
 
 const inputStyle: React.CSSProperties = {
@@ -128,7 +133,7 @@ function readBool(key: string, fallback: boolean): boolean {
     return v === 'true'
 }
 
-export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
+export default function ProfileTab({ user, refreshUser, hasCastingCalls }: ProfileTabProps) {
     const t = useTranslations('profileTab')
     const [profileName, setProfileName] = useState(user.name)
     const [currentPassword, setCurrentPassword] = useState('')
@@ -138,44 +143,54 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
     const [profileError, setProfileError] = useState('')
     const [bannerUploading, setBannerUploading] = useState(false)
 
-    // Theme — persisted in localStorage
-    const [themeMode, setThemeMode] = useState<'dark' | 'light' | 'system'>(() => {
+    // OAuth set-password flow state
+    const [setPassStep, setSetPassStep] = useState<'idle' | 'sending' | 'code-sent' | 'setting' | 'done'>('idle')
+    const [setPassCode, setSetPassCode] = useState('')
+    const [setPassNew, setSetPassNew] = useState('')
+    const [setPassConfirm, setSetPassConfirm] = useState('')
+    const [setPassError, setSetPassError] = useState('')
+    const [setPassMsg, setSetPassMsg] = useState('')
+
+    const isOAuthOnly = !user.hasPassword && (user.authProvider === 'google' || user.authProvider === 'apple')
+    const providerLabel = user.authProvider === 'google' ? 'Google' : user.authProvider === 'apple' ? 'Apple' : ''
+
+    // Theme — persisted to DB (server) + localStorage (instant/fallback)
+    const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
+        // Server value takes priority, then localStorage, then default
+        if (user.themeMode === 'light' || user.themeMode === 'dark') return user.themeMode
         if (typeof window === 'undefined') return 'dark'
-        return (localStorage.getItem('aim-theme') as 'dark' | 'light' | 'system') ?? 'dark'
+        const local = localStorage.getItem('aim-theme')
+        return local === 'light' ? 'light' : 'dark'
     })
 
-    function applyTheme(mode: 'dark' | 'light' | 'system') {
+    function applyTheme(mode: 'dark' | 'light') {
         if (mode === 'light') {
             document.documentElement.setAttribute('data-theme', 'light')
-        } else if (mode === 'dark') {
-            document.documentElement.removeAttribute('data-theme')
         } else {
-            // system
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-            if (prefersDark) document.documentElement.removeAttribute('data-theme')
-            else document.documentElement.setAttribute('data-theme', 'light')
+            document.documentElement.removeAttribute('data-theme')
         }
     }
 
     useEffect(() => {
         applyTheme(themeMode)
-        // Mirror system changes in real time when mode === 'system'
-        const mq = window.matchMedia('(prefers-color-scheme: dark)')
-        const onSystemChange = () => {
-            if ((localStorage.getItem('aim-theme') ?? 'dark') === 'system') applyTheme('system')
-        }
-        mq.addEventListener('change', onSystemChange)
-        return () => mq.removeEventListener('change', onSystemChange)
     }, [themeMode])
 
-    function handleTheme(key: 'dark' | 'light' | 'system') {
+    function handleTheme(key: 'dark' | 'light') {
         setThemeMode(key)
         localStorage.setItem('aim-theme', key)
         applyTheme(key)
+        // Persist to server (fire-and-forget)
+        fetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ themeMode: key }),
+        }).catch(() => { /* silent */ })
     }
 
-    // Accent colour — persisted in localStorage
+    // Accent colour — persisted to DB (server) + localStorage (instant/fallback)
     const [accentKey, setAccentKey] = useState<AccentKey>(() => {
+        // Server value takes priority
+        if (user.accentColor && ACCENTS.some(a => a.key === user.accentColor)) return user.accentColor as AccentKey
         if (typeof window === 'undefined') return 'gold'
         return (localStorage.getItem(ACCENT_KEY) as AccentKey) ?? 'gold'
     })
@@ -185,6 +200,12 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
         setAccentKey(key)
         localStorage.setItem(ACCENT_KEY, key)
         applyAccent(key)
+        // Persist to server (fire-and-forget)
+        fetch('/api/auth/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accentColor: key }),
+        }).catch(() => { /* silent */ })
     }
 
     // Notifications — persisted in localStorage
@@ -287,7 +308,7 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                         }}>{user.role === 'admin' ? `👑 ${t('admin')}` : `🎭 ${t('member')}`}</span>
                         <div style={{ display: 'flex', gap: '6px', marginTop: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
                             {[
-                                { href: '/casting', label: `🎬 ${t('exploreCasting')}` },
+                                ...(hasCastingCalls ? [{ href: '/casting', label: `🎬 ${t('exploreCasting')}` }] : []),
                                 { href: '/works', label: `🎥 ${t('browseWorks')}` },
                                 { href: '/donate', label: `💛 ${t('supportUs')}` },
                             ].map((link) => (
@@ -375,26 +396,143 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                     {/* Security */}
                     <div style={cardStyle}>
                         <h3 style={sectionTitle}>🔒 {t('security')}</h3>
-                        <p style={sectionDesc}>{t('securityDesc')}</p>
-                        <form onSubmit={handleProfileUpdate}>
-                            <div style={{ marginBottom: '8px' }}>
-                                <label style={labelStyle}>{t('currentPassword')}</label>
-                                <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
-                                <div>
-                                    <label style={labelStyle}>{t('newPassword')}</label>
-                                    <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t('minChars')} minLength={6} style={inputStyle} />
+
+                        {isOAuthOnly ? (
+                            /* ── OAuth-only user: Set Password flow ─────────── */
+                            <>
+                                {/* Info notice */}
+                                <div style={{
+                                    padding: '12px 14px',
+                                    background: 'rgba(96,165,250,0.08)',
+                                    border: '1px solid rgba(96,165,250,0.2)',
+                                    borderRadius: 'var(--radius-md)',
+                                    marginBottom: 'var(--space-md)',
+                                    display: 'flex', gap: '10px', alignItems: 'flex-start',
+                                }}>
+                                    <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>ℹ️</span>
+                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                        {t('oauthNoPassword', { provider: providerLabel })}
+                                    </div>
                                 </div>
-                                <div>
-                                    <label style={labelStyle}>{t('confirm')}</label>
-                                    <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} placeholder={t('reenterPassword')} style={inputStyle} />
-                                </div>
-                            </div>
-                            <button type="submit" disabled={profileStatus === 'saving'} className="btn btn-primary" style={{ padding: '0.5rem 1.4rem', fontSize: '0.78rem', fontWeight: 700, opacity: profileStatus === 'saving' ? 0.7 : 1 }}>
-                                {profileStatus === 'saving' ? t('saving') : t('updatePassword')}
-                            </button>
-                        </form>
+
+                                {setPassStep === 'done' ? (
+                                    <div style={{ padding: '10px 14px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 'var(--radius-sm)', fontSize: '0.78rem', color: 'var(--color-success)' }}>
+                                        ✅ {t('passwordSetSuccess')}
+                                    </div>
+                                ) : (
+                                    <>
+                                        {setPassError && (
+                                            <div style={{ padding: '6px 10px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.75rem', color: 'var(--color-error)' }}>{setPassError}</div>
+                                        )}
+                                        {setPassMsg && (
+                                            <div style={{ padding: '6px 10px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 'var(--radius-sm)', marginBottom: '10px', fontSize: '0.75rem', color: 'var(--color-success)' }}>{setPassMsg}</div>
+                                        )}
+
+                                        {setPassStep === 'idle' || setPassStep === 'sending' ? (
+                                            <button
+                                                className="btn btn-primary"
+                                                disabled={setPassStep === 'sending'}
+                                                style={{ padding: '0.5rem 1.4rem', fontSize: '0.78rem', fontWeight: 700, opacity: setPassStep === 'sending' ? 0.7 : 1 }}
+                                                onClick={async () => {
+                                                    setSetPassStep('sending')
+                                                    setSetPassError('')
+                                                    setSetPassMsg('')
+                                                    try {
+                                                        const res = await fetch('/api/auth/set-password', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ action: 'send-code' }),
+                                                        })
+                                                        const data = await res.json()
+                                                        if (res.ok) {
+                                                            setSetPassStep('code-sent')
+                                                            setSetPassMsg(t('codeSentToEmail'))
+                                                        } else {
+                                                            setSetPassError(data.error || t('networkError'))
+                                                            setSetPassStep('idle')
+                                                        }
+                                                    } catch {
+                                                        setSetPassError(t('networkError'))
+                                                        setSetPassStep('idle')
+                                                    }
+                                                }}
+                                            >
+                                                {setPassStep === 'sending' ? t('saving') : t('createPasswordBtn')}
+                                            </button>
+                                        ) : (
+                                            /* Code entry + new password form */
+                                            <form onSubmit={async (e) => {
+                                                e.preventDefault()
+                                                setSetPassError('')
+                                                if (setPassNew.length < 6) { setSetPassError(t('minCharsError')); return }
+                                                if (setPassNew !== setPassConfirm) { setSetPassError(t('passwordsNoMatch')); return }
+                                                setSetPassStep('setting')
+                                                try {
+                                                    const res = await fetch('/api/auth/set-password', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ action: 'set', code: setPassCode, newPassword: setPassNew }),
+                                                    })
+                                                    const data = await res.json()
+                                                    if (res.ok) {
+                                                        setSetPassStep('done')
+                                                        await refreshUser()
+                                                    } else {
+                                                        setSetPassError(data.error || t('updateFailed'))
+                                                        setSetPassStep('code-sent')
+                                                    }
+                                                } catch {
+                                                    setSetPassError(t('networkError'))
+                                                    setSetPassStep('code-sent')
+                                                }
+                                            }}>
+                                                <div style={{ marginBottom: '8px' }}>
+                                                    <label style={labelStyle}>{t('verificationCode')}</label>
+                                                    <input type="text" inputMode="numeric" maxLength={6} value={setPassCode} onChange={e => setSetPassCode(e.target.value.replace(/\D/g, ''))} placeholder="123456" style={{ ...inputStyle, letterSpacing: '6px', fontFamily: 'monospace', textAlign: 'center', fontSize: '1.1rem' }} required />
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                                                    <div>
+                                                        <label style={labelStyle}>{t('newPassword')}</label>
+                                                        <input type="password" value={setPassNew} onChange={e => setSetPassNew(e.target.value)} placeholder={t('minChars')} minLength={6} style={inputStyle} required />
+                                                    </div>
+                                                    <div>
+                                                        <label style={labelStyle}>{t('confirm')}</label>
+                                                        <input type="password" value={setPassConfirm} onChange={e => setSetPassConfirm(e.target.value)} placeholder={t('reenterPassword')} style={inputStyle} required />
+                                                    </div>
+                                                </div>
+                                                <button type="submit" disabled={setPassStep === 'setting'} className="btn btn-primary" style={{ padding: '0.5rem 1.4rem', fontSize: '0.78rem', fontWeight: 700, opacity: setPassStep === 'setting' ? 0.7 : 1 }}>
+                                                    {setPassStep === 'setting' ? t('saving') : t('setPasswordBtn')}
+                                                </button>
+                                            </form>
+                                        )}
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            /* ── Credential user: Change Password flow ──────── */
+                            <>
+                                <p style={sectionDesc}>{t('securityDesc')}</p>
+                                <form onSubmit={handleProfileUpdate}>
+                                    <div style={{ marginBottom: '8px' }}>
+                                        <label style={labelStyle}>{t('currentPassword')}</label>
+                                        <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="••••••••" style={inputStyle} />
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '12px' }}>
+                                        <div>
+                                            <label style={labelStyle}>{t('newPassword')}</label>
+                                            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder={t('minChars')} minLength={6} style={inputStyle} />
+                                        </div>
+                                        <div>
+                                            <label style={labelStyle}>{t('confirm')}</label>
+                                            <input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} placeholder={t('reenterPassword')} style={inputStyle} />
+                                        </div>
+                                    </div>
+                                    <button type="submit" disabled={profileStatus === 'saving'} className="btn btn-primary" style={{ padding: '0.5rem 1.4rem', fontSize: '0.78rem', fontWeight: 700, opacity: profileStatus === 'saving' ? 0.7 : 1 }}>
+                                        {profileStatus === 'saving' ? t('saving') : t('updatePassword')}
+                                    </button>
+                                </form>
+                            </>
+                        )}
                     </div>
                 </div>
             </ScrollReveal3D>
@@ -408,13 +546,13 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                         <p style={sectionDesc}>{t('appearanceDesc')}</p>
 
                         {/* Theme switcher */}
-                        <label style={{ ...labelStyle, marginBottom: '6px' }}>Theme</label>
+                        <label style={{ ...labelStyle, marginBottom: '6px' }}>{t('theme')}</label>
                         <div
                             role="radiogroup"
                             aria-label="Theme selection"
                             style={{ display: 'flex', gap: '3px', background: 'var(--bg-glass-light)', borderRadius: 'var(--radius-sm)', padding: '3px', border: '1px solid var(--border-subtle)', marginBottom: '4px' }}
                         >
-                            {([['dark', `🌙 ${t('dark')}`], ['light', `☀️ ${t('light')}`], ['system', `💻 ${t('system')}`]] as const).map(([key, label]) => (
+                            {([['dark', `🌙 ${t('dark')}`], ['light', `☀️ ${t('light')}`]] as const).map(([key, label]) => (
                                 <button
                                     key={key}
                                     role="radio"
@@ -432,10 +570,9 @@ export default function ProfileTab({ user, refreshUser }: ProfileTabProps) {
                                 >{label}</button>
                             ))}
                         </div>
-                        <p style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>{t('systemDesc')}</p>
 
                         {/* Accent colour picker */}
-                        <label style={{ ...labelStyle, marginBottom: '8px' }}>Accent Colour</label>
+                        <label style={{ ...labelStyle, marginBottom: '8px' }}>{t('accentColour')}</label>
                         <div
                             role="radiogroup"
                             aria-label="Accent colour selection"

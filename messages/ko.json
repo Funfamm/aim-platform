@@ -166,7 +166,14 @@
     "emailPrivate": "이메일은 비공개입니다.",
     "namePlaceholder": "이름",
     "emailPlaceholder": "your@email.com",
-    "amountPlaceholder": "금액 입력(최소 ${min})"
+    "amountPlaceholder": "금액 입력(최소 ${min})",
+    "errorEmailRequired": "이메일은 필수입니다",
+    "validationRequired": "이 필드를 채워 주세요.",
+    "errPaypalMissing": "PayPal이 설정되지 않았습니다.",
+    "errPaypalLoad": "PayPal을 불러올 수 없습니다. 연결을 확인하세요.",
+    "errPaymentFailed": "결제에 실패했습니다. 다시 시도해 주세요.",
+    "errPaymentProcessing": "결제 처리 오류. 다시 시도해 주세요.",
+    "errPaymentCanceled": "결제가 취소되었습니다. 다시 시도할 수 있습니다."
   },
   "footer": {
     "tagline": "AI로 영화의 미래를 개척.",
@@ -184,7 +191,8 @@
     "rights": "모든 권리 보유.",
     "emailPlaceholder": "이메일 입력",
     "subscribe": "구독",
-    "subscribed": "구독됨!"
+    "subscribed": "구독됨!",
+    "validationRequired": "이 필드를 채워 주세요."
   },
   "common": {
     "loading": "로딩 중...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "조연",
     "roleTypeExtra": "엑스트라",
     "withdraw": "취소",
-    "applyAgain": "다시 지원"
+    "applyAgain": "다시 지원",
+    "applied": "지원 완료 ✓"
   },
   "alreadyApplied": {
     "pageLabel": "지원 상태",
@@ -308,7 +317,7 @@
     "statusNotSelected": "미선발",
     "statusWithdrawn": "취소됨",
     "resultPending": "지원서를 검토 중입니다. 곧 결과가 공개될 예정입니다.",
-    "resultAvailableOn": "{date}부터 결과 확인 가능",
+    "resultAvailableOn": "{date}부터 결과 확인 가능",
     "auditQueued": "AI 심사를 위해 지원서가 대기 중입니다.",
     "auditProcessing": "AI 시스템이 오디션을 검토 중입니다.",
     "auditScoredHidden": "심사 완료. {date}에 결과가 공개됩니다.",
@@ -389,7 +398,18 @@
     "statusFinalReview": "최종 검토",
     "statusApproved": "승인됨",
     "statusSelected": "선정됨",
-    "statusNotSelected": "미선정"
+    "statusNotSelected": "미선정",
+    "praiseWords": "당신은 놀랍습니다! 🌟|진정한 후원자! 💫|영화 영웅! 🎬|감사합니다! ❤️|전설! 🏆",
+    "receiptTitle": "기부 영수증",
+    "receiptThankYou": "지원에 감사드립니다",
+    "receiptDate": "날짜",
+    "receiptDonor": "기부자",
+    "receiptMethod": "방법",
+    "receiptStatus": "상태",
+    "receiptMessage": "메시지",
+    "receiptAnonymous": "익명",
+    "receiptPrint": "영수증 인쇄",
+    "receiptFooter": "이 영수증은 귀하의 관대한 기부를 확인합니다. 100%가 이야기를 실현하는 데 사용됩니다. 🎥"
   },
   "upcomingHero": {
     "label": "곧 공개",
@@ -547,7 +567,19 @@
     "genericError": "오류. 다시 시도하세요.",
     "emailLabel": "이메일:",
     "ageLabel": "나이:",
-    "genderLabel": "성별:"
+    "genderLabel": "성별:",
+    "photoFrontHeadshot": "정면 얼굴 사진",
+    "photoFrontDesc": "정면에서 찍은 밝고 선명한 얼굴 사진",
+    "photoSideProfile": "측면 프로필",
+    "photoSideDesc": "왼쪽 또는 오른쪽 측면 뷰",
+    "photoFullBody": "전신 사진",
+    "photoFullDesc": "서 있는 전신, 자연스러운 포즈",
+    "photoExpression": "표정 사진",
+    "photoExpressionDesc": "웃는, 진지한 또는 감정적인 표정",
+    "photoOptional1": "추가 사진 (선택)",
+    "photoOptional1Desc": "액션 포즈, 클로즈업 또는 창의적인 사진",
+    "photoOptional2": "추가 사진 (선택)",
+    "photoOptional2Desc": "보여주고 싶은 다른 각도나 룩"
   },
   "training": {
     "hub": "트레이닝 허브",
@@ -717,7 +749,8 @@
     "sendAnother": "다시 보내기",
     "errorMsg": "전송 실패.",
     "sending": "전송 중...",
-    "sendMessage": "메시지 보내기"
+    "sendMessage": "메시지 보내기",
+    "validationRequired": "이 필드를 채워 주세요."
   },
   "forgotPassword": {
     "accountRecovery": "계정 복구",
@@ -743,7 +776,18 @@
     "noMatch": "비밀번호 불일치",
     "resetFailed": "재설정 실패",
     "hidePassword": "숨기기",
-    "showPassword": "보기"
+    "showPassword": "보기",
+    "errEmailRequired": "이메일은 필수입니다",
+    "errNotFound": "해당 이메일로 등록된 계정을 찾을 수 없습니다",
+    "errTooMany": "시도 횟수가 너무 많습니다. 나중에 다시 시도해 주세요.",
+    "errCodeRequired": "인증 코드가 필요합니다",
+    "errNoCode": "재설정 코드를 찾을 수 없습니다. 새 코드를 요청하세요.",
+    "errCodeExpired": "코드가 만료되었습니다. 새 코드를 요청하세요.",
+    "errCodeInvalid": "잘못된 코드입니다. 다시 시도해 주세요.",
+    "errPwTooShort": "비밀번호는 6자 이상이어야 합니다",
+    "errSamePassword": "현재 비밀번호를 재사용할 수 없습니다.",
+    "errReusedPassword": "이 비밀번호는 최근에 사용되었습니다. 다른 것을 선택하세요.",
+    "errResetFailed": "비밀번호 재설정에 실패했습니다. 다시 시도해 주세요."
   },
   "sponsors": {
     "label": "후원자",
@@ -816,7 +860,16 @@
       "noResults": "결과를 찾을 수 없습니다.",
       "loading": "검색 중…",
       "suggestionTitle": "제안"
-    }
+    },
+    "oauthNoPassword": "{provider}(으)로 로그인했습니다. 계정에 아직 비밀번호가 없습니다. 아래에서 비밀번호를 만들어 이메일과 비밀번호로도 로그인하세요.",
+    "createPasswordBtn": "비밀번호 만들기",
+    "setPasswordBtn": "비밀번호 설정",
+    "passwordSetSuccess": "비밀번호가 성공적으로 생성되었습니다! 이제 이메일과 비밀번호로 로그인할 수 있습니다.",
+    "codeSentToEmail": "6자리 인증 코드가 이메일로 전송되었습니다.",
+    "verificationCode": "인증 코드",
+    "minCharsError": "비밀번호는 최소 6자 이상이어야 합니다",
+    "theme": "테마",
+    "accentColour": "강조 색상"
   },
   "notificationBell": {
     "title": "알림",
@@ -874,17 +927,17 @@
   },
   "scripts": {
     "metaTitle": "스크립트 모집 | AIM Studio",
-    "metaDesc": "시나리오를 제출하고 AI 기반 영화 제작으로 AIM Studio가 제작할 기회를 잡으세요.",
+    "metaDesc": "AIM Studio에서 제작될 기회를 잡기 위해 시나리오를 제출하세요.",
     "badge": "공개 모집",
     "heroTitle": "시나리오",
     "heroAccent": "제출",
-    "heroDesc": "오리지널 시나리오를 찾고 있습니다. 스크립트를 제출하면 AI가 제작 가능성을 분석합니다. 최고의 스크립트는 AIM Studio에서 제작됩니다.",
+    "heroDesc": "독창적인 시나리오를 찾고 있습니다. 스크립트를 제출하면 크리에이티브 팀이 제작 가능성을 검토합니다.",
     "noCompensation": "금전적 보상 없음 · 크레딧 및 포트폴리오 기회",
     "stepLabel": "단계",
     "step1Title": "스크립트 제출",
     "step1Desc": "공모 양식을 통해 PDF 또는 Final Draft 형식으로 시나리오를 업로드하세요.",
-    "step2Title": "AI 분석",
-    "step2Desc": "AI가 스크립트의 구조, 독창성, 제작 가능성을 검토합니다.",
+    "step2Title": "팀 검토",
+    "step2Desc": "크리에이티브 팀이 구조, 독창성, 제작 가능성 측면에서 스크립트를 검토합니다.",
     "step3Title": "제작 확정",
     "step3Desc": "선정된 스크립트는 전체 크리에이티브 크레딧과 함께 AIM Studio 제작에 들어갑니다.",
     "closedTitle": "시나리오 제출 마감",
@@ -899,6 +952,12 @@
     "deadlineLabel": "마감일",
     "submission": "건",
     "submissions": "건",
-    "submitScript": "스크립트 제출"
+    "submitScript": "스크립트 제출",
+    "notifyMeBtn": "오픈 시 알림 받기",
+    "notifyLoading": "구독 중...",
+    "notifyConfirmedTitle": "목록에 등록되었습니다!",
+    "notifyConfirmedDesc": "이 공고가 열리는 즉시 알려드리겠습니다.",
+    "comingSoonLabel": "곧 출시",
+    "comingSoonBadge": "곧 출시"
   }
 }

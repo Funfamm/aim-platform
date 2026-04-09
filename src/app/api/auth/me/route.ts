@@ -18,6 +18,11 @@ export async function GET() {
             bannerUrl: true,
             role: true,
             emailVerified: true,
+            passwordHash: true,
+            googleId: true,
+            appleId: true,
+            accentColor: true,
+            themeMode: true,
         },
     })
 
@@ -25,5 +30,13 @@ export async function GET() {
         return NextResponse.json({ user: null }, { status: 401 })
     }
 
-    return NextResponse.json({ user })
+    // Expose auth metadata without leaking the actual hash
+    const { passwordHash, googleId, appleId, ...safeUser } = user
+    return NextResponse.json({
+        user: {
+            ...safeUser,
+            hasPassword: !!passwordHash,
+            authProvider: googleId ? 'google' : appleId ? 'apple' : 'credentials',
+        },
+    })
 }

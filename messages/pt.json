@@ -166,7 +166,14 @@
     "emailPrivate": "Seu email é privado.",
     "namePlaceholder": "Seu nome",
     "emailPlaceholder": "seu@email.com",
-    "amountPlaceholder": "Insira o valor (mínimo ${min})"
+    "amountPlaceholder": "Insira o valor (mínimo ${min})",
+    "errorEmailRequired": "O e-mail é obrigatório",
+    "validationRequired": "Por favor, preencha este campo.",
+    "errPaypalMissing": "PayPal não está configurado.",
+    "errPaypalLoad": "Não foi possível carregar o PayPal. Verifique sua conexão.",
+    "errPaymentFailed": "O pagamento falhou. Por favor, tente novamente.",
+    "errPaymentProcessing": "Erro ao processar o pagamento. Por favor, tente novamente.",
+    "errPaymentCanceled": "O pagamento foi cancelado. Você pode tentar novamente."
   },
   "footer": {
     "tagline": "Pioneiros do futuro do cinema através da inteligência artificial.",
@@ -184,7 +191,8 @@
     "rights": "Todos os direitos reservados.",
     "emailPlaceholder": "Seu email",
     "subscribe": "Inscrever-se",
-    "subscribed": "Você está inscrito!"
+    "subscribed": "Você está inscrito!",
+    "validationRequired": "Por favor, preencha este campo."
   },
   "common": {
     "loading": "Carregando...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "Coadjuvante",
     "roleTypeExtra": "Figurante",
     "withdraw": "Retirar",
-    "applyAgain": "Candidatar-se novamente"
+    "applyAgain": "Candidatar-se novamente",
+    "applied": "Aplicado ✓"
   },
   "alreadyApplied": {
     "pageLabel": "Status da candidatura",
@@ -308,7 +317,7 @@
     "statusNotSelected": "Não selecionado",
     "statusWithdrawn": "Retirado",
     "resultPending": "Sua candidatura está sendo analisada. Os resultados serão revelados em breve.",
-    "resultAvailableOn": "Resultados disponíveis a partir de {date}",
+    "resultAvailableOn": "Resultados disponíveis a partir de {date}",
     "auditQueued": "Sua candidatura está na fila para revisão pela IA.",
     "auditProcessing": "Sua audição está sendo revisada pelo nosso sistema de IA.",
     "auditScoredHidden": "Revisão concluída. Seu resultado será divulgado em {date}.",
@@ -389,7 +398,18 @@
     "statusFinalReview": "Revisão Final",
     "statusApproved": "Aprovado",
     "statusSelected": "Selecionado",
-    "statusNotSelected": "Não Selecionado"
+    "statusNotSelected": "Não Selecionado",
+    "praiseWords": "Você é incrível! 🌟|Verdadeiro apoiador! 💫|Herói do cinema! 🎬|Obrigado! ❤️|Lenda! 🏆",
+    "receiptTitle": "Recibo de doação",
+    "receiptThankYou": "Obrigado pelo seu apoio",
+    "receiptDate": "Data",
+    "receiptDonor": "Doador",
+    "receiptMethod": "Método",
+    "receiptStatus": "Status",
+    "receiptMessage": "Mensagem",
+    "receiptAnonymous": "Anônimo",
+    "receiptPrint": "Imprimir recibo",
+    "receiptFooter": "Este recibo confirma sua generosa contribuição. 100% vai para dar vida às histórias. 🎥"
   },
   "upcomingHero": {
     "label": "Em Breve",
@@ -547,7 +567,19 @@
     "genericError": "Erro. Tente novamente.",
     "emailLabel": "Email:",
     "ageLabel": "Idade:",
-    "genderLabel": "Gênero:"
+    "genderLabel": "Gênero:",
+    "photoFrontHeadshot": "Foto de Frente",
+    "photoFrontDesc": "Foto clara e bem iluminada do seu rosto de frente",
+    "photoSideProfile": "Perfil Lateral",
+    "photoSideDesc": "Vista de perfil esquerdo ou direito",
+    "photoFullBody": "Foto Corpo Inteiro",
+    "photoFullDesc": "Em pé, corpo inteiro, pose neutra",
+    "photoExpression": "Foto de Expressão",
+    "photoExpressionDesc": "Expressão sorridente, séria ou emocional de sua escolha",
+    "photoOptional1": "Foto Adicional (Opcional)",
+    "photoOptional1Desc": "Pose de ação, close-up ou foto criativa",
+    "photoOptional2": "Foto Adicional (Opcional)",
+    "photoOptional2Desc": "Outro ângulo ou look que você queira mostrar"
   },
   "training": {
     "hub": "Centro de Formação",
@@ -717,7 +749,8 @@
     "sendAnother": "Enviar Outra",
     "errorMsg": "Erro. Tente novamente.",
     "sending": "Enviando...",
-    "sendMessage": "Enviar Mensagem"
+    "sendMessage": "Enviar Mensagem",
+    "validationRequired": "Por favor, preencha este campo."
   },
   "forgotPassword": {
     "accountRecovery": "Recuperação de Conta",
@@ -743,7 +776,18 @@
     "noMatch": "Senhas não coincidem",
     "resetFailed": "Erro ao redefinir",
     "hidePassword": "Ocultar",
-    "showPassword": "Mostrar"
+    "showPassword": "Mostrar",
+    "errEmailRequired": "O e-mail é obrigatório",
+    "errNotFound": "Nenhuma conta encontrada com esse e-mail",
+    "errTooMany": "Muitas tentativas. Por favor, tente novamente mais tarde.",
+    "errCodeRequired": "O código de verificação é obrigatório",
+    "errNoCode": "Nenhum código de redefinição encontrado. Solicite um novo.",
+    "errCodeExpired": "Código expirado. Solicite um novo.",
+    "errCodeInvalid": "Código inválido. Por favor, tente novamente.",
+    "errPwTooShort": "A senha deve ter pelo menos 6 caracteres",
+    "errSamePassword": "Você não pode reutilizar sua senha atual.",
+    "errReusedPassword": "Esta senha foi usada recentemente. Escolha uma diferente.",
+    "errResetFailed": "Falha ao redefinir a senha. Tente novamente."
   },
   "sponsors": {
     "label": "Nossos Apoiadores",
@@ -816,7 +860,16 @@
       "noResults": "Nenhum resultado encontrado.",
       "loading": "Pesquisando…",
       "suggestionTitle": "Sugestões"
-    }
+    },
+    "oauthNoPassword": "Voce entrou com {provider}. Sua conta ainda nao tem uma senha. Crie uma abaixo para tambem fazer login com e-mail e senha.",
+    "createPasswordBtn": "Criar senha",
+    "setPasswordBtn": "Definir senha",
+    "passwordSetSuccess": "Senha criada com sucesso! Agora voce pode fazer login com e-mail e senha.",
+    "codeSentToEmail": "Um codigo de verificacao de 6 digitos foi enviado para seu e-mail.",
+    "verificationCode": "Codigo de verificacao",
+    "minCharsError": "A senha deve ter pelo menos 6 caracteres",
+    "theme": "Tema",
+    "accentColour": "Cor de destaque"
   },
   "notificationBell": {
     "title": "Notificações",
@@ -874,17 +927,17 @@
   },
   "scripts": {
     "metaTitle": "Chamadas de Roteiros | AIM Studio",
-    "metaDesc": "Envie seu roteiro para ter a chance de ser produzido pela AIM Studio com filmagem impulsionada por IA.",
+    "metaDesc": "Envie seu roteiro para ter a chance de ser produzido pela AIM Studio.",
     "badge": "Chamadas abertas",
     "heroTitle": "Envio de",
     "heroAccent": "Roteiros",
-    "heroDesc": "Procuramos roteiros originais. Envie seu script e nossa IA o analisará quanto ao potencial de produção. Os melhores scripts são produzidos pela AIM Studio.",
+    "heroDesc": "Estamos buscando roteiros originais. Envie seu script e nossa equipe criativa irá avaliá-lo para potencial de produção.",
     "noCompensation": "Sem compensação financeira · Crédito e oportunidade de portfólio",
     "stepLabel": "Etapa",
     "step1Title": "Envie seu roteiro",
     "step1Desc": "Faça upload do seu roteiro em formato PDF ou Final Draft pelo formulário de chamada aberta.",
-    "step2Title": "Análise com IA",
-    "step2Desc": "Nossa IA revisa seu script quanto a estrutura, originalidade e viabilidade de produção.",
+    "step2Title": "Revisão da equipe",
+    "step2Desc": "Nossa equipe criativa analisa seu script quanto a estrutura, originalidade e viabilidade de produção.",
     "step3Title": "Entre em produção",
     "step3Desc": "Os scripts selecionados entram em produção na AIM Studio com crédito criativo completo.",
     "closedTitle": "Envio de roteiros encerrado",
@@ -899,6 +952,12 @@
     "deadlineLabel": "Prazo",
     "submission": "envio",
     "submissions": "envios",
-    "submitScript": "Enviar roteiro"
+    "submitScript": "Enviar roteiro",
+    "notifyMeBtn": "Notificar quando abrir",
+    "notifyLoading": "Inscrevendo...",
+    "notifyConfirmedTitle": "Você está na lista!",
+    "notifyConfirmedDesc": "Vamos te notificar assim que essa chamada abrir.",
+    "comingSoonLabel": "Em breve",
+    "comingSoonBadge": "Em breve"
   }
 }

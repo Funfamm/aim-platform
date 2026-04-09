@@ -9,6 +9,10 @@ interface User {
     avatar: string | null
     bannerUrl: string | null
     role: 'member' | 'admin' | 'superadmin'
+    hasPassword?: boolean
+    authProvider?: 'google' | 'apple' | 'credentials'
+    accentColor?: string
+    themeMode?: string
 }
 
 interface AuthContextType {
@@ -32,6 +36,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (res.ok) {
                 const data = await res.json()
                 setUser(data.user)
+
+                // Apply saved preferences immediately on login
+                if (data.user?.accentColor) {
+                    localStorage.setItem('aim-accent', data.user.accentColor)
+                }
+                if (data.user?.themeMode) {
+                    localStorage.setItem('aim-theme', data.user.themeMode)
+                    if (data.user.themeMode === 'light') {
+                        document.documentElement.setAttribute('data-theme', 'light')
+                    } else {
+                        document.documentElement.removeAttribute('data-theme')
+                    }
+                }
             } else {
                 setUser(null)
             }

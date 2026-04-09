@@ -166,7 +166,14 @@
     "emailPrivate": "你的邮箱是私密的。",
     "namePlaceholder": "你的名字",
     "emailPlaceholder": "your@email.com",
-    "amountPlaceholder": "输入金额(最低${min})"
+    "amountPlaceholder": "输入金额(最低${min})",
+    "errorEmailRequired": "电子邮件是必填项",
+    "validationRequired": "请填写此字段。",
+    "errPaypalMissing": "PayPal未配置。",
+    "errPaypalLoad": "无法加载PayPal，请检查您的网络连接。",
+    "errPaymentFailed": "支付失败，请重试。",
+    "errPaymentProcessing": "支付处理错误，请重试。",
+    "errPaymentCanceled": "支付已取消，您可以重新尝试。"
   },
   "footer": {
     "tagline": "通过人工智能开创电影的未来。",
@@ -184,7 +191,8 @@
     "rights": "保留所有权利。",
     "emailPlaceholder": "输入邮箱",
     "subscribe": "订阅",
-    "subscribed": "已订阅！"
+    "subscribed": "已订阅！",
+    "validationRequired": "请填写此字段。"
   },
   "common": {
     "loading": "加载中...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "配角",
     "roleTypeExtra": "临演",
     "withdraw": "撤回",
-    "applyAgain": "重新申请"
+    "applyAgain": "重新申请",
+    "applied": "已申请 ✓"
   },
   "alreadyApplied": {
     "pageLabel": "申请状态",
@@ -308,7 +317,7 @@
     "statusNotSelected": "未选中",
     "statusWithdrawn": "已撤回",
     "resultPending": "您的申请正在审核中，结果即将公布。",
-    "resultAvailableOn": "结果将于 {date} 起公布",
+    "resultAvailableOn": "结果将于 {date} 起公布",
     "auditQueued": "您的申请正在等待AI审核。",
     "auditProcessing": "您的试镜正在由我们的AI系统审核中。",
     "auditScoredHidden": "审核完成，您的结果将于{date}公布。",
@@ -389,7 +398,18 @@
     "statusFinalReview": "最终审核",
     "statusApproved": "已批准",
     "statusSelected": "已选中",
-    "statusNotSelected": "未选中"
+    "statusNotSelected": "未选中",
+    "praiseWords": "你太棒了！🌟|真正的支持者！💫|电影英雄！🎬|谢谢！❤️|传奇！🏆",
+    "receiptTitle": "捐款收据",
+    "receiptThankYou": "感谢您的支持",
+    "receiptDate": "日期",
+    "receiptDonor": "捐助者",
+    "receiptMethod": "方式",
+    "receiptStatus": "状态",
+    "receiptMessage": "留言",
+    "receiptAnonymous": "匿名",
+    "receiptPrint": "打印收据",
+    "receiptFooter": "此收据确认您的慷慨贡献。100%用于将故事带入生活。🎥"
   },
   "upcomingHero": {
     "label": "即将推出",
@@ -547,7 +567,19 @@
     "genericError": "错误。请重试。",
     "emailLabel": "邮箱:",
     "ageLabel": "年龄:",
-    "genderLabel": "性别:"
+    "genderLabel": "性别:",
+    "photoFrontHeadshot": "正面头像",
+    "photoFrontDesc": "正面拍摄、光线充足的清晰面部照片",
+    "photoSideProfile": "侧面照",
+    "photoSideDesc": "左侧或右侧侧面视图",
+    "photoFullBody": "全身照",
+    "photoFullDesc": "站立全身，自然姿势",
+    "photoExpression": "表情照",
+    "photoExpressionDesc": "微笑、严肃或您选择的情感表达",
+    "photoOptional1": "附加照片（可选）",
+    "photoOptional1Desc": "动作姿势、特写或创意照片",
+    "photoOptional2": "附加照片（可选）",
+    "photoOptional2Desc": "您想展示的另一个角度或造型"
   },
   "training": {
     "hub": "培训中心",
@@ -717,7 +749,8 @@
     "sendAnother": "再发一条",
     "errorMsg": "发送失败。请重试。",
     "sending": "发送中...",
-    "sendMessage": "发送消息"
+    "sendMessage": "发送消息",
+    "validationRequired": "请填写此字段。"
   },
   "forgotPassword": {
     "accountRecovery": "账户恢复",
@@ -743,7 +776,18 @@
     "noMatch": "密码不匹配",
     "resetFailed": "重置失败",
     "hidePassword": "隐藏",
-    "showPassword": "显示"
+    "showPassword": "显示",
+    "errEmailRequired": "电子邮件是必填项",
+    "errNotFound": "未找到与该电子邮件关联的账户",
+    "errTooMany": "尝试次数过多，请稍后再试。",
+    "errCodeRequired": "需要验证码",
+    "errNoCode": "未找到重置码，请申请新的。",
+    "errCodeExpired": "验证码已过期，请申请新的。",
+    "errCodeInvalid": "验证码无效，请重试。",
+    "errPwTooShort": "密码必须至少包含6个字符",
+    "errSamePassword": "您不能重复使用当前密码。",
+    "errReusedPassword": "该密码最近已使用，请选择其他密码。",
+    "errResetFailed": "密码重置失败，请重试。"
   },
   "sponsors": {
     "label": "我们的支持者",
@@ -816,7 +860,16 @@
       "noResults": "未找到结果。",
       "loading": "搜索中…",
       "suggestionTitle": "建议"
-    }
+    },
+    "oauthNoPassword": "您通过 {provider} 登录。您的账户目前没有密码。您可以在下方创建一个密码，以便也能用邮箱和密码登录。",
+    "createPasswordBtn": "创建密码",
+    "setPasswordBtn": "设置密码",
+    "passwordSetSuccess": "密码创建成功！您现在可以使用邮箱和密码登录。",
+    "codeSentToEmail": "6位验证码已发送至您的邮箱。",
+    "verificationCode": "验证码",
+    "minCharsError": "密码至少需要6个字符",
+    "theme": "主题",
+    "accentColour": "强调色"
   },
   "notificationBell": {
     "title": "通知",
@@ -874,17 +927,17 @@
   },
   "scripts": {
     "metaTitle": "剧本征集 | AIM Studio",
-    "metaDesc": "提交您的剧本，有机会由AIM Studio通过AI驱动的电影制作进行拍摄。",
+    "metaDesc": "提交您的剧本，有机会由AIM Studio制作。",
     "badge": "公开征集",
     "heroTitle": "剧本",
     "heroAccent": "征集",
-    "heroDesc": "我们正在寻找原创剧本。提交您的剧本，我们的AI将分析其制作潜力。最佳剧本将由AIM Studio制作。",
+    "heroDesc": "我们正在寻找原创剧本。提交您的剧本，我们的创意团队将审核其制作潜力。",
     "noCompensation": "无经济补偿 · 署名及作品集展示机会",
     "stepLabel": "步骤",
     "step1Title": "提交您的剧本",
     "step1Desc": "通过公开征集表格以PDF或Final Draft格式上传您的剧本。",
-    "step2Title": "AI分析",
-    "step2Desc": "我们的AI审查您的剧本结构、原创性和制作可行性。",
+    "step2Title": "团队审核",
+    "step2Desc": "我们的创意团队从结构、原创性和制作可行性方面审核您的剧本。",
     "step3Title": "进入制作",
     "step3Desc": "入选剧本将以完整创作署名进入AIM Studio制作流程。",
     "closedTitle": "剧本征集已关闭",
@@ -899,6 +952,12 @@
     "deadlineLabel": "截止日期",
     "submission": "份投稿",
     "submissions": "份投稿",
-    "submitScript": "提交剧本"
+    "submitScript": "提交剧本",
+    "notifyMeBtn": "开放时通知我",
+    "notifyLoading": "订阅中...",
+    "notifyConfirmedTitle": "您已加入列表！",
+    "notifyConfirmedDesc": "一旦此征集开放，我们会立即通知您。",
+    "comingSoonLabel": "即将推出",
+    "comingSoonBadge": "即将推出"
   }
 }

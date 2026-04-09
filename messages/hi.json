@@ -166,7 +166,14 @@
     "emailPrivate": "आपका ईमेल निजी है।",
     "namePlaceholder": "आपका नाम",
     "emailPlaceholder": "your@email.com",
-    "amountPlaceholder": "राशि दर्ज करें (न्यूनतम ${min})"
+    "amountPlaceholder": "राशि दर्ज करें (न्यूनतम ${min})",
+    "errorEmailRequired": "ईमेल आवश्यक है",
+    "validationRequired": "कृपया इस फ़ील्ड को भरें।",
+    "errPaypalMissing": "PayPal कॉन्फ़िगर नहीं है।",
+    "errPaypalLoad": "PayPal लोड नहीं हो सका। कनेक्शन जाँचें।",
+    "errPaymentFailed": "भुगतान विफल हुआ। कृपया पुनः प्रयास करें।",
+    "errPaymentProcessing": "भुगतान प्रसंस्करण त्रुटि। कृपया पुनः प्रयास करें।",
+    "errPaymentCanceled": "भुगतान रद्द किया गया। आप पुनः प्रयास कर सकते हैं।"
   },
   "footer": {
     "tagline": "कृत्रिम बुद्धिमत्ता से सिनेमा का भविष्य।",
@@ -184,7 +191,8 @@
     "rights": "सर्वाधिकार सुरक्षित।",
     "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "subscribe": "सदस्यता लें",
-    "subscribed": "आप सदस्य हैं!"
+    "subscribed": "आप सदस्य हैं!",
+    "validationRequired": "कृपया इस फ़ील्ड को भरें।"
   },
   "common": {
     "loading": "लोड हो रहा है...",
@@ -274,7 +282,8 @@
     "roleTypeSupporting": "सहायक",
     "roleTypeExtra": "एक्स्ट्रा",
     "withdraw": "वापस लें",
-    "applyAgain": "फिर से आवेदन करें"
+    "applyAgain": "फिर से आवेदन करें",
+    "applied": "आवेदन किया ✓"
   },
   "alreadyApplied": {
     "pageLabel": "आवेदन स्थिति",
@@ -308,7 +317,7 @@
     "statusNotSelected": "नहीं चुना गया",
     "statusWithdrawn": "वापस लिया",
     "resultPending": "आपका आवेदन समीक्षाधीन है। परिणाम जल्द ही सामने आएंगे।",
-    "resultAvailableOn": "परिणाम {date} से उपलब्ध",
+    "resultAvailableOn": "परिणाम {date} से उपलब्ध",
     "auditQueued": "आपका आवेदन AI समीक्षा कतार में है।",
     "auditProcessing": "आपके ऑडिशन की हमारी AI प्रणाली द्वारा समीक्षा की जा रही है।",
     "auditScoredHidden": "समीक्षा पूरी हुई! आपका परिणाम {date} को जारी किया जाएगा।",
@@ -389,7 +398,18 @@
     "statusFinalReview": "अंतिम समीक्षा",
     "statusApproved": "मंजूर",
     "statusSelected": "चयनित",
-    "statusNotSelected": "अचयनित"
+    "statusNotSelected": "अचयनित",
+    "praiseWords": "आप अद्भुत हैं! 🌟|सच्चे समर्थक! 💫|फिल्म नायक! 🎬|धन्यवाद! ❤️|किंवदंती! 🏆",
+    "receiptTitle": "दान रसीद",
+    "receiptThankYou": "आपके समर्थन के लिए धन्यवाद",
+    "receiptDate": "तारीख",
+    "receiptDonor": "दाता",
+    "receiptMethod": "तरीका",
+    "receiptStatus": "स्थिति",
+    "receiptMessage": "संदेश",
+    "receiptAnonymous": "गुमनाम",
+    "receiptPrint": "रसीद प्रिंट करें",
+    "receiptFooter": "यह रसीद आपके उदार योगदान की पुष्टि करती है। 100% कहानियों को जीवंत करने में जाता है। 🎥"
   },
   "upcomingHero": {
     "label": "आगामी",
@@ -547,7 +567,19 @@
     "genericError": "त्रुटि। पुनः प्रयास करें।",
     "emailLabel": "ईमेल:",
     "ageLabel": "उम्र:",
-    "genderLabel": "लिंग:"
+    "genderLabel": "लिंग:",
+    "photoFrontHeadshot": "सामने का फोटो",
+    "photoFrontDesc": "आपके चेहरे की स्पष्ट और अच्छी तरह से प्रकाशित फोटो",
+    "photoSideProfile": "साइड प्रोफाइल",
+    "photoSideDesc": "बाईं या दाईं ओर का प्रोफाइल व्यू",
+    "photoFullBody": "पूर्ण शरीर फोटो",
+    "photoFullDesc": "खड़े हुए, पूर्ण शरीर, सामान्य मुद्रा",
+    "photoExpression": "अभिव्यक्ति फोटो",
+    "photoExpressionDesc": "मुस्कुराते, गंभीर या भावनात्मक अभिव्यक्ति",
+    "photoOptional1": "अतिरिक्त फोटो (वैकल्पिक)",
+    "photoOptional1Desc": "एक्शन पोज़, क्लोज़-अप या रचनात्मक फोटो",
+    "photoOptional2": "अतिरिक्त फोटो (वैकल्पिक)",
+    "photoOptional2Desc": "कोई अन्य कोण या लुक जो आप दिखाना चाहते हैं"
   },
   "training": {
     "hub": "प्रशिक्षण केंद्र",
@@ -717,7 +749,8 @@
     "sendAnother": "एक और भेजें",
     "errorMsg": "भेजने में विफल।",
     "sending": "भेज रहे हैं...",
-    "sendMessage": "संदेश भेजें"
+    "sendMessage": "संदेश भेजें",
+    "validationRequired": "कृपया इस फ़ील्ड को भरें।"
   },
   "forgotPassword": {
     "accountRecovery": "खाता पुनर्प्राप्ति",
@@ -743,7 +776,18 @@
     "noMatch": "पासवर्ड मेल नहीं खाते",
     "resetFailed": "रीसेट विफल",
     "hidePassword": "छिपाएं",
-    "showPassword": "दिखाएं"
+    "showPassword": "दिखाएं",
+    "errEmailRequired": "ईमेल आवश्यक है",
+    "errNotFound": "उस ईमेल से कोई खाता नहीं मिला",
+    "errTooMany": "बहुत अधिक प्रयास। कृपया बाद में पुनः प्रयास करें।",
+    "errCodeRequired": "सत्यापन कोड आवश्यक है",
+    "errNoCode": "कोई रीसेट कोड नहीं मिला। कृपया नया अनुरोध करें।",
+    "errCodeExpired": "कोड की समय-सीमा समाप्त हो गई। कृपया नया अनुरोध करें।",
+    "errCodeInvalid": "अमान्य कोड। कृपया पुनः प्रयास करें।",
+    "errPwTooShort": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+    "errSamePassword": "आप अपना वर्तमान पासवर्ड दोबारा उपयोग नहीं कर सकते।",
+    "errReusedPassword": "यह पासवर्ड हाल ही में उपयोग किया गया था। कोई अलग चुनें।",
+    "errResetFailed": "पासवर्ड रीसेट विफल। कृपया पुनः प्रयास करें।"
   },
   "sponsors": {
     "label": "हमारे समर्थक",
@@ -816,7 +860,16 @@
       "noResults": "कोई परिणाम नहीं मिला।",
       "loading": "खोज रहे हैं…",
       "suggestionTitle": "सुझाव"
-    }
+    },
+    "oauthNoPassword": "Aapne {provider} se sign in kiya hai. Aapke account mein abhi koi password nahi hai. Neeche ek password banayein taaki aap email aur password se bhi login kar sakein.",
+    "createPasswordBtn": "Password banayein",
+    "setPasswordBtn": "Password set karein",
+    "passwordSetSuccess": "Password safaltapoorvak bana diya gaya! Ab aap apne email aur password se login kar sakte hain.",
+    "codeSentToEmail": "Aapke email par 6 ank ka verification code bheja gaya hai.",
+    "verificationCode": "Verification Code",
+    "minCharsError": "Password kam se kam 6 akshar ka hona chahiye",
+    "theme": "थीम",
+    "accentColour": "एक्सेंट रंग"
   },
   "notificationBell": {
     "title": "सूचनाएँ",
@@ -874,17 +927,17 @@
   },
   "scripts": {
     "metaTitle": "स्क्रिप्ट कॉल्स | AIM Studio",
-    "metaDesc": "अपनी स्क्रीनप्ले सबमिट करें और AI-संचालित फिल्म निर्माण के ज़रिए AIM Studio द्वारा इसे प्रोड्यूस करवाने का मौका पाएं।",
+    "metaDesc": "AIM Studio द्वारा निर्मित होने की संभावना के लिए अपनी पटकथा जमा करें।",
     "badge": "खुली आवेदन प्रक्रिया",
     "heroTitle": "स्क्रिप्ट",
     "heroAccent": "सबमिशन",
-    "heroDesc": "हम मौलिक स्क्रीनप्ले की तलाश कर रहे हैं। अपनी स्क्रिप्ट सबमिट करें और हमारा AI उसे प्रोडक्शन क्षमता के लिए विश्लेषण करेगा। बेहतरीन स्क्रिप्ट AIM Studio द्वारा प्रोड्यूस की जाती हैं।",
+    "heroDesc": "हम मौलिक पटकथाओं की तलाश में हैं। अपनी स्क्रिप्ट जमा करें और हमारी क्रिएटिव टीम इसे प्रोडक्शन के लिए समीक्षा करेगी।",
     "noCompensation": "कोई आर्थिक मुआवज़ा नहीं · क्रेडिट और पोर्टफोलियो अवसर",
     "stepLabel": "चरण",
     "step1Title": "अपनी स्क्रिप्ट सबमिट करें",
     "step1Desc": "खुली आवेदन प्रक्रिया फॉर्म के ज़रिए PDF या Final Draft फॉर्मेट में अपनी स्क्रीनप्ले अपलोड करें।",
-    "step2Title": "AI विश्लेषण",
-    "step2Desc": "हमारा AI आपकी स्क्रिप्ट की संरचना, मौलिकता और प्रोडक्शन व्यवहार्यता की समीक्षा करता है।",
+    "step2Title": "टीम समीक्षा",
+    "step2Desc": "हमारी क्रिएटिव टीम संरचना, मौलिकता और प्रोडक्शन की व्यवहार्यता के लिए आपकी स्क्रिप्ट की समीक्षा करती है।",
     "step3Title": "प्रोडक्शन पाएं",
     "step3Desc": "चुनी गई स्क्रिप्ट को AIM Studio में पूर्ण क्रिएटिव क्रेडिट के साथ प्रोडक्शन में लिया जाता है।",
     "closedTitle": "स्क्रिप्ट सबमिशन बंद है",
@@ -899,6 +952,12 @@
     "deadlineLabel": "अंतिम तिथि",
     "submission": "सबमिशन",
     "submissions": "सबमिशन",
-    "submitScript": "स्क्रिप्ट सबमिट करें"
+    "submitScript": "स्क्रिप्ट सबमिट करें",
+    "notifyMeBtn": "खुलने पर सूचित करें",
+    "notifyLoading": "सदस्यता हो रही है...",
+    "notifyConfirmedTitle": "आप सूची में हैं!",
+    "notifyConfirmedDesc": "जैसे ही यह कॉल खुलेगी, हम आपको सूचित करेंगे।",
+    "comingSoonLabel": "जल्द आ रहा है",
+    "comingSoonBadge": "जल्द"
   }
 }

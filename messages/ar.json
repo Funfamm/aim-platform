@@ -168,7 +168,14 @@
     "emailPrivate": "بريدك خاص.",
     "namePlaceholder": "اسمك",
     "emailPlaceholder": "بريدك@email.com",
-    "amountPlaceholder": "أدخل المبلغ (أدنى ${min})"
+    "amountPlaceholder": "أدخل المبلغ (أدنى ${min})",
+    "errorEmailRequired": "البريد الإلكتروني مطلوب",
+    "validationRequired": "يرجى ملء هذا الحقل.",
+    "errPaypalMissing": "PayPal غير مُهيأ.",
+    "errPaypalLoad": "فشل تحميل PayPal. تحقق من اتصالك أو أعد المحاولة.",
+    "errPaymentFailed": "فشلت عملية الدفع. يرجى المحاولة مجدداً.",
+    "errPaymentProcessing": "خطأ في معالجة الدفع. يرجى المحاولة مجدداً.",
+    "errPaymentCanceled": "تم إلغاء الدفع. يمكنك المحاولة مجدداً."
   },
   "footer": {
     "tagline": "رواد مستقبل السينما من خلال الذكاء الاصطناعي.",
@@ -186,7 +193,8 @@
     "rights": "جميع الحقوق محفوظة.",
     "emailPlaceholder": "بريدك الإلكتروني",
     "subscribe": "اشترك",
-    "subscribed": "أنت مشترك!"
+    "subscribed": "أنت مشترك!",
+    "validationRequired": "يرجى ملء هذا الحقل."
   },
   "common": {
     "loading": "جاري التحميل...",
@@ -276,7 +284,8 @@
     "roleTypeSupporting": "ثانوي",
     "roleTypeExtra": "كومبارس",
     "withdraw": "سحب",
-    "applyAgain": "تطبيق مجددًا"
+    "applyAgain": "تطبيق مجددًا",
+    "applied": "تم التقديم ✓"
   },
   "alreadyApplied": {
     "pageLabel": "حالة الطلب",
@@ -310,7 +319,7 @@
     "statusNotSelected": "لم يُختر",
     "statusWithdrawn": "مسحوب",
     "resultPending": "طلبك قيد المراجعة. ستُكشف النتائج قريباً.",
-    "resultAvailableOn": "النتائج متاحة من {date}",
+    "resultAvailableOn": "النتائج متاحة من {date}",
     "auditQueued": "طلبك في قائمة انتظار المراجعة بالذكاء الاصطناعي.",
     "auditProcessing": "يتم حاليًا مراجعة تجربة التمثيل الخاصة بك من قِبل نظام الذكاء الاصطناعي.",
     "auditScoredHidden": "اكتملت المراجعة! سيُكشف عن نتيجتك في {date}.",
@@ -391,7 +400,18 @@
     "statusFinalReview": "مراجعة نهائية",
     "statusApproved": "مُعتمد",
     "statusSelected": "مُختار",
-    "statusNotSelected": "لم يُختر"
+    "statusNotSelected": "لم يُختر",
+    "praiseWords": "أنت مذهل! 🌟|داعم حقيقي! 💫|بطل السينما! 🎬|شكراً لك! ❤️|أسطورة! 🏆",
+    "receiptTitle": "إيصال التبرع",
+    "receiptThankYou": "شكراً على دعمك",
+    "receiptDate": "التاريخ",
+    "receiptDonor": "المتبرع",
+    "receiptMethod": "الطريقة",
+    "receiptStatus": "الحالة",
+    "receiptMessage": "الرسالة",
+    "receiptAnonymous": "مجهول",
+    "receiptPrint": "طباعة الإيصال",
+    "receiptFooter": "يؤكد هذا الإيصال مساهمتك الكريمة. 100٪ يذهب نحو إحياء القصص. 🎥"
   },
   "upcomingHero": {
     "label": "قريباً",
@@ -549,7 +569,19 @@
     "genericError": "خطأ. حاول مجدداً.",
     "emailLabel": "البريد:",
     "ageLabel": "العمر:",
-    "genderLabel": "الجنس:"
+    "genderLabel": "الجنس:",
+    "photoFrontHeadshot": "صورة أمامية للوجه",
+    "photoFrontDesc": "صورة واضحة ومضاءة جيداً لوجهك مباشرةً",
+    "photoSideProfile": "صورة جانبية",
+    "photoSideDesc": "منظر الجانب الأيسر أو الأيمن",
+    "photoFullBody": "صورة الجسم الكامل",
+    "photoFullDesc": "جسم كامل واقف، وضعية محايدة",
+    "photoExpression": "صورة تعبيرية",
+    "photoExpressionDesc": "ابتسامة أو جدية أو تعبير عاطفي من اختيارك",
+    "photoOptional1": "صورة إضافية (اختياري)",
+    "photoOptional1Desc": "وضعية حركة أو صورة إبداعية",
+    "photoOptional2": "صورة إضافية (اختياري)",
+    "photoOptional2Desc": "زاوية أخرى أو مظهر تريد إبرازه"
   },
   "training": {
     "hub": "مركز التدريب",
@@ -719,7 +751,8 @@
     "sendAnother": "إرسال أخرى",
     "errorMsg": "فشل الإرسال.",
     "sending": "جاري الإرسال...",
-    "sendMessage": "إرسال الرسالة"
+    "sendMessage": "إرسال الرسالة",
+    "validationRequired": "يرجى ملء هذا الحقل."
   },
   "forgotPassword": {
     "accountRecovery": "استعادة الحساب",
@@ -745,7 +778,18 @@
     "noMatch": "كلمات المرور غير متطابقة",
     "resetFailed": "فشلت إعادة التعيين",
     "hidePassword": "إخفاء",
-    "showPassword": "إظهار"
+    "showPassword": "إظهار",
+    "errEmailRequired": "البريد الإلكتروني مطلوب",
+    "errNotFound": "لا يوجد حساب مرتبط بهذا البريد الإلكتروني",
+    "errTooMany": "محاولات كثيرة جداً. يرجى المحاولة لاحقاً.",
+    "errCodeRequired": "رمز التحقق مطلوب",
+    "errNoCode": "لم يُعثر على رمز إعادة تعيين. يرجى طلب رمز جديد.",
+    "errCodeExpired": "انتهت صلاحية الرمز. يرجى طلب رمز جديد.",
+    "errCodeInvalid": "رمز غير صحيح. يرجى المحاولة مجدداً.",
+    "errPwTooShort": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
+    "errSamePassword": "لا يمكنك إعادة استخدام كلمة المرور الحالية.",
+    "errReusedPassword": "كلمة المرور هذه مستخدمة مؤخراً. يرجى اختيار كلمة مختلفة.",
+    "errResetFailed": "فشل إعادة تعيين كلمة المرور. يرجى المحاولة مجدداً."
   },
   "sponsors": {
     "label": "داعمونا",
@@ -818,7 +862,16 @@
       "noResults": "لا توجد نتائج.",
       "loading": "جارٍ البحث…",
       "suggestionTitle": "اقتراحات"
-    }
+    },
+    "oauthNoPassword": "لقد سجلت الدخول باستخدام {provider}. حسابك لا يحتوي على كلمة مرور حتى الان. يمكنك انشاء واحدة ادناه لتسجيل الدخول ايضا بالبريد الالكتروني وكلمة المرور.",
+    "createPasswordBtn": "انشاء كلمة مرور",
+    "setPasswordBtn": "تعيين كلمة المرور",
+    "passwordSetSuccess": "تم انشاء كلمة المرور بنجاح! يمكنك الان تسجيل الدخول بالبريد الالكتروني وكلمة المرور.",
+    "codeSentToEmail": "تم ارسال رمز تحقق مكون من 6 ارقام الى بريدك الالكتروني.",
+    "verificationCode": "رمز التحقق",
+    "minCharsError": "يجب ان تكون كلمة المرور 6 احرف على الاقل",
+    "theme": "المظهر",
+    "accentColour": "لون التمييز"
   },
   "notificationBell": {
     "title": "الإشعارات",
@@ -876,17 +929,17 @@
   },
   "scripts": {
     "metaTitle": "طلبات النصوص | AIM Studio",
-    "metaDesc": "قدّم سيناريو فيلمك لفرصة إنتاجه في AIM Studio باستخدام تقنيات الذكاء الاصطناعي.",
+    "metaDesc": "قدِّم سيناريوك للحصول على فرصة إنتاجه من قِبَل AIM Studio.",
     "badge": "الطلبات المفتوحة",
     "heroTitle": "تقديم",
     "heroAccent": "السيناريوهات",
-    "heroDesc": "نبحث عن سيناريوهات أصيلة. قدّم نصك وسيحلله الذكاء الاصطناعي لتقييم إمكانية إنتاجه. أفضل النصوص تُنتج في AIM Studio.",
+    "heroDesc": "نبحث عن نصوص سينمائية أصلية. قدِّم نصك وسيقوم فريقنا الإبداعي بمراجعته.",
     "noCompensation": "بدون تعويض مالي · فرصة لمحفظة أعمالك وائتمان إبداعي",
     "stepLabel": "خطوة",
     "step1Title": "قدّم نصك",
     "step1Desc": "ارفع سيناريو فيلمك بتنسيق PDF أو Final Draft عبر نموذج الطلب المفتوح.",
-    "step2Title": "تحليل بالذكاء الاصطناعي",
-    "step2Desc": "يراجع الذكاء الاصطناعي نصك من حيث البنية والأصالة والجدوى الإنتاجية.",
+    "step2Title": "مراجعة الفريق",
+    "step2Desc": "يراجع فريقنا الإبداعي نصك من حيث البنية والأصالة وإمكانية الإنتاج.",
     "step3Title": "احصل على الإنتاج",
     "step3Desc": "تدخل النصوص المختارة في الإنتاج في AIM Studio مع الاعتراف الإبداعي الكامل.",
     "closedTitle": "تقديم النصوص مغلق",
@@ -901,6 +954,12 @@
     "deadlineLabel": "الموعد النهائي",
     "submission": "تقديم",
     "submissions": "تقديمات",
-    "submitScript": "تقديم النص"
+    "submitScript": "تقديم النص",
+    "notifyMeBtn": "أخطرني عند الفتح",
+    "notifyLoading": "جاري الاشتراك...",
+    "notifyConfirmedTitle": "أنت في القائمة!",
+    "notifyConfirmedDesc": "سنُخطرك فور فتح هذه الدعوة.",
+    "comingSoonLabel": "قريباً",
+    "comingSoonBadge": "قريباً"
   }
 }

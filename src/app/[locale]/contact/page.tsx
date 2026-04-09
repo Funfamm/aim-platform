@@ -114,16 +114,25 @@ export default function ContactPage() {
                                         <div className="form-grid-2col" style={{ marginBottom: 'var(--space-md)' }}>
                                             <div>
                                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('name')}</label>
-                                                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder={t('namePlaceholder')} style={inputStyle} />
+                                                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder={t('namePlaceholder')} style={inputStyle}
+                                                    onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
+                                                    onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                                                />
                                             </div>
                                             <div>
                                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('email')}</label>
-                                                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required placeholder={t('emailPlaceholder')} style={inputStyle} />
+                                                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required placeholder={t('emailPlaceholder')} style={inputStyle}
+                                                    onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
+                                                    onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                                                />
                                             </div>
                                         </div>
                                         <div style={{ marginBottom: 'var(--space-md)' }}>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('subject')}</label>
-                                            <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required placeholder={t('subjectPlaceholder')} style={inputStyle} />
+                                            <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required placeholder={t('subjectPlaceholder')} style={inputStyle}
+                                                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
+                                                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                                            />
                                         </div>
                                         <div style={{ marginBottom: 'var(--space-lg)' }}>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('message')}</label>
@@ -134,6 +143,8 @@ export default function ContactPage() {
                                                 rows={5}
                                                 placeholder={t('messagePlaceholder')}
                                                 style={{ ...inputStyle, resize: 'vertical' as const, fontFamily: 'inherit' }}
+                                                onInvalid={e => (e.target as HTMLTextAreaElement).setCustomValidity(t('validationRequired'))}
+                                                onInput={e => (e.target as HTMLTextAreaElement).setCustomValidity('')}
                                             />
                                         </div>
                                         {status === 'error' && (

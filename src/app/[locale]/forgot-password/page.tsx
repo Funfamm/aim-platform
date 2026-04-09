@@ -161,6 +161,23 @@ export default function ForgotPasswordPage() {
 
     const stepNum = step === 'email' ? 1 : step === 'code' ? 2 : step === 'reset' ? 3 : 3
 
+    const translateApiError = (code: string): string => {
+        const map: Record<string, string> = {
+            ERR_EMAIL_REQUIRED: t('errEmailRequired'),
+            ERR_NOT_FOUND:      t('errNotFound'),
+            ERR_TOO_MANY:       t('errTooMany'),
+            ERR_CODE_REQUIRED:  t('errCodeRequired'),
+            ERR_NO_CODE:        t('errNoCode'),
+            ERR_CODE_EXPIRED:   t('errCodeExpired'),
+            ERR_CODE_INVALID:   t('errCodeInvalid'),
+            ERR_PW_TOO_SHORT:   t('errPwTooShort'),
+            ERR_SAME_PASSWORD:  t('errSamePassword'),
+            ERR_REUSED_PASSWORD:t('errReusedPassword'),
+            ERR_RESET_FAILED:   t('errResetFailed'),
+        }
+        return map[code] ?? code
+    }
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
         setError('')
@@ -184,7 +201,7 @@ export default function ForgotPasswordPage() {
                     setInfo('⚠️ ' + t('emailNotConfigured'))
                 }
             } else {
-                setError(data.error || t('emailNotFound'))
+                setError(translateApiError(data.error))
             }
         } else if (step === 'code') {
             if (code.length !== 6) { setError(t('enterAllDigits')); setLoading(false); return }
@@ -199,7 +216,7 @@ export default function ForgotPasswordPage() {
                 setStep('reset')
                 setInfo('')
             } else {
-                setError(data.error || t('invalidCode'))
+                setError(translateApiError(data.error))
             }
         } else if (step === 'reset') {
             if (newPassword.length < 6) { setError(t('minChars')); setLoading(false); return }
@@ -214,7 +231,7 @@ export default function ForgotPasswordPage() {
             if (res.ok) {
                 setStep('done')
             } else {
-                setError(data.error || t('resetFailed'))
+                setError(translateApiError(data.error))
             }
         }
     }
@@ -232,7 +249,7 @@ export default function ForgotPasswordPage() {
             setInfo('📧 ' + t('newCodeSent'))
         } else {
             const data = await res.json()
-            setError(data.error || t('resendFailed'))
+            setError(translateApiError(data.error))
             setInfo('')
         }
     }

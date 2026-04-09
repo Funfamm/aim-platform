@@ -5,6 +5,7 @@ import { getUserSession } from '@/lib/auth'
 import { sendEmail } from '@/lib/mailer'
 import { applicationConfirmationWithOverrides, applicationAdminNotification } from '@/lib/email-templates'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
+import { t as emailT } from '@/lib/email-i18n'
 import { uploadLimiter } from '@/lib/rate-limit'
 import { checkMagicBytes } from '@/lib/upload-safety'
 import { logUploadEvent } from '@/lib/upload-audit'
@@ -236,19 +237,19 @@ export async function POST(
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || ''
         Promise.resolve().then(async () => {
             try {
-                await sendEmail({
-                    to: email,
-                    subject: `Application received for ${castingCall.roleName} 🎭`,
-                    html: await applicationConfirmationWithOverrides(fullName, castingCall.roleName, undefined, siteUrl),
-                })
+                const subject = (emailT('castingConfirmation', locale, 'subject') || 'Application received for {role} 🎭').replace('{role}', castingCall.roleName)
+                const html = await applicationConfirmationWithOverrides(fullName, castingCall.roleName, undefined, siteUrl, locale)
+                await sendEmail({ to: email, subject, html })
                 // Mirror to notification board if user is logged in
                 if (userId) {
+                    const notifTitle = (emailT('castingConfirmation', locale, 'notifTitle') || 'Application Received: {role} 🎭').replace('{role}', castingCall.roleName)
+                    const notifMessage = (emailT('castingConfirmation', locale, 'notifMessage') || 'Your application for "{role}" has been submitted successfully. Our team will be in touch!').replace('{role}', castingCall.roleName)
                     await mirrorToNotificationBoard(
                         userId,
                         'status_change',
-                        `Application Received: ${castingCall.roleName} 🎭`,
-                        `Your application for "${castingCall.roleName}" has been submitted successfully. Our team will be in touch!`,
-                        '/dashboard/applications',
+                        notifTitle,
+                        notifMessage,
+                        `/casting/${id}/apply`,
                         `app-confirm-${application.id}`,
                     )
                 }
