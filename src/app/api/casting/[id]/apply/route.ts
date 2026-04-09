@@ -217,10 +217,9 @@ export async function POST(
             })
         }
 
-        // ═══ AUTO-AUDIT — schedule AI analysis via cron job ═══
-        // We stamp scheduledAuditAt on the record so the hourly cron job
-        // (/api/cron/audit-applications) picks it up reliably — no fragile
-        // setTimeout that dies when the serverless function ends.
+        // ═══ AUTO-AUDIT — enqueue for AI scoring ═══
+        // Places the application in the priority queue; the daily cron will
+        // score it when a free-tier API key still has quota available.
         let siteSettings: Awaited<ReturnType<typeof prisma.siteSettings.findFirst>> = null
         try {
             siteSettings = await prisma.siteSettings.findFirst()
@@ -228,13 +227,9 @@ export async function POST(
             console.error('Failed to load SiteSettings (schema drift?):', settingsErr)
         }
         if (siteSettings?.aiAutoAudit) {
-            const delayHours = (siteSettings as any).auditDelayHours ?? 2
-            const scheduledAuditAt = new Date(Date.now() + delayHours * 60 * 60 * 1000)
-            await prisma.application.update({
-                where: { id: application.id },
-                data: { scheduledAuditAt } as any,
-            })
-            console.log(`[Auto-Audit] Scheduled for ${application.id} at ${scheduledAuditAt.toISOString()} (+${delayHours}h)`)
+            const { enqueueApplication } = await import('@/lib/audit-queue')
+            await enqueueApplication(application.id, 0)
+            console.log(`[Auto-Audit] Queued ${application.id} for AI scoring`)
         }
 
         // Fire-and-forget: confirmation email to applicant + admin notification + in-app mirror

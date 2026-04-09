@@ -2,20 +2,36 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { runAuditionAgent } from '@/lib/agents/audition-agent'
 import { getAutoAdvanceStatus, notifyApplicantStatusChange } from '@/lib/notifications'
+import {
+    getNextBatch,
+    markProcessing,
+    markScoredHidden,
+    markFailed,
+    releaseStuck,
+    getDueForReveal,
+    markScoredVisible,
+} from '@/lib/audit-queue'
+import { resetExpiredWindows, getAvailableKey, consumeKey, cooldownKey } from '@/lib/key-quota'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300 // 5 min — cron jobs can process multiple applications
+export const maxDuration = 300 // 5 min — process as many as quota allows
 
 /**
  * GET /api/cron/audit-applications
  *
- * Called by Vercel Cron every hour (see vercel.json).
- * Picks up applications whose `scheduledAuditAt` is in the past
- * and haven't been audited yet (aiScore is null), then runs the AI audit
- * on each with pacing to avoid AI rate limits.
+ * Called by Vercel Cron once per day (see vercel.json: "0 0 * * *").
+ * Hobby-plan compatible — no hourly cron required.
+ *
+ * Pass 1 — Score queued applications:
+ *   1. Reset expired API-key quota windows.
+ *   2. Release any stuck 'processing' jobs (crash recovery).
+ *   3. While quota is available: pull next queued app → score → store as scored_hidden.
+ *
+ * Pass 2 — Reveal scored results:
+ *   4. Find all scored_hidden apps whose resultVisibleAt ≤ now.
+ *   5. Flip them to scored_visible and send notifications.
  *
  * Security: Vercel sets Authorization: Bearer <CRON_SECRET> on each invocation.
- * Set CRON_SECRET in the Vercel dashboard to prevent public triggering.
  */
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization')
@@ -24,46 +40,33 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const now = new Date()
-
-    // Raw query — scheduledAuditAt won't exist in Prisma types until migration runs
-    // Using $queryRaw to safely read the new column regardless of type-gen state
-    const due = await (prisma.application as any).findMany({
-        where: {
-            scheduledAuditAt: { lte: now },
-            aiScore: null,
-            aiReport: null,
-        },
-        include: {
-            castingCall: {
-                include: { project: true },
-            },
-        },
-        orderBy: { scheduledAuditAt: 'asc' },
-        take: 20,
-    }) as Array<Record<string, any>>
-
-    if (due.length === 0) {
-        return NextResponse.json({ message: 'No applications due for audit', processed: 0 })
-    }
-
-    console.log(`[Cron/Audit] Found ${due.length} application(s) due for audit`)
-
     const settings = await prisma.siteSettings.findFirst().catch(() => null)
     const REVEAL_DELAY_HOURS = (settings as any)?.resultRevealDelayHours ?? 6
-    const PACE_MS = 8_000 // 8s between AI calls
+    const BATCH_SIZE: number = (settings as any)?.auditQueueBatchSize ?? 10
 
-    let successCount = 0
-    let errorCount = 0
+    // ── Pass 1: Score queued applications ──────────────────────────────────
+    const resetCount = await resetExpiredWindows()
+    const stuckCount = await releaseStuck()
 
-    for (let i = 0; i < due.length; i++) {
-        const app = due[i]
+    let scored = 0
+    let skipped = 0
+    let failed = 0
 
-        if (i > 0) {
-            await new Promise(r => setTimeout(r, PACE_MS))
+    const batch = await getNextBatch(BATCH_SIZE)
+
+    for (const app of batch) {
+        // Check quota before each call — stop if no key available
+        const key = await getAvailableKey()
+        if (!key) {
+            console.log('[Cron/Audit] No API key quota available — stopping scoring pass')
+            skipped = batch.length - scored - failed
+            break
         }
 
+        await markProcessing(app.id)
+
         try {
+            // Parse experience data
             let experienceData = {
                 text: '',
                 specialSkills: '',
@@ -73,6 +76,7 @@ export async function GET(req: NextRequest) {
                 experienceData.text = app.experience
             }
 
+            // Parse photo URLs
             let photoUrls: string[] = []
             if (app.headshotPath) {
                 try { photoUrls = JSON.parse(app.headshotPath) } catch { /* */ }
@@ -101,6 +105,7 @@ export async function GET(req: NextRequest) {
                 locale: app.locale || 'en',
             })
 
+            // Determine pipeline status
             let newStatus = app.status
             const autoStatus = await getAutoAdvanceStatus(app.status, report.overallScore)
             if (autoStatus) {
@@ -109,55 +114,62 @@ export async function GET(req: NextRequest) {
                 newStatus = 'under_review'
             }
 
-            const resultVisibleAt = new Date(Date.now() + REVEAL_DELAY_HOURS * 60 * 60 * 1000)
-
-            await (prisma.application as any).update({
-                where: { id: app.id },
-                data: {
-                    aiScore: report.overallScore,
-                    aiFitLevel: report.recommendation,
-                    aiReport: JSON.stringify(report),
-                    statusNote: report.applicantFeedback || '',
-                    status: newStatus,
-                    reviewedAt: new Date(),
-                    resultVisibleAt,
-                    scheduledAuditAt: null, // clear so it won't re-run
-                    photoScreeningStatus: report.screeningSkipped ? 'skipped' : 'completed',
-                },
+            // Store result privately — visible only after reveal delay
+            await markScoredHidden(app.id, REVEAL_DELAY_HOURS, {
+                aiScore: report.overallScore,
+                aiFitLevel: report.recommendation,
+                aiReport: JSON.stringify(report),
+                statusNote: report.applicantFeedback || '',
+                status: newStatus,
+                reviewedAt: new Date(),
+                photoScreeningStatus: report.screeningSkipped ? 'skipped' : 'completed',
+                scheduledAuditAt: null, // clear legacy field
             })
 
-            if (newStatus !== app.status) {
-                notifyApplicantStatusChange({
-                    applicationId: app.id,
-                    recipientEmail: app.email,
-                    recipientName: app.fullName,
-                    newStatus,
-                    roleName: app.castingCall.roleName,
-                    projectTitle: app.castingCall.project.title,
-                    aiScore: report.overallScore,
-                    statusNote: report.applicantFeedback,
-                }).catch(err => console.error('[Cron/Audit] Notification error:', err))
-            }
-
-            successCount++
+            await consumeKey(key.id)
+            scored++
             console.log(`[Cron/Audit] ✓ ${app.fullName} — ${report.overallScore}/100 (${report.recommendation})`)
+
         } catch (err) {
-            errorCount++
+            failed++
             const msg = err instanceof Error ? err.message : String(err)
             console.error(`[Cron/Audit] ✗ ${app.fullName} (${app.id}): ${msg}`)
 
-            // Clear scheduledAuditAt to avoid re-queuing broken records indefinitely
-            await (prisma.application as any).update({
-                where: { id: app.id },
-                data: { scheduledAuditAt: null },
-            }).catch(() => null)
+            // If the error looks like a quota/auth error from the AI provider, cooldown the key
+            if (/quota|rate.limit|429|auth|api.?key/i.test(msg)) {
+                await cooldownKey(key.id, 60)
+            }
+            await markFailed(app.id, msg)
         }
     }
 
+    // ── Pass 2: Reveal results whose timer has expired ─────────────────────
+    const dueForReveal = await getDueForReveal()
+    let revealed = 0
+
+    for (const app of dueForReveal) {
+        await markScoredVisible(app.id)
+
+        // Send notification now that result is public
+        notifyApplicantStatusChange({
+            applicationId: app.id,
+            recipientEmail: app.email,
+            recipientName: app.fullName,
+            newStatus: app.status,
+            roleName: app.castingCall.roleName,
+            projectTitle: app.castingCall.project.title,
+            aiScore: app.aiScore,
+            statusNote: app.statusNote,
+        }).catch(err => console.error('[Cron/Reveal] Notification error:', err))
+
+        revealed++
+        console.log(`[Cron/Reveal] ✓ Result released for ${app.fullName}`)
+    }
+
     return NextResponse.json({
-        message: 'Cron audit complete',
-        processed: due.length,
-        success: successCount,
-        errors: errorCount,
+        message: 'Cron run complete',
+        pass1: { scored, skipped, failed, batchSize: BATCH_SIZE },
+        pass2: { revealed },
+        maintenance: { resetWindows: resetCount, releasedStuck: stuckCount },
     })
 }

@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIM Studio — Sprint 4 Review</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --bg-primary: #0a0a0f;
+    --bg-card: #111118;
+    --bg-elevated: #16161f;
+    --gold: #d4a853;
+    --gold-dim: rgba(212, 168, 83, 0.15);
+    --gold-glow: rgba(212, 168, 83, 0.08);
+    --green: #34d399;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --text: #e8e8ec;
+    --text-dim: #8b8b9e;
+    --text-muted: #4a4a5e;
+    --border: rgba(255,255,255,0.06);
+    --font: 'Inter', -apple-system, sans-serif;
+    --font-display: 'Playfair Display', Georgia, serif;
+}
+
+html { scroll-behavior: smooth; scroll-snap-type: y mandatory; overflow-x: hidden; }
+body { font-family: var(--font); background: var(--bg-primary); color: var(--text); }
+
+/* ── Slides ── */
+.slide {
+    min-height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Gold accent bar */
+.slide::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), rgba(139,92,246,0.5), var(--gold), transparent);
+    opacity: 0.6;
+}
+
+/* Slide number */
+.slide-num {
+    position: absolute;
+    bottom: 30px; right: 40px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+}
+
+/* ── Title Slide ── */
+.title-slide {
+    background: linear-gradient(160deg, var(--bg-primary) 0%, #0d0d15 40%, #0f0f1a 100%);
+}
+.title-slide .accent-line {
+    width: 3px; height: 140px;
+    background: linear-gradient(180deg, var(--gold), rgba(139,92,246,0.6));
+    margin-bottom: 24px;
+    border-radius: 2px;
+}
+.title-slide .brand {
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+}
+.title-slide h1 {
+    font-family: var(--font);
+    font-size: 4.5rem;
+    font-weight: 900;
+    line-height: 1.05;
+    color: var(--text);
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+}
+.title-slide h1 span {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 700;
+    color: var(--gold);
+    display: block;
+    font-size: 3rem;
+    margin-top: 4px;
+}
+.title-slide .meta {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-top: 28px;
+    line-height: 1.8;
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+    max-width: 400px;
+}
+.title-slide .orb {
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 500px; height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(212,168,83,0.04) 0%, transparent 70%);
+    pointer-events: none;
+}
+.title-slide .orb2 {
+    position: absolute;
+    right: 100px; bottom: -100px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(139,92,246,0.03) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+/* ── Section Headers ── */
+.section-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 14px;
+}
+.slide h2 {
+    font-size: 2.6rem;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 10px;
+}
+.slide h2 em {
+    font-family: var(--font-display);
+    font-style: italic;
+    color: var(--gold);
+}
+.slide .subtitle {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-width: 650px;
+    margin-bottom: 40px;
+}
+
+/* ── Stat Grid ── */
+.stat-grid {
+    display: grid;
+    gap: 16px;
+    margin-top: 20px;
+}
+.stat-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.stat-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.stat-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+
+.stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+.stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212,168,83,0.2);
+}
+.stat-card .stat-value {
+    font-size: 2.8rem;
+    font-weight: 900;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+.stat-card .stat-label {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+.stat-card .stat-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    line-height: 1.4;
+}
+.stat-card .glow {
+    position: absolute;
+    top: -20px; right: -20px;
+    width: 100px; height: 100px;
+    border-radius: 50%;
+    opacity: 0.15;
+    pointer-events: none;
+}
+
+/* ── Feature Cards ── */
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-top: 20px;
+}
+.feature-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 28px;
+    transition: transform 0.3s ease, border-color 0.3s ease;
+}
+.feature-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212,168,83,0.15);
+}
+.feature-card .icon {
+    font-size: 1.6rem;
+    margin-bottom: 10px;
+}
+.feature-card h3 {
+    font-size: 1rem;
+    font-weight: 800;
+    margin-bottom: 6px;
+    color: var(--text);
+}
+.feature-card p {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    line-height: 1.55;
+}
+.feature-card .tag {
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: var(--gold-dim);
+    color: var(--gold);
+}
+
+/* ── Table ── */
+.clean-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.clean-table th {
+    text-align: left;
+    font-size: 0.6rem;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    padding: 10px 16px;
+    border-bottom: 2px solid rgba(212,168,83,0.15);
+}
+.clean-table td {
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+.clean-table tr:hover td { background: rgba(255,255,255,0.01); }
+.clean-table td:first-child { color: var(--text); font-weight: 600; }
+
+/* Priority badges */
+.badge {
+    display: inline-block;
+    font-size: 0.55rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+.badge-high { background: rgba(248,113,113,0.1); color: var(--red); border: 1px solid rgba(248,113,113,0.15); }
+.badge-done { background: rgba(52,211,153,0.1); color: var(--green); border: 1px solid rgba(52,211,153,0.15); }
+.badge-new { background: rgba(96,165,250,0.1); color: var(--blue); border: 1px solid rgba(96,165,250,0.15); }
+.badge-gold { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(212,168,83,0.2); }
+
+/* ── Timeline ── */
+.timeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-top: 40px;
+}
+.timeline-item {
+    flex: 1;
+    padding: 20px 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    text-align: center;
+    margin-right: -1px;
+    transition: transform 0.2s;
+    position: relative;
+}
+.timeline-item.past {
+    background: rgba(52,211,153,0.03);
+    border-color: rgba(52,211,153,0.1);
+}
+.timeline-item.current {
+    background: linear-gradient(135deg, rgba(212,168,83,0.06), rgba(52,211,153,0.04));
+    border-color: var(--gold);
+    box-shadow: 0 0 30px rgba(212,168,83,0.06);
+    z-index: 2;
+    transform: scale(1.03);
+}
+.timeline-item.future {
+    opacity: 0.5;
+}
+.timeline-item .t-sprint {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: var(--text);
+    margin-bottom: 2px;
+}
+.timeline-item .t-label {
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    font-weight: 600;
+}
+.timeline-item .t-check {
+    position: absolute;
+    top: 8px; right: 10px;
+    font-size: 0.65rem;
+}
+
+/* ── Architecture diagram ── */
+.arch-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 30px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+.arch-node {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 22px;
+    text-align: center;
+    min-width: 130px;
+}
+.arch-node .a-icon { font-size: 1.5rem; margin-bottom: 6px; }
+.arch-node .a-name { font-size: 0.75rem; font-weight: 700; color: var(--text); }
+.arch-node .a-sub { font-size: 0.58rem; color: var(--text-muted); margin-top: 2px; }
+.arch-arrow {
+    font-size: 1.2rem;
+    color: var(--gold);
+    padding: 0 8px;
+    opacity: 0.5;
+}
+
+/* ── Migration comparison ── */
+.compare-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: start;
+    margin-top: 20px;
+}
+.compare-col {
+    background: var(--bg-card);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 28px;
+}
+.compare-col h3 {
+    font-size: 0.9rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.compare-col ul {
+    list-style: none;
+    padding: 0;
+}
+.compare-col li {
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.compare-col li:last-child { border-bottom: none; }
+.compare-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: var(--gold);
+    padding-top: 50px;
+}
+.compare-col.old h3 { color: var(--text-muted); }
+.compare-col.new { border-color: rgba(52,211,153,0.15); }
+.compare-col.new h3 { color: var(--green); }
+
+/* ── Language grid ── */
+.lang-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 20px;
+}
+.lang-chip {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text);
+    transition: border-color 0.2s;
+    min-width: 100px;
+}
+.lang-chip:hover { border-color: rgba(212,168,83,0.2); }
+.lang-chip .flag { font-size: 1.3rem; display: block; margin-bottom: 4px; }
+.lang-chip .lang-name { font-size: 0.6rem; color: var(--text-muted); display: block; margin-top: 2px; }
+
+/* ── Proof points ── */
+.proof-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 16px;
+}
+.proof-list li {
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.5;
+}
+.proof-list li:last-child { border-bottom: none; }
+.proof-list .check { color: var(--green); font-weight: 800; font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Nav dots ── */
+.nav-dots {
+    position: fixed;
+    right: 24px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 100;
+}
+.nav-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0;
+}
+.nav-dot.active {
+    background: var(--gold);
+    box-shadow: 0 0 8px rgba(212,168,83,0.4);
+    transform: scale(1.3);
+}
+
+/* ── Keyboard hint ── */
+.kb-hint {
+    position: fixed;
+    bottom: 20px; left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+    z-index: 100;
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation dots -->
+<div class="nav-dots" id="navDots"></div>
+<div class="kb-hint">↓ SCROLL · ARROW KEYS · CLICK DOTS</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 1 Title -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide title-slide" id="s1">
+    <div class="orb"></div>
+    <div class="orb2"></div>
+    <div class="accent-line"></div>
+    <div class="brand">AIM STUDIO</div>
+    <h1>Sprint 4<span>Media, Infrastructure & Global Reach</span></h1>
+    <div class="meta">
+        April 7, 2026 &nbsp;·&nbsp; Sprint Review Presentation<br>
+        <span style="color: var(--gold); font-style: italic;">Content Modules → Production Infrastructure</span>
+    </div>
+    <div class="slide-num">01</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 2 Sprint Overview / Stats -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s2" style="background: linear-gradient(160deg, var(--bg-primary), #0d0d18);">
+    <div class="section-label">📊 Sprint at a Glance</div>
+    <h2>What <em>Sprint 4</em> Delivered</h2>
+    <p class="subtitle">Two weeks of infrastructure hardening, media pipeline engineering, and global localization preparing AIM Studio for real-world scale.</p>
+
+    <div class="stat-grid cols-4">
+        <div class="stat-card">
+            <div class="glow" style="background: radial-gradient(circle, var(--gold), transparent);"></div>
+            <div class="stat-value" style="color: var(--gold);">264</div>
+            <div class="stat-label">Commits</div>
+            <div class="stat-sub">Since Sprint 3 delivery</div>
+        </div>
+        <div class="stat-card">
+            <div class="glow" style="background: radial-gradient(circle, var(--green), transparent);"></div>
+            <div class="stat-value" style="color: var(--green);">77K</div>
+            <div class="stat-label">Lines Added</div>
+            <div class="stat-sub">413 files changed</div>
+        </div>
+        <div class="stat-card">
+            <div class="glow" style="background: radial-gradient(circle, var(--blue), transparent);"></div>
+            <div class="stat-value" style="color: var(--blue);">42</div>
+            <div class="stat-label">DB Models</div>
+            <div class="stat-sub">298 source files</div>
+        </div>
+        <div class="stat-card">
+            <div class="glow" style="background: radial-gradient(circle, var(--purple), transparent);"></div>
+            <div class="stat-value" style="color: var(--purple);">11</div>
+            <div class="stat-label">Languages</div>
+            <div class="stat-sub">Full platform coverage</div>
+        </div>
+    </div>
+    <div class="slide-num">02</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 3 Render → Vercel Migration -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s3" style="background: linear-gradient(160deg, var(--bg-primary), #0e0e1a);">
+    <div class="section-label">🚀 Platform Migration</div>
+    <h2>Render → <em>Vercel</em></h2>
+    <p class="subtitle">Migrated the entire deployment pipeline from Render to Vercel the native hosting platform for Next.js delivering faster builds, global edge CDN, and zero-config deployments.</p>
+
+    <div class="compare-grid">
+        <div class="compare-col old">
+            <h3><span style="font-size:1.1rem">🔴</span> Render (Before)</h3>
+            <ul>
+                <li>❌ Custom Dockerfiles for Next.js</li>
+                <li>❌ Single-region deployment (US-East)</li>
+                <li>❌ Manual SSL & domain config</li>
+                <li>❌ Build caching issues</li>
+                <li>❌ 413 errors on media uploads</li>
+                <li>❌ Cold starts on serverless functions</li>
+            </ul>
+        </div>
+        <div class="compare-arrow">→</div>
+        <div class="compare-col new">
+            <h3><span style="font-size:1.1rem">🟢</span> Vercel (After)</h3>
+            <ul>
+                <li>✅ Native Next.js framework detection</li>
+                <li>✅ Global Edge Network (CDN in 30+ regions)</li>
+                <li>✅ Automatic SSL + custom domains</li>
+                <li>✅ Incremental builds under 60s deploys</li>
+                <li>✅ R2 presigned URLs bypass size limits</li>
+                <li>✅ Zero cold starts with edge functions</li>
+            </ul>
+        </div>
+    </div>
+    <div class="slide-num">03</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 4 Security: 15-Minute Token Rotation -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s4" style="background: linear-gradient(160deg, var(--bg-primary), #100e18);">
+    <div class="section-label">🔐 Security Architecture</div>
+    <h2>15-Minute <em>Token Rotation</em></h2>
+    <p class="subtitle">Implemented short-lived access tokens with automatic refresh every session token expires after 15 minutes and is silently rotated, preventing session hijacking and replay attacks.</p>
+
+    <div class="arch-flow">
+        <div class="arch-node">
+            <div class="a-icon">👤</div>
+            <div class="a-name">User Login</div>
+            <div class="a-sub">Credentials verified</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node" style="border-color: var(--gold);">
+            <div class="a-icon">🎫</div>
+            <div class="a-name">Access Token</div>
+            <div class="a-sub" style="color: var(--gold);">15-min TTL</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node">
+            <div class="a-icon">🔄</div>
+            <div class="a-name">Refresh Token</div>
+            <div class="a-sub">Long-lived, rotated</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node" style="border-color: var(--green);">
+            <div class="a-icon">✅</div>
+            <div class="a-name">Silent Refresh</div>
+            <div class="a-sub">Seamless to user</div>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <ul class="proof-list">
+            <li><span class="check">✓</span> Access tokens expire every 900 seconds cannot be reused after window closes</li>
+            <li><span class="check">✓</span> Refresh endpoint (<code style="color:var(--gold);font-size:0.75rem;">/api/auth/refresh</code>) issues new pair without re-login</li>
+            <li><span class="check">✓</span> Email verification tokens also expire at 15 minutes</li>
+            <li><span class="check">✓</span> Tested with unit tests confirming exact 900-second TTL enforcement</li>
+        </ul>
+    </div>
+    <div class="slide-num">04</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 5 Media Upload Pipeline (R2) -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s5" style="background: linear-gradient(160deg, var(--bg-primary), #0d0f18);">
+    <div class="section-label">📦 Media Pipeline</div>
+    <h2>Client-Side <em>Direct Uploads</em></h2>
+    <p class="subtitle">Replaced the server-relay upload model with presigned URL uploads directly to Cloudflare R2 eliminating Vercel's 4.5MB serverless body limit and enabling large media file handling.</p>
+
+    <div class="arch-flow">
+        <div class="arch-node">
+            <div class="a-icon">📱</div>
+            <div class="a-name">Client Browser</div>
+            <div class="a-sub">Selects files</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node">
+            <div class="a-icon">🔑</div>
+            <div class="a-name">API Route</div>
+            <div class="a-sub">Generates presigned URL</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node" style="border-color: var(--gold);">
+            <div class="a-icon">☁️</div>
+            <div class="a-name">Cloudflare R2</div>
+            <div class="a-sub" style="color: var(--gold);">Direct PUT upload</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node" style="border-color: var(--green);">
+            <div class="a-icon">🎬</div>
+            <div class="a-name">CDN Delivery</div>
+            <div class="a-sub">r2.impactaistudio.com</div>
+        </div>
+    </div>
+
+    <div class="feature-grid" style="margin-top:30px; grid-template-columns: repeat(3,1fr);">
+        <div class="feature-card">
+            <div class="icon">🚫</div>
+            <h3>No 413 Errors</h3>
+            <p>Server never touches file bytes presigned URL bypasses all body limits.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">📸</div>
+            <h3>Casting Applications</h3>
+            <p>Headshots, demos, portfolios uploaded directly from the casting form.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🔒</div>
+            <h3>Secure by Design</h3>
+            <p>Presigned URLs expire in 60 seconds. File type and size validated server-side.</p>
+        </div>
+    </div>
+    <div class="slide-num">05</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 6 Internationalization -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s6" style="background: linear-gradient(160deg, var(--bg-primary), #0f0d18);">
+    <div class="section-label">🌍 Internationalization</div>
+    <h2>11 Languages, <em>Every Page</em></h2>
+    <p class="subtitle">Full i18n coverage across the entire platform using next-intl with a deep-merge locale loading strategy every page, form, notification, and email template is translated.</p>
+
+    <div class="lang-grid">
+        <div class="lang-chip"><span class="flag">🇬🇧</span>English<span class="lang-name">Primary</span></div>
+        <div class="lang-chip"><span class="flag">🇫🇷</span>Français<span class="lang-name">French</span></div>
+        <div class="lang-chip"><span class="flag">🇪🇸</span>Español<span class="lang-name">Spanish</span></div>
+        <div class="lang-chip"><span class="flag">🇩🇪</span>Deutsch<span class="lang-name">German</span></div>
+        <div class="lang-chip"><span class="flag">🇵🇹</span>Português<span class="lang-name">Portuguese</span></div>
+        <div class="lang-chip"><span class="flag">🇸🇦</span>العربية<span class="lang-name">Arabic</span></div>
+        <div class="lang-chip"><span class="flag">🇮🇳</span>हिन्दी<span class="lang-name">Hindi</span></div>
+        <div class="lang-chip"><span class="flag">🇨🇳</span>中文<span class="lang-name">Chinese</span></div>
+        <div class="lang-chip"><span class="flag">🇯🇵</span>日本語<span class="lang-name">Japanese</span></div>
+        <div class="lang-chip"><span class="flag">🇰🇷</span>한국어<span class="lang-name">Korean</span></div>
+        <div class="lang-chip"><span class="flag">🇷🇺</span>Русский<span class="lang-name">Russian</span></div>
+    </div>
+
+    <div style="margin-top:28px;">
+        <ul class="proof-list">
+            <li><span class="check">✓</span> Deep-merge strategy: page-level keys auto-merge with root translations no key collisions</li>
+            <li><span class="check">✓</span> Scripts page, casting form, notification preferences, dashboard all fully translated</li>
+            <li><span class="check">✓</span> Transactional emails render in the user's detected locale</li>
+            <li><span class="check">✓</span> RTL support for Arabic layout</li>
+        </ul>
+    </div>
+    <div class="slide-num">06</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 7 AI Infrastructure -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s7" style="background: linear-gradient(160deg, var(--bg-primary), #10101a);">
+    <div class="section-label">🤖 AI Infrastructure</div>
+    <h2>Intelligent <em>API Key Management</em></h2>
+    <p class="subtitle">Built a production-grade API key pool router with automatic error recovery, cooldown management, and real-time health monitoring in the admin dashboard.</p>
+
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="icon">🔄</div>
+            <h3>Auto-Recovery Pool</h3>
+            <p>Multiple Gemini keys rotate automatically. Rate-limited keys cool down for 65s, connection errors for 5 minutes then auto-rejoin the pool.</p>
+            <span class="tag">Self-healing</span>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🚦</div>
+            <h3>Health Status Badges</h3>
+            <p>Live admin dashboard shows 🟢 Healthy, 🟡 Recovering, or 🔴 Cooling Down with countdown timers and error details.</p>
+            <span class="tag">Real-time monitoring</span>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🎯</div>
+            <h3>Smart Routing</h3>
+            <p>Keys assigned per-agent (audit, analytics, casting). Pool selects the least-recently-used healthy key automatically.</p>
+            <span class="tag">Zero downtime</span>
+        </div>
+        <div class="feature-card">
+            <div class="icon">📊</div>
+            <h3>AI Analytics Console</h3>
+            <p>Voice-enabled AI insights with conversational follow-up. Generates 5-7 actionable recommendations from live platform data.</p>
+            <span class="tag">Gemini powered</span>
+        </div>
+    </div>
+    <div class="slide-num">07</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 8 Email System & Observability -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s8" style="background: linear-gradient(160deg, var(--bg-primary), #0d0e18);">
+    <div class="section-label">✉️ Communications</div>
+    <h2>Email Delivery <em>Pipeline</em></h2>
+    <p class="subtitle">Dual-transport email system (Microsoft Graph + SMTP) with delivery logging, automatic categorization, retry logic, and a full analytics panel for monitoring volume and failure rates.</p>
+
+    <div class="stat-grid cols-3" style="margin-bottom: 28px;">
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--purple); font-size: 2rem;">Graph + SMTP</div>
+            <div class="stat-label">Dual Transport</div>
+            <div class="stat-sub">Configurable per admin settings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--green); font-size: 2rem;">3x Retry</div>
+            <div class="stat-label">Exponential Backoff</div>
+            <div class="stat-sub">1s → 2s → 4s automatic retries</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="color: var(--blue); font-size: 2rem;">5 Types</div>
+            <div class="stat-label">Auto-Categorized</div>
+            <div class="stat-sub">Auth · Application · Notification · Subscribe · General</div>
+        </div>
+    </div>
+
+    <ul class="proof-list">
+        <li><span class="check">✓</span> Every outgoing email logged to <code style="color:var(--gold);font-size:0.75rem;">EmailLog</code> table recipient, subject, transport, success/failure</li>
+        <li><span class="check">✓</span> Admin analytics panel: delivery rate badge, monthly volume, failure count, type breakdown chart</li>
+        <li><span class="check">✓</span> Localized email templates Welcome, Verification, Application Status all render in user's language</li>
+    </ul>
+    <div class="slide-num">08</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 9 Admin Analytics Dashboard  -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s9" style="background: linear-gradient(160deg, var(--bg-primary), #0f0e18);">
+    <div class="section-label">📈 Analytics & Monitoring</div>
+    <h2>Studio <em>Command Center</em></h2>
+    <p class="subtitle">A real-time admin analytics dashboard with live visitor tracking, AI-powered insights, voice conversation mode, casting funnel visualization, and comprehensive system health monitoring.</p>
+
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="icon">⚡</div>
+            <h3>Real-Time Dashboard</h3>
+            <p>Studio Pulse vitality score, live visitor count, page views, user growth, and casting conversion rates all auto-refreshing every 30 seconds.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🎙️</div>
+            <h3>Voice AI Insights</h3>
+            <p>Generate AI-powered insights from live data. Voice conversation mode lets you ask follow-up questions with Text-to-Speech responses.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🎯</div>
+            <h3>Casting Funnel</h3>
+            <p>Visual funnel: Page Views → Applications → Reviewed. Live conversion rate tracking shows casting page effectiveness.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icon">🖥️</div>
+            <h3>System Health</h3>
+            <p>Database latency, memory usage, service status, hourly heatmaps, device breakdown, referrer sources full observability.</p>
+        </div>
+    </div>
+    <div class="slide-num">09</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 10 What Can Be Demonstrated -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s10" style="background: linear-gradient(160deg, var(--bg-primary), #0d1018);">
+    <div class="section-label">🎥 Live Demo Points</div>
+    <h2>What I Can <em>Show You</em></h2>
+    <p class="subtitle">Every feature in this sprint is deployed and can be demonstrated live on the production platform.</p>
+
+    <div class="stat-grid cols-2">
+        <div class="stat-card" style="padding: 22px 28px;">
+            <h3 style="color: var(--gold); font-size: 0.9rem; font-weight: 800; margin-bottom: 14px;">🌐 Public-Facing</h3>
+            <ul class="proof-list" style="margin: 0;">
+                <li><span class="check">✓</span> Switch language on any page all 11 render live</li>
+                <li><span class="check">✓</span> Submit a casting application with media uploads</li>
+                <li><span class="check">✓</span> PayPal donation flow sandbox or live</li>
+                <li><span class="check">✓</span> Scripts & Works page premium redesign</li>
+                <li><span class="check">✓</span> Google OAuth sign-in with token refresh</li>
+            </ul>
+        </div>
+        <div class="stat-card" style="padding: 22px 28px;">
+            <h3 style="color: var(--green); font-size: 0.9rem; font-weight: 800; margin-bottom: 14px;">🔒 Admin Dashboard</h3>
+            <ul class="proof-list" style="margin: 0;">
+                <li><span class="check">✓</span> Analytics Command Center with live stats</li>
+                <li><span class="check">✓</span> AI Insights generation + voice mode</li>
+                <li><span class="check">✓</span> API key health badges (Healthy/Recovering/Cooling)</li>
+                <li><span class="check">✓</span> Email delivery panel volume, failures, types</li>
+                <li><span class="check">✓</span> Trailer & subscriber tracking cards</li>
+            </ul>
+        </div>
+    </div>
+    <div class="slide-num">10</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 11 Key Learnings -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s11" style="background: linear-gradient(160deg, var(--bg-primary), #110e1a);">
+    <div class="section-label">💡 Reflections</div>
+    <h2>What I <em>Learned</em></h2>
+    <p class="subtitle">Sprint 4 pushed into production infrastructure territory every challenge taught a principle I'll carry forward.</p>
+
+    <div class="feature-grid">
+        <div class="feature-card" style="border-left: 3px solid var(--gold);">
+            <div class="icon">🚀</div>
+            <h3>Pick the Right Platform for Your Stack</h3>
+            <p>Render is a solid general platform, but Next.js has native framework-level integration with Vercel built-in ISR, edge functions, preview deploys. <strong style="color:var(--gold);">Lesson:</strong> Don't fight your framework. Move to where it's a first-class citizen.</p>
+        </div>
+        <div class="feature-card" style="border-left: 3px solid var(--green);">
+            <div class="icon">🔐</div>
+            <h3>Short-Lived Tokens Are Worth the Complexity</h3>
+            <p>Implementing 15-minute token rotation added complexity silent refresh, token pair management, race conditions. But the security payoff is significant. <strong style="color:var(--green);">Lesson:</strong> Security is not a feature you add later; it's architecture you design upfront.</p>
+        </div>
+        <div class="feature-card" style="border-left: 3px solid var(--blue);">
+            <div class="icon">☁️</div>
+            <h3>Never Relay Files Through Your Server</h3>
+            <p>The original upload pipeline sent files through the API route hitting Vercel's 4.5MB limit immediately. Presigned URLs let the client upload directly to storage. <strong style="color:var(--blue);">Lesson:</strong> Design data flow to move bytes the shortest path possible.</p>
+        </div>
+        <div class="feature-card" style="border-left: 3px solid var(--purple);">
+            <div class="icon">🌍</div>
+            <h3>i18n Must Be Structural, Not Cosmetic</h3>
+            <p>Bolting translations onto finished pages causes regressions. The deep-merge locale strategy ensures page-level keys never overwrite root keys. <strong style="color:var(--purple);">Lesson:</strong> Internationalization is an architecture decision plan the key structure before writing UI.</p>
+        </div>
+        <div class="feature-card" style="border-left: 3px solid var(--amber);">
+            <div class="icon">📊</div>
+            <h3>If You Can't See It, You Can't Fix It</h3>
+            <p>Without the email delivery log, failed emails were invisible. Without API key health badges, cooldowns were silent. <strong style="color:var(--amber);">Lesson:</strong> Observability isn't optional instrument everything from day one.</p>
+        </div>
+        <div class="feature-card" style="border-left: 3px solid var(--red);">
+            <div class="icon">🗄️</div>
+            <h3>Schema Migrations Need a Strategy</h3>
+            <p>Using <code style="font-size:0.72rem;">prisma db push</code> vs <code style="font-size:0.72rem;">prisma migrate</code> works differently in dev vs production. Understanding when to use each prevents deployment failures. <strong style="color:var(--red);">Lesson:</strong> Know your ORM's deployment model before you hit production.</p>
+        </div>
+    </div>
+    <div class="slide-num">11</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 12 Sprint 5 Roadmap -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide" id="s12" style="background: linear-gradient(160deg, var(--bg-primary), #0e0e1a);">
+    <div class="section-label">🗺️ Sprint 5 Roadmap What's Next</div>
+    <h2>Frontend Audit + <em>Bug Fixes</em></h2>
+
+    <table class="clean-table">
+        <thead>
+            <tr>
+                <th style="width:100px;">Priority</th>
+                <th style="width:220px;">Feature</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge badge-high">HIGH</span></td>
+                <td style="color: var(--text); font-weight:700;">Complete Frontend Audit</td>
+                <td>Systematic page-by-page review of every route, form, and component across all 11 locales</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-high">HIGH</span></td>
+                <td style="color: var(--text); font-weight:700;">Bug Fixing & Regression</td>
+                <td>Resolve all UI/UX issues, broken flows, and edge cases discovered during the audit</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-gold">MEDIUM</span></td>
+                <td style="color: var(--text); font-weight:700;">Performance Profiling</td>
+                <td>Lighthouse audits, Core Web Vitals optimization, bundle size analysis, lazy loading</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-gold">MEDIUM</span></td>
+                <td style="color: var(--text); font-weight:700;">Cross-Browser Testing</td>
+                <td>Verify all features work correctly on Chrome, Safari, Firefox, and mobile browsers</td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-new">LOW</span></td>
+                <td style="color: var(--text); font-weight:700;">Domain Launch Prep</td>
+                <td>Final DNS setup, SEO meta tags, Open Graph images, and production domain cutover</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="timeline">
+        <div class="timeline-item past">
+            <div class="t-check">✅</div>
+            <div class="t-sprint">Sprint 1</div>
+            <div class="t-label">Wireframes</div>
+        </div>
+        <div class="timeline-item past">
+            <div class="t-check">✅</div>
+            <div class="t-sprint">Sprint 2</div>
+            <div class="t-label">Auth + Security</div>
+        </div>
+        <div class="timeline-item past">
+            <div class="t-check">✅</div>
+            <div class="t-sprint">Sprint 3</div>
+            <div class="t-label">Content Modules</div>
+        </div>
+        <div class="timeline-item current">
+            <div class="t-check">✅</div>
+            <div class="t-sprint">Sprint 4</div>
+            <div class="t-label">Media + Deploy</div>
+        </div>
+        <div class="timeline-item future">
+            <div class="t-sprint">Sprint 5</div>
+            <div class="t-label">Audit + Fixes</div>
+        </div>
+    </div>
+    <div class="slide-num">11</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- SLIDE 12 Thank You -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="slide title-slide" id="s12" style="text-align: center; align-items: center;">
+    <div class="orb"></div>
+    <div class="orb2" style="left: -100px; right: auto;"></div>
+    <div style="font-size: 3.5rem; margin-bottom: 20px;">🎬</div>
+    <div class="brand">AIM STUDIO</div>
+    <h1 style="font-size: 3.5rem;">Thank You</h1>
+    <div class="meta" style="text-align: center; max-width: 500px;">
+        <span style="color: var(--gold); font-style: italic;">Sprint 4 Media, Infrastructure & Global Reach</span><br>
+        264 commits · 77K lines · 42 models · 11 languages<br><br>
+        <span style="color: var(--text-muted); font-size: 0.75rem;">impactaistudio.com</span>
+    </div>
+    <div class="slide-num">12</div>
+</div>
+
+<script>
+// ── Navigation ──
+const slides = document.querySelectorAll('.slide');
+const dotsContainer = document.getElementById('navDots');
+
+slides.forEach((slide, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'nav-dot';
+    dot.addEventListener('click', () => slide.scrollIntoView({ behavior: 'smooth' }));
+    dotsContainer.appendChild(dot);
+});
+
+const dots = document.querySelectorAll('.nav-dot');
+
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const idx = [...slides].indexOf(entry.target);
+            dots.forEach((d,i) => d.classList.toggle('active', i === idx));
+        }
+    });
+}, { threshold: 0.5 });
+
+slides.forEach(s => observer.observe(s));
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+    const current = [...slides].findIndex(s => {
+        const rect = s.getBoundingClientRect();
+        return rect.top >= -100 && rect.top < window.innerHeight / 2;
+    });
+    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+        e.preventDefault();
+        if (current < slides.length - 1) slides[current + 1].scrollIntoView({ behavior: 'smooth' });
+    }
+    if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+        e.preventDefault();
+        if (current > 0) slides[current - 1].scrollIntoView({ behavior: 'smooth' });
+    }
+});
+</script>
+</body>
+</html>

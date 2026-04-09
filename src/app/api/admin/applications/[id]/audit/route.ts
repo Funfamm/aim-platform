@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { runAuditionAgent } from '@/lib/agents/audition-agent'
 import { getAutoAdvanceStatus, notifyApplicantStatusChange } from '@/lib/notifications'
 import { aiLimiter } from '@/lib/rate-limit'
+import { enqueueApplication, markProcessing, markScoredHidden, markScoredVisible } from '@/lib/audit-queue'
 
 // Internal secret for server-to-server auto-audit calls (no admin session required)
 const INTERNAL_SECRET = process.env.JWT_SECRET || ''
@@ -24,12 +25,67 @@ export async function POST(
     }
 
     const { id } = await params
+
+    // ── Parse action from request body ──────────────────────────────────────
+    let action: string | undefined
+    let locale = 'en'
+    try {
+        const body = await request.json().catch(() => ({}))
+        action = (body as { action?: string })?.action
+        locale = (body as { locale?: string })?.locale || 'en'
+    } catch { /* no body */ }
+
+    // ── REVEAL NOW: flip a scored_hidden result to visible immediately ───────
+    if (action === 'reveal_now') {
+        const app = await prisma.application.findUnique({
+            where: { id },
+            include: { castingCall: { include: { project: true } } },
+        })
+        if (!app) return NextResponse.json({ error: 'Application not found' }, { status: 404 })
+
+        const auditState = (app as any).auditState
+        if (auditState !== 'scored_hidden') {
+            return NextResponse.json({
+                error: `Cannot reveal: application is in state "${auditState ?? 'unknown'}". It must be "scored_hidden".`,
+            }, { status: 409 })
+        }
+
+        await (prisma.application as any).update({
+            where: { id },
+            data: {
+                auditState: 'scored_visible',
+                resultVisibleAt: new Date(),
+                adminRevealOverride: true,
+            },
+        })
+
+        // Fire notification immediately
+        notifyApplicantStatusChange({
+            applicationId: id,
+            recipientEmail: app.email,
+            recipientName: app.fullName,
+            newStatus: app.status,
+            roleName: app.castingCall.roleName,
+            projectTitle: app.castingCall.project.title,
+            aiScore: app.aiScore ?? undefined,
+            statusNote: app.statusNote ?? undefined,
+        }).catch(err => console.error('[Admin/RevealNow] Notification error:', err))
+
+        return NextResponse.json({ success: true, action: 'reveal_now', applicationId: id })
+    }
+
+    // ── PROCESS NOW: score immediately, bypassing quota ──────────────────────
+    // For "process_now" or standard admin audit trigger (action = undefined)
+    if (action === 'process_now') {
+        // Bump priority and re-queue so it's first if something else delays it
+        await enqueueApplication(id, 999)
+    }
+
+    // ── Load and validate application ────────────────────────────────────────
     const application = await prisma.application.findUnique({
         where: { id },
         include: {
-            castingCall: {
-                include: { project: true },
-            },
+            castingCall: { include: { project: true } },
         },
     })
 
@@ -43,16 +99,17 @@ export async function POST(
         return NextResponse.json({ success: true, skipped: true, reason: 'already_audited' })
     }
 
-    // Get locale from request body (auto-audit) or from stored application locale
-    let locale = 'en'
-    try {
-        const body = await request.json().catch(() => ({}))
-        locale = (body as { locale?: string })?.locale || application.locale || 'en'
-    } catch { locale = application.locale || 'en' }
+    // Use application locale if not provided in body
+    locale = locale || application.locale || 'en'
 
     // Parse experience data
-    let experienceData = { text: '', specialSkills: '', personality: { describe_yourself: '', why_acting: '', dream_role: '', unique_quality: '' } }
-    try { experienceData = JSON.parse(application.experience) } catch { experienceData = { text: application.experience, specialSkills: '', personality: { describe_yourself: '', why_acting: '', dream_role: '', unique_quality: '' } } }
+    let experienceData = {
+        text: '', specialSkills: '',
+        personality: { describe_yourself: '', why_acting: '', dream_role: '', unique_quality: '' },
+    }
+    try { experienceData = JSON.parse(application.experience) } catch {
+        experienceData = { text: application.experience, specialSkills: '', personality: { describe_yourself: '', why_acting: '', dream_role: '', unique_quality: '' } }
+    }
 
     // Parse photo URLs
     let photoUrls: string[] = []
@@ -60,7 +117,10 @@ export async function POST(
         try { photoUrls = JSON.parse(application.headshotPath) } catch { /* single path or invalid */ }
     }
 
-    // Run the AI audition
+    // Mark as processing in the queue
+    await markProcessing(id)
+
+    // ── Run the AI audition ───────────────────────────────────────────────────
     try {
         const report = await runAuditionAgent({
             applicant: {
@@ -85,7 +145,7 @@ export async function POST(
             locale,
         })
 
-        // Determine new status: auto-advance based on AI score, or just mark as reviewed
+        // Determine new pipeline status
         let newStatus = application.status
         const autoStatus = await getAutoAdvanceStatus(application.status, report.overallScore)
         if (autoStatus) {
@@ -94,29 +154,22 @@ export async function POST(
             newStatus = 'under_review' as import('@prisma/client').ApplicationStatus
         }
 
-        // ═══ DELAYED REVEAL — results visible after admin-configured delay ═══
         const settings = await prisma.siteSettings.findFirst().catch(() => null)
         const REVEAL_DELAY_HOURS = (settings as any)?.resultRevealDelayHours ?? 6
-        const resultVisibleAt = new Date(Date.now() + REVEAL_DELAY_HOURS * 60 * 60 * 1000)
 
-        // Update the application with AI results (stored immediately, revealed later)
-        await prisma.application.update({
-            where: { id },
-            data: {
-                aiScore: report.overallScore,
-                aiFitLevel: report.recommendation,
-                aiReport: JSON.stringify(report),
-                statusNote: report.applicantFeedback || '',
-                status: newStatus,
-                reviewedAt: new Date(),
-                resultVisibleAt,
-                photoScreeningStatus: report.screeningSkipped ? 'skipped' : 'completed',
-            } as any,
+        // Store result — admin-triggered audits are also subject to reveal delay
+        // unless the admin immediately follows up with reveal_now
+        await markScoredHidden(id, REVEAL_DELAY_HOURS, {
+            aiScore: report.overallScore,
+            aiFitLevel: report.recommendation,
+            aiReport: JSON.stringify(report),
+            statusNote: report.applicantFeedback || '',
+            status: newStatus,
+            reviewedAt: new Date(),
+            photoScreeningStatus: report.screeningSkipped ? 'skipped' : 'completed',
         })
 
-        // Schedule notification for when results become visible
-        // The notification is logged now but marked as 'scheduled' — 
-        // a cron job or the user's next visit will trigger the actual send
+        // Notify on status change (result still hidden — applicant sees "under review")
         if (newStatus !== application.status) {
             notifyApplicantStatusChange({
                 applicationId: id,
@@ -132,12 +185,20 @@ export async function POST(
 
         return NextResponse.json({
             success: true,
+            action: action || 'audit',
             report,
             warnings: report.warnings ?? [],
             autoAdvanced: autoStatus !== null,
             newStatus,
+            auditState: 'scored_hidden',
         })
     } catch (error) {
+        // Reset queue state on failure
+        await (prisma.application as any).update({
+            where: { id },
+            data: { auditState: 'queued', lastProcessingError: (error instanceof Error ? error.message : String(error)).slice(0, 500) },
+        }).catch(() => null)
+
         console.error('AI audit error:', error)
         const message = process.env.NODE_ENV === 'development'
             ? (error instanceof Error ? error.message : 'AI analysis failed')

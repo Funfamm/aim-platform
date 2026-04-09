@@ -198,7 +198,15 @@ model Application {
   statusNoteTranslations String?
   status                 ApplicationStatus         @default(submitted)
   audioUrl               String?
-  scheduledAuditAt       DateTime?                 // when the cron job should run the AI audit
+  scheduledAuditAt       DateTime?                 // legacy — kept for backward compat, no longer written
+  // ── AI Audit Queue fields ──
+  auditState             String?                   // queued | processing | scored_hidden | scored_visible | failed
+  queuedAt               DateTime?
+  aiScoredAt             DateTime?
+  processingAttempts     Int                       @default(0)
+  lastProcessingError    String?
+  adminRevealOverride    Boolean                   @default(false)
+  priority               Int                       @default(0)  // higher = processed first
   castingCall            CastingCall               @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
   user                   User?                     @relation(fields: [userId], references: [id])
   notifications          ApplicationNotification[]
@@ -210,6 +218,8 @@ model Application {
   @@index([createdAt])
   @@index([aiScore])
   @@index([scheduledAuditAt])
+  @@index([auditState])
+  @@index([priority, queuedAt])
 }
 
 model Admin {
@@ -295,7 +305,8 @@ model SiteSettings {
   notifyOnContentPublish        Boolean        @default(false)
   emailReplyTo                  String?
   resultRevealDelayHours        Int            @default(6)
-  auditDelayHours               Int            @default(2)  // hours after submission to run auto-audit
+  auditDelayHours               Int            @default(2)  // hours after submission to run auto-audit (legacy)
+  auditQueueBatchSize           Int            @default(10) // max apps scored per cron run
 }
 
 model PasswordHistory {
@@ -553,18 +564,29 @@ model FilmView {
 }
 
 model ApiKey {
-  id              String    @id @default(cuid())
-  label           String    @default("API Key")
-  provider        String    @default("gemini")
+  id              String       @id @default(cuid())
+  label           String       @default("API Key")
+  provider        String       @default("gemini")
   key             String
-  isActive        Boolean   @default(true)
-  assignedAgent   String    @default("all")
-  usageCount      Int       @default(0)
+  isActive        Boolean      @default(true)
+  assignedAgent   String       @default("all")
+  usageCount      Int          @default(0)
   lastUsed        DateTime?
   lastError       String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
   cooledDownUntil DateTime?
+  quota           ApiKeyQuota?
+}
+
+model ApiKeyQuota {
+  id             String    @id @default(cuid())
+  apiKeyId       String    @unique
+  windowMaxCalls Int       @default(50)
+  usedInWindow   Int       @default(0)
+  windowResetAt  DateTime
+  cooldownUntil  DateTime?
+  apiKey         ApiKey    @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
 }
 
 model Course {
