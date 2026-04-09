@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 // ── S3-compatible client for Cloudflare R2 ─────────────────────────────────
 const s3 = new S3Client({
     region: 'auto',
-    endpoint: `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+    endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
     credentials: {
         accessKeyId: process.env.R2_ACCESS_KEY_ID!,
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
