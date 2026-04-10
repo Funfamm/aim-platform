@@ -34,14 +34,17 @@ export function CsrfProvider({ children }: { children: React.ReactNode }) {
 
             const method = (init?.method || 'GET').toUpperCase()
 
+            // Check if this is a same-origin request (relative URL or same host)
+            const isSameOrigin = url.startsWith('/') || url.startsWith(window.location.origin)
+
             // Inject CSRF header on any mutation to /api/*
-            if (MUTATION_METHODS.includes(method) && url.includes('/api/')) {
+            if (MUTATION_METHODS.includes(method) && url.includes('/api/') && isSameOrigin) {
                 const token = getCsrfToken()
                 const headers = new Headers(init?.headers)
                 if (token && !headers.has('X-CSRF-Token') && !headers.has('x-csrf-token')) {
                     headers.set('X-CSRF-Token', token)
                 }
-                // Ensure cookies (including auth JWT) are sent
+                // Ensure cookies (including auth JWT) are sent for same-origin API calls
                 const newInit: RequestInit = {
                     ...init,
                     headers,
@@ -50,7 +53,13 @@ export function CsrfProvider({ children }: { children: React.ReactNode }) {
                 return originalFetch(input, newInit)
             }
 
-            return originalFetch(input, { ...init, credentials: 'include' })
+            // For same-origin non-mutation requests, include credentials for auth
+            // For cross-origin requests (e.g. R2 uploads), respect the caller's setting
+            if (isSameOrigin) {
+                return originalFetch(input, { ...init, credentials: init?.credentials || 'include' })
+            }
+
+            return originalFetch(input, init)
         }
 
         return () => {
