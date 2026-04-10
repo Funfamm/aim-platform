@@ -410,7 +410,11 @@
     "receiptMessage": "Сообщение",
     "receiptAnonymous": "Анонимно",
     "receiptPrint": "Распечатать квитанцию",
-    "receiptFooter": "Эта квитанция подтверждает ваш щедрый вклад. 100% идёт на воплощение историй в жизнь. 🎥"
+    "receiptFooter": "Эта квитанция подтверждает ваш щедрый вклад. 100% идёт на воплощение историй в жизнь. 🎥",
+    "viewDetails": "Подробнее",
+    "roleTypeLead": "Главная",
+    "roleTypeSupporting": "Второстепенная",
+    "roleTypeExtra": "Массовка"
   },
   "upcomingHero": {
     "label": "Скоро",

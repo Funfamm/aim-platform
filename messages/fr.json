@@ -410,7 +410,11 @@
     "receiptMessage": "Message",
     "receiptAnonymous": "Anonyme",
     "receiptPrint": "Imprimer le reçu",
-    "receiptFooter": "Ce reçu confirme votre généreuse contribution. 100% va à la réalisation d'histoires. 🎥"
+    "receiptFooter": "Ce reçu confirme votre généreuse contribution. 100% va à la réalisation d'histoires. 🎥",
+    "viewDetails": "Voir les détails",
+    "roleTypeLead": "Principal",
+    "roleTypeSupporting": "Secondaire",
+    "roleTypeExtra": "Figurant"
   },
   "upcomingHero": {
     "label": "Prochainement",

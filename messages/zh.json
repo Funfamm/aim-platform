@@ -410,7 +410,11 @@
     "receiptMessage": "留言",
     "receiptAnonymous": "匿名",
     "receiptPrint": "打印收据",
-    "receiptFooter": "此收据确认您的慷慨贡献。100%用于将故事带入生活。🎥"
+    "receiptFooter": "此收据确认您的慷慨贡献。100%用于将故事带入生活。🎥",
+    "viewDetails": "查看详情",
+    "roleTypeLead": "主角",
+    "roleTypeSupporting": "配角",
+    "roleTypeExtra": "群演"
   },
   "upcomingHero": {
     "label": "即将推出",

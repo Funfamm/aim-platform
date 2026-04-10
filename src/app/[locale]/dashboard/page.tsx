@@ -338,7 +338,7 @@ export default function DashboardPage() {
                                                                 <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                                                                     {app.castingCall.project.title}
                                                                 </span>
-                                                                <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)', fontWeight: 600, textTransform: 'uppercase' as const }}>{app.castingCall.roleType}</span>
+                                                                <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)', fontWeight: 600, textTransform: 'uppercase' as const }}>{t({ lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }[app.castingCall.roleType.toLowerCase()] || 'roleTypeLead')}</span>
                                                             </div>
                                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{t('role')}: <strong>{app.castingCall.roleName}</strong></div>
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('applied')} {new Date(app.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })}</div>

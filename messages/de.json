@@ -410,7 +410,11 @@
     "receiptMessage": "Nachricht",
     "receiptAnonymous": "Anonym",
     "receiptPrint": "Quittung drucken",
-    "receiptFooter": "Diese Quittung bestätigt deinen großzügigen Beitrag. 100% fließt in die Verwirklichung von Geschichten. 🎥"
+    "receiptFooter": "Diese Quittung bestätigt deinen großzügigen Beitrag. 100% fließt in die Verwirklichung von Geschichten. 🎥",
+    "viewDetails": "Details ansehen",
+    "roleTypeLead": "Hauptrolle",
+    "roleTypeSupporting": "Nebenrolle",
+    "roleTypeExtra": "Statist"
   },
   "upcomingHero": {
     "label": "Demnächst",

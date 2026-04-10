@@ -410,7 +410,11 @@
     "receiptMessage": "Mensagem",
     "receiptAnonymous": "Anônimo",
     "receiptPrint": "Imprimir recibo",
-    "receiptFooter": "Este recibo confirma sua generosa contribuição. 100% vai para dar vida às histórias. 🎥"
+    "receiptFooter": "Este recibo confirma sua generosa contribuição. 100% vai para dar vida às histórias. 🎥",
+    "viewDetails": "Ver detalhes",
+    "roleTypeLead": "Principal",
+    "roleTypeSupporting": "Coadjuvante",
+    "roleTypeExtra": "Figurante"
   },
   "upcomingHero": {
     "label": "Em Breve",

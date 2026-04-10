@@ -410,7 +410,11 @@
     "receiptMessage": "메시지",
     "receiptAnonymous": "익명",
     "receiptPrint": "영수증 인쇄",
-    "receiptFooter": "이 영수증은 귀하의 관대한 기부를 확인합니다. 100%가 이야기를 실현하는 데 사용됩니다. 🎥"
+    "receiptFooter": "이 영수증은 귀하의 관대한 기부를 확인합니다. 100%가 이야기를 실현하는 데 사용됩니다. 🎥",
+    "viewDetails": "상세 보기",
+    "roleTypeLead": "주연",
+    "roleTypeSupporting": "조연",
+    "roleTypeExtra": "엑스트라"
   },
   "upcomingHero": {
     "label": "곧 공개",

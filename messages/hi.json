@@ -410,7 +410,11 @@
     "receiptMessage": "संदेश",
     "receiptAnonymous": "गुमनाम",
     "receiptPrint": "रसीद प्रिंट करें",
-    "receiptFooter": "यह रसीद आपके उदार योगदान की पुष्टि करती है। 100% कहानियों को जीवंत करने में जाता है। 🎥"
+    "receiptFooter": "यह रसीद आपके उदार योगदान की पुष्टि करती है। 100% कहानियों को जीवंत करने में जाता है। 🎥",
+    "viewDetails": "विवरण देखें",
+    "roleTypeLead": "मुख्य",
+    "roleTypeSupporting": "सहायक",
+    "roleTypeExtra": "अतिरिक्त"
   },
   "upcomingHero": {
     "label": "आगामी",

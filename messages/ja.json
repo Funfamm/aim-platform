@@ -394,7 +394,11 @@
     "receiptMessage": "メッセージ",
     "receiptAnonymous": "匿名",
     "receiptPrint": "領収書を印刷",
-    "receiptFooter": "この領収書はあなたの寛大な貢献を確認します。100%が物語を実現するために使われます。🎥"
+    "receiptFooter": "この領収書はあなたの寛大な貢献を確認します。100%が物語を実現するために使われます。🎥",
+    "viewDetails": "詳細を見る",
+    "roleTypeLead": "主演",
+    "roleTypeSupporting": "助演",
+    "roleTypeExtra": "エキストラ"
   },
   "upcomingHero": {
     "label": "近日公開",

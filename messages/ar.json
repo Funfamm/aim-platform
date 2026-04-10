@@ -412,7 +412,11 @@
     "receiptMessage": "الرسالة",
     "receiptAnonymous": "مجهول",
     "receiptPrint": "طباعة الإيصال",
-    "receiptFooter": "يؤكد هذا الإيصال مساهمتك الكريمة. 100٪ يذهب نحو إحياء القصص. 🎥"
+    "receiptFooter": "يؤكد هذا الإيصال مساهمتك الكريمة. 100٪ يذهب نحو إحياء القصص. 🎥",
+    "viewDetails": "عرض التفاصيل",
+    "roleTypeLead": "رئيسي",
+    "roleTypeSupporting": "مساند",
+    "roleTypeExtra": "كومبارس"
   },
   "upcomingHero": {
     "label": "قريباً",
