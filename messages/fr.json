@@ -570,6 +570,7 @@
     "invalidImage": "Veuillez télécharger une image",
     "submitError": "Erreur d'envoi",
     "genericError": "Erreur. Réessayez.",
+    "friendlyUploadError": "Oups ! Un petit souci lors du téléchargement. Vérifiez votre connexion et réessayez — vos informations sont sauvegardées !",
     "emailLabel": "Email:",
     "ageLabel": "Âge:",
     "genderLabel": "Genre:",

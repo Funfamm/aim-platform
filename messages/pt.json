@@ -570,6 +570,7 @@
     "invalidImage": "Envie uma imagem",
     "submitError": "Erro ao enviar",
     "genericError": "Erro. Tente novamente.",
+    "friendlyUploadError": "Ops! Tivemos um probleminha ao enviar seus arquivos. Verifique sua conexão e tente novamente — suas informações estão salvas!",
     "emailLabel": "Email:",
     "ageLabel": "Idade:",
     "genderLabel": "Gênero:",

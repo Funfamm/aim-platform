@@ -182,6 +182,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     }
 
     const goToStep = (nextStep: number) => {
+        setError('')
         setStep(nextStep)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }
@@ -198,34 +199,41 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     ): Promise<string> => {
         // Use inferred MIME for the presign request (fixes iOS HEIC empty-type issue)
         const mime = inferMime(file)
+        const nameSlug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'applicant'
+        const category = kind === 'image' ? 'photos' : 'audio'
+        const folder = `casting/${nameSlug}/${category}`
 
-        // 1. Get a short-lived presigned PUT URL from our server route
-        const signRes = await fetch('/api/upload/presign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                fileName: file.name,
-                fileType: mime,
-                kind,
-                name,
-            }),
-        })
-        if (!signRes.ok) {
-            const err = await signRes.json().catch(() => ({}))
-            throw new Error(err.error || `Failed to sign upload for ${file.name}`)
-        }
-        const { presignedUrl, finalUrl } = await signRes.json()
-
-        // 2. PUT the raw file directly to R2 — browser → R2, bypasses Vercel entirely
-        const putRes = await fetch(presignedUrl, {
-            method: 'PUT',
-            headers: { 'Content-Type': mime },
-            body: file,
-        })
-        if (!putRes.ok) {
-            throw new Error(`Upload failed (${putRes.status}): ${file.name}`)
+        // Strategy 1: Direct browser → R2 via presigned URL (fastest, no Vercel limit)
+        try {
+            const signRes = await fetch('/api/upload/presign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileName: file.name, fileType: mime, kind, name }),
+            })
+            if (signRes.ok) {
+                const { presignedUrl, finalUrl } = await signRes.json()
+                const putRes = await fetch(presignedUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': mime },
+                    body: file,
+                })
+                if (putRes.ok) return finalUrl
+                console.warn('[Upload] Direct R2 PUT failed, falling back to stream proxy')
+            }
+        } catch (e) {
+            console.warn('[Upload] Presign/R2 failed, falling back to stream proxy:', e)
         }
 
+        // Strategy 2: Fallback — stream through our server proxy (bypasses CORS)
+        const streamRes = await fetch(
+            `/api/upload/stream?fileName=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(mime)}&folder=${encodeURIComponent(folder)}&fileSize=${file.size}`,
+            { method: 'POST', body: file },
+        )
+        if (!streamRes.ok) {
+            const err = await streamRes.json().catch(() => ({}))
+            throw new Error(err.error || `Upload failed: ${file.name}`)
+        }
+        const { finalUrl } = await streamRes.json()
         return finalUrl
     }
 
@@ -286,7 +294,14 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             setSubmitted(true)
         } catch (err: unknown) {
             setUploadProgress(null)
-            setError(err instanceof Error ? err.message : t('genericError'))
+            const rawMsg = err instanceof Error ? err.message : String(err)
+            console.error('[ApplicationForm] Submit failed:', rawMsg)
+            // Show friendly message to users, technical details only to admins
+            if (isAdmin) {
+                setError(rawMsg)
+            } else {
+                setError(t('friendlyUploadError'))
+            }
         } finally {
             setSubmitting(false)
         }
@@ -452,7 +467,6 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         {PHOTO_SLOT_KEYS.map((slot) => {
                             const file = photos[slot.key]
                             const sizeMB = file ? file.size / (1024 * 1024) : 0
-                            const sizePercent = file ? Math.min((file.size / (10 * 1024 * 1024)) * 100, 100) : 0
 
                             return (
                                 <div key={slot.key} style={{ marginBottom: 'var(--space-sm)' }}>
@@ -508,18 +522,6 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                                                         <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>
                                                             {sizeMB.toFixed(1)} MB
                                                         </span>
-                                                    </div>
-                                                    {/* Size progress bar */}
-                                                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
-                                                        <div style={{
-                                                            height: '100%',
-                                                            width: `${sizePercent}%`,
-                                                            background: sizePercent > 80
-                                                                ? 'linear-gradient(90deg, var(--accent-gold), #f59e0b)'
-                                                                : 'linear-gradient(90deg, var(--color-success), #34d399)',
-                                                            borderRadius: '3px',
-                                                            transition: 'width 0.3s ease',
-                                                        }} />
                                                     </div>
                                                     <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '3px', textAlign: 'center' }}>
                                                         {t('tapToReplace')}

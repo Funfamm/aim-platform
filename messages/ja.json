@@ -554,6 +554,7 @@
     "invalidImage": "画像をアップロードしてください",
     "submitError": "送信エラー",
     "genericError": "エラー。再試行してください。",
+    "friendlyUploadError": "おっと！ファイルのアップロードに少し問題がありました。インターネット接続を確認してもう一度お試しください — 情報は保存されています！",
     "emailLabel": "メール:",
     "ageLabel": "年齢:",
     "genderLabel": "性別:",

@@ -570,6 +570,7 @@
     "invalidImage": "请上传图片",
     "submitError": "提交错误",
     "genericError": "错误。请重试。",
+    "friendlyUploadError": "哎呀！上传文件时遇到了小问题。请检查您的网络连接后重试 — 您的信息已保存！",
     "emailLabel": "邮箱:",
     "ageLabel": "年龄:",
     "genderLabel": "性别:",

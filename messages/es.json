@@ -570,6 +570,7 @@
     "invalidImage": "Por favor sube una imagen (JPG, PNG, etc.)",
     "submitError": "Error al enviar solicitud",
     "genericError": "Algo salió mal. Intenta de nuevo.",
+    "friendlyUploadError": "¡Ups! Tuvimos un pequeño problema al subir tus archivos. Verifica tu conexión a internet e intenta de nuevo — ¡tu información está guardada!",
     "emailLabel": "Email:",
     "ageLabel": "Edad:",
     "genderLabel": "Género:",

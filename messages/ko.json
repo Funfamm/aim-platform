@@ -570,6 +570,7 @@
     "invalidImage": "이미지를 업로드하세요",
     "submitError": "제출 오류",
     "genericError": "오류. 다시 시도하세요.",
+    "friendlyUploadError": "이런! 파일 업로드 중 문제가 발생했어요. 인터넷 연결을 확인하고 다시 시도해 주세요 — 정보는 저장되어 있어요!",
     "emailLabel": "이메일:",
     "ageLabel": "나이:",
     "genderLabel": "성별:",

@@ -570,6 +570,7 @@
     "invalidImage": "Bitte ein Bild hochladen",
     "submitError": "Fehler beim Senden",
     "genericError": "Fehler. Erneut versuchen.",
+    "friendlyUploadError": "Hoppla! Beim Hochladen gab es ein kleines Problem. Bitte überprüfe deine Internetverbindung und versuche es erneut — deine Daten sind gespeichert!",
     "emailLabel": "E-Mail:",
     "ageLabel": "Alter:",
     "genderLabel": "Geschlecht:",

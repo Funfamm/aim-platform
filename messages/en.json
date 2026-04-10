@@ -567,6 +567,7 @@
     "invalidImage": "Please upload an image file (JPG, PNG, etc.)",
     "submitError": "Failed to submit application",
     "genericError": "Something went wrong. Please try again.",
+    "friendlyUploadError": "Oops! We had a little trouble uploading your files. Please check your internet connection and try again — your info is still saved!",
     "emailLabel": "Email:",
     "ageLabel": "Age:",
     "genderLabel": "Gender:",
