@@ -305,6 +305,63 @@ export default function AdminAnalyticsPage() {
     return (
         <div className="admin-layout">
             <AdminSidebar />
+            <style>{`
+                @media (max-width: 768px) {
+                    /* Header */
+                    .aa-header-row { flex-direction: column !important; gap: 10px !important; }
+                    .aa-header-row h1 { font-size: 1.25rem !important; }
+                    .aa-header-indicators { flex-wrap: wrap; }
+
+                    /* Dashboard command strip: 4-col → 2-col */
+                    .aa-cmd-strip { grid-template-columns: repeat(2, 1fr) !important; }
+
+                    /* Studio Pulse + Metrics: side-by-side → stacked */
+                    .aa-pulse-row { grid-template-columns: 1fr !important; }
+
+                    /* Engagement strip: 5-col → horizontal scroll */
+                    .aa-engage-strip {
+                        grid-template-columns: repeat(5, 140px) !important;
+                        overflow-x: auto !important;
+                        -webkit-overflow-scrolling: touch;
+                        padding-bottom: 6px;
+                        scrollbar-width: none;
+                    }
+                    .aa-engage-strip::-webkit-scrollbar { display: none; }
+
+                    /* Email stats: 4-col → 2-col */
+                    .aa-email-stats { grid-template-columns: repeat(2, 1fr) !important; }
+
+                    /* Funnel + Activity: side-by-side → stacked */
+                    .aa-funnel-row { grid-template-columns: 1fr !important; }
+
+                    /* Application list: compact 4-col → simplified */
+                    .aa-app-row {
+                        grid-template-columns: 1fr auto !important;
+                        gap: 6px !important;
+                        padding: 10px 12px !important;
+                    }
+                    .aa-app-score, .aa-app-date { display: none !important; }
+
+                    /* Traffic tab: stats → 3+2 */
+                    .aa-traffic-strip { grid-template-columns: repeat(3, 1fr) !important; }
+
+                    /* Chart + Heatmap → stacked */
+                    .aa-chart-row { grid-template-columns: 1fr !important; }
+
+                    /* Bottom triple → stacked */
+                    .aa-bottom-row { grid-template-columns: 1fr !important; }
+
+                    /* Content strip → stacked */
+                    .aa-content-strip { grid-template-columns: 1fr !important; }
+
+                    /* Tab bar text */
+                    .aa-tabs button { font-size: 0.68rem !important; padding: 0.5rem 0.3rem !important; }
+
+                    /* Quick actions wrap better */
+                    .aa-quick-actions { gap: 6px !important; }
+                    .aa-quick-actions a { font-size: 0.7rem !important; padding: 6px 10px !important; }
+                }
+            `}</style>
 
             <main className="admin-main">
                 {/* ── Cinematic Header ── */}
@@ -331,7 +388,7 @@ export default function AdminAnalyticsPage() {
                         pointerEvents: 'none',
                     }} />
 
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+                    <div className="aa-header-row" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
                         <div>
                             <div style={{ fontSize: '0.68rem', color: 'var(--accent-gold)', fontWeight: 600, letterSpacing: '0.08em', marginBottom: '4px', opacity: 0.9 }}>
                                 {getGreeting()}, Director
@@ -349,7 +406,7 @@ export default function AdminAnalyticsPage() {
 
                         {/* Status indicators */}
                         {data && (
-                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            <div className="aa-header-indicators" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                 <div style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',
                                     padding: '5px 14px', borderRadius: 'var(--radius-full)',
@@ -381,7 +438,7 @@ export default function AdminAnalyticsPage() {
                 </div>
 
                 {/* Tab bar */}
-                <div style={{
+                <div className="aa-tabs" style={{
                     display: 'flex', gap: '4px', marginBottom: 'var(--space-xl)',
                     background: 'var(--bg-secondary)', padding: '4px',
                     borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)',
@@ -421,7 +478,7 @@ export default function AdminAnalyticsPage() {
                                 {/* ── Dashboard Command Strip ── */}
                                 {data?.dashboard && (
                                     <>
-                                        <div style={{
+                                        <div className="aa-cmd-strip" style={{
                                             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)',
                                             marginBottom: 'var(--space-lg)',
                                         }}>
@@ -456,7 +513,7 @@ export default function AdminAnalyticsPage() {
                                         </div>
 
                                         {/* Quick Actions */}
-                                        <div style={{
+                                        <div className="aa-quick-actions" style={{
                                             display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)',
                                             flexWrap: 'wrap',
                                         }}>
@@ -523,7 +580,7 @@ export default function AdminAnalyticsPage() {
                                                         }
                                                         const sc = statusColors[app.status] || statusColors.pending
                                                         return (
-                                                            <Link key={app.id} href={`/admin/applications/${app.id}`} style={{
+                                                            <Link key={app.id} href={`/admin/applications/${app.id}`} className="aa-app-row" style={{
                                                                 display: 'grid', gridTemplateColumns: '1fr 100px 60px 70px',
                                                                 alignItems: 'center', gap: '10px',
                                                                 padding: '10px 16px', textDecoration: 'none',
@@ -538,7 +595,7 @@ export default function AdminAnalyticsPage() {
                                                                         {app.castingCall.roleName} · {app.castingCall.project.title}
                                                                     </div>
                                                                 </div>
-                                                                <div>
+                                                                <div className="aa-app-score">
                                                                     {app.aiScore ? (
                                                                         <span style={{
                                                                             fontWeight: 700, fontSize: '0.88rem',
@@ -554,7 +611,7 @@ export default function AdminAnalyticsPage() {
                                                                     background: sc.bg, color: sc.color,
                                                                     textTransform: 'capitalize', textAlign: 'center',
                                                                 }}>{app.status}</span>
-                                                                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.68rem', textAlign: 'right' }}>
+                                                                <div className="aa-app-date" style={{ color: 'var(--text-tertiary)', fontSize: '0.68rem', textAlign: 'right' }}>
                                                                     {new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                                 </div>
                                                             </Link>
@@ -567,7 +624,7 @@ export default function AdminAnalyticsPage() {
                                 )}
 
                                 {/* ── Studio Pulse + Metrics ── */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.2s both' }}>
+                                <div className="aa-pulse-row" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.2s both' }}>
                                     {/* Vitality Score */}
                                     <div style={{
                                         ...glassCard,
@@ -598,7 +655,7 @@ export default function AdminAnalyticsPage() {
                                 </div>
 
                                 {/* ── Engagement Metrics Strip ── */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
+                                <div className="aa-engage-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
                                     {[
                                         { label: 'This Week', value: data.traffic.weekViews, icon: '📅', color: 'var(--accent-gold)', glow: 'rgba(212,168,83,0.08)' },
                                         { label: 'Casting Views', value: data.engagement.castingViews, icon: '🎭', color: '#f59e0b', glow: 'rgba(245,158,11,0.06)' },
@@ -648,7 +705,7 @@ export default function AdminAnalyticsPage() {
                                         </div>
 
                                         {/* Stats row */}
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
+                                        <div className="aa-email-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
                                             {[
                                                 { label: 'All Time', value: data.email.total, color: '#a855f7' },
                                                 { label: 'Today', value: data.email.today, color: 'var(--accent-gold)' },
@@ -713,7 +770,7 @@ export default function AdminAnalyticsPage() {
                                 )}
 
                                 {/* ── Funnel & Activity ── */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', animation: 'cardCascade 0.6s ease 0.5s both' }}>
+                                <div className="aa-funnel-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', animation: 'cardCascade 0.6s ease 0.5s both' }}>
                                     {/* Casting Funnel — enhanced */}
                                     <div style={{ ...glassCard, position: 'relative', overflow: 'hidden' }}>
                                         <h4 style={sectionLabel}>🎯 Casting Funnel</h4>
@@ -801,7 +858,7 @@ export default function AdminAnalyticsPage() {
                         {activeTab === 'traffic' && (
                             <>
                                 {/* Traffic Summary Strip */}
-                                <div style={{
+                                <div className="aa-traffic-strip" style={{
                                     display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '2px',
                                     background: 'var(--border-subtle)', borderRadius: 'var(--radius-lg)',
                                     overflow: 'hidden', marginBottom: 'var(--space-lg)',
@@ -824,7 +881,7 @@ export default function AdminAnalyticsPage() {
                                 </div>
 
                                 {/* Mosaic: Chart + Heatmap */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
+                                <div className="aa-chart-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
                                     <div>
                                         <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', fontWeight: 700, marginBottom: '6px' }}>7-Day Trend</div>
                                         <AreaChart
@@ -844,7 +901,7 @@ export default function AdminAnalyticsPage() {
                                 </div>
 
                                 {/* Bottom row: Top Pages + Devices + Sources */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 'var(--space-md)' }}>
+                                <div className="aa-bottom-row" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr 1fr', gap: 'var(--space-md)' }}>
                                     {/* Top Pages — compact */}
                                     <div style={{ ...cardStyle, padding: 'var(--space-md)' }}>
                                         <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', fontWeight: 700, marginBottom: '8px' }}>Top Pages</div>
@@ -940,7 +997,7 @@ export default function AdminAnalyticsPage() {
                         {activeTab === 'content' && (
                             <>
                                 {/* Content Performance Strip */}
-                                <div style={{
+                                <div className="aa-content-strip" style={{
                                     display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px',
                                     background: 'var(--border-subtle)', borderRadius: 'var(--radius-lg)',
                                     overflow: 'hidden', marginBottom: 'var(--space-lg)',
@@ -1047,8 +1104,9 @@ export default function AdminAnalyticsPage() {
                         {activeTab === 'ai' && (
                             <>
                                 {/* Agent Header compact with glow */}
-                                <div style={{
+                                <div className="aa-header-row" style={{
                                     display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
+                                    flexWrap: 'wrap',
                                     padding: '12px 16px',
                                     background: 'linear-gradient(135deg, rgba(212,168,83,0.05), rgba(139,92,246,0.05))',
                                     border: `1px solid ${isSpeaking ? 'rgba(212,168,83,0.35)' : 'rgba(212,168,83,0.12)'}`,
@@ -1139,7 +1197,7 @@ export default function AdminAnalyticsPage() {
                                 )}
 
                                 {insights.length === 0 && !insightsLoading && !insightsError ? (
-                                    <div style={{
+                                    <div className="aa-bottom-row" style={{
                                         display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)',
                                     }}>
                                         {[
