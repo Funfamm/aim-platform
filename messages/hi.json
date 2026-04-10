@@ -723,7 +723,9 @@
     "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें।",
     "pwTooShort": "पासवर्ड कम से कम 6 अक्षर का होना चाहिए।",
     "hidePassword": "पासवर्ड छुपाएं",
-    "showPassword": "पासवर्ड दिखाएं"
+    "showPassword": "पासवर्ड दिखाएं",
+    "allFieldsRequired": "नाम, ईमेल और पासवर्ड आवश्यक है",
+    "accountExists": "इस ईमेल वाला एक खाता पहले से मौजूद है"
   },
   "login": {
     "welcomeBack": "फिर से स्वागत है",
@@ -744,7 +746,10 @@
     "hidePassword": "छिपाएं",
     "showPassword": "दिखाएं",
     "fillRequired": "कृपया यह फ़ील्ड भरें।",
-    "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें।"
+    "emailInvalid": "कृपया एक वैध ईमेल पता दर्ज करें।",
+    "invalidCredentials": "अमान्य ईमेल या पासवर्ड",
+    "credentialsRequired": "ईमेल और पासवर्ड आवश्यक है",
+    "verifyEmailRequired": "कृपया लॉग इन करने से पहले अपना ईमेल सत्यापित करें।"
   },
   "contact": {
     "label": "संपर्क करें",

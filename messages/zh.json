@@ -723,7 +723,9 @@
     "emailInvalid": "请输入有效的电子邮件地址。",
     "pwTooShort": "密码必须至少6个字符。",
     "hidePassword": "隐藏密码",
-    "showPassword": "显示密码"
+    "showPassword": "显示密码",
+    "allFieldsRequired": "姓名、电子邮件和密码为必填项",
+    "accountExists": "使用此电子邮件的帐户已存在"
   },
   "login": {
     "welcomeBack": "欢迎回来",
@@ -744,7 +746,10 @@
     "hidePassword": "隐藏",
     "showPassword": "显示",
     "fillRequired": "请填写此字段。",
-    "emailInvalid": "请输入有效的电子邮件地址。"
+    "emailInvalid": "请输入有效的电子邮件地址。",
+    "invalidCredentials": "电子邮件或密码无效",
+    "credentialsRequired": "需要电子邮件和密码",
+    "verifyEmailRequired": "请在登录前验证您的电子邮件。"
   },
   "contact": {
     "label": "联系我们",

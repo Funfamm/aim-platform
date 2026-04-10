@@ -723,7 +723,9 @@
     "emailInvalid": "Por favor, insira um endereço de e-mail válido.",
     "pwTooShort": "A senha deve ter pelo menos 6 caracteres.",
     "hidePassword": "Ocultar senha",
-    "showPassword": "Mostrar senha"
+    "showPassword": "Mostrar senha",
+    "allFieldsRequired": "Nome, e-mail e senha são obrigatórios",
+    "accountExists": "Já existe uma conta com este e-mail"
   },
   "login": {
     "welcomeBack": "Bem-vindo",
@@ -744,7 +746,10 @@
     "hidePassword": "Ocultar",
     "showPassword": "Mostrar",
     "fillRequired": "Por favor, preencha este campo.",
-    "emailInvalid": "Por favor, insira um endereço de e-mail válido."
+    "emailInvalid": "Por favor, insira um endereço de e-mail válido.",
+    "invalidCredentials": "E-mail ou senha inválida",
+    "credentialsRequired": "E-mail e senha são obrigatórios",
+    "verifyEmailRequired": "Verifique seu e-mail antes de fazer login."
   },
   "contact": {
     "label": "Entre em Contato",

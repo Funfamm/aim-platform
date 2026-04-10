@@ -723,7 +723,9 @@
     "emailInvalid": "유효한 이메일 주소를 입력해 주세요.",
     "pwTooShort": "비밀번호는 6자 이상이어야 합니다.",
     "hidePassword": "비밀번호 숨기기",
-    "showPassword": "비밀번호 표시"
+    "showPassword": "비밀번호 표시",
+    "allFieldsRequired": "이름, 이메일, 비밀번호가 필요합니다",
+    "accountExists": "이 이메일을 사용하는 계정이 이미 존재합니다."
   },
   "login": {
     "welcomeBack": "다시 오신 것을 환영합니다",
@@ -744,7 +746,10 @@
     "hidePassword": "숨기기",
     "showPassword": "보기",
     "fillRequired": "이 필드를 입력해 주세요.",
-    "emailInvalid": "유효한 이메일 주소를 입력해 주세요."
+    "emailInvalid": "유효한 이메일 주소를 입력해 주세요.",
+    "invalidCredentials": "잘못된 이메일 또는 비밀번호",
+    "credentialsRequired": "이메일과 비밀번호가 필요합니다",
+    "verifyEmailRequired": "로그인하기 전에 이메일을 확인해 주세요."
   },
   "contact": {
     "label": "문의하기",

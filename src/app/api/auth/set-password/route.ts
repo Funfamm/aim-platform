@@ -82,17 +82,17 @@ export async function POST(request: Request) {
 
             const html = `
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"/></head>
+<html dir="${locale === 'ar' ? 'rtl' : 'ltr'}"><head><meta charset="utf-8"/></head>
 <body style="margin:0;padding:0;background:#0a0a12;font-family:'Segoe UI',system-ui,sans-serif">
 <div style="max-width:520px;margin:40px auto;background:linear-gradient(145deg,#12121f 0%,#1a1a2e 100%);border:1px solid rgba(212,168,83,0.15);border-radius:16px;padding:40px">
 <div style="text-align:center;margin-bottom:24px">
   <span style="font-size:32px">🔐</span>
 </div>
 <h1 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#e8e8f0;text-align:center">
-  ${locale === 'en' ? 'Set Your Password' : 'Verify Your Identity'}
+  ${emailT('securitySetPassword', locale, 'heading')}
 </h1>
 <p style="margin:0 0 24px;font-size:14px;color:#8888a0;text-align:center;line-height:1.5">
-  ${locale === 'en' ? 'Use this code to create a password for your account.' : 'Enter this code to set up your password.'}
+  ${emailT('securitySetPassword', locale, 'subtext')}
 </p>
 <div style="text-align:center;margin:24px 0">
   <div style="display:inline-block;padding:16px 32px;background:rgba(212,168,83,0.08);border:2px solid rgba(212,168,83,0.25);border-radius:12px;letter-spacing:8px;font-size:28px;font-weight:800;color:#e4b95a;font-family:monospace">
@@ -100,16 +100,16 @@ export async function POST(request: Request) {
   </div>
 </div>
 <p style="margin:16px 0 0;font-size:12px;color:#666;text-align:center">
-  This code expires in 10 minutes.
+  ${emailT('securitySetPassword', locale, 'expiry')} ${emailT('securitySetPassword', locale, 'expiryTime')}.
 </p>
 <hr style="border:none;border-top:1px solid rgba(255,255,255,0.06);margin:24px 0"/>
 <p style="margin:0;font-size:11px;color:#555;text-align:center">
-  AI Impact Media Studio
+  ${emailT('securitySetPassword', locale, 'footer')}
 </p>
 </div>
 </body></html>`
 
-            const subject = emailT('securityVerifyEmail', locale, 'subject') || 'Verify Your Identity - AIM Studio'
+            const subject = emailT('securitySetPassword', locale, 'subject')
 
             await sendEmail({ to: user.email, subject, html })
 

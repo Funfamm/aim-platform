@@ -205,6 +205,98 @@ export const emailStrings: Record<string, TemplateStrings> = {
         },
     },
 
+    // ── Security: Set Password (OAuth user creating a password) ───────────────
+    securitySetPassword: {
+        en: {
+            subject:    'Verify Your Identity – AIM Studio',
+            heading:    'Set Your Password',
+            subtext:    'Use this code to create a password for your account.',
+            expiry:     'This code expires in',
+            expiryTime: '10 minutes',
+            footer:     'AI Impact Media Studio',
+        },
+        es: {
+            subject:    'Verifica tu Identidad – AIM Studio',
+            heading:    'Establece tu Contraseña',
+            subtext:    'Usa este código para crear una contraseña para tu cuenta.',
+            expiry:     'Este código expira en',
+            expiryTime: '10 minutos',
+            footer:     'AI Impact Media Studio',
+        },
+        fr: {
+            subject:    'Vérifiez votre Identité – AIM Studio',
+            heading:    'Définir votre Mot de Passe',
+            subtext:    'Utilisez ce code pour créer un mot de passe pour votre compte.',
+            expiry:     'Ce code expire dans',
+            expiryTime: '10 minutes',
+            footer:     'AI Impact Media Studio',
+        },
+        ar: {
+            subject:    'تحقق من هويتك – AIM Studio',
+            heading:    'إنشاء كلمة المرور',
+            subtext:    'استخدم هذا الرمز لإنشاء كلمة مرور لحسابك.',
+            expiry:     'ينتهي هذا الرمز خلال',
+            expiryTime: '١٠ دقائق',
+            footer:     'AI Impact Media Studio',
+        },
+        zh: {
+            subject:    '验证您的身份 – AIM Studio',
+            heading:    '设置您的密码',
+            subtext:    '使用此验证码为您的账户创建密码。',
+            expiry:     '此验证码将在',
+            expiryTime: '10 分钟后过期',
+            footer:     'AI Impact Media Studio',
+        },
+        hi: {
+            subject:    'अपनी पहचान सत्यापित करें – AIM Studio',
+            heading:    'अपना पासवर्ड सेट करें',
+            subtext:    'अपने खाते के लिए पासवर्ड बनाने हेतु इस कोड का उपयोग करें।',
+            expiry:     'यह कोड',
+            expiryTime: '10 मिनट में समाप्त होगा',
+            footer:     'AI Impact Media Studio',
+        },
+        pt: {
+            subject:    'Verifique sua Identidade – AIM Studio',
+            heading:    'Defina sua Senha',
+            subtext:    'Use este código para criar uma senha para sua conta.',
+            expiry:     'Este código expira em',
+            expiryTime: '10 minutos',
+            footer:     'AI Impact Media Studio',
+        },
+        ru: {
+            subject:    'Подтвердите свою личность – AIM Studio',
+            heading:    'Установите Пароль',
+            subtext:    'Используйте этот код для создания пароля для вашего аккаунта.',
+            expiry:     'Код действителен',
+            expiryTime: '10 минут',
+            footer:     'AI Impact Media Studio',
+        },
+        ja: {
+            subject:    '本人確認 – AIM Studio',
+            heading:    'パスワードを設定',
+            subtext:    'このコードを使用してアカウントのパスワードを作成してください。',
+            expiry:     'このコードの有効期限は',
+            expiryTime: '10分',
+            footer:     'AI Impact Media Studio',
+        },
+        de: {
+            subject:    'Identität bestätigen – AIM Studio',
+            heading:    'Passwort Festlegen',
+            subtext:    'Verwenden Sie diesen Code, um ein Passwort für Ihr Konto zu erstellen.',
+            expiry:     'Dieser Code läuft ab in',
+            expiryTime: '10 Minuten',
+            footer:     'AI Impact Media Studio',
+        },
+        ko: {
+            subject:    '본인 확인 – AIM Studio',
+            heading:    '비밀번호 설정',
+            subtext:    '이 코드를 사용하여 계정 비밀번호를 생성하세요.',
+            expiry:     '이 코드는',
+            expiryTime: '10분 후 만료됩니다',
+            footer:     'AI Impact Media Studio',
+        },
+    },
+
     // ── Security: Forgot Password / Password Reset ────────────────────────────
     securityForgotPassword: {
         en: {
@@ -1838,6 +1930,7 @@ export const emailStrings: Record<string, TemplateStrings> = {
         zh: { heading: '刚刚发布：{title}', body: '我们刚刚发布了新的{type}内容。在平台上查看吧。', buttonText: '查看{type} →', footer: '您收到此邮件是因为您订阅了内容更新。' },
     },
 }
+
 
 /**
  * Look up a translated string.

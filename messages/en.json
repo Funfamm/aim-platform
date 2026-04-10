@@ -720,7 +720,9 @@
     "emailInvalid": "Please enter a valid email address.",
     "pwTooShort": "Password must be at least 6 characters.",
     "hidePassword": "Hide password",
-    "showPassword": "Show password"
+    "showPassword": "Show password",
+    "allFieldsRequired": "Name, email, and password are required",
+    "accountExists": "An account with this email already exists"
   },
   "login": {
     "welcomeBack": "Welcome Back",
@@ -741,7 +743,10 @@
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "fillRequired": "Please fill out this field.",
-    "emailInvalid": "Please enter a valid email address."
+    "emailInvalid": "Please enter a valid email address.",
+    "invalidCredentials": "Invalid email or password",
+    "credentialsRequired": "Email and password are required",
+    "verifyEmailRequired": "Please verify your email before logging in."
   },
   "contact": {
     "label": "Get in Touch",

@@ -707,7 +707,9 @@
     "emailInvalid": "有効なメールアドレスを入力してください。",
     "pwTooShort": "パスワードは6文字以上でなければなりません。",
     "hidePassword": "パスワードを隠す",
-    "showPassword": "パスワードを表示"
+    "showPassword": "パスワードを表示",
+    "allFieldsRequired": "名前、メールアドレス、パスワードは必須です",
+    "accountExists": "このメールアドレスを持つアカウントはすでに存在します"
   },
   "login": {
     "welcomeBack": "おかえりなさい",
@@ -728,7 +730,10 @@
     "hidePassword": "非表示",
     "showPassword": "表示",
     "fillRequired": "このフィールドを入力してください。",
-    "emailInvalid": "有効なメールアドレスを入力してください。"
+    "emailInvalid": "有効なメールアドレスを入力してください。",
+    "invalidCredentials": "無効な電子メールまたはパスワード",
+    "credentialsRequired": "メールアドレスとパスワードが必要です",
+    "verifyEmailRequired": "ログインする前にメールアドレスを確認してください。"
   },
   "contact": {
     "label": "お問合せ",

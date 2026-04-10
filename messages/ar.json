@@ -725,7 +725,9 @@
     "emailInvalid": "يرجى إدخال بريد إلكتروني صالح.",
     "pwTooShort": "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
     "hidePassword": "إخفاء كلمة المرور",
-    "showPassword": "إظهار كلمة المرور"
+    "showPassword": "إظهار كلمة المرور",
+    "allFieldsRequired": "الاسم والبريد الإلكتروني وكلمة المرور مطلوبة",
+    "accountExists": "يوجد حساب بهذا البريد الإلكتروني بالفعل"
   },
   "login": {
     "welcomeBack": "مرحباً بعودتك",
@@ -746,7 +748,10 @@
     "hidePassword": "إخفاء",
     "showPassword": "إظهار",
     "fillRequired": "يرجى ملء هذا الحقل.",
-    "emailInvalid": "يرجى إدخال بريد إلكتروني صالح."
+    "emailInvalid": "يرجى إدخال بريد إلكتروني صالح.",
+    "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صالحة",
+    "credentialsRequired": "البريد الإلكتروني وكلمة المرور مطلوبة",
+    "verifyEmailRequired": "يرجى التحقق من بريدك الإلكتروني قبل تسجيل الدخول."
   },
   "contact": {
     "label": "تواصل معنا",

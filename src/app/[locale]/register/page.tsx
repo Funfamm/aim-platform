@@ -43,7 +43,10 @@ export default function RegisterPage() {
                 // Fallback: already verified (e.g. OAuth)
                 router.push('/dashboard')
             } else {
-                setError(data.error || t('registrationFailed'))
+                let err = data.error || t('registrationFailed')
+                if (data.error === 'Name, email, and password are required') err = t('allFieldsRequired')
+                else if (data.error === 'An account with this email already exists') err = t('accountExists')
+                setError(err)
             }
         } catch {
             setError(t('registrationFailed'))

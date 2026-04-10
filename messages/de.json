@@ -723,7 +723,9 @@
     "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     "pwTooShort": "Das Passwort muss mindestens 6 Zeichen lang sein.",
     "hidePassword": "Passwort verbergen",
-    "showPassword": "Passwort anzeigen"
+    "showPassword": "Passwort anzeigen",
+    "allFieldsRequired": "Name, E-Mail und Passwort sind erforderlich",
+    "accountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits"
   },
   "login": {
     "welcomeBack": "Willkommen Zurück",
@@ -744,7 +746,10 @@
     "hidePassword": "Verbergen",
     "showPassword": "Anzeigen",
     "fillRequired": "Bitte füllen Sie dieses Feld aus.",
-    "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein."
+    "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    "invalidCredentials": "Ungültige E-Mail-Adresse oder ungültiges Passwort",
+    "credentialsRequired": "E-Mail und Passwort sind erforderlich",
+    "verifyEmailRequired": "Bitte überprüfen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden."
   },
   "contact": {
     "label": "Kontakt",

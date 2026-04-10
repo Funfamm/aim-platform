@@ -89,7 +89,11 @@ export default function LoginPage() {
                 // Email not verified — send to the verify page
                 router.push(`/verify-email?email=${encodeURIComponent(email)}`)
             } else {
-                setError(data.error || t('loginFailed'))
+                let err = data.error || t('loginFailed')
+                if (data.error === 'Invalid email or password') err = t('invalidCredentials')
+                else if (data.error === 'Email and password are required') err = t('credentialsRequired')
+                else if (data.error === 'Please verify your email before logging in.') err = t('verifyEmailRequired')
+                setError(err)
             }
         } catch {
             setError(t('loginFailed'))

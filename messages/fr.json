@@ -723,7 +723,9 @@
     "emailInvalid": "Veuillez entrer une adresse email valide.",
     "pwTooShort": "Le mot de passe doit comporter au moins 6 caractères.",
     "hidePassword": "Masquer le mot de passe",
-    "showPassword": "Afficher le mot de passe"
+    "showPassword": "Afficher le mot de passe",
+    "allFieldsRequired": "Le nom, l'e-mail et le mot de passe sont requis",
+    "accountExists": "Un compte avec cette adresse e-mail existe déjà"
   },
   "login": {
     "welcomeBack": "Bon Retour",
@@ -744,7 +746,10 @@
     "hidePassword": "Masquer le mot de passe",
     "showPassword": "Afficher le mot de passe",
     "fillRequired": "Veuillez remplir ce champ.",
-    "emailInvalid": "Veuillez entrer une adresse email valide."
+    "emailInvalid": "Veuillez entrer une adresse email valide.",
+    "invalidCredentials": "Email ou mot de passe invalide",
+    "credentialsRequired": "L'e-mail et le mot de passe sont requis",
+    "verifyEmailRequired": "Veuillez vérifier votre adresse e-mail avant de vous connecter."
   },
   "contact": {
     "label": "Nous contacter",
