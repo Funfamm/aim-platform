@@ -480,7 +480,8 @@
     "roleTypeSupporting": "配角",
     "roleTypeExtra": "临演",
     "withdraw": "撤回",
-    "applyAgain": "重新申请"
+    "applyAgain": "重新申请",
+    "applied": "已申请"
   },
   "castingForm": {
     "pageLabel": "选角申请",

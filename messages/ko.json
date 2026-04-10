@@ -480,7 +480,8 @@
     "roleTypeSupporting": "조연",
     "roleTypeExtra": "엑스트라",
     "withdraw": "취소",
-    "applyAgain": "다시 지원"
+    "applyAgain": "다시 지원",
+    "applied": "지원 완료"
   },
   "castingForm": {
     "pageLabel": "캐스팅 지원",

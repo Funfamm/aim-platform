@@ -464,7 +464,8 @@
     "roleTypeSupporting": "助演",
     "roleTypeExtra": "エキストラ",
     "withdraw": "取り下げ",
-    "applyAgain": "再応募"
+    "applyAgain": "再応募",
+    "applied": "応募済み"
   },
   "castingForm": {
     "pageLabel": "キャスティング応募",

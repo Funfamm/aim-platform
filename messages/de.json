@@ -480,7 +480,8 @@
     "roleTypeSupporting": "Nebenrolle",
     "roleTypeExtra": "Statist",
     "withdraw": "Zurückziehen",
-    "applyAgain": "Erneut bewerben"
+    "applyAgain": "Erneut bewerben",
+    "applied": "Beworben"
   },
   "castingForm": {
     "pageLabel": "Casting-Bewerbung",

@@ -480,7 +480,8 @@
     "roleTypeSupporting": "Coadjuvante",
     "roleTypeExtra": "Figurante",
     "withdraw": "Retirar",
-    "applyAgain": "Candidatar-se novamente"
+    "applyAgain": "Candidatar-se novamente",
+    "applied": "Candidatura enviada"
   },
   "castingForm": {
     "pageLabel": "Candidatura Casting",

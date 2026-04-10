@@ -478,7 +478,8 @@
     "watch": "Watch",
     "roleTypeLead": "Lead",
     "roleTypeSupporting": "Supporting",
-    "roleTypeExtra": "Extra"
+    "roleTypeExtra": "Extra",
+    "applied": "Applied"
   },
   "castingForm": {
     "pageLabel": "Casting Application",

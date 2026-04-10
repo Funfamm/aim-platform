@@ -480,7 +480,8 @@
     "roleTypeSupporting": "Второстепенная",
     "roleTypeExtra": "Массовка",
     "withdraw": "Отозвать",
-    "applyAgain": "Подать заявку снова"
+    "applyAgain": "Подать заявку снова",
+    "applied": "Подано"
   },
   "castingForm": {
     "pageLabel": "Заявка на Кастинг",

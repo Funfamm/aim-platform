@@ -480,7 +480,8 @@
     "roleTypeSupporting": "Secundario",
     "roleTypeExtra": "Extra",
     "withdraw": "Retirar",
-    "applyAgain": "Aplicar de nuevo"
+    "applyAgain": "Aplicar de nuevo",
+    "applied": "Postulado"
   },
   "castingForm": {
     "pageLabel": "Solicitud de Casting",

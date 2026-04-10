@@ -480,7 +480,8 @@
     "roleTypeSupporting": "Secondaire",
     "roleTypeExtra": "Figurant",
     "withdraw": "Retirer",
-    "applyAgain": "Postuler à nouveau"
+    "applyAgain": "Postuler à nouveau",
+    "applied": "Candidature envoyée"
   },
   "castingForm": {
     "pageLabel": "Candidature Casting",

@@ -482,7 +482,8 @@
     "roleTypeSupporting": "ثانوي",
     "roleTypeExtra": "كومبارس",
     "withdraw": "سحب",
-    "applyAgain": "تطبيق مجددًا"
+    "applyAgain": "تطبيق مجددًا",
+    "applied": "تم التقديم"
   },
   "castingForm": {
     "pageLabel": "طلب كاستنج",

@@ -480,7 +480,8 @@
     "roleTypeSupporting": "सहायक",
     "roleTypeExtra": "एक्स्ट्रा",
     "withdraw": "वापस लें",
-    "applyAgain": "फिर से आवेदन करें"
+    "applyAgain": "फिर से आवेदन करें",
+    "applied": "आवेदन किया"
   },
   "castingForm": {
     "pageLabel": "कास्टिंग आवेदन",
