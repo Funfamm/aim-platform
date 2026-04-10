@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
                     roleName: true,
                     roleType: true,
                     project: {
-                        select: { title: true, slug: true },
+                        select: { title: true, slug: true, translations: true },
                     },
                 },
             },

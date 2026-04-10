@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
                     genre: true,
                     status: true,
                     tagline: true,
+                    translations: true,
                 },
             },
         },

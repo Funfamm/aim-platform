@@ -27,7 +27,7 @@ interface ApplicationData {
     castingCall: {
         roleName: string
         roleType: string
-        project: { title: string; slug: string }
+        project: { title: string; slug: string; translations?: string | null }
     }
 }
 
@@ -38,6 +38,7 @@ interface WatchlistItem {
         id: string; title: string; slug: string
         coverImage: string | null; genre: string | null
         status: string; tagline: string
+        translations?: string | null
     }
 }
 
@@ -49,6 +50,7 @@ interface HistoryItem {
         id: string; title: string; slug: string
         coverImage: string | null; genre: string | null
         duration: string | null
+        translations?: string | null
     }
 }
 
@@ -326,6 +328,12 @@ export default function DashboardPage() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
                                     {applications.map((app, i) => {
                                         const statusInfo = STATUS_CONFIG[app.status] || STATUS_CONFIG['submitted']
+                                        // Resolve translated project title
+                                        const projTr = (() => {
+                                            if (locale === 'en' || !app.castingCall.project.translations) return null
+                                            try { return JSON.parse(app.castingCall.project.translations)?.[locale] || null } catch { return null }
+                                        })()
+                                        const projectTitle = projTr?.title || app.castingCall.project.title
                                         return (
                                             <ScrollReveal3D key={app.id} direction="up" delay={250 + i * 60} distance={15}>
                                                 <Link
@@ -336,7 +344,7 @@ export default function DashboardPage() {
                                                         <div style={{ flex: 1, minWidth: 0 }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '4px', flexWrap: 'wrap' }}>
                                                                 <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                                                    {app.castingCall.project.title}
+                                                                    {projectTitle}
                                                                 </span>
                                                                 <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)', fontWeight: 600, textTransform: 'uppercase' as const }}>{t({ lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }[app.castingCall.roleType.toLowerCase()] || 'roleTypeLead')}</span>
                                                             </div>
@@ -375,7 +383,15 @@ export default function DashboardPage() {
                                 <EmptyState icon="🎬" title={t('noWatchTitle')} desc={t('noWatchDesc')} linkHref="/works" linkText={t('noWatchCta')} />
                             ) : (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-md)' }}>
-                                    {watchlist.map((item, i) => (
+                                    {watchlist.map((item, i) => {
+                                        const wTr = (() => {
+                                            if (locale === 'en' || !item.project.translations) return null
+                                            try { return JSON.parse(item.project.translations)?.[locale] || null } catch { return null }
+                                        })()
+                                        const wTitle = wTr?.title || item.project.title
+                                        const wTagline = wTr?.tagline || item.project.tagline
+                                        const wGenre = wTr?.genre || item.project.genre
+                                        return (
                                         <ScrollReveal3D key={item.id} direction="up" delay={250 + i * 60} distance={15}>
                                             <Link href={`/works/${item.project.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
                                                 <div style={{
@@ -388,17 +404,17 @@ export default function DashboardPage() {
                                                         backgroundSize: 'cover', backgroundPosition: 'center',
                                                     }} />
                                                     <div style={{ padding: 'var(--space-md)' }}>
-                                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '4px', color: 'var(--text-primary)' }}>{item.project.title}</h4>
-                                                        {item.project.tagline && <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '8px', lineHeight: 1.4 }}>{item.project.tagline.slice(0, 80)}</p>}
+                                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '4px', color: 'var(--text-primary)' }}>{wTitle}</h4>
+                                                        {wTagline && <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '8px', lineHeight: 1.4 }}>{wTagline.slice(0, 80)}</p>}
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            {item.project.genre && <span style={{ fontSize: '0.6rem', padding: '2px 8px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{item.project.genre}</span>}
-                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('saved')} {new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                                            {wGenre && <span style={{ fontSize: '0.6rem', padding: '2px 8px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{wGenre}</span>}
+                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('saved')} {new Date(item.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </Link>
                                         </ScrollReveal3D>
-                                    ))}
+                                    )})}
                                     {pagination.watchHasMore && (
                                         <button onClick={() => loadMore('watchlist')} disabled={pagination.loadingMore === 'watchlist'} style={loadMoreStyle}>
                                             {pagination.loadingMore === 'watchlist' ? t('loading') : t('loadMore')}
@@ -417,7 +433,14 @@ export default function DashboardPage() {
                                 <EmptyState icon="📺" title={t('noHistoryTitle')} desc={t('noHistoryDesc')} linkHref="/works" linkText={t('noHistoryCta')} />
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                                    {history.map((item, i) => (
+                                    {history.map((item, i) => {
+                                        const hTr = (() => {
+                                            if (locale === 'en' || !item.project.translations) return null
+                                            try { return JSON.parse(item.project.translations)?.[locale] || null } catch { return null }
+                                        })()
+                                        const hTitle = hTr?.title || item.project.title
+                                        const hGenre = hTr?.genre || item.project.genre
+                                        return (
                                         <ScrollReveal3D key={item.id} direction="up" delay={250 + i * 60} distance={15}>
                                             <Link href={`/works/${item.project.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
                                                 <div className="dash-history-card">
@@ -427,10 +450,10 @@ export default function DashboardPage() {
                                                         backgroundSize: 'cover', backgroundPosition: 'center',
                                                     }} />
                                                     <div style={{ flex: 1 }}>
-                                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', color: 'var(--text-primary)' }}>{item.project.title}</h4>
+                                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', color: 'var(--text-primary)' }}>{hTitle}</h4>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            {item.project.genre && <span style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{item.project.genre}</span>}
-                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('watched')} {new Date(item.watchedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                            {hGenre && <span style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{hGenre}</span>}
+                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('watched')} {new Date(item.watchedAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                                         </div>
                                                         {item.progress > 0 && (
                                                             <div style={{ marginTop: '6px', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', width: '100%' }}>
@@ -442,7 +465,7 @@ export default function DashboardPage() {
                                                 </div>
                                             </Link>
                                         </ScrollReveal3D>
-                                    ))}
+                                    )})}
                                     {pagination.historyHasMore && (
                                         <button onClick={() => loadMore('history')} disabled={pagination.loadingMore === 'history'} style={loadMoreStyle}>
                                             {pagination.loadingMore === 'history' ? t('loading') : t('loadMoreHistory')}

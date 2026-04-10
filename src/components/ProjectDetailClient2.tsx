@@ -63,6 +63,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
     const [user, setUser] = useState<{ id: string; name: string } | null>(null)
     const [checkingAuth, setCheckingAuth] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
+    const [appliedCastingIds, setAppliedCastingIds] = useState<Set<string>>(new Set())
     const router = useRouter()
     const colors = statusColors[project.status] || statusColors.upcoming
     const statusLabel = t(statusLabelKeys[project.status] || 'comingSoon')
@@ -90,6 +91,18 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                         .then(r => r.json())
                         .then(d => { if (d?.saved) setIsSaved(true) })
                         .catch(() => { })
+                    // Check which casting calls the user has already applied for
+                    if (project.castingCalls.length > 0) {
+                        fetch(`/api/dashboard/applications?limit=50&locale=${locale}`)
+                            .then(r => r.json())
+                            .then(d => {
+                                const ids = new Set<string>(
+                                    (d.applications || []).map((a: { castingCallId: string }) => a.castingCallId)
+                                )
+                                setAppliedCastingIds(ids)
+                            })
+                            .catch(() => { })
+                    }
                 }
             })
             .catch(() => { })
@@ -578,9 +591,22 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                                 <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-xs)' }}>
                                                     {(() => { const rk: Record<string, string> = { lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }; return t(rk[call.roleType.toLowerCase()] || 'roleTypeLead'); })()} • {call.ageRange || t('anyAge')} • {call.gender || t('anyGender')}
                                                 </div>
-                                                <Link href={`/casting/${call.id}/apply`} className="btn btn-primary btn-sm" style={{ width: '100%' }}>
-                                                    {t('applyNow')}
-                                                </Link>
+                                                {appliedCastingIds.has(call.id) ? (
+                                                    <div style={{
+                                                        width: '100%', textAlign: 'center',
+                                                        padding: '0.45rem 1rem', fontSize: '0.8rem', fontWeight: 600,
+                                                        background: 'rgba(52,211,153,0.1)',
+                                                        border: '1px solid rgba(52,211,153,0.25)',
+                                                        borderRadius: 'var(--radius-full)',
+                                                        color: 'var(--color-success)',
+                                                    }}>
+                                                        {t('applied')}
+                                                    </div>
+                                                ) : (
+                                                    <Link href={`/casting/${call.id}/apply`} className="btn btn-primary btn-sm" style={{ width: '100%' }}>
+                                                        {t('applyNow')}
+                                                    </Link>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

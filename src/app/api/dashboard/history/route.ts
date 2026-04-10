@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
                     coverImage: true,
                     genre: true,
                     duration: true,
+                    translations: true,
                 },
             },
         },

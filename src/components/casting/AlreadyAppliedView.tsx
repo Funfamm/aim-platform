@@ -399,7 +399,7 @@ export default function AlreadyAppliedView({ application }: { application: Appli
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                 {canWithdraw && (
                     <>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.5 }}>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.5, maxWidth: '380px', margin: '0 auto', padding: '0 var(--space-md)' }}>
                             {t('withdrawNote')}
                         </p>
                         {error && (
