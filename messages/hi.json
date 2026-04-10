@@ -580,7 +580,9 @@
     "photoOptional1": "अतिरिक्त फोटो (वैकल्पिक)",
     "photoOptional1Desc": "एक्शन पोज़, क्लोज़-अप या रचनात्मक फोटो",
     "photoOptional2": "अतिरिक्त फोटो (वैकल्पिक)",
-    "photoOptional2Desc": "कोई अन्य कोण या लुक जो आप दिखाना चाहते हैं"
+    "photoOptional2Desc": "कोई अन्य कोण या लुक जो आप दिखाना चाहते हैं",
+    "removePhoto": "फ़ोटो हटाएं",
+    "tapToReplace": "बदलने के लिए टैप करें"
   },
   "training": {
     "hub": "प्रशिक्षण केंद्र",
@@ -872,15 +874,25 @@
       "loading": "खोज रहे हैं…",
       "suggestionTitle": "सुझाव"
     },
-    "oauthNoPassword": "Aapne {provider} se sign in kiya hai. Aapke account mein abhi koi password nahi hai. Neeche ek password banayein taaki aap email aur password se bhi login kar sakein.",
-    "createPasswordBtn": "Password banayein",
-    "setPasswordBtn": "Password set karein",
-    "passwordSetSuccess": "Password safaltapoorvak bana diya gaya! Ab aap apne email aur password se login kar sakte hain.",
-    "codeSentToEmail": "Aapke email par 6 ank ka verification code bheja gaya hai.",
-    "verificationCode": "Verification Code",
-    "minCharsError": "Password kam se kam 6 akshar ka hona chahiye",
+    "oauthNoPassword": "आपने {provider} से साइन इन किया है। आपके खाते में अभी कोई पासवर्ड नहीं है। नीचे एक पासवर्ड बनाएं ताकि आप ईमेल और पासवर्ड से भी लॉगिन कर सकें।",
+    "createPasswordBtn": "पासवर्ड बनाएं",
+    "setPasswordBtn": "पासवर्ड सेट करें",
+    "passwordSetSuccess": "पासवर्ड सफलतापूर्वक बन गया! अब आप अपने ईमेल और पासवर्ड से लॉगिन कर सकते हैं।",
+    "codeSentToEmail": "आपके ईमेल पर 6 अंकों का सत्यापन कोड भेजा गया है।",
+    "verificationCode": "सत्यापन कोड",
+    "minCharsError": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",
+    "errCurrentRequired": "कृपया अपना वर्तमान पासवर्ड दर्ज करें",
+    "errOauthNoPassword": "OAuth खातों के लिए पासवर्ड नहीं बदला जा सकता",
+    "errCurrentIncorrect": "वर्तमान पासवर्ड गलत है",
+    "errSamePassword": "नया पासवर्ड वर्तमान पासवर्ड जैसा नहीं हो सकता",
+    "errReusedPassword": "यह पासवर्ड हाल ही में उपयोग किया गया था। कृपया कोई अलग चुनें",
     "theme": "थीम",
-    "accentColour": "एक्सेंट रंग"
+    "accentColour": "एक्सेंट रंग",
+    "colorGold": "सुनहरा",
+    "colorSilver": "चाँदी",
+    "colorEmber": "अंगारा",
+    "colorJade": "जेड",
+    "colorAzure": "आसमानी"
   },
   "notificationBell": {
     "title": "सूचनाएँ",

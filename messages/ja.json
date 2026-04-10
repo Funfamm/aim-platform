@@ -564,7 +564,9 @@
     "photoOptional1": "追加写真（任意）",
     "photoOptional1Desc": "アクションポーズ、クローズアップ、またはクリエイティブな写真",
     "photoOptional2": "追加写真（任意）",
-    "photoOptional2Desc": "見せたい別のアングルやルック"
+    "photoOptional2Desc": "見せたい別のアングルやルック",
+    "removePhoto": "写真を削除",
+    "tapToReplace": "タップして差し替え"
   },
   "training": {
     "hub": "トレーニングハブ",
@@ -863,8 +865,18 @@
     "codeSentToEmail": "6桁の認証コードがメールに送信されました。",
     "verificationCode": "認証コード",
     "minCharsError": "パスワードは6文字以上にしてください",
+    "errCurrentRequired": "現在のパスワードを入力してください",
+    "errOauthNoPassword": "OAuthアカウントのパスワードは変更できません",
+    "errCurrentIncorrect": "現在のパスワードが正しくありません",
+    "errSamePassword": "新しいパスワードは現在のパスワードと同じにできません",
+    "errReusedPassword": "このパスワードは最近使用されました。別のものを選んでください",
     "theme": "テーマ",
-    "accentColour": "アクセントカラー"
+    "accentColour": "アクセントカラー",
+    "colorGold": "ゴールド",
+    "colorSilver": "シルバー",
+    "colorEmber": "エンバー",
+    "colorJade": "ジェイド",
+    "colorAzure": "アジュール"
   },
   "search": {
     "close": "閉じる",

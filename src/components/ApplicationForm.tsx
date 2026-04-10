@@ -128,6 +128,20 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         setFormData((prev) => ({ ...prev, [key]: value }))
     }
 
+    // Map file extension → MIME when the browser reports nothing (common for HEIC on iOS)
+    const inferMime = (file: File): string => {
+        if (file.type && file.type !== 'application/octet-stream') return file.type
+        const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+        const map: Record<string, string> = {
+            jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+            webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
+            mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav',
+            webm: 'audio/webm', ogg: 'audio/ogg', flac: 'audio/flac',
+            aac: 'audio/aac', mp4: 'audio/mp4',
+        }
+        return map[ext] || file.type || 'application/octet-stream'
+    }
+
     const handlePhotoChange = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
@@ -135,7 +149,8 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             setError(t('imageTooLarge'))
             return
         }
-        if (!file.type.startsWith('image/')) {
+        const mime = inferMime(file)
+        if (!mime.startsWith('image/')) {
             setError(t('invalidImage'))
             return
         }
@@ -181,13 +196,16 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         kind: 'image' | 'audio',
         name: string,
     ): Promise<string> => {
+        // Use inferred MIME for the presign request (fixes iOS HEIC empty-type issue)
+        const mime = inferMime(file)
+
         // 1. Get a short-lived presigned PUT URL from our server route
         const signRes = await fetch('/api/upload/presign', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 fileName: file.name,
-                fileType: file.type,
+                fileType: mime,
                 kind,
                 name,
             }),
@@ -201,7 +219,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         // 2. PUT the raw file directly to R2 — browser → R2, bypasses Vercel entirely
         const putRes = await fetch(presignedUrl, {
             method: 'PUT',
-            headers: { 'Content-Type': file.type },
+            headers: { 'Content-Type': mime },
             body: file,
         })
         if (!putRes.ok) {
@@ -431,44 +449,105 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                     </p>
 
                     <div className="photo-upload-grid" style={{ gap: 'var(--space-md)' }}>
-                        {PHOTO_SLOT_KEYS.map((slot) => (
-                            <div key={slot.key} style={{ marginBottom: 'var(--space-sm)' }}>
-                                <div
-                                    className={`file-upload-zone ${photos[slot.key] ? 'has-file' : ''}`}
-                                    onClick={() => fileInputRefs.current[slot.key]?.click()}
-                                    style={{ padding: 'var(--space-lg)', minHeight: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}
-                                >
-                                    {photos[slot.key] ? (
-                                        <>
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img
-                                                src={URL.createObjectURL(photos[slot.key]!)}
-                                                alt={t(slot.labelKey as Parameters<typeof t>[0])}
-                                                style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-sm)' }}
-                                            />
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--success)' }}>✓ {photos[slot.key]!.name}</div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)', color: slot.required ? 'var(--accent-gold)' : 'var(--text-tertiary)' }}>
-                                                📸
-                                            </div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '2px' }}>
-                                                {t(slot.labelKey as Parameters<typeof t>[0])} {slot.required && <span style={{ color: 'var(--accent-gold)' }}>*</span>}
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t(slot.descKey as Parameters<typeof t>[0])}</div>
-                                        </>
-                                    )}
+                        {PHOTO_SLOT_KEYS.map((slot) => {
+                            const file = photos[slot.key]
+                            const sizeMB = file ? file.size / (1024 * 1024) : 0
+                            const sizePercent = file ? Math.min((file.size / (10 * 1024 * 1024)) * 100, 100) : 0
+
+                            return (
+                                <div key={slot.key} style={{ marginBottom: 'var(--space-sm)' }}>
+                                    <div
+                                        className={`file-upload-zone ${file ? 'has-file' : ''}`}
+                                        onClick={() => fileInputRefs.current[slot.key]?.click()}
+                                        style={{ padding: 'var(--space-lg)', minHeight: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                                    >
+                                        {file ? (
+                                            <>
+                                                {/* Delete button */}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        setPhotos((prev) => ({ ...prev, [slot.key]: null }))
+                                                        // Reset the file input so the same file can be re-selected
+                                                        if (fileInputRefs.current[slot.key]) {
+                                                            fileInputRefs.current[slot.key]!.value = ''
+                                                        }
+                                                    }}
+                                                    aria-label={t('removePhoto')}
+                                                    style={{
+                                                        position: 'absolute', top: '8px', right: '8px', zIndex: 2,
+                                                        width: '28px', height: '28px', borderRadius: '50%',
+                                                        background: 'rgba(239,68,68,0.85)', color: '#fff',
+                                                        border: 'none', cursor: 'pointer',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.85rem', fontWeight: 700,
+                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                                        transition: 'transform 0.15s ease, background 0.15s ease',
+                                                    }}
+                                                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.15)'; e.currentTarget.style.background = 'rgba(239,68,68,1)' }}
+                                                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(239,68,68,0.85)' }}
+                                                >
+                                                    ✕
+                                                </button>
+
+                                                {/* Preview image */}
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={URL.createObjectURL(file)}
+                                                    alt={t(slot.labelKey as Parameters<typeof t>[0])}
+                                                    style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-xs)' }}
+                                                />
+
+                                                {/* File info */}
+                                                <div style={{ width: '100%', marginTop: '4px' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                        <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>
+                                                            ✓ {file.name}
+                                                        </span>
+                                                        <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                                                            {sizeMB.toFixed(1)} MB
+                                                        </span>
+                                                    </div>
+                                                    {/* Size progress bar */}
+                                                    <div style={{ height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
+                                                        <div style={{
+                                                            height: '100%',
+                                                            width: `${sizePercent}%`,
+                                                            background: sizePercent > 80
+                                                                ? 'linear-gradient(90deg, var(--accent-gold), #f59e0b)'
+                                                                : 'linear-gradient(90deg, var(--color-success), #34d399)',
+                                                            borderRadius: '3px',
+                                                            transition: 'width 0.3s ease',
+                                                        }} />
+                                                    </div>
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '3px', textAlign: 'center' }}>
+                                                        {t('tapToReplace')}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)', color: slot.required ? 'var(--accent-gold)' : 'var(--text-tertiary)' }}>
+                                                    📸
+                                                </div>
+                                                <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '2px' }}>
+                                                    {t(slot.labelKey as Parameters<typeof t>[0])} {slot.required && <span style={{ color: 'var(--accent-gold)' }}>*</span>}
+                                                </div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t(slot.descKey as Parameters<typeof t>[0])}</div>
+                                            </>
+                                        )}
+                                    </div>
+                                    <input
+                                        ref={(el) => { fileInputRefs.current[slot.key] = el }}
+                                        type="file"
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        onChange={(e) => handlePhotoChange(slot.key, e)}
+                                    />
                                 </div>
-                                <input
-                                    ref={(el) => { fileInputRefs.current[slot.key] = el }}
-                                    type="file"
-                                    accept="image/*"
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => handlePhotoChange(slot.key, e)}
-                                />
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
 
                     <div style={{ textAlign: 'center', marginTop: 'var(--space-md)', fontSize: '0.85rem', color: requiredPhotosCount >= 4 ? 'var(--success)' : 'var(--text-tertiary)' }}>

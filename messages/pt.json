@@ -580,7 +580,9 @@
     "photoOptional1": "Foto Adicional (Opcional)",
     "photoOptional1Desc": "Pose de ação, close-up ou foto criativa",
     "photoOptional2": "Foto Adicional (Opcional)",
-    "photoOptional2Desc": "Outro ângulo ou look que você queira mostrar"
+    "photoOptional2Desc": "Outro ângulo ou look que você queira mostrar",
+    "removePhoto": "Remover foto",
+    "tapToReplace": "Toque para substituir"
   },
   "training": {
     "hub": "Centro de Formação",
@@ -872,15 +874,25 @@
       "loading": "Pesquisando…",
       "suggestionTitle": "Sugestões"
     },
-    "oauthNoPassword": "Voce entrou com {provider}. Sua conta ainda nao tem uma senha. Crie uma abaixo para tambem fazer login com e-mail e senha.",
+    "oauthNoPassword": "Você entrou com {provider}. Sua conta ainda não tem uma senha. Crie uma abaixo para também fazer login com e-mail e senha.",
     "createPasswordBtn": "Criar senha",
     "setPasswordBtn": "Definir senha",
-    "passwordSetSuccess": "Senha criada com sucesso! Agora voce pode fazer login com e-mail e senha.",
-    "codeSentToEmail": "Um codigo de verificacao de 6 digitos foi enviado para seu e-mail.",
-    "verificationCode": "Codigo de verificacao",
+    "passwordSetSuccess": "Senha criada com sucesso! Agora você pode fazer login com e-mail e senha.",
+    "codeSentToEmail": "Um código de verificação de 6 dígitos foi enviado para seu e-mail.",
+    "verificationCode": "Código de verificação",
     "minCharsError": "A senha deve ter pelo menos 6 caracteres",
+    "errCurrentRequired": "Por favor, insira sua senha atual",
+    "errOauthNoPassword": "Não é possível alterar a senha de contas OAuth",
+    "errCurrentIncorrect": "A senha atual está incorreta",
+    "errSamePassword": "A nova senha não pode ser igual à atual",
+    "errReusedPassword": "Esta senha foi usada recentemente. Por favor, escolha outra",
     "theme": "Tema",
-    "accentColour": "Cor de destaque"
+    "accentColour": "Cor de destaque",
+    "colorGold": "Dourado",
+    "colorSilver": "Prata",
+    "colorEmber": "Brasa",
+    "colorJade": "Jade",
+    "colorAzure": "Azul celeste"
   },
   "notificationBell": {
     "title": "Notificações",

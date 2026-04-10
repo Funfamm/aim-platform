@@ -49,7 +49,7 @@ const ACCENT_KEY = 'aim-accent'
 const ACCENTS = [
     {
         key: 'gold',
-        label: 'Gold',
+        i18nKey: 'colorGold',
         base: '#e4b95a',
         light: '#f5dfa0',
         dark: '#b8922e',
@@ -59,7 +59,7 @@ const ACCENTS = [
     },
     {
         key: 'silver',
-        label: 'Silver',
+        i18nKey: 'colorSilver',
         base: '#c8c8d4',
         light: '#e8e8f0',
         dark: '#8888a0',
@@ -69,7 +69,7 @@ const ACCENTS = [
     },
     {
         key: 'ember',
-        label: 'Ember',
+        i18nKey: 'colorEmber',
         base: '#f06b47',
         light: '#f9a88e',
         dark: '#b84820',
@@ -79,7 +79,7 @@ const ACCENTS = [
     },
     {
         key: 'jade',
-        label: 'Jade',
+        i18nKey: 'colorJade',
         base: '#34d399',
         light: '#6ee7b7',
         dark: '#059669',
@@ -89,7 +89,7 @@ const ACCENTS = [
     },
     {
         key: 'azure',
-        label: 'Azure',
+        i18nKey: 'colorAzure',
         base: '#60a5fa',
         light: '#93c5fd',
         dark: '#2563eb',
@@ -240,6 +240,16 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
         await refreshUser()
     }
 
+    // Map API error codes to i18n keys
+    const errorCodeToI18n: Record<string, string> = {
+        ERR_CURRENT_REQUIRED: 'errCurrentRequired',
+        ERR_PW_TOO_SHORT: 'minCharsError',
+        ERR_OAUTH_NO_PASSWORD: 'errOauthNoPassword',
+        ERR_CURRENT_INCORRECT: 'errCurrentIncorrect',
+        ERR_SAME_PASSWORD: 'errSamePassword',
+        ERR_REUSED_PASSWORD: 'errReusedPassword',
+    }
+
     const handleProfileUpdate = async (e: FormEvent) => {
         e.preventDefault()
         setProfileError('')
@@ -260,7 +270,11 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
                 setProfileStatus('saved'); setCurrentPassword(''); setNewPassword(''); setConfirmNewPassword('')
                 await refreshUser()
                 setTimeout(() => setProfileStatus('idle'), 3000)
-            } else { setProfileError(data.error || t('updateFailed')); setProfileStatus('error') }
+            } else {
+                const i18nKey = errorCodeToI18n[data.error]
+                setProfileError(i18nKey ? t(i18nKey) : (data.error || t('updateFailed')))
+                setProfileStatus('error')
+            }
         } catch { setProfileError(t('networkError')); setProfileStatus('error') }
     }
 
@@ -584,8 +598,8 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
                                     className="accent-swatch"
                                     role="radio"
                                     aria-checked={accentKey === a.key}
-                                    aria-label={`${a.label} accent`}
-                                    title={a.label}
+                                    aria-label={`${t(a.i18nKey)} accent`}
+                                    title={t(a.i18nKey)}
                                     onClick={() => handleAccent(a.key)}
                                     style={{
                                         width: '26px', height: '26px', borderRadius: '50%',
@@ -607,7 +621,7 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
 
                             ))}
                             <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginLeft: '4px' }}>
-                                {ACCENTS.find(a => a.key === accentKey)?.label}
+                                {t(ACCENTS.find(a => a.key === accentKey)?.i18nKey ?? 'colorGold')}
                             </span>
                         </div>
                     </div>

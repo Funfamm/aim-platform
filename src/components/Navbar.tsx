@@ -57,6 +57,15 @@ export default function Navbar() {
         }
     }, [userMenuOpen])
 
+    // Close language menu when clicking outside
+    useEffect(() => {
+        const handleClick = () => setLangMenuOpen(false)
+        if (langMenuOpen) {
+            document.addEventListener('click', handleClick)
+            return () => document.removeEventListener('click', handleClick)
+        }
+    }, [langMenuOpen])
+
     const links = [
         { href: '/', label: t('home') },
         { href: '/works', label: t('works') },

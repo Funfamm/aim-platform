@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/mailer'
 import { contactAcknowledgmentWithOverrides, contactAdminNotification } from '@/lib/email-templates'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { getSessionAndRefresh } from '@/lib/auth'
+import { t as emailT } from '@/lib/email-i18n'
 
 export async function POST(request: Request) {
     try {
@@ -17,12 +18,21 @@ export async function POST(request: Request) {
             data: { name, email, subject, message },
         })
 
+        const lang = locale || 'en'
+
+        // Localized email subject from i18n map (falls back to English)
+        const localizedSubject = (emailT('contactAcknowledgment', lang, 'subject') || 'We received your message: {subject}').replace('{subject}', subject)
+
         // Fire-and-forget: auto-reply to sender + mirror to notification board if logged in
         sendEmail({
             to: email,
-            subject: `Message received: ${subject}`,
-            html: await contactAcknowledgmentWithOverrides(name, subject, undefined, locale || 'en'),
+            subject: localizedSubject,
+            html: await contactAcknowledgmentWithOverrides(name, subject, undefined, lang),
         })
+
+        // Localized notification board strings
+        const notifTitle = emailT('contactAcknowledgment', lang, 'heading') || 'Message Received ✓'
+        const notifBody = (emailT('contactAcknowledgment', lang, 'bodyIntro') || 'Your message regarding "{subject}" has been received. Our team will review it and get back to you as soon as possible.').replace(/{subject}/g, subject)
 
         // Mirror to notification board — only if the sender has a registered account
         void (async () => {
@@ -32,8 +42,8 @@ export async function POST(request: Request) {
                     await mirrorToNotificationBoard(
                         session.userId,
                         'system',
-                        `Message Received ✓`,
-                        `Your message about "${subject}" has been received. We typically respond within 1-3 business days.`,
+                        notifTitle,
+                        notifBody,
                         '/contact',
                         `contact-${session.userId}-${Date.now()}`,
                     )

@@ -580,7 +580,9 @@
     "photoOptional1": "附加照片（可选）",
     "photoOptional1Desc": "动作姿势、特写或创意照片",
     "photoOptional2": "附加照片（可选）",
-    "photoOptional2Desc": "您想展示的另一个角度或造型"
+    "photoOptional2Desc": "您想展示的另一个角度或造型",
+    "removePhoto": "删除照片",
+    "tapToReplace": "点击替换"
   },
   "training": {
     "hub": "培训中心",
@@ -879,8 +881,18 @@
     "codeSentToEmail": "6位验证码已发送至您的邮箱。",
     "verificationCode": "验证码",
     "minCharsError": "密码至少需要6个字符",
+    "errCurrentRequired": "请输入当前密码",
+    "errOauthNoPassword": "OAuth 账户无法更改密码",
+    "errCurrentIncorrect": "当前密码不正确",
+    "errSamePassword": "新密码不能与当前密码相同",
+    "errReusedPassword": "此密码最近已使用过，请选择其他密码",
     "theme": "主题",
-    "accentColour": "强调色"
+    "accentColour": "强调色",
+    "colorGold": "金色",
+    "colorSilver": "银色",
+    "colorEmber": "琥珀",
+    "colorJade": "翡翠",
+    "colorAzure": "天蓝"
   },
   "notificationBell": {
     "title": "通知",

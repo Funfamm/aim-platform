@@ -580,7 +580,9 @@
     "photoOptional1": "Дополнительное фото (необязательно)",
     "photoOptional1Desc": "Активная поза, крупный план или творческое фото",
     "photoOptional2": "Дополнительное фото (необязательно)",
-    "photoOptional2Desc": "Другой ракурс или образ"
+    "photoOptional2Desc": "Другой ракурс или образ",
+    "removePhoto": "Удалить фото",
+    "tapToReplace": "Нажмите для замены"
   },
   "training": {
     "hub": "Обучение",
@@ -872,15 +874,25 @@
       "loading": "Идёт поиск…",
       "suggestionTitle": "Подсказки"
     },
-    "oauthNoPassword": "Vy voshli cherez {provider}. U vashego akkaunta poka net parolya. Sozdajte ego nizhe, chtoby takzhe vhodit po e-mail i parolyu.",
-    "createPasswordBtn": "Sozdat parol",
-    "setPasswordBtn": "Ustanovit parol",
-    "passwordSetSuccess": "Parol uspeshno sozdan! Teper vy mozhete vhodit s pomoshchyu e-mail i parolya.",
-    "codeSentToEmail": "Na vashu pochtu otpravlen 6-znachnyj kod podtverzhdeniya.",
-    "verificationCode": "Kod podtverzhdeniya",
-    "minCharsError": "Parol dolzhen soderzhat ne menee 6 simvolov",
+    "oauthNoPassword": "Вы вошли через {provider}. У вашего аккаунта пока нет пароля. Создайте его ниже, чтобы также входить по электронной почте и паролю.",
+    "createPasswordBtn": "Создать пароль",
+    "setPasswordBtn": "Установить пароль",
+    "passwordSetSuccess": "Пароль успешно создан! Теперь вы можете входить с помощью электронной почты и пароля.",
+    "codeSentToEmail": "На вашу почту отправлен 6-значный код подтверждения.",
+    "verificationCode": "Код подтверждения",
+    "minCharsError": "Пароль должен содержать не менее 6 символов",
+    "errCurrentRequired": "Пожалуйста, введите текущий пароль",
+    "errOauthNoPassword": "Невозможно изменить пароль для учётных записей OAuth",
+    "errCurrentIncorrect": "Текущий пароль неверен",
+    "errSamePassword": "Новый пароль не может совпадать с текущим",
+    "errReusedPassword": "Этот пароль недавно использовался. Пожалуйста, выберите другой",
     "theme": "Тема",
-    "accentColour": "Цвет акцента"
+    "accentColour": "Цвет акцента",
+    "colorGold": "Золото",
+    "colorSilver": "Серебро",
+    "colorEmber": "Уголёк",
+    "colorJade": "Нефрит",
+    "colorAzure": "Лазурь"
   },
   "notificationBell": {
     "title": "Уведомления",

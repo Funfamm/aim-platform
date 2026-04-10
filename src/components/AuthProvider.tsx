@@ -24,6 +24,32 @@ interface AuthContextType {
     refreshUser: () => Promise<void>
 }
 
+// ── Accent colour definitions (must match ProfileTab.tsx & layout.tsx) ──
+const ACCENT_COLORS: Record<string, { base: string; light: string; dark: string; glow: string; glowStrong: string; lift: string }> = {
+    gold:   { base: '#e4b95a', light: '#f5dfa0', dark: '#b8922e', glow: 'rgba(228,185,90,0.15)', glowStrong: 'rgba(228,185,90,0.25)', lift: '0 8px 30px rgba(228,185,90,0.25),0 2px 8px rgba(228,185,90,0.15)' },
+    silver: { base: '#c8c8d4', light: '#e8e8f0', dark: '#8888a0', glow: 'rgba(200,200,212,0.15)', glowStrong: 'rgba(200,200,212,0.25)', lift: '0 8px 30px rgba(200,200,212,0.25),0 2px 8px rgba(200,200,212,0.15)' },
+    ember:  { base: '#f06b47', light: '#f9a88e', dark: '#b84820', glow: 'rgba(240,107,71,0.15)', glowStrong: 'rgba(240,107,71,0.25)', lift: '0 8px 30px rgba(240,107,71,0.25),0 2px 8px rgba(240,107,71,0.15)' },
+    jade:   { base: '#34d399', light: '#6ee7b7', dark: '#059669', glow: 'rgba(52,211,153,0.15)', glowStrong: 'rgba(52,211,153,0.25)', lift: '0 8px 30px rgba(52,211,153,0.25),0 2px 8px rgba(52,211,153,0.15)' },
+    azure:  { base: '#60a5fa', light: '#93c5fd', dark: '#2563eb', glow: 'rgba(96,165,250,0.15)', glowStrong: 'rgba(96,165,250,0.25)', lift: '0 8px 30px rgba(96,165,250,0.25),0 2px 8px rgba(96,165,250,0.15)' },
+}
+
+/** Apply accent colour CSS variables to the document root */
+function applyAccentVars(key: string) {
+    const a = ACCENT_COLORS[key] ?? ACCENT_COLORS.gold
+    const r = document.documentElement.style
+    r.setProperty('--accent-gold', a.base)
+    r.setProperty('--accent-gold-light', a.light)
+    r.setProperty('--accent-gold-dark', a.dark)
+    r.setProperty('--accent-gold-glow', a.glow)
+    r.setProperty('--accent-cream', a.dark)
+    r.setProperty('--text-accent', a.base)
+    r.setProperty('--border-accent', `${a.base}55`)
+    r.setProperty('--border-glow', `${a.base}80`)
+    r.setProperty('--shadow-glow', `0 0 40px ${a.glow}`)
+    r.setProperty('--shadow-glow-strong', `0 0 80px ${a.glowStrong}`)
+    r.setProperty('--shadow-gold-lift', a.lift)
+}
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -37,10 +63,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const data = await res.json()
                 setUser(data.user)
 
-                // Apply saved preferences immediately on login
-                if (data.user?.accentColor) {
+                // Apply saved accent colour immediately on login / refresh
+                if (data.user?.accentColor && ACCENT_COLORS[data.user.accentColor]) {
                     localStorage.setItem('aim-accent', data.user.accentColor)
+                    applyAccentVars(data.user.accentColor)
                 }
+
+                // Apply saved theme immediately on login / refresh
                 if (data.user?.themeMode) {
                     localStorage.setItem('aim-theme', data.user.themeMode)
                     if (data.user.themeMode === 'light') {
@@ -73,6 +102,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const data = await res.json()
             if (res.ok) {
                 setUser(data.user)
+
+                // Apply accent from login response immediately
+                if (data.user?.accentColor && ACCENT_COLORS[data.user.accentColor]) {
+                    localStorage.setItem('aim-accent', data.user.accentColor)
+                    applyAccentVars(data.user.accentColor)
+                }
+
                 return { success: true, redirectTo: data.redirectTo }
             }
             return { success: false, error: data.error || 'Login failed' }
@@ -102,6 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = async () => {
         await fetch('/api/auth/logout', { method: 'POST' })
         setUser(null)
+
+        // Reset accent colour to default gold & clear localStorage
+        localStorage.removeItem('aim-accent')
+        applyAccentVars('gold')
+
+        // Reset theme to dark & clear localStorage
+        localStorage.removeItem('aim-theme')
+        document.documentElement.removeAttribute('data-theme')
     }
 
     return (

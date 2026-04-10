@@ -580,7 +580,9 @@
     "photoOptional1": "Photo Supplémentaire (Optionnel)",
     "photoOptional1Desc": "Pose d'action, gros plan ou photo créative",
     "photoOptional2": "Photo Supplémentaire (Optionnel)",
-    "photoOptional2Desc": "Un autre angle ou look que vous souhaitez montrer"
+    "photoOptional2Desc": "Un autre angle ou look que vous souhaitez montrer",
+    "removePhoto": "Supprimer la photo",
+    "tapToReplace": "Appuyez pour remplacer"
   },
   "training": {
     "hub": "Centre de Formation",
@@ -872,15 +874,25 @@
       "loading": "Recherche en cours…",
       "suggestionTitle": "Suggestions"
     },
-    "oauthNoPassword": "Vous vous etes connecte avec {provider}. Votre compte n'a pas encore de mot de passe. Vous pouvez en creer un ci-dessous pour vous connecter aussi avec e-mail et mot de passe.",
-    "createPasswordBtn": "Creer un mot de passe",
-    "setPasswordBtn": "Definir le mot de passe",
-    "passwordSetSuccess": "Mot de passe cree avec succes ! Vous pouvez maintenant vous connecter avec votre e-mail et mot de passe.",
-    "codeSentToEmail": "Un code de verification a 6 chiffres a ete envoye a votre e-mail.",
-    "verificationCode": "Code de verification",
-    "minCharsError": "Le mot de passe doit contenir au moins 6 caracteres",
+    "oauthNoPassword": "Vous vous êtes connecté avec {provider}. Votre compte n'a pas encore de mot de passe. Vous pouvez en créer un ci-dessous pour vous connecter aussi avec e-mail et mot de passe.",
+    "createPasswordBtn": "Créer un mot de passe",
+    "setPasswordBtn": "Définir le mot de passe",
+    "passwordSetSuccess": "Mot de passe créé avec succès ! Vous pouvez maintenant vous connecter avec votre e-mail et mot de passe.",
+    "codeSentToEmail": "Un code de vérification à 6 chiffres a été envoyé à votre e-mail.",
+    "verificationCode": "Code de vérification",
+    "minCharsError": "Le mot de passe doit contenir au moins 6 caractères",
+    "errCurrentRequired": "Veuillez saisir votre mot de passe actuel",
+    "errOauthNoPassword": "Impossible de changer le mot de passe pour les comptes OAuth",
+    "errCurrentIncorrect": "Le mot de passe actuel est incorrect",
+    "errSamePassword": "Le nouveau mot de passe ne peut pas être identique à l'actuel",
+    "errReusedPassword": "Ce mot de passe a été utilisé récemment. Veuillez en choisir un autre",
     "theme": "Thème",
-    "accentColour": "Couleur d'accentuation"
+    "accentColour": "Couleur d'accentuation",
+    "colorGold": "Or",
+    "colorSilver": "Argent",
+    "colorEmber": "Braise",
+    "colorJade": "Jade",
+    "colorAzure": "Azur"
   },
   "notificationBell": {
     "title": "Notifications",

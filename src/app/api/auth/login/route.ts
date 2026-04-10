@@ -29,13 +29,13 @@ export async function POST(request: Request) {
                 id: true, name: true, email: true, role: true,
                 passwordHash: true, avatar: true, bannerUrl: true,
                 emailVerified: true, tokenVersion: true, mfaEnabled: true,
-                preferredLanguage: true,
+                preferredLanguage: true, accentColor: true, themeMode: true,
             },
         }), 'login_find_user') as {
             id: string; name: string; email: string; role: string;
             passwordHash: string | null; avatar: string | null; bannerUrl: string | null;
             emailVerified: boolean; tokenVersion: number; mfaEnabled: boolean;
-            preferredLanguage: string | null;
+            preferredLanguage: string | null; accentColor: string | null; themeMode: string | null;
         } | null
         if (!user || !user.passwordHash) {
             recordAuthFailure('invalid_credentials')
@@ -121,6 +121,7 @@ export async function POST(request: Request) {
             user: {
                 id: user.id, name: user.name, email: user.email,
                 avatar: user.avatar, bannerUrl: user.bannerUrl, role: user.role,
+                accentColor: user.accentColor, themeMode: user.themeMode,
             },
             redirectTo,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -73,12 +73,27 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing fileName, fileType or kind' }, { status: 400 })
         }
 
-        // ── Content-type allowlist ──────────────────────────────────────────
-        if (kind === 'image' && !ALLOWED_IMAGE_TYPES.includes(fileType)) {
-            return NextResponse.json({ error: `Unsupported image type: ${fileType}` }, { status: 400 })
+        // ── Infer MIME from extension when browser sends empty/generic type ──
+        // iOS Safari commonly sends '' or 'application/octet-stream' for HEIC
+        let resolvedType = fileType
+        if (!resolvedType || resolvedType === 'application/octet-stream') {
+            const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
+            const mimeMap: Record<string, string> = {
+                jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+                webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
+                mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav',
+                webm: 'audio/webm', ogg: 'audio/ogg', flac: 'audio/flac',
+                aac: 'audio/aac', mp4: 'audio/mp4',
+            }
+            resolvedType = mimeMap[ext] || fileType
         }
-        if (kind === 'audio' && !ALLOWED_AUDIO_TYPES.includes(fileType)) {
-            return NextResponse.json({ error: `Unsupported audio type: ${fileType}` }, { status: 400 })
+
+        // ── Content-type allowlist ──────────────────────────────────────────
+        if (kind === 'image' && !ALLOWED_IMAGE_TYPES.includes(resolvedType)) {
+            return NextResponse.json({ error: `Unsupported image type: ${resolvedType}` }, { status: 400 })
+        }
+        if (kind === 'audio' && !ALLOWED_AUDIO_TYPES.includes(resolvedType)) {
+            return NextResponse.json({ error: `Unsupported audio type: ${resolvedType}` }, { status: 400 })
         }
 
         // ── Build folder path ────────────────────────────────────────────────
@@ -93,7 +108,7 @@ export async function POST(req: NextRequest) {
         const command = new PutObjectCommand({
             Bucket: BUCKET,
             Key: r2Key,
-            ContentType: fileType,
+            ContentType: resolvedType,
         })
 
         const presignedUrl = await getSignedUrl(s3, command, { expiresIn: 600 })

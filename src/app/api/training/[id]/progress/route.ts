@@ -10,8 +10,44 @@ import {
 import { t as et } from '@/lib/email-i18n'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 
-// POST — enroll in course
-// PUT  — mark lesson complete
+// POST  — enroll in course
+// PUT   — mark lesson complete
+// PATCH — save partial progress (timeSpent heartbeat)
+
+// ── PATCH: save partial reading progress (timeSpent) without completing ──
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+    const session = await getUserSession()
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id: courseId } = await params
+    const userId = session.userId
+    const { lessonId, timeSpent } = await req.json()
+
+    if (!lessonId || typeof timeSpent !== 'number') {
+        return NextResponse.json({ error: 'lessonId and timeSpent required' }, { status: 400 })
+    }
+
+    // Verify the lesson belongs to this course
+    const lesson = await prisma.lesson.findUnique({
+        where: { id: lessonId },
+        select: { module: { select: { courseId: true } } },
+    })
+    if (!lesson || lesson.module.courseId !== courseId) {
+        return NextResponse.json({ error: 'Lesson not found in course' }, { status: 404 })
+    }
+
+    try {
+        await prisma.lessonProgress.upsert({
+            where: { userId_lessonId: { userId, lessonId } },
+            create: { userId, lessonId, timeSpent, completed: false },
+            update: { timeSpent },
+        })
+        return NextResponse.json({ ok: true })
+    } catch (err) {
+        return NextResponse.json({ error: 'Failed to save progress', details: String(err) }, { status: 500 })
+    }
+}
+
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await getUserSession()
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

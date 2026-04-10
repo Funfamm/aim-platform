@@ -23,6 +23,7 @@ interface ApplicationData {
     status: string
     statusNote: string | null
     createdAt: string
+    castingCallId: string
     castingCall: {
         roleName: string
         roleType: string
@@ -327,26 +328,32 @@ export default function DashboardPage() {
                                         const statusInfo = STATUS_CONFIG[app.status] || STATUS_CONFIG['submitted']
                                         return (
                                             <ScrollReveal3D key={app.id} direction="up" delay={250 + i * 60} distance={15}>
-                                                <div className="dash-app-card">
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '4px', flexWrap: 'wrap' }}>
-                                                            <Link href={`/works/${app.castingCall.project.slug}`} style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', textDecoration: 'none' }}>
-                                                                {app.castingCall.project.title}
-                                                            </Link>
-                                                            <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)', fontWeight: 600, textTransform: 'uppercase' as const }}>{app.castingCall.roleType}</span>
-                                                        </div>
-                                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{t('role')}: <strong>{app.castingCall.roleName}</strong></div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('applied')} {new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                                                        {app.statusNote && (
-                                                            <div style={{ marginTop: '8px', padding: '8px 12px', background: 'rgba(228,185,90,0.06)', borderLeft: '2px solid var(--accent-gold)', borderRadius: '0 var(--radius-sm) var(--radius-sm) 0', fontSize: '0.8rem', color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.4 }}>
-                                                                {app.statusNote}
+                                                <Link
+                                                    href={`/casting/${app.castingCallId}/apply`}
+                                                    style={{ textDecoration: 'none', display: 'block' }}
+                                                >
+                                                    <div className="dash-app-card">
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '4px', flexWrap: 'wrap' }}>
+                                                                <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                                    {app.castingCall.project.title}
+                                                                </span>
+                                                                <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)', fontWeight: 600, textTransform: 'uppercase' as const }}>{app.castingCall.roleType}</span>
                                                             </div>
-                                                        )}
+                                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{t('role')}: <strong>{app.castingCall.roleName}</strong></div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('applied')} {new Date(app.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
+                                                            <div style={{ padding: '0.35rem 0.9rem', background: statusInfo.bg, border: `1px solid ${statusInfo.color}30`, borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 600, color: statusInfo.color, whiteSpace: 'nowrap' }}>
+                                                                {statusInfo.label}
+                                                            </div>
+                                                            <span style={{ fontSize: '0.7rem', color: 'var(--accent-gold)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                {t('viewDetails')}
+                                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                    <div style={{ padding: '0.35rem 0.9rem', background: statusInfo.bg, border: `1px solid ${statusInfo.color}30`, borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 600, color: statusInfo.color, whiteSpace: 'nowrap', flexShrink: 0 }}>
-                                                        {statusInfo.label}
-                                                    </div>
-                                                </div>
+                                                </Link>
                                             </ScrollReveal3D>
                                         )
                                     })}

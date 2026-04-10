@@ -580,7 +580,9 @@
     "photoOptional1": "Zusätzliche Aufnahme (Optional)",
     "photoOptional1Desc": "Aktionspose, Nahaufnahme oder kreatives Foto",
     "photoOptional2": "Zusätzliche Aufnahme (Optional)",
-    "photoOptional2Desc": "Ein anderer Winkel oder Look"
+    "photoOptional2Desc": "Ein anderer Winkel oder Look",
+    "removePhoto": "Foto entfernen",
+    "tapToReplace": "Zum Ersetzen tippen"
   },
   "training": {
     "hub": "Ausbildungszentrum",
@@ -872,15 +874,25 @@
       "loading": "Suche läuft…",
       "suggestionTitle": "Vorschläge"
     },
-    "oauthNoPassword": "Sie haben sich mit {provider} angemeldet. Ihr Konto hat noch kein Passwort. Sie koennen unten eines erstellen, um sich auch mit E-Mail und Passwort anzumelden.",
+    "oauthNoPassword": "Sie haben sich mit {provider} angemeldet. Ihr Konto hat noch kein Passwort. Sie können unten eines erstellen, um sich auch mit E-Mail und Passwort anzumelden.",
     "createPasswordBtn": "Passwort erstellen",
     "setPasswordBtn": "Passwort festlegen",
-    "passwordSetSuccess": "Passwort erfolgreich erstellt! Sie koennen sich jetzt mit E-Mail und Passwort anmelden.",
+    "passwordSetSuccess": "Passwort erfolgreich erstellt! Sie können sich jetzt mit E-Mail und Passwort anmelden.",
     "codeSentToEmail": "Ein 6-stelliger Verifizierungscode wurde an Ihre E-Mail gesendet.",
     "verificationCode": "Verifizierungscode",
     "minCharsError": "Passwort muss mindestens 6 Zeichen lang sein",
+    "errCurrentRequired": "Bitte geben Sie Ihr aktuelles Passwort ein",
+    "errOauthNoPassword": "Passwort für OAuth-Konten kann nicht geändert werden",
+    "errCurrentIncorrect": "Das aktuelle Passwort ist falsch",
+    "errSamePassword": "Das neue Passwort darf nicht mit dem aktuellen übereinstimmen",
+    "errReusedPassword": "Dieses Passwort wurde kürzlich verwendet. Bitte wählen Sie ein anderes",
     "theme": "Design",
-    "accentColour": "Akzentfarbe"
+    "accentColour": "Akzentfarbe",
+    "colorGold": "Gold",
+    "colorSilver": "Silber",
+    "colorEmber": "Glut",
+    "colorJade": "Jade",
+    "colorAzure": "Azur"
   },
   "notificationBell": {
     "title": "Benachrichtigungen",

@@ -580,7 +580,9 @@
     "photoOptional1": "Foto Adicional (Opcional)",
     "photoOptional1Desc": "Pose de acción, primer plano o foto creativa",
     "photoOptional2": "Foto Adicional (Opcional)",
-    "photoOptional2Desc": "Otro ángulo o look que quieras mostrar"
+    "photoOptional2Desc": "Otro ángulo o look que quieras mostrar",
+    "removePhoto": "Eliminar foto",
+    "tapToReplace": "Toca para reemplazar"
   },
   "training": {
     "hub": "Centro de Formación",
@@ -872,15 +874,25 @@
       "loading": "Buscando…",
       "suggestionTitle": "Sugerencias"
     },
-    "oauthNoPassword": "Iniciaste sesion con {provider}. Tu cuenta aun no tiene contrasena. Puedes crear una a continuacion para tambien iniciar sesion con correo y contrasena.",
-    "createPasswordBtn": "Crear contrasena",
-    "setPasswordBtn": "Establecer contrasena",
-    "passwordSetSuccess": "Contrasena creada exitosamente! Ahora puedes iniciar sesion con tu correo y contrasena.",
-    "codeSentToEmail": "Se ha enviado un codigo de verificacion de 6 digitos a tu correo.",
-    "verificationCode": "Codigo de verificacion",
-    "minCharsError": "La contrasena debe tener al menos 6 caracteres",
+    "oauthNoPassword": "Iniciaste sesión con {provider}. Tu cuenta aún no tiene contraseña. Puedes crear una a continuación para también iniciar sesión con correo y contraseña.",
+    "createPasswordBtn": "Crear contraseña",
+    "setPasswordBtn": "Establecer contraseña",
+    "passwordSetSuccess": "¡Contraseña creada exitosamente! Ahora puedes iniciar sesión con tu correo y contraseña.",
+    "codeSentToEmail": "Se ha enviado un código de verificación de 6 dígitos a tu correo.",
+    "verificationCode": "Código de verificación",
+    "minCharsError": "La contraseña debe tener al menos 6 caracteres",
+    "errCurrentRequired": "Por favor, ingrese su contraseña actual",
+    "errOauthNoPassword": "No se puede cambiar la contraseña de cuentas OAuth",
+    "errCurrentIncorrect": "La contraseña actual es incorrecta",
+    "errSamePassword": "La nueva contraseña no puede ser igual a la actual",
+    "errReusedPassword": "Esta contraseña fue usada recientemente. Por favor, elija otra",
     "theme": "Tema",
-    "accentColour": "Color de acento"
+    "accentColour": "Color de acento",
+    "colorGold": "Dorado",
+    "colorSilver": "Plata",
+    "colorEmber": "Brasa",
+    "colorJade": "Jade",
+    "colorAzure": "Azul celeste"
   },
   "notificationBell": {
     "title": "Notificaciones",

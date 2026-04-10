@@ -52,18 +52,16 @@ export default async function ApplyPage({
     })
     if (!castingCall || castingCall.status !== 'open') notFound()
 
-    // Check for existing application by this user
-    const existingApplication = isAdmin
-        ? null
-        : await prisma.application.findFirst({
-            where: { castingCallId: id, userId: session.userId },
-            select: {
-                id: true, fullName: true, email: true, phone: true,
-                age: true, gender: true, location: true, specialSkills: true,
-                status: true, statusNote: true, resultVisibleAt: true,
-                createdAt: true, castingCallId: true,
-            },
-        })
+    // Check for existing application by this user (admins included — they should see their own status)
+    const existingApplication = await prisma.application.findFirst({
+        where: { castingCallId: id, userId: session.userId },
+        select: {
+            id: true, fullName: true, email: true, phone: true,
+            age: true, gender: true, location: true, specialSkills: true,
+            status: true, statusNote: true, resultVisibleAt: true,
+            createdAt: true, castingCallId: true,
+        },
+    })
 
     // If they already applied and are NOT coming back via ?reapply=1 after a withdrawal, show status page
     if (existingApplication && existingApplication.status !== 'withdrawn') {

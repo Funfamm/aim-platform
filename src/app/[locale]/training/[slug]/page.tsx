@@ -15,7 +15,7 @@ type Course = {
     category: string; level: string; modules: Module[]; translations: string | null
     _count: { enrollments: number }
 }
-type ProgressEntry = { lessonId: string; completed: boolean }
+type ProgressEntry = { lessonId: string; completed: boolean; timeSpent?: number }
 type Badge = { badgeType: string; earnedAt: string }
 type QuizQuestion = { id: string; questionText: string; questionType: string; options: { id: string; text: string }[]; translations: string | null }
 type QuizData = { id: string; title: string; passMark: number; maxAttempts: number; questionCount: number; translations: string | null; questions: QuizQuestion[] }
@@ -439,31 +439,71 @@ export default function CourseDetailPage() {
     }, [activeLesson])
 
     // Start reading timer for non-video lessons when selected
+    // Persists elapsed time to localStorage + backend so it resumes on return
     useEffect(() => {
         if (!activeLesson || !enrolled || isCompleted(activeLesson.id)) return
         if (activeLesson.contentType === 'video') return // videos use onEnded
 
+        const lessonId = activeLesson.id
+        const storageKey = `aim-reading-${lessonId}`
+
         // For reading/document/link lessons: use admin-set duration (minutes)
         const durationMinutes = activeLesson.duration || 1
         const totalSeconds = durationMinutes * 60
-        let elapsed = 0
 
-        setReadingProgress(0)
+        // Resume from saved progress: max of localStorage and backend timeSpent
+        const savedLocal = parseInt(localStorage.getItem(storageKey) || '0', 10)
+        const savedBackend = progress.find(p => p.lessonId === lessonId)?.timeSpent || 0
+        let elapsed = Math.max(savedLocal, savedBackend)
+
+        // Already met the time requirement — auto-complete immediately
+        if (elapsed >= totalSeconds) {
+            localStorage.removeItem(storageKey)
+            handleComplete(activeLesson)
+            return
+        }
+
+        setReadingProgress(Math.min(100, Math.round((elapsed / totalSeconds) * 100)))
         if (readingTimerRef.current) clearInterval(readingTimerRef.current)
+
+        let lastSavedToBackend = elapsed
 
         readingTimerRef.current = setInterval(() => {
             elapsed++
             const pct = Math.min(100, Math.round((elapsed / totalSeconds) * 100))
             setReadingProgress(pct)
+
+            // Persist to localStorage every tick (survives tab close / navigation)
+            localStorage.setItem(storageKey, String(elapsed))
+
+            // Heartbeat: save to backend every 30 seconds (survives cache clear / device switch)
+            if (course && elapsed - lastSavedToBackend >= 30) {
+                lastSavedToBackend = elapsed
+                fetch(`/api/training/${course.id}/progress`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lessonId, timeSpent: elapsed }),
+                }).catch(() => { /* non-critical */ })
+            }
+
             if (elapsed >= totalSeconds) {
                 if (readingTimerRef.current) clearInterval(readingTimerRef.current)
-                // Auto-complete
+                localStorage.removeItem(storageKey)
                 handleComplete(activeLesson)
             }
         }, 1000)
 
         return () => {
             if (readingTimerRef.current) clearInterval(readingTimerRef.current)
+            // Save current elapsed on unmount (page leave / lesson switch)
+            localStorage.setItem(storageKey, String(elapsed))
+            if (course && elapsed > lastSavedToBackend) {
+                fetch(`/api/training/${course.id}/progress`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ lessonId, timeSpent: elapsed }),
+                }).catch(() => { /* non-critical */ })
+            }
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeLesson?.id, enrolled])

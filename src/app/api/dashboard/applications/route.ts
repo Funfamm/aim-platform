@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
             statusNote: true,
             resultVisibleAt: true,
             createdAt: true,
+            castingCallId: true,
             castingCall: {
                 select: {
                     roleName: true,

@@ -35,20 +35,62 @@ export async function PUT(request: Request) {
     updateData.themeMode = themeMode
   }
 
+  // How many recent passwords to check against (matches forgot-password route)
+  const PASSWORD_HISTORY_LIMIT = 5
+
   if (newPassword) {
     if (!currentPassword) {
-      return NextResponse.json({ error: 'Current password is required' }, { status: 400 })
+      return NextResponse.json({ error: 'ERR_CURRENT_REQUIRED' }, { status: 400 })
     }
     if (newPassword.length < 6) {
-      return NextResponse.json({ error: 'New password must be at least 6 characters' }, { status: 400 })
+      return NextResponse.json({ error: 'ERR_PW_TOO_SHORT' }, { status: 400 })
     }
     if (!user.passwordHash) {
-      return NextResponse.json({ error: 'Cannot change password for OAuth accounts' }, { status: 400 })
+      return NextResponse.json({ error: 'ERR_OAUTH_NO_PASSWORD' }, { status: 400 })
     }
     const valid = await compare(currentPassword, user.passwordHash)
     if (!valid) {
-      return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 })
+      return NextResponse.json({ error: 'ERR_CURRENT_INCORRECT' }, { status: 400 })
     }
+
+    // ── Password reuse check (same rules as forgot-password) ──
+    // Check against current password
+    const sameAsCurrent = await compare(newPassword, user.passwordHash)
+    if (sameAsCurrent) {
+      return NextResponse.json({ error: 'ERR_SAME_PASSWORD' }, { status: 400 })
+    }
+
+    // Check against recent password history
+    const recentPasswords = await prisma.passwordHistory.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: PASSWORD_HISTORY_LIMIT,
+    })
+
+    for (const entry of recentPasswords) {
+      const matchesOld = await compare(newPassword, entry.passwordHash)
+      if (matchesOld) {
+        return NextResponse.json({ error: 'ERR_REUSED_PASSWORD' }, { status: 400 })
+      }
+    }
+
+    // ── Save current password to history before changing ──
+    await prisma.passwordHistory.create({
+      data: { userId: user.id, passwordHash: user.passwordHash },
+    })
+
+    // Clean up old entries — keep only the last N
+    const allHistory = await prisma.passwordHistory.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    })
+    if (allHistory.length > PASSWORD_HISTORY_LIMIT) {
+      const toDelete = allHistory.slice(PASSWORD_HISTORY_LIMIT).map((h: { id: string }) => h.id)
+      await prisma.passwordHistory.deleteMany({
+        where: { id: { in: toDelete } },
+      })
+    }
+
     updateData.passwordHash = await hash(newPassword, 12)
     updateData.tokenVersion = { increment: 1 }
   }

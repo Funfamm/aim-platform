@@ -577,7 +577,9 @@
     "photoOptional1": "Additional Shot (Optional)",
     "photoOptional1Desc": "Action pose, close-up, or creative photo",
     "photoOptional2": "Additional Shot (Optional)",
-    "photoOptional2Desc": "Another angle or look you want to showcase"
+    "photoOptional2Desc": "Another angle or look you want to showcase",
+    "removePhoto": "Remove photo",
+    "tapToReplace": "Tap to replace"
   },
   "training": {
     "hub": "Training Hub",
@@ -876,8 +878,18 @@
     "codeSentToEmail": "A 6-digit verification code has been sent to your email.",
     "verificationCode": "Verification Code",
     "minCharsError": "Password must be at least 6 characters",
+    "errCurrentRequired": "Please enter your current password",
+    "errOauthNoPassword": "Cannot change password for OAuth accounts",
+    "errCurrentIncorrect": "Current password is incorrect",
+    "errSamePassword": "New password cannot be the same as your current password",
+    "errReusedPassword": "This password was recently used. Please choose a different one",
     "theme": "Theme",
-    "accentColour": "Accent Colour"
+    "accentColour": "Accent Colour",
+    "colorGold": "Gold",
+    "colorSilver": "Silver",
+    "colorEmber": "Ember",
+    "colorJade": "Jade",
+    "colorAzure": "Azure"
   },
   "notificationBell": {
     "title": "Notifications",

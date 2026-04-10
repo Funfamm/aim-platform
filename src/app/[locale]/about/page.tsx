@@ -22,15 +22,14 @@ const DEFAULT_STORY = `We're not a traditional studio behind closed doors. We cr
 This is cinema built together. Your talent, your creativity, powered by AI. Welcome to AIM Studio.`
 
 async function fetchAboutStats() {
-    const [productions, countryRows, ownerRows] = await Promise.all([
+    const [productions, countryRows, memberCount] = await Promise.all([
         prisma.project.count({ where: { OR: [{ projectType: 'movie' }, { projectType: 'series' }] } }),
         prisma.project.findMany({ where: { country: { not: null } }, select: { country: true } }),
-        prisma.project.findMany({ where: { ownerId: { not: null } }, select: { ownerId: true } }),
+        prisma.user.count({ where: { emailVerified: true, role: 'member' } }),
     ]);
     const distinctCountries = new Set(countryRows.map(r => r.country)).size;
-    const distinctCreators = new Set(ownerRows.map(r => r.ownerId)).size;
     const awards = 0; // placeholder until an Award model exists
-    return { productions, distinctCountries, distinctCreators, awards };
+    return { productions, distinctCountries, distinctCreators: memberCount, awards };
 }
 
 export default async function AboutPage() {

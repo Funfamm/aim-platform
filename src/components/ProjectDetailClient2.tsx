@@ -408,7 +408,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                 {t('officialTrailer')}
                             </span>
                             <h2 style={{ marginTop: '4px', fontSize: '1.6rem' }}>
-                                {project.title}
+                                {title}
                             </h2>
                         </div>
 

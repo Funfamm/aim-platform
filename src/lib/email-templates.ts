@@ -66,7 +66,8 @@ const ACCENT_GREEN = '#10b981'
 const ACCENT_BLUE = '#3b82f6'
 
 /** Shared email wrapper with premium branded header/footer */
-function emailWrapper(content: string, preheader?: string): string {
+function emailWrapper(content: string, preheader?: string, footerText?: string): string {
+    const autoFooter = footerText ?? 'This email was sent automatically. Please do not reply directly.'
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -117,7 +118,7 @@ function emailWrapper(content: string, preheader?: string): string {
                                 &copy; ${new Date().getFullYear()} AIM Studio &bull; AI-Powered Filmmaking
                             </p>
                             <p style="margin: 8px 0 0; font-size: 11px; color: #6b7280;">
-                                This email was sent automatically. Please do not reply directly.
+                                ${autoFooter}
                             </p>
                         </td>
                     </tr>
@@ -204,6 +205,25 @@ export function subscribeConfirmation(name?: string, siteUrl?: string): string {
         ${paragraph("We don't spam. Only meaningful updates when we have something worth sharing.")}
         ${siteUrl ? `${divider()}${button('Visit AIM Studio', siteUrl)}` : ''}
     `, 'Subscription confirmed! Welcome to AIM Studio')
+}
+
+export async function contactAcknowledgmentWithOverrides(name: string, subject: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const localizedSubject   = (emailT('contactAcknowledgment', locale, 'subject')   || 'We received your message: {subject}').replace('{subject}', subject)
+    const localizedBodyIntro = (emailT('contactAcknowledgment', locale, 'bodyIntro') || 'Your message regarding "{subject}" has been received. Our team will review it and get back to you as soon as possible.').replace(/{subject}/g, subject)
+    const localizedFooter    =  emailT('contactAcknowledgment', locale, 'footerAuto') || 'This email was sent automatically. Please do not reply directly.'
+    const f = await mergeFields('contact', {
+        heading:    emailT('contactAcknowledgment', locale, 'heading') || 'Message Received ✓',
+        body:       emailT('contactAcknowledgment', locale, 'body') || 'Typical response time is 1 to 3 business days.',
+        buttonText: emailT('contactAcknowledgment', locale, 'buttonText') || 'Back to Homepage',
+        buttonUrl:  siteUrl || '',
+    })
+    return emailWrapper(`
+        ${heading(f.heading)}
+        ${subtext(`Hi ${name}, ${emailT('contactAcknowledgment', locale, 'subtext') || 'we got your message.'}`)}
+        ${paragraph(localizedBodyIntro)}
+        ${paragraph(f.body)}
+        ${f.buttonUrl ? `${divider()}${secondaryButton(f.buttonText, f.buttonUrl)}` : ''}
+    `, localizedSubject, localizedFooter)
 }
 
 export function contactAcknowledgment(name: string, subject: string, siteUrl?: string): string {
@@ -632,22 +652,6 @@ export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?
         ${paragraph(f.noSpam)}
         ${f.buttonUrl ? `${divider()}${button(f.buttonText, f.buttonUrl)}` : ''}
     `, 'Subscription confirmed! Welcome to AIM Studio')
-}
-
-export async function contactAcknowledgmentWithOverrides(name: string, subject: string, siteUrl?: string, locale = 'en'): Promise<string> {
-    const f = await mergeFields('contact', {
-        heading:    emailT('contactAcknowledgment', locale, 'heading') || 'Message Received ✓',
-        body:       emailT('contactAcknowledgment', locale, 'body') || 'Typical response time is 1 to 3 business days.',
-        buttonText: emailT('contactAcknowledgment', locale, 'buttonText') || 'Back to Homepage',
-        buttonUrl:  siteUrl || '',
-    })
-    return emailWrapper(`
-        ${heading(f.heading)}
-        ${subtext(`Hi ${name}, ${emailT('contactAcknowledgment', locale, 'subtext') || 'we got your message.'}`)}
-        ${paragraph(`Your message regarding "<strong>${subject}</strong>" has been received. Our team will review it and get back to you as soon as possible.`)}
-        ${paragraph(f.body)}
-        ${f.buttonUrl ? `${divider()}${secondaryButton(f.buttonText, f.buttonUrl)}` : ''}
-    `, `We received your message about "${subject}"`)
 }
 
 export async function donationThankYouWithOverrides(name: string, amount: number, siteUrl?: string, locale = 'en'): Promise<string> {
