@@ -62,18 +62,36 @@ export default function ContactPage() {
                     textAlign: 'center',
                     position: 'relative',
                     overflow: 'hidden',
+                    zIndex: 1,
                 }}>
                     {/* Page Media background image */}
                     {heroImage && (
-                        <div style={{
-                            position: 'absolute', inset: 0,
-                            backgroundImage: `url(${heroImage})`,
-                            backgroundSize: 'cover', backgroundPosition: 'center',
-                            backgroundAttachment: 'fixed',
-                            opacity: 0.35,
-                            filter: 'brightness(0.6)',
-                            transition: 'opacity 0.8s ease',
-                        }} />
+                        <>
+                            <style>{`
+                                .contact-bg {
+                                    position: fixed;
+                                    inset: 0;
+                                    background-image: var(--contact-bg-url);
+                                    background-size: cover;
+                                    background-position: center;
+                                    opacity: 0.35;
+                                    filter: brightness(0.6);
+                                    transition: opacity 0.8s ease;
+                                    z-index: 0;
+                                    pointer-events: none;
+                                }
+                                @media (max-width: 768px) {
+                                    .contact-bg {
+                                        position: absolute;
+                                        background-attachment: scroll;
+                                    }
+                                }
+                            `}</style>
+                            <div
+                                className="contact-bg"
+                                style={{ ['--contact-bg-url' as string]: `url(${heroImage})` }}
+                            />
+                        </>
                     )}
                     <div className="container" style={{ maxWidth: '600px' }}>
                         <ScrollReveal3D direction="up" distance={40}>

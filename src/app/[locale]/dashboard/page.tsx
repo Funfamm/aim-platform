@@ -277,8 +277,15 @@ export default function DashboardPage() {
                 @media (max-width: 600px) {
                     .dash-app-card {
                         flex-direction: column;
-                        align-items: flex-start;
+                        align-items: stretch;
                         gap: var(--space-sm);
+                    }
+                    .dash-app-card-right {
+                        display: flex;
+                        flex-direction: row;
+                        align-items: center;
+                        justify-content: space-between;
+                        width: 100%;
                     }
                 }
                 .dash-history-card {
@@ -343,15 +350,15 @@ export default function DashboardPage() {
                                                     <div className="dash-app-card">
                                                         <div style={{ flex: 1, minWidth: 0 }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: '4px', flexWrap: 'wrap' }}>
-                                                                <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                                <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
                                                                     {projectTitle}
                                                                 </span>
-                                                                <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)', fontWeight: 600, textTransform: 'uppercase' as const }}>{t({ lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }[app.castingCall.roleType.toLowerCase()] || 'roleTypeLead')}</span>
+                                                                <span style={{ fontSize: '0.65rem', padding: '2px 8px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)', fontWeight: 600, textTransform: 'uppercase' as const, flexShrink: 0 }}>{t({ lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }[app.castingCall.roleType.toLowerCase()] || 'roleTypeLead')}</span>
                                                             </div>
                                                             <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{t('role')}: <strong>{app.castingCall.roleName}</strong></div>
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t('applied')} {new Date(app.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' })}</div>
                                                         </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
+                                                        <div className="dash-app-card-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
                                                             <div style={{ padding: '0.35rem 0.9rem', background: statusInfo.bg, border: `1px solid ${statusInfo.color}30`, borderRadius: 'var(--radius-full)', fontSize: '0.75rem', fontWeight: 600, color: statusInfo.color, whiteSpace: 'nowrap' }}>
                                                                 {statusInfo.label}
                                                             </div>
