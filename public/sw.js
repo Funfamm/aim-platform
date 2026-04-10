@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aim-studio-v1'
+const CACHE_NAME = 'aim-studio-v2'
 const OFFLINE_URL = '/offline'
 
 // Assets to pre-cache
@@ -27,9 +27,16 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return
 
-  // Skip API calls and non-http requests
+  // Skip API calls, non-http requests, and static PWA assets
   const url = new URL(event.request.url)
   if (url.pathname.startsWith('/api/') || !url.protocol.startsWith('http')) return
+  // Skip manifest and SW itself — these are static and should not be intercepted
+  if (
+    url.pathname === '/manifest.json' ||
+    url.pathname === '/sw.js' ||
+    url.pathname.startsWith('/icon-') ||
+    url.pathname.startsWith('/favicon')
+  ) return
 
   event.respondWith(
     fetch(event.request)

@@ -115,11 +115,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.paypal.com https://www.paypalobjects.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://www.paypal.com https://www.paypalobjects.com https://vercel.live",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudinary.com https://*.unsplash.com https://lh3.googleusercontent.com https://*.r2.dev https://*.r2.cloudflarestorage.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://accounts.google.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com",
+              "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://fonts.googleapis.com https://fonts.gstatic.com",
               "media-src 'self' blob: https://*.r2.dev https://*.r2.cloudflarestorage.com",
               "frame-ancestors 'self'",
               "base-uri 'self'",

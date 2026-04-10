@@ -215,6 +215,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                 const putRes = await fetch(presignedUrl, {
                     method: 'PUT',
                     headers: { 'Content-Type': mime },
+                    credentials: 'omit', // presigned URL has auth built-in; cookies would break CORS wildcard
                     body: file,
                 })
                 if (putRes.ok) return finalUrl
