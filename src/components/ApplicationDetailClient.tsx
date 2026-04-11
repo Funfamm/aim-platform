@@ -56,18 +56,42 @@ interface Props {
         screeningSkipped?: boolean
         warnings?: string[]
     } | null
+    isSuperAdmin?: boolean
+}
+
+// Valid forward transitions per status (strict pipeline)
+const NEXT_STEPS: Record<string, string[]> = {
+    submitted:    ['under_review', 'shortlisted', 'not_selected'],
+    under_review: ['shortlisted', 'not_selected'],
+    shortlisted:  ['callback', 'final_review', 'not_selected'],
+    callback:     ['final_review', 'not_selected'],
+    final_review: ['selected', 'not_selected'],
+    selected:     ['under_review'],      // restore path
+    rejected:     ['under_review'],      // restore path
+    not_selected: ['under_review'],      // restore path
 }
 
 const PIPELINE = [
-    { key: 'submitted', label: 'Received', icon: '📥' },
-    { key: 'under_review', label: 'Reviewing', icon: '🔍' },
-    { key: 'shortlisted', label: 'Shortlisted', icon: '⭐' },
-    { key: 'callback', label: 'Callback', icon: '✉️' },
+    { key: 'submitted',    label: 'Received',     icon: '📥' },
+    { key: 'under_review', label: 'Reviewing',    icon: '🔍' },
+    { key: 'shortlisted',  label: 'Shortlisted',  icon: '⭐' },
+    { key: 'callback',     label: 'Follow-up',    icon: '✉️' },
     { key: 'final_review', label: 'Final Review', icon: '🎭' },
-    { key: 'selected', label: 'Cast', icon: '🏆' },
+    { key: 'selected',     label: 'Cast',         icon: '🏆' },
 ]
 
-export default function ApplicationDetailClient({ application, castingCall, photos, voicePath, experienceData, socialData, aiReport }: Props) {
+// Human-readable action labels
+const ACTION_LABELS: Record<string, { label: string; icon: string; style: 'primary' | 'danger' | 'restore' }> = {
+    under_review: { label: 'Begin Review',          icon: '🔍', style: 'primary'  },
+    shortlisted:  { label: 'Shortlist',             icon: '⭐', style: 'primary'  },
+    callback:     { label: 'Request Follow-up Email', icon: '✉️', style: 'primary' },
+    final_review: { label: 'Move to Final Review',  icon: '🎭', style: 'primary'  },
+    selected:     { label: 'Cast / Select',         icon: '🏆', style: 'primary'  },
+    not_selected: { label: 'Not Selected',          icon: '✕',  style: 'danger'   },
+    rejected:     { label: 'Reject',               icon: '✕',  style: 'danger'   },
+}
+
+export default function ApplicationDetailClient({ application, castingCall, photos, voicePath, experienceData, socialData, aiReport, isSuperAdmin }: Props) {
     const router = useRouter()
     const [runningAI, setRunningAI] = useState(false)
     const [updatingStatus, setUpdatingStatus] = useState(false)
@@ -77,6 +101,8 @@ export default function ApplicationDetailClient({ application, castingCall, phot
     const [editingFeedback, setEditingFeedback] = useState(application.statusNote || '')
     const [savingFeedback, setSavingFeedback] = useState(false)
     const [feedbackSaved, setFeedbackSaved] = useState(false)
+    const [bypassActive, setBypassActive] = useState(false)
+    const [confirmAction, setConfirmAction] = useState<string | null>(null)
 
     // Notification log
     const [notifOpen, setNotifOpen] = useState(false)
@@ -110,7 +136,6 @@ export default function ApplicationDetailClient({ application, castingCall, phot
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [notifOpen])
 
-    // Compute delivery status
     const resultVisibleAt = application.resultVisibleAt ? new Date(application.resultVisibleAt) : null
     const now = new Date()
     const isDelivered = resultVisibleAt ? now >= resultVisibleAt : false
@@ -152,6 +177,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
 
     const updateStatus = async (newStatus: string) => {
         setUpdatingStatus(true)
+        setConfirmAction(null)
         try {
             await fetch(`/api/admin/applications/${application.id}/status`, {
                 method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -164,10 +190,64 @@ export default function ApplicationDetailClient({ application, castingCall, phot
 
     const stageOrder = PIPELINE.map(s => s.key)
     const currentIdx = stageOrder.indexOf(application.status)
+    const isWithdrawn = application.status === 'withdrawn'
+    const isTerminal = ['selected', 'rejected', 'not_selected'].includes(application.status)
     const isRejected = application.status === 'rejected' || application.status === 'not_selected'
+
+    // Valid next steps for current status (or all if bypass active)
+    const allowedNextSteps = bypassActive && isSuperAdmin
+        ? stageOrder.filter(s => s !== application.status)
+        : (NEXT_STEPS[application.status] || [])
+
+    // Whether the Shortlist action is AI-gated
+    const shortlistGated = !bypassActive && application.aiScore === null
+
+    // Button style helper
+    const actionBtnStyle = (variant: 'primary' | 'danger' | 'restore', disabled?: boolean): React.CSSProperties => ({
+        padding: '8px 18px',
+        fontSize: '0.78rem',
+        fontWeight: 700,
+        borderRadius: '10px',
+        border: variant === 'primary'
+            ? '1px solid rgba(212,168,83,0.35)'
+            : variant === 'danger'
+            ? '1px solid rgba(239,68,68,0.25)'
+            : '1px solid rgba(139,92,246,0.25)',
+        background: variant === 'primary'
+            ? 'linear-gradient(135deg, rgba(212,168,83,0.18), rgba(212,168,83,0.06))'
+            : variant === 'danger'
+            ? 'rgba(239,68,68,0.08)'
+            : 'rgba(139,92,246,0.08)',
+        color: variant === 'primary'
+            ? 'var(--accent-gold)'
+            : variant === 'danger'
+            ? 'var(--color-error)'
+            : '#a78bfa',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.45 : 1,
+        transition: 'all 0.2s',
+    })
 
     return (
         <div>
+            {/* ─── WITHDRAWN BANNER ─── */}
+            {isWithdrawn && (
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '14px 18px', marginBottom: '20px', borderRadius: '10px',
+                    background: 'rgba(239,68,68,0.07)',
+                    border: '1px solid rgba(239,68,68,0.25)',
+                }}>
+                    <span style={{ fontSize: '1.4rem' }}>⚠️</span>
+                    <div>
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f87171' }}>Application Withdrawn by Applicant</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                            This application is read-only. If the applicant wishes to reapply, a new submission will appear here.
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* ─── HEADER BAR ─── */}
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -181,13 +261,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    {isRejected && (
-                        <span style={{ padding: '4px 14px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '20px', background: 'rgba(239,68,68,0.12)', color: 'var(--color-error)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                            NOT SELECTED
-                        </span>
-                    )}
-
-                    {/* auditState badge */}
+                    {/* Audit State Badge */}
                     {(application as any).auditState && (
                         <span style={{
                             padding: '3px 10px', fontSize: '0.66rem', fontWeight: 700,
@@ -213,9 +287,8 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         </span>
                     )}
 
-                    {/* Process Now — when queued, null, or failed */}
-                    {(!(application as any).auditState ||
-                      ['queued','failed',null].includes((application as any).auditState)) && (
+                    {/* AI Audit Buttons — hidden for withdrawn */}
+                    {!isWithdrawn && (!(application as any).auditState || ['queued','failed',null].includes((application as any).auditState)) && (
                         <button onClick={() => runAIAudit('process_now')} disabled={runningAI}
                             style={{
                                 padding: '6px 16px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
@@ -227,8 +300,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         </button>
                     )}
 
-                    {/* Reveal Now — only when scored_hidden */}
-                    {(application as any).auditState === 'scored_hidden' && (
+                    {!isWithdrawn && (application as any).auditState === 'scored_hidden' && (
                         <button onClick={() => runAIAudit('reveal_now')} disabled={runningAI}
                             style={{
                                 padding: '6px 16px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
@@ -240,41 +312,43 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         </button>
                     )}
 
-                    {!isRejected && (
-                        <button onClick={() => updateStatus('not_selected')} disabled={updatingStatus}
+                    {/* Superadmin Bypass Toggle */}
+                    {isSuperAdmin && !isWithdrawn && (
+                        <button
+                            onClick={() => setBypassActive(b => !b)}
                             style={{
-                                padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600, borderRadius: '8px',
-                                border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
-                                color: 'var(--color-error)', cursor: 'pointer',
-                            }}>
-                            ✗ Deny
+                                padding: '6px 14px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '8px',
+                                border: bypassActive ? '1px solid rgba(168,85,247,0.5)' : '1px solid rgba(168,85,247,0.2)',
+                                background: bypassActive ? 'rgba(168,85,247,0.15)' : 'rgba(168,85,247,0.05)',
+                                color: '#a855f7', cursor: 'pointer', transition: 'all 0.2s',
+                                boxShadow: bypassActive ? '0 0 12px rgba(168,85,247,0.25)' : 'none',
+                            }}
+                        >
+                            {bypassActive ? '🔓 Override Active' : '🔒 Super Admin Override'}
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* ─── PIPELINE BAR ─── */}
+            {/* ─── PIPELINE BAR (Read-Only Visualization) ─── */}
             <div style={{
                 display: 'flex', gap: '2px', marginBottom: '20px',
                 padding: '4px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
                 border: '1px solid rgba(255,255,255,0.05)',
             }}>
-                {PIPELINE.map((stage, i) => {
+                {PIPELINE.map((stage) => {
                     const stageIdx = stageOrder.indexOf(stage.key)
                     const isActive = application.status === stage.key
                     const isPast = !isRejected && currentIdx >= 0 && stageIdx < currentIdx
-                    const isFuture = !isRejected && currentIdx >= 0 && stageIdx > currentIdx
+                    const isFuture = currentIdx >= 0 && stageIdx > currentIdx
 
                     return (
-                        <button key={stage.key}
-                            onClick={() => updateStatus(stage.key)}
-                            disabled={updatingStatus || isActive}
+                        <div key={stage.key}
                             style={{
-                                flex: 1, padding: '8px 4px', borderRadius: '8px', border: 'none',
-                                cursor: isActive ? 'default' : 'pointer',
+                                flex: 1, padding: '8px 4px', borderRadius: '8px',
                                 background: isActive ? 'var(--accent-gold-glow)' : isPast ? 'rgba(16,185,129,0.06)' : 'transparent',
                                 borderBottom: isActive ? '2px solid var(--accent-gold)' : isPast ? '2px solid rgba(16,185,129,0.4)' : '2px solid transparent',
-                                transition: 'all 0.2s', textAlign: 'center',
+                                textAlign: 'center',
                                 opacity: isFuture && isRejected ? 0.3 : 1,
                             }}
                         >
@@ -287,10 +361,128 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                 width: '4px', height: '4px', borderRadius: '50%',
                                 background: 'var(--accent-gold)', margin: '3px auto 0',
                             }} />}
-                        </button>
+                        </div>
                     )
                 })}
+                {isWithdrawn && (
+                    <div style={{
+                        flex: 1, padding: '8px 4px', borderRadius: '8px', textAlign: 'center',
+                        background: 'rgba(239,68,68,0.08)', borderBottom: '2px solid rgba(239,68,68,0.4)',
+                    }}>
+                        <div style={{ fontSize: '0.85rem', marginBottom: '2px' }}>⤺</div>
+                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#f87171' }}>Withdrawn</div>
+                        <div style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#f87171', margin: '3px auto 0' }} />
+                    </div>
+                )}
             </div>
+
+            {/* ─── SMART ACTION BLOCK ─── */}
+            {!isWithdrawn && (
+                <div style={{
+                    padding: '16px 18px', marginBottom: '20px', borderRadius: '12px',
+                    background: 'linear-gradient(135deg, rgba(212,168,83,0.04), rgba(139,92,246,0.03))',
+                    border: bypassActive ? '1px solid rgba(168,85,247,0.3)' : '1px solid rgba(212,168,83,0.1)',
+                    transition: 'border 0.2s',
+                }}>
+                    <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: bypassActive ? '#a855f7' : 'var(--accent-gold)', marginBottom: '12px' }}>
+                        {bypassActive ? '🔓 Override Mode — All Actions Unlocked' : '⚡ Available Actions'}
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {allowedNextSteps.map(nextStatus => {
+                            const meta = ACTION_LABELS[nextStatus]
+                            if (!meta) return null
+                            const isShortlist = nextStatus === 'shortlisted'
+                            const gated = isShortlist && shortlistGated
+
+                            return (
+                                <div key={nextStatus} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    <button
+                                        onClick={() => setConfirmAction(nextStatus)}
+                                        disabled={updatingStatus || gated}
+                                        style={actionBtnStyle(meta.style, updatingStatus || gated)}
+                                    >
+                                        {meta.icon} {meta.label}
+                                    </button>
+                                    {/* AI Skip override for Shortlist gate */}
+                                    {gated && (
+                                        <button
+                                            onClick={() => setConfirmAction(nextStatus + '__skip_ai')}
+                                            disabled={updatingStatus}
+                                            style={{
+                                                padding: '3px 10px', fontSize: '0.62rem', fontWeight: 600, borderRadius: '6px',
+                                                border: '1px solid rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.06)',
+                                                color: '#f59e0b', cursor: 'pointer',
+                                            }}
+                                            title="Skip AI requirement and shortlist manually"
+                                        >
+                                            ⚡ Skip AI & Shortlist
+                                        </button>
+                                    )}
+                                </div>
+                            )
+                        })}
+
+                        {allowedNextSteps.length === 0 && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                No further actions available for this status.
+                            </span>
+                        )}
+                    </div>
+
+                    {shortlistGated && !bypassActive && (
+                        <div style={{ fontSize: '0.68rem', color: '#f59e0b', marginTop: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>⚠️</span> Shortlist requires an AI Audit score. Run <strong>🤖 Process Now</strong> above, or use <strong>⚡ Skip AI & Shortlist</strong>.
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ─── CONFIRM MODAL ─── */}
+            {confirmAction && (
+                <div onClick={() => setConfirmAction(null)} style={{
+                    position: 'fixed', inset: 0, zIndex: 9000,
+                    background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <div onClick={e => e.stopPropagation()} style={{
+                        background: '#141720', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px',
+                        padding: '28px 32px', maxWidth: '400px', width: '90%',
+                        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+                    }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px' }}>Confirm Action</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+                            {confirmAction.endsWith('__skip_ai')
+                                ? <>You are about to <strong>Shortlist</strong> this applicant without an AI audit. Only do this if you have manually reviewed their submission.</>
+                                : <>Move <strong>{application.fullName}</strong> to <strong>{ACTION_LABELS[confirmAction]?.label || confirmAction}</strong>?
+                                    {['callback'].includes(confirmAction) && <><br /><span style={{ color: '#f59e0b', fontSize: '0.75rem' }}>⚠️ A follow-up email will be sent to the applicant.</span></>}
+                                    {['selected'].includes(confirmAction) && <><br /><span style={{ color: '#22c55e', fontSize: '0.75rem' }}>🏆 A selection email will be sent to the applicant.</span></>}
+                                    {['not_selected', 'rejected'].includes(confirmAction) && <><br /><span style={{ color: '#f87171', fontSize: '0.75rem' }}>✕ A rejection notification will be sent to the applicant.</span></>}
+                                </>
+                            }
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => setConfirmAction(null)} style={{
+                                padding: '8px 18px', fontSize: '0.78rem', fontWeight: 600, borderRadius: '8px',
+                                border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                                color: 'var(--text-tertiary)', cursor: 'pointer',
+                            }}>Cancel</button>
+                            <button
+                                onClick={() => {
+                                    const targetStatus = confirmAction.replace('__skip_ai', '')
+                                    updateStatus(targetStatus)
+                                }}
+                                style={{
+                                    padding: '8px 20px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
+                                    border: '1px solid rgba(212,168,83,0.35)',
+                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
+                                    color: 'var(--accent-gold)', cursor: 'pointer',
+                                }}>
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ─── VISION SCREENING SKIPPED WARNING ─── */}
             {currentReport?.screeningSkipped && (
@@ -330,7 +522,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', alignItems: 'start' }}>
                 {/* LEFT COLUMN */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    {/* Photo Gallery — Compact Filmstrip */}
+                    {/* Photo Gallery */}
                     <div style={{
                         padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
                         border: '1px solid rgba(255,255,255,0.05)',
@@ -361,9 +553,8 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         )}
                     </div>
 
-                    {/* Voice + Experience — Side by Side */}
+                    {/* Voice + Skills */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                        {/* Voice */}
                         <div style={{
                             padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
                             border: '1px solid rgba(255,255,255,0.05)',
@@ -380,7 +571,6 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                             )}
                         </div>
 
-                        {/* Skills */}
                         <div style={{
                             padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
                             border: '1px solid rgba(255,255,255,0.05)',
@@ -403,7 +593,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         </div>
                     </div>
 
-                    {/* Personality Answers — Compact Accordion */}
+                    {/* Personality Answers */}
                     <div style={{
                         padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
                         border: '1px solid rgba(255,255,255,0.05)',
@@ -442,7 +632,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
 
                 {/* RIGHT COLUMN */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {/* Info Card — Ultra Compact */}
+                    {/* Info Card */}
                     <div style={{
                         padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
                         border: '1px solid rgba(255,255,255,0.05)',
@@ -465,7 +655,6 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                 </div>
                             ))}
                         </div>
-                        {/* Social */}
                         {socialData.primary.username && (
                             <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.75rem' }}>
                                 <span style={{ color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>{socialData.primary.platform}: </span>
@@ -487,7 +676,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                         onRunAudit={runAIAudit}
                     />
 
-                    {/* ─── DELIVERY INFO ─── */}
+                    {/* Delivery Info */}
                     {(currentReport || application.statusNote) && (
                         <div style={{
                             padding: '14px', borderRadius: '10px',
@@ -500,7 +689,6 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                 📬 Applicant Delivery
                             </div>
 
-                            {/* Delivery Status */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                                 <div style={{
                                     width: '8px', height: '8px', borderRadius: '50%',
@@ -524,46 +712,51 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                 </div>
                             )}
 
-                            {/* Editable Applicant Feedback */}
+                            {/* Editable Applicant Feedback — locked when withdrawn */}
                             <div style={{ marginTop: '8px' }}>
                                 <div style={{ fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
-                                    ✉️ Message to applicant (editable)
+                                    ✉️ Message to applicant {isWithdrawn ? '(read-only)' : '(editable)'}
                                 </div>
                                 <textarea
                                     value={editingFeedback}
-                                    onChange={(e) => { setEditingFeedback(e.target.value); setFeedbackSaved(false) }}
+                                    onChange={(e) => { if (!isWithdrawn) { setEditingFeedback(e.target.value); setFeedbackSaved(false) } }}
+                                    readOnly={isWithdrawn}
                                     style={{
                                         width: '100%', minHeight: '70px', padding: '8px',
                                         fontSize: '0.75rem', lineHeight: 1.5,
-                                        background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)',
+                                        background: isWithdrawn ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
+                                        color: isWithdrawn ? 'var(--text-tertiary)' : 'var(--text-secondary)',
                                         border: '1px solid rgba(255,255,255,0.08)', borderRadius: '6px',
-                                        resize: 'vertical', fontFamily: 'inherit',
+                                        resize: isWithdrawn ? 'none' : 'vertical', fontFamily: 'inherit',
+                                        cursor: isWithdrawn ? 'not-allowed' : 'text',
                                     }}
                                     placeholder="Edit feedback before it reaches the applicant..."
                                 />
-                                <div style={{ display: 'flex', gap: '8px', marginTop: '6px', alignItems: 'center' }}>
-                                    <button
-                                        onClick={saveFeedback}
-                                        disabled={savingFeedback || editingFeedback === (application.statusNote || '')}
-                                        style={{
-                                            padding: '5px 12px', fontSize: '0.7rem', fontWeight: 700,
-                                            borderRadius: '6px', border: '1px solid rgba(212,168,83,0.3)',
-                                            background: 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))',
-                                            color: 'var(--accent-gold)', cursor: 'pointer',
-                                            opacity: editingFeedback === (application.statusNote || '') ? 0.4 : 1,
-                                        }}
-                                    >
-                                        {savingFeedback ? '⏳ Saving...' : feedbackSaved ? '✓ Saved' : '💾 Save Changes'}
-                                    </button>
-                                    {editingFeedback !== (application.statusNote || '') && (
-                                        <span style={{ fontSize: '0.65rem', color: 'var(--color-warning)' }}>Unsaved changes</span>
-                                    )}
-                                </div>
+                                {!isWithdrawn && (
+                                    <div style={{ display: 'flex', gap: '8px', marginTop: '6px', alignItems: 'center' }}>
+                                        <button
+                                            onClick={saveFeedback}
+                                            disabled={savingFeedback || editingFeedback === (application.statusNote || '')}
+                                            style={{
+                                                padding: '5px 12px', fontSize: '0.7rem', fontWeight: 700,
+                                                borderRadius: '6px', border: '1px solid rgba(212,168,83,0.3)',
+                                                background: 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))',
+                                                color: 'var(--accent-gold)', cursor: 'pointer',
+                                                opacity: editingFeedback === (application.statusNote || '') ? 0.4 : 1,
+                                            }}
+                                        >
+                                            {savingFeedback ? '⏳ Saving...' : feedbackSaved ? '✓ Saved' : '💾 Save Changes'}
+                                        </button>
+                                        {editingFeedback !== (application.statusNote || '') && (
+                                            <span style={{ fontSize: '0.65rem', color: 'var(--color-warning)' }}>Unsaved changes</span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
 
-                    {/* Role Requirements Quick View */}
+                    {/* Role Requirements */}
                     <div style={{
                         padding: '14px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px',
                         border: '1px solid rgba(255,255,255,0.05)',
@@ -631,7 +824,6 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                         }}>{n.status.toUpperCase()}</span>
                                     </div>
                                 ))}
-                                {/* Pagination */}
                                 {notifTotal > NOTIF_SIZE && (
                                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '10px' }}>
                                         <button

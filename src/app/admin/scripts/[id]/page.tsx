@@ -41,12 +41,30 @@ interface ScriptCall {
 }
 
 const statusColors: Record<string, { color: string; bg: string }> = {
-    submitted: { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
-    analyzing: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-    analyzed: { color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
+    submitted:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+    analyzing:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
+    analyzed:    { color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
     shortlisted: { color: '#d4a853', bg: 'rgba(212,168,83,0.1)' },
-    selected: { color: '#34d399', bg: 'rgba(52,211,153,0.1)' },
-    rejected: { color: '#f43f5e', bg: 'rgba(244,63,94,0.1)' },
+    selected:    { color: '#34d399', bg: 'rgba(52,211,153,0.1)' },
+    rejected:    { color: '#f43f5e', bg: 'rgba(244,63,94,0.1)' },
+    withdrawn:   { color: '#f87171', bg: 'rgba(239,68,68,0.08)' },
+}
+
+// Valid forward steps per status
+const SCRIPT_NEXT_STEPS: Record<string, string[]> = {
+    submitted:   ['analyzed', 'shortlisted', 'rejected'],
+    analyzed:    ['shortlisted', 'rejected'],
+    shortlisted: ['selected', 'rejected'],
+    selected:    ['analyzed'],   // restore
+    rejected:    ['analyzed'],   // restore
+}
+
+const SCRIPT_ACTION_LABELS: Record<string, { label: string; icon: string; danger?: boolean }> = {
+    analyzed:    { label: 'Mark Analyzed',    icon: '✅' },
+    shortlisted: { label: 'Shortlist',        icon: '⭐' },
+    selected:    { label: 'Select Script',    icon: '🏆' },
+    rejected:    { label: 'Reject',           icon: '✕',  danger: true },
+    analyzed_restore: { label: 'Restore to Review', icon: '↩️' },
 }
 
 function ScoreBar({ label, score, color }: { label: string; score: number; color: string }) {
@@ -71,6 +89,7 @@ export default function AdminScriptCallDetailPage() {
     const [loading, setLoading] = useState(true)
     const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set())
     const [expanded, setExpanded] = useState<string | null>(null)
+    const [confirmAction, setConfirmAction] = useState<{ subId: string; status: string } | null>(null)
 
     const fetchData = useCallback(async () => {
         const [callRes, subRes] = await Promise.all([
@@ -205,8 +224,9 @@ export default function AdminScriptCallDetailPage() {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
-                                    {!sub.analysis && (
+                                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                    {/* AI Analyze button */}
+                                    {sub.status !== 'withdrawn' && !sub.analysis && (
                                         <button
                                             onClick={e => { e.stopPropagation(); analyzeSubmission(sub.id) }}
                                             className="btn btn-sm"
@@ -219,22 +239,39 @@ export default function AdminScriptCallDetailPage() {
                                             {analyzingIds.has(sub.id) ? '⏳' : '🤖 Analyze'}
                                         </button>
                                     )}
-                                    <select
-                                        value={sub.status}
-                                        onClick={e => e.stopPropagation()}
-                                        onChange={e => updateStatus(sub.id, e.target.value)}
-                                        style={{
-                                            padding: '3px 6px', fontSize: '0.65rem',
-                                            background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)',
-                                            borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', cursor: 'pointer',
-                                        }}
-                                    >
-                                        <option value="submitted">Submitted</option>
-                                        <option value="analyzed">Analyzed</option>
-                                        <option value="shortlisted">Shortlisted</option>
-                                        <option value="selected">Selected ✓</option>
-                                        <option value="rejected">Rejected</option>
-                                    </select>
+
+                                    {/* Smart Action Buttons */}
+                                    {sub.status === 'withdrawn' ? (
+                                        <span style={{
+                                            padding: '3px 10px', fontSize: '0.65rem', fontWeight: 600,
+                                            borderRadius: '6px', background: 'rgba(239,68,68,0.08)',
+                                            color: '#f87171', border: '1px solid rgba(239,68,68,0.2)',
+                                        }}>⤺ Withdrawn — Read Only</span>
+                                    ) : (
+                                        (SCRIPT_NEXT_STEPS[sub.status] || []).map(nextStatus => {
+                                            const meta = SCRIPT_ACTION_LABELS[nextStatus]
+                                            if (!meta) return null
+                                            // AI gate: shortlist requires analysis
+                                            const gated = nextStatus === 'shortlisted' && !sub.analysis
+                                            return (
+                                                <button
+                                                    key={nextStatus}
+                                                    onClick={() => !gated && setConfirmAction({ subId: sub.id, status: nextStatus })}
+                                                    title={gated ? 'Run AI analysis before shortlisting' : meta.label}
+                                                    style={{
+                                                        padding: '3px 10px', fontSize: '0.65rem', fontWeight: 600,
+                                                        borderRadius: '6px', cursor: gated ? 'not-allowed' : 'pointer',
+                                                        opacity: gated ? 0.45 : 1, transition: 'all 0.15s',
+                                                        background: meta.danger ? 'rgba(244,63,94,0.07)' : 'rgba(212,168,83,0.08)',
+                                                        border: `1px solid ${meta.danger ? 'rgba(244,63,94,0.2)' : 'rgba(212,168,83,0.2)'}`,
+                                                        color: meta.danger ? '#f43f5e' : 'var(--accent-gold)',
+                                                    }}
+                                                >
+                                                    {meta.icon} {meta.label}
+                                                </button>
+                                            )
+                                        })
+                                    )}
                                 </div>
                             </div>
 
@@ -317,6 +354,44 @@ export default function AdminScriptCallDetailPage() {
             {submissions.length === 0 && (
                 <div className="glass-card" style={{ textAlign: 'center', padding: 'var(--space-3xl)', color: 'var(--text-tertiary)' }}>
                     No submissions yet. Share the call link to start receiving scripts.
+                </div>
+            )}
+
+            {/* ─── CONFIRM MODAL ─── */}
+            {confirmAction && (
+                <div onClick={() => setConfirmAction(null)} style={{
+                    position: 'fixed', inset: 0, zIndex: 9000,
+                    background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                    <div onClick={e => e.stopPropagation()} style={{
+                        background: '#141720', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px',
+                        padding: '28px 32px', maxWidth: '400px', width: '90%',
+                        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+                    }}>
+                        <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px' }}>Confirm Action</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+                            Move this submission to <strong>{SCRIPT_ACTION_LABELS[confirmAction.status]?.label || confirmAction.status}</strong>?
+                            {confirmAction.status === 'selected' && <><br /><span style={{ color: '#22c55e', fontSize: '0.75rem' }}>🏆 A selection email will be sent to the author.</span></>}
+                            {confirmAction.status === 'rejected' && <><br /><span style={{ color: '#f87171', fontSize: '0.75rem' }}>✕ A rejection notification will be sent to the author.</span></>}
+                        </div>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => setConfirmAction(null)} style={{
+                                padding: '8px 18px', fontSize: '0.78rem', fontWeight: 600, borderRadius: '8px',
+                                border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
+                                color: 'var(--text-tertiary)', cursor: 'pointer',
+                            }}>Cancel</button>
+                            <button
+                                onClick={() => { updateStatus(confirmAction.subId, confirmAction.status); setConfirmAction(null) }}
+                                style={{
+                                    padding: '8px 20px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
+                                    border: '1px solid rgba(212,168,83,0.35)',
+                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
+                                    color: 'var(--accent-gold)', cursor: 'pointer',
+                                }}>
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

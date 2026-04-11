@@ -100,6 +100,7 @@ export default function AdminApplicationsPage() {
     // Batch audit state
     const [batchRunning, setBatchRunning] = useState(false)
     const [batchProgress, setBatchProgress] = useState<{ total: number; done: number; results: Array<{ id: string; fullName: string; status: string; aiScore?: number; recommendation?: string; error?: string }> } | null>(null)
+    const [bulkToast, setBulkToast] = useState<string | null>(null)
 
     const fetchApps = useCallback(async (page = 1) => {
         setLoading(true)
@@ -230,7 +231,42 @@ export default function AdminApplicationsPage() {
                 body: JSON.stringify({ applicationIds: [...selected], status: bulkAction }),
             })
         }
-        setSelected(new Set()); setBulkAction(''); fetchApps(pagination.page)
+        setSelected(new Set()); setBulkAction('')
+        // Smart bulk filter: check eligibility before applying status change
+        if (bulkAction !== 'delete') {
+            const eligibleMap: Record<string, string[]> = {
+                under_review: ['submitted'],
+                shortlisted:  ['submitted', 'under_review'],
+                callback:     ['shortlisted'],
+                final_review: ['shortlisted', 'callback'],
+                selected:     ['final_review'],
+                rejected:     ['submitted', 'under_review', 'shortlisted', 'callback', 'final_review'],
+                not_selected: ['submitted', 'under_review', 'shortlisted', 'callback', 'final_review'],
+            }
+            const allowed = eligibleMap[bulkAction]
+            if (allowed) {
+                const eligibleIds = apps.filter(a => selected.has(a.id) && allowed.includes(a.status)).map(a => a.id)
+                const skipped = selected.size - eligibleIds.length
+                if (eligibleIds.length === 0) {
+                    setBulkToast(`⚠️ No selected applications are eligible for this action.`)
+                    setTimeout(() => setBulkToast(null), 4000)
+                    setBulkAction('')
+                    return
+                }
+                await fetch('/api/admin/applications/bulk-status', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ applicationIds: eligibleIds, status: bulkAction }),
+                })
+                const msg = skipped > 0
+                    ? `✅ ${eligibleIds.length} updated. ${skipped} skipped (status not eligible).`
+                    : `✅ ${eligibleIds.length} applications updated.`
+                setBulkToast(msg)
+                setTimeout(() => setBulkToast(null), 4000)
+                fetchApps(pagination.page)
+                return
+            }
+        }
+        fetchApps(pagination.page)
     }
 
     const totalApps = Object.values(statusCounts).reduce((s, c) => s + c, 0)
@@ -289,10 +325,11 @@ export default function AdminApplicationsPage() {
                                 { value: '', label: 'Bulk Action...' },
                                 { value: 'batch_audit', label: '🤖 Batch AI Audit' },
                                 { value: 'download', label: '📥 Download ZIP' },
+                                { value: 'under_review', label: '→ Begin Review' },
                                 { value: 'shortlisted', label: '→ Shortlist' },
-                                { value: 'callback', label: '→ Callback' },
+                                { value: 'callback', label: '→ Request Follow-up' },
                                 { value: 'final_review', label: '→ Final Review' },
-                                { value: 'rejected', label: '→ Reject' },
+                                { value: 'not_selected', label: '→ Not Selected' },
                                 { value: 'delete', label: '🗑️ Delete' },
                             ]} />
                             <button onClick={handleBulkAction} disabled={!bulkAction} style={{
@@ -303,6 +340,19 @@ export default function AdminApplicationsPage() {
                     )}
                     <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>{pagination.total.toLocaleString()} result{pagination.total !== 1 ? 's' : ''}</span>
                 </div>
+
+                {/* Bulk Toast */}
+                {bulkToast && (
+                    <div style={{
+                        padding: '10px 16px', marginBottom: '10px', borderRadius: '8px',
+                        background: bulkToast.startsWith('⚠️') ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)',
+                        border: `1px solid ${bulkToast.startsWith('⚠️') ? 'rgba(245,158,11,0.25)' : 'rgba(34,197,94,0.2)'}`,
+                        fontSize: '0.78rem', fontWeight: 600,
+                        color: bulkToast.startsWith('⚠️') ? '#f59e0b' : '#22c55e',
+                    }}>
+                        {bulkToast}
+                    </div>
+                )}
 
                 {/* Batch Audit Progress */}
                 {batchProgress && (
@@ -423,7 +473,8 @@ export default function AdminApplicationsPage() {
                                     opacity: isWithdrawn ? 0.65 : 1,
                                 }}>
                                     <input type="checkbox" checked={selected.has(app.id)} onChange={() => toggleSelect(app.id)}
-                                        style={{ cursor: 'pointer', accentColor: 'var(--accent-gold)' }} />
+                                        disabled={isWithdrawn}
+                                        style={{ cursor: isWithdrawn ? 'not-allowed' : 'pointer', accentColor: 'var(--accent-gold)', opacity: isWithdrawn ? 0.3 : 1 }} />
                                     {photo && (
                                         <div style={{
                                             width: '36px', height: '36px', borderRadius: '6px', flexShrink: 0,

@@ -8,6 +8,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 export default async function ApplicationDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await getSessionAndRefresh()
     if (!session) redirect('/admin/login')
+    const isSuperAdmin = session.role === 'superadmin'
 
     const { id } = await params
     const application = await prisma.application.findUnique({
@@ -74,6 +75,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                     experienceData={experienceData}
                     socialData={socialData}
                     aiReport={aiReport}
+                    isSuperAdmin={isSuperAdmin}
                 />
             </main>
         </div>
