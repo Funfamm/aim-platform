@@ -40,7 +40,6 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
 
     if (!call || !call.isPublic || call.status !== 'open') notFound()
 
-    // ── Check if user already submitted ──
     const user = await prisma.user.findUnique({
         where: { id: session.userId as string },
         select: { email: true },
@@ -62,174 +61,177 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
             <ScriptVideoBackground />
             <style>{`
                 @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(20px); }
+                    from { opacity: 0; transform: translateY(16px); }
                     to   { opacity: 1; transform: translateY(0); }
                 }
                 @keyframes shimmer {
                     0%   { background-position: -200% center; }
                     100% { background-position:  200% center; }
                 }
-                @keyframes glow-pulse {
-                    0%, 100% { box-shadow: 0 0 20px rgba(212,168,83,0.08); }
-                    50%       { box-shadow: 0 0 40px rgba(212,168,83,0.18); }
+                @keyframes glowPulse {
+                    0%, 100% { box-shadow: 0 0 20px rgba(212,168,83,0.06), 0 8px 32px rgba(0,0,0,0.4); }
+                    50%       { box-shadow: 0 0 40px rgba(212,168,83,0.14), 0 8px 32px rgba(0,0,0,0.4); }
                 }
-                .detail-fade { animation: fadeInUp 0.55s ease both; }
-                .detail-fade-1 { animation: fadeInUp 0.55s ease 0.1s both; }
-                .detail-fade-2 { animation: fadeInUp 0.55s ease 0.2s both; }
-                .detail-fade-3 { animation: fadeInUp 0.55s ease 0.3s both; }
-                .detail-fade-4 { animation: fadeInUp 0.55s ease 0.4s both; }
 
-                .tag-gold {
-                    font-size: 0.68rem; padding: 4px 14px; font-weight: 600;
-                    background: rgba(212,168,83,0.08); color: var(--accent-gold);
-                    border-radius: var(--radius-full); border: 1px solid rgba(212,168,83,0.2);
+                .d0 { animation: fadeInUp 0.45s ease both; }
+                .d1 { animation: fadeInUp 0.45s ease 0.08s both; }
+                .d2 { animation: fadeInUp 0.45s ease 0.16s both; }
+                .d3 { animation: fadeInUp 0.45s ease 0.24s both; }
+                .d4 { animation: fadeInUp 0.45s ease 0.32s both; }
+
+                .back-btn {
+                    display: inline-flex; align-items: center; gap: 6px;
+                    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em;
+                    text-transform: uppercase; color: var(--text-tertiary);
+                    text-decoration: none;
+                    padding: 6px 14px; border-radius: 8px;
+                    background: rgba(255,255,255,0.04);
+                    border: 1px solid rgba(255,255,255,0.07);
+                    transition: all 0.2s;
                 }
-                .tag-blue {
-                    font-size: 0.68rem; padding: 4px 14px; font-weight: 600;
-                    background: rgba(96,165,250,0.08); color: #60a5fa;
-                    border-radius: var(--radius-full); border: 1px solid rgba(96,165,250,0.15);
+                .back-btn:hover { color: var(--accent-gold); border-color: rgba(212,168,83,0.2); }
+
+                .tag-gold    { font-size: 0.65rem; padding: 4px 12px; font-weight: 600; background: rgba(212,168,83,0.08); color: var(--accent-gold); border-radius: 6px; border: 1px solid rgba(212,168,83,0.2); }
+                .tag-blue    { font-size: 0.65rem; padding: 4px 12px; font-weight: 600; background: rgba(96,165,250,0.08); color: #60a5fa; border-radius: 6px; border: 1px solid rgba(96,165,250,0.15); }
+                .tag-rose    { font-size: 0.65rem; padding: 4px 12px; font-weight: 600; background: rgba(244,63,94,0.07); color: #f43f5e; border-radius: 6px; border: 1px solid rgba(244,63,94,0.15); }
+                .tag-neutral { font-size: 0.65rem; padding: 4px 11px; background: rgba(255,255,255,0.03); color: var(--text-secondary); border-radius: 6px; border: 1px solid var(--border-subtle); }
+
+                .info-card {
+                    background: linear-gradient(145deg, rgba(12,12,18,0.9), rgba(8,8,14,0.82));
+                    border: 1px solid rgba(212,168,83,0.12);
+                    border-radius: 14px;
+                    padding: 18px 20px;
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    box-shadow: 0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
                 }
-                .tag-rose {
-                    font-size: 0.68rem; padding: 4px 14px; font-weight: 600;
-                    background: rgba(244,63,94,0.07); color: #f43f5e;
-                    border-radius: var(--radius-full); border: 1px solid rgba(244,63,94,0.15);
-                }
-                .tag-neutral {
-                    font-size: 0.68rem; padding: 4px 12px;
-                    background: rgba(255,255,255,0.03); color: var(--text-secondary);
-                    border-radius: var(--radius-full); border: 1px solid var(--border-subtle);
-                }
+
                 .form-card {
-                    background: rgba(255,255,255,0.03);
+                    background: rgba(255,255,255,0.025);
                     border: 1px solid rgba(212,168,83,0.18);
                     border-radius: 20px;
                     backdrop-filter: blur(24px);
-                    position: sticky;
-                    top: 100px;
-                    animation: glow-pulse 4s ease-in-out infinite;
+                    -webkit-backdrop-filter: blur(24px);
                     overflow: hidden;
+                    animation: glowPulse 4s ease-in-out infinite;
                 }
-                .form-card-header {
-                    padding: 28px 32px 20px;
-                    background: linear-gradient(135deg, rgba(212,168,83,0.06), transparent);
-                    border-bottom: 1px solid rgba(212,168,83,0.1);
-                }
-                .form-card-body { padding: 28px 32px 32px; }
+
                 .meta-row {
-                    display: flex; align-items: center; gap: 10px;
-                    padding: 12px 0;
-                    border-bottom: 1px solid rgba(255,255,255,0.04);
-                    font-size: 0.85rem;
+                    display: flex; align-items: center; justify-content: space-between;
+                    padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+                    font-size: 0.8rem;
                 }
-                .meta-row:last-child { border-bottom: none; }
-                .meta-label { color: var(--text-tertiary); min-width: 100px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; }
-                .meta-value { color: var(--text-primary); font-weight: 600; }
-                @media (max-width: 900px) {
-                    .detail-grid { grid-template-columns: 1fr !important; }
-                    .form-card { position: static !important; }
+                .meta-row:last-child { border-bottom: none; padding-bottom: 0; }
+                .meta-label { color: var(--text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; }
+                .meta-value { color: var(--text-primary); font-weight: 600; text-align: right; }
+
+                /* ── Mobile layout ── */
+                .detail-layout {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
+
+                /* ── Tablet+ ── */
+                @media (min-width: 900px) {
+                    .detail-layout {
+                        display: grid;
+                        grid-template-columns: 1fr 400px;
+                        gap: 28px;
+                        align-items: start;
+                    }
+                    .form-card {
+                        position: sticky;
+                        top: 96px;
+                    }
                 }
             `}</style>
 
-            <main style={{ minHeight: '100vh', paddingTop: '90px', background: 'transparent', position: 'relative', zIndex: 2 }}>
+            <main style={{ minHeight: '100vh', paddingTop: '68px', background: 'transparent', position: 'relative', zIndex: 2 }}>
 
                 {/* ── Hero strip ── */}
                 <div style={{
                     borderBottom: '1px solid rgba(255,255,255,0.05)',
-                    background: 'linear-gradient(180deg, rgba(13,15,20,0.7) 0%, rgba(13,15,20,0.5) 100%)',
+                    background: 'linear-gradient(180deg, rgba(13,15,20,0.75) 0%, rgba(13,15,20,0.5) 100%)',
                     backdropFilter: 'blur(12px)',
                     WebkitBackdropFilter: 'blur(12px)',
-                    padding: '52px 0 44px',
+                    padding: '28px 20px 24px',
                 }}>
-                    <div className="container" style={{ maxWidth: '1080px' }}>
+                    <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
-                        {/* Breadcrumb project pill */}
+                        {/* Back button */}
+                        <a href="/scripts" className="back-btn d0" style={{ marginBottom: '16px' }}>
+                            <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>←</span> {t('backToScripts')}
+                        </a>
+
+                        {/* Project pill */}
                         {call.project && (
-                            <div className="detail-fade" style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                marginBottom: '20px',
-                                fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em',
+                            <div className="d0" style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '7px',
+                                marginBottom: '12px',
+                                fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.1em',
                                 textTransform: 'uppercase', color: 'var(--accent-gold)',
                                 background: 'rgba(212,168,83,0.07)',
-                                padding: '5px 16px', borderRadius: 'var(--radius-full)',
+                                padding: '4px 14px', borderRadius: '99px',
                                 border: '1px solid rgba(212,168,83,0.18)',
                             }}>
-                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} />
+                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} />
                                 {call.project.title}
                             </div>
                         )}
 
-                        <h1 className="detail-fade-1" style={{
-                            fontSize: 'clamp(2rem, 5vw, 3rem)',
+                        <h1 className="d1" style={{
+                            fontSize: 'clamp(1.6rem, 5.5vw, 2.8rem)',
                             fontWeight: 800, lineHeight: 1.1,
-                            marginBottom: '18px',
+                            marginBottom: '14px',
                             background: 'linear-gradient(135deg, #e8e6e3 30%, #d4a853)',
                             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+                            letterSpacing: '-0.02em',
                         }}>
                             {call.title}
                         </h1>
 
                         {/* Tags row */}
-                        <div className="detail-fade-2" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        <div className="d2" style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
                             {call.genre && <span className="tag-gold">🎬 {call.genre}</span>}
                             {call.targetLength && <span className="tag-blue">⏱ {call.targetLength}</span>}
-                            {call.deadline && <span className="tag-rose">📅 Deadline: {call.deadline}</span>}
+                            {call.deadline && <span className="tag-rose">📅 {call.deadline}</span>}
                             <span className="tag-neutral">📄 {call._count.submissions} submission{call._count.submissions !== 1 ? 's' : ''}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* ── Main grid ── */}
-                <section style={{ padding: '52px 0 80px' }}>
-                    <div className="container" style={{ maxWidth: '1080px' }}>
-                        <div className="detail-grid" style={{
-                            display: 'grid',
-                            gridTemplateColumns: '1fr 420px',
-                            gap: '48px',
-                            alignItems: 'start',
-                        }}>
+                {/* ── Main content ── */}
+                <section style={{ padding: '20px 16px 80px' }}>
+                    <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+                        <div className="detail-layout">
 
-                            {/* LEFT — Details */}
-                            <div>
-                                {/* Description */}
-                                <div className="detail-fade-2" style={{
-                                    background: 'rgba(255,255,255,0.02)',
-                                    border: '1px solid rgba(255,255,255,0.06)',
-                                    borderRadius: '16px',
-                                    padding: '32px',
-                                    marginBottom: '28px',
-                                }}>
+                            {/* LEFT — Info cards */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                                {/* About */}
+                                <div className="info-card d2">
                                     <div style={{
-                                        fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
-                                        textTransform: 'uppercase', color: 'var(--accent-gold)',
-                                        marginBottom: '14px',
+                                        fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.12em',
+                                        textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: '10px',
                                     }}>
-                                    {t('aboutCall')}
+                                        {t('aboutCall')}
                                     </div>
-                                    <p style={{
-                                        fontSize: '1.05rem', lineHeight: 1.85,
-                                        color: 'var(--text-secondary)', margin: 0,
-                                    }}>
+                                    <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>
                                         {call.description}
                                     </p>
                                 </div>
 
-                                {/* Tone keywords */}
+                                {/* Tone */}
                                 {toneList.length > 0 && (
-                                    <div className="detail-fade-3" style={{
-                                        background: 'rgba(255,255,255,0.02)',
-                                        border: '1px solid rgba(255,255,255,0.06)',
-                                        borderRadius: '16px',
-                                        padding: '28px 32px',
-                                        marginBottom: '28px',
-                                    }}>
+                                    <div className="info-card d3" style={{ borderColor: 'rgba(255,255,255,0.07)' }}>
                                         <div style={{
-                                            fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
-                                            textTransform: 'uppercase', color: 'var(--text-tertiary)',
-                                            marginBottom: '14px',
+                                            fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.12em',
+                                            textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '10px',
                                         }}>
-                                        {t('desiredTone')}
+                                            {t('desiredTone')}
                                         </div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
                                             {toneList.map((tone: string) => (
                                                 <span key={tone} className="tag-neutral">{tone}</span>
                                             ))}
@@ -237,19 +239,13 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                     </div>
                                 )}
 
-                                {/* Submission details table */}
-                                <div className="detail-fade-4" style={{
-                                    background: 'rgba(255,255,255,0.02)',
-                                    border: '1px solid rgba(255,255,255,0.06)',
-                                    borderRadius: '16px',
-                                    padding: '28px 32px',
-                                }}>
+                                {/* Submission details */}
+                                <div className="info-card d4">
                                     <div style={{
-                                        fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
-                                        textTransform: 'uppercase', color: 'var(--accent-gold)',
-                                        marginBottom: '18px',
+                                        fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.12em',
+                                        textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: '12px',
                                     }}>
-                                    {t('submissionDetails')}
+                                        {t('submissionDetails')}
                                     </div>
                                     <div>
                                         {call.genre && (
@@ -277,17 +273,18 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                         <div className="meta-row">
                                             <span className="meta-label">{t('statusLabel')}</span>
                                             <span style={{
-                                                fontSize: '0.72rem', fontWeight: 700,
+                                                fontSize: '0.65rem', fontWeight: 700,
                                                 color: '#10b981', background: 'rgba(16,185,129,0.08)',
-                                                padding: '3px 12px', borderRadius: 'var(--radius-full)',
+                                                padding: '3px 10px', borderRadius: '6px',
                                                 border: '1px solid rgba(16,185,129,0.2)',
                                             }}>● {t('statusOpen')}</span>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
 
-                            {/* RIGHT — Form or Submitted Card */}
+                            {/* RIGHT — Form */}
                             <div>
                                 {existingSubmission && existingSubmission.status !== 'withdrawn' ? (
                                     <ScriptSubmittedCard
@@ -298,23 +295,28 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                         submittedAt={existingSubmission.createdAt.toISOString()}
                                     />
                                 ) : (
-                                    <div className="form-card detail-fade-1">
-                                        <div className="form-card-header">
+                                    <div className="form-card d1">
+                                        <div style={{
+                                            padding: '22px 22px 16px',
+                                            background: 'linear-gradient(135deg, rgba(212,168,83,0.06), transparent)',
+                                            borderBottom: '1px solid rgba(212,168,83,0.1)',
+                                        }}>
                                             <div style={{
-                                                fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
+                                                fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em',
                                                 textTransform: 'uppercase', color: 'var(--accent-gold)',
-                                                marginBottom: '8px',
+                                                marginBottom: '6px',
                                             }}>
                                                 {t('submitYourScript')}
                                             </div>
                                             <div style={{
-                                                fontSize: '1.15rem', fontWeight: 700,
-                                                color: 'var(--text-primary)', lineHeight: 1.3,
+                                                fontSize: '1.05rem', fontWeight: 800,
+                                                color: 'var(--text-primary)', lineHeight: 1.25,
+                                                letterSpacing: '-0.01em',
                                             }}>
                                                 {call.title}
                                             </div>
                                         </div>
-                                        <div className="form-card-body">
+                                        <div style={{ padding: '22px 22px 28px' }}>
                                             <ScriptSubmissionForm callId={call.id} />
                                         </div>
                                     </div>

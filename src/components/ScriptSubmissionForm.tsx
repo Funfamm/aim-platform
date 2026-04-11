@@ -18,6 +18,26 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
     const [uploadState, setUploadState] = useState<'idle' | 'uploading' | 'done' | 'error'>('idle')
     const [uploadedPath, setUploadedPath] = useState<string | null>(null)
     const [uploadFileName, setUploadFileName] = useState<string | null>(null)
+    const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+    const REQUIRED_FIELDS = ['authorName', 'authorEmail', 'title', 'logline', 'synopsis'] as const
+    type RequiredField = typeof REQUIRED_FIELDS[number]
+
+    const validateField = (field: RequiredField, value: string): string => {
+        if (!value.trim()) return t('formErrorRequired')
+        if (field === 'authorEmail' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
+            return t('formErrorInvalidEmail')
+        return ''
+    }
+
+    // Either paste text OR upload a file — at least one is required
+    const scriptProvided = () => form.scriptText.trim().length > 0 || uploadState === 'done'
+
+    const handleBlurRequired = (field: RequiredField) => {
+        setFocusedField(null)
+        const err = validateField(field, form[field])
+        setFieldErrors(prev => ({ ...prev, [field]: err }))
+    }
 
     const update = (field: string, value: string) => setForm(f => ({ ...f, [field]: value }))
 
@@ -63,6 +83,20 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        // Custom validation — check all required fields
+        const errors: Record<string, string> = {}
+        for (const field of REQUIRED_FIELDS) {
+            const err = validateField(field, form[field])
+            if (err) errors[field] = err
+        }
+        // Either script text OR file must be provided
+        if (!scriptProvided()) {
+            errors['scriptContent'] = 'Please paste your script or upload a file — at least one is required.'
+        }
+        if (Object.keys(errors).length > 0) {
+            setFieldErrors(errors)
+            return
+        }
         setSubmitting(true)
         setError('')
         try {
@@ -83,7 +117,7 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
 
     const inputBase: React.CSSProperties = {
         width: '100%',
-        padding: '11px 14px',
+        padding: '10px 13px',
         background: 'rgba(255,255,255,0.04)',
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: '10px',
@@ -153,10 +187,10 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
     }
 
     return (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+        <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
 
             {/* ── Author section ── */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '20px' }}>
                 <div style={sectionHeaderStyle}>👤 {t('authorSectionLabel')}</div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div>
@@ -166,10 +200,10 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                             value={form.authorName}
                             onChange={e => update('authorName', e.target.value)}
                             onFocus={() => setFocusedField('authorName')}
-                            onBlur={() => setFocusedField(null)}
-                            required
+                            onBlur={() => handleBlurRequired('authorName')}
                             placeholder={t('formNamePlaceholder')}
                         />
+                        {fieldErrors.authorName && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#f87171' }}>{fieldErrors.authorName}</p>}
                     </div>
                     <div>
                         <label style={labelStyle}>{t('formEmailLabel')} *</label>
@@ -179,10 +213,10 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                             value={form.authorEmail}
                             onChange={e => update('authorEmail', e.target.value)}
                             onFocus={() => setFocusedField('authorEmail')}
-                            onBlur={() => setFocusedField(null)}
-                            required
+                            onBlur={() => handleBlurRequired('authorEmail')}
                             placeholder={t('formEmailPlaceholder')}
                         />
+                        {fieldErrors.authorEmail && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#f87171' }}>{fieldErrors.authorEmail}</p>}
                     </div>
                     <div>
                         <label style={labelStyle}>{t('formBioLabel')}</label>
@@ -199,9 +233,9 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
             </div>
 
             {/* ── Script section ── */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: '20px' }}>
                 <div style={sectionHeaderStyle}>📝 {t('scriptSectionLabel')}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     <div>
                         <label style={labelStyle}>{t('formScriptTitleLabel')} *</label>
                         <input
@@ -209,10 +243,10 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                             value={form.title}
                             onChange={e => update('title', e.target.value)}
                             onFocus={() => setFocusedField('title')}
-                            onBlur={() => setFocusedField(null)}
-                            required
+                            onBlur={() => handleBlurRequired('title')}
                             placeholder={t('formScriptTitlePlaceholder')}
                         />
+                        {fieldErrors.title && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#f87171' }}>{fieldErrors.title}</p>}
                     </div>
                     <div>
                         <label style={labelStyle}>{t('formLoglineLabel')} *</label>
@@ -221,12 +255,12 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                             value={form.logline}
                             onChange={e => update('logline', e.target.value)}
                             onFocus={() => setFocusedField('logline')}
-                            onBlur={() => setFocusedField(null)}
-                            required
+                            onBlur={() => handleBlurRequired('logline')}
                             placeholder={t('formLoglinePlaceholder')}
                         />
+                        {fieldErrors.logline && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#f87171' }}>{fieldErrors.logline}</p>}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                         <div>
                             <label style={labelStyle}>{t('formGenreLabel')}</label>
                             <input
@@ -257,68 +291,122 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                             value={form.synopsis}
                             onChange={e => update('synopsis', e.target.value)}
                             onFocus={() => setFocusedField('synopsis')}
-                            onBlur={() => setFocusedField(null)}
-                            required
+                            onBlur={() => handleBlurRequired('synopsis')}
                             placeholder={t('formSynopsisPlaceholder')}
                         />
+                        {fieldErrors.synopsis && <p style={{ margin: '4px 0 0', fontSize: '0.72rem', color: '#f87171' }}>{fieldErrors.synopsis}</p>}
                     </div>
-                    <div>
-                        <label style={labelStyle}>{t('formScriptTextLabel')}</label>
-                        <textarea
-                            style={{ ...getInputStyle('scriptText'), minHeight: '160px', resize: 'vertical', fontFamily: 'monospace', fontSize: '0.78rem' }}
-                            value={form.scriptText}
-                            onChange={e => update('scriptText', e.target.value)}
-                            onFocus={() => setFocusedField('scriptText')}
-                            onBlur={() => setFocusedField(null)}
-                            placeholder={t('formScriptTextPlaceholder')}
-                        />
-                    </div>
+                    {/* ── Script Content: either paste OR upload ── */}
+                    <div style={{
+                        border: fieldErrors['scriptContent'] ? '1px solid rgba(244,63,94,0.35)' : '1px solid rgba(212,168,83,0.12)',
+                        borderRadius: '12px',
+                        padding: '16px',
+                        background: fieldErrors['scriptContent'] ? 'rgba(244,63,94,0.03)' : 'rgba(212,168,83,0.02)',
+                        display: 'flex', flexDirection: 'column', gap: '12px',
+                    }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)' }}>
+                                📄 {t('formScriptTextLabel')} *
+                            </span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                Paste text or upload a file
+                            </span>
+                        </div>
 
-                    {/* ── File Upload ── */}
-                    <div>
-                        <label style={labelStyle}>{t('formUploadLabel')}</label>
-                        <label
-                            htmlFor="script-file-upload"
-                            style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                justifyContent: 'center', gap: '8px',
-                                padding: '22px 16px',
-                                border: `1px dashed ${uploadState === 'done' ? 'rgba(16,185,129,0.5)' : uploadState === 'error' ? 'rgba(244,63,94,0.4)' : 'rgba(212,168,83,0.25)'}`,
-                                borderRadius: '10px',
-                                background: uploadState === 'done' ? 'rgba(16,185,129,0.04)' : uploadState === 'error' ? 'rgba(244,63,94,0.04)' : 'rgba(212,168,83,0.03)',
-                                cursor: uploadState === 'uploading' ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease',
-                            }}
-                        >
-                            <span style={{ fontSize: '1.4rem' }}>
-                                {uploadState === 'done' ? '✅' : uploadState === 'error' ? '❌' : uploadState === 'uploading' ? '⏳' : '📄'}
-                            </span>
-                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: uploadState === 'done' ? '#10b981' : uploadState === 'error' ? '#f43f5e' : 'var(--text-secondary)' }}>
-                                {uploadState === 'uploading' ? t('formUploading')
-                                    : uploadState === 'done' ? `${t('formUploadDone')}: ${uploadFileName}`
-                                    : uploadState === 'error' ? t('formUploadError')
-                                    : t('formUploadBtn')}
-                            </span>
-                            <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
-                                {t('formUploadHint')}
-                            </span>
-                            <input
-                                id="script-file-upload"
-                                type="file"
-                                accept=".pdf,.fdx,.txt,.fountain"
-                                style={{ display: 'none' }}
-                                disabled={uploadState === 'uploading'}
-                                onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }}
+                        {/* Paste textarea */}
+                        <div>
+                            <label style={{ ...labelStyle, color: form.scriptText.trim() ? '#10b981' : 'var(--text-tertiary)' }}>
+                                Option A — Paste script text
+                            </label>
+                            <textarea
+                                style={{
+                                    ...getInputStyle('scriptText'),
+                                    minHeight: '140px', resize: 'vertical',
+                                    fontFamily: 'monospace', fontSize: '0.78rem',
+                                    opacity: uploadState === 'done' ? 0.45 : 1,
+                                }}
+                                value={form.scriptText}
+                                onChange={e => {
+                                    update('scriptText', e.target.value)
+                                    if (fieldErrors['scriptContent']) setFieldErrors(prev => ({ ...prev, scriptContent: '' }))
+                                }}
+                                onFocus={() => setFocusedField('scriptText')}
+                                onBlur={() => setFocusedField(null)}
+                                placeholder={t('formScriptTextPlaceholder')}
+                                disabled={uploadState === 'done'}
                             />
-                        </label>
-                        {uploadState === 'done' && (
-                            <button
-                                type="button"
-                                onClick={() => { setUploadState('idle'); setUploadedPath(null); setUploadFileName(null) }}
-                                style={{ marginTop: '6px', fontSize: '0.7rem', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        </div>
+
+                        {/* Divider */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                            <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>OR</span>
+                            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.06)' }} />
+                        </div>
+
+                        {/* File upload */}
+                        <div>
+                            <label style={{ ...labelStyle, color: uploadState === 'done' ? '#10b981' : 'var(--text-tertiary)' }}>
+                                Option B — Upload script file
+                            </label>
+                            <label
+                                htmlFor="script-file-upload"
+                                style={{
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                    justifyContent: 'center', gap: '8px',
+                                    padding: '20px 16px',
+                                    border: `1px dashed ${uploadState === 'done' ? 'rgba(16,185,129,0.5)' : uploadState === 'error' ? 'rgba(244,63,94,0.4)' : form.scriptText.trim() ? 'rgba(255,255,255,0.07)' : 'rgba(212,168,83,0.25)'}`,
+                                    borderRadius: '10px',
+                                    background: uploadState === 'done' ? 'rgba(16,185,129,0.04)' : uploadState === 'error' ? 'rgba(244,63,94,0.04)' : 'rgba(212,168,83,0.02)',
+                                    cursor: uploadState === 'uploading' || form.scriptText.trim().length > 0 ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s ease',
+                                    opacity: form.scriptText.trim().length > 0 ? 0.45 : 1,
+                                }}
                             >
-                                ✕ Remove
-                            </button>
+                                <span style={{ fontSize: '1.4rem' }}>
+                                    {uploadState === 'done' ? '✅' : uploadState === 'error' ? '❌' : uploadState === 'uploading' ? '⏳' : '📄'}
+                                </span>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: uploadState === 'done' ? '#10b981' : uploadState === 'error' ? '#f43f5e' : 'var(--text-secondary)' }}>
+                                    {uploadState === 'uploading' ? t('formUploading')
+                                        : uploadState === 'done' ? `${t('formUploadDone')}: ${uploadFileName}`
+                                        : uploadState === 'error' ? t('formUploadError')
+                                        : t('formUploadBtn')}
+                                </span>
+                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
+                                    {t('formUploadHint')}
+                                </span>
+                                <input
+                                    id="script-file-upload"
+                                    type="file"
+                                    accept=".pdf,.fdx,.txt,.fountain"
+                                    style={{ display: 'none' }}
+                                    disabled={uploadState === 'uploading' || form.scriptText.trim().length > 0}
+                                    onChange={e => {
+                                        const f = e.target.files?.[0]
+                                        if (f) {
+                                            handleFileUpload(f)
+                                            if (fieldErrors['scriptContent']) setFieldErrors(prev => ({ ...prev, scriptContent: '' }))
+                                        }
+                                    }}
+                                />
+                            </label>
+                            {uploadState === 'done' && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setUploadState('idle'); setUploadedPath(null); setUploadFileName(null) }}
+                                    style={{ marginTop: '6px', fontSize: '0.7rem', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                >
+                                    Remove file
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Either/or error */}
+                        {fieldErrors['scriptContent'] && (
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: '#f87171', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                <span>⚠️</span> {fieldErrors['scriptContent']}
+                            </p>
                         )}
                     </div>
                 </div>

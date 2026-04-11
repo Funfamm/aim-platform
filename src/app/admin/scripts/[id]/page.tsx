@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 
 interface ScriptAnalysis {
     originalityScore: number
@@ -38,45 +39,66 @@ interface ScriptCall {
     description: string
     genre: string | null
     status: string
+    deadline: string | null
 }
 
-const statusColors: Record<string, { color: string; bg: string }> = {
-    submitted:   { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
-    analyzing:   { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
-    analyzed:    { color: '#60a5fa', bg: 'rgba(96,165,250,0.1)' },
-    shortlisted: { color: '#d4a853', bg: 'rgba(212,168,83,0.1)' },
-    selected:    { color: '#34d399', bg: 'rgba(52,211,153,0.1)' },
-    rejected:    { color: '#f43f5e', bg: 'rgba(244,63,94,0.1)' },
-    withdrawn:   { color: '#f87171', bg: 'rgba(239,68,68,0.08)' },
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string; dot: string }> = {
+    submitted:   { label: 'Submitted',   color: '#94a3b8', bg: 'rgba(148,163,184,0.1)',  border: 'rgba(148,163,184,0.2)',  dot: '#94a3b8' },
+    analyzing:   { label: 'Analyzing',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)',   border: 'rgba(245,158,11,0.2)',   dot: '#f59e0b' },
+    analyzed:    { label: 'Analyzed',    color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.2)',   dot: '#60a5fa' },
+    shortlisted: { label: 'Shortlisted', color: '#d4a853', bg: 'rgba(212,168,83,0.1)',   border: 'rgba(212,168,83,0.2)',   dot: '#d4a853' },
+    selected:    { label: 'Selected',    color: '#34d399', bg: 'rgba(52,211,153,0.1)',   border: 'rgba(52,211,153,0.2)',   dot: '#34d399' },
+    rejected:    { label: 'Rejected',    color: '#f43f5e', bg: 'rgba(244,63,94,0.1)',    border: 'rgba(244,63,94,0.2)',    dot: '#f43f5e' },
+    withdrawn:   { label: 'Withdrawn',   color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.15)', dot: '#6b7280' },
 }
 
-// Valid forward steps per status
-const SCRIPT_NEXT_STEPS: Record<string, string[]> = {
+const NEXT_STEPS: Record<string, string[]> = {
     submitted:   ['analyzed', 'shortlisted', 'rejected'],
     analyzed:    ['shortlisted', 'rejected'],
     shortlisted: ['selected', 'rejected'],
-    selected:    ['analyzed'],   // restore
-    rejected:    ['analyzed'],   // restore
+    selected:    ['analyzed'],
+    rejected:    ['analyzed'],
 }
 
-const SCRIPT_ACTION_LABELS: Record<string, { label: string; icon: string; danger?: boolean }> = {
-    analyzed:    { label: 'Mark Analyzed',    icon: '✅' },
-    shortlisted: { label: 'Shortlist',        icon: '⭐' },
-    selected:    { label: 'Select Script',    icon: '🏆' },
-    rejected:    { label: 'Reject',           icon: '✕',  danger: true },
-    analyzed_restore: { label: 'Restore to Review', icon: '↩️' },
+const ACTION_META: Record<string, { label: string; icon: string; danger?: boolean; success?: boolean }> = {
+    analyzed:    { label: 'Mark Analyzed',  icon: '✅' },
+    shortlisted: { label: 'Shortlist',      icon: '⭐' },
+    selected:    { label: 'Select',         icon: '🏆', success: true },
+    rejected:    { label: 'Reject',         icon: '✕',  danger: true },
 }
 
 function ScoreBar({ label, score, color }: { label: string; score: number; color: string }) {
     return (
-        <div style={{ marginBottom: '8px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '3px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{label}</span>
-                <span style={{ fontWeight: 700, color }}>{score}/100</span>
+        <div style={{ marginBottom: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>{label}</span>
+                <span style={{ fontSize: '0.72rem', fontWeight: 800, color }}>{score}</span>
             </div>
-            <div style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
-                <div style={{ width: `${score}%`, height: '100%', background: color, borderRadius: '2px', transition: 'width 0.5s' }} />
+            <div style={{ height: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{
+                    width: `${score}%`, height: '100%', borderRadius: '3px',
+                    background: `linear-gradient(90deg, ${color}88, ${color})`,
+                    transition: 'width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    boxShadow: `0 0 6px ${color}44`,
+                }} />
             </div>
+        </div>
+    )
+}
+
+function ScoreBadge({ score }: { score: number }) {
+    const color = score >= 70 ? '#34d399' : score >= 50 ? '#d4a853' : '#f43f5e'
+    const bg = score >= 70 ? 'rgba(52,211,153,0.12)' : score >= 50 ? 'rgba(212,168,83,0.12)' : 'rgba(244,63,94,0.12)'
+    const border = score >= 70 ? 'rgba(52,211,153,0.3)' : score >= 50 ? 'rgba(212,168,83,0.3)' : 'rgba(244,63,94,0.3)'
+    return (
+        <div style={{
+            width: 44, height: 44, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.9rem', fontWeight: 900, flexShrink: 0,
+            background: bg, border: `2px solid ${border}`, color,
+            boxShadow: `0 0 12px ${color}22`,
+        }}>
+            {Math.round(score)}
         </div>
     )
 }
@@ -88,8 +110,10 @@ export default function AdminScriptCallDetailPage() {
     const [submissions, setSubmissions] = useState<Submission[]>([])
     const [loading, setLoading] = useState(true)
     const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set())
+    const [analyzeAllLoading, setAnalyzeAllLoading] = useState(false)
     const [expanded, setExpanded] = useState<string | null>(null)
     const [confirmAction, setConfirmAction] = useState<{ subId: string; status: string } | null>(null)
+    const [activeTab, setActiveTab] = useState<'all' | 'analyzed' | 'shortlisted' | 'selected'>('all')
 
     const fetchData = useCallback(async () => {
         const [callRes, subRes] = await Promise.all([
@@ -122,10 +146,12 @@ export default function AdminScriptCallDetailPage() {
     }
 
     const analyzeAll = async () => {
-        const unanalyzed = submissions.filter(s => !s.analysis && s.status !== 'analyzing')
+        setAnalyzeAllLoading(true)
+        const unanalyzed = submissions.filter(s => !s.analysis && s.status !== 'analyzing' && s.status !== 'withdrawn')
         for (const sub of unanalyzed) {
             await analyzeSubmission(sub.id)
         }
+        setAnalyzeAllLoading(false)
     }
 
     const updateStatus = async (subId: string, status: string) => {
@@ -137,134 +163,379 @@ export default function AdminScriptCallDetailPage() {
         fetchData()
     }
 
-    if (loading) return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>Loading...</div>
-    if (!call) return <div style={{ padding: 'var(--space-3xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>Script call not found</div>
+    if (loading) return (
+        <div style={{ padding: '60px', textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '16px' }}>⏳</div>
+            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Loading submissions...</div>
+        </div>
+    )
+    if (!call) return (
+        <div style={{ padding: '60px', textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🎬</div>
+            <div style={{ color: 'var(--text-tertiary)' }}>Script call not found</div>
+        </div>
+    )
 
-    const topScores = submissions.filter(s => s.analysis).sort((a, b) => (b.analysis?.overallScore || 0) - (a.analysis?.overallScore || 0))
+    const analyzed = submissions.filter(s => s.analysis)
+    const shortlisted = submissions.filter(s => s.status === 'shortlisted')
+    const selected = submissions.filter(s => s.status === 'selected')
+    const unscored = submissions.filter(s => !s.analysis && s.status !== 'withdrawn' && s.status !== 'analyzing')
+    const topScores = [...analyzed].sort((a, b) => (b.analysis?.overallScore || 0) - (a.analysis?.overallScore || 0))
+    const avgScore = analyzed.length > 0
+        ? Math.round(analyzed.reduce((acc, s) => acc + (s.analysis?.overallScore || 0), 0) / analyzed.length)
+        : null
+
+    const filteredSubs = activeTab === 'all' ? submissions
+        : activeTab === 'analyzed' ? analyzed
+        : activeTab === 'shortlisted' ? shortlisted
+        : selected
 
     return (
-        <div>
-            {/* Header */}
-            <div style={{ marginBottom: 'var(--space-xl)' }}>
-                <h1 style={{ fontSize: '1.4rem', marginBottom: '4px' }}>{call.title}</h1>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                    {submissions.length} submission{submissions.length !== 1 ? 's' : ''} ·
-                    {topScores.length} analyzed ·
-                    {call.genre || 'Any genre'}
-                </p>
+        <>
+            <style>{`
+                @keyframes fadeUp {
+                    from { opacity: 0; transform: translateY(12px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes expandIn {
+                    from { opacity: 0; transform: translateY(-8px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .admin-sub-card {
+                    background: linear-gradient(145deg, rgba(16,18,26,0.95), rgba(12,14,20,0.9));
+                    border: 1px solid rgba(255,255,255,0.07);
+                    border-radius: 16px;
+                    transition: all 0.25s ease;
+                    overflow: hidden;
+                    animation: fadeUp 0.35s ease both;
+                }
+                .admin-sub-card:hover {
+                    border-color: rgba(212,168,83,0.2);
+                    box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(212,168,83,0.06);
+                    transform: translateY(-1px);
+                }
+                .admin-sub-card.is-expanded {
+                    border-color: rgba(212,168,83,0.25);
+                }
+                .sub-expanded-body {
+                    animation: expandIn 0.25s ease both;
+                }
+                .stat-pill {
+                    display: flex; flex-direction: column; align-items: center;
+                    padding: 16px 24px; border-radius: 14px; gap: 4px;
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    min-width: 90px;
+                }
+                .tab-btn {
+                    padding: 7px 16px; border-radius: 8px; font-size: 0.72rem;
+                    font-weight: 600; cursor: pointer; transition: all 0.15s;
+                    border: 1px solid transparent; background: transparent;
+                    color: var(--text-tertiary); letter-spacing: 0.02em;
+                }
+                .tab-btn.active {
+                    background: rgba(212,168,83,0.12);
+                    border-color: rgba(212,168,83,0.25);
+                    color: var(--accent-gold);
+                }
+                .tab-btn:not(.active):hover {
+                    background: rgba(255,255,255,0.04);
+                    color: var(--text-secondary);
+                }
+                .action-btn {
+                    padding: 5px 14px; font-size: 0.65rem; font-weight: 700;
+                    border-radius: 8px; cursor: pointer; transition: all 0.15s;
+                    letter-spacing: 0.03em; white-space: nowrap;
+                }
+                .action-btn:hover { transform: translateY(-1px); filter: brightness(1.15); }
+                .action-btn:active { transform: translateY(0); }
+                .podium-card {
+                    padding: 16px 18px; border-radius: 12px;
+                    background: rgba(255,255,255,0.02);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    animation: fadeUp 0.4s ease both;
+                }
+                .podium-card.rank-1 {
+                    background: linear-gradient(135deg, rgba(212,168,83,0.07), rgba(212,168,83,0.02));
+                    border-color: rgba(212,168,83,0.2);
+                }
+            `}</style>
+
+            {/* ── Page Header ── */}
+            <div style={{ marginBottom: '28px', animation: 'fadeUp 0.3s ease both' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                    <Link href="/admin/scripts" style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '5px',
+                        fontSize: '0.7rem', color: 'var(--text-tertiary)', textDecoration: 'none',
+                        padding: '4px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.07)', transition: 'all 0.15s',
+                    }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+                        All Calls
+                    </Link>
+                    <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: '0.65rem' }}>/</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Submissions</span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                    <div>
+                        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '6px', lineHeight: 1.2 }}>
+                            {call.title}
+                        </h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            {call.genre && (
+                                <span style={{
+                                    fontSize: '0.65rem', fontWeight: 600, padding: '2px 10px',
+                                    borderRadius: 'var(--radius-full)', background: 'rgba(212,168,83,0.1)',
+                                    border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)',
+                                }}>{call.genre}</span>
+                            )}
+                            <span style={{
+                                fontSize: '0.65rem', fontWeight: 600, padding: '2px 10px',
+                                borderRadius: 'var(--radius-full)',
+                                background: call.status === 'open' ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
+                                border: `1px solid ${call.status === 'open' ? 'rgba(52,211,153,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                                color: call.status === 'open' ? '#34d399' : '#f87171',
+                                textTransform: 'uppercase',
+                            }}>{call.status}</span>
+                            {call.deadline && (
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                                    Deadline: {new Date(call.deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Analyze All Button */}
+                    {unscored.length > 0 && (
+                        <button
+                            onClick={analyzeAll}
+                            disabled={analyzeAllLoading}
+                            style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                padding: '10px 22px', borderRadius: '10px',
+                                background: analyzeAllLoading
+                                    ? 'rgba(245,158,11,0.06)'
+                                    : 'linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.06))',
+                                border: '1px solid rgba(245,158,11,0.25)',
+                                color: '#f59e0b', fontSize: '0.78rem', fontWeight: 700,
+                                cursor: analyzeAllLoading ? 'not-allowed' : 'pointer',
+                                opacity: analyzeAllLoading ? 0.7 : 1,
+                                transition: 'all 0.2s', letterSpacing: '0.02em',
+                                boxShadow: '0 2px 12px rgba(245,158,11,0.1)',
+                            }}
+                        >
+                            <span style={{ fontSize: '1rem' }}>{analyzeAllLoading ? '⏳' : '🤖'}</span>
+                            {analyzeAllLoading ? 'Analyzing...' : `Analyze All Unscored (${unscored.length})`}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {/* Top 3 Banner */}
-            {topScores.length >= 3 && (
-                <div className="glass-card" style={{
-                    padding: 'var(--space-lg)', marginBottom: 'var(--space-xl)',
-                    border: '1px solid rgba(212,168,83,0.2)',
+            {/* ── Stats Bar ── */}
+            <div style={{
+                display: 'flex', gap: '12px', marginBottom: '28px', flexWrap: 'wrap',
+                animation: 'fadeUp 0.35s ease both',
+            }}>
+                <div className="stat-pill">
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-primary)' }}>{submissions.length}</div>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total</div>
+                </div>
+                <div className="stat-pill">
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#60a5fa' }}>{analyzed.length}</div>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Analyzed</div>
+                </div>
+                <div className="stat-pill">
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#d4a853' }}>{shortlisted.length}</div>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Shortlisted</div>
+                </div>
+                <div className="stat-pill">
+                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#34d399' }}>{selected.length}</div>
+                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Selected</div>
+                </div>
+                {avgScore !== null && (
+                    <div className="stat-pill" style={{ borderColor: 'rgba(212,168,83,0.15)', background: 'rgba(212,168,83,0.04)' }}>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--accent-gold)' }}>{avgScore}</div>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Avg Score</div>
+                    </div>
+                )}
+                {unscored.length > 0 && (
+                    <div className="stat-pill" style={{ borderColor: 'rgba(239,68,68,0.15)', background: 'rgba(239,68,68,0.04)' }}>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#f87171' }}>{unscored.length}</div>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Unscored</div>
+                    </div>
+                )}
+            </div>
+
+            {/* ── Top 3 Podium ── */}
+            {topScores.length >= 2 && (
+                <div style={{
+                    background: 'linear-gradient(135deg, rgba(212,168,83,0.05), rgba(212,168,83,0.01))',
+                    border: '1px solid rgba(212,168,83,0.15)',
+                    borderRadius: '16px', padding: '20px 24px', marginBottom: '28px',
+                    animation: 'fadeUp 0.4s ease 0.1s both',
                 }}>
-                    <h3 style={{ fontSize: '0.9rem', color: 'var(--accent-gold)', marginBottom: 'var(--space-md)' }}>
-                        🏆 AI Top 3 Picks
-                    </h3>
-                    <div className="grid-3col">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                        <span style={{ fontSize: '1rem' }}>🏆</span>
+                        <h3 style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-gold)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+                            AI Top Picks
+                        </h3>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(topScores.length, 3)}, 1fr)`, gap: '12px' }}>
                         {topScores.slice(0, 3).map((sub, i) => (
-                            <div key={sub.id} style={{
-                                padding: 'var(--space-md)',
-                                background: i === 0 ? 'rgba(212,168,83,0.08)' : 'rgba(255,255,255,0.02)',
-                                borderRadius: 'var(--radius-md)',
-                                border: `1px solid ${i === 0 ? 'rgba(212,168,83,0.2)' : 'var(--border-subtle)'}`,
-                            }}>
-                                <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>
-                                    #{i + 1} · Score: {sub.analysis?.overallScore}
+                            <div
+                                key={sub.id}
+                                className={`podium-card rank-${i + 1}`}
+                                style={{ cursor: 'pointer', animationDelay: `${0.05 * i}s` }}
+                                onClick={() => { setExpanded(sub.id); setActiveTab('all') }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span style={{
+                                        fontSize: '0.65rem', fontWeight: 800, color: i === 0 ? '#d4a853' : i === 1 ? '#94a3b8' : '#cd7f32',
+                                    }}>#{i + 1}</span>
+                                    <div style={{
+                                        fontSize: '0.95rem', fontWeight: 900,
+                                        padding: '2px 8px', borderRadius: '6px',
+                                        background: `rgba(${i === 0 ? '212,168,83' : '255,255,255'},0.08)`,
+                                        color: i === 0 ? '#d4a853' : 'var(--text-primary)',
+                                    }}>
+                                        {Math.round(sub.analysis?.overallScore || 0)}
+                                    </div>
                                 </div>
-                                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '2px' }}>{sub.title}</div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>by {sub.authorName}</div>
+                                <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '3px', lineHeight: 1.3 }}>{sub.title}</div>
+                                <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>by {sub.authorName}</div>
+                                {sub.analysis?.recommendation && (
+                                    <div style={{
+                                        marginTop: '8px', fontSize: '0.68rem', color: 'var(--text-secondary)',
+                                        lineHeight: 1.5,
+                                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                    }}>
+                                        {sub.analysis.recommendation}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Actions */}
-            <div style={{ display: 'flex', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)' }}>
-                <button onClick={analyzeAll} className="btn btn-primary btn-sm" style={{ cursor: 'pointer' }}>
-                    🤖 Analyze All Unscored
-                </button>
+            {/* ── Filter Tabs ── */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '18px', animation: 'fadeUp 0.4s ease 0.15s both' }}>
+                {([
+                    { key: 'all', label: `All (${submissions.length})` },
+                    { key: 'analyzed', label: `Analyzed (${analyzed.length})` },
+                    { key: 'shortlisted', label: `Shortlisted (${shortlisted.length})` },
+                    { key: 'selected', label: `Selected (${selected.length})` },
+                ] as const).map(tab => (
+                    <button
+                        key={tab.key}
+                        className={`tab-btn ${activeTab === tab.key ? 'active' : ''}`}
+                        onClick={() => setActiveTab(tab.key)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            {/* Submissions List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                {submissions.map(sub => {
-                    const sc = statusColors[sub.status] || statusColors.submitted
+            {/* ── Submissions List ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {filteredSubs.map((sub, idx) => {
+                    const sc = STATUS_CONFIG[sub.status] || STATUS_CONFIG.submitted
                     const isExpanded = expanded === sub.id
+                    const isAnalyzing = analyzingIds.has(sub.id)
 
                     return (
-                        <div key={sub.id} className="glass-card" style={{ padding: 'var(--space-lg)', overflow: 'hidden' }}>
-                            {/* Summary row */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', cursor: 'pointer' }} onClick={() => setExpanded(isExpanded ? null : sub.id)}>
-                                <div style={{
-                                    width: '40px', height: '40px', borderRadius: '50%',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    fontSize: '1rem', fontWeight: 800, flexShrink: 0,
-                                    background: sub.analysis ? (sub.analysis.overallScore >= 70 ? 'rgba(52,211,153,0.15)' : sub.analysis.overallScore >= 50 ? 'rgba(212,168,83,0.15)' : 'rgba(244,63,94,0.15)') : 'rgba(255,255,255,0.05)',
-                                    color: sub.analysis ? (sub.analysis.overallScore >= 70 ? '#34d399' : sub.analysis.overallScore >= 50 ? 'var(--accent-gold)' : '#f43f5e') : 'var(--text-tertiary)',
-                                    border: `1px solid ${sub.analysis ? (sub.analysis.overallScore >= 70 ? 'rgba(52,211,153,0.3)' : sub.analysis.overallScore >= 50 ? 'rgba(212,168,83,0.3)' : 'rgba(244,63,94,0.3)') : 'var(--border-subtle)'}`,
-                                }}>
-                                    {sub.analysis ? Math.round(sub.analysis.overallScore) : '-'}
-                                </div>
+                        <div
+                            key={sub.id}
+                            className={`admin-sub-card ${isExpanded ? 'is-expanded' : ''}`}
+                            style={{ animationDelay: `${0.04 * idx}s` }}
+                        >
+                            {/* ── Summary Row ── */}
+                            <div
+                                style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px 20px', cursor: 'pointer' }}
+                                onClick={() => setExpanded(isExpanded ? null : sub.id)}
+                            >
+                                {/* Score Badge */}
+                                {sub.analysis ? (
+                                    <ScoreBadge score={sub.analysis.overallScore} />
+                                ) : (
+                                    <div style={{
+                                        width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '1.1rem',
+                                        background: isAnalyzing ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.04)',
+                                        border: `2px solid ${isAnalyzing ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                                    }}>
+                                        {isAnalyzing ? '⏳' : '—'}
+                                    </div>
+                                )}
 
-                                <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                                        <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{sub.title}</span>
+                                {/* Info */}
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{sub.title}</span>
                                         <span style={{
-                                            fontSize: '0.5rem', fontWeight: 600, textTransform: 'uppercase',
-                                            padding: '1px 6px', borderRadius: 'var(--radius-full)',
-                                            color: sc.color, background: sc.bg,
-                                        }}>{sub.status}</span>
+                                            fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase',
+                                            padding: '2px 8px', borderRadius: '5px', letterSpacing: '0.06em',
+                                            color: sc.color, background: sc.bg, border: `1px solid ${sc.border}`,
+                                            display: 'flex', alignItems: 'center', gap: '4px',
+                                        }}>
+                                            <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
+                                            {sc.label}
+                                        </span>
+                                        {sub.genre && <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.04)', padding: '1px 7px', borderRadius: '4px' }}>{sub.genre}</span>}
                                     </div>
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                                        by {sub.authorName} · {sub.logline.slice(0, 80)}{sub.logline.length > 80 ? '...' : ''}
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        by <strong style={{ color: 'var(--text-secondary)' }}>{sub.authorName}</strong>
+                                        {' · '}
+                                        <span style={{ fontStyle: 'italic' }}>
+                                            {sub.logline.length > 90 ? sub.logline.slice(0, 90) + '…' : sub.logline}
+                                        </span>
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-                                    {/* AI Analyze button */}
-                                    {sub.status !== 'withdrawn' && !sub.analysis && (
+                                {/* Action Buttons */}
+                                <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                                    {/* Analyze Button */}
+                                    {sub.status !== 'withdrawn' && !sub.analysis && !isAnalyzing && (
                                         <button
-                                            onClick={e => { e.stopPropagation(); analyzeSubmission(sub.id) }}
-                                            className="btn btn-sm"
-                                            disabled={analyzingIds.has(sub.id)}
+                                            className="action-btn"
+                                            onClick={() => analyzeSubmission(sub.id)}
                                             style={{
-                                                background: 'rgba(96,165,250,0.1)', border: '1px solid rgba(96,165,250,0.2)',
-                                                color: '#60a5fa', fontSize: '0.65rem', cursor: 'pointer',
+                                                background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.2)',
+                                                color: '#60a5fa',
                                             }}
                                         >
-                                            {analyzingIds.has(sub.id) ? '⏳' : '🤖 Analyze'}
+                                            🤖 Analyze
                                         </button>
                                     )}
 
-                                    {/* Smart Action Buttons */}
+                                    {/* Status Action Buttons */}
                                     {sub.status === 'withdrawn' ? (
-                                        <span style={{
-                                            padding: '3px 10px', fontSize: '0.65rem', fontWeight: 600,
-                                            borderRadius: '6px', background: 'rgba(239,68,68,0.08)',
-                                            color: '#f87171', border: '1px solid rgba(239,68,68,0.2)',
-                                        }}>⤺ Withdrawn — Read Only</span>
+                                        <span style={{ fontSize: '0.62rem', color: '#6b7280', padding: '4px 10px', background: 'rgba(107,114,128,0.06)', border: '1px solid rgba(107,114,128,0.15)', borderRadius: '6px' }}>
+                                            ↩ Withdrawn
+                                        </span>
                                     ) : (
-                                        (SCRIPT_NEXT_STEPS[sub.status] || []).map(nextStatus => {
-                                            const meta = SCRIPT_ACTION_LABELS[nextStatus]
+                                        (NEXT_STEPS[sub.status] || []).map(nextStatus => {
+                                            const meta = ACTION_META[nextStatus]
                                             if (!meta) return null
-                                            // AI gate: shortlist requires analysis
                                             const gated = nextStatus === 'shortlisted' && !sub.analysis
                                             return (
                                                 <button
                                                     key={nextStatus}
+                                                    className="action-btn"
                                                     onClick={() => !gated && setConfirmAction({ subId: sub.id, status: nextStatus })}
                                                     title={gated ? 'Run AI analysis before shortlisting' : meta.label}
                                                     style={{
-                                                        padding: '3px 10px', fontSize: '0.65rem', fontWeight: 600,
-                                                        borderRadius: '6px', cursor: gated ? 'not-allowed' : 'pointer',
-                                                        opacity: gated ? 0.45 : 1, transition: 'all 0.15s',
-                                                        background: meta.danger ? 'rgba(244,63,94,0.07)' : 'rgba(212,168,83,0.08)',
-                                                        border: `1px solid ${meta.danger ? 'rgba(244,63,94,0.2)' : 'rgba(212,168,83,0.2)'}`,
-                                                        color: meta.danger ? '#f43f5e' : 'var(--accent-gold)',
+                                                        opacity: gated ? 0.35 : 1,
+                                                        cursor: gated ? 'not-allowed' : 'pointer',
+                                                        background: meta.danger
+                                                            ? 'rgba(244,63,94,0.07)'
+                                                            : meta.success
+                                                            ? 'rgba(52,211,153,0.08)'
+                                                            : 'rgba(212,168,83,0.08)',
+                                                        border: `1px solid ${meta.danger ? 'rgba(244,63,94,0.2)' : meta.success ? 'rgba(52,211,153,0.2)' : 'rgba(212,168,83,0.2)'}`,
+                                                        color: meta.danger ? '#f43f5e' : meta.success ? '#34d399' : 'var(--accent-gold)',
                                                     }}
                                                 >
                                                     {meta.icon} {meta.label}
@@ -272,73 +543,179 @@ export default function AdminScriptCallDetailPage() {
                                             )
                                         })
                                     )}
+
+                                    {/* Expand chevron */}
+                                    <div style={{
+                                        color: 'var(--text-tertiary)', fontSize: '0.7rem',
+                                        transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                        marginLeft: '4px',
+                                    }}>
+                                        ▾
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Expanded Details */}
+                            {/* ── Expanded Detail Panel ── */}
                             {isExpanded && (
-                                <div style={{ marginTop: 'var(--space-lg)', paddingTop: 'var(--space-lg)', borderTop: '1px solid var(--border-subtle)' }}>
-                                    <div style={{ display: 'grid', gridTemplateColumns: sub.analysis ? '1fr 1fr' : '1fr', gap: 'var(--space-xl)' }}>
-                                        {/* Script Details */}
-                                        <div>
-                                            <h4 style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', marginBottom: 'var(--space-md)' }}>Script Details</h4>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Author</div>
-                                            <div style={{ fontSize: '0.85rem', marginBottom: 'var(--space-sm)' }}>{sub.authorName} ({sub.authorEmail})</div>
-                                            {sub.authorBio && <>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Bio</div>
-                                                <div style={{ fontSize: '0.85rem', marginBottom: 'var(--space-sm)' }}>{sub.authorBio}</div>
-                                            </>}
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Logline</div>
-                                            <div style={{ fontSize: '0.85rem', marginBottom: 'var(--space-sm)', fontStyle: 'italic' }}>{sub.logline}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Synopsis</div>
-                                            <div style={{ fontSize: '0.85rem', marginBottom: 'var(--space-sm)', lineHeight: 1.6 }}>{sub.synopsis}</div>
-                                            {sub.genre && <>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Genre</div>
-                                                <div style={{ fontSize: '0.85rem', marginBottom: 'var(--space-sm)' }}>{sub.genre}</div>
-                                            </>}
+                                <div
+                                    className="sub-expanded-body"
+                                    style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '24px 20px 20px' }}
+                                >
+                                    <div style={{ display: 'grid', gridTemplateColumns: sub.analysis ? '1fr 1.1fr' : '1fr', gap: '24px' }}>
+
+                                        {/* Left: Submission Details */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                            {/* Author Card */}
+                                            <div style={{
+                                                padding: '14px 16px', borderRadius: '10px',
+                                                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                                            }}>
+                                                <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)', marginBottom: '10px' }}>
+                                                    Author
+                                                </div>
+                                                <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '2px' }}>{sub.authorName}</div>
+                                                <div style={{ fontSize: '0.72rem', color: '#60a5fa', marginBottom: sub.authorBio ? '8px' : 0 }}>
+                                                    <a href={`mailto:${sub.authorEmail}`} style={{ color: 'inherit', textDecoration: 'none' }}>{sub.authorEmail}</a>
+                                                </div>
+                                                {sub.authorBio && (
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '8px' }}>
+                                                        {sub.authorBio}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Script Meta */}
+                                            <div style={{
+                                                padding: '14px 16px', borderRadius: '10px',
+                                                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                                            }}>
+                                                <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)', marginBottom: '10px' }}>
+                                                    Script
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: '12px' }}>
+                                                    {sub.genre && (
+                                                        <div>
+                                                            <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Genre</div>
+                                                            <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{sub.genre}</div>
+                                                        </div>
+                                                    )}
+                                                    {sub.estimatedDuration && (
+                                                        <div>
+                                                            <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Duration</div>
+                                                            <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>{sub.estimatedDuration}</div>
+                                                        </div>
+                                                    )}
+                                                    <div>
+                                                        <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Submitted</div>
+                                                        <div style={{ fontSize: '0.78rem', fontWeight: 600 }}>
+                                                            {new Date(sub.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Logline</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6, fontStyle: 'italic', marginBottom: '12px' }}>
+                                                    "{sub.logline}"
+                                                </div>
+                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Synopsis</div>
+                                                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{sub.synopsis}</div>
+                                            </div>
+
+                                            {/* Full Script Toggle */}
                                             {sub.scriptText && (
-                                                <details style={{ marginTop: 'var(--space-md)' }}>
-                                                    <summary style={{ cursor: 'pointer', fontSize: '0.75rem', color: 'var(--accent-gold)' }}>View Full Script</summary>
+                                                <details style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <summary style={{
+                                                        cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600,
+                                                        color: 'var(--accent-gold)', padding: '10px 14px',
+                                                        background: 'rgba(212,168,83,0.04)',
+                                                        listStyle: 'none', display: 'flex', alignItems: 'center', gap: '6px',
+                                                    }}>
+                                                        📄 View Full Script
+                                                    </summary>
                                                     <pre style={{
-                                                        marginTop: 'var(--space-sm)', padding: 'var(--space-md)',
-                                                        background: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)',
-                                                        fontSize: '0.75rem', lineHeight: 1.6,
-                                                        maxHeight: '400px', overflow: 'auto',
+                                                        margin: 0, padding: '16px',
+                                                        background: 'rgba(0,0,0,0.4)',
+                                                        fontSize: '0.72rem', lineHeight: 1.7,
+                                                        maxHeight: '360px', overflow: 'auto',
                                                         whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                                                        color: 'var(--text-secondary)',
                                                     }}>{sub.scriptText}</pre>
                                                 </details>
                                             )}
                                         </div>
 
-                                        {/* AI Analysis */}
+                                        {/* Right: AI Analysis */}
                                         {sub.analysis && (
                                             <div>
-                                                <h4 style={{ fontSize: '0.8rem', color: 'var(--accent-gold)', marginBottom: 'var(--space-md)' }}>
-                                                    AI Analysis: Score: {sub.analysis.overallScore}
-                                                </h4>
-                                                <ScoreBar label="Originality" score={sub.analysis.originalityScore} color="#34d399" />
-                                                <ScoreBar label="Structure" score={sub.analysis.structureScore} color="#60a5fa" />
-                                                <ScoreBar label="Dialogue" score={sub.analysis.dialogueScore} color="#f59e0b" />
-                                                <ScoreBar label="Visual Potential" score={sub.analysis.visualPotentialScore} color="#a78bfa" />
-                                                <ScoreBar label="Theme Alignment" score={sub.analysis.themeAlignmentScore} color="#f472b6" />
-                                                <ScoreBar label="Feasibility" score={sub.analysis.feasibilityScore} color="#22d3ee" />
+                                                {/* Overall Score Hero */}
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', gap: '16px',
+                                                    padding: '16px 18px', borderRadius: '12px', marginBottom: '16px',
+                                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.07), rgba(212,168,83,0.02))',
+                                                    border: '1px solid rgba(212,168,83,0.18)',
+                                                }}>
+                                                    <div style={{
+                                                        position: 'relative', width: 56, height: 56, flexShrink: 0,
+                                                        borderRadius: '50%',
+                                                        background: `conic-gradient(var(--accent-gold) ${sub.analysis.overallScore}%, rgba(255,255,255,0.05) 0)`,
+                                                    }}>
+                                                        <div style={{
+                                                            position: 'absolute', inset: 5, borderRadius: '50%',
+                                                            background: '#0c0e14',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: '0.9rem', fontWeight: 900, color: 'var(--accent-gold)',
+                                                        }}>
+                                                            {Math.round(sub.analysis.overallScore)}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)', marginBottom: '4px' }}>
+                                                            AI Overall Score
+                                                        </div>
+                                                        {sub.analysis.recommendation && (
+                                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                                                {sub.analysis.recommendation}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
 
+                                                {/* Score Breakdown */}
+                                                <div style={{
+                                                    padding: '16px 18px', borderRadius: '12px', marginBottom: '14px',
+                                                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                                                }}>
+                                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
+                                                        Score Breakdown
+                                                    </div>
+                                                    <ScoreBar label="Originality"      score={sub.analysis.originalityScore}     color="#34d399" />
+                                                    <ScoreBar label="Structure"        score={sub.analysis.structureScore}        color="#60a5fa" />
+                                                    <ScoreBar label="Dialogue"         score={sub.analysis.dialogueScore}         color="#f59e0b" />
+                                                    <ScoreBar label="Visual Potential" score={sub.analysis.visualPotentialScore}  color="#a78bfa" />
+                                                    <ScoreBar label="Theme Alignment"  score={sub.analysis.themeAlignmentScore}   color="#f472b6" />
+                                                    <ScoreBar label="Feasibility"      score={sub.analysis.feasibilityScore}      color="#22d3ee" />
+                                                </div>
+
+                                                {/* Strengths & Concerns */}
                                                 {sub.analysis.strengths && (
-                                                    <div style={{ marginTop: 'var(--space-md)' }}>
-                                                        <div style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 600, marginBottom: '4px' }}>✅ Strengths</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{sub.analysis.strengths}</div>
+                                                    <div style={{
+                                                        padding: '12px 16px', borderRadius: '10px', marginBottom: '10px',
+                                                        background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.12)',
+                                                    }}>
+                                                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#34d399', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                                            ✅ Strengths
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{sub.analysis.strengths}</div>
                                                     </div>
                                                 )}
                                                 {sub.analysis.concerns && (
-                                                    <div style={{ marginTop: 'var(--space-sm)' }}>
-                                                        <div style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 600, marginBottom: '4px' }}>⚠️ Concerns</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', whiteSpace: 'pre-line', lineHeight: 1.6 }}>{sub.analysis.concerns}</div>
-                                                    </div>
-                                                )}
-                                                {sub.analysis.recommendation && (
-                                                    <div style={{ marginTop: 'var(--space-sm)' }}>
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--accent-gold)', fontWeight: 600, marginBottom: '4px' }}>📋 Recommendation</div>
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{sub.analysis.recommendation}</div>
+                                                    <div style={{
+                                                        padding: '12px 16px', borderRadius: '10px',
+                                                        background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.12)',
+                                                    }}>
+                                                        <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#f59e0b', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                                            ⚠️ Concerns
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{sub.analysis.concerns}</div>
                                                     </div>
                                                 )}
                                             </div>
@@ -351,49 +728,102 @@ export default function AdminScriptCallDetailPage() {
                 })}
             </div>
 
-            {submissions.length === 0 && (
-                <div className="glass-card" style={{ textAlign: 'center', padding: 'var(--space-3xl)', color: 'var(--text-tertiary)' }}>
-                    No submissions yet. Share the call link to start receiving scripts.
+            {/* Empty State */}
+            {filteredSubs.length === 0 && (
+                <div style={{
+                    textAlign: 'center', padding: '60px 40px', borderRadius: '16px',
+                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                    animation: 'fadeUp 0.35s ease both',
+                }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>
+                        {activeTab === 'all' ? '📭' : activeTab === 'analyzed' ? '🤖' : activeTab === 'shortlisted' ? '⭐' : '🏆'}
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px' }}>
+                        {activeTab === 'all' ? 'No submissions yet' : `No ${activeTab} submissions`}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                        {activeTab === 'all'
+                            ? 'Share the call link to start receiving scripts.'
+                            : `Switch to "All" to view all submissions.`}
+                    </div>
                 </div>
             )}
 
-            {/* ─── CONFIRM MODAL ─── */}
+            {/* ─── Confirm Modal ─── */}
             {confirmAction && (
-                <div onClick={() => setConfirmAction(null)} style={{
-                    position: 'fixed', inset: 0, zIndex: 9000,
-                    background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                    <div onClick={e => e.stopPropagation()} style={{
-                        background: '#141720', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '14px',
-                        padding: '28px 32px', maxWidth: '400px', width: '90%',
-                        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-                    }}>
-                        <div style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px' }}>Confirm Action</div>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
-                            Move this submission to <strong>{SCRIPT_ACTION_LABELS[confirmAction.status]?.label || confirmAction.status}</strong>?
-                            {confirmAction.status === 'selected' && <><br /><span style={{ color: '#22c55e', fontSize: '0.75rem' }}>🏆 A selection email will be sent to the author.</span></>}
-                            {confirmAction.status === 'rejected' && <><br /><span style={{ color: '#f87171', fontSize: '0.75rem' }}>✕ A rejection notification will be sent to the author.</span></>}
+                <div
+                    onClick={() => setConfirmAction(null)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 9000,
+                        background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: 'linear-gradient(145deg, #141820, #101318)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            borderRadius: '16px', padding: '32px',
+                            maxWidth: '420px', width: '100%',
+                            boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+                            animation: 'fadeUp 0.25s ease both',
+                        }}
+                    >
+                        <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '12px' }}>
+                            {confirmAction.status === 'rejected' ? '⚠️' : confirmAction.status === 'selected' ? '🏆' : '✅'}
                         </div>
-                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                            <button onClick={() => setConfirmAction(null)} style={{
-                                padding: '8px 18px', fontSize: '0.78rem', fontWeight: 600, borderRadius: '8px',
-                                border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
-                                color: 'var(--text-tertiary)', cursor: 'pointer',
-                            }}>Cancel</button>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>
+                            Confirm Action
+                        </div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: 1.6, textAlign: 'center' }}>
+                            Move this submission to{' '}
+                            <strong style={{ color: 'var(--text-primary)' }}>
+                                {ACTION_META[confirmAction.status]?.label || confirmAction.status}
+                            </strong>?
+                        </div>
+                        {confirmAction.status === 'selected' && (
+                            <div style={{ fontSize: '0.72rem', color: '#34d399', textAlign: 'center', marginBottom: '4px' }}>
+                                🏆 A selection email will be sent to the author.
+                            </div>
+                        )}
+                        {confirmAction.status === 'rejected' && (
+                            <div style={{ fontSize: '0.72rem', color: '#f87171', textAlign: 'center', marginBottom: '4px' }}>
+                                ✕ A rejection notification will be sent to the author.
+                            </div>
+                        )}
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
+                            <button
+                                onClick={() => setConfirmAction(null)}
+                                style={{
+                                    flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 600,
+                                    borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)',
+                                    background: 'rgba(255,255,255,0.04)', color: 'var(--text-tertiary)',
+                                    cursor: 'pointer', transition: 'all 0.15s',
+                                }}
+                            >
+                                Cancel
+                            </button>
                             <button
                                 onClick={() => { updateStatus(confirmAction.subId, confirmAction.status); setConfirmAction(null) }}
                                 style={{
-                                    padding: '8px 20px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
-                                    border: '1px solid rgba(212,168,83,0.35)',
-                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
-                                    color: 'var(--accent-gold)', cursor: 'pointer',
-                                }}>
+                                    flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 700,
+                                    borderRadius: '10px', cursor: 'pointer', transition: 'all 0.15s',
+                                    background: confirmAction.status === 'rejected'
+                                        ? 'rgba(244,63,94,0.12)'
+                                        : confirmAction.status === 'selected'
+                                        ? 'rgba(52,211,153,0.12)'
+                                        : 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
+                                    border: `1px solid ${confirmAction.status === 'rejected' ? 'rgba(244,63,94,0.3)' : confirmAction.status === 'selected' ? 'rgba(52,211,153,0.3)' : 'rgba(212,168,83,0.35)'}`,
+                                    color: confirmAction.status === 'rejected' ? '#f43f5e' : confirmAction.status === 'selected' ? '#34d399' : 'var(--accent-gold)',
+                                }}
+                            >
                                 Confirm
                             </button>
                         </div>
                     </div>
                 </div>
             )}
-        </div>
+        </>
     )
 }

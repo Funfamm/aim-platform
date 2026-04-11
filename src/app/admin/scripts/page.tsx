@@ -20,6 +20,7 @@ interface ScriptCall {
     deadline: string | null
     targetLength: string | null
     toneKeywords: string | null
+    maxSubmissions: number
     project: { title: string } | null
     _count: { submissions: number }
 }
@@ -52,6 +53,48 @@ export default function AdminScriptsPage() {
         if (res.ok) setCalls(await res.json())
         setLoading(false)
     }, [])
+
+    // ── Edit state ──
+    const [editTarget, setEditTarget] = useState<ScriptCall | null>(null)
+    const [editForm, setEditForm] = useState({
+        title: '', description: '', genre: '', toneKeywords: '',
+        targetLength: '', projectId: '', deadline: '',
+        maxSubmissions: 100, isPublic: false, status: 'draft',
+    })
+    const [editSaving, setEditSaving] = useState(false)
+
+    const openEdit = (call: ScriptCall) => {
+        setEditTarget(call)
+        setEditForm({
+            title: call.title,
+            description: call.description,
+            genre: call.genre || '',
+            toneKeywords: call.toneKeywords || '',
+            targetLength: call.targetLength || '',
+            projectId: call.projectId || '',
+            deadline: call.deadline || '',
+            maxSubmissions: call.maxSubmissions ?? 100,
+            isPublic: call.isPublic,
+            status: call.status,
+        })
+    }
+
+    const handleEdit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!editTarget) return
+        setEditSaving(true)
+        const res = await fetch(`/api/script-calls/${editTarget.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...editForm, projectId: editForm.projectId || null, maxSubmissions: Number(editForm.maxSubmissions) }),
+        })
+        if (res.ok) {
+            setEditTarget(null)
+            fetchCalls()
+        }
+        setEditSaving(false)
+    }
+
 
     useEffect(() => {
         fetchCalls()
@@ -264,7 +307,99 @@ export default function AdminScriptsPage() {
                     </form>
                 )}
 
-                {/* ─── CALLS LIST ─── */}
+                {/* ─── EDIT SLIDE-IN PANEL ─── */}
+                {editTarget && (
+                    <div style={{
+                        position: 'fixed', inset: 0, zIndex: 9000,
+                        background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                    }}
+                        onClick={() => !editSaving && setEditTarget(null)}
+                    >
+                        <form
+                            onSubmit={handleEdit}
+                            onClick={e => e.stopPropagation()}
+                            style={{
+                                width: '100%', maxWidth: '560px',
+                                background: 'var(--bg-card, #1a1d23)',
+                                border: '1px solid rgba(212,168,83,0.18)',
+                                borderRadius: '16px', padding: '24px',
+                                boxShadow: '0 24px 64px rgba(0,0,0,0.5)',
+                                maxHeight: '90vh', overflowY: 'auto',
+                            }}
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)' }}>
+                                    ✏️ Edit Script Call
+                                </div>
+                                <button type="button" onClick={() => setEditTarget(null)} style={{
+                                    background: 'none', border: 'none', color: 'var(--text-tertiary)',
+                                    cursor: 'pointer', fontSize: '1rem', lineHeight: 1,
+                                }}>✕</button>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={lbl}>Title *</label>
+                                    <input style={inp} value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} required />
+                                </div>
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={lbl}>Description *</label>
+                                    <textarea style={{ ...inp, minHeight: '80px', resize: 'vertical' }} value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} required />
+                                </div>
+                                <div>
+                                    <label style={lbl}>Genre</label>
+                                    <input style={inp} value={editForm.genre} onChange={e => setEditForm(f => ({ ...f, genre: e.target.value }))} placeholder="e.g. Sci-Fi Thriller" />
+                                </div>
+                                <div>
+                                    <label style={lbl}>Target Length</label>
+                                    <input style={inp} value={editForm.targetLength} onChange={e => setEditForm(f => ({ ...f, targetLength: e.target.value }))} placeholder="e.g. Short Film 10-15 min" />
+                                </div>
+                                <div>
+                                    <label style={lbl}>Tone Keywords</label>
+                                    <input style={inp} value={editForm.toneKeywords} onChange={e => setEditForm(f => ({ ...f, toneKeywords: e.target.value }))} placeholder="dark, suspenseful, poetic" />
+                                </div>
+                                <div>
+                                    <label style={lbl}>Deadline</label>
+                                    <input style={inp} type="date" value={editForm.deadline} onChange={e => setEditForm(f => ({ ...f, deadline: e.target.value }))} />
+                                </div>
+                                <div>
+                                    <label style={lbl}>Linked Project</label>
+                                    <select style={inp} value={editForm.projectId} onChange={e => setEditForm(f => ({ ...f, projectId: e.target.value }))}>
+                                        <option value="">None (general call)</option>
+                                        {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={lbl}>Max Submissions</label>
+                                    <input style={inp} type="number" value={editForm.maxSubmissions} onChange={e => setEditForm(f => ({ ...f, maxSubmissions: Number(e.target.value) }))} />
+                                </div>
+                                <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '16px', paddingTop: '4px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                        <input type="checkbox" checked={editForm.isPublic} onChange={e => setEditForm(f => ({ ...f, isPublic: e.target.checked }))} />
+                                        Make Public
+                                    </label>
+                                    <select style={{ ...inp, width: 'auto', padding: '6px 12px' }} value={editForm.status} onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}>
+                                        <option value="draft">Draft</option>
+                                        <option value="open">Open</option>
+                                        <option value="closed">Closed</option>
+                                        <option value="archived">Archived</option>
+                                    </select>
+                                    <div style={{ flex: 1 }} />
+                                    <button type="submit" disabled={editSaving} style={{
+                                        padding: '8px 20px', fontSize: '0.78rem', fontWeight: 700, borderRadius: '8px',
+                                        border: '1px solid rgba(212,168,83,0.3)', cursor: 'pointer',
+                                        background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
+                                        color: 'var(--accent-gold)', opacity: editSaving ? 0.6 : 1,
+                                    }}>
+                                        {editSaving ? 'Saving...' : '💾 Save Changes'}
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                )}
+
                 {loading ? (
                     <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>Loading...</div>
                 ) : filtered.length === 0 ? (
@@ -281,106 +416,144 @@ export default function AdminScriptsPage() {
                         </div>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         {filtered.map(call => {
                             const meta = STATUS_META[call.status] || STATUS_META.draft
                             const daysLeft = call.deadline ? Math.ceil((new Date(call.deadline).getTime() - now) / 86400000) : null
 
                             return (
                                 <div key={call.id} style={{
-                                    padding: '14px', borderRadius: '10px',
-                                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
-                                    transition: 'all 0.2s',
+                                    borderRadius: '14px',
+                                    background: 'linear-gradient(145deg, rgba(18,20,28,0.95), rgba(12,14,20,0.9))',
+                                    border: '1px solid rgba(255,255,255,0.07)',
+                                    overflow: 'hidden',
+                                    transition: 'all 0.2s ease',
                                 }}>
-                                    {/* Top Row: Title + Badges */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                                        <Link href={`/admin/scripts/${call.id}`} style={{
-                                            fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)',
-                                            textDecoration: 'none', flex: 1, minWidth: 0,
-                                        }}>
-                                            {call.title}
-                                        </Link>
-                                        <span style={{
-                                            fontSize: '0.52rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em',
-                                            padding: '2px 8px', borderRadius: '4px',
-                                            color: meta.color, background: meta.bg, border: `1px solid ${meta.color}25`,
-                                        }}>
-                                            {meta.icon} {call.status}
-                                        </span>
-                                        {call.isPublic && (
-                                            <span style={{ fontSize: '0.52rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', color: '#34d399', background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.15)' }}>
-                                                🌐 Public
-                                            </span>
+                                    {/* ── Card Banner / Header ── */}
+                                    <div style={{
+                                        padding: '20px 22px 16px',
+                                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                        background: call.status === 'open'
+                                            ? 'linear-gradient(135deg, rgba(52,211,153,0.05), rgba(52,211,153,0.01))'
+                                            : call.status === 'draft'
+                                            ? 'linear-gradient(135deg, rgba(148,163,184,0.04), transparent)'
+                                            : 'linear-gradient(135deg, rgba(245,158,11,0.04), transparent)',
+                                    }}>
+                                        {/* Project badge (above title) */}
+                                        {call.project && (
+                                            <div style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                padding: '4px 12px', borderRadius: '6px', marginBottom: '10px',
+                                                background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)',
+                                                fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)',
+                                                textTransform: 'uppercase', letterSpacing: '0.06em',
+                                            }}>
+                                                🎬 {call.project.title}
+                                            </div>
                                         )}
-                                    </div>
 
-                                    {/* Meta Row */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '8px', flexWrap: 'wrap' }}>
-                                        {call.genre && <span>🎬 {call.genre}</span>}
-                                        <span>📄 {call._count.submissions} submission{call._count.submissions !== 1 ? 's' : ''}</span>
-                                        {call.project && <span>🎯 {call.project.title}</span>}
-                                        {call.targetLength && <span>⏱️ {call.targetLength}</span>}
-                                        {daysLeft !== null && (
-                                            <span style={{ color: daysLeft <= 3 ? '#ef4444' : daysLeft <= 7 ? '#f59e0b' : 'var(--text-tertiary)' }}>
-                                                ⏰ {daysLeft > 0 ? `${daysLeft}d left` : 'Expired'}
-                                            </span>
-                                        )}
-                                        {call.toneKeywords && (
-                                            <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
-                                                {call.toneKeywords.split(',').slice(0, 3).map((t, i) => (
-                                                    <span key={i} style={{
-                                                        fontSize: '0.58rem', padding: '1px 6px', borderRadius: '3px',
-                                                        background: 'rgba(139,92,246,0.08)', color: '#a78bfa',
-                                                    }}>{t.trim()}</span>
-                                                ))}
+                                        {/* Title + Status row */}
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+                                            <Link href={`/admin/scripts/${call.id}`} style={{
+                                                fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)',
+                                                textDecoration: 'none', flex: 1, minWidth: 0, lineHeight: 1.2,
+                                                letterSpacing: '-0.01em',
+                                            }}>
+                                                {call.title}
+                                            </Link>
+                                            <div style={{ display: 'flex', gap: '6px', flexShrink: 0, alignItems: 'center', paddingTop: '2px' }}>
+                                                <span style={{
+                                                    fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
+                                                    padding: '3px 10px', borderRadius: '6px',
+                                                    color: meta.color, background: meta.bg, border: `1px solid ${meta.color}30`,
+                                                }}>
+                                                    {meta.icon} {call.status}
+                                                </span>
+                                                {call.isPublic && (
+                                                    <span style={{
+                                                        fontSize: '0.6rem', fontWeight: 700, padding: '3px 10px', borderRadius: '6px',
+                                                        color: '#34d399', background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)',
+                                                    }}>
+                                                        🌐 Public
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Description */}
+                                        {call.description && (
+                                            <div style={{
+                                                fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6,
+                                                marginTop: '8px', display: '-webkit-box',
+                                                WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                            }}>
+                                                {call.description}
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Description preview */}
-                                    {call.description && (
-                                        <div style={{
-                                            fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5,
-                                            maxHeight: '36px', overflow: 'hidden', marginBottom: '10px',
-                                        }}>
-                                            {call.description}
+                                    {/* ── Meta + Actions Footer ── */}
+                                    <div style={{ padding: '12px 22px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                        {/* Meta pills */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.7rem', color: 'var(--text-tertiary)', flex: 1, flexWrap: 'wrap' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span style={{ color: '#60a5fa', fontWeight: 700 }}>{call._count.submissions}</span>
+                                                {' '}submission{call._count.submissions !== 1 ? 's' : ''}
+                                            </span>
+                                            {call.genre && <span style={{ color: 'var(--text-tertiary)' }}>· 🎭 {call.genre}</span>}
+                                            {call.targetLength && <span>· ⏱ {call.targetLength}</span>}
+                                            {daysLeft !== null && (
+                                                <span style={{ color: daysLeft <= 3 ? '#ef4444' : daysLeft <= 7 ? '#f59e0b' : 'var(--text-tertiary)' }}>
+                                                    · ⏰ {daysLeft > 0 ? `${daysLeft}d left` : 'Expired'}
+                                                </span>
+                                            )}
+                                            {call.toneKeywords && call.toneKeywords.split(',').slice(0, 3).map((t, i) => (
+                                                <span key={i} style={{
+                                                    fontSize: '0.6rem', padding: '1px 7px', borderRadius: '4px',
+                                                    background: 'rgba(139,92,246,0.08)', color: '#a78bfa', border: '1px solid rgba(139,92,246,0.12)',
+                                                }}>{t.trim()}</span>
+                                            ))}
                                         </div>
-                                    )}
 
-                                    {/* Actions Row */}
-                                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                        <Link href={`/admin/scripts/${call.id}`} style={{
-                                            padding: '4px 12px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '6px',
-                                            background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)',
-                                            color: 'var(--accent-gold)', textDecoration: 'none',
-                                        }}>
-                                            View Submissions ({call._count.submissions})
-                                        </Link>
-                                        <button onClick={() => togglePublic(call)} style={{
-                                            padding: '4px 10px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '6px',
-                                            background: call.isPublic ? 'rgba(52,211,153,0.06)' : 'rgba(255,255,255,0.02)',
-                                            border: `1px solid ${call.isPublic ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.06)'}`,
-                                            color: call.isPublic ? '#34d399' : 'var(--text-tertiary)', cursor: 'pointer',
-                                        }}>
-                                            {call.isPublic ? '🌐 Public' : '🔒 Private'}
-                                        </button>
-                                        <select value={call.status} onChange={e => updateStatus(call, e.target.value)}
-                                            style={{
-                                                padding: '4px 8px', fontSize: '0.68rem', borderRadius: '6px',
-                                                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                                                color: 'var(--text-secondary)', cursor: 'pointer',
+                                        {/* Action buttons */}
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                                            <Link href={`/admin/scripts/${call.id}`} style={{
+                                                padding: '5px 14px', fontSize: '0.7rem', fontWeight: 700, borderRadius: '7px',
+                                                background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)',
+                                                color: 'var(--accent-gold)', textDecoration: 'none', whiteSpace: 'nowrap',
                                             }}>
-                                            <option value="draft">Draft</option>
-                                            <option value="open">Open</option>
-                                            <option value="closed">Closed</option>
-                                            <option value="archived">Archived</option>
-                                        </select>
-                                        <div style={{ flex: 1 }} />
-                                        <button onClick={() => deleteCall(call.id)} style={{
-                                            padding: '4px 8px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '6px',
-                                            background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.12)',
-                                            color: '#ef4444', cursor: 'pointer',
-                                        }}>✕</button>
+                                                📋 Submissions
+                                            </Link>
+                                            <button onClick={() => togglePublic(call)} style={{
+                                                padding: '5px 11px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '7px',
+                                                background: call.isPublic ? 'rgba(52,211,153,0.07)' : 'rgba(255,255,255,0.03)',
+                                                border: `1px solid ${call.isPublic ? 'rgba(52,211,153,0.18)' : 'rgba(255,255,255,0.07)'}`,
+                                                color: call.isPublic ? '#34d399' : 'var(--text-tertiary)', cursor: 'pointer',
+                                            }}>
+                                                {call.isPublic ? '🌐' : '🔒'}
+                                            </button>
+                                            <select value={call.status} onChange={e => updateStatus(call, e.target.value)}
+                                                style={{
+                                                    padding: '5px 8px', fontSize: '0.68rem', borderRadius: '7px',
+                                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                                                    color: 'var(--text-secondary)', cursor: 'pointer',
+                                                }}>
+                                                <option value="draft">Draft</option>
+                                                <option value="open">Open</option>
+                                                <option value="closed">Closed</option>
+                                                <option value="archived">Archived</option>
+                                            </select>
+                                            <button onClick={() => openEdit(call)} style={{
+                                                padding: '5px 11px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '7px',
+                                                background: 'rgba(96,165,250,0.07)', border: '1px solid rgba(96,165,250,0.18)',
+                                                color: '#60a5fa', cursor: 'pointer',
+                                            }}>✏️</button>
+                                            <button onClick={() => deleteCall(call.id)} style={{
+                                                padding: '5px 9px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '7px',
+                                                background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)',
+                                                color: '#ef4444', cursor: 'pointer',
+                                            }}>✕</button>
+                                        </div>
                                     </div>
                                 </div>
                             )

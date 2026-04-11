@@ -483,22 +483,23 @@ model PageMedia {
 }
 
 model ScriptCall {
-  id             String             @id @default(cuid())
-  title          String
-  description    String
-  genre          String?
-  toneKeywords   String?
-  targetLength   String?
-  projectId      String?
-  status         String             @default("draft")
-  isPublic       Boolean            @default(false)
-  deadline       String?
-  maxSubmissions Int                @default(100)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  project        Project?           @relation(fields: [projectId], references: [id])
-  submissions    ScriptSubmission[]
-  notifications  ScriptCallNotify[]
+  id                   String             @id @default(cuid())
+  title                String
+  description          String
+  genre                String?
+  toneKeywords         String?
+  targetLength         String?
+  projectId            String?
+  status               String             @default("draft")
+  isPublic             Boolean            @default(false)
+  deadline             String?
+  maxSubmissions       Int                @default(100)
+  contentTranslations  String?            @db.Text
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  project              Project?           @relation(fields: [projectId], references: [id])
+  submissions          ScriptSubmission[]
+  notifications        ScriptCallNotify[]
 
   @@index([title])
 }

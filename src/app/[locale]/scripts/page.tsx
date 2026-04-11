@@ -40,7 +40,15 @@ export default async function ScriptCallsPage() {
         },
     }) : []
 
-    // Coming-soon: published but not yet open
+    type TransMap = Record<string, Record<string, string>>
+    function getLocalized(call: { contentTranslations?: string | null }, field: string, fallback: string): string {
+        if (!call.contentTranslations || locale === 'en') return fallback
+        try {
+            const map = JSON.parse(call.contentTranslations) as TransMap
+            return map[locale]?.[field] || fallback
+        } catch { return fallback }
+    }
+
     const comingSoon = enabled ? await prisma.scriptCall.findMany({
         where: { isPublic: true, status: { not: 'open' } },
         orderBy: { createdAt: 'desc' },
@@ -50,7 +58,6 @@ export default async function ScriptCallsPage() {
         },
     }) : []
 
-    // Which calls this user is already subscribed to
     const userId = session.userId as string
     let subscribedIds = new Set<string>()
     if (comingSoon.length > 0) {
@@ -62,7 +69,6 @@ export default async function ScriptCallsPage() {
         subscribedIds = new Set(subs.map((s: { scriptCallId: string }) => s.scriptCallId))
     }
 
-    // Is this user already subscribed to general new-call notifications?
     let alreadySubscribed = false
     try {
         const userEmail = (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email
@@ -74,13 +80,12 @@ export default async function ScriptCallsPage() {
 
     return (
         <>
-            {/* Video background (replaces CinematicBackground when videos exist) */}
             <ScriptVideoBackground />
             <CinematicBackground variant="creative" />
 
             <style>{`
                 @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(24px); }
+                    from { opacity: 0; transform: translateY(20px); }
                     to   { opacity: 1; transform: translateY(0); }
                 }
                 @keyframes shimmer {
@@ -91,93 +96,105 @@ export default async function ScriptCallsPage() {
                     0%, 100% { transform: translateY(0) rotate(-3deg); }
                     50%      { transform: translateY(-6px) rotate(3deg); }
                 }
-                .script-hero    { animation: fadeInUp 0.6s ease both; }
-                .script-badge   { animation: fadeInUp 0.6s ease 0.1s both; }
-                .script-desc    { animation: fadeInUp 0.6s ease 0.2s both; }
-                .script-notice  { animation: fadeInUp 0.6s ease 0.3s both; }
-                .script-process { animation: fadeInUp 0.6s ease 0.35s both; }
+                @keyframes pulseDot {
+                    0%, 100% { opacity: 1; transform: scale(1); }
+                    50%      { opacity: 0.5; transform: scale(0.75); }
+                }
+
+                .script-hero   { animation: fadeInUp 0.5s ease both; }
+                .script-badge  { animation: fadeInUp 0.5s ease 0.1s both; }
+                .script-steps  { animation: fadeInUp 0.5s ease 0.2s both; }
+                .script-calls  { animation: fadeInUp 0.5s ease 0.25s both; }
+
+                /* ── Process Steps ── */
+                .steps-row {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 10px;
+                }
+
+                /* ── Script Card ── */
                 .script-card {
-                    position: relative;
                     display: block;
-                    padding: var(--space-xl);
                     text-decoration: none;
-                    border-radius: var(--radius-xl);
-                    background: rgba(255,255,255,0.03);
-                    border: 1px solid rgba(255,255,255,0.07);
-                    backdrop-filter: blur(20px);
-                    transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
+                    border-radius: 18px;
                     overflow: hidden;
+                    background: linear-gradient(145deg, rgba(14,14,20,0.92), rgba(10,10,16,0.85));
+                    border: 1px solid rgba(212,168,83,0.15);
+                    backdrop-filter: blur(24px) saturate(160%);
+                    -webkit-backdrop-filter: blur(24px) saturate(160%);
+                    box-shadow: 0 6px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+                    transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
+                    position: relative;
                 }
                 .script-card::before {
                     content: '';
-                    position: absolute;
-                    inset: 0;
-                    background: linear-gradient(135deg, rgba(212,168,83,0.06), transparent 60%);
-                    opacity: 0;
-                    transition: opacity 0.35s ease;
+                    position: absolute; inset: 0;
+                    background: linear-gradient(135deg, rgba(212,168,83,0.08) 0%, transparent 60%);
+                    opacity: 0; transition: opacity 0.35s;
+                    pointer-events: none;
                 }
                 .script-card:hover {
                     transform: translateY(-4px);
-                    border-color: rgba(212,168,83,0.3);
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(212,168,83,0.1);
+                    border-color: rgba(212,168,83,0.35);
+                    box-shadow: 0 20px 56px rgba(0,0,0,0.5), 0 0 36px rgba(212,168,83,0.07);
                 }
                 .script-card:hover::before { opacity: 1; }
-                .script-card:hover .submit-btn {
-                    background: var(--accent-gold) !important;
-                    color: #0f1115 !important;
+                .script-card:active { transform: scale(0.98); }
+
+                .submit-arrow {
+                    display: inline-flex; align-items: center; gap: 5px;
+                    font-size: 0.72rem; font-weight: 700;
+                    color: var(--accent-gold); letter-spacing: 0.04em;
+                    transition: gap 0.2s ease;
                 }
-                .submit-btn { transition: all 0.25s ease !important; }
-                .step-line {
-                    position: absolute;
-                    left: 19px;
-                    top: 40px;
-                    bottom: -12px;
-                    width: 2px;
-                    background: linear-gradient(to bottom, rgba(212,168,83,0.3), transparent);
-                }
-                @media (max-width: 600px) {
+                .script-card:hover .submit-arrow { gap: 8px; }
+
+                /* ── Responsive ── */
+                @media (max-width: 640px) {
+                    .steps-row { grid-template-columns: 1fr !important; gap: 8px !important; }
                     .scripts-grid { grid-template-columns: 1fr !important; }
-                    .process-steps { flex-direction: column !important; gap: 16px !important; }
-                    .process-step-line { display: none !important; }
+                    .coming-grid  { grid-template-columns: 1fr !important; }
+                }
+                @media (min-width: 641px) and (max-width: 900px) {
+                    .steps-row { grid-template-columns: 1fr 1fr !important; }
+                    .scripts-grid { grid-template-columns: 1fr !important; }
                 }
             `}</style>
 
-            <main style={{ minHeight: '100vh', paddingTop: '90px', position: 'relative', zIndex: 2 }}>
+            <main style={{ minHeight: '100vh', paddingTop: '72px', position: 'relative', zIndex: 2 }}>
 
                 {/* ══ HERO ══ */}
-                <section style={{ textAlign: 'center', padding: 'var(--space-3xl) 0 var(--space-2xl)' }}>
-                    <div className="container" style={{ maxWidth: '720px' }}>
-                        {/* Floating pen icon */}
+                <section style={{ textAlign: 'center', padding: '40px 20px 28px' }}>
+                    <div style={{ maxWidth: '640px', margin: '0 auto' }}>
                         <div style={{
-                            display: 'inline-block',
-                            fontSize: '3rem', marginBottom: 'var(--space-md)',
+                            display: 'inline-block', fontSize: '2.4rem',
+                            marginBottom: '12px',
                             animation: 'penFloat 3s ease-in-out infinite',
                         }}>✍️</div>
 
                         <div className="script-badge" style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '8px',
-                            fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em',
-                            textTransform: 'uppercase',
-                            color: 'var(--accent-gold)',
+                            display: 'inline-flex', alignItems: 'center', gap: '7px',
+                            fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em',
+                            textTransform: 'uppercase', color: 'var(--accent-gold)',
                             background: 'rgba(212,168,83,0.08)',
-                            padding: '5px 16px',
-                            borderRadius: 'var(--radius-full)',
+                            padding: '5px 14px', borderRadius: '99px',
                             border: '1px solid rgba(212,168,83,0.2)',
-                            marginBottom: 'var(--space-md)',
+                            marginBottom: '14px',
                         }}>
-                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-gold)', animation: 'heartFloat 2s ease-in-out infinite' }} />
+                            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)', animation: 'pulseDot 2s ease-in-out infinite' }} />
                             {t('badge')}
                         </div>
 
                         <h1 className="script-hero" style={{
-                            fontSize: 'clamp(2.2rem, 6vw, 3.8rem)',
-                            fontWeight: 800, lineHeight: 1.05,
-                            marginBottom: 'var(--space-md)',
+                            fontSize: 'clamp(1.9rem, 7vw, 3.4rem)',
+                            fontWeight: 800, lineHeight: 1.08,
+                            marginBottom: '0',
+                            letterSpacing: '-0.02em',
                         }}>
                             {t('heroTitle')}{' '}
                             <span style={{
                                 fontFamily: 'var(--font-serif)', fontStyle: 'italic',
-                                color: 'var(--accent-gold)',
                                 background: 'linear-gradient(135deg, #d4a853, #f0c96e, #c49b3a)',
                                 backgroundSize: '200% auto',
                                 WebkitBackgroundClip: 'text',
@@ -187,36 +204,13 @@ export default async function ScriptCallsPage() {
                                 {t('heroAccent')}
                             </span>
                         </h1>
-
-                        <p className="script-desc" style={{
-                            maxWidth: '580px', margin: '0 auto var(--space-xl)',
-                            color: 'var(--text-secondary)', fontSize: '1.08rem', lineHeight: 1.7,
-                        }}>
-                            {t('heroDesc')}
-                        </p>
-
-                        {/* Scroll indicator */}
-                        <div style={{
-                            display: 'flex', alignItems: 'center', gap: '12px',
-                            justifyContent: 'center',
-                            opacity: 0.35,
-                        }}>
-                            <div style={{ flex: 1, maxWidth: '80px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.5))' }} />
-                            <span style={{ fontSize: '0.6rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent-gold)', fontWeight: 700 }}>{t('badge')}</span>
-                            <div style={{ flex: 1, maxWidth: '80px', height: '1px', background: 'linear-gradient(to left, transparent, rgba(212,168,83,0.5))' }} />
-                        </div>
                     </div>
                 </section>
 
                 {/* ══ HOW IT WORKS ══ */}
-                <section style={{ padding: 'var(--space-xl) 0' }}>
-                    <div className="container" style={{ maxWidth: '800px' }}>
-                        <div className="script-process" style={{
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(3, 1fr)',
-                            gap: 'var(--space-lg)',
-                            marginBottom: 'var(--space-3xl)',
-                        }}>
+                <section style={{ padding: '0 16px 32px' }} className="script-steps">
+                    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                        <div className="steps-row">
                             {([
                                 { icon: '📝', step: '01', titleKey: 'step1Title', descKey: 'step1Desc' },
                                 { icon: '🤖', step: '02', titleKey: 'step2Title', descKey: 'step2Desc' },
@@ -224,178 +218,178 @@ export default async function ScriptCallsPage() {
                             ] as const).map(({ icon, step, titleKey, descKey }) => (
                                 <div key={step} style={{
                                     textAlign: 'center',
-                                    padding: 'var(--space-lg) var(--space-md)',
-                                    background: 'rgba(255,255,255,0.02)',
-                                    borderRadius: 'var(--radius-xl)',
-                                    border: '1px solid var(--border-subtle)',
+                                    padding: '18px 14px',
+                                    background: 'rgba(10,10,14,0.78)',
+                                    borderRadius: '14px',
+                                    border: '1px solid rgba(212,168,83,0.15)',
+                                    backdropFilter: 'blur(12px)',
+                                    WebkitBackdropFilter: 'blur(12px)',
                                 }}>
-                                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>{icon}</div>
+                                    <div style={{ fontSize: '1.6rem', marginBottom: '6px' }}>{icon}</div>
                                     <div style={{
-                                        fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em',
-                                        color: 'var(--accent-gold)', textTransform: 'uppercase', marginBottom: '6px',
+                                        fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em',
+                                        color: 'var(--accent-gold)', textTransform: 'uppercase', marginBottom: '4px',
                                     }}>{t('stepLabel')} {step}</div>
-                                    <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '4px' }}>{t(titleKey)}</div>
-                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>{t(descKey)}</div>
+                                    <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '3px' }}>{t(titleKey)}</div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>{t(descKey)}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                {/* ══ CALLS LIST / EMPTY / CLOSED ══ */}
-                <section style={{ padding: '0 0 var(--space-4xl)' }}>
-                    <div className="container" style={{ maxWidth: '1000px' }}>
+                {/* ══ CALLS ══ */}
+                <section style={{ padding: '0 16px 80px' }} className="script-calls">
+                    <div style={{ maxWidth: '960px', margin: '0 auto' }}>
 
                         {!enabled ? (
-                            /* -- Script calls disabled -- */
                             <div style={{
-                                textAlign: 'center',
-                                padding: 'var(--space-3xl)',
+                                textAlign: 'center', padding: '48px 24px',
                                 background: 'rgba(255,255,255,0.02)',
-                                borderRadius: 'var(--radius-xl)',
-                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '18px', border: '1px solid var(--border-subtle)',
                             }}>
-                                <div style={{ fontSize: '3.5rem', marginBottom: 'var(--space-md)' }}>📜</div>
-                                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: 'var(--space-sm)' }}>
-                                    {t('closedTitle')}
-                                </h2>
-                                <p style={{ color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)', maxWidth: '480px', margin: '0 auto var(--space-lg)' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '14px' }}>📜</div>
+                                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '10px' }}>{t('closedTitle')}</h2>
+                                <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px', fontSize: '0.88rem', lineHeight: 1.6 }}>
                                     {t('closedDesc')}
                                 </p>
                                 <NotifyNewCallsButton initialSubscribed={alreadySubscribed} />
                             </div>
 
                         ) : calls.length === 0 ? (
-                            /* -- Enabled but no open calls -- */
                             <div style={{
-                                textAlign: 'center',
-                                padding: 'var(--space-3xl)',
+                                textAlign: 'center', padding: '48px 24px',
                                 background: 'rgba(255,255,255,0.02)',
-                                borderRadius: 'var(--radius-xl)',
-                                border: '1px solid var(--border-subtle)',
+                                borderRadius: '18px', border: '1px solid var(--border-subtle)',
                             }}>
-                                <div style={{ fontSize: '3.5rem', marginBottom: 'var(--space-md)' }}>🔍</div>
-                                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: 'var(--space-sm)' }}>
-                                    {t('noCallsTitle')}
-                                </h2>
-                                <p style={{ color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto var(--space-lg)' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '14px' }}>🔍</div>
+                                <h2 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '10px' }}>{t('noCallsTitle')}</h2>
+                                <p style={{ color: 'var(--text-secondary)', maxWidth: '380px', margin: '0 auto 20px', fontSize: '0.88rem', lineHeight: 1.6 }}>
                                     {t('noCallsDesc')}
                                 </p>
                                 <NotifyNewCallsButton initialSubscribed={alreadySubscribed} />
                             </div>
 
                         ) : (
-                            /* -- Active calls grid -- */
                             <>
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    marginBottom: 'var(--space-xl)',
-                                }}>
+                                {/* Section header */}
+                                <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <div>
-                                        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '4px' }}>
+                                        <h2 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '2px' }}>
                                             {t('openCallsTitle')}
                                         </h2>
-                                        <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
+                                        <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
                                             {calls.length} {calls.length === 1 ? t('callSingular') : t('callPlural')}
                                         </p>
                                     </div>
                                 </div>
 
+                                {/* Cards grid */}
                                 <div className="scripts-grid" style={{
                                     display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-                                    gap: 'var(--space-lg)',
-                                    alignItems: 'start',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                                    gap: '14px',
                                 }}>
                                     {calls.map((call, i) => (
                                         <Link
                                             key={call.id}
                                             href={`/scripts/${call.id}`}
                                             className="script-card"
-                                            style={{ animationDelay: `${i * 80}ms`, animation: 'fadeInUp 0.5s ease both' }}
+                                            style={{ animationDelay: `${i * 70}ms`, animation: 'fadeInUp 0.45s ease both' }}
                                         >
-                                            {/* Project badge */}
-                                            {call.project && (
-                                                <div style={{
-                                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                                    marginBottom: 'var(--space-md)',
+                                            {/* Card header tint */}
+                                            <div style={{
+                                                padding: '18px 18px 14px',
+                                                background: 'linear-gradient(135deg, rgba(212,168,83,0.07), transparent)',
+                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                            }}>
+                                                {/* Project badge */}
+                                                {call.project && (
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: '7px',
+                                                        marginBottom: '10px',
+                                                    }}>
+                                                        {call.project.coverImage && (
+                                                            <div style={{
+                                                                width: '22px', height: '22px', borderRadius: '5px',
+                                                                backgroundImage: `url(${call.project.coverImage})`,
+                                                                backgroundSize: 'cover', backgroundPosition: 'center',
+                                                                border: '1px solid rgba(212,168,83,0.25)', flexShrink: 0,
+                                                            }} />
+                                                        )}
+                                                        <span style={{
+                                                            fontSize: '0.58rem', color: 'var(--accent-gold)',
+                                                            textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700,
+                                                        }}>
+                                                            {t('forProject')}: {call.project.title}
+                                                        </span>
+                                                    </div>
+                                                )}
+
+                                                {/* Title */}
+                                                <h3 style={{
+                                                    fontSize: '1.05rem', fontWeight: 800,
+                                                    color: 'var(--text-primary)', lineHeight: 1.25,
+                                                    margin: 0, letterSpacing: '-0.01em',
                                                 }}>
-                                                    {call.project.coverImage && (
-                                                        <div style={{
-                                                            width: '28px', height: '28px', borderRadius: '6px',
-                                                            backgroundImage: `url(${call.project.coverImage})`,
-                                                            backgroundSize: 'cover', backgroundPosition: 'center',
-                                                            border: '1px solid rgba(212,168,83,0.2)',
-                                                            flexShrink: 0,
-                                                        }} />
-                                                    )}
-                                                    <span style={{
-                                                        fontSize: '0.65rem', color: 'var(--accent-gold)',
-                                                        textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600,
-                                                    }}>
-                                                        {t('forProject')}: {call.project.title}
-                                                    </span>
-                                                </div>
-                                            )}
-
-                                            {/* Title */}
-                                            <h3 style={{
-                                                fontSize: '1.15rem', fontWeight: 700,
-                                                marginBottom: 'var(--space-sm)',
-                                                color: 'var(--text-primary)',
-                                                lineHeight: 1.3,
-                                            }}>
-                                                {call.title}
-                                            </h3>
-
-                                            {/* Description */}
-                                            <p style={{
-                                                fontSize: '0.85rem', color: 'var(--text-secondary)',
-                                                marginBottom: 'var(--space-lg)', lineHeight: 1.65,
-                                            }}>
-                                                {call.description.slice(0, 180)}{call.description.length > 180 ? '…' : ''}
-                                            </p>
-
-                                            {/* Tags */}
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: 'var(--space-lg)' }}>
-                                                {call.genre && (
-                                                    <span style={{
-                                                        fontSize: '0.63rem', padding: '3px 10px', fontWeight: 600,
-                                                        background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
-                                                        borderRadius: 'var(--radius-full)', border: '1px solid rgba(212,168,83,0.18)',
-                                                    }}>{call.genre}</span>
-                                                )}
-                                                {call.targetLength && (
-                                                    <span style={{
-                                                        fontSize: '0.63rem', padding: '3px 10px', fontWeight: 600,
-                                                        background: 'rgba(96,165,250,0.08)', color: '#60a5fa',
-                                                        borderRadius: 'var(--radius-full)', border: '1px solid rgba(96,165,250,0.15)',
-                                                    }}>{call.targetLength}</span>
-                                                )}
-                                                {call.deadline && (
-                                                    <span style={{
-                                                        fontSize: '0.63rem', padding: '3px 10px',
-                                                        background: 'rgba(255,255,255,0.03)', color: 'var(--text-tertiary)',
-                                                        borderRadius: 'var(--radius-full)', border: '1px solid var(--border-subtle)',
-                                                    }}>
-                                                        ⏰ {t('deadlineLabel')}: {call.deadline}
-                                                    </span>
-                                                )}
+                                                    {getLocalized(call, 'title', call.title)}
+                                                </h3>
                                             </div>
 
-                                            {/* Footer */}
-                                            <div style={{
-                                                display: 'flex', justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                paddingTop: 'var(--space-md)',
-                                                borderTop: '1px solid var(--border-subtle)',
-                                            }}>
-                                                <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                                                    {call._count.submissions} {call._count.submissions !== 1 ? t('submissions') : t('submission')}
-                                                </span>
-                                                <span className="btn btn-primary btn-sm submit-btn">
-                                                    {t('submitScript')} →
-                                                </span>
+                                            {/* Card body */}
+                                            <div style={{ padding: '14px 18px' }}>
+                                                {/* Description */}
+                                                <p style={{
+                                                    fontSize: '0.8rem', color: 'var(--text-secondary)',
+                                                    marginBottom: '12px', lineHeight: 1.6,
+                                                    display: '-webkit-box',
+                                                    WebkitLineClamp: 3,
+                                                    WebkitBoxOrient: 'vertical',
+                                                    overflow: 'hidden',
+                                                }}>
+                                                    {getLocalized(call, 'description', call.description)}
+                                                </p>
+
+                                                {/* Tags */}
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '14px' }}>
+                                                    {call.genre && (
+                                                        <span style={{
+                                                            fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
+                                                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
+                                                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                                                        }}>{getLocalized(call, 'genre', call.genre)}</span>
+                                                    )}
+                                                    {call.targetLength && (
+                                                        <span style={{
+                                                            fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
+                                                            background: 'rgba(96,165,250,0.07)', color: '#60a5fa',
+                                                            borderRadius: '5px', border: '1px solid rgba(96,165,250,0.14)',
+                                                        }}>{call.targetLength}</span>
+                                                    )}
+                                                    {call.deadline && (
+                                                        <span style={{
+                                                            fontSize: '0.6rem', padding: '2px 9px',
+                                                            background: 'rgba(255,255,255,0.03)', color: 'var(--text-tertiary)',
+                                                            borderRadius: '5px', border: '1px solid rgba(255,255,255,0.07)',
+                                                        }}>⏰ {call.deadline}</span>
+                                                    )}
+                                                </div>
+
+                                                {/* Footer */}
+                                                <div style={{
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                    paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)',
+                                                }}>
+                                                    <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
+                                                        {call._count.submissions === 0
+                                                            ? t('beFirstToSubmit')
+                                                            : `${call._count.submissions} ${call._count.submissions !== 1 ? t('submissions') : t('submission')}`
+                                                        }
+                                                    </span>
+                                                    <span className="submit-arrow">
+                                                        {t('submitScript')} <span>→</span>
+                                                    </span>
+                                                </div>
                                             </div>
                                         </Link>
                                     ))}
@@ -403,116 +397,101 @@ export default async function ScriptCallsPage() {
                             </>
                         )}
 
-                        {/* ── COMING SOON section ── */}
+                        {/* ── COMING SOON ── */}
                         {comingSoon.length > 0 && (
-                            <div style={{ marginTop: 'var(--space-4xl)' }}>
+                            <div style={{ marginTop: '48px' }}>
                                 <div style={{
                                     display: 'flex', alignItems: 'center', gap: '12px',
-                                    marginBottom: 'var(--space-xl)',
+                                    marginBottom: '16px',
                                 }}>
-                                    <div style={{
-                                        flex: 1, height: '1px',
-                                        background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.2), transparent)',
-                                    }} />
+                                    <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.2))' }} />
                                     <span style={{
-                                        fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em',
+                                        fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.14em',
                                         textTransform: 'uppercase', color: 'var(--accent-gold)', opacity: 0.7,
+                                        whiteSpace: 'nowrap',
                                     }}>⏳ {t('comingSoonLabel')}</span>
-                                    <div style={{
-                                        flex: 1, height: '1px',
-                                        background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.2), transparent)',
-                                    }} />
+                                    <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(212,168,83,0.2))' }} />
                                 </div>
 
-                                <div className="scripts-grid" style={{
+                                <div className="coming-grid" style={{
                                     display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-                                    gap: 'var(--space-lg)',
-                                    alignItems: 'start',
+                                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                    gap: '12px',
                                 }}>
                                     {comingSoon.map((call, i) => (
                                         <div
                                             key={call.id}
                                             style={{
                                                 position: 'relative',
-                                                padding: 'var(--space-xl)',
-                                                borderRadius: 'var(--radius-xl)',
+                                                padding: '16px 18px',
+                                                borderRadius: '14px',
                                                 background: 'rgba(255,255,255,0.015)',
                                                 border: '1px solid rgba(255,255,255,0.06)',
-                                                backdropFilter: 'blur(20px)',
-                                                animationDelay: `${i * 80}ms`,
-                                                animation: 'fadeInUp 0.5s ease both',
+                                                backdropFilter: 'blur(16px)',
+                                                animationDelay: `${i * 70}ms`,
+                                                animation: 'fadeInUp 0.45s ease both',
                                                 overflow: 'hidden',
                                             }}
                                         >
-                                            {/* Frosted overlay — coming soon */}
                                             <div style={{
-                                                position: 'absolute', top: '12px', right: '14px',
-                                                fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.1em',
+                                                position: 'absolute', top: '10px', right: '12px',
+                                                fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.1em',
                                                 textTransform: 'uppercase',
                                                 color: 'rgba(212,168,83,0.6)',
                                                 background: 'rgba(212,168,83,0.06)',
                                                 border: '1px solid rgba(212,168,83,0.12)',
-                                                padding: '2px 10px', borderRadius: 'var(--radius-full)',
+                                                padding: '2px 8px', borderRadius: '99px',
                                             }}>
                                                 {t('comingSoonBadge')}
                                             </div>
 
-                                            {/* Project badge */}
                                             {call.project && (
-                                                <div style={{
-                                                    display: 'flex', alignItems: 'center', gap: '8px',
-                                                    marginBottom: 'var(--space-md)',
-                                                }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
                                                     {call.project.coverImage && (
                                                         <div style={{
-                                                            width: '24px', height: '24px', borderRadius: '5px',
+                                                            width: '20px', height: '20px', borderRadius: '4px',
                                                             backgroundImage: `url(${call.project.coverImage})`,
                                                             backgroundSize: 'cover', backgroundPosition: 'center',
-                                                            border: '1px solid rgba(212,168,83,0.15)',
+                                                            border: '1px solid rgba(212,168,83,0.12)',
                                                             flexShrink: 0, opacity: 0.6,
                                                         }} />
                                                     )}
                                                     <span style={{
-                                                        fontSize: '0.62rem', color: 'var(--accent-gold)',
-                                                        textTransform: 'uppercase', letterSpacing: '0.08em',
-                                                        fontWeight: 600, opacity: 0.7,
+                                                        fontSize: '0.58rem', color: 'rgba(212,168,83,0.6)',
+                                                        textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700,
                                                     }}>
                                                         {t('forProject')}: {call.project.title}
                                                     </span>
                                                 </div>
                                             )}
 
-                                            {/* Title */}
                                             <h3 style={{
-                                                fontSize: '1.05rem', fontWeight: 700,
-                                                marginBottom: 'var(--space-sm)',
-                                                color: 'var(--text-primary)', lineHeight: 1.3,
-                                                opacity: 0.8,
+                                                fontSize: '0.95rem', fontWeight: 700,
+                                                color: 'var(--text-primary)', lineHeight: 1.3, opacity: 0.8,
+                                                marginBottom: '6px',
                                             }}>
-                                                {call.title}
+                                                {getLocalized(call, 'title', call.title)}
                                             </h3>
 
-                                            {/* Description */}
                                             <p style={{
-                                                fontSize: '0.82rem', color: 'var(--text-tertiary)',
-                                                marginBottom: 'var(--space-lg)', lineHeight: 1.6,
+                                                fontSize: '0.75rem', color: 'var(--text-tertiary)',
+                                                marginBottom: '12px', lineHeight: 1.55,
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                                             }}>
-                                                {call.description.slice(0, 140)}{call.description.length > 140 ? '…' : ''}
+                                                {getLocalized(call, 'description', call.description)}
                                             </p>
 
-                                            {/* Genre tag */}
                                             {call.genre && (
-                                                <div style={{ marginBottom: 'var(--space-md)' }}>
-                                                    <span style={{
-                                                        fontSize: '0.6rem', padding: '3px 10px', fontWeight: 600,
-                                                        background: 'rgba(212,168,83,0.05)', color: 'rgba(212,168,83,0.6)',
-                                                        borderRadius: 'var(--radius-full)', border: '1px solid rgba(212,168,83,0.1)',
-                                                    }}>{call.genre}</span>
-                                                </div>
+                                                <span style={{
+                                                    display: 'inline-block',
+                                                    fontSize: '0.58rem', padding: '2px 8px', fontWeight: 600,
+                                                    background: 'rgba(212,168,83,0.05)', color: 'rgba(212,168,83,0.55)',
+                                                    borderRadius: '5px', border: '1px solid rgba(212,168,83,0.1)',
+                                                    marginBottom: '12px',
+                                                }}>{getLocalized(call, 'genre', call.genre)}</span>
                                             )}
 
-                                            {/* Notify Me button */}
                                             <NotifyMeButton
                                                 scriptCallId={call.id}
                                                 initialSubscribed={subscribedIds.has(call.id)}
