@@ -115,13 +115,13 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                 .tag-neutral { font-size: 0.65rem; padding: 4px 11px; background: rgba(255,255,255,0.03); color: var(--text-secondary); border-radius: 6px; border: 1px solid var(--border-subtle); }
 
                 .info-card {
-                    background: linear-gradient(145deg, rgba(12,12,18,0.9), rgba(8,8,14,0.82));
-                    border: 1px solid rgba(212,168,83,0.12);
+                    background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+                    border: 1px solid rgba(255,255,255,0.14);
                     border-radius: 14px;
-                    padding: 18px 20px;
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
-                    box-shadow: 0 6px 24px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04);
+                    padding: 14px 16px;
+                    backdrop-filter: blur(24px);
+                    -webkit-backdrop-filter: blur(24px);
+                    box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12);
                 }
 
                 .form-card {
@@ -136,11 +136,11 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
 
                 .meta-row {
                     display: flex; align-items: center; justify-content: space-between;
-                    padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
-                    font-size: 0.8rem;
+                    padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+                    font-size: 0.78rem;
                 }
                 .meta-row:last-child { border-bottom: none; padding-bottom: 0; }
-                .meta-label { color: var(--text-tertiary); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; }
+                .meta-label { color: var(--text-tertiary); font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em; }
                 .meta-value { color: var(--text-primary); font-weight: 600; text-align: right; }
 
                 /* ── Mobile layout ── */
@@ -150,12 +150,12 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                     gap: 16px;
                 }
 
-                /* ── Tablet+ ── */
+                /* ── Tablet+ — form gets priority width ── */
                 @media (min-width: 900px) {
                     .detail-layout {
                         display: grid;
-                        grid-template-columns: 1fr 400px;
-                        gap: 28px;
+                        grid-template-columns: 340px 1fr;
+                        gap: 24px;
                         align-items: start;
                     }
                     .form-card {
@@ -230,12 +230,19 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                 {/* About */}
                                 <div className="info-card d2">
                                     <div style={{
-                                        fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.12em',
-                                        textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: '10px',
+                                        fontSize: '0.57rem', fontWeight: 700, letterSpacing: '0.12em',
+                                        textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: '8px',
                                     }}>
                                         {t('aboutCall')}
                                     </div>
-                                    <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>
+                                    <p style={{
+                                        fontSize: '0.82rem', lineHeight: 1.6,
+                                        color: 'rgba(255,255,255,0.72)', margin: 0,
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 4,
+                                        WebkitBoxOrient: 'vertical',
+                                        overflow: 'hidden',
+                                    }}>
                                         {call.description}
                                     </p>
                                 </div>
@@ -304,7 +311,7 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
 
                             </div>
 
-                            {/* RIGHT — Form */}
+                            {/* RIGHT — Form (wider column on desktop) */}
                             <div>
                                 {existingSubmission && existingSubmission.status !== 'withdrawn' ? (
                                     <ScriptSubmittedCard

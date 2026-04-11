@@ -65,15 +65,15 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
     return (
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
             <div style={{
-                background: 'linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.07))',
-                backdropFilter: 'blur(80px) saturate(200%) brightness(1.1)',
-                WebkitBackdropFilter: 'blur(80px) saturate(200%) brightness(1.1)',
-                border: '1px solid rgba(255,255,255,0.22)',
+                background: 'linear-gradient(145deg, rgba(10,10,16,0.82), rgba(6,6,12,0.75)), linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
+                backdropFilter: 'blur(80px) saturate(180%) brightness(0.9)',
+                WebkitBackdropFilter: 'blur(80px) saturate(180%) brightness(0.9)',
+                border: '1px solid rgba(255,255,255,0.18)',
                 borderRadius: 'var(--radius-lg)',
                 padding: 'var(--space-md)',
                 transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
                 cursor: 'default',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(255,255,255,0.05)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(255,255,255,0.04)',
             }}>
                 <div style={{
                     display: 'flex',

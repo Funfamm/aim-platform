@@ -291,16 +291,18 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             }}>{t('accent')}</span>
                         </h1>
 
-                        {/* Stats-style capsule row — matching Works page pattern */}
-                        <div className="animate-fade-in-up delay-2 glass-panel" style={{
+                        {/* Stats-style capsule row — white frosted glass */}
+                        <div className="animate-fade-in-up delay-2" style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             gap: '6px',
                             flexWrap: 'wrap',
                             padding: '10px 20px',
-                            backdropFilter: 'blur(16px)',
-                            WebkitBackdropFilter: 'blur(16px)',
+                            backdropFilter: 'blur(20px) saturate(180%)',
+                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
                             borderRadius: 'var(--radius-full)',
-                            border: '1px solid rgba(228,185,90,0.12)',
+                            background: 'rgba(255,255,255,0.18)',
+                            border: '1px solid rgba(255,255,255,0.35)',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
                         }}>
                             {[
                                 { icon: '🌟', text: t('noExperience') },
@@ -310,13 +312,13 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             ].map((tag, i) => (
                                 <span key={tag.text} style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    fontSize: '0.65rem', fontWeight: 600,
-                                    color: 'var(--accent-gold)',
+                                    fontSize: '0.65rem', fontWeight: 700,
+                                    color: 'rgba(15,15,20,0.85)',
                                     letterSpacing: '0.03em',
                                 }}>
                                     <span style={{ fontSize: '0.7rem' }}>{tag.icon}</span>
                                     {tag.text}
-                                    {i < 3 && <span style={{ margin: '0 4px', opacity: 0.3, color: 'var(--text-tertiary)' }}>·</span>}
+                                    {i < 3 && <span style={{ margin: '0 4px', opacity: 0.3, color: 'rgba(0,0,0,0.5)' }}>·</span>}
                                 </span>
                             ))}
                         </div>

@@ -295,17 +295,13 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                         </div>
                     </div>
 
-                    {/* Video navigation dots — absolutely centered at bottom of hero */}
+                    {/* Video navigation dots */}
                     {videos.length > 1 && (
                         <div style={{
-                            position: 'absolute',
-                            bottom: 'var(--space-xl)',
-                            left: 0,
-                            right: 0,
                             display: 'flex',
                             justifyContent: 'center',
                             gap: '6px',
-                            zIndex: 2,
+                            marginTop: 'var(--space-md)',
                         }}>
                             {videos.map((_, i) => (
                                 <button

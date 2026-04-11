@@ -114,12 +114,6 @@ export default async function ScriptCallsPage() {
                 .script-steps  { animation: fadeInUp 0.5s ease 0.2s both; }
                 .script-calls  { animation: fadeInUp 0.5s ease 0.25s both; }
 
-                /* ── Process Steps ── */
-                .steps-row {
-                    display: grid;
-                    grid-template-columns: repeat(3, 1fr);
-                    gap: 10px;
-                }
 
                 /* ── Script Card ── */
                 .script-card {
@@ -170,12 +164,12 @@ export default async function ScriptCallsPage() {
 
                 /* ── Responsive ── */
                 @media (max-width: 640px) {
-                    .steps-row { grid-template-columns: 1fr !important; gap: 8px !important; }
                     .scripts-grid { grid-template-columns: 1fr !important; }
                     .coming-grid  { grid-template-columns: 1fr !important; }
+                    .step-strip   { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; padding: 14px 18px !important; }
+                    .step-arrow   { display: none !important; }
                 }
                 @media (min-width: 641px) and (max-width: 900px) {
-                    .steps-row { grid-template-columns: 1fr 1fr !important; }
                     .scripts-grid { grid-template-columns: 1fr !important; }
                 }
             `}</style>
@@ -225,34 +219,53 @@ export default async function ScriptCallsPage() {
                     </div>
                 </section>
 
-                {/* ══ HOW IT WORKS ══ */}
-                <section style={{ padding: '0 16px 32px' }} className="script-steps">
-                    <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                        <div className="steps-row">
-                            {([
-                                { icon: '📝', step: '01', titleKey: 'step1Title', descKey: 'step1Desc' },
-                                { icon: '🤖', step: '02', titleKey: 'step2Title', descKey: 'step2Desc' },
-                                { icon: '🎬', step: '03', titleKey: 'step3Title', descKey: 'step3Desc' },
-                            ] as const).map(({ icon, step, titleKey, descKey }) => (
-                                <div key={step} style={{
-                                    textAlign: 'center',
-                                    padding: '18px 14px',
-                                    background: 'rgba(10,10,14,0.78)',
-                                    borderRadius: '14px',
-                                    border: '1px solid rgba(212,168,83,0.15)',
-                                    backdropFilter: 'blur(12px)',
-                                    WebkitBackdropFilter: 'blur(12px)',
+                {/* ══ HOW IT WORKS — compact frosted step strip ══ */}
+                <section style={{ padding: '0 16px 28px', textAlign: 'center' }} className="script-steps">
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        flexWrap: 'wrap', justifyContent: 'center',
+                        gap: '4px',
+                        padding: '12px 22px',
+                        background: 'rgba(255,255,255,0.12)',
+                        backdropFilter: 'blur(20px) saturate(160%)',
+                        WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+                        border: '1px solid rgba(255,255,255,0.25)',
+                        borderRadius: '99px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4)',
+                    }} className="step-strip">
+                        {([
+                            { icon: '📝', step: '01', titleKey: 'step1Title' },
+                            { icon: '🤖', step: '02', titleKey: 'step2Title' },
+                            { icon: '🎬', step: '03', titleKey: 'step3Title' },
+                        ] as const).map(({ icon, step, titleKey }, i) => (
+                            <>
+                                <span key={step} style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    padding: '2px 4px',
                                 }}>
-                                    <div style={{ fontSize: '1.6rem', marginBottom: '6px' }}>{icon}</div>
-                                    <div style={{
-                                        fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.12em',
-                                        color: 'var(--accent-gold)', textTransform: 'uppercase', marginBottom: '4px',
-                                    }}>{t('stepLabel')} {step}</div>
-                                    <div style={{ fontWeight: 700, fontSize: '0.82rem', marginBottom: '3px' }}>{t(titleKey)}</div>
-                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>{t(descKey)}</div>
-                                </div>
-                            ))}
-                        </div>
+                                    <span style={{
+                                        width: '18px', height: '18px', borderRadius: '50%',
+                                        background: 'rgba(212,168,83,0.18)',
+                                        border: '1px solid rgba(212,168,83,0.35)',
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '0.5rem', fontWeight: 800, color: 'var(--accent-gold)',
+                                        flexShrink: 0,
+                                    }}>{step}</span>
+                                    <span style={{ fontSize: '0.7rem' }}>{icon}</span>
+                                    <span style={{
+                                        fontSize: '0.72rem', fontWeight: 700,
+                                        color: 'rgba(15,15,20,0.9)',
+                                        whiteSpace: 'nowrap',
+                                    }}>{t(titleKey)}</span>
+                                </span>
+                                {i < 2 && (
+                                    <span className="step-arrow" style={{
+                                        fontSize: '0.7rem', color: 'rgba(0,0,0,0.3)',
+                                        margin: '0 2px',
+                                    }}>→</span>
+                                )}
+                            </>
+                        ))}
                     </div>
                 </section>
 
