@@ -125,27 +125,27 @@ export default async function ScriptCallsPage() {
                 .script-card {
                     display: block;
                     text-decoration: none;
-                    border-radius: 18px;
+                    border-radius: 20px;
                     overflow: hidden;
-                    background: linear-gradient(145deg, rgba(14,14,20,0.55), rgba(10,10,16,0.45));
-                    border: 1px solid rgba(212,168,83,0.15);
-                    backdrop-filter: blur(28px) saturate(180%);
-                    -webkit-backdrop-filter: blur(28px) saturate(180%);
-                    box-shadow: 0 6px 28px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07);
+                    background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.07));
+                    border: 1px solid rgba(255,255,255,0.22);
+                    backdrop-filter: blur(40px) saturate(200%) brightness(1.1);
+                    -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.1);
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(255,255,255,0.05);
                     transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
                     position: relative;
                 }
                 .script-card::before {
                     content: '';
                     position: absolute; inset: 0;
-                    background: linear-gradient(135deg, rgba(212,168,83,0.08) 0%, transparent 60%);
+                    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
                     opacity: 0; transition: opacity 0.35s;
                     pointer-events: none;
                 }
                 .script-card:hover {
                     transform: translateY(-4px);
-                    border-color: rgba(212,168,83,0.35);
-                    box-shadow: 0 20px 56px rgba(0,0,0,0.5), 0 0 36px rgba(212,168,83,0.07);
+                    border-color: rgba(255,255,255,0.35);
+                    box-shadow: 0 20px 56px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 36px rgba(212,168,83,0.08);
                 }
                 .script-card:hover::before { opacity: 1; }
                 .script-card:active { transform: scale(0.98); }
@@ -318,8 +318,8 @@ export default async function ScriptCallsPage() {
                                             {/* Card header tint */}
                                             <div style={{
                                                 padding: '18px 18px 14px',
-                                                background: 'linear-gradient(135deg, rgba(212,168,83,0.07), transparent)',
-                                                borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                                background: 'linear-gradient(135deg, rgba(255,255,255,0.08), transparent)',
+                                                borderBottom: '1px solid rgba(255,255,255,0.15)',
                                             }}>
                                                 {/* Project badge */}
                                                 {call.project && (
@@ -387,8 +387,8 @@ export default async function ScriptCallsPage() {
                                                     {call.deadline && (
                                                         <span style={{
                                                             fontSize: '0.6rem', padding: '2px 9px',
-                                                            background: 'rgba(255,255,255,0.03)', color: 'var(--text-tertiary)',
-                                                            borderRadius: '5px', border: '1px solid rgba(255,255,255,0.07)',
+                                                            background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)',
+                                                            borderRadius: '5px', border: '1px solid rgba(255,255,255,0.2)',
                                                         }}>⏰ {call.deadline}</span>
                                                     )}
                                                 </div>
@@ -396,7 +396,7 @@ export default async function ScriptCallsPage() {
                                                 {/* Footer */}
                                                 <div style={{
                                                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                    paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)',
+                                                    paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.15)',
                                                 }}>
                                                     <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
                                                         {call._count.submissions === 0
