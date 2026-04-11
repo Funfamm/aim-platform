@@ -15,7 +15,7 @@
 // them over the default template field values before rendering.
 
 import { prisma } from './db'
-import { getEmailString as emailT } from './email-i18n'
+import { t as emailT } from './email-i18n'
 
 type TemplateFields = Record<string, string>
 type AllOverrides = Record<string, TemplateFields>

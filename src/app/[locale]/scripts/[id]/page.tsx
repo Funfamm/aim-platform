@@ -39,7 +39,6 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
             id: true, title: true, description: true, genre: true,
             toneKeywords: true, targetLength: true, deadline: true,
             status: true, isPublic: true, maxSubmissions: true,
-            requirements: true, compensationNotes: true,
             project: { select: { title: true, slug: true, coverImage: true } },
             _count: { select: { submissions: true } },
         },
