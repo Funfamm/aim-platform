@@ -3,6 +3,7 @@ import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
 import NotifyMeButton from '@/components/scripts/NotifyMeButton'
 import NotifyNewCallsButton from '@/components/scripts/NotifyNewCallsButton'
+import ScriptVideoBackground from '@/components/scripts/ScriptVideoBackground'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { redirect } from 'next/navigation'
@@ -73,6 +74,8 @@ export default async function ScriptCallsPage() {
 
     return (
         <>
+            {/* Video background (replaces CinematicBackground when videos exist) */}
+            <ScriptVideoBackground />
             <CinematicBackground variant="creative" />
 
             <style>{`
@@ -186,23 +189,21 @@ export default async function ScriptCallsPage() {
                         </h1>
 
                         <p className="script-desc" style={{
-                            maxWidth: '580px', margin: '0 auto var(--space-lg)',
+                            maxWidth: '580px', margin: '0 auto var(--space-xl)',
                             color: 'var(--text-secondary)', fontSize: '1.08rem', lineHeight: 1.7,
                         }}>
                             {t('heroDesc')}
                         </p>
 
-                        {/* Notice pill */}
-                        <div className="script-notice" style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '8px',
-                            fontSize: '0.72rem', color: 'var(--text-tertiary)',
-                            background: 'rgba(255,255,255,0.03)',
-                            padding: '7px 18px',
-                            borderRadius: 'var(--radius-full)',
-                            border: '1px solid var(--border-subtle)',
+                        {/* Scroll indicator */}
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '12px',
+                            justifyContent: 'center',
+                            opacity: 0.35,
                         }}>
-                            <span>🏆</span>
-                            {t('noCompensation')}
+                            <div style={{ flex: 1, maxWidth: '80px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.5))' }} />
+                            <span style={{ fontSize: '0.6rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent-gold)', fontWeight: 700 }}>{t('badge')}</span>
+                            <div style={{ flex: 1, maxWidth: '80px', height: '1px', background: 'linear-gradient(to left, transparent, rgba(212,168,83,0.5))' }} />
                         </div>
                     </div>
                 </section>

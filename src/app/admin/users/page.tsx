@@ -22,6 +22,7 @@ export default function AdminUsersPage() {
     const [selected, setSelected] = useState<Set<string>>(new Set())
     const [deleting, setDeleting] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState(false)
+    const [purgeMode, setPurgeMode] = useState(false)
 
     const fetchUsers = useCallback(async (page = 1) => {
         setLoading(true)
@@ -63,20 +64,20 @@ export default function AdminUsersPage() {
         }
     }
 
-    const handleBulkDelete = async () => {
+    const handleBulkDelete = async (purge = false) => {
         if (selected.size === 0) return
         setDeleting(true)
         try {
             const res = await fetch('/api/admin/users', {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: Array.from(selected) }),
+                body: JSON.stringify({ ids: Array.from(selected), purge }),
             })
             const data = await res.json()
             if (res.ok) {
                 setConfirmDelete(false)
                 await fetchUsers(pagination.page)
-                alert(`Deleted ${data.deleted} user${data.deleted !== 1 ? 's' : ''} successfully.`)
+                alert(data.message)
             } else {
                 alert(`Error: ${data.error}`)
             }
@@ -178,15 +179,32 @@ export default function AdminUsersPage() {
                             Clear Selection
                         </button>
                         <button
-                            onClick={() => setConfirmDelete(true)}
+                            onClick={() => { setPurgeMode(false); setConfirmDelete(true) }}
                             disabled={deletableSelected.length === 0}
                             style={{
-                                padding: '7px 16px', borderRadius: '8px', border: 'none', cursor: deletableSelected.length === 0 ? 'not-allowed' : 'pointer',
+                                padding: '7px 16px', borderRadius: '8px', border: 'none',
+                                cursor: deletableSelected.length === 0 ? 'not-allowed' : 'pointer',
                                 background: deletableSelected.length === 0 ? 'rgba(239,68,68,0.2)' : '#ef4444',
-                                color: 'white', fontWeight: 700, fontSize: '0.8rem', opacity: deletableSelected.length === 0 ? 0.5 : 1,
+                                color: 'white', fontWeight: 700, fontSize: '0.8rem',
+                                opacity: deletableSelected.length === 0 ? 0.5 : 1,
                             }}
                         >
-                            🗑 Delete {deletableSelected.length > 0 ? `${deletableSelected.length} ` : ''}User{deletableSelected.length !== 1 ? 's' : ''}
+                            🗑 Remove {deletableSelected.length > 0 ? `${deletableSelected.length} ` : ''}User{deletableSelected.length !== 1 ? 's' : ''}
+                        </button>
+                        <button
+                            onClick={() => { setPurgeMode(true); setConfirmDelete(true) }}
+                            disabled={deletableSelected.length === 0}
+                            title="Hard purge: permanently deletes user + ALL their applications, donations, and data"
+                            style={{
+                                padding: '7px 16px', borderRadius: '8px',
+                                border: '1px solid rgba(239,68,68,0.5)',
+                                cursor: deletableSelected.length === 0 ? 'not-allowed' : 'pointer',
+                                background: 'transparent',
+                                color: '#ef4444', fontWeight: 700, fontSize: '0.8rem',
+                                opacity: deletableSelected.length === 0 ? 0.4 : 1,
+                            }}
+                        >
+                            ☢️ Purge
                         </button>
                     </div>
                 )}
@@ -194,19 +212,40 @@ export default function AdminUsersPage() {
                 {/* Confirm Delete Modal */}
                 {confirmDelete && (
                     <div style={{
-                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999,
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 9999,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                         <div style={{
-                            background: 'var(--bg-secondary)', border: '1px solid rgba(239,68,68,0.3)',
-                            borderRadius: '16px', padding: '32px', maxWidth: '400px', width: '90%', textAlign: 'center',
+                            background: 'var(--bg-secondary)',
+                            border: `1px solid ${purgeMode ? 'rgba(239,68,68,0.5)' : 'rgba(239,68,68,0.3)'}`,
+                            borderRadius: '16px', padding: '32px', maxWidth: '440px', width: '90%', textAlign: 'center',
                         }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>⚠️</div>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px' }}>Confirm Bulk Delete</h3>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.6 }}>
-                                You are about to permanently delete <strong style={{ color: '#ef4444' }}>{deletableSelected.length} user{deletableSelected.length !== 1 ? 's' : ''}</strong>.
-                                This will also remove all their applications, donations, and data. This cannot be undone.
+                            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>{purgeMode ? '☢️' : '⚠️'}</div>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '8px' }}>
+                                {purgeMode ? 'Hard Purge' : 'Remove Users'}
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '12px', lineHeight: 1.6 }}>
+                                {purgeMode ? (
+                                    <>
+                                        You are about to <strong style={{ color: '#ef4444' }}>permanently purge {deletableSelected.length} user{deletableSelected.length !== 1 ? 's' : ''}</strong>.
+                                        {' '}This will <strong>wipe all their applications, AI scores, donations and data</strong> — nothing will be recoverable.
+                                    </>
+                                ) : (
+                                    <>
+                                        You are about to <strong style={{ color: '#ef4444' }}>remove {deletableSelected.length} user{deletableSelected.length !== 1 ? 's' : ''}</strong>.
+                                        {' '}Their account will be deleted, but <strong>casting applications and AI scores will be preserved</strong> with an anonymized email for your records.
+                                    </>
+                                )}
                             </p>
+                            {purgeMode && (
+                                <div style={{
+                                    padding: '10px 14px', marginBottom: '16px',
+                                    background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.2)',
+                                    borderRadius: '8px', fontSize: '0.75rem', color: '#ef4444', textAlign: 'left',
+                                }}>
+                                    ⚠️ Use this only for spam or fake accounts. Financial records (donations) will also be deleted.
+                                </div>
+                            )}
                             <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                                 <button
                                     onClick={() => setConfirmDelete(false)}
@@ -215,15 +254,18 @@ export default function AdminUsersPage() {
                                     Cancel
                                 </button>
                                 <button
-                                    onClick={handleBulkDelete}
+                                    onClick={() => handleBulkDelete(purgeMode)}
                                     disabled={deleting}
                                     style={{
-                                        padding: '10px 24px', borderRadius: '8px', border: 'none', cursor: deleting ? 'not-allowed' : 'pointer',
+                                        padding: '10px 24px', borderRadius: '8px', border: 'none',
+                                        cursor: deleting ? 'not-allowed' : 'pointer',
                                         background: '#ef4444', color: 'white', fontWeight: 700, fontSize: '0.9rem',
                                         opacity: deleting ? 0.7 : 1,
                                     }}
                                 >
-                                    {deleting ? 'Deleting...' : 'Yes, Delete'}
+                                    {deleting
+                                        ? (purgeMode ? 'Purging...' : 'Removing...')
+                                        : (purgeMode ? '☢️ Yes, Purge Everything' : '🗑 Yes, Remove')}
                                 </button>
                             </div>
                         </div>

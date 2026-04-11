@@ -22,6 +22,7 @@ import {
     newCastingRoleEmail,
     announcementEmail,
     contentPublishEmail,
+    scriptStatusUpdateEmail,
 } from '@/lib/email-templates'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -723,4 +724,100 @@ function buildPlainHtml(title: string, message: string, link?: string): string {
             ${link ? `<a href="${link}" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#d4a853;color:#000;border-radius:6px;text-decoration:none;font-weight:600;">View Now</a>` : ''}
         </div>
     `.trim()
+}
+
+
+// ─── Script Submission Status Change ──────────────────────────────────────────
+
+interface ScriptStatusChangeOptions {
+    submissionId: string
+    recipientEmail: string
+    recipientName: string
+    scriptTitle: string
+    callTitle: string
+    newStatus: string
+    statusNote?: string | null
+}
+
+/**
+ * Send email + in-app notification when admin changes a script submission status.
+ * Mirrors the casting flow's notifyApplicantStatusChange().
+ */
+export async function notifyScriptStatusChange(opts: ScriptStatusChangeOptions): Promise<void> {
+    // Only notify on meaningful status changes
+    const notifyStatuses = ['shortlisted', 'selected', 'rejected']
+    if (!notifyStatuses.includes(opts.newStatus)) return
+
+    try {
+        const settings = await prisma.siteSettings.findFirst({
+            select: { notifyApplicantOnStatusChange: true, siteName: true },
+        })
+        // Respect global toggle (reuses casting toggle — same intent)
+        if (settings && !settings.notifyApplicantOnStatusChange) return
+
+        const siteName = settings?.siteName || 'AIM Studio'
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || ''
+
+        // Resolve locale — script submissions store authorEmail but not userId,
+        // so look up user by email if they have an account
+        let locale = 'en'
+        let userId: string | null = null
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const userRecord = await (prisma as any).user.findUnique({
+            where: { email: opts.recipientEmail },
+            select: { id: true, preferredLanguage: true, receiveLocalizedEmails: true },
+        }).catch(() => null)
+
+        if (userRecord) {
+            userId = userRecord.id
+            if (userRecord.receiveLocalizedEmails !== false && userRecord.preferredLanguage) {
+                locale = userRecord.preferredLanguage
+            }
+        }
+
+        // Map status → i18n key
+        const i18nKeyMap: Record<string, string> = {
+            shortlisted: 'scriptStatus_shortlisted',
+            selected:    'scriptStatus_selected',
+            rejected:    'scriptStatus_rejected',
+        }
+        const i18nKey = i18nKeyMap[opts.newStatus] || 'scriptStatus_rejected'
+
+        // Build subject and in-app strings
+        const subject = `[${siteName}] ` + (t(i18nKey, locale, 'subject') || 'Script Submission Update').replace('{title}', opts.scriptTitle)
+        const inAppTitle   = (t(i18nKey, locale, 'notifTitle')   || 'Script Update').replace('{title}', opts.scriptTitle)
+        const inAppMessage = (t(i18nKey, locale, 'notifMessage') || 'Your screenplay submission has been updated.').replace('{title}', opts.scriptTitle)
+
+        // Render email HTML
+        const html = scriptStatusUpdateEmail(
+            opts.recipientName,
+            opts.scriptTitle,
+            opts.newStatus,
+            opts.callTitle,
+            opts.statusNote || undefined,
+            siteUrl,
+            locale,
+        )
+
+        // Send email
+        const sent = await sendEmail({ to: opts.recipientEmail, subject, html })
+
+        // In-app notification if user has an account
+        if (userId) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (prisma as any).userNotification.create({
+                data: {
+                    userId,
+                    type: 'status_change',
+                    title: inAppTitle,
+                    message: inAppMessage,
+                    link: '/scripts',
+                },
+            }).catch(() => {})
+        }
+
+        logger.info('notifications', `${sent ? '📧' : '❌'} Script status notification ${sent ? 'sent' : 'failed'} → ${opts.recipientEmail} (status: ${opts.newStatus}, locale: ${locale})`)
+    } catch (err) {
+        logger.error('notifications', 'notifyScriptStatusChange failed', { error: err })
+    }
 }

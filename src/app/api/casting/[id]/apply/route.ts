@@ -10,6 +10,27 @@ import { uploadLimiter } from '@/lib/rate-limit'
 import { checkMagicBytes } from '@/lib/upload-safety'
 import { logUploadEvent } from '@/lib/upload-audit'
 import { uploadBufferToR2 } from '@/lib/r2Upload'
+import path from 'path'
+import fs from 'fs'
+
+// ── Locale-aware error helper ───────────────────────────────────────────────
+function applyError(key: string, locale: string, replacements: Record<string, string> = {}): string {
+    try {
+        const filePath = path.join(process.cwd(), 'messages', `${locale}.json`)
+        const fallbackPath = path.join(process.cwd(), 'messages', 'en.json')
+        const raw = fs.existsSync(filePath)
+            ? fs.readFileSync(filePath, 'utf8')
+            : fs.readFileSync(fallbackPath, 'utf8')
+        const data = JSON.parse(raw)
+        let msg: string = data?.castingForm?.[key] || data?.castingForm?.[key.replace('apply', '')] || key
+        for (const [k, v] of Object.entries(replacements)) {
+            msg = msg.replace(`{${k}}`, v)
+        }
+        return msg
+    } catch {
+        return key
+    }
+}
 
 // ═══ FILE UPLOAD SECURITY ═══
 const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
@@ -32,10 +53,14 @@ export async function POST(
     try {
         const { id } = await params
 
+        // Detect locale early from Accept-Language header for pre-formData errors
+        const acceptLang = request.headers.get('accept-language') || 'en'
+        const earlyLocale = acceptLang.split(',')[0].split('-')[0].trim() || 'en'
+
         // Verify casting call exists and is open
         const castingCall = await withDbRetry(() => prisma.castingCall.findUnique({ where: { id } }), 'apply_find_casting')
         if (!castingCall || castingCall.status !== 'open') {
-            return NextResponse.json({ error: 'Casting call not found or closed' }, { status: 404 })
+            return NextResponse.json({ error: applyError('applyNotFound', earlyLocale) }, { status: 404 })
         }
 
         const formData = await request.formData()
@@ -71,13 +96,13 @@ export async function POST(
         }
 
         if (!fullName || !email) {
-            return NextResponse.json({ error: 'Name and email are required' }, { status: 400 })
+            return NextResponse.json({ error: applyError('applyNameEmailRequired', locale) }, { status: 400 })
         }
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(email)) {
-            return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
+            return NextResponse.json({ error: applyError('applyInvalidEmail', locale) }, { status: 400 })
         }
 
         // Try to link to a logged-in user
@@ -115,7 +140,7 @@ export async function POST(
                 })
             }
             return NextResponse.json({
-                error: `You've already applied for this role! You can apply for other roles in different projects. Check your email (${email}) for confirmation.`,
+                error: applyError('applyAlreadyApplied', locale, { email }),
             }, { status: 409 })
         }
 
@@ -126,7 +151,7 @@ export async function POST(
         }), 'apply_rate_limit_count')
         if (recentApplications >= 5) {
             return NextResponse.json({
-                error: "You've submitted too many applications today. Please try again tomorrow. This limit is to ensure fair review for all applicants.",
+                error: applyError('applyTooManyToday', locale),
             }, { status: 429 })
         }
 
@@ -178,7 +203,7 @@ export async function POST(
         const currentCount = await withDbRetry(() => prisma.application.count({ where: { castingCallId: id } }), 'apply_max_count')
         if (castingCall.maxApplications && currentCount >= castingCall.maxApplications) {
             return NextResponse.json({
-                error: `This role has reached its maximum number of applications (${castingCall.maxApplications}). The casting team is reviewing current submissions.`,
+                error: applyError('applyClosed', locale),
             }, { status: 410 })
         }
 

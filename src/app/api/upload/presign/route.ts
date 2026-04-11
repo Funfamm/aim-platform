@@ -22,6 +22,13 @@ const ALLOWED_AUDIO_TYPES = [
     'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/wav', 'audio/x-wav',
     'audio/webm', 'audio/ogg', 'audio/aac', 'audio/m4a', 'audio/x-m4a', 'audio/flac',
 ]
+const ALLOWED_DOCUMENT_TYPES = [
+    'application/pdf',
+    'application/x-fdx',           // Final Draft .fdx
+    'application/vnd.final-draft', // alternate FDX MIME
+    'text/plain',                   // .txt scripts
+    'application/octet-stream',     // fallback for unknown file types
+]
 
 function slugify(value: string) {
     return value
@@ -63,12 +70,14 @@ export async function POST(req: NextRequest) {
             kind,
             name = '',
             castingCallId = 'unknown',
+            scriptCallId = 'unknown',
         } = body as {
             fileName: string
             fileType: string
-            kind: 'image' | 'audio'
+            kind: 'image' | 'audio' | 'document'
             name?: string
             castingCallId?: string
+            scriptCallId?: string
         }
 
         if (!fileName || !fileType || !kind) {
@@ -97,6 +106,13 @@ export async function POST(req: NextRequest) {
         if (kind === 'audio' && !ALLOWED_AUDIO_TYPES.includes(resolvedType)) {
             return NextResponse.json({ error: `Unsupported audio type: ${resolvedType}` }, { status: 400 })
         }
+        if (kind === 'document') {
+            const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
+            const allowedExts = ['pdf', 'fdx', 'txt', 'fountain']
+            if (!allowedExts.includes(ext) && !ALLOWED_DOCUMENT_TYPES.includes(resolvedType)) {
+                return NextResponse.json({ error: `Unsupported document type. Please upload PDF, FDX, or TXT.` }, { status: 400 })
+            }
+        }
 
         // ── Build folder path ────────────────────────────────────────────────
         // Pattern: casting/calls/{castingCallId}/{nameSlug}-{hash}/{photos|audio}/{ts}-{uuid}.ext
@@ -104,8 +120,10 @@ export async function POST(req: NextRequest) {
         // scan exactly one casting call's applicants without trawling all uploads.
         const nameSlug   = name ? slugify(name) : 'applicant'
         const nameHash   = shortHash(name || 'applicant')
-        const category   = kind === 'image' ? 'photos' : 'audio'
-        const folder     = `casting/calls/${castingCallId}/${nameSlug}-${nameHash}/${category}`
+        const category   = kind === 'image' ? 'photos' : kind === 'audio' ? 'audio' : 'scripts'
+        const folder     = kind === 'document'
+            ? `scripts/calls/${scriptCallId}/${nameSlug}-${nameHash}/scripts`
+            : `casting/calls/${castingCallId}/${nameSlug}-${nameHash}/${category}`
         const ext        = extFrom(fileName)
         const r2Key      = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`
 

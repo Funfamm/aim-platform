@@ -79,10 +79,10 @@ export async function DELETE(request: NextRequest) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     try {
-        const { ids } = await request.json() as { ids: string[] }
+        const { ids, purge = false } = await request.json() as { ids: string[]; purge?: boolean }
         if (!ids || ids.length === 0) return NextResponse.json({ error: 'No IDs provided' }, { status: 400 })
 
-        // Fetch users to delete including their email for anonymization
+        // Fetch users to delete — superadmins are always protected
         const usersToDelete = await prisma.user.findMany({
             where: { id: { in: ids }, role: { not: 'superadmin' } },
             select: { id: true, email: true },
@@ -90,52 +90,66 @@ export async function DELETE(request: NextRequest) {
         const safeIds = usersToDelete.map(u => u.id)
         if (safeIds.length === 0) return NextResponse.json({ error: 'No eligible users to delete' }, { status: 400 })
 
-        // Map user id -> anonymized email
-        const anonMap = new Map<string, string>()
-        usersToDelete.forEach(u => anonMap.set(u.id, generateDeletedEmail(u.id, u.email)))
-
-        // Cascade-clear and anonymize all user data systematically in a transaction
-        await prisma.$transaction(async (tx) => {
-            // 1a. Guest applications: anonymise email based on original email (no userId)
-            for (const u of usersToDelete) {
-                const anonEmail = anonMap.get(u.id)!;
-                await tx.application.updateMany({
-                    where: { email: u.email },
-                    data: { email: anonEmail },
-                });
-            }
-            // 1. Applications: Unlink user and anonymize email for linked records
-            for (const [uid, anonEmail] of anonMap.entries()) {
-                await tx.application.updateMany({
-                    where: { userId: uid },
-                    data: { userId: null, email: anonEmail },
-                });
-            }
-
-            // 2. Donations: Preserve financial records, unlink user and anonymize
-            for (const [uid, anonEmail] of anonMap.entries()) {
-                await tx.donation.updateMany({
-                    where: { userId: uid },
-                    data: { userId: null, email: anonEmail },
-                })
-            }
-
-            // 3. Script Submissions: Anonymize based on original email
-            for (const u of usersToDelete) {
-                const anonEmail = anonMap.get(u.id)!
-                await tx.scriptSubmission.updateMany({
-                    where: { authorEmail: u.email },
-                    data: { authorEmail: anonEmail },
-                })
-            }
-
-            // 4. Delete users — this triggers Cascade for all related models with onDelete: Cascade
-            await tx.user.deleteMany({
-                where: { id: { in: safeIds } },
+        if (purge) {
+            // ── HARD PURGE ── delete all linked records, no anonymization
+            await prisma.$transaction(async (tx) => {
+                // Hard-delete applications (by email match for guests + by userId for linked)
+                for (const u of usersToDelete) {
+                    await tx.application.deleteMany({ where: { email: u.email } })
+                    await tx.application.deleteMany({ where: { userId: u.id } })
+                }
+                // Hard-delete donations
+                for (const u of usersToDelete) {
+                    await tx.donation.deleteMany({ where: { userId: u.id } })
+                    await tx.donation.deleteMany({ where: { email: u.email } })
+                }
+                // Hard-delete script submissions
+                for (const u of usersToDelete) {
+                    await tx.scriptSubmission.deleteMany({ where: { authorEmail: u.email } })
+                }
+                // Delete users (cascades everything else)
+                await tx.user.deleteMany({ where: { id: { in: safeIds } } })
             })
-        })
+            return NextResponse.json({ deleted: safeIds.length, purged: true, message: `${safeIds.length} user(s) and ALL their data have been permanently purged.` })
+        } else {
+            // ── SOFT REMOVE ── anonymize PII, preserve audit trail
+            const anonMap = new Map<string, string>()
+            usersToDelete.forEach(u => anonMap.set(u.id, generateDeletedEmail(u.id, u.email)))
 
-        return NextResponse.json({ deleted: safeIds.length, message: `${safeIds.length} user(s) and all related records have been permanently anonymized and removed.` })
+            await prisma.$transaction(async (tx) => {
+                // 1a. Guest applications: anonymise by email
+                for (const u of usersToDelete) {
+                    await tx.application.updateMany({
+                        where: { email: u.email },
+                        data: { email: anonMap.get(u.id)! },
+                    })
+                }
+                // 1b. Linked applications: unlink + anonymize
+                for (const [uid, anonEmail] of anonMap.entries()) {
+                    await tx.application.updateMany({
+                        where: { userId: uid },
+                        data: { userId: null, email: anonEmail },
+                    })
+                }
+                // 2. Donations
+                for (const [uid, anonEmail] of anonMap.entries()) {
+                    await tx.donation.updateMany({
+                        where: { userId: uid },
+                        data: { userId: null, email: anonEmail },
+                    })
+                }
+                // 3. Script submissions
+                for (const u of usersToDelete) {
+                    await tx.scriptSubmission.updateMany({
+                        where: { authorEmail: u.email },
+                        data: { authorEmail: anonMap.get(u.id)! },
+                    })
+                }
+                // 4. Delete users (cascades Watchlist, Notifications, Badges, etc.)
+                await tx.user.deleteMany({ where: { id: { in: safeIds } } })
+            })
+            return NextResponse.json({ deleted: safeIds.length, purged: false, message: `${safeIds.length} user(s) anonymized and removed. Casting records preserved.` })
+        }
     } catch (err) {
         console.error('Bulk delete users error:', err)
         return NextResponse.json({ error: 'Delete failed' }, { status: 500 })

@@ -161,6 +161,7 @@ export async function GET(req: NextRequest) {
             newStatus: app.status,
             aiScore: app.aiScore,
             statusNote: app.statusNote,
+            locale: app.locale || 'en',
         }).catch(err => console.error('[Cron/Reveal] Notification error:', err))
 
         revealed++

@@ -15,7 +15,7 @@
 // them over the default template field values before rendering.
 
 import { prisma } from './db'
-import { t as emailT } from './email-i18n'
+import { getEmailString as emailT } from './email-i18n'
 
 type TemplateFields = Record<string, string>
 type AllOverrides = Record<string, TemplateFields>
@@ -66,8 +66,9 @@ const ACCENT_GREEN = '#10b981'
 const ACCENT_BLUE = '#3b82f6'
 
 /** Shared email wrapper with premium branded header/footer */
-function emailWrapper(content: string, preheader?: string, footerText?: string): string {
-    const autoFooter = footerText ?? 'This email was sent automatically. Please do not reply directly.'
+function emailWrapper(content: string, preheader?: string, footerText?: string, locale = 'en'): string {
+    const tagline    = emailT('emailWrapper', locale, 'tagline') || 'AI-Powered Filmmaking'
+    const autoFooter = footerText ?? (emailT('emailWrapper', locale, 'autoFooter') || 'This email was sent automatically. Please do not reply directly.')
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -115,7 +116,7 @@ function emailWrapper(content: string, preheader?: string, footerText?: string):
                     <tr>
                         <td style="padding-top: 28px; text-align: center;">
                             <p style="margin: 0; font-size: 12px; color: ${TEXT_SECONDARY}; line-height: 1.6;">
-                                &copy; ${new Date().getFullYear()} AIM Studio &bull; AI-Powered Filmmaking
+                                &copy; ${new Date().getFullYear()} AIM Studio &bull; ${tagline}
                             </p>
                             <p style="margin: 8px 0 0; font-size: 11px; color: #6b7280;">
                                 ${autoFooter}
@@ -724,6 +725,36 @@ export function auditResultRevealEmail(
     siteUrl: string,
     locale = 'en'
 ): string {
+    // Locale-aware strings for this template
+    const aiReviewReadyMap: Record<string, string> = {
+        en: 'AI Review Ready', ar: 'نتيجة المراجعة جاهزة', de: 'KI-Prüfung bereit',
+        es: 'Revisión IA lista', fr: 'Examen IA prêt', hi: 'AI समीक्षा तैयार',
+        ja: 'AI審査完了', ko: 'AI 심사 완료', pt: 'Revisão IA pronta',
+        ru: 'Результат ИИ готов', zh: 'AI审核已完成',
+    }
+    const notSelectedMsgMap: Record<string, string> = {
+        en: 'We appreciate your interest and the time you invested in your application. We encourage you to explore other casting opportunities on our platform.',
+        ar: 'نقدر اهتمامك والوقت الذي خصصته لطلبك. نشجعك على استكشاف فرص الكاستينج الأخرى على منصتنا.',
+        de: 'Wir schätzen dein Interesse und die Zeit, die du in deine Bewerbung investiert hast. Wir ermutigen dich, andere Casting-Möglichkeiten auf unserer Plattform zu erkunden.',
+        es: 'Apreciamos tu interés y el tiempo que invertiste en tu solicitud. Te animamos a explorar otras oportunidades de casting en nuestra plataforma.',
+        fr: "Nous apprécions votre intérêt et le temps que vous avez consacré à votre candidature. Nous vous encourageons à explorer d'autres opportunités de casting sur notre plateforme.",
+        hi: 'हम आपकी रुचि और आवेदन में लगाए समय की सराहना करते हैं। हम आपको हमारे प्लेटफ़ॉर्म पर अन्य कास्टिंग अवसर खोजने के लिए प्रोत्साहित करते हैं।',
+        ja: 'ご応募にかけていただいた時間と関心に感謝いたします。ぜひ他のキャスティング機会もご覧ください。',
+        ko: '지원에 투자하신 시간과 관심에 감사드립니다. 플랫폼에서 다른 캐스팅 기회를 탐색해 보시길 권장합니다.',
+        pt: 'Agradecemos seu interesse e o tempo investido em sua candidatura. Incentivamos você a explorar outras oportunidades de elenco em nossa plataforma.',
+        ru: 'Мы ценим ваш интерес и время, вложенное в заявку. Рекомендуем изучить другие возможности кастинга на нашей платформе.',
+        zh: '我们感谢您的兴趣和为申请付出的时间。我们鼓励您探索我们平台上的其他选角机会。',
+    }
+    const roleLabel    = emailT('castingConfirmation', locale, 'roleLabel')    || 'Role'
+    const projectLabel = emailT('castingConfirmation', locale, 'projectLabel') || 'Project'
+    const statusLabel  = emailT('castingConfirmation', locale, 'statusLabel')  || 'Status'
+    const aiScoreLabel: Record<string, string> = {
+        en: 'AI Score', ar: 'نقاط الذكاء الاصطناعي', de: 'KI-Bewertung',
+        es: 'Puntuación IA', fr: 'Score IA', hi: 'AI स्कोर',
+        ja: 'AIスコア', ko: 'AI 점수', pt: 'Pontuação IA',
+        ru: 'Оценка ИИ', zh: 'AI评分',
+    }
+
     const statusLabels: Record<string, { emoji: string; label: string; color: string }> = {
         submitted:    { emoji: '📋', label: 'Submitted',           color: ACCENT_BLUE },
         under_review: { emoji: '🔍', label: 'Under Review',        color: ACCENT_BLUE },
@@ -768,65 +799,52 @@ export function auditResultRevealEmail(
     }
 
     const ctaMap: Record<string, string> = {
-        en: 'View My Result',
-        ar: 'عرض نتيجتي',
-        de: 'Mein Ergebnis anzeigen',
-        es: 'Ver mi resultado',
-        fr: 'Voir mon résultat',
-        hi: 'मेरा परिणाम देखें',
-        ja: '結果を確認する',
-        ko: '내 결과 보기',
-        pt: 'Ver meu resultado',
-        ru: 'Просмотреть результат',
-        zh: '查看我的结果',
+        en: 'View My Result',  ar: 'عرض نتيجتي',         de: 'Mein Ergebnis anzeigen',
+        es: 'Ver mi resultado', fr: 'Voir mon résultat',   hi: 'मेरा परिणाम देखें',
+        ja: '結果を確認する',   ko: '내 결과 보기',         pt: 'Ver meu resultado',
+        ru: 'Просмотреть результат', zh: '查看我的结果',
     }
 
     const noteIntroMap: Record<string, string> = {
-        en: 'Feedback from the team:',
-        ar: 'ملاحظات من الفريق:',
-        de: 'Feedback vom Team:',
-        es: 'Comentarios del equipo:',
-        fr: "Commentaires de l'équipe :",
-        hi: 'हमारी टीम की प्रतिक्रिया:',
-        ja: 'チームからのフィードバック:',
-        ko: '팀의 피드백:',
-        pt: 'Feedback da equipe:',
-        ru: 'Отзыв команды:',
-        zh: '团队反馈：',
+        en: 'Feedback from the team:',    ar: 'ملاحظات من الفريق:',         de: 'Feedback vom Team:',
+        es: 'Comentarios del equipo:',    fr: "Commentaires de l'équipe :", hi: 'हमारी टीम की प्रतिक्रिया:',
+        ja: 'チームからのフィードバック:', ko: '팀의 피드백:',                pt: 'Feedback da equipe:',
+        ru: 'Отзыв команды:',             zh: '团队反馈：',
     }
 
-    const intro = introMap[locale] ?? introMap['en']
-    const cta   = ctaMap[locale]   ?? ctaMap['en']
-    const noteIntro = noteIntroMap[locale] ?? noteIntroMap['en']
-    const subject   = subjectMap[locale]   ?? subjectMap['en']
-    const dashUrl   = `${siteUrl}/dashboard`
+    const intro      = introMap[locale]     ?? introMap['en']
+    const cta        = ctaMap[locale]       ?? ctaMap['en']
+    const noteIntro  = noteIntroMap[locale] ?? noteIntroMap['en']
+    const subject    = subjectMap[locale]   ?? subjectMap['en']
+    const dashUrl    = `${siteUrl}/dashboard`
 
     return emailWrapper(`
         <div style="text-align: center; padding: 20px 0 28px;">
             <div style="font-size: 52px; margin-bottom: 12px;">🎭</div>
             <div style="display: inline-block; padding: 6px 18px; background: ${BG_DARK}; border-radius: 20px; border: 1px solid ${st.color};">
-                <span style="font-size: 12px; font-weight: 700; color: ${st.color}; letter-spacing: 1.5px; text-transform: uppercase;">AI Review Ready</span>
+                <span style="font-size: 12px; font-weight: 700; color: ${st.color}; letter-spacing: 1.5px; text-transform: uppercase;">${aiReviewReadyMap[locale] ?? aiReviewReadyMap['en']}</span>
             </div>
         </div>
         ${heading(`${st.emoji} ${st.label}`)}
         ${subtext(`Hi ${name}, ${intro}`)}
         ${infoCard(`
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                ${infoRow('Role', roleName)}
-                ${infoRow('Project', projectTitle)}
-                ${infoRow('Status', `<span style="color: ${st.color}; font-weight: 700;">${st.label}</span>`)}
-                ${aiScore != null ? infoRow('AI Score', `<span style="color: ${BRAND_COLOR}; font-weight: 800; font-size: 16px;">${aiScore}<span style="font-size: 11px; font-weight: 400; color: ${TEXT_SECONDARY};">/100</span></span>`) : ''}
+                ${infoRow(roleLabel, roleName)}
+                ${infoRow(projectLabel, projectTitle)}
+                ${infoRow(statusLabel, `<span style="color: ${st.color}; font-weight: 700;">${st.label}</span>`)}
+                ${aiScore != null ? infoRow(aiScoreLabel[locale] ?? 'AI Score', `<span style="color: ${BRAND_COLOR}; font-weight: 800; font-size: 16px;">${aiScore}<span style="font-size: 11px; font-weight: 400; color: ${TEXT_SECONDARY};"> /100</span></span>`) : ''}
             </table>
         `, st.color)}
         ${statusNote
             ? `${divider()}<p style="margin: 0 0 6px; font-size: 12px; font-weight: 600; color: ${TEXT_SECONDARY}; text-transform: uppercase; letter-spacing: 0.5px;">${noteIntro}</p><p style="margin: 0; font-size: 14px; color: ${TEXT_PRIMARY}; line-height: 1.7; font-style: italic;">${statusNote}</p>`
             : ''}
         ${isNotSelected
-            ? `${divider()}<p style="margin: 0 0 12px; font-size: 14px; color: ${TEXT_SECONDARY}; line-height: 1.7;">We appreciate your interest and the time you invested in your application. We encourage you to explore other casting opportunities on our platform.</p>`
+            ? `${divider()}<p style="margin: 0 0 12px; font-size: 14px; color: ${TEXT_SECONDARY}; line-height: 1.7;">${notSelectedMsgMap[locale] ?? notSelectedMsgMap['en']}</p>`
             : ''}
         ${button(cta, dashUrl)}
-    `, subject)
+    `, subject, undefined, locale)
 }
+
 
 export async function scriptSubmissionConfirmationWithOverrides(name: string, title: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('scriptSubmission', {
@@ -1103,3 +1121,107 @@ export function badgeEarnedEmail(
 }
 
 
+// ── Script Status Update Email ────────────────────────────────────────────────
+
+/**
+ * Localized email sent to script submitters when admin changes the submission status.
+ * Mirrors the casting applicationStatusUpdate() pattern.
+ */
+export function scriptStatusUpdateEmail(
+    name: string,
+    scriptTitle: string,
+    newStatus: string,
+    callTitle: string,
+    note?: string,
+    siteUrl?: string,
+    locale = 'en',
+): string {
+    // Map status → i18n key
+    const i18nKeyMap: Record<string, string> = {
+        shortlisted: 'scriptStatus_shortlisted',
+        selected:    'scriptStatus_selected',
+        rejected:    'scriptStatus_rejected',
+    }
+    const i18nKey = i18nKeyMap[newStatus] || 'scriptStatus_rejected'
+
+    const localizedHeading = emailT(i18nKey, locale, 'heading') || 'Script Submission Update'
+    const localizedBody    = emailT(i18nKey, locale, 'body')    || ''
+    const localizedLabel   = emailT(i18nKey, locale, 'label')   || newStatus.replace(/_/g, ' ')
+    const localizedSubtext = emailT(i18nKey, locale, 'subtext') || 'we have an update about your screenplay.'
+    const localizedButton  = emailT('scriptSubmission', locale, 'buttonText') || 'View Script Calls'
+
+    // Status display colours
+    const colorMap: Record<string, string> = {
+        shortlisted: '#f59e0b',
+        selected:    ACCENT_GREEN,
+        rejected:    '#6b7280',
+    }
+    const emojiMap: Record<string, string> = {
+        shortlisted: '⭐',
+        selected:    '🏆',
+        rejected:    '📝',
+    }
+    const color = colorMap[newStatus] || TEXT_SECONDARY
+    const emoji = emojiMap[newStatus] || '📋'
+
+    const mainMessage = localizedBody
+        ? paragraph(localizedBody)
+        : paragraph(`There is an update on your script <strong>"${scriptTitle}"</strong> submitted to <strong>${callTitle}</strong>.`)
+
+    return emailWrapper(`
+        ${heading(localizedHeading)}
+        ${subtext(`Hi ${name}, ${localizedSubtext}`)}
+        <div style="text-align: center; padding: 20px 0;">
+            <div style="font-size: 36px; margin-bottom: 8px;">${emoji}</div>
+            <div style="display: inline-block; padding: 8px 24px; background-color: ${BG_DARK}; border-radius: 20px; border: 1px solid ${color};">
+                <span style="font-size: 16px; font-weight: 700; color: ${color};">${localizedLabel}</span>
+            </div>
+        </div>
+        ${divider()}
+        ${mainMessage}
+        ${infoCard(`
+            <p style="margin: 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Script</p>
+            <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${scriptTitle}</p>
+            <p style="margin: 10px 0 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Call</p>
+            <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${callTitle}</p>
+        `, color)}
+        ${note ? divider() + paragraph(`<em style="color: ${TEXT_SECONDARY};">${note}</em>`) : ''}
+        ${siteUrl ? button(localizedButton, `${siteUrl}/scripts`) : ''}
+    `, emailT(i18nKey, locale, 'subject') || `Script Submission Update — ${scriptTitle}`)
+}
+
+
+// ── Script Withdrawal Confirmation Email ──────────────────────────────────────
+
+/**
+ * Localized email confirming a script submission withdrawal.
+ */
+export function scriptWithdrawalEmail(
+    name: string,
+    scriptTitle: string,
+    callTitle: string,
+    siteUrl: string,
+    locale = 'en',
+): string {
+    const localizedHeading = emailT('scriptWithdrawal', locale, 'heading') || 'Submission Withdrawn'
+    const localizedBody = (emailT('scriptWithdrawal', locale, 'body') || '')
+        .replace('{title}', scriptTitle).replace('{call}', callTitle)
+    const localizedSubtext = emailT('scriptWithdrawal', locale, 'subtext') || 'your submission has been withdrawn.'
+    const localizedButton = emailT('scriptWithdrawal', locale, 'buttonText') || 'Browse Script Calls'
+    const localizedFooter = emailT('scriptWithdrawal', locale, 'footer') || 'You can resubmit to this call at any time while it remains open.'
+
+    return emailWrapper(`
+        ${heading(localizedHeading)}
+        ${subtext(`Hi ${name}, ${localizedSubtext}`)}
+        ${divider()}
+        ${localizedBody ? paragraph(localizedBody) : paragraph(`Your script <strong>"${scriptTitle}"</strong> submitted to <strong>${callTitle}</strong> has been withdrawn.`)}
+        ${infoCard(`
+            <p style="margin: 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Script</p>
+            <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${scriptTitle}</p>
+            <p style="margin: 10px 0 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Call</p>
+            <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${callTitle}</p>
+        `, '#6b7280')}
+        ${paragraph(`<em style="color: ${TEXT_SECONDARY};">${localizedFooter}</em>`)}
+        ${button(localizedButton, `${siteUrl}/scripts`)}
+    `, emailT('scriptWithdrawal', locale, 'subject')?.replace('{title}', scriptTitle) || `Script Withdrawn: ${scriptTitle}`)
+}

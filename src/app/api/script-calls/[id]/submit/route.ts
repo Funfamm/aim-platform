@@ -22,7 +22,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     }
 
     const body = await req.json()
-    const { authorName, authorEmail, authorBio, title, logline, synopsis, scriptText, genre, estimatedDuration } = body
+    const { authorName, authorEmail, authorBio, title, logline, synopsis, scriptText, genre, estimatedDuration, scriptFilePath } = body
 
     if (!authorName || !authorEmail || !title || !logline || !synopsis) {
         return NextResponse.json({ error: 'Name, email, title, logline, and synopsis are required' }, { status: 400 })
@@ -38,6 +38,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             logline,
             synopsis,
             scriptText: scriptText || null,
+            scriptFilePath: scriptFilePath || null,
             genre: genre || null,
             estimatedDuration: estimatedDuration || null,
         },

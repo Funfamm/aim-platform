@@ -155,6 +155,7 @@ export async function getDueForReveal(): Promise<Array<Record<string, any>>> {
             aiScore: true,
             statusNote: true,
             status: true,
+            locale: true,
             resultVisibleAt: true,
             castingCall: {
                 select: {
