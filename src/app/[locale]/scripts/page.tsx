@@ -129,8 +129,8 @@ export default async function ScriptCallsPage() {
                     overflow: hidden;
                     background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.07));
                     border: 1px solid rgba(255,255,255,0.22);
-                    backdrop-filter: blur(40px) saturate(200%) brightness(1.1);
-                    -webkit-backdrop-filter: blur(40px) saturate(200%) brightness(1.1);
+                    backdrop-filter: blur(80px) saturate(200%) brightness(1.1);
+                    -webkit-backdrop-filter: blur(80px) saturate(200%) brightness(1.1);
                     box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(255,255,255,0.05);
                     transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
                     position: relative;

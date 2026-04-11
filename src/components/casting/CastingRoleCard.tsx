@@ -66,8 +66,8 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
             <div style={{
                 background: 'linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.07))',
-                backdropFilter: 'blur(40px) saturate(200%) brightness(1.1)',
-                WebkitBackdropFilter: 'blur(40px) saturate(200%) brightness(1.1)',
+                backdropFilter: 'blur(80px) saturate(200%) brightness(1.1)',
+                WebkitBackdropFilter: 'blur(80px) saturate(200%) brightness(1.1)',
                 border: '1px solid rgba(255,255,255,0.22)',
                 borderRadius: 'var(--radius-lg)',
                 padding: 'var(--space-md)',
