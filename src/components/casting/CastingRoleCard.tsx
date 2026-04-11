@@ -124,13 +124,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                             borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
                         }}>{call.gender}</span>
                     )}
-                    {call.compensation && (
-                        <span style={{
-                            fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
-                            background: 'rgba(74,222,128,0.07)', color: '#4ade80',
-                            borderRadius: '5px', border: '1px solid rgba(74,222,128,0.14)',
-                        }}>{call.compensation}</span>
-                    )}
+
                     {call.deadline && (
                         <span style={{
                             fontSize: '0.6rem', padding: '2px 9px',
