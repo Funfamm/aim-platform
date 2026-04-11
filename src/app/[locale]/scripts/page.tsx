@@ -34,7 +34,10 @@ export default async function ScriptCallsPage() {
         where: { isPublic: true, status: 'open' },
         orderBy: { createdAt: 'desc' },
         take: 50,
-        include: {
+        select: {
+            id: true, title: true, description: true, genre: true,
+            toneKeywords: true, targetLength: true, deadline: true,
+            status: true, maxSubmissions: true, createdAt: true,
             project: { select: { title: true, coverImage: true } },
             _count: { select: { submissions: true } },
         },
@@ -53,7 +56,10 @@ export default async function ScriptCallsPage() {
         where: { isPublic: true, status: { not: 'open' } },
         orderBy: { createdAt: 'desc' },
         take: 20,
-        include: {
+        select: {
+            id: true, title: true, description: true, genre: true,
+            toneKeywords: true, targetLength: true, deadline: true,
+            status: true, maxSubmissions: true, createdAt: true,
             project: { select: { title: true, coverImage: true } },
         },
     }) : []

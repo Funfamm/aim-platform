@@ -17,7 +17,11 @@ export async function GET() {
     const calls = await prisma.scriptCall.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        include: {
+        select: {
+            id: true, title: true, description: true, genre: true,
+            toneKeywords: true, targetLength: true, deadline: true,
+            status: true, isPublic: true, maxSubmissions: true,
+            projectId: true, createdAt: true, updatedAt: true,
             project: { select: { title: true, slug: true, coverImage: true } },
             _count: { select: { submissions: true } },
         },
@@ -57,10 +61,12 @@ export async function POST(req: Request) {
     if (genre) fieldsToTranslate.genre = genre
     if (toneKeywords) fieldsToTranslate.toneKeywords = toneKeywords
     translateAndSave(fieldsToTranslate, async (translations) => {
-        await prisma.scriptCall.update({
-            where: { id: call.id },
-            data: { contentTranslations: translations },
-        })
+        try {
+            await prisma.scriptCall.update({
+                where: { id: call.id },
+                data: { contentTranslations: translations },
+            })
+        } catch { /* contentTranslations column may not exist in DB yet */ }
     })
 
     return NextResponse.json(call)

@@ -15,7 +15,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
     const call = await prisma.scriptCall.findUnique({
         where: { id },
-        include: {
+        select: {
+            id: true, title: true, description: true, genre: true,
+            toneKeywords: true, targetLength: true, deadline: true,
+            status: true, isPublic: true, maxSubmissions: true,
+            projectId: true, createdAt: true, updatedAt: true,
             project: { select: { title: true, slug: true, coverImage: true } },
             _count: { select: { submissions: true } },
         },
@@ -64,10 +68,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
         if (Object.keys(fieldsToTranslate).length > 0) {
             translateAndSave(fieldsToTranslate, async (translations) => {
-                await prisma.scriptCall.update({
-                    where: { id },
-                    data: { contentTranslations: translations },
-                })
+                try {
+                    await prisma.scriptCall.update({
+                        where: { id },
+                        data: { contentTranslations: translations },
+                    })
+                } catch { /* contentTranslations column may not exist in DB yet */ }
             })
         }
     }
