@@ -371,7 +371,6 @@ body {
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-x: none;
-  overscroll-behavior-y: none;
 }
 
 /* Ultra-fine grain texture overlay */
