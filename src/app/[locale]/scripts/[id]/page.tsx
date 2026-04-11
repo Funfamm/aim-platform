@@ -56,6 +56,18 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
 
     const toneList = call.toneKeywords?.split(',').map((t: string) => t.trim()).filter(Boolean) || []
 
+    // ── Deadline enforcement (server-side for UI) ───────────────────────────────
+    let isPastDeadline = false
+    let formattedDeadline: string | null = null
+    if (call.deadline) {
+        const dl = new Date(call.deadline)
+        dl.setHours(23, 59, 59, 999)
+        isPastDeadline = new Date() > dl
+        formattedDeadline = new Date(call.deadline).toLocaleDateString('en-GB', {
+            day: 'numeric', month: 'short', year: 'numeric',
+        })
+    }
+
     return (
         <>
             <ScriptVideoBackground />
@@ -195,7 +207,7 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                         <div className="d2" style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
                             {call.genre && <span className="tag-gold">🎬 {call.genre}</span>}
                             {call.targetLength && <span className="tag-blue">⏱ {call.targetLength}</span>}
-                            {call.deadline && <span className="tag-rose">📅 {call.deadline}</span>}
+                            {call.deadline && <span className={isPastDeadline ? 'tag-neutral' : 'tag-rose'}>📅 {isPastDeadline ? '🔒 Closed' : formattedDeadline}</span>}
                             <span className="tag-neutral">📄 {call._count.submissions} submission{call._count.submissions !== 1 ? 's' : ''}</span>
                         </div>
                     </div>
@@ -263,7 +275,9 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                         {call.deadline && (
                                             <div className="meta-row">
                                                 <span className="meta-label">{t('deadlineLabel')}</span>
-                                                <span className="meta-value" style={{ color: '#f43f5e' }}>{call.deadline}</span>
+                                                <span className="meta-value" style={{ color: isPastDeadline ? 'var(--text-tertiary)' : '#f43f5e' }}>
+                                                    {formattedDeadline}{isPastDeadline ? ' · Closed' : ''}
+                                                </span>
                                             </div>
                                         )}
                                         <div className="meta-row">
@@ -294,6 +308,30 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                         submissionStatus={existingSubmission.status}
                                         submittedAt={existingSubmission.createdAt.toISOString()}
                                     />
+                                ) : isPastDeadline ? (
+                                    /* ── Deadline passed — show closed banner ── */
+                                    <div className="form-card d1" style={{ textAlign: 'center', padding: '48px 28px' }}>
+                                        <div style={{ fontSize: '2.6rem', marginBottom: '14px' }}>🔒</div>
+                                        <div style={{
+                                            fontSize: '1.1rem', fontWeight: 800,
+                                            color: 'var(--text-primary)', marginBottom: '8px',
+                                        }}>Submissions Closed</div>
+                                        <p style={{
+                                            fontSize: '0.85rem', color: 'var(--text-tertiary)',
+                                            lineHeight: 1.6, margin: '0 auto', maxWidth: '260px',
+                                        }}>
+                                            The deadline for this script call was <strong style={{ color: 'var(--text-secondary)' }}>{formattedDeadline}</strong>.
+                                            Check back for upcoming calls.
+                                        </p>
+                                        <a href="/scripts" style={{
+                                            display: 'inline-block', marginTop: '22px',
+                                            padding: '10px 28px', borderRadius: '99px',
+                                            background: 'rgba(212,168,83,0.1)',
+                                            border: '1px solid rgba(212,168,83,0.25)',
+                                            color: 'var(--accent-gold)', fontWeight: 700,
+                                            fontSize: '0.8rem', textDecoration: 'none',
+                                        }}>View Open Calls →</a>
+                                    </div>
                                 ) : (
                                     <div className="form-card d1">
                                         <div style={{

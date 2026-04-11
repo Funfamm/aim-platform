@@ -63,6 +63,18 @@ export async function POST(
             return NextResponse.json({ error: applyError('applyNotFound', earlyLocale) }, { status: 404 })
         }
 
+        // ── Deadline enforcement ────────────────────────────────────────────────
+        if (castingCall.deadline) {
+            const deadlineDate = new Date(castingCall.deadline)
+            // Allow submissions through the end of the deadline day
+            deadlineDate.setHours(23, 59, 59, 999)
+            if (new Date() > deadlineDate) {
+                // Auto-close so future status checks short-circuit immediately
+                await prisma.castingCall.update({ where: { id }, data: { status: 'closed' } }).catch(() => {})
+                return NextResponse.json({ error: applyError('applyClosed', earlyLocale) }, { status: 410 })
+            }
+        }
+
         const formData = await request.formData()
 
         // Extract text fields

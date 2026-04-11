@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { scriptSubmissionConfirmationWithOverrides } from '@/lib/email-templates'
-import { emailT } from '@/lib/email-i18n'
+import { t as emailT } from '@/lib/email-i18n'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 
 // POST — public submission (no auth required)
@@ -16,6 +16,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     if (!call || call.status !== 'open') {
         return NextResponse.json({ error: 'This script call is no longer accepting submissions' }, { status: 400 })
+    }
+
+    // ── Deadline enforcement ──────────────────────────────────────────────────
+    if (call.deadline) {
+        const deadlineDate = new Date(call.deadline)
+        // Set to end-of-day so submissions on the deadline day are still allowed
+        deadlineDate.setHours(23, 59, 59, 999)
+        if (new Date() > deadlineDate) {
+            // Auto-close the call so future checks are instant
+            await prisma.scriptCall.update({ where: { id }, data: { status: 'closed' } }).catch(() => {})
+            return NextResponse.json({ error: 'The submission deadline for this script call has passed' }, { status: 400 })
+        }
     }
 
     if (call._count.submissions >= call.maxSubmissions) {
