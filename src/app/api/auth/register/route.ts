@@ -41,7 +41,7 @@ export async function POST(request: Request) {
                         verificationExpiry: new Date(expiry),
                     } as any,
                 }), 'register_update_existing')
-                void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html => sendEmail({ to: email, subject: 'Verify your AIM Studio account', html })).catch(() => {})
+                void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html => sendEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html })).catch(() => {})
                 if (process.env.NODE_ENV !== 'production') {
                     console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
                 }
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
 
         // Send verification email in the user's locale (fire-and-forget)
         void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html =>
-            sendEmail({ to: email, subject: 'Verify your AIM Studio account', html })
+            sendEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html })
         ).catch(() => {})
 
         // Log verification code in development so it works without SMTP

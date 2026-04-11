@@ -894,6 +894,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
     // ── Subscription Confirmation ──────────────────────────────────────────────
     subscribe: {
         en: {
+            subject:    "Subscription confirmed! Welcome to AIM Studio 🎉",
+            footer:     "You received this email because you subscribed to updates from AIM Studio.",
             heading:    "You're In! 🎉",
             subtext:    'Thanks for subscribing!',
             body:       "You'll be the first to know about our upcoming projects, casting calls, behind-the-scenes content, and exclusive announcements.",
@@ -901,6 +903,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visit AIM Studio',
         },
         es: {
+            subject:    "¡Suscripción confirmada! Bienvenido a AIM Studio 🎉",
+            footer:     "Has recibido este correo porque te has suscrito a las actualizaciones de AIM Studio.",
             heading:    '¡Estás dentro! 🎉',
             subtext:    '¡Gracias por suscribirte!',
             body:       'Serás el primero en conocer nuestros próximos proyectos, convocatorias de casting, contenido entre bastidores y anuncios exclusivos.',
@@ -908,6 +912,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visitar AIM Studio',
         },
         fr: {
+            subject:    "Abonnement confirmé ! Bienvenue sur AIM Studio 🎉",
+            footer:     "Vous avez reçu cet e-mail car vous vous êtes abonné aux mises à jour d'AIM Studio.",
             heading:    'Vous êtes inscrit ! 🎉',
             subtext:    'Merci de vous être abonné !',
             body:       "Vous serez le premier à connaître nos prochains projets, castings, contenus en coulisses et annonces exclusives.",
@@ -915,6 +921,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visiter AIM Studio',
         },
         ar: {
+            subject:    "اكتمل الاشتراك! مرحباً بك في AIM Studio 🎉",
+            footer:     "لقد تلقيت هذا البريد الإلكتروني لأنك اشتركت في تحديثات AIM Studio.",
             heading:    'أنت الآن معنا! 🎉',
             subtext:    'شكراً على اشتراكك!',
             body:       'ستكون أول من يعلم بمشاريعنا القادمة، ومكالمات الكاستينج، والمحتوى خلف الكواليس، والإعلانات الحصرية.',
@@ -922,6 +930,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'زيارة AIM Studio',
         },
         zh: {
+            subject:    "订阅成功！欢迎来到 AIM Studio 🎉",
+            footer:     "您收到此邮件是因为您订阅了 AIM Studio 的更新。",
             heading:    '您已加入!🎉',
             subtext:    '感谢您的订阅!',
             body:       '您将第一个了解我们即将推出的项目、选角信息、幕后内容和独家公告。',
@@ -929,6 +939,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: '访问 AIM Studio',
         },
         hi: {
+            subject:    "सदस्यता की पुष्टि! AIM Studio में आपका स्वागत है 🎉",
+            footer:     "आपको यह ईमेल इसलिए मिला है क्योंकि आपने AIM Studio के अपडेट की सदस्यता ली है।",
             heading:    'आप अंदर हैं! 🎉',
             subtext:    'सब्सक्राइब करने के लिए धन्यवाद!',
             body:       'आप हमारे आगामी प्रोजेक्ट्स, कास्टिंग कॉल्स, बैकस्टेज कंटेंट और एक्सक्लूसिव घोषणाओं के बारे में सबसे पहले जानेंगे।',
@@ -936,6 +948,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'AIM Studio पर जाएं',
         },
         pt: {
+            subject:    "Assinatura confirmada! Bem-vindo ao AIM Studio 🎉",
+            footer:     "Você recebeu este e-mail porque se inscreveu nas atualizações do AIM Studio.",
             heading:    'Você está dentro! 🎉',
             subtext:    'Obrigado por se inscrever!',
             body:       'Você será o primeiro a saber sobre nossos próximos projetos, castings, conteúdo dos bastidores e anúncios exclusivos.',
@@ -943,6 +957,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Visitar AIM Studio',
         },
         ru: {
+            subject:    "Подписка подтверждена! Добро пожаловать в AIM Studio 🎉",
+            footer:     "Вы получили это письмо, потому что подписались на обновления AIM Studio.",
             heading:    'Вы с нами! 🎉',
             subtext:    'Спасибо за подписку!',
             body:       'Вы будете первым узнавать о наших проектах, кастингах, закулисном контенте и эксклюзивных анонсах.',
@@ -950,6 +966,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'Посетить AIM Studio',
         },
         ja: {
+            subject:    "登録完了！AIM Studioへようこそ 🎉",
+            footer:     "このメールは、AIM Studioの更新を購読されたため送信しています。",
             heading:    '登録完了!🎉',
             subtext:    'ご登録ありがとうございます!',
             body:       '今後のプロジェクト、キャスティング募集、舞台裏コンテンツ、限定発表をいち早くお届けします。',
@@ -957,6 +975,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'AIM Studioを訪問する',
         },
         de: {
+            subject:    "Abonnement bestätigt! Willkommen bei AIM Studio 🎉",
+            footer:     "Sie haben diese E-Mail erhalten, weil Sie Aktualisierungen von AIM Studio abonniert haben.",
             heading:    'Sie sind dabei! 🎉',
             subtext:    'Danke für Ihre Anmeldung!',
             body:       'Sie erfahren als Erster von unseren kommenden Projekten, Casting-Aufrufen, Behind-the-Scenes-Inhalten und exklusiven Ankündigungen.',
@@ -964,6 +984,8 @@ export const emailStrings: Record<string, TemplateStrings> = {
             buttonText: 'AIM Studio Besuchen',
         },
         ko: {
+            subject:    "구독 확인! AIM Studio에 오신 것을 환영합니다 🎉",
+            footer:     "AIM Studio의 업데이트를 구독하셨기 때문에 이 이메일을 받으셨습니다.",
             heading:    '등록되었습니다! 🎉',
             subtext:    '구독해 주셔서 감사합니다!',
             body:       '다가오는 프로젝트, 캐스팅 공고, 비하인드 콘텐츠 및 독점 발표를 가장 먼저 받아보세요.',

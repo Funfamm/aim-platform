@@ -642,6 +642,7 @@ export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?
         noSpam:     emailT('subscribe', locale, 'noSpam')     || "We don't spam. Only meaningful updates when we have something worth sharing.",
         buttonText: emailT('subscribe', locale, 'buttonText') || 'Visit AIM Studio',
         buttonUrl:  siteUrl || '',
+        footer:     emailT('subscribe', locale, 'footer')     || "You received this email because you subscribed to updates from AIM Studio.",
     })
     const subtextStr = name
         ? (emailT('subscribe', locale, 'subtext') || 'Thanks for subscribing!').replace('{name}', name)

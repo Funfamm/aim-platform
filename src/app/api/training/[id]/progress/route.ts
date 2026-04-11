@@ -90,24 +90,33 @@ async function sendEnrollmentNotification(userId: string, courseId: string) {
 
     const course = await prisma.course.findUnique({
         where: { id: courseId },
-        select: { title: true, slug: true },
+        select: { title: true, slug: true, translations: true },
     })
     if (!course) return
 
     const locale: string = (user.receiveLocalizedEmails !== false && user.preferredLanguage) ? user.preferredLanguage : 'en'
+    
+    let localizedTitle = course.title
+    if (course.translations) {
+        try {
+            const t = JSON.parse(course.translations as string)
+            if (t[locale]?.title) localizedTitle = t[locale].title
+        } catch (e) {}
+    }
+
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const courseUrl = `${siteUrl}/${locale}/training/${course.slug}`
 
     // All strings resolved from static i18n — no runtime translate call needed
-    const subject = et('trainingEnrollment', locale, 'subject').replace('{title}', course.title)
-    const notifTitle = et('trainingEnrollment', locale, 'notifTitle').replace('{title}', course.title)
-    const notifMessage = et('trainingEnrollment', locale, 'notifMessage').replace('{title}', course.title)
+    const subject = et('trainingEnrollment', locale, 'subject').replace('{title}', localizedTitle)
+    const notifTitle = et('trainingEnrollment', locale, 'notifTitle').replace('{title}', localizedTitle)
+    const notifMessage = et('trainingEnrollment', locale, 'notifMessage').replace('{title}', localizedTitle)
 
     // Send localized email
     await sendEmail({
         to: user.email,
         subject,
-        html: courseEnrollmentEmail(user.name || '', course.title, courseUrl, locale),
+        html: courseEnrollmentEmail(user.name || '', localizedTitle, courseUrl, locale),
     }).catch(err => console.error('[enrollment] email failed:', err))
 
     // In-app notification (dedup key — only fires once per enrollment)
@@ -203,8 +212,16 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                     data: { completedAt: new Date(), certificateId: `CERT-${courseId.slice(0, 6)}-${userId.slice(0, 6)}-${Date.now().toString(36)}` },
                 })
 
+                let localizedTitle = course.title
+                if (course.translations) {
+                    try {
+                        const t = JSON.parse(course.translations as string)
+                        if (t[locale]?.title) localizedTitle = t[locale].title
+                    } catch (e) {}
+                }
+
                 // Fire-and-forget: completion email + notification
-                sendCompletionNotification(userId, courseId, course.title, course.slug, locale, user?.email || '', user?.name || '').catch(err =>
+                sendCompletionNotification(userId, courseId, localizedTitle, course.slug, locale, user?.email || '', user?.name || '').catch(err =>
                     console.error('[completion] notification failed:', err)
                 )
             }
