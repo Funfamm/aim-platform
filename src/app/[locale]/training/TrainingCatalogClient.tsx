@@ -83,10 +83,23 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
     return (
         <div style={{ overflowX: 'hidden', width: '100%' }}>
             <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Playfair+Display:ital,wght@1,700&family=Cinzel:wght@900&display=swap');
                 @keyframes pulse-gold { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
                 @keyframes float { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
                 @keyframes scroll-hint { 0%,100%{opacity:0.4;transform:translateY(0);} 50%{opacity:1;transform:translateY(6px);} }
                 @keyframes shimmer { 0%{background-position:-200% center;} 100%{background-position:200% center;} }
+                @keyframes craft-glow { 0%,100%{filter:drop-shadow(0 0 18px rgba(228,185,90,0.55));} 50%{filter:drop-shadow(0 0 36px rgba(228,185,90,0.9));} }
+                @keyframes title-reveal { from{opacity:0;transform:translateY(18px);} to{opacity:1;transform:translateY(0);} }
+                .training-title-row { animation: title-reveal 0.8s cubic-bezier(.22,1,.36,1) both; }
+                .training-title-row-2 { animation: title-reveal 0.8s 0.15s cubic-bezier(.22,1,.36,1) both; }
+                .craft-shimmer {
+                    background: linear-gradient(90deg, #f5d77e 0%, var(--accent-gold,#d4a853) 30%, #fff6c8 50%, var(--accent-gold,#d4a853) 70%, #b8870a 100%);
+                    background-size: 200% auto;
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                    background-clip: text;
+                    animation: shimmer 3.5s linear infinite, craft-glow 3.5s ease-in-out infinite;
+                }
                 .course-card { transition: transform 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s ease !important; }
                 .course-card:hover { transform: translateY(-6px) scale(1.01) !important; box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(228,185,90,0.12) !important; }
                 .filter-pill { transition: all 0.2s ease; cursor: pointer; }
@@ -166,28 +179,70 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                             <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-gold)', animation: 'pulse-gold 2s infinite' }} />
                         </div>
 
-                        {/* Title */}
-                        <h1 style={{
-                            fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', fontWeight: 900,
-                            lineHeight: 1.05, marginBottom: '20px',
-                            fontFamily: 'var(--font-display)',
-                            textShadow: '0 4px 30px rgba(0,0,0,0.6)',
-                            letterSpacing: '-0.02em',
-                        }}>
-                            {t('heroTitle')}{' '}
-                            <span style={{
-                                background: 'linear-gradient(135deg, #f5d77e 0%, var(--accent-gold) 50%, #b8870a 100%)',
-                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                            }}>{t('heroAccent')}</span>
-                        </h1>
+                        {/* Title — premium cinematic mixed-font layout */}
+                        <div style={{ marginBottom: '36px' }}>
+                            {/* Line 1: LEVEL UP — wide cinematic caps */}
+                            <div className="training-title-row" style={{
+                                display: 'flex', alignItems: 'baseline', justifyContent: 'center',
+                                gap: 'clamp(6px, 1.2vw, 14px)', lineHeight: 1,
+                                marginBottom: 'clamp(2px, 0.5vw, 6px)',
+                            }}>
+                                <span style={{
+                                    fontFamily: "'Bebas Neue', 'Impact', sans-serif",
+                                    fontSize: 'clamp(3.2rem, 7.5vw, 6.4rem)',
+                                    fontWeight: 400,
+                                    color: '#fff',
+                                    letterSpacing: '0.06em',
+                                    lineHeight: 1,
+                                    textShadow: '0 6px 40px rgba(0,0,0,0.7)',
+                                }}>LEVEL</span>
+                                {/* Thin gold rule between words */}
+                                <span style={{
+                                    display: 'inline-block',
+                                    width: 'clamp(18px, 2.5vw, 32px)',
+                                    height: '2px',
+                                    background: 'linear-gradient(90deg, transparent, rgba(228,185,90,0.7), transparent)',
+                                    alignSelf: 'center',
+                                    flexShrink: 0,
+                                }} />
+                                <span style={{
+                                    fontFamily: "'Bebas Neue', 'Impact', sans-serif",
+                                    fontSize: 'clamp(3.2rem, 7.5vw, 6.4rem)',
+                                    fontWeight: 400,
+                                    color: '#fff',
+                                    letterSpacing: '0.06em',
+                                    lineHeight: 1,
+                                    textShadow: '0 6px 40px rgba(0,0,0,0.7)',
+                                }}>UP</span>
+                            </div>
 
-                        {/* Description */}
-                        <p style={{
-                            fontSize: '1.1rem', color: 'rgba(255,255,255,0.7)',
-                            maxWidth: '540px', lineHeight: 1.75,
-                            textShadow: '0 2px 12px rgba(0,0,0,0.6)',
-                            marginBottom: '36px',
-                        }}>{t('heroDesc')}</p>
+                            {/* Line 2: Your Craft — italic serif + gold shimmer */}
+                            <div className="training-title-row-2" style={{
+                                display: 'flex', alignItems: 'baseline', justifyContent: 'center',
+                                gap: 'clamp(8px, 1.5vw, 18px)', lineHeight: 1,
+                            }}>
+                                <span style={{
+                                    fontFamily: "'Playfair Display', 'Georgia', serif",
+                                    fontStyle: 'italic',
+                                    fontSize: 'clamp(1.6rem, 3.6vw, 3rem)',
+                                    fontWeight: 700,
+                                    color: 'rgba(255,255,255,0.75)',
+                                    letterSpacing: '-0.01em',
+                                    lineHeight: 1,
+                                    textShadow: '0 4px 20px rgba(0,0,0,0.6)',
+                                }}>your</span>
+                                <span
+                                    className="craft-shimmer"
+                                    style={{
+                                        fontFamily: "'Cinzel', 'Playfair Display', serif",
+                                        fontSize: 'clamp(2.4rem, 5.5vw, 4.8rem)',
+                                        fontWeight: 900,
+                                        letterSpacing: '0.04em',
+                                        lineHeight: 1,
+                                    }}
+                                >CRAFT</span>
+                            </div>
+                        </div>
 
                         {/* Stat pills in hero */}
                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
