@@ -537,6 +537,47 @@ export default function Navbar() {
                         {t('about')}
                     </Link>
 
+                    {sections.casting && (
+                        <Link href="/casting" prefetch={false} onClick={() => setMobileOpen(false)}
+                            className={`drawer-item ${pathname === '/casting' ? 'active-page' : ''}`}>
+                            <span className="drawer-icon-glow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                                    <circle cx="8.5" cy="7" r="4" />
+                                    <line x1="20" y1="8" x2="20" y2="14" />
+                                    <line x1="23" y1="11" x2="17" y2="11" />
+                                </svg>
+                            </span>
+                            {t('casting')}
+                        </Link>
+                    )}
+
+                    {sections.scripts && (
+                        <Link href="/scripts" prefetch={false} onClick={() => setMobileOpen(false)}
+                            className={`drawer-item ${pathname.startsWith('/scripts') ? 'active-page' : ''}`}>
+                            <span className="drawer-icon-glow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M12 20h9" />
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                                </svg>
+                            </span>
+                            {t('scripts')}
+                        </Link>
+                    )}
+
+                    {sections.training && (
+                        <Link href="/training" prefetch={false} onClick={() => setMobileOpen(false)}
+                            className={`drawer-item ${pathname.startsWith('/training') ? 'active-page' : ''}`}>
+                            <span className="drawer-icon-glow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+                                </svg>
+                            </span>
+                            {t('training')}
+                        </Link>
+                    )}
+
                     {sections.donations && (
                         <Link href="/donate" prefetch={false} onClick={() => setMobileOpen(false)}
                             className={`drawer-item ${pathname === '/donate' ? 'active-page' : ''}`}>
