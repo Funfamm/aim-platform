@@ -46,6 +46,12 @@ const icons = {
             <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
         </svg>
     ),
+    scripts: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20h9" />
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+        </svg>
+    ),
     search: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" />
@@ -110,16 +116,20 @@ export default function MobileTabBar() {
 
     const castingEnabled = settings?.castingCallsEnabled ?? false
     const trainingEnabled = settings?.trainingEnabled ?? false
+    const scriptsEnabled = settings?.scriptCallsEnabled ?? false
 
-    /* ── Build the 4 main tabs ── */
+    /* ── Build the 4 main tabs ────────────────────────────────────────────────── */
     const tabs: TabItem[] = [
         { href: '/', label: t('home'), icon: icons.home },
         { href: '/works', label: t('works'), icon: icons.works },
         { href: '/upcoming', label: t('upcoming'), icon: icons.upcoming },
     ]
 
+    // 4th tab priority: casting → scripts → training
     if (castingEnabled) {
         tabs.push({ href: '/casting', label: t('casting'), icon: icons.casting })
+    } else if (scriptsEnabled) {
+        tabs.push({ href: '/scripts', label: t('scripts'), icon: icons.scripts })
     } else if (trainingEnabled) {
         tabs.push({ href: '/training', label: t('training'), icon: icons.training })
     }
@@ -409,6 +419,16 @@ export default function MobileTabBar() {
                                         <div className="suggestion-content">
                                             <span className="suggestion-title">{t('casting')}</span>
                                             <span className="suggestion-subtitle">{tSearch('openRoles')}</span>
+                                        </div>
+                                        <svg className="suggestion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
+                                    </button>
+                                )}
+                                {scriptsEnabled && (
+                                    <button className="search-suggestion-item" onClick={() => selectResult('/scripts')}>
+                                        <span className="suggestion-icon">✍️</span>
+                                        <div className="suggestion-content">
+                                            <span className="suggestion-title">{t('scripts')}</span>
+                                            <span className="suggestion-subtitle">{tSearch('submitScript')}</span>
                                         </div>
                                         <svg className="suggestion-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6" /></svg>
                                     </button>

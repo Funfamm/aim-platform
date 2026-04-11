@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { translateAndSave } from '@/lib/translate'
 
 async function isAdmin() {
     const session = await getSession()
@@ -49,6 +50,17 @@ export async function POST(req: Request) {
             isPublic: isPublic ?? false,
             status: status || 'draft',
         },
+    })
+
+    // Fire-and-forget: auto-translate to all supported languages
+    const fieldsToTranslate: Record<string, string> = { title, description }
+    if (genre) fieldsToTranslate.genre = genre
+    if (toneKeywords) fieldsToTranslate.toneKeywords = toneKeywords
+    translateAndSave(fieldsToTranslate, async (translations) => {
+        await prisma.scriptCall.update({
+            where: { id: call.id },
+            data: { contentTranslations: translations },
+        })
     })
 
     return NextResponse.json(call)

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getSession } from '@/lib/auth'
+import { translateAndSave } from '@/lib/translate'
 
 async function isAdmin() {
     const session = await getSession()
@@ -49,6 +50,27 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.status !== undefined && { status: body.status }),
         },
     })
+
+    // Fire-and-forget: auto-translate text content to all supported languages
+    const hasTextChange = body.title !== undefined || body.description !== undefined ||
+        body.genre !== undefined || body.toneKeywords !== undefined
+
+    if (hasTextChange) {
+        const fieldsToTranslate: Record<string, string> = {}
+        if (call.title) fieldsToTranslate.title = call.title
+        if (call.description) fieldsToTranslate.description = call.description
+        if (call.genre) fieldsToTranslate.genre = call.genre
+        if (call.toneKeywords) fieldsToTranslate.toneKeywords = call.toneKeywords
+
+        if (Object.keys(fieldsToTranslate).length > 0) {
+            translateAndSave(fieldsToTranslate, async (translations) => {
+                await prisma.scriptCall.update({
+                    where: { id },
+                    data: { contentTranslations: translations },
+                })
+            })
+        }
+    }
 
     return NextResponse.json(call)
 }
