@@ -65,15 +65,16 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
     return (
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
             <div style={{
-                background: 'linear-gradient(145deg, rgba(10,10,16,0.82), rgba(6,6,12,0.75)), linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))',
-                backdropFilter: 'blur(80px) saturate(180%) brightness(0.9)',
-                WebkitBackdropFilter: 'blur(80px) saturate(180%) brightness(0.9)',
-                border: '1px solid rgba(255,255,255,0.18)',
+                background: 'rgba(255,255,255,0.025)',
+                backdropFilter: 'blur(24px)',
+                WebkitBackdropFilter: 'blur(24px)',
+                border: '1px solid rgba(212,168,83,0.18)',
                 borderRadius: 'var(--radius-lg)',
                 padding: 'var(--space-md)',
                 transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
                 cursor: 'default',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(255,255,255,0.04)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                animation: 'glowPulse 4s ease-in-out infinite',
             }}>
                 <div style={{
                     display: 'flex',
@@ -83,20 +84,33 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                 }}>
                     <span style={{
                         fontSize: '0.65rem',
-                        fontWeight: 600,
+                        fontWeight: 700,
+                        fontFamily: 'var(--font-display)',
                         textTransform: 'uppercase' as const,
-                        letterSpacing: '0.08em',
+                        letterSpacing: '0.1em',
                         color: 'var(--accent-gold)',
-                        opacity: 0.8,
+                        textShadow: '0 1px 4px rgba(0,0,0,0.6)',
                     }}>{roleTypeLabel} {t('role')}</span>
                     <span className="badge badge-green" style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{t('open')}</span>
                 </div>
 
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 'var(--space-xs)', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+                <h4 style={{
+                    fontSize: '1.05rem', fontWeight: 800,
+                    fontFamily: 'var(--font-display)',
+                    marginBottom: 'var(--space-xs)',
+                    color: '#ffffff',
+                    letterSpacing: '-0.01em',
+                    textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                }}>
                     {roleName}
                 </h4>
 
-                <p style={{ fontSize: '0.78rem', lineHeight: 1.6, color: 'rgba(255,255,255,0.75)', marginBottom: 'var(--space-sm)' }}>
+                <p style={{
+                    fontSize: '0.78rem', lineHeight: 1.6,
+                    color: 'rgba(255,255,255,0.85)',
+                    marginBottom: 'var(--space-sm)',
+                    textShadow: '0 1px 3px rgba(0,0,0,0.4)',
+                }}>
                     {roleDescription.slice(0, 100)}{roleDescription.length > 100 ? '...' : ''}
                 </p>
 

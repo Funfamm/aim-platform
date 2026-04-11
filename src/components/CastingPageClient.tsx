@@ -481,6 +481,10 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                     0% { transform: scale(1) translate(0, 0); }
                     100% { transform: scale(1.1) translate(-1%, -1%); }
                 }
+                @keyframes glowPulse {
+                    0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 0 0 rgba(212,168,83,0); }
+                    50%      { box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 0 20px rgba(212,168,83,0.08); }
+                }
                 @media (max-width: 768px) {
                     .casting-strip-items {
                         flex-direction: column !important;

@@ -108,6 +108,10 @@ export default async function ScriptCallsPage() {
                     0%, 100% { opacity: 1; transform: scale(1); }
                     50%      { opacity: 0.5; transform: scale(0.75); }
                 }
+                @keyframes glowPulse {
+                    0%, 100% { box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 0 0 rgba(212,168,83,0); }
+                    50%      { box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 0 20px rgba(212,168,83,0.08); }
+                }
 
                 .script-hero   { animation: fadeInUp 0.5s ease both; }
                 .script-badge  { animation: fadeInUp 0.5s ease 0.1s both; }
@@ -115,31 +119,32 @@ export default async function ScriptCallsPage() {
                 .script-calls  { animation: fadeInUp 0.5s ease 0.25s both; }
 
 
-                /* ── Script Card ── */
+                /* ── Script Card — matches form-card style ── */
                 .script-card {
                     display: block;
                     text-decoration: none;
                     border-radius: 20px;
                     overflow: hidden;
-                    background: linear-gradient(145deg, rgba(255,255,255,0.13), rgba(255,255,255,0.07));
-                    border: 1px solid rgba(255,255,255,0.22);
-                    backdrop-filter: blur(80px) saturate(200%) brightness(1.1);
-                    -webkit-backdrop-filter: blur(80px) saturate(200%) brightness(1.1);
-                    box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(255,255,255,0.05);
+                    background: rgba(255,255,255,0.025);
+                    border: 1px solid rgba(212,168,83,0.18);
+                    backdrop-filter: blur(24px);
+                    -webkit-backdrop-filter: blur(24px);
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
                     transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
                     position: relative;
+                    animation: glowPulse 4s ease-in-out infinite;
                 }
                 .script-card::before {
                     content: '';
                     position: absolute; inset: 0;
-                    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+                    background: linear-gradient(135deg, rgba(212,168,83,0.06) 0%, transparent 60%);
                     opacity: 0; transition: opacity 0.35s;
                     pointer-events: none;
                 }
                 .script-card:hover {
                     transform: translateY(-4px);
-                    border-color: rgba(255,255,255,0.35);
-                    box-shadow: 0 20px 56px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 36px rgba(212,168,83,0.08);
+                    border-color: rgba(212,168,83,0.35);
+                    box-shadow: 0 20px 56px rgba(0,0,0,0.35), 0 0 36px rgba(212,168,83,0.1);
                 }
                 .script-card:hover::before { opacity: 1; }
                 .script-card:active { transform: scale(0.98); }
@@ -166,8 +171,6 @@ export default async function ScriptCallsPage() {
                 @media (max-width: 640px) {
                     .scripts-grid { grid-template-columns: 1fr !important; }
                     .coming-grid  { grid-template-columns: 1fr !important; }
-                    .step-strip   { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; padding: 14px 18px !important; }
-                    .step-arrow   { display: none !important; }
                 }
                 @media (min-width: 641px) and (max-width: 900px) {
                     .scripts-grid { grid-template-columns: 1fr !important; }
@@ -350,7 +353,9 @@ export default async function ScriptCallsPage() {
                                                         )}
                                                         <span style={{
                                                             fontSize: '0.58rem', color: 'var(--accent-gold)',
-                                                            textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700,
+                                                            textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700,
+                                                            fontFamily: 'var(--font-display)',
+                                                            textShadow: '0 1px 4px rgba(0,0,0,0.6)',
                                                         }}>
                                                             {t('forProject')}: {call.project.title}
                                                         </span>
@@ -360,8 +365,10 @@ export default async function ScriptCallsPage() {
                                                 {/* Title */}
                                                 <h3 style={{
                                                     fontSize: '1.05rem', fontWeight: 800,
+                                                    fontFamily: 'var(--font-display)',
                                                     color: '#ffffff', lineHeight: 1.25,
                                                     margin: 0, letterSpacing: '-0.01em',
+                                                    textShadow: '0 2px 8px rgba(0,0,0,0.5)',
                                                 }}>
                                                     {getLocalized(call, 'title', call.title)}
                                                 </h3>
@@ -371,8 +378,9 @@ export default async function ScriptCallsPage() {
                                             <div style={{ padding: '14px 18px' }}>
                                                 {/* Description */}
                                                 <p style={{
-                                                    fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)',
+                                                    fontSize: '0.8rem', color: 'rgba(255,255,255,0.85)',
                                                     marginBottom: '12px', lineHeight: 1.6,
+                                                    textShadow: '0 1px 3px rgba(0,0,0,0.4)',
                                                     display: '-webkit-box',
                                                     WebkitLineClamp: 3,
                                                     WebkitBoxOrient: 'vertical',
