@@ -11,7 +11,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const call = await prisma.scriptCall.findUnique({
         where: { id },
-        include: { _count: { select: { submissions: true } } },
+        select: {
+            id: true, title: true, status: true, deadline: true,
+            maxSubmissions: true,
+            _count: { select: { submissions: true } },
+        },
     })
 
     if (!call || call.status !== 'open') {

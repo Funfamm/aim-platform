@@ -11,7 +11,10 @@ export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
-    const call = await prisma.scriptCall.findUnique({ where: { id } })
+    const call = await prisma.scriptCall.findUnique({
+        where: { id },
+        select: { id: true, title: true, description: true },
+    })
     if (!call) return { title: 'Not Found' }
     return {
         title: `${call.title} | Script Call | AIM Studio`,
@@ -32,7 +35,11 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
 
     const call = await prisma.scriptCall.findUnique({
         where: { id },
-        include: {
+        select: {
+            id: true, title: true, description: true, genre: true,
+            toneKeywords: true, targetLength: true, deadline: true,
+            status: true, isPublic: true, maxSubmissions: true,
+            requirements: true, compensationNotes: true,
             project: { select: { title: true, slug: true, coverImage: true } },
             _count: { select: { submissions: true } },
         },
