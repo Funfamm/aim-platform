@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AIM Studio â€“ Email Internationalisation Strings
  * -------------------------------------------------
  * Translation map for ALL userâ€‘facing transactional AND security email
