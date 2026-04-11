@@ -5,6 +5,7 @@ import { withDbRetry } from '@/lib/db-retry'
 import { authLimiter } from '@/lib/rate-limit'
 import { sendEmail } from '@/lib/mailer'
 import { verificationEmailLocalized, welcomeEmailWithOverrides } from '@/lib/email-templates'
+import { t as emailT } from '@/lib/email-i18n'
 import { validatePassword } from '@/lib/validation'
 
 export async function POST(request: Request) {
