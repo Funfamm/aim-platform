@@ -44,10 +44,12 @@ export default async function ScriptCallsPage() {
     }) : []
 
     type TransMap = Record<string, Record<string, string>>
-    function getLocalized(call: { contentTranslations?: string | null }, field: string, fallback: string): string {
-        if (!call.contentTranslations || locale === 'en') return fallback
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function getLocalized(call: Record<string, any>, field: string, fallback: string): string {
+        const translations = call.contentTranslations as string | null | undefined
+        if (!translations || locale === 'en') return fallback
         try {
-            const map = JSON.parse(call.contentTranslations) as TransMap
+            const map = JSON.parse(translations) as TransMap
             return map[locale]?.[field] || fallback
         } catch { return fallback }
     }
