@@ -71,9 +71,9 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                 border: '1px solid rgba(255,255,255,0.22)',
                 borderRadius: 'var(--radius-lg)',
                 padding: 'var(--space-md)',
-                transition: 'all 0.3s ease',
+                transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
                 cursor: 'default',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.3)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.3), inset 0 -1px 0 rgba(255,255,255,0.05)',
             }}>
                 <div style={{
                     display: 'flex',
@@ -92,11 +92,11 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     <span className="badge badge-green" style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{t('open')}</span>
                 </div>
 
-                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 'var(--space-xs)' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 'var(--space-xs)', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
                     {roleName}
                 </h4>
 
-                <p style={{ fontSize: '0.78rem', lineHeight: 1.6, color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>
+                <p style={{ fontSize: '0.78rem', lineHeight: 1.6, color: 'rgba(255,255,255,0.75)', marginBottom: 'var(--space-sm)' }}>
                     {roleDescription.slice(0, 100)}{roleDescription.length > 100 ? '...' : ''}
                 </p>
 

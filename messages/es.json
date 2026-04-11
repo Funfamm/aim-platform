@@ -1137,5 +1137,14 @@
     "label": "No seleccionado",
     "notifTitle": "Actualización de guión",
     "notifMessage": "Hay una actualización sobre tu guión \"{title}\"."
+  },
+  "castingPaused": {
+    "title": "Convocatorias de casting en pausa",
+    "description": "Actualmente no estamos aceptando solicitudes de casting. Por favor, vuelva a consultar pronto."
+  },
+  "trainingPaused": {
+    "title": "Centro de entrenamiento: Próximamente",
+    "description": "Estamos construyendo una experiencia de capacitación de clase mundial para aspirantes a cineastas, actores y creativos.",
+    "backHome": "← Volver al inicio"
   }
 }

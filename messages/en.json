@@ -1134,5 +1134,14 @@
     "label": "Not Selected",
     "notifTitle": "Script Submission Update",
     "notifMessage": "We have an update on your screenplay submission \"{title}\"."
+  },
+  "castingPaused": {
+    "title": "Casting Calls Paused",
+    "description": "We are not currently accepting casting applications. Please check back soon for new opportunities."
+  },
+  "trainingPaused": {
+    "title": "Training Hub: Coming Soon",
+    "description": "We're building a world-class training experience for aspiring filmmakers, actors, and creatives.",
+    "backHome": "← Back Home"
   }
 }

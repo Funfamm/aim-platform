@@ -125,14 +125,12 @@ export default function MobileTabBar() {
         { href: '/upcoming', label: t('upcoming'), icon: icons.upcoming },
     ]
 
-    // 4th tab priority: casting → scripts → training
-    if (castingEnabled) {
-        tabs.push({ href: '/casting', label: t('casting'), icon: icons.casting })
-    } else if (scriptsEnabled) {
-        tabs.push({ href: '/scripts', label: t('scripts'), icon: icons.scripts })
-    } else if (trainingEnabled) {
-        tabs.push({ href: '/training', label: t('training'), icon: icons.training })
-    }
+    // Extra tabs: all enabled sections, in priority order, capped at 2 slots (5 tabs total)
+    const extraPool: TabItem[] = []
+    if (castingEnabled)  extraPool.push({ href: '/casting',  label: t('casting'),  icon: icons.casting  })
+    if (scriptsEnabled)  extraPool.push({ href: '/scripts',  label: t('scripts'),  icon: icons.scripts  })
+    if (trainingEnabled) extraPool.push({ href: '/training', label: t('training'), icon: icons.training })
+    extraPool.slice(0, 1).forEach(tab => tabs.push(tab))
 
     /* ── Scroll collapse/expand logic (only in idle mode) ── */
     const handleScroll = useCallback(() => {

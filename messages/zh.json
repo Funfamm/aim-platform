@@ -1137,5 +1137,14 @@
     "label": "未入选",
     "notifTitle": "剧本提交更新",
     "notifMessage": "关于\"{title}\"有一则新消息。"
+  },
+  "castingPaused": {
+    "title": "选角暂停",
+    "description": "我们目前不接受选角申请。请稍后回来查看新机会。"
+  },
+  "trainingPaused": {
+    "title": "培训中心：即将推出",
+    "description": "我们正在为有抱负的电影创作者、演员和创意人士打造世界级的培训体验。",
+    "backHome": "← 返回首页"
   }
 }

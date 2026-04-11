@@ -14,9 +14,10 @@ interface HomeHeroProps {
     completedCount: number
     upcomingCount: number
     openCastings: number
+    castingEnabled: boolean
 }
 
-export default function HomeHero({ completedCount, upcomingCount, openCastings }: HomeHeroProps) {
+export default function HomeHero({ completedCount, upcomingCount, openCastings, castingEnabled }: HomeHeroProps) {
     const t = useTranslations('hero')
     const th = useTranslations('home')
     const ROTATING_WORDS = useMemo(() => [t('word1'), t('word2'), t('word3'), t('word4'), t('word5')], [t])
@@ -261,9 +262,11 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
                         </Link>
-                        <Link href="/casting" prefetch={false} className="btn btn-secondary btn-lg">
-                            {t('ctaCasting')}
-                        </Link>
+                        {castingEnabled && (
+                            <Link href="/casting" prefetch={false} className="btn btn-secondary btn-lg">
+                                {t('ctaCasting')}
+                            </Link>
+                        )}
                     </div>
 
                     {/* Compact stats pill — matches Works page */}
@@ -292,9 +295,18 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings }
                         </div>
                     </div>
 
-                    {/* Video navigation dots */}
+                    {/* Video navigation dots — absolutely centered at bottom of hero */}
                     {videos.length > 1 && (
-                        <div style={{ display: 'flex', gap: '6px', marginTop: 'var(--space-lg)' }}>
+                        <div style={{
+                            position: 'absolute',
+                            bottom: 'var(--space-xl)',
+                            left: 0,
+                            right: 0,
+                            display: 'flex',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            zIndex: 2,
+                        }}>
                             {videos.map((_, i) => (
                                 <button
                                     key={i}

@@ -1137,5 +1137,14 @@
     "label": "Nicht ausgewählt",
     "notifTitle": "Update zur Einreichung",
     "notifMessage": "Es gibt ein Update zu deiner Einreichung \"{title}\"."
+  },
+  "castingPaused": {
+    "title": "Casting-Aufrufe pausiert",
+    "description": "Wir nehmen derzeit keine Casting-Bewerbungen an. Bitte schauen Sie bald wieder vorbei."
+  },
+  "trainingPaused": {
+    "title": "Trainingszentrum: Demnächst",
+    "description": "Wir bauen ein erstklassiges Trainingserlebnis für angehende Filmemacher, Schauspieler und Kreative auf.",
+    "backHome": "← Zurück zur Startseite"
   }
 }

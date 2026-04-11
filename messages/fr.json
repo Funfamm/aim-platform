@@ -1137,5 +1137,14 @@
     "label": "Non sélectionné",
     "notifTitle": "Mise à jour soumission",
     "notifMessage": "Mise à jour concernant \"{title}\"."
+  },
+  "castingPaused": {
+    "title": "Appels au casting en pause",
+    "description": "Nous n'acceptons pas de candidatures pour le moment. Veuillez revenir vérifier bientôt."
+  },
+  "trainingPaused": {
+    "title": "Centre de formation : Prochainement",
+    "description": "Nous créons une expérience de formation de classe mondiale pour les futurs cinéastes, acteurs et créatifs.",
+    "backHome": "← Retour à l'accueil"
   }
 }

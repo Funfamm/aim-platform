@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import TrainingCatalogClient from './TrainingCatalogClient'
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +16,7 @@ export const metadata = {
 export default async function TrainingPage() {
     const session = await getUserSession()
     const locale = await getLocale()
+    const t = await getTranslations('trainingPaused')
     if (!session) redirect(`/${locale}/login?redirect=/training`)
     const isLoggedIn = true
     let settings = null
@@ -27,16 +28,16 @@ export default async function TrainingPage() {
 <main style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
                     <div>
                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎓</div>
-                        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '8px' }}>Training Hub: Coming Soon</h1>
+                        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '8px' }}>{t('title')}</h1>
                         <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto', lineHeight: 1.7 }}>
-                            We&apos;re building a world-class training experience for aspiring filmmakers, actors, and creatives.
+                            {t('description')}
                         </p>
                         <Link href="/" style={{
                             display: 'inline-block', marginTop: '24px',
                             padding: '10px 28px', borderRadius: 'var(--radius-full)',
                             background: 'var(--accent-gold)', color: '#0a0a0a',
                             fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none',
-                        }}>← Back Home</Link>
+                        }}>{t('backHome')}</Link>
                     </div>
                 </main>
                 <Footer />

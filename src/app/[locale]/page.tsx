@@ -27,7 +27,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       throw err;
     }
   };
-  const [featuredProjects, completedCount, upcomingCount, openCastings, homeSponsors] = await safeQuery(() =>
+  const [featuredProjects, completedCount, upcomingCount, openCastings, homeSponsors, siteSettings] = await safeQuery(() =>
     Promise.all([
       prisma.project.findMany({
         where: { featured: true },
@@ -60,6 +60,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           bannerDurationHours: true,
         },
       }),
+      prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true } }).catch(() => null),
     ])
   );
 
@@ -82,6 +83,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         completedCount={completedCount}
         upcomingCount={upcomingCount}
         openCastings={openCastings}
+        castingEnabled={siteSettings?.castingCallsEnabled ?? true}
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}

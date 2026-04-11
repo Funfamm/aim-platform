@@ -1137,5 +1137,14 @@
     "label": "Não selecionado",
     "notifTitle": "Atualização de roteiro",
     "notifMessage": "Há uma atualização sobre \"{title}\"."
+  },
+  "castingPaused": {
+    "title": "Chamadas de elenco pausadas",
+    "description": "Não estamos aceitando inscrições para elenco no momento. Por favor, volte em breve para novas oportunidades."
+  },
+  "trainingPaused": {
+    "title": "Centro de Treinamento: Em breve",
+    "description": "Estamos construindo uma experiência de treinamento de classe mundial para aspirantes a cineastas, atores e criativos.",
+    "backHome": "← Voltar ao Início"
   }
 }

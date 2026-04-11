@@ -1137,5 +1137,14 @@
     "label": "미선정",
     "notifTitle": "시나리오 안내",
     "notifMessage": "\"{title}\" 관련 안내가 있습니다."
+  },
+  "castingPaused": {
+    "title": "캐스팅 모집 일시 중지",
+    "description": "현재 캐스팅 지원을 받지 않고 있습니다. 새로운 기회가 있는지 곧 다시 확인해 주세요."
+  },
+  "trainingPaused": {
+    "title": "트레이닝 허브: 출시 예정",
+    "description": "영화 제작자, 배우, 크리에이터를 꿈꾸는 분들을 위한 세계적인 수준의 트레이닝 경험을 구축하고 있습니다.",
+    "backHome": "← 홈으로 돌아가기"
   }
 }

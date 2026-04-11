@@ -3,7 +3,7 @@ import CastingPageClient from '@/components/CastingPageClient'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
 // Must be dynamic so the auth check runs on every request.
 // If this page were cached (ISR), a signed-in user's render would be
@@ -22,6 +22,7 @@ export default async function CastingPage() {
     let settings = null
     try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift */ }
     const locale = await getLocale()
+    const t = await getTranslations('castingPaused')
 
     const session = await getUserSession();
   // Enforce login for casting page
@@ -34,9 +35,9 @@ export default async function CastingPage() {
                 <main style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '2rem' }}>
                     <div>
                         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎭</div>
-                        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '8px' }}>Casting Calls Paused</h1>
+                        <h1 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '8px' }}>{t('title')}</h1>
                         <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto' }}>
-                            We are not currently accepting casting applications. Please check back soon for new opportunities.
+                            {t('description')}
                         </p>
                     </div>
                 </main>

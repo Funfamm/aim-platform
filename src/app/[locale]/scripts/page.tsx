@@ -347,7 +347,7 @@ export default async function ScriptCallsPage() {
                                                 {/* Title */}
                                                 <h3 style={{
                                                     fontSize: '1.05rem', fontWeight: 800,
-                                                    color: 'var(--text-primary)', lineHeight: 1.25,
+                                                    color: '#ffffff', lineHeight: 1.25,
                                                     margin: 0, letterSpacing: '-0.01em',
                                                 }}>
                                                     {getLocalized(call, 'title', call.title)}
@@ -358,7 +358,7 @@ export default async function ScriptCallsPage() {
                                             <div style={{ padding: '14px 18px' }}>
                                                 {/* Description */}
                                                 <p style={{
-                                                    fontSize: '0.8rem', color: 'var(--text-secondary)',
+                                                    fontSize: '0.8rem', color: 'rgba(255,255,255,0.75)',
                                                     marginBottom: '12px', lineHeight: 1.6,
                                                     display: '-webkit-box',
                                                     WebkitLineClamp: 3,
