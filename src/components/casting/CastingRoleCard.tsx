@@ -102,25 +102,43 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
 
                 <div style={{
                     display: 'flex',
-                    gap: 'var(--space-sm)',
+                    gap: '5px',
                     flexWrap: 'wrap',
                     marginBottom: 'var(--space-sm)',
-                    fontSize: '0.7rem',
-                    color: 'var(--text-tertiary)',
                 }}>
                     {call.ageRange && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0113 0" /></svg>
+                        <span style={{
+                            fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
+                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
+                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                            display: 'inline-flex', alignItems: 'center', gap: '3px',
+                        }}>
+                            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0113 0" /></svg>
                             {call.ageRange}
                         </span>
                     )}
                     {call.gender && (
-                        <span>{call.gender}</span>
+                        <span style={{
+                            fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
+                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
+                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                        }}>{call.gender}</span>
+                    )}
+                    {call.compensation && (
+                        <span style={{
+                            fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
+                            background: 'rgba(74,222,128,0.07)', color: '#4ade80',
+                            borderRadius: '5px', border: '1px solid rgba(74,222,128,0.14)',
+                        }}>{call.compensation}</span>
                     )}
                     {call.deadline && (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                            {new Date(call.deadline).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
+                        <span style={{
+                            fontSize: '0.6rem', padding: '2px 9px',
+                            background: 'rgba(255,255,255,0.03)', color: 'var(--text-tertiary)',
+                            borderRadius: '5px', border: '1px solid rgba(255,255,255,0.07)',
+                            display: 'inline-flex', alignItems: 'center', gap: '3px',
+                        }}>
+                            ⏰ {new Date(call.deadline).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
                         </span>
                     )}
                 </div>

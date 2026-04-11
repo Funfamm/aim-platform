@@ -150,13 +150,23 @@ export default async function ScriptCallsPage() {
                 .script-card:hover::before { opacity: 1; }
                 .script-card:active { transform: scale(0.98); }
 
-                .submit-arrow {
+                .submit-btn {
                     display: inline-flex; align-items: center; gap: 5px;
                     font-size: 0.72rem; font-weight: 700;
-                    color: var(--accent-gold); letter-spacing: 0.04em;
-                    transition: gap 0.2s ease;
+                    color: #0f1115; letter-spacing: 0.04em;
+                    background: linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold));
+                    padding: 7px 18px;
+                    border-radius: 99px;
+                    border: none;
+                    box-shadow: 0 2px 10px rgba(212,168,83,0.25);
+                    transition: all 0.3s ease;
+                    white-space: nowrap;
                 }
-                .script-card:hover .submit-arrow { gap: 8px; }
+                .script-card:hover .submit-btn {
+                    gap: 8px;
+                    box-shadow: 0 4px 18px rgba(212,168,83,0.4);
+                    filter: brightness(1.06);
+                }
 
                 /* ── Responsive ── */
                 @media (max-width: 640px) {
@@ -394,7 +404,7 @@ export default async function ScriptCallsPage() {
                                                             : `${call._count.submissions} ${call._count.submissions !== 1 ? t('submissions') : t('submission')}`
                                                         }
                                                     </span>
-                                                    <span className="submit-arrow">
+                                                    <span className="submit-btn">
                                                         {t('submitScript')} <span>→</span>
                                                     </span>
                                                 </div>
