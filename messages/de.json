@@ -588,7 +588,18 @@
     "photoOptional2": "Zusätzliche Aufnahme (Optional)",
     "photoOptional2Desc": "Ein anderer Winkel oder Look",
     "removePhoto": "Foto entfernen",
-    "tapToReplace": "Zum Ersetzen tippen"
+    "tapToReplace": "Zum Ersetzen tippen",
+    "savedMediaFound": "Wir haben Ihre gespeicherten Medien aus einer früheren Bewerbung gefunden.",
+    "useSavedPhotos": "Gespeicherte Fotos verwenden",
+    "uploadNewPhotos": "Neue Fotos hochladen",
+    "useSavedAudio": "Gespeicherte Aufnahme verwenden",
+    "uploadNewAudio": "Neu aufnehmen",
+    "savedBadge": "Gespeichert",
+    "savedPhotosWarning": "Ihre gespeicherten Fotos werden verwendet. Tippen Sie auf Neue Fotos hochladen, um sie zu ändern.",
+    "savedAudioWarning": "Ihre gespeicherte Aufnahme wird verwendet. Tippen Sie auf Neu aufnehmen, um sie zu ändern.",
+    "copyingFiles": "Ihre gespeicherten Dateien werden kopiert...",
+    "savedPhotosReady": "Ihre gespeicherten Fotos sind bereit zur Einreichung.",
+    "savedAudioReady": "Ihre gespeicherte Aufnahme ist bereit zur Einreichung."
   },
   "training": {
     "hub": "Ausbildungszentrum",

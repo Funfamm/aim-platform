@@ -592,16 +592,19 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                                     {(() => { const rk: Record<string, string> = { lead: 'roleTypeLead', supporting: 'roleTypeSupporting', extra: 'roleTypeExtra' }; return t(rk[call.roleType.toLowerCase()] || 'roleTypeLead'); })()} • {call.ageRange || t('anyAge')} • {call.gender || t('anyGender')}
                                                 </div>
                                                 {appliedCastingIds.has(call.id) ? (
-                                                    <div style={{
-                                                        width: '100%', textAlign: 'center',
+                                                    <Link href="/dashboard?tab=applications" style={{
+                                                        display: 'block', width: '100%', textAlign: 'center',
                                                         padding: '0.45rem 1rem', fontSize: '0.8rem', fontWeight: 600,
                                                         background: 'rgba(52,211,153,0.1)',
                                                         border: '1px solid rgba(52,211,153,0.25)',
                                                         borderRadius: 'var(--radius-full)',
                                                         color: 'var(--color-success)',
+                                                        textDecoration: 'none',
+                                                        transition: 'background 0.2s, border-color 0.2s',
+                                                        cursor: 'pointer',
                                                     }}>
-                                                        {t('applied')}
-                                                    </div>
+                                                        ✓ {t('applied')}
+                                                    </Link>
                                                 ) : (
                                                     <Link href={`/casting/${call.id}/apply`} className="btn btn-primary btn-sm" style={{ width: '100%' }}>
                                                         {t('applyNow')}

@@ -37,6 +37,7 @@ model User {
   receiveLocalizedEmails Boolean                     @default(true)
   accentColor            String                      @default("gold")
   themeMode              String                      @default("dark")
+  mediaProfile           Json?                       // { front_headshot, side_profile, full_body, expression, optional_1, optional_2, voiceRecording }
   applications           Application[]
   donations              Donation[]
   enrollments            Enrollment[]

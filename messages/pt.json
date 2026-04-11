@@ -588,7 +588,18 @@
     "photoOptional2": "Foto Adicional (Opcional)",
     "photoOptional2Desc": "Outro ângulo ou look que você queira mostrar",
     "removePhoto": "Remover foto",
-    "tapToReplace": "Toque para substituir"
+    "tapToReplace": "Toque para substituir",
+    "savedMediaFound": "Encontramos seus arquivos salvos de uma candidatura anterior.",
+    "useSavedPhotos": "Usar fotos salvas",
+    "uploadNewPhotos": "Carregar novas fotos",
+    "useSavedAudio": "Usar gravação salva",
+    "uploadNewAudio": "Nova gravação",
+    "savedBadge": "Salvo",
+    "savedPhotosWarning": "Usando suas fotos salvas. Toque em Carregar novas fotos para alterá-las.",
+    "savedAudioWarning": "Usando sua gravação salva. Toque em Nova gravação para alterá-la.",
+    "copyingFiles": "Copiando seus arquivos salvos...",
+    "savedPhotosReady": "Suas fotos salvas estão prontas para envio.",
+    "savedAudioReady": "Sua gravação salva está pronta para envio."
   },
   "training": {
     "hub": "Centro de Formação",

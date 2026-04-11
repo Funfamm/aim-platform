@@ -588,7 +588,18 @@
     "photoOptional2": "Foto Adicional (Opcional)",
     "photoOptional2Desc": "Otro ángulo o look que quieras mostrar",
     "removePhoto": "Eliminar foto",
-    "tapToReplace": "Toca para reemplazar"
+    "tapToReplace": "Toca para reemplazar",
+    "savedMediaFound": "Encontramos tus archivos guardados de una solicitud anterior.",
+    "useSavedPhotos": "Usar fotos guardadas",
+    "uploadNewPhotos": "Subir fotos nuevas",
+    "useSavedAudio": "Usar grabación guardada",
+    "uploadNewAudio": "Grabar de nuevo",
+    "savedBadge": "Guardado",
+    "savedPhotosWarning": "Usando tus fotos guardadas. Toca Subir fotos nuevas para cambiarlas.",
+    "savedAudioWarning": "Usando tu grabación guardada. Toca Grabar de nuevo para cambiarla.",
+    "copyingFiles": "Copiando tus archivos guardados...",
+    "savedPhotosReady": "Tus fotos guardadas están listas para enviar.",
+    "savedAudioReady": "Tu grabación guardada está lista para enviar."
   },
   "training": {
     "hub": "Centro de Formación",

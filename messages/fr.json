@@ -588,7 +588,18 @@
     "photoOptional2": "Photo Supplémentaire (Optionnel)",
     "photoOptional2Desc": "Un autre angle ou look que vous souhaitez montrer",
     "removePhoto": "Supprimer la photo",
-    "tapToReplace": "Appuyez pour remplacer"
+    "tapToReplace": "Appuyez pour remplacer",
+    "savedMediaFound": "Nous avons trouvé vos fichiers enregistrés d'une précédente candidature.",
+    "useSavedPhotos": "Utiliser les photos enregistrées",
+    "uploadNewPhotos": "Télécharger de nouvelles photos",
+    "useSavedAudio": "Utiliser l'enregistrement sauvegardé",
+    "uploadNewAudio": "Nouvel enregistrement",
+    "savedBadge": "Enregistré",
+    "savedPhotosWarning": "Vos photos enregistrées sont utilisées. Appuyez sur Télécharger de nouvelles photos pour les changer.",
+    "savedAudioWarning": "Votre enregistrement sauvegardé est utilisé. Appuyez sur Nouvel enregistrement pour le changer.",
+    "copyingFiles": "Copie de vos fichiers enregistrés...",
+    "savedPhotosReady": "Vos photos enregistrées sont prêtes à être soumises.",
+    "savedAudioReady": "Votre enregistrement est prêt à être soumis."
   },
   "training": {
     "hub": "Centre de Formation",

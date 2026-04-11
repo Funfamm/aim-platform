@@ -572,7 +572,18 @@
     "photoOptional2": "追加写真（任意）",
     "photoOptional2Desc": "見せたい別のアングルやルック",
     "removePhoto": "写真を削除",
-    "tapToReplace": "タップして差し替え"
+    "tapToReplace": "タップして差し替え",
+    "savedMediaFound": "以前の応募から保存済みのメディアが見つかりました。",
+    "useSavedPhotos": "保存済み写真を使用",
+    "uploadNewPhotos": "新しい写真をアップロード",
+    "useSavedAudio": "保存済み録音を使用",
+    "uploadNewAudio": "新しく録音",
+    "savedBadge": "保存済み",
+    "savedPhotosWarning": "保存済みの写真を使用しています。変更するには新しい写真をアップロードをタップしてください。",
+    "savedAudioWarning": "保存済みの録音を使用しています。変更するには新しく録音をタップしてください。",
+    "copyingFiles": "保存済みファイルをコピー中...",
+    "savedPhotosReady": "保存済みの写真を提出する準備ができています。",
+    "savedAudioReady": "保存済みの録音を提出する準備ができています。"
   },
   "training": {
     "hub": "トレーニングハブ",

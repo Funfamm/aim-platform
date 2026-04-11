@@ -62,11 +62,13 @@ export async function POST(req: NextRequest) {
             fileType,
             kind,
             name = '',
+            castingCallId = 'unknown',
         } = body as {
             fileName: string
             fileType: string
             kind: 'image' | 'audio'
             name?: string
+            castingCallId?: string
         }
 
         if (!fileName || !fileType || !kind) {
@@ -97,10 +99,13 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Build folder path ────────────────────────────────────────────────
-        // Pattern: casting/{applicant-name}/{photos|audio}/{timestamp}-{uuid}.ext
+        // Pattern: casting/calls/{castingCallId}/{nameSlug}-{hash}/{photos|audio}/{ts}-{uuid}.ext
+        // Each casting call has its own isolated folder so the AI agent can
+        // scan exactly one casting call's applicants without trawling all uploads.
         const nameSlug   = name ? slugify(name) : 'applicant'
+        const nameHash   = shortHash(name || 'applicant')
         const category   = kind === 'image' ? 'photos' : 'audio'
-        const folder     = `casting/${nameSlug}/${category}`
+        const folder     = `casting/calls/${castingCallId}/${nameSlug}-${nameHash}/${category}`
         const ext        = extFrom(fileName)
         const r2Key      = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`
 

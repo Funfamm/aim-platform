@@ -588,7 +588,18 @@
     "photoOptional2": "附加照片（可选）",
     "photoOptional2Desc": "您想展示的另一个角度或造型",
     "removePhoto": "删除照片",
-    "tapToReplace": "点击替换"
+    "tapToReplace": "点击替换",
+    "savedMediaFound": "我们找到了您在上次申请中保存的文件。",
+    "useSavedPhotos": "使用已保存的照片",
+    "uploadNewPhotos": "上传新照片",
+    "useSavedAudio": "使用已保存的录音",
+    "uploadNewAudio": "重新录音",
+    "savedBadge": "已保存",
+    "savedPhotosWarning": "正在使用您已保存的照片。点击上传新照片进行更改。",
+    "savedAudioWarning": "正在使用您已保存的录音。点击重新录音进行更改。",
+    "copyingFiles": "正在复制您保存的文件...",
+    "savedPhotosReady": "您保存的照片已准备好提交。",
+    "savedAudioReady": "您保存的录音已准备好提交。"
   },
   "training": {
     "hub": "培训中心",

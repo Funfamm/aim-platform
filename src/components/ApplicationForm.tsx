@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import ApplicationSuccess from '@/components/application/ApplicationSuccess'
 import VoiceRecorder from '@/components/application/VoiceRecorder'
 import { useTranslations, useLocale } from 'next-intl'
@@ -19,46 +19,35 @@ interface CastingCallInfo {
     }
 }
 
+type MediaProfile = {
+    front_headshot?: string | null
+    side_profile?: string | null
+    full_body?: string | null
+    expression?: string | null
+    optional_1?: string | null
+    optional_2?: string | null
+    voiceRecording?: string | null
+}
+
 const PHOTO_SLOT_KEYS = [
     { key: 'front_headshot', labelKey: 'photoFrontHeadshot', descKey: 'photoFrontDesc', required: true },
-    { key: 'side_profile', labelKey: 'photoSideProfile', descKey: 'photoSideDesc', required: true },
-    { key: 'full_body', labelKey: 'photoFullBody', descKey: 'photoFullDesc', required: true },
-    { key: 'expression', labelKey: 'photoExpression', descKey: 'photoExpressionDesc', required: true },
-    { key: 'optional_1', labelKey: 'photoOptional1', descKey: 'photoOptional1Desc', required: false },
-    { key: 'optional_2', labelKey: 'photoOptional2', descKey: 'photoOptional2Desc', required: false },
+    { key: 'side_profile',   labelKey: 'photoSideProfile',   descKey: 'photoSideDesc',  required: true },
+    { key: 'full_body',      labelKey: 'photoFullBody',       descKey: 'photoFullDesc',  required: true },
+    { key: 'expression',     labelKey: 'photoExpression',     descKey: 'photoExpressionDesc', required: true },
+    { key: 'optional_1',     labelKey: 'photoOptional1',      descKey: 'photoOptional1Desc',  required: false },
+    { key: 'optional_2',     labelKey: 'photoOptional2',      descKey: 'photoOptional2Desc',  required: false },
 ]
 
 const SOCIAL_PLATFORMS = [
     { value: 'instagram', label: 'Instagram' },
-    { value: 'tiktok', label: 'TikTok' },
-    { value: 'youtube', label: 'YouTube' },
-    { value: 'x', label: 'X (Twitter)' },
-    { value: 'facebook', label: 'Facebook' },
-    { value: 'linkedin', label: 'LinkedIn' },
-    { value: 'imdb', label: 'IMDb' },
+    { value: 'tiktok',    label: 'TikTok' },
+    { value: 'youtube',   label: 'YouTube' },
+    { value: 'x',         label: 'X (Twitter)' },
+    { value: 'facebook',  label: 'Facebook' },
+    { value: 'linkedin',  label: 'LinkedIn' },
+    { value: 'imdb',      label: 'IMDb' },
     { value: 'backstage', label: 'Backstage' },
-    { value: 'other', label: 'Other' },
-]
-
-const PERSONALITY_QUESTIONS = [
-    {
-        key: 'describe_yourself',
-        label: 'Describe yourself in three words',
-        type: 'text' as const,
-        placeholder: 'e.g., Bold, creative, empathetic',
-    },
-    {
-        key: 'why_acting',
-        label: 'What draws you to apply?',
-        type: 'textarea' as const,
-        placeholder: 'Tell us what sparks your interest...',
-    },
-    {
-        key: 'dream_role',
-        label: "What's your dream role?",
-        type: 'textarea' as const,
-        placeholder: 'A genre, character type, or scenario...',
-    },
+    { value: 'other',     label: 'Other' },
 ]
 
 const CONSENT_ITEMS = [
@@ -83,6 +72,11 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [error, setError] = useState('')
+
+    // ── Saved media profile ──────────────────────────────────────────────────
+    const [savedMedia, setSavedMedia] = useState<MediaProfile | null>(null)
+    const [useSavedPhotos, setUseSavedPhotos] = useState(false)
+    const [useSavedAudio, setUseSavedAudio] = useState(false)
 
     // Form state
     const [formData, setFormData] = useState({
@@ -117,18 +111,37 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
 
     const [audioFile, setAudioFile] = useState<File | null>(null)
     const [consents, setConsents] = useState({ consent_media: false, consent_voluntary: false, consent_privacy: false })
-    // Track per-file upload progress (0–100)
     const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null)
 
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
     const totalSteps = 5
 
+    // ── Fetch saved media profile on mount ───────────────────────────────────
+    useEffect(() => {
+        fetch('/api/user/media-profile')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data?.mediaProfile) {
+                    const mp: MediaProfile = data.mediaProfile
+                    // Only surface saved media if at least 4 required photos exist
+                    const requiredKeys = ['front_headshot', 'side_profile', 'full_body', 'expression']
+                    const hasRequired = requiredKeys.every(k => mp[k as keyof MediaProfile])
+                    if (hasRequired) {
+                        setSavedMedia(mp)
+                        // Default to using saved media
+                        setUseSavedPhotos(true)
+                        if (mp.voiceRecording) setUseSavedAudio(true)
+                    }
+                }
+            })
+            .catch(() => { /* not logged in or no profile — ignore */ })
+    }, [])
+
     const updateField = (key: string, value: string) => {
         setFormData((prev) => ({ ...prev, [key]: value }))
     }
 
-    // Map file extension → MIME when the browser reports nothing (common for HEIC on iOS)
     const inferMime = (file: File): string => {
         if (file.type && file.type !== 'application/octet-stream') return file.type
         const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
@@ -145,39 +158,35 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     const handlePhotoChange = (key: string, e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
-        if (file.size > 10 * 1024 * 1024) {
-            setError(t('imageTooLarge'))
-            return
-        }
+        if (file.size > 10 * 1024 * 1024) { setError(t('imageTooLarge')); return }
         const mime = inferMime(file)
-        if (!mime.startsWith('image/')) {
-            setError(t('invalidImage'))
-            return
-        }
+        if (!mime.startsWith('image/')) { setError(t('invalidImage')); return }
         setError('')
         setPhotos((prev) => ({ ...prev, [key]: file }))
+        // Switching to new upload for this role — disable saved photos mode
+        setUseSavedPhotos(false)
     }
 
-    const requiredPhotosCount = Object.entries(photos).filter(([key, file]) => {
+    // Count of required new-upload photos
+    const newRequiredCount = Object.entries(photos).filter(([key, file]) => {
         const slot = PHOTO_SLOT_KEYS.find((s) => s.key === key)
         return slot?.required && file !== null
     }).length
 
+    // Photos are satisfied if using saved OR enough new ones uploaded
+    const photosReady = (useSavedPhotos && savedMedia !== null) || newRequiredCount >= 4
+    // Audio is satisfied if using saved OR a new file provided
+    const audioReady  = (useSavedAudio && !!savedMedia?.voiceRecording) || !!audioFile
+
     const canProceed = (s: number) => {
         if (isAdmin) return true
         switch (s) {
-            case 1:
-                return formData.fullName && formData.email && formData.age && formData.gender
-            case 2:
-                return formData.describe_yourself && formData.why_acting && formData.dream_role
-            case 3:
-                return requiredPhotosCount >= 4
-            case 4:
-                return audioFile && formData.socialUsername
-            case 5:
-                return consents.consent_media && consents.consent_voluntary && consents.consent_privacy
-            default:
-                return false
+            case 1: return formData.fullName && formData.email && formData.age && formData.gender
+            case 2: return formData.describe_yourself && formData.why_acting && formData.dream_role
+            case 3: return photosReady
+            case 4: return audioReady && formData.socialUsername
+            case 5: return consents.consent_media && consents.consent_voluntary && consents.consent_privacy
+            default: return false
         }
     }
 
@@ -188,34 +197,25 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     }
 
     /**
-     * Upload a single file directly to R2 via a presigned PUT URL.
-     * Browser → R2 directly — no Vercel body limit, supports files up to GBs.
-     * Requires R2 CORS to allow PUT from the app's domain.
+     * Upload a single file directly to R2 via presigned PUT.
+     * Passes castingCallId so files land in the correct per-call folder.
      */
-    const uploadFileDirect = async (
-        file: File,
-        kind: 'image' | 'audio',
-        name: string,
-    ): Promise<string> => {
-        // Use inferred MIME for the presign request (fixes iOS HEIC empty-type issue)
-        const mime = inferMime(file)
-        const nameSlug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'applicant'
-        const category = kind === 'image' ? 'photos' : 'audio'
-        const folder = `casting/${nameSlug}/${category}`
+    const uploadFileDirect = async (file: File, kind: 'image' | 'audio', name: string): Promise<string> => {
+        const mime     = inferMime(file)
+        const castingCallId = castingCall.id
 
-        // Strategy 1: Direct browser → R2 via presigned URL (fastest, no Vercel limit)
         try {
             const signRes = await fetch('/api/upload/presign', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileName: file.name, fileType: mime, kind, name }),
+                body: JSON.stringify({ fileName: file.name, fileType: mime, kind, name, castingCallId }),
             })
             if (signRes.ok) {
                 const { presignedUrl, finalUrl } = await signRes.json()
                 const putRes = await fetch(presignedUrl, {
                     method: 'PUT',
                     headers: { 'Content-Type': mime },
-                    credentials: 'omit', // presigned URL has auth built-in; cookies would break CORS wildcard
+                    credentials: 'omit',
                     body: file,
                 })
                 if (putRes.ok) return finalUrl
@@ -225,9 +225,12 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             console.warn('[Upload] Presign/R2 failed, falling back to stream proxy:', e)
         }
 
-        // Strategy 2: Fallback — stream through our server proxy (bypasses CORS)
+        // Fallback: stream proxy
+        const nameSlug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'applicant'
+        const category = kind === 'image' ? 'photos' : 'audio'
+        const folder   = `casting/calls/${castingCallId}/${nameSlug}`
         const streamRes = await fetch(
-            `/api/upload/stream?fileName=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(mime)}&folder=${encodeURIComponent(folder)}&fileSize=${file.size}`,
+            `/api/upload/stream?fileName=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(mime)}&folder=${encodeURIComponent(folder + '/' + category)}&fileSize=${file.size}`,
             { method: 'POST', body: file },
         )
         if (!streamRes.ok) {
@@ -238,6 +241,28 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         return finalUrl
     }
 
+    /**
+     * Server-side R2 copy: reuse a saved file into this casting call's folder.
+     * Zero bytes from the browser.
+     */
+    const copysavedFile = async (sourceUrl: string, slot: string): Promise<string> => {
+        const res = await fetch('/api/upload/copy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sourceUrl,
+                castingCallId: castingCall.id,
+                slot,
+                name: formData.fullName,
+            }),
+        })
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}))
+            throw new Error(err.error || `Copy failed for slot: ${slot}`)
+        }
+        const { finalUrl } = await res.json()
+        return finalUrl
+    }
 
     const handleSubmit = async () => {
         if (!canProceed(5)) return
@@ -246,36 +271,52 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         setUploadProgress(null)
 
         try {
-            const photoEntries = Object.entries(photos).filter(([, f]) => f !== null) as [string, File][]
-            const totalUploads = photoEntries.length + (audioFile ? 1 : 0)
-            let completed = 0
+            // ── Count total file operations ──────────────────────────────────
+            const photoEntries    = Object.entries(photos).filter(([, f]) => f !== null) as [string, File][]
+            const savedPhotoSlots = useSavedPhotos && savedMedia
+                ? PHOTO_SLOT_KEYS.map(s => s.key).filter(k => savedMedia[k as keyof MediaProfile])
+                : []
+            const needsNewAudio   = !useSavedAudio || !savedMedia?.voiceRecording
 
-            setUploadProgress({ current: 0, total: totalUploads })
+            const totalOps = photoEntries.length + savedPhotoSlots.length + (needsNewAudio && audioFile ? 1 : 0) + (!needsNewAudio ? 1 : 0)
+            let completed  = 0
+            setUploadProgress({ current: 0, total: totalOps })
 
-            // Upload photos directly to R2 (browser → R2, bypasses Vercel — no size limit)
+            // ── Upload new photos (fresh files) ──────────────────────────────
             const photoUrls: Record<string, string> = {}
             for (const [key, file] of photoEntries) {
                 photoUrls[key] = await uploadFileDirect(file, 'image', formData.fullName)
                 completed++
-                setUploadProgress({ current: completed, total: totalUploads })
+                setUploadProgress({ current: completed, total: totalOps })
             }
 
-            // Upload audio directly to R2
+            // ── Copy saved photos into this casting call's folder ─────────────
+            for (const slot of savedPhotoSlots) {
+                const savedUrl = savedMedia![slot as keyof MediaProfile] as string
+                photoUrls[slot] = await copysavedFile(savedUrl, slot)
+                completed++
+                setUploadProgress({ current: completed, total: totalOps })
+            }
+
+            // ── Handle audio ─────────────────────────────────────────────────
             let voiceUrl: string | null = null
-            if (audioFile) {
+            if (!needsNewAudio && savedMedia?.voiceRecording) {
+                voiceUrl = await copysavedFile(savedMedia.voiceRecording, 'voiceRecording')
+                completed++
+                setUploadProgress({ current: completed, total: totalOps })
+            } else if (audioFile) {
                 voiceUrl = await uploadFileDirect(audioFile, 'audio', formData.fullName)
                 completed++
-                setUploadProgress({ current: completed, total: totalUploads })
+                setUploadProgress({ current: completed, total: totalOps })
             }
 
             setUploadProgress(null)
 
-            // Submit — only metadata + R2 URLs, no file bytes
+            // ── Submit metadata + R2 URLs ────────────────────────────────────
             const data = new FormData()
             Object.entries(formData).forEach(([key, value]) => { if (value) data.append(key, value) })
             data.append('castingCallId', castingCall.id)
             data.append('locale', locale)
-
             for (const [key, url] of Object.entries(photoUrls)) {
                 data.append(`photo_${key}`, url)
             }
@@ -292,17 +333,20 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                 throw new Error(err.error || t('submitError'))
             }
 
+            // ── Update media profile with the URLs used for this application ─
+            const profileUpdate: MediaProfile = { ...photoUrls, voiceRecording: voiceUrl }
+            fetch('/api/user/media-profile', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(profileUpdate),
+            }).catch(() => { /* non-critical */ })
+
             setSubmitted(true)
         } catch (err: unknown) {
             setUploadProgress(null)
             const rawMsg = err instanceof Error ? err.message : String(err)
             console.error('[ApplicationForm] Submit failed:', rawMsg)
-            // Show friendly message to users, technical details only to admins
-            if (isAdmin) {
-                setError(rawMsg)
-            } else {
-                setError(t('friendlyUploadError'))
-            }
+            setError(isAdmin ? rawMsg : t('friendlyUploadError'))
         } finally {
             setSubmitting(false)
         }
@@ -310,6 +354,67 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
 
     if (submitted) {
         return <ApplicationSuccess roleName={castingCall.roleName} projectTitle={castingCall.project.title} />
+    }
+
+    // ── Saved media banner (shown at top of Step 3 and 4) ───────────────────
+    const SavedMediaBanner = ({ mode }: { mode: 'photos' | 'audio' }) => {
+        const isSaved = mode === 'photos' ? useSavedPhotos : useSavedAudio
+        const setSaved = mode === 'photos'
+            ? (v: boolean) => setUseSavedPhotos(v)
+            : (v: boolean) => setUseSavedAudio(v)
+        const btnSaved  = mode === 'photos' ? t('useSavedPhotos')  : t('useSavedAudio')
+        const btnNew    = mode === 'photos' ? t('uploadNewPhotos') : t('uploadNewAudio')
+        const warning   = mode === 'photos' ? t('savedPhotosWarning') : t('savedAudioWarning')
+
+        return (
+            <div style={{
+                marginBottom: 'var(--space-xl)',
+                padding: 'var(--space-md) var(--space-lg)',
+                background: 'rgba(212,168,83,0.07)',
+                border: '1px solid rgba(212,168,83,0.25)',
+                borderRadius: 'var(--radius-md)',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-sm)' }}>
+                    <span style={{ fontSize: '1.1rem' }}>✨</span>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--accent-gold)' }}>
+                        {t('savedMediaFound')}
+                    </span>
+                </div>
+                <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap' }}>
+                    <button
+                        type="button"
+                        onClick={() => setSaved(true)}
+                        style={{
+                            padding: '6px 16px', fontSize: '0.8rem', fontWeight: 600, borderRadius: 'var(--radius-full)',
+                            border: `1px solid ${isSaved ? 'rgba(52,211,153,0.5)' : 'var(--border-subtle)'}`,
+                            background: isSaved ? 'rgba(52,211,153,0.12)' : 'transparent',
+                            color: isSaved ? 'var(--color-success)' : 'var(--text-secondary)',
+                            cursor: 'pointer', transition: 'all 0.2s',
+                        }}
+                    >
+                        ✓ {btnSaved}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setSaved(false)}
+                        style={{
+                            padding: '6px 16px', fontSize: '0.8rem', fontWeight: 600, borderRadius: 'var(--radius-full)',
+                            border: `1px solid ${!isSaved ? 'rgba(212,168,83,0.5)' : 'var(--border-subtle)'}`,
+                            background: !isSaved ? 'rgba(212,168,83,0.08)' : 'transparent',
+                            color: !isSaved ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                            cursor: 'pointer', transition: 'all 0.2s',
+                        }}
+                    >
+                        ↑ {btnNew}
+                    </button>
+                </div>
+                {isSaved && (
+                    <p style={{ marginTop: 'var(--space-sm)', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                        ℹ️ {warning}
+                    </p>
+                )}
+            </div>
+        )
     }
 
     return (
@@ -349,7 +454,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                     borderRadius: 'var(--radius-md)',
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '0.82rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
-                        <span>⬆️ Uploading files to secure storage…</span>
+                        <span>⬆️ {t('copyingFiles')}</span>
                         <span>{uploadProgress.current} / {uploadProgress.total}</span>
                     </div>
                     <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
@@ -374,9 +479,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             {step === 1 && (
                 <div className="animate-fade-in-up">
                     <h3 style={{ marginBottom: 'var(--space-xs)' }}>{t('basicsTitle')}</h3>
-                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>
-                        {t('basicsDesc')}
-                    </p>
+                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>{t('basicsDesc')}</p>
 
                     <div className="grid-2" style={{ gap: 'var(--space-md)' }}>
                         <div className="form-group">
@@ -430,13 +533,11 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                 </div>
             )}
 
-            {/* ═══ STEP 2: Personality / About You ═══ */}
+            {/* ═══ STEP 2: Personality ═══ */}
             {step === 2 && (
                 <div className="animate-fade-in-up">
                     <h3 style={{ marginBottom: 'var(--space-xs)' }}>{t('personalityTitle')}</h3>
-                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>
-                        {t('personalityDesc')}
-                    </p>
+                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>{t('personalityDesc')}</p>
 
                     <div className="form-group">
                         <label className="form-label">{t('describeYourself')} *</label>
@@ -457,106 +558,141 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             {step === 3 && (
                 <div className="animate-fade-in-up">
                     <h3 style={{ marginBottom: 'var(--space-xs)' }}>{t('photosTitle')}</h3>
-                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-sm)' }}>
-                        {t('photosDesc')}
-                    </p>
+                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-sm)' }}>{t('photosDesc')}</p>
                     <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-xl)' }}>
                         📷 {t('photosTip')}
                     </p>
 
-                    <div className="photo-upload-grid" style={{ gap: 'var(--space-md)' }}>
-                        {PHOTO_SLOT_KEYS.map((slot) => {
-                            const file = photos[slot.key]
-                            const sizeMB = file ? file.size / (1024 * 1024) : 0
+                    {/* Saved media banner */}
+                    {savedMedia && <SavedMediaBanner mode="photos" />}
 
-                            return (
-                                <div key={slot.key} style={{ marginBottom: 'var(--space-sm)' }}>
-                                    <div
-                                        className={`file-upload-zone ${file ? 'has-file' : ''}`}
-                                        onClick={() => fileInputRefs.current[slot.key]?.click()}
-                                        style={{ padding: 'var(--space-lg)', minHeight: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
-                                    >
-                                        {file ? (
-                                            <>
-                                                {/* Delete button */}
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setPhotos((prev) => ({ ...prev, [slot.key]: null }))
-                                                        // Reset the file input so the same file can be re-selected
-                                                        if (fileInputRefs.current[slot.key]) {
-                                                            fileInputRefs.current[slot.key]!.value = ''
-                                                        }
-                                                    }}
-                                                    aria-label={t('removePhoto')}
-                                                    style={{
-                                                        position: 'absolute', top: '8px', right: '8px', zIndex: 2,
-                                                        width: '28px', height: '28px', borderRadius: '50%',
-                                                        background: 'rgba(239,68,68,0.85)', color: '#fff',
-                                                        border: 'none', cursor: 'pointer',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        fontSize: '0.85rem', fontWeight: 700,
-                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-                                                        transition: 'transform 0.15s ease, background 0.15s ease',
-                                                    }}
-                                                    onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.15)'; e.currentTarget.style.background = 'rgba(239,68,68,1)' }}
-                                                    onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(239,68,68,0.85)' }}
-                                                >
-                                                    ✕
-                                                </button>
-
-                                                {/* Preview image */}
-                                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                <img
-                                                    src={URL.createObjectURL(file)}
-                                                    alt={t(slot.labelKey as Parameters<typeof t>[0])}
-                                                    style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-xs)' }}
-                                                />
-
-                                                {/* File info */}
-                                                <div style={{ width: '100%', marginTop: '4px' }}>
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                                        <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>
-                                                            ✓ {file.name}
-                                                        </span>
-                                                        <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>
-                                                            {sizeMB.toFixed(1)} MB
-                                                        </span>
-                                                    </div>
-                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '3px', textAlign: 'center' }}>
-                                                        {t('tapToReplace')}
-                                                    </div>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)', color: slot.required ? 'var(--accent-gold)' : 'var(--text-tertiary)' }}>
-                                                    📸
-                                                </div>
-                                                <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '2px' }}>
-                                                    {t(slot.labelKey as Parameters<typeof t>[0])} {slot.required && <span style={{ color: 'var(--accent-gold)' }}>*</span>}
-                                                </div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t(slot.descKey as Parameters<typeof t>[0])}</div>
-                                            </>
-                                        )}
+                    {/* Saved photo thumbnails */}
+                    {useSavedPhotos && savedMedia && (
+                        <div className="photo-upload-grid" style={{ gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                            {PHOTO_SLOT_KEYS.map(slot => {
+                                const url = savedMedia[slot.key as keyof MediaProfile] as string | undefined
+                                if (!url) return null
+                                return (
+                                    <div key={slot.key} style={{ position: 'relative' }}>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={url}
+                                            alt={t(slot.labelKey as Parameters<typeof t>[0])}
+                                            style={{ width: '100%', height: '140px', objectFit: 'cover', borderRadius: 'var(--radius-md)', border: '1px solid rgba(52,211,153,0.3)' }}
+                                        />
+                                        <span style={{
+                                            position: 'absolute', top: '6px', left: '6px',
+                                            fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px',
+                                            background: 'rgba(52,211,153,0.85)', color: '#fff',
+                                            borderRadius: 'var(--radius-full)',
+                                        }}>
+                                            ✓ {t('savedBadge')}
+                                        </span>
+                                        <div style={{ fontSize: '0.72rem', marginTop: '4px', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                                            {t(slot.labelKey as Parameters<typeof t>[0])}
+                                        </div>
                                     </div>
-                                    <input
-                                        ref={(el) => { fileInputRefs.current[slot.key] = el }}
-                                        type="file"
-                                        accept="image/*"
-                                        style={{ display: 'none' }}
-                                        onChange={(e) => handlePhotoChange(slot.key, e)}
-                                    />
-                                </div>
-                            )
-                        })}
-                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
 
-                    <div style={{ textAlign: 'center', marginTop: 'var(--space-md)', fontSize: '0.85rem', color: requiredPhotosCount >= 4 ? 'var(--success)' : 'var(--text-tertiary)' }}>
-                        {requiredPhotosCount}/4 {t('photosUploaded')}
-                        {requiredPhotosCount >= 4 && ' ✓'}
-                    </div>
+                    {/* New upload grid — only shown when not using saved */}
+                    {!useSavedPhotos && (
+                        <>
+                            <div className="photo-upload-grid" style={{ gap: 'var(--space-md)' }}>
+                                {PHOTO_SLOT_KEYS.map((slot) => {
+                                    const file = photos[slot.key]
+                                    const sizeMB = file ? file.size / (1024 * 1024) : 0
+
+                                    return (
+                                        <div key={slot.key} style={{ marginBottom: 'var(--space-sm)' }}>
+                                            <div
+                                                className={`file-upload-zone ${file ? 'has-file' : ''}`}
+                                                onClick={() => fileInputRefs.current[slot.key]?.click()}
+                                                style={{ padding: 'var(--space-lg)', minHeight: '180px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}
+                                            >
+                                                {file ? (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setPhotos((prev) => ({ ...prev, [slot.key]: null }))
+                                                                if (fileInputRefs.current[slot.key]) {
+                                                                    fileInputRefs.current[slot.key]!.value = ''
+                                                                }
+                                                            }}
+                                                            aria-label={t('removePhoto')}
+                                                            style={{
+                                                                position: 'absolute', top: '8px', right: '8px', zIndex: 2,
+                                                                width: '28px', height: '28px', borderRadius: '50%',
+                                                                background: 'rgba(239,68,68,0.85)', color: '#fff',
+                                                                border: 'none', cursor: 'pointer',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                fontSize: '0.85rem', fontWeight: 700,
+                                                                boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                                                transition: 'transform 0.15s ease, background 0.15s ease',
+                                                            }}
+                                                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.15)'; e.currentTarget.style.background = 'rgba(239,68,68,1)' }}
+                                                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.background = 'rgba(239,68,68,0.85)' }}
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img
+                                                            src={URL.createObjectURL(file)}
+                                                            alt={t(slot.labelKey as Parameters<typeof t>[0])}
+                                                            style={{ width: '100%', height: '120px', objectFit: 'cover', borderRadius: 'var(--radius-sm)', marginBottom: 'var(--space-xs)' }}
+                                                        />
+                                                        <div style={{ width: '100%', marginTop: '4px' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                                                <span style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>
+                                                                    ✓ {file.name}
+                                                                </span>
+                                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>
+                                                                    {sizeMB.toFixed(1)} MB
+                                                                </span>
+                                                            </div>
+                                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '3px', textAlign: 'center' }}>
+                                                                {t('tapToReplace')}
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)', color: slot.required ? 'var(--accent-gold)' : 'var(--text-tertiary)' }}>📸</div>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '2px' }}>
+                                                            {t(slot.labelKey as Parameters<typeof t>[0])} {slot.required && <span style={{ color: 'var(--accent-gold)' }}>*</span>}
+                                                        </div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>{t(slot.descKey as Parameters<typeof t>[0])}</div>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <input
+                                                ref={(el) => { fileInputRefs.current[slot.key] = el }}
+                                                type="file"
+                                                accept="image/*"
+                                                style={{ display: 'none' }}
+                                                onChange={(e) => handlePhotoChange(slot.key, e)}
+                                            />
+                                        </div>
+                                    )
+                                })}
+                            </div>
+
+                            <div style={{ textAlign: 'center', marginTop: 'var(--space-md)', fontSize: '0.85rem', color: newRequiredCount >= 4 ? 'var(--success)' : 'var(--text-tertiary)' }}>
+                                {newRequiredCount}/4 {t('photosUploaded')}
+                                {newRequiredCount >= 4 && ' ✓'}
+                            </div>
+                        </>
+                    )}
+
+                    {useSavedPhotos && savedMedia && (
+                        <p style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--color-success)', marginTop: 'var(--space-md)' }}>
+                            ✓ {t('savedPhotosReady')}
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -564,11 +700,24 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             {step === 4 && (
                 <div className="animate-fade-in-up">
                     <h3 style={{ marginBottom: 'var(--space-xs)' }}>{t('voiceTitle')}</h3>
-                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>
-                        {t('voiceDesc')}
-                    </p>
+                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>{t('voiceDesc')}</p>
 
-                    <VoiceRecorder audioFile={audioFile} onAudioChange={setAudioFile} />
+                    {/* Saved audio banner */}
+                    {savedMedia?.voiceRecording && <SavedMediaBanner mode="audio" />}
+
+                    {/* Show recorder only when not using saved audio */}
+                    {!useSavedAudio && <VoiceRecorder audioFile={audioFile} onAudioChange={setAudioFile} />}
+
+                    {useSavedAudio && savedMedia?.voiceRecording && (
+                        <div style={{
+                            padding: 'var(--space-md)', marginBottom: 'var(--space-xl)',
+                            background: 'rgba(52,211,153,0.05)', border: '1px solid rgba(52,211,153,0.2)',
+                            borderRadius: 'var(--radius-md)', textAlign: 'center',
+                            fontSize: '0.85rem', color: 'var(--color-success)',
+                        }}>
+                            🎙️ {t('savedAudioReady')}
+                        </div>
+                    )}
 
                     {/* Social Media */}
                     <div style={{
@@ -585,26 +734,18 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                             </div>
                         </div>
 
-                        {/* Primary Social */}
                         <div className="social-grid" style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
                             <select className="form-select" value={formData.socialPlatform} onChange={(e) => updateField('socialPlatform', e.target.value)}>
-                                {SOCIAL_PLATFORMS.map((p) => (
-                                    <option key={p.value} value={p.value}>{p.label}</option>
-                                ))}
+                                {SOCIAL_PLATFORMS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </select>
                             <input className="form-input" type="text" placeholder={t('usernamePlaceholder')} value={formData.socialUsername} onChange={(e) => updateField('socialUsername', e.target.value)} />
                         </div>
 
-                        {/* Optional Second Social */}
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }}>
-                            {t('additionalSocial')}
-                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }}>{t('additionalSocial')}</div>
                         <div className="social-grid" style={{ display: 'grid', gridTemplateColumns: '180px 1fr', gap: 'var(--space-sm)' }}>
                             <select className="form-select" value={formData.socialPlatform2} onChange={(e) => updateField('socialPlatform2', e.target.value)}>
                                 <option value="">{t('selectPlatform')}</option>
-                                {SOCIAL_PLATFORMS.map((p) => (
-                                    <option key={p.value} value={p.value}>{p.label}</option>
-                                ))}
+                                {SOCIAL_PLATFORMS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </select>
                             <input className="form-input" type="text" placeholder={t('usernamePlaceholder')} value={formData.socialUsername2} onChange={(e) => updateField('socialUsername2', e.target.value)} />
                         </div>
@@ -616,37 +757,30 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             {step === 5 && (
                 <div className="animate-fade-in-up">
                     <h3 style={{ marginBottom: 'var(--space-xs)' }}>{t('reviewTitle')}</h3>
-                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>
-                        {t('reviewDesc')}
-                    </p>
+                    <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>{t('reviewDesc')}</p>
 
-                    {/* Summary Card */}
                     <div className="glass-card" style={{ padding: 'var(--space-xl)', marginBottom: 'var(--space-xl)' }}>
                         <h4 style={{ marginBottom: 'var(--space-md)' }}>{t('summary')}</h4>
                         <div className="form-grid-2col" style={{ fontSize: '0.85rem' }}>
-                            <div>
-                                <span style={{ color: 'var(--text-tertiary)' }}>{t('name')}</span>{' '}
-                                <span style={{ color: 'var(--text-primary)' }}>{formData.fullName}</span>
-                            </div>
-                            <div>
-                                <span style={{ color: 'var(--text-tertiary)' }}>{t('emailLabel')}</span>{' '}
-                                <span style={{ color: 'var(--text-primary)' }}>{formData.email}</span>
-                            </div>
-                            <div>
-                                <span style={{ color: 'var(--text-tertiary)' }}>{t('ageLabel')}</span>{' '}
-                                <span style={{ color: 'var(--text-primary)' }}>{formData.age}</span>
-                            </div>
-                            <div>
-                                <span style={{ color: 'var(--text-tertiary)' }}>{t('genderLabel')}</span>{' '}
-                                <span style={{ color: 'var(--text-primary)' }}>{formData.gender}</span>
-                            </div>
+                            <div><span style={{ color: 'var(--text-tertiary)' }}>{t('name')}</span>{' '}<span style={{ color: 'var(--text-primary)' }}>{formData.fullName}</span></div>
+                            <div><span style={{ color: 'var(--text-tertiary)' }}>{t('emailLabel')}</span>{' '}<span style={{ color: 'var(--text-primary)' }}>{formData.email}</span></div>
+                            <div><span style={{ color: 'var(--text-tertiary)' }}>{t('ageLabel')}</span>{' '}<span style={{ color: 'var(--text-primary)' }}>{formData.age}</span></div>
+                            <div><span style={{ color: 'var(--text-tertiary)' }}>{t('genderLabel')}</span>{' '}<span style={{ color: 'var(--text-primary)' }}>{formData.gender}</span></div>
                             <div>
                                 <span style={{ color: 'var(--text-tertiary)' }}>{t('photos')}</span>{' '}
-                                <span style={{ color: 'var(--success)' }}>{Object.values(photos).filter(Boolean).length} {t('uploaded')}</span>
+                                <span style={{ color: 'var(--success)' }}>
+                                    {useSavedPhotos && savedMedia
+                                        ? `✓ ${t('savedBadge')}`
+                                        : `${Object.values(photos).filter(Boolean).length} ${t('uploaded')}`}
+                                </span>
                             </div>
                             <div>
                                 <span style={{ color: 'var(--text-tertiary)' }}>{t('voice')}</span>{' '}
-                                <span style={{ color: audioFile ? 'var(--success)' : 'var(--error)' }}>{audioFile ? '✓ ' + t('voiceUploaded') : '✗ ' + t('voiceMissing')}</span>
+                                <span style={{ color: audioReady ? 'var(--success)' : 'var(--error)' }}>
+                                    {audioReady
+                                        ? (useSavedAudio ? `✓ ${t('savedBadge')}` : `✓ ${t('voiceUploaded')}`)
+                                        : `✗ ${t('voiceMissing')}`}
+                                </span>
                             </div>
                             <div>
                                 <span style={{ color: 'var(--text-tertiary)' }}>{t('social')}</span>{' '}
@@ -657,23 +791,20 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         </div>
                     </div>
 
-                    {/* Consent Checkboxes */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
                         {[
-                            { key: 'consent_media', text: t('consent1') },
-                            { key: 'consent_voluntary', text: t('consent2') },
-                            { key: 'consent_privacy', text: t('consent3') },
+                            { key: 'consent_media',      text: t('consent1') },
+                            { key: 'consent_voluntary',  text: t('consent2') },
+                            { key: 'consent_privacy',    text: t('consent3') },
                         ].map((item) => (
                             <label
                                 key={item.key}
                                 style={{
-                                    display: 'flex',
-                                    gap: 'var(--space-md)',
+                                    display: 'flex', gap: 'var(--space-md)',
                                     padding: 'var(--space-lg)',
                                     background: consents[item.key as keyof typeof consents] ? 'rgba(52, 211, 153, 0.05)' : 'var(--bg-secondary)',
                                     border: `1px solid ${consents[item.key as keyof typeof consents] ? 'rgba(52, 211, 153, 0.3)' : 'var(--border-subtle)'}`,
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer',
+                                    borderRadius: 'var(--radius-md)', cursor: 'pointer',
                                     transition: 'all var(--transition-fast)',
                                 }}
                             >
@@ -681,17 +812,9 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                                     type="checkbox"
                                     checked={consents[item.key as keyof typeof consents]}
                                     onChange={(e) => setConsents((prev) => ({ ...prev, [item.key]: e.target.checked }))}
-                                    style={{
-                                        width: '20px',
-                                        height: '20px',
-                                        accentColor: 'var(--accent-gold)',
-                                        flexShrink: 0,
-                                        marginTop: '2px',
-                                    }}
+                                    style={{ width: '20px', height: '20px', accentColor: 'var(--accent-gold)', flexShrink: 0, marginTop: '2px' }}
                                 />
-                                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                                    {item.text}
-                                </span>
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{item.text}</span>
                             </label>
                         ))}
                     </div>
@@ -700,10 +823,8 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
 
             {/* ═══ Navigation Buttons ═══ */}
             <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                marginTop: 'var(--space-2xl)',
-                paddingTop: 'var(--space-lg)',
+                display: 'flex', justifyContent: 'space-between',
+                marginTop: 'var(--space-2xl)', paddingTop: 'var(--space-lg)',
                 borderTop: '1px solid var(--border-subtle)',
             }}>
                 {step > 1 ? (
@@ -733,7 +854,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                         {uploadProgress ? (
                             <>
                                 <div className="loading-spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
-                                Uploading {uploadProgress.current}/{uploadProgress.total}…
+                                {uploadProgress.current}/{uploadProgress.total}…
                             </>
                         ) : submitting ? (
                             <>

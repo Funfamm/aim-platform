@@ -585,7 +585,18 @@
     "photoOptional2": "Additional Shot (Optional)",
     "photoOptional2Desc": "Another angle or look you want to showcase",
     "removePhoto": "Remove photo",
-    "tapToReplace": "Tap to replace"
+    "tapToReplace": "Tap to replace",
+    "savedMediaFound": "We found your saved media from a previous application.",
+    "useSavedPhotos": "Use Saved Photos",
+    "uploadNewPhotos": "Upload New Photos",
+    "useSavedAudio": "Use Saved Recording",
+    "uploadNewAudio": "Record New",
+    "savedBadge": "Saved",
+    "savedPhotosWarning": "Using your saved photos. Tap Upload New Photos to change them.",
+    "savedAudioWarning": "Using your saved voice recording. Tap Record New to change it.",
+    "copyingFiles": "Copying your saved files...",
+    "savedPhotosReady": "Your saved photos are ready to submit.",
+    "savedAudioReady": "Your saved recording is ready to submit."
   },
   "training": {
     "hub": "Training Hub",

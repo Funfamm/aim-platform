@@ -590,7 +590,18 @@
     "photoOptional2": "صورة إضافية (اختياري)",
     "photoOptional2Desc": "زاوية أخرى أو مظهر تريد إبرازه",
     "removePhoto": "حذف الصورة",
-    "tapToReplace": "اضغط للاستبدال"
+    "tapToReplace": "اضغط للاستبدال",
+    "savedMediaFound": "وجدنا ملفاتك المحفوظة من طلب سابق.",
+    "useSavedPhotos": "استخدام الصور المحفوظة",
+    "uploadNewPhotos": "رفع صور جديدة",
+    "useSavedAudio": "استخدام التسجيل المحفوظ",
+    "uploadNewAudio": "تسجيل جديد",
+    "savedBadge": "محفوظ",
+    "savedPhotosWarning": "يتم استخدام صورك المحفوظة. اضغط على رفع صور جديدة لتغييرها.",
+    "savedAudioWarning": "يتم استخدام تسجيلك المحفوظ. اضغط على تسجيل جديد لتغييره.",
+    "copyingFiles": "جارٍ نسخ ملفاتك المحفوظة...",
+    "savedPhotosReady": "صورك المحفوظة جاهزة للإرسال.",
+    "savedAudioReady": "تسجيلك المحفوظ جاهز للإرسال."
   },
   "training": {
     "hub": "مركز التدريب",
