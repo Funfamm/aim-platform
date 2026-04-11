@@ -127,11 +127,11 @@ export default async function ScriptCallsPage() {
                     text-decoration: none;
                     border-radius: 18px;
                     overflow: hidden;
-                    background: linear-gradient(145deg, rgba(14,14,20,0.92), rgba(10,10,16,0.85));
+                    background: linear-gradient(145deg, rgba(14,14,20,0.55), rgba(10,10,16,0.45));
                     border: 1px solid rgba(212,168,83,0.15);
-                    backdrop-filter: blur(24px) saturate(160%);
-                    -webkit-backdrop-filter: blur(24px) saturate(160%);
-                    box-shadow: 0 6px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+                    backdrop-filter: blur(28px) saturate(180%);
+                    -webkit-backdrop-filter: blur(28px) saturate(180%);
+                    box-shadow: 0 6px 28px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07);
                     transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
                     position: relative;
                 }
