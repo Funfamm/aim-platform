@@ -358,7 +358,6 @@ html {
   -ms-text-size-adjust: 100%;
   overflow-x: hidden;
   touch-action: pan-y;
-  overscroll-behavior-y: none;
 }
 
 body {
