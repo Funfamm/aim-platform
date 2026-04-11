@@ -30,33 +30,39 @@ export default async function ScriptCallsPage() {
     try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift */ }
     const enabled = settings?.scriptCallsEnabled ?? false
 
-    const calls = enabled ? await prisma.scriptCall.findMany({
-        where: { isPublic: true, status: 'open' },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-        include: {
-            project: { select: { title: true, coverImage: true } },
-            _count: { select: { submissions: true } },
-        },
-    }) : []
-
-    type TransMap = Record<string, Record<string, string>>
-    function getLocalized(call: { contentTranslations?: string | null }, field: string, fallback: string): string {
-        if (!call.contentTranslations || locale === 'en') return fallback
+    let calls: Awaited<ReturnType<typeof prisma.scriptCall.findMany>> = []
+    if (enabled) {
         try {
-            const map = JSON.parse(call.contentTranslations) as TransMap
-            return map[locale]?.[field] || fallback
-        } catch { return fallback }
+            calls = await prisma.scriptCall.findMany({
+                where: { isPublic: true, status: 'open' },
+                orderBy: { createdAt: 'desc' },
+                take: 50,
+                include: {
+                    project: { select: { title: true, coverImage: true } },
+                    _count: { select: { submissions: true } },
+                },
+            })
+        } catch (e) {
+            console.error('[scripts] findMany (open) failed — possible schema drift:', e)
+        }
     }
 
-    const comingSoon = enabled ? await prisma.scriptCall.findMany({
-        where: { isPublic: true, status: { not: 'open' } },
-        orderBy: { createdAt: 'desc' },
-        take: 20,
-        include: {
-            project: { select: { title: true, coverImage: true } },
-        },
-    }) : []
+
+    let comingSoon: Awaited<ReturnType<typeof prisma.scriptCall.findMany>> = []
+    if (enabled) {
+        try {
+            comingSoon = await prisma.scriptCall.findMany({
+                where: { isPublic: true, status: { not: 'open' } },
+                orderBy: { createdAt: 'desc' },
+                take: 20,
+                include: {
+                    project: { select: { title: true, coverImage: true } },
+                },
+            })
+        } catch (e) {
+            console.error('[scripts] findMany (comingSoon) failed — possible schema drift:', e)
+        }
+    }
 
     const userId = session.userId as string
     let subscribedIds = new Set<string>()
