@@ -1049,7 +1049,7 @@
     "formSubmitBtn": "Enviar guión",
     "formSubmitting": "Enviando...",
     "formSuccessTitle": "¡Guión enviado!",
-    "formSuccessDesc": "Tu guión ha sido recibido. Nuestra IA lo analizará y nuestro equipo revisará las mejores propuestas.",
+    "formSuccessDesc": "Tu guión ha sido recibido. Nuestro equipo revisará las propuestas y se pondrá en contacto si la tuya es seleccionada.",
     "formErrorGeneric": "Error al enviar. Por favor, inténtalo de nuevo.",
     "formErrorRequired": "Este campo es obligatorio.",
     "formErrorInvalidEmail": "Por favor, ingresa un correo electrónico válido.",

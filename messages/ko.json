@@ -1049,7 +1049,7 @@
     "formSubmitBtn": "스크립트 제출",
     "formSubmitting": "제출 중...",
     "formSuccessTitle": "스크립트가 제출되었습니다!",
-    "formSuccessDesc": "시나리오가 접수되었습니다. AI가 분석하고 팀이 상위 제출물을 검토합니다.",
+    "formSuccessDesc": "시나리오가 접수되었습니다. 팀이 모든 제출물을 검토하고 선정 시 연락드리겠습니다.",
     "formErrorGeneric": "제출에 실패했습니다. 다시 시도해 주세요.",
     "formErrorRequired": "이 필드는 필수입니다.",
     "formErrorInvalidEmail": "유효한 이메일 주소를 입력해 주세요.",

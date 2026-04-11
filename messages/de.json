@@ -1049,7 +1049,7 @@
     "formSubmitBtn": "Drehbuch einreichen",
     "formSubmitting": "Wird eingereicht...",
     "formSuccessTitle": "Drehbuch eingereicht!",
-    "formSuccessDesc": "Dein Drehbuch wurde empfangen. Unsere KI analysiert es und unser Team prüft die besten Einsendungen.",
+    "formSuccessDesc": "Dein Drehbuch wurde empfangen. Unser Team wird die Einreichungen prüfen und sich melden, falls dein Beitrag ausgewählt wird.",
     "formErrorGeneric": "Einreichung fehlgeschlagen. Bitte versuche es erneut.",
     "formErrorRequired": "Dieses Feld ist erforderlich.",
     "formErrorInvalidEmail": "Bitte eine gültige E-Mail-Adresse eingeben.",

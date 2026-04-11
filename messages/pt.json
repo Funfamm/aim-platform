@@ -1049,7 +1049,7 @@
     "formSubmitBtn": "Enviar roteiro",
     "formSubmitting": "Enviando...",
     "formSuccessTitle": "Roteiro enviado!",
-    "formSuccessDesc": "Seu roteiro foi recebido. Nossa IA irá analisá-lo e nossa equipe revisará as melhores submissões.",
+    "formSuccessDesc": "Seu roteiro foi recebido. Nossa equipe analisará as submissões e entrará em contato caso o seu seja selecionado.",
     "formErrorGeneric": "Falha no envio. Por favor, tente novamente.",
     "formErrorRequired": "Este campo é obrigatório.",
     "formErrorInvalidEmail": "Por favor, insira um endereço de e-mail válido.",

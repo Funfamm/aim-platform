@@ -1046,7 +1046,7 @@
     "formSubmitBtn": "Submit Script",
     "formSubmitting": "Submitting...",
     "formSuccessTitle": "Script Submitted!",
-    "formSuccessDesc": "Your screenplay has been received. Our AI will analyze it and our team will review the top submissions.",
+    "formSuccessDesc": "Your screenplay has been received. Our team will review the submissions and reach out if yours is selected.",
     "formErrorGeneric": "Submission failed. Please try again.",
     "formErrorRequired": "This field is required.",
     "formErrorInvalidEmail": "Please enter a valid email address.",

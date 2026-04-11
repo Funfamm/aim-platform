@@ -1049,7 +1049,7 @@
     "formSubmitBtn": "提交剧本",
     "formSubmitting": "提交中...",
     "formSuccessTitle": "剧本已提交！",
-    "formSuccessDesc": "您的剧本已收到。我们的AI将进行分析，团队将审阅最优秀的作品。",
+    "formSuccessDesc": "您的剧本已收到。我们的团队将审阅所有作品，如您的作品入选，我们将与您联系。",
     "formErrorGeneric": "提交失败，请重试。",
     "formErrorRequired": "此字段为必填项。",
     "formErrorInvalidEmail": "请输入有效的电子邮件地址。",

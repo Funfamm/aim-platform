@@ -1050,7 +1050,7 @@
     "formSubmitBtn": "脚本を応募する",
     "formSubmitting": "送信中...",
     "formSuccessTitle": "脚本を応募しました！",
-    "formSuccessDesc": "脚本を受け取りました。AIが分析し、上位の応募作をチームがレビューします。",
+    "formSuccessDesc": "脚本を受け取りました。チームがすべての応募作品を審査し、選ばれた場合はご連絡いたします。",
     "formErrorGeneric": "応募に失敗しました。もう一度お試しください。",
     "formErrorRequired": "このフィールドは必須です。",
     "formErrorInvalidEmail": "有効なメールアドレスを入力してください。",
