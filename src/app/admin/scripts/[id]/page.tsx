@@ -119,9 +119,33 @@ export default function AdminScriptCallDetailPage() {
     const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set())
     const [analyzeAllLoading, setAnalyzeAllLoading] = useState(false)
     const [expanded, setExpanded] = useState<string | null>(null)
-    const [confirmAction, setConfirmAction] = useState<{ subId: string; status: string } | null>(null)
     const [activeTab, setActiveTab] = useState<'all' | 'analyzed' | 'shortlisted' | 'selected'>('all')
-    const [scoreThreshold, setScoreThreshold] = useState(60) // default: 60 = shortlist bar
+    const [scoreThreshold, setScoreThreshold] = useState(60)
+
+    // ── Single-script confirm modal (enhanced with threshold guard) ────────
+    const [confirmAction, setConfirmAction] = useState<{
+        subId: string
+        status: string
+        isBelowThreshold?: boolean  // triggers override modal variant
+        score?: number
+    } | null>(null)
+    const [overrideChecked, setOverrideChecked] = useState(false)
+
+    // ── Bulk selection ──────────────────────────────────────────────────────
+    const [selectedSubs, setSelectedSubs] = useState<Set<string>>(new Set())
+    const [bulkAction, setBulkAction] = useState('')
+    const [bulkLoading, setBulkLoading] = useState(false)
+    const [bulkToast, setBulkToast] = useState<string | null>(null)
+    // Threshold override modal for bulk shortlist
+    const [bulkOverrideModal, setBulkOverrideModal] = useState<{
+        belowIds: string[];   // submission IDs below threshold
+        aboveIds: string[];   // submission IDs at/above threshold
+        belowTitles: string[] // titles for display
+    } | null>(null)
+    // Bulk decline confirmation modal
+    const [bulkDeclineModal, setBulkDeclineModal] = useState(false)
+    const [bulkDeclineChecked, setBulkDeclineChecked] = useState(false)
+    const [bulkDeclineNote, setBulkDeclineNote] = useState('')
 
     const fetchData = useCallback(async () => {
         const [callRes, subRes] = await Promise.all([
@@ -169,6 +193,109 @@ export default function AdminScriptCallDetailPage() {
             body: JSON.stringify({ status }),
         })
         fetchData()
+    }
+
+    // ── Bulk action helpers ─────────────────────────────────────────────────
+    const toggleSubSelect = (subId: string) => {
+        setSelectedSubs(prev => {
+            const next = new Set(prev)
+            if (next.has(subId)) next.delete(subId); else next.add(subId)
+            return next
+        })
+    }
+
+    const selectAllVisible = () => {
+        const visible = filteredSubsIds()
+        if (selectedSubs.size === visible.length) setSelectedSubs(new Set())
+        else setSelectedSubs(new Set(visible))
+    }
+
+    // Helper to get current visible submission IDs (called after filteredSubs is computed)
+    const filteredSubsIds = () => {
+        const analyzed = submissions.filter(s => s.analysis)
+        const shortlisted = submissions.filter(s => s.status === 'shortlisted')
+        const selected = submissions.filter(s => s.status === 'selected')
+        const filtered = activeTab === 'all' ? submissions
+            : activeTab === 'analyzed' ? analyzed
+            : activeTab === 'shortlisted' ? shortlisted
+            : selected
+        return filtered.map(s => s.id)
+    }
+
+    const applyBulkAction = async (action: string, ids: string[], note?: string) => {
+        setBulkLoading(true)
+        try {
+            const res = await fetch(`/api/script-calls/${id}/submissions/bulk`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ submissionIds: ids, status: action, statusNote: note }),
+            })
+            if (res.ok) {
+                const data = await res.json()
+                let msg = `✅ ${data.updated} updated`
+                if (data.notified > 0) msg += ` · ${data.notified} notified`
+                if (data.skipped > 0) msg += ` · ${data.skipped} already notified (skipped)`
+                setBulkToast(msg)
+                setTimeout(() => setBulkToast(null), 5000)
+            } else {
+                setBulkToast('⚠️ Bulk action failed. Please try again.')
+                setTimeout(() => setBulkToast(null), 4000)
+            }
+        } catch {
+            setBulkToast('⚠️ Network error.')
+            setTimeout(() => setBulkToast(null), 4000)
+        } finally {
+            setBulkLoading(false)
+            setSelectedSubs(new Set())
+            setBulkAction('')
+            fetchData()
+        }
+    }
+
+    const exportCsv = async (ids: string[]) => {
+        const res = await fetch(`/api/script-calls/${id}/submissions/export-csv`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ submissionIds: ids }),
+        })
+        if (!res.ok) return
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = `AIM_Scripts_${new Date().toISOString().slice(0, 10)}.csv`
+        document.body.appendChild(a); a.click()
+        document.body.removeChild(a); URL.revokeObjectURL(url)
+        setSelectedSubs(new Set()); setBulkAction('')
+    }
+
+    const handleBulkApply = () => {
+        if (!bulkAction || selectedSubs.size === 0) return
+        const ids = [...selectedSubs]
+
+        if (bulkAction === 'export_csv') { exportCsv(ids); return }
+
+        if (bulkAction === 'rejected') {
+            setBulkDeclineChecked(false)
+            setBulkDeclineNote('')
+            setBulkDeclineModal(true)
+            return
+        }
+
+        if (bulkAction === 'shortlisted') {
+            const selectedSubmissions = submissions.filter(s => selectedSubs.has(s.id))
+            const below = selectedSubmissions.filter(s => s.analysis && s.analysis.overallScore < scoreThreshold)
+            const above = selectedSubmissions.filter(s => !s.analysis || s.analysis.overallScore >= scoreThreshold)
+            if (below.length > 0) {
+                setBulkOverrideModal({
+                    belowIds: below.map(s => s.id),
+                    aboveIds: above.map(s => s.id),
+                    belowTitles: below.map(s => s.title),
+                })
+                return
+            }
+        }
+
+        applyBulkAction(bulkAction, ids)
     }
 
     if (loading) return (
@@ -519,7 +646,7 @@ export default function AdminScriptCallDetailPage() {
             )}
 
             {/* ── Filter Tabs ── */}
-            <div style={{ display: 'flex', gap: '6px', marginBottom: '18px', animation: 'fadeUp 0.4s ease 0.15s both' }}>
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', animation: 'fadeUp 0.4s ease 0.15s both', alignItems: 'center', flexWrap: 'wrap' }}>
                 {([
                     { key: 'all', label: `All (${submissions.length})` },
                     { key: 'analyzed', label: `Analyzed (${analyzed.length})` },
@@ -534,10 +661,93 @@ export default function AdminScriptCallDetailPage() {
                         {tab.label}
                     </button>
                 ))}
+                {filteredSubs.length > 0 && (
+                    <button
+                        onClick={selectAllVisible}
+                        style={{
+                            marginLeft: 'auto', fontSize: '0.68rem', fontWeight: 600, padding: '5px 12px',
+                            borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)',
+                            background: selectedSubs.size === filteredSubs.length ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)',
+                            color: selectedSubs.size === filteredSubs.length ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        {selectedSubs.size === filteredSubs.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                )}
             </div>
+
+            {/* ── Bulk Action Bar ── */}
+            {selectedSubs.size > 0 && (
+                <div style={{
+                    position: 'sticky', top: '70px', zIndex: 40,
+                    marginBottom: '12px', padding: '10px 14px',
+                    borderRadius: '10px', border: '1px solid rgba(212,168,83,0.2)',
+                    background: 'linear-gradient(135deg, rgba(212,168,83,0.06), rgba(20,24,32,0.95))',
+                    backdropFilter: 'blur(12px)',
+                    display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+                    animation: 'fadeUp 0.2s ease both',
+                }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--accent-gold)' }}>
+                        {selectedSubs.size} selected
+                    </span>
+                    <select
+                        value={bulkAction}
+                        onChange={e => setBulkAction(e.target.value)}
+                        style={{
+                            padding: '6px 10px', borderRadius: '7px',
+                            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                            color: 'var(--text-secondary)', fontSize: '0.75rem', fontFamily: 'inherit',
+                            cursor: 'pointer', colorScheme: 'dark',
+                        }}
+                    >
+                        <option value="">Bulk Action...</option>
+                        <option value="analyzed">→ Mark Analyzed</option>
+                        <option value="shortlisted">⭐ Shortlist</option>
+                        <option value="rejected">✕ Decline</option>
+                        <option value="export_csv">📊 Export CSV</option>
+                    </select>
+                    <button
+                        onClick={handleBulkApply}
+                        disabled={!bulkAction || bulkLoading}
+                        style={{
+                            padding: '6px 14px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '7px',
+                            cursor: !bulkAction || bulkLoading ? 'not-allowed' : 'pointer',
+                            opacity: !bulkAction ? 0.4 : 1,
+                            background: bulkAction === 'rejected' ? 'rgba(244,63,94,0.1)' : 'rgba(212,168,83,0.1)',
+                            border: `1px solid ${bulkAction === 'rejected' ? 'rgba(244,63,94,0.25)' : 'rgba(212,168,83,0.25)'}`,
+                            color: bulkAction === 'rejected' ? '#f43f5e' : 'var(--accent-gold)',
+                        }}
+                    >
+                        {bulkLoading ? '...' : 'Apply'}
+                    </button>
+                    <button
+                        onClick={() => setSelectedSubs(new Set())}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '0.7rem', cursor: 'pointer' }}
+                    >
+                        Clear
+                    </button>
+                </div>
+            )}
+
+            {/* ── Bulk Toast ── */}
+            {bulkToast && (
+                <div style={{
+                    padding: '10px 16px', marginBottom: '12px', borderRadius: '8px',
+                    background: bulkToast.startsWith('⚠️') ? 'rgba(245,158,11,0.08)' : 'rgba(34,197,94,0.08)',
+                    border: `1px solid ${bulkToast.startsWith('⚠️') ? 'rgba(245,158,11,0.25)' : 'rgba(34,197,94,0.2)'}`,
+                    fontSize: '0.78rem', fontWeight: 600,
+                    color: bulkToast.startsWith('⚠️') ? '#f59e0b' : '#22c55e',
+                    animation: 'fadeUp 0.2s ease both',
+                }}>
+                    {bulkToast}
+                </div>
+            )}
 
             {/* ── Submissions List ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+
                 {filteredSubs.map((sub, idx) => {
                     const sc = STATUS_CONFIG[sub.status] || STATUS_CONFIG.submitted
                     const isExpanded = expanded === sub.id
@@ -654,25 +864,45 @@ export default function AdminScriptCallDetailPage() {
                                             const meta = ACTION_META[nextStatus]
                                             if (!meta) return null
                                             const gated = nextStatus === 'shortlisted' && !sub.analysis
+                                            // Threshold guard: below-threshold shortlist gets a warning style
+                                            const isBelowThreshold = nextStatus === 'shortlisted'
+                                                && sub.analysis
+                                                && sub.analysis.overallScore < scoreThreshold
                                             return (
                                                 <button
                                                     key={nextStatus}
                                                     className="action-btn"
-                                                    onClick={() => !gated && setConfirmAction({ subId: sub.id, status: nextStatus })}
-                                                    title={gated ? 'Run AI analysis before shortlisting' : meta.label}
+                                                    onClick={() => {
+                                                        if (gated) return
+                                                        if (isBelowThreshold) {
+                                                            // Trigger threshold override modal instead
+                                                            setOverrideChecked(false)
+                                                            setConfirmAction({
+                                                                subId: sub.id,
+                                                                status: nextStatus,
+                                                                isBelowThreshold: true,
+                                                                score: sub.analysis?.overallScore,
+                                                            })
+                                                        } else {
+                                                            setConfirmAction({ subId: sub.id, status: nextStatus })
+                                                        }
+                                                    }}
+                                                    title={gated ? 'Run AI analysis before shortlisting' : isBelowThreshold ? `Score ${Math.round(sub.analysis?.overallScore ?? 0)} is below threshold of ${scoreThreshold} — click to override` : meta.label}
                                                     style={{
                                                         opacity: gated ? 0.35 : 1,
                                                         cursor: gated ? 'not-allowed' : 'pointer',
-                                                        background: meta.danger
+                                                        background: isBelowThreshold
+                                                            ? 'rgba(245,158,11,0.08)'
+                                                            : meta.danger
                                                             ? 'rgba(244,63,94,0.07)'
                                                             : meta.success
                                                             ? 'rgba(52,211,153,0.08)'
                                                             : 'rgba(212,168,83,0.08)',
-                                                        border: `1px solid ${meta.danger ? 'rgba(244,63,94,0.2)' : meta.success ? 'rgba(52,211,153,0.2)' : 'rgba(212,168,83,0.2)'}`,
-                                                        color: meta.danger ? '#f43f5e' : meta.success ? '#34d399' : 'var(--accent-gold)',
+                                                        border: `1px solid ${isBelowThreshold ? 'rgba(245,158,11,0.3)' : meta.danger ? 'rgba(244,63,94,0.2)' : meta.success ? 'rgba(52,211,153,0.2)' : 'rgba(212,168,83,0.2)'}`,
+                                                        color: isBelowThreshold ? '#f59e0b' : meta.danger ? '#f43f5e' : meta.success ? '#34d399' : 'var(--accent-gold)',
                                                     }}
                                                 >
-                                                    {meta.icon} {meta.label}
+                                                    {isBelowThreshold ? '⚠️' : meta.icon} {meta.label}
                                                 </button>
                                             )
                                         })
@@ -884,10 +1114,10 @@ export default function AdminScriptCallDetailPage() {
                 </div>
             )}
 
-            {/* ─── Confirm Modal ─── */}
+            {/* ─── Single-Script Confirm Modal (+ Threshold Override Variant) ─── */}
             {confirmAction && (
                 <div
-                    onClick={() => setConfirmAction(null)}
+                    onClick={() => { setConfirmAction(null); setOverrideChecked(false) }}
                     style={{
                         position: 'fixed', inset: 0, zIndex: 9000,
                         background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
@@ -898,69 +1128,178 @@ export default function AdminScriptCallDetailPage() {
                         onClick={e => e.stopPropagation()}
                         style={{
                             background: 'linear-gradient(145deg, #141820, #101318)',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            border: confirmAction.isBelowThreshold
+                                ? '1px solid rgba(245,158,11,0.3)'
+                                : '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '16px', padding: '32px',
-                            maxWidth: '420px', width: '100%',
+                            maxWidth: '440px', width: '100%',
                             boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
                             animation: 'fadeUp 0.25s ease both',
                         }}
                     >
                         <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '12px' }}>
-                            {confirmAction.status === 'rejected' ? '⚠️' : confirmAction.status === 'selected' ? '🏆' : '✅'}
+                            {confirmAction.isBelowThreshold ? '⚠️' : confirmAction.status === 'rejected' ? '⚠️' : confirmAction.status === 'selected' ? '🏆' : '✅'}
                         </div>
                         <div style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>
-                            Confirm Action
+                            {confirmAction.isBelowThreshold ? 'Override Shortlist Threshold?' : 'Confirm Action'}
                         </div>
-                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: 1.6, textAlign: 'center' }}>
-                            Move this submission to{' '}
-                            <strong style={{ color: 'var(--text-primary)' }}>
-                                {ACTION_META[confirmAction.status]?.label || confirmAction.status}
-                            </strong>?
+
+                        {confirmAction.isBelowThreshold ? (
+                            <>
+                                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.6, textAlign: 'center' }}>
+                                    This script scored <strong style={{ color: '#f59e0b' }}>{Math.round(confirmAction.score ?? 0)}</strong> against your threshold of <strong style={{ color: 'var(--accent-gold)' }}>{scoreThreshold}</strong>.
+                                    Shortlisting it would override the rule.
+                                </div>
+                                {/* Score vs Threshold bar */}
+                                <div style={{ marginBottom: '18px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                                        <span>AI Score: {Math.round(confirmAction.score ?? 0)}</span>
+                                        <span>Threshold: {scoreThreshold}</span>
+                                    </div>
+                                    <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', position: 'relative', overflow: 'visible' }}>
+                                        <div style={{ height: '100%', borderRadius: '3px', background: 'rgba(245,158,11,0.5)', width: `${Math.min(100, confirmAction.score ?? 0)}%`, transition: 'width 0.3s ease' }} />
+                                        {/* Threshold marker */}
+                                        <div style={{
+                                            position: 'absolute', top: '-3px', bottom: '-3px',
+                                            left: `${scoreThreshold}%`, width: '2px',
+                                            background: 'rgba(212,168,83,0.8)',
+                                            borderRadius: '1px',
+                                        }} />
+                                    </div>
+                                </div>
+                                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '20px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={overrideChecked}
+                                        onChange={e => setOverrideChecked(e.target.checked)}
+                                        style={{ accentColor: '#f59e0b', marginTop: '2px', flexShrink: 0 }}
+                                    />
+                                    I understand this script is below my scoring threshold and I am overriding the recommendation.
+                                </label>
+                                <div style={{ display: 'flex', gap: '10px' }}>
+                                    <button onClick={() => { setConfirmAction(null); setOverrideChecked(false) }} style={{ flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 600, borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'var(--text-tertiary)', cursor: 'pointer' }}>Cancel</button>
+                                    <button
+                                        disabled={!overrideChecked}
+                                        onClick={() => { updateStatus(confirmAction.subId, 'shortlisted'); setConfirmAction(null); setOverrideChecked(false) }}
+                                        style={{ flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 700, borderRadius: '10px', cursor: overrideChecked ? 'pointer' : 'not-allowed', opacity: overrideChecked ? 1 : 0.4, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}
+                                    >
+                                        Override &amp; Shortlist
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '8px', lineHeight: 1.6, textAlign: 'center' }}>
+                                    Move this submission to{' '}
+                                    <strong style={{ color: 'var(--text-primary)' }}>
+                                        {ACTION_META[confirmAction.status]?.label || confirmAction.status}
+                                    </strong>?
+                                </div>
+                                {confirmAction.status === 'selected' && (
+                                    <div style={{ fontSize: '0.72rem', color: '#34d399', textAlign: 'center', marginBottom: '4px' }}>
+                                        🏆 A selection email will be sent to the author.
+                                    </div>
+                                )}
+                                {confirmAction.status === 'rejected' && (
+                                    <div style={{ fontSize: '0.72rem', color: '#f87171', textAlign: 'center', marginBottom: '4px' }}>
+                                        ✕ A rejection notification will be sent to the author.
+                                    </div>
+                                )}
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
+                                    <button onClick={() => setConfirmAction(null)} style={{ flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 600, borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'var(--text-tertiary)', cursor: 'pointer', transition: 'all 0.15s' }}>Cancel</button>
+                                    <button
+                                        onClick={() => { updateStatus(confirmAction.subId, confirmAction.status); setConfirmAction(null) }}
+                                        style={{ flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 700, borderRadius: '10px', cursor: 'pointer', transition: 'all 0.15s', background: confirmAction.status === 'rejected' ? 'rgba(244,63,94,0.12)' : confirmAction.status === 'selected' ? 'rgba(52,211,153,0.12)' : 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))', border: `1px solid ${confirmAction.status === 'rejected' ? 'rgba(244,63,94,0.3)' : confirmAction.status === 'selected' ? 'rgba(52,211,153,0.3)' : 'rgba(212,168,83,0.35)'}`, color: confirmAction.status === 'rejected' ? '#f43f5e' : confirmAction.status === 'selected' ? '#34d399' : 'var(--accent-gold)' }}
+                                    >
+                                        Confirm
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Bulk Decline Modal ─── */}
+            {bulkDeclineModal && (
+                <div onClick={() => setBulkDeclineModal(false)} style={{ position: 'fixed', inset: 0, zIndex: 9001, background: 'rgba(0,0,0,0.78)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: 'linear-gradient(145deg, #141820, #101318)', border: '1px solid rgba(244,63,94,0.25)', borderRadius: '16px', padding: '32px', maxWidth: '440px', width: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.6)', animation: 'fadeUp 0.25s ease both' }}>
+                        <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '12px' }}>⚠️</div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>Decline {selectedSubs.size} Submission{selectedSubs.size !== 1 ? 's' : ''}?</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.6, textAlign: 'center' }}>
+                            A decline notification will be sent to each author.
                         </div>
-                        {confirmAction.status === 'selected' && (
-                            <div style={{ fontSize: '0.72rem', color: '#34d399', textAlign: 'center', marginBottom: '4px' }}>
-                                🏆 A selection email will be sent to the author.
-                            </div>
-                        )}
-                        {confirmAction.status === 'rejected' && (
-                            <div style={{ fontSize: '0.72rem', color: '#f87171', textAlign: 'center', marginBottom: '4px' }}>
-                                ✕ A rejection notification will be sent to the author.
-                            </div>
-                        )}
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '24px' }}>
+                        <div style={{ marginBottom: '14px' }}>
+                            <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-tertiary)', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Optional note to include in email</div>
+                            <textarea
+                                value={bulkDeclineNote}
+                                onChange={e => setBulkDeclineNote(e.target.value)}
+                                placeholder="Leave blank for the standard decline message..."
+                                rows={3}
+                                style={{ width: '100%', padding: '8px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-primary)', fontSize: '0.78rem', fontFamily: 'inherit', resize: 'vertical', colorScheme: 'dark', boxSizing: 'border-box' }}
+                            />
+                        </div>
+                        <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', marginBottom: '20px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                            <input type="checkbox" checked={bulkDeclineChecked} onChange={e => setBulkDeclineChecked(e.target.checked)} style={{ accentColor: '#f43f5e', marginTop: '2px', flexShrink: 0 }} />
+                            I understand this will send a decline notification to {selectedSubs.size} author{selectedSubs.size !== 1 ? 's' : ''}.
+                        </label>
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                            <button onClick={() => setBulkDeclineModal(false)} style={{ flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 600, borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: 'var(--text-tertiary)', cursor: 'pointer' }}>Cancel</button>
                             <button
-                                onClick={() => setConfirmAction(null)}
-                                style={{
-                                    flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 600,
-                                    borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)',
-                                    background: 'rgba(255,255,255,0.04)', color: 'var(--text-tertiary)',
-                                    cursor: 'pointer', transition: 'all 0.15s',
-                                }}
+                                disabled={!bulkDeclineChecked}
+                                onClick={() => { setBulkDeclineModal(false); applyBulkAction('rejected', [...selectedSubs], bulkDeclineNote || undefined) }}
+                                style={{ flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 700, borderRadius: '10px', cursor: bulkDeclineChecked ? 'pointer' : 'not-allowed', opacity: bulkDeclineChecked ? 1 : 0.4, background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.3)', color: '#f43f5e' }}
+                            >
+                                Decline &amp; Notify
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ─── Bulk Threshold Override Modal ─── */}
+            {bulkOverrideModal && (
+                <div onClick={() => setBulkOverrideModal(null)} style={{ position: 'fixed', inset: 0, zIndex: 9002, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                    <div onClick={e => e.stopPropagation()} style={{ background: 'linear-gradient(145deg, #141820, #101318)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '16px', padding: '32px', maxWidth: '500px', width: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.6)', animation: 'fadeUp 0.25s ease both' }}>
+                        <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '12px' }}>⚠️</div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, marginBottom: '8px', textAlign: 'center' }}>Shortlist Threshold Warning</div>
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.6, textAlign: 'center' }}>
+                            <strong style={{ color: '#f59e0b' }}>{bulkOverrideModal.belowIds.length}</strong> of <strong>{selectedSubs.size}</strong> selected scripts are below your threshold of <strong style={{ color: 'var(--accent-gold)' }}>{scoreThreshold}</strong>:
+                        </div>
+                        <div style={{ borderRadius: '8px', padding: '10px 12px', marginBottom: '18px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)', display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '140px', overflowY: 'auto' }}>
+                            {bulkOverrideModal.belowTitles.map((title, i) => (
+                                <div key={i} style={{ fontSize: '0.72rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ opacity: 0.5 }}>⚠</span> {title}
+                                </div>
+                            ))}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <button
+                                onClick={() => { setBulkOverrideModal(null); applyBulkAction('shortlisted', [...bulkOverrideModal.belowIds, ...bulkOverrideModal.aboveIds]) }}
+                                style={{ padding: '11px', fontSize: '0.8rem', fontWeight: 700, borderRadius: '10px', cursor: 'pointer', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', color: '#f59e0b' }}
+                            >
+                                Override All — Shortlist {selectedSubs.size} scripts
+                            </button>
+                            {bulkOverrideModal.aboveIds.length > 0 && (
+                                <button
+                                    onClick={() => { setBulkOverrideModal(null); applyBulkAction('shortlisted', bulkOverrideModal.aboveIds) }}
+                                    style={{ padding: '11px', fontSize: '0.8rem', fontWeight: 700, borderRadius: '10px', cursor: 'pointer', background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.25)', color: '#34d399' }}
+                                >
+                                    Shortlist Eligible Only — {bulkOverrideModal.aboveIds.length} script{bulkOverrideModal.aboveIds.length !== 1 ? 's' : ''} above threshold
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setBulkOverrideModal(null)}
+                                style={{ padding: '11px', fontSize: '0.8rem', fontWeight: 600, borderRadius: '10px', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)' }}
                             >
                                 Cancel
-                            </button>
-                            <button
-                                onClick={() => { updateStatus(confirmAction.subId, confirmAction.status); setConfirmAction(null) }}
-                                style={{
-                                    flex: 1, padding: '11px', fontSize: '0.8rem', fontWeight: 700,
-                                    borderRadius: '10px', cursor: 'pointer', transition: 'all 0.15s',
-                                    background: confirmAction.status === 'rejected'
-                                        ? 'rgba(244,63,94,0.12)'
-                                        : confirmAction.status === 'selected'
-                                        ? 'rgba(52,211,153,0.12)'
-                                        : 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
-                                    border: `1px solid ${confirmAction.status === 'rejected' ? 'rgba(244,63,94,0.3)' : confirmAction.status === 'selected' ? 'rgba(52,211,153,0.3)' : 'rgba(212,168,83,0.35)'}`,
-                                    color: confirmAction.status === 'rejected' ? '#f43f5e' : confirmAction.status === 'selected' ? '#34d399' : 'var(--accent-gold)',
-                                }}
-                            >
-                                Confirm
                             </button>
                         </div>
                     </div>
                 </div>
             )}
         </>
-            </main>
-        </div>
-    )
+    </main>
+</div>
+)
 }

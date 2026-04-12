@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 
 const {
   R2_ACCOUNT_ID,
@@ -63,4 +63,43 @@ export async function uploadBufferToR2(
   // If no public URL is defined, return the relative bucket key. 
   // videoStorage.ts (or similar proxy routes) will be responsible for resolving this later.
   return key;
+}
+
+/**
+ * Deletes one or more objects from Cloudflare R2 by their public URLs.
+ * Silently skips URLs that don't match R2_PUBLIC_URL (e.g. external CDN links).
+ * Never throws — failures are logged so callers can proceed with DB operations.
+ *
+ * @param urls  Array of full public R2 URLs (e.g. https://cdn.example.com/uploads/file.jpg)
+ * @returns     { deleted: number, failed: number }
+ */
+export async function deleteR2Objects(urls: string[]): Promise<{ deleted: number; failed: number }> {
+  const r2PublicUrl = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+  const bucket = process.env.R2_BUCKET_NAME;
+
+  if (!r2PublicUrl || !bucket) return { deleted: 0, failed: 0 };
+
+  let client: S3Client;
+  try {
+    client = getS3Client();
+  } catch {
+    return { deleted: 0, failed: urls.length };
+  }
+
+  let deleted = 0;
+  let failed = 0;
+
+  for (const url of urls) {
+    if (!url || !url.startsWith(r2PublicUrl)) continue; // skip non-R2 or empty
+    const key = url.slice(r2PublicUrl.length + 1); // strip base URL + leading slash
+    try {
+      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+      deleted++;
+    } catch (err) {
+      console.error(`[r2Upload] Failed to delete R2 object: ${key}`, err);
+      failed++;
+    }
+  }
+
+  return { deleted, failed };
 }

@@ -358,50 +358,44 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                         }}>{t('titleAccent')}</span>
                     </h1>
 
-                    {/* Stats strip */}
+                    {/* Stats pill — same style as Works landing page */}
                     <div className="animate-fade-in-up delay-2" style={{
-                        display: 'flex', gap: 'var(--space-sm)',
-                        marginTop: 'var(--space-md)',
-                        flexWrap: 'wrap' as const,
-                        justifyContent: 'center',
+                        display: 'inline-flex',
+                        gap: 'var(--space-xl)',
+                        marginTop: 'var(--space-lg)',
+                        padding: '0.6rem 1.5rem',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid var(--border-subtle)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
                     }}>
-                        {[
-                            { value: projects.length, label: t('inPipeline'), icon: '🎯' },
-                            { value: projects.reduce((sum, p) => sum + p.castingCalls.length, 0), label: t('openRoles'), icon: '🎭' },
-                            { value: projects.filter(p => p.status === 'in-production').length, label: t('inProduction'), icon: '🎬' },
-                        ].map((stat) => (
-                            <div key={stat.label} style={{
-                                textAlign: 'center',
-                                padding: '14px 24px',
-                                background: 'rgba(13, 15, 20, 0.6)',
-                                backdropFilter: 'blur(16px)',
-                                WebkitBackdropFilter: 'blur(16px)',
-                                borderRadius: 'var(--radius-lg)',
-                                border: '1px solid rgba(228,185,90,0.15)',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                minWidth: '90px',
-                            }}>
-                                {/* Top glow accent */}
-                                <div style={{
-                                    position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
-                                    background: 'linear-gradient(90deg, transparent, rgba(228,185,90,0.4), transparent)',
-                                }} />
-                                <div style={{ fontSize: '0.75rem', marginBottom: '4px' }}>{stat.icon}</div>
-                                <div style={{
-                                    fontFamily: 'var(--font-display)', fontSize: '2rem', fontWeight: 800,
-                                    background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
-                                    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    lineHeight: 1.1,
-                                }}>{stat.value}</div>
-                                <div style={{
-                                    fontSize: '0.6rem', color: 'var(--text-secondary)',
-                                    letterSpacing: '0.1em', textTransform: 'uppercase' as const,
-                                    marginTop: '4px',
-                                }}>{stat.label}</div>
-                            </div>
-                        ))}
+                        <div>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                {projects.length}
+                            </span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                {t('inPipeline')}
+                            </span>
+                        </div>
+                        <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                        <div>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                {projects.filter(p => p.status === 'in-production').length}
+                            </span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                {t('inProduction')}
+                            </span>
+                        </div>
+                        <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                        <div>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                {projects.reduce((sum, p) => sum + p.castingCalls.length, 0)}
+                            </span>
+                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                {t('openRoles')}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Scroll CTA */}

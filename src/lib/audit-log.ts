@@ -1,10 +1,3 @@
-/**
- * Admin audit log — records who did what and when.
- *
- * All destructive admin actions should be logged here for
- * accountability and incident investigation.
- */
-
 import { logger } from '@/lib/logger'
 
 export type AuditAction =
@@ -24,15 +17,21 @@ export type AuditAction =
 interface AuditEntry {
     actor: string       // userId of the admin performing the action
     action: AuditAction
-    target: string      // resource ID(s) affected
+    target: string      // raw resource ID(s) — kept for backward compat
+    /** Human-readable summary stored in DB e.g. "47 applications (rejected)".
+     *  Falls back to target if omitted. */
+    targetSummary?: string
     details?: Record<string, unknown>
 }
 
 /**
  * Log a privileged admin action.
- * Writes to the structured logger with the [AUDIT] category.
+ * - Writes to the structured logger (Sentry breadcrumbs / Render logs)
+ * - Persists to AdminAuditLog DB table for the admin UI audit panel
  */
-export function logAdminAction({ actor, action, target, details }: AuditEntry): void {
+export function logAdminAction({ actor, action, target, targetSummary, details }: AuditEntry): void {
+    const summary = targetSummary ?? target
+
     const entry = {
         actor,
         action,
@@ -40,10 +39,18 @@ export function logAdminAction({ actor, action, target, details }: AuditEntry): 
         timestamp: new Date().toISOString(),
         ...details,
     }
-    logger.info('AUDIT', `${action} by ${actor} on ${target}`, entry)
+    logger.info('AUDIT', `${action} by ${actor} on ${summary}`, entry)
+    console.log(`[AUDIT] ${action} | actor=${actor} | target=${summary}`, details ? JSON.stringify(details) : '')
 
-    // Also log to console so it appears in Render logs / Sentry breadcrumbs
-    console.log(`[AUDIT] ${action} | actor=${actor} | target=${target}`, details ? JSON.stringify(details) : '')
+    // Persist to DB — fire-and-forget, never blocks the request
+    import('@/lib/db').then(({ prisma }) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ;(prisma as any).adminAuditLog.create({
+            data: { actor, action, targetSummary: summary, details: details ?? null },
+        }).catch((err: unknown) => {
+            logger.warn('AUDIT', 'Failed to persist audit log entry to DB', { error: err })
+        })
+    }).catch(() => {/* db import failed — already logged to console */})
 }
 
 /**

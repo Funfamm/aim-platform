@@ -376,15 +376,18 @@ model SearchAnalytics {
 }
 
 model ApplicationNotification {
-  id             String      @id @default(cuid())
-  applicationId  String
-  type           String
-  subject        String
-  body           String
-  recipientEmail String
-  status         String      @default("sent")
-  createdAt      DateTime    @default(now())
-  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  id                String      @id @default(cuid())
+  applicationId     String
+  type              String
+  subject           String
+  body              String
+  recipientEmail    String
+  status            String      @default("sent")
+  notifiedForStatus String?     // dedup key — which status triggered this notification
+  createdAt         DateTime    @default(now())
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId, notifiedForStatus, status])
 }
 
 model Subscriber {
@@ -519,22 +522,23 @@ model ScriptCallNotify {
 }
 
 model ScriptSubmission {
-  id                String          @id @default(cuid())
-  scriptCallId      String
-  authorName        String
-  authorEmail       String
-  authorBio         String?
-  title             String
-  logline           String
-  synopsis          String
-  scriptText        String?
-  scriptFilePath    String?
-  genre             String?
-  estimatedDuration String?
-  status            String          @default("submitted")
-  createdAt         DateTime        @default(now())
-  analysis          ScriptAnalysis?
-  scriptCall        ScriptCall      @relation(fields: [scriptCallId], references: [id], onDelete: Cascade)
+  id                 String          @id @default(cuid())
+  scriptCallId       String
+  authorName         String
+  authorEmail        String
+  authorBio          String?
+  title              String
+  logline            String
+  synopsis           String
+  scriptText         String?
+  scriptFilePath     String?
+  genre              String?
+  estimatedDuration  String?
+  status             String          @default("submitted")
+  lastNotifiedStatus String?         // dedup key — last status a notification was sent for
+  createdAt          DateTime        @default(now())
+  analysis           ScriptAnalysis?
+  scriptCall         ScriptCall      @relation(fields: [scriptCallId], references: [id], onDelete: Cascade)
 
   @@index([scriptCallId])
 }
@@ -834,4 +838,20 @@ enum ApplicationStatus {
   withdrawn
   pending
   approved
+}
+
+// ─── Admin Audit Log ──────────────────────────────────────────────────────────
+// Persists every privileged admin action for accountability & incident review.
+// Separate from the existing logger/console output so the UI can query it.
+model AdminAuditLog {
+  id            String   @id @default(cuid())
+  actor         String   // userId of the admin
+  action        String   // AuditAction enum value
+  targetSummary String   // human-readable summary e.g. "47 applications (rejected)"
+  details       Json?    // arbitrary metadata
+  createdAt     DateTime @default(now())
+
+  @@index([action])
+  @@index([actor])
+  @@index([createdAt])
 }

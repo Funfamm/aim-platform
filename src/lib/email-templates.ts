@@ -1173,7 +1173,9 @@ export function scriptStatusUpdateEmail(
     const emoji = emojiMap[newStatus] || '📋'
 
     const mainMessage = localizedBody
-        ? paragraph(localizedBody)
+        ? paragraph(localizedBody
+            .replace(/{title}/g, scriptTitle)
+            .replace(/{call}/g, callTitle))
         : paragraph(`There is an update on your script <strong>"${scriptTitle}"</strong> submitted to <strong>${callTitle}</strong>.`)
 
     return emailWrapper(`

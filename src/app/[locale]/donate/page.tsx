@@ -290,12 +290,59 @@ export default function DonatePage() {
                                 {t('title')} <span style={{ color: 'var(--accent-gold)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>{t('titleAccent')}</span>
                             </h1>
                             <div className="divider divider-center" />
-                            <p style={{ color: 'var(--text-secondary)', fontSize: '1.05rem', marginBottom: 'var(--space-sm)', lineHeight: 1.7, textAlign: 'center', maxWidth: '520px', marginLeft: 'auto', marginRight: 'auto' }}>
-                                {t('description')}
-                            </p>
-                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', marginBottom: 'var(--space-2xl)', textAlign: 'center', maxWidth: '520px', marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.6 }}>
-                                {t('descSub')}
-                            </p>
+                            <div style={{
+                                position: 'relative',
+                                margin: 'var(--space-lg) auto var(--space-xl)',
+                                maxWidth: '500px',
+                                padding: '18px 24px 18px 28px',
+                                background: 'linear-gradient(135deg, rgba(212,168,83,0.06) 0%, rgba(212,168,83,0.02) 100%)',
+                                border: '1px solid rgba(212,168,83,0.18)',
+                                borderRadius: '12px',
+                                textAlign: 'left',
+                                overflow: 'hidden',
+                            }}>
+                                {/* Animated left accent bar */}
+                                <div style={{
+                                    position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px',
+                                    background: 'linear-gradient(to bottom, transparent, var(--accent-gold), transparent)',
+                                    animation: 'donateBarPulse 3s ease-in-out infinite',
+                                }} />
+                                {/* Film-frame corner dots */}
+                                {[{ top: 8, left: 8 }, { top: 8, right: 8 }, { bottom: 8, left: 8 }, { bottom: 8, right: 8 }].map((pos, i) => (
+                                    <div key={i} style={{
+                                        position: 'absolute', ...pos,
+                                        width: '4px', height: '4px', borderRadius: '50%',
+                                        background: 'rgba(212,168,83,0.35)',
+                                    }} />
+                                ))}
+                                <style>{`
+                                    @keyframes donateBarPulse {
+                                        0%, 100% { opacity: 0.4; }
+                                        50% { opacity: 1; }
+                                    }
+                                `}</style>
+                                <p style={{
+                                    color: 'var(--text-secondary)', fontSize: '0.97rem',
+                                    lineHeight: 1.75, margin: 0,
+                                }}>
+                                    {t('description')}
+                                </p>
+                                <p style={{
+                                    margin: '12px 0 0',
+                                    fontSize: '0.82rem',
+                                    color: 'var(--accent-gold)',
+                                    fontStyle: 'italic',
+                                    fontFamily: 'var(--font-serif)',
+                                    letterSpacing: '0.01em',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                }}>
+                                    <span style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, rgba(212,168,83,0.4), transparent)' }} />
+                                    {t('descSub')}
+                                    <span style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, rgba(212,168,83,0.4), transparent)' }} />
+                                </p>
+                            </div>
                         </ScrollReveal3D>
 
                         <ScrollReveal3D direction="up" delay={150} distance={30}>

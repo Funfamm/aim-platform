@@ -786,9 +786,9 @@ export async function notifyScriptStatusChange(opts: ScriptStatusChangeOptions):
         const i18nKey = i18nKeyMap[opts.newStatus] || 'scriptStatus_rejected'
 
         // Build subject and in-app strings
-        const subject = `[${siteName}] ` + (t(i18nKey, locale, 'subject') || 'Script Submission Update').replace('{title}', opts.scriptTitle)
+        const subject = `${siteName} — ` + (t(i18nKey, locale, 'subject') || 'Script Submission Update').replace('{title}', opts.scriptTitle).replace('{call}', opts.callTitle)
         const inAppTitle   = (t(i18nKey, locale, 'notifTitle')   || 'Script Update').replace('{title}', opts.scriptTitle)
-        const inAppMessage = (t(i18nKey, locale, 'notifMessage') || 'Your screenplay submission has been updated.').replace('{title}', opts.scriptTitle)
+        const inAppMessage = (t(i18nKey, locale, 'notifMessage') || 'Your screenplay submission has been updated.').replace('{title}', opts.scriptTitle).replace('{call}', opts.callTitle)
 
         // Render email HTML
         const html = scriptStatusUpdateEmail(
