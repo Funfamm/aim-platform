@@ -125,11 +125,11 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                 }
 
                 .form-card {
-                    background: rgba(255,255,255,0.025);
+                    background: rgba(255,255,255,0.08);
                     border: 1px solid rgba(212,168,83,0.18);
                     border-radius: 20px;
-                    backdrop-filter: blur(24px);
-                    -webkit-backdrop-filter: blur(24px);
+                    backdrop-filter: blur(40px) saturate(140%);
+                    -webkit-backdrop-filter: blur(40px) saturate(140%);
                     overflow: hidden;
                     animation: glowPulse 4s ease-in-out infinite;
                 }
