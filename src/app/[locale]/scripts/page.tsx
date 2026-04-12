@@ -197,35 +197,67 @@ export default async function ScriptCallsPage() {
                 }
             `}</style>
 
-            <main style={{ minHeight: '100vh', paddingTop: '72px', position: 'relative', zIndex: 2 }}>
+            <main style={{ minHeight: '100vh', position: 'relative', zIndex: 2 }}>
 
-                {/* ══ HERO ══ */}
-                <section style={{ textAlign: 'center', padding: '40px 20px 28px' }}>
-                    <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-                        <div style={{
-                            display: 'inline-block', fontSize: '2.4rem',
-                            marginBottom: '12px',
-                            animation: 'penFloat 3s ease-in-out infinite',
-                        }}>✍️</div>
+                {/* ══ HERO — full-screen, casting-page style ══ */}
+                <section style={{
+                    position: 'relative',
+                    height: '100dvh',
+                    overflow: 'hidden',
+                    zIndex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                }}>
+                    {/* Radial glow */}
+                    <div style={{
+                        position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)',
+                        width: '700px', height: '700px',
+                        background: 'radial-gradient(circle, rgba(228,185,90,0.06), transparent 65%)',
+                        pointerEvents: 'none',
+                    }} />
 
+                    {/* Decorative corner frames */}
+                    <div style={{
+                        position: 'absolute', top: '80px', left: '20px', width: '60px', height: '60px',
+                        borderTop: '2px solid rgba(228,185,90,0.2)', borderLeft: '2px solid rgba(228,185,90,0.2)',
+                        pointerEvents: 'none',
+                    }} />
+                    <div style={{
+                        position: 'absolute', top: '80px', right: '20px', width: '60px', height: '60px',
+                        borderTop: '2px solid rgba(228,185,90,0.2)', borderRight: '2px solid rgba(228,185,90,0.2)',
+                        pointerEvents: 'none',
+                    }} />
+
+                    {/* Content */}
+                    <div style={{
+                        position: 'relative', zIndex: 1,
+                        textAlign: 'center',
+                        maxWidth: 'min(700px, 100%)',
+                        padding: '0 var(--space-md)',
+                        display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center',
+                        gap: 'var(--space-md)',
+                    }}>
+                        {/* Badge */}
                         <div className="script-badge" style={{
                             display: 'inline-flex', alignItems: 'center', gap: '7px',
                             fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em',
-                            textTransform: 'uppercase', color: 'var(--accent-gold)',
+                            textTransform: 'uppercase' as const, color: 'var(--accent-gold)',
                             background: 'rgba(212,168,83,0.08)',
                             padding: '5px 14px', borderRadius: '99px',
                             border: '1px solid rgba(212,168,83,0.2)',
-                            marginBottom: '14px',
                         }}>
-                            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)', animation: 'pulseDot 2s ease-in-out infinite' }} />
+                            <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)', animation: 'pulseDot 2s ease-in-out infinite', display: 'inline-block' }} />
                             {t('badge')}
                         </div>
 
+                        {/* Heading */}
                         <h1 className="script-hero" style={{
-                            fontSize: 'clamp(1.9rem, 7vw, 3.4rem)',
-                            fontWeight: 800, lineHeight: 1.08,
-                            marginBottom: '20px',
-                            letterSpacing: '-0.02em',
+                            fontSize: 'clamp(1.8rem, 4.5vw, 2.8rem)',
+                            fontWeight: 800, lineHeight: 1.15,
+                            margin: 0, letterSpacing: '-0.02em',
                         }}>
                             {t('heroTitle')}{' '}
                             <span style={{
@@ -240,7 +272,7 @@ export default async function ScriptCallsPage() {
                             </span>
                         </h1>
 
-                        {/* Stats pill — same style as Works / Casting / Upcoming */}
+                        {/* Stats pill */}
                         {enabled && (
                             <div className="script-stats-pill" style={{
                                 display: 'inline-flex',
@@ -282,12 +314,20 @@ export default async function ScriptCallsPage() {
                                 </div>
                             </div>
                         )}
+
+                        {/* CTA */}
+                        <a href="#scripts" className="btn btn-primary btn-lg script-hero">
+                            {t('exploreCta')}
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 5v14M5 12l7 7 7-7" />
+                            </svg>
+                        </a>
                     </div>
                 </section>
 
 
                 {/* ══ CALLS ══ */}
-                <section style={{ padding: '0 16px 80px' }} className="script-calls">
+                <section id="scripts" style={{ padding: '0 16px 80px', scrollMarginTop: '72px' }} className="script-calls">
                     <div style={{ maxWidth: '960px', margin: '0 auto' }}>
 
                         {!enabled ? (
