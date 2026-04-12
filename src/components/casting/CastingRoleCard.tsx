@@ -67,16 +67,17 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
             <div style={{
                 position: 'relative',
                 borderRadius: 'var(--radius-lg)',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'rgba(13, 15, 20, 0.88)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.05)',
                 overflow: 'hidden',
             }}>
-                {/* Exact glass-panel style */}
+                {/* Blur enhancement — works when backdrop-filter isn't blocked by parent transform */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    backdropFilter: 'blur(24px)',
-                    WebkitBackdropFilter: 'blur(24px)',
-                    background: 'rgba(13, 15, 20, 0.6)',
+                    backdropFilter: 'blur(24px) saturate(150%)',
+                    WebkitBackdropFilter: 'blur(24px) saturate(150%)',
                     borderRadius: 'inherit',
                     zIndex: 0,
                     pointerEvents: 'none',
