@@ -38,11 +38,23 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
         select: {
             id: true, title: true, description: true, genre: true,
             toneKeywords: true, targetLength: true, deadline: true,
-            status: true, isPublic: true, maxSubmissions: true,
+            status: true, isPublic: true, maxSubmissions: true, contentTranslations: true,
             project: { select: { title: true, slug: true, coverImage: true } },
             _count: { select: { submissions: true } },
         },
     })
+
+    type TransMap = Record<string, Record<string, string>>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function getLocalized(item: Record<string, any>, field: string, fallback: string | null): string {
+        if (!fallback) return ''
+        const translations = item.contentTranslations as string | null | undefined
+        if (!translations || locale === 'en') return fallback
+        try {
+            const map = JSON.parse(translations) as TransMap
+            return map[locale]?.[field] || fallback
+        } catch { return fallback }
+    }
 
     if (!call || !call.isPublic || call.status !== 'open') notFound()
 
@@ -60,7 +72,8 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
         })
     }
 
-    const toneList = call.toneKeywords?.split(',').map((t: string) => t.trim()).filter(Boolean) || []
+    const localizedToneKeywords = getLocalized(call, 'toneKeywords', call.toneKeywords) || ''
+    const toneList = localizedToneKeywords.split(',').map((t: string) => t.trim()).filter(Boolean) || []
 
     // ── Deadline enforcement (server-side for UI) ───────────────────────────────
     let isPastDeadline = false
@@ -206,15 +219,14 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                             letterSpacing: '-0.02em',
                         }}>
-                            {call.title}
+                            {getLocalized(call, 'title', call.title)}
                         </h1>
 
-                        {/* Tags row */}
                         <div className="d2" style={{ display: 'flex', flexWrap: 'wrap', gap: '7px' }}>
-                            {call.genre && <span className="tag-gold">🎬 {call.genre}</span>}
+                            {call.genre && <span className="tag-gold">🎬 {getLocalized(call, 'genre', call.genre)}</span>}
                             {call.targetLength && <span className="tag-blue">⏱ {call.targetLength}</span>}
-                            {call.deadline && <span className={isPastDeadline ? 'tag-neutral' : 'tag-rose'}>📅 {isPastDeadline ? '🔒 Closed' : formattedDeadline}</span>}
-                            <span className="tag-neutral">📄 {call._count.submissions} submission{call._count.submissions !== 1 ? 's' : ''}</span>
+                            {call.deadline && <span className={isPastDeadline ? 'tag-neutral' : 'tag-rose'}>📅 {isPastDeadline ? `🔒 Closed` : formattedDeadline}</span>}
+                            <span className="tag-neutral">📄 {call._count.submissions === 0 ? t('beFirstToSubmit') : `${call._count.submissions} ${call._count.submissions !== 1 ? t('submissions') : t('submission')}`}</span>
                         </div>
                     </div>
                 </div>
@@ -243,7 +255,7 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                         WebkitBoxOrient: 'vertical',
                                         overflow: 'hidden',
                                     }}>
-                                        {call.description}
+                                        {getLocalized(call, 'description', call.description)}
                                     </p>
                                 </div>
 
