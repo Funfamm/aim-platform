@@ -125,11 +125,11 @@ export default async function ScriptCallsPage() {
                     text-decoration: none;
                     border-radius: 20px;
                     overflow: hidden;
-                    background: rgba(255,255,255,0.08);
-                    border: 1px solid rgba(212,168,83,0.18);
-                    backdrop-filter: blur(40px) saturate(140%);
-                    -webkit-backdrop-filter: blur(40px) saturate(140%);
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+                    background: rgba(255, 255, 255, 0.14);
+                    border: 1px solid rgba(255, 255, 255, 0.22);
+                    backdrop-filter: blur(40px) saturate(150%);
+                    -webkit-backdrop-filter: blur(40px) saturate(150%);
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22);
                     transition: all 0.35s cubic-bezier(0.16,1,0.3,1);
                     position: relative;
                     animation: glowPulse 4s ease-in-out infinite;

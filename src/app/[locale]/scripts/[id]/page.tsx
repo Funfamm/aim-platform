@@ -24,10 +24,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function ScriptCallDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
+    const locale = await getLocale()
 
     const session = await getUserSession()
     if (!session) {
-        const locale = await getLocale()
         redirect(`/${locale}/login?redirect=/scripts/${id}`)
     }
 
@@ -128,21 +128,22 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                 .tag-neutral { font-size: 0.65rem; padding: 4px 11px; background: rgba(255,255,255,0.03); color: var(--text-secondary); border-radius: 6px; border: 1px solid var(--border-subtle); }
 
                 .info-card {
-                    background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
-                    border: 1px solid rgba(255,255,255,0.14);
+                    background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+                    border: 1px solid rgba(255, 255, 255, 0.22);
                     border-radius: 14px;
                     padding: 14px 16px;
-                    backdrop-filter: blur(24px);
-                    -webkit-backdrop-filter: blur(24px);
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.12);
+                    backdrop-filter: blur(40px) saturate(150%);
+                    -webkit-backdrop-filter: blur(40px) saturate(150%);
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22);
                 }
 
                 .form-card {
-                    background: rgba(255,255,255,0.08);
-                    border: 1px solid rgba(212,168,83,0.18);
+                    background: rgba(255, 255, 255, 0.14);
+                    border: 1px solid rgba(255, 255, 255, 0.22);
                     border-radius: 20px;
-                    backdrop-filter: blur(40px) saturate(140%);
-                    -webkit-backdrop-filter: blur(40px) saturate(140%);
+                    backdrop-filter: blur(40px) saturate(150%);
+                    -webkit-backdrop-filter: blur(40px) saturate(150%);
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22);
                     overflow: hidden;
                     animation: glowPulse 4s ease-in-out infinite;
                 }
