@@ -136,8 +136,7 @@ export default async function ScriptCallsPage() {
 
                 .script-hero   { animation: fadeInUp 0.5s ease both; }
                 .script-badge  { animation: fadeInUp 0.5s ease 0.1s both; }
-                .script-steps  { animation: fadeInUp 0.5s ease 0.2s both; }
-                .script-calls  { animation: fadeInUp 0.5s ease 0.25s both; }
+                .script-calls  { animation: fadeInUp 0.5s ease 0.2s both; }
 
 
                 /* ── Script Card — matches form-card style ── */
@@ -286,55 +285,6 @@ export default async function ScriptCallsPage() {
                     </div>
                 </section>
 
-                {/* ══ HOW IT WORKS — compact frosted step strip ══ */}
-                <section style={{ padding: '0 16px 28px', textAlign: 'center' }} className="script-steps">
-                    <div style={{
-                        display: 'inline-flex', alignItems: 'center',
-                        flexWrap: 'wrap', justifyContent: 'center',
-                        gap: '4px',
-                        padding: '12px 22px',
-                        background: 'rgba(255,255,255,0.12)',
-                        backdropFilter: 'blur(20px) saturate(160%)',
-                        WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-                        border: '1px solid rgba(255,255,255,0.25)',
-                        borderRadius: '99px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.4)',
-                    }} className="step-strip">
-                        {([
-                            { icon: '📝', step: '01', titleKey: 'step1Title' },
-                            { icon: '🤖', step: '02', titleKey: 'step2Title' },
-                            { icon: '🎬', step: '03', titleKey: 'step3Title' },
-                        ] as const).map(({ icon, step, titleKey }, i) => (
-                            <>
-                                <span key={step} style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                    padding: '2px 4px',
-                                }}>
-                                    <span style={{
-                                        width: '18px', height: '18px', borderRadius: '50%',
-                                        background: 'rgba(212,168,83,0.18)',
-                                        border: '1px solid rgba(212,168,83,0.35)',
-                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '0.5rem', fontWeight: 800, color: 'var(--accent-gold)',
-                                        flexShrink: 0,
-                                    }}>{step}</span>
-                                    <span style={{ fontSize: '0.7rem' }}>{icon}</span>
-                                    <span style={{
-                                        fontSize: '0.72rem', fontWeight: 700,
-                                        color: 'rgba(15,15,20,0.9)',
-                                        whiteSpace: 'nowrap',
-                                    }}>{t(titleKey)}</span>
-                                </span>
-                                {i < 2 && (
-                                    <span className="step-arrow" style={{
-                                        fontSize: '0.7rem', color: 'rgba(0,0,0,0.3)',
-                                        margin: '0 2px',
-                                    }}>→</span>
-                                )}
-                            </>
-                        ))}
-                    </div>
-                </section>
 
                 {/* ══ CALLS ══ */}
                 <section style={{ padding: '0 16px 80px' }} className="script-calls">
