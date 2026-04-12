@@ -567,31 +567,39 @@ export async function notifyNewRole(roleId: string, roleName: string, projectTit
 }
 
 /** Call this when admin posts a platform announcement */
-export async function notifyAnnouncement(title: string, message: string, link?: string): Promise<void> {
+export async function notifyAnnouncement(
+    title: string,
+    message: string,
+    link?: string,
+    prebuiltTranslations?: Record<string, Record<string, string>> | null
+): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/notifications'
 
-    // Translate the content text AND the static email template strings so the
-    // entire email (badge, button, footer) renders in the recipient's language.
-    const translationTimeout = new Promise<null>(resolve => setTimeout(() => {
-        logger.warn('notifications', 'translateContent timed out after 10s — broadcasting in English only')
-        resolve(null)
-    }, 10_000))
+    let translations: Record<string, Record<string, string>> | null = prebuiltTranslations ?? null
 
-    const translations = await Promise.race([
-        translateContent({
-            title,
-            message,
-            badgeText: 'Platform Announcement',
-            buttonText: link ? 'View Announcement →' : 'View in Notifications →',
-            footerOptIn: "You're receiving this because you opted in to platform announcements.",
-            managePrefs: 'Manage preferences',
-        }, 'all').catch((err) => {
-            logger.warn('notifications', 'translateContent failed', { error: err })
-            return null
-        }),
-        translationTimeout,
-    ])
+    // Only auto-translate when the admin did NOT pre-translate (fallback for legacy callers)
+    if (!translations) {
+        const translationTimeout = new Promise<null>(resolve => setTimeout(() => {
+            logger.warn('notifications', 'translateContent timed out after 10s — broadcasting in English only')
+            resolve(null)
+        }, 10_000))
+
+        translations = await Promise.race([
+            translateContent({
+                title,
+                message,
+                badgeText: 'Platform Announcement',
+                buttonText: link ? 'View Announcement →' : 'View in Notifications →',
+                footerOptIn: "You're receiving this because you opted in to platform announcements.",
+                managePrefs: 'Manage preferences',
+            }, 'all').catch((err) => {
+                logger.warn('notifications', 'translateContent failed', { error: err })
+                return null
+            }),
+            translationTimeout,
+        ])
+    }
 
     await broadcastNotification({
         type: 'announcement',
@@ -606,6 +614,7 @@ export async function notifyAnnouncement(title: string, message: string, link?: 
         translations,
     })
 }
+
 
 
 /** Call this when admin publishes new content (project, blog, video) */

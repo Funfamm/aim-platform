@@ -163,17 +163,16 @@ export default function ForgotPasswordPage() {
 
     const translateApiError = (code: string): string => {
         const map: Record<string, string> = {
-            ERR_EMAIL_REQUIRED: t('errEmailRequired'),
-            ERR_NOT_FOUND:      t('errNotFound'),
-            ERR_TOO_MANY:       t('errTooMany'),
-            ERR_CODE_REQUIRED:  t('errCodeRequired'),
-            ERR_NO_CODE:        t('errNoCode'),
-            ERR_CODE_EXPIRED:   t('errCodeExpired'),
-            ERR_CODE_INVALID:   t('errCodeInvalid'),
-            ERR_PW_TOO_SHORT:   t('errPwTooShort'),
-            ERR_SAME_PASSWORD:  t('errSamePassword'),
-            ERR_REUSED_PASSWORD:t('errReusedPassword'),
-            ERR_RESET_FAILED:   t('errResetFailed'),
+            ERR_EMAIL_REQUIRED:  t('errEmailRequired'),
+            ERR_TOO_MANY:        t('errTooMany'),
+            ERR_CODE_REQUIRED:   t('errCodeRequired'),
+            ERR_NO_CODE:         t('errNoCode'),
+            ERR_CODE_EXPIRED:    t('errCodeExpired'),
+            ERR_CODE_INVALID:    t('errCodeInvalid'),
+            ERR_PW_TOO_SHORT:    t('errPwTooShort'),
+            ERR_SAME_PASSWORD:   t('errSamePassword'),
+            ERR_REUSED_PASSWORD: t('errReusedPassword'),
+            ERR_RESET_FAILED:    t('errResetFailed'),
         }
         return map[code] ?? code
     }
@@ -195,11 +194,8 @@ export default function ForgotPasswordPage() {
             if (res.ok) {
                 setStep('code')
                 setCodeTimerKey(k => k + 1)
-                if (data.emailConfigured) {
-                    setInfo('📧 ' + t('codeSent'))
-                } else {
-                    setInfo('⚠️ ' + t('emailNotConfigured'))
-                }
+                // Always show the same message — never reveal if the email exists
+                setInfo('📧 ' + t('codeSent'))
             } else {
                 setError(translateApiError(data.error))
             }

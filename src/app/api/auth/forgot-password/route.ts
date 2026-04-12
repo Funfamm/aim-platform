@@ -5,6 +5,7 @@ import { withDbRetry } from '@/lib/db-retry'
 import { sendEmail } from '@/lib/mailer'
 import { forgotPasswordCodeLocalized, passwordChangedEmailLocalized } from '@/lib/email-templates'
 import { t as emailT } from '@/lib/email-i18n'
+import { authLimiter } from '@/lib/rate-limit'
 
 // In-memory code store (in production, use Redis or DB)
 // Format: { email: { code: string, expiresAt: number, attempts: number } }
@@ -26,8 +27,13 @@ setInterval(() => {
 }, 60_000) // Every minute
 
 export async function POST(request: Request) {
+    // Rate limit: 10 requests/min per IP — prevents email spam & quota exhaustion
+    const blocked = authLimiter.check(request)
+    if (blocked) return blocked
+
     try {
         const { email, password, action, code } = await request.json()
+
 
         if (!email) {
         return NextResponse.json({ error: 'ERR_EMAIL_REQUIRED' }, { status: 400 })
@@ -35,50 +41,50 @@ export async function POST(request: Request) {
 
         const normalizedEmail = email.toLowerCase().trim()
 
-        // ─── Step 1: Verify email exists and send 6-digit code ───
+        // ─── Step 1: Send 6-digit code ───────────────────────────────────────────
+        // SECURITY: Always return the same 200 response regardless of whether the
+        // email exists, to prevent user enumeration / email harvesting attacks.
+        // The real work happens inside — silently no-ops if email not found.
         if (action === 'verify') {
-            const user = await withDbRetry(() => prisma.user.findUnique({
-                where: { email: normalizedEmail },
-                select: { name: true, preferredLanguage: true } as any,
-            }), 'forgot_password_find') as any
-            if (!user) {
-                return NextResponse.json({ error: 'ERR_NOT_FOUND' }, { status: 404 })
-            }
+            // Constant-time delay so response timing doesn't leak email existence
+            const [user] = await Promise.all([
+                withDbRetry(() => prisma.user.findUnique({
+                    where: { email: normalizedEmail },
+                    select: { name: true, preferredLanguage: true } as any,
+                }), 'forgot_password_find') as Promise<any>,
+                new Promise(r => setTimeout(r, 300)), // normalise timing
+            ])
 
-            // Rate limit: max 3 codes per email per 15 minutes
-            const existing = resetCodes.get(normalizedEmail)
-            if (existing && existing.attempts >= 3 && existing.expiresAt > Date.now()) {
-                return NextResponse.json({ error: 'ERR_TOO_MANY' }, { status: 429 })
-            }
+            if (user) {
+                // Rate limit: max 3 codes per email per 15 minutes
+                const existing = resetCodes.get(normalizedEmail)
+                if (existing && existing.attempts >= 3 && existing.expiresAt > Date.now()) {
+                    // Still return generic 200 — never leak that the email exists
+                    return NextResponse.json({
+                        success: true,
+                        message: 'If an account with that email exists, a reset code has been sent.',
+                    })
+                }
 
-            const newCode = generateCode()
-            resetCodes.set(normalizedEmail, {
-                code: newCode,
-                expiresAt: Date.now() + 10 * 60 * 1000, // 10 minutes
-                attempts: (existing?.attempts || 0) + 1,
-            })
+                const newCode = generateCode()
+                resetCodes.set(normalizedEmail, {
+                    code: newCode,
+                    expiresAt: Date.now() + 10 * 60 * 1000,
+                    attempts: (existing?.attempts || 0) + 1,
+                })
 
-            const fpLocale = user.preferredLanguage || 'en'
-            const fpHtml = await forgotPasswordCodeLocalized(user.name || 'there', newCode, undefined, fpLocale)
-            // Send the code via email
-            const sent = await sendEmail({
-                to: normalizedEmail,
-                subject: emailT('securityForgotPassword', fpLocale, 'subject') || 'Password Reset Code | AIM Studio',
-                html: fpHtml,
-            })
-
-            if (!sent) {
-                return NextResponse.json({
-                    success: true,
-                    message: 'If email sending is configured, a code has been sent to your email.',
-                    emailConfigured: false,
+                const fpLocale = user.preferredLanguage || 'en'
+                const fpHtml = await forgotPasswordCodeLocalized(user.name || 'there', newCode, undefined, fpLocale)
+                await sendEmail({
+                    to: normalizedEmail,
+                    subject: emailT('securityForgotPassword', fpLocale, 'subject') || 'Password Reset Code | AIM Studio',
+                    html: fpHtml,
                 })
             }
-
+            // Whether user exists or not — always the same response
             return NextResponse.json({
                 success: true,
-                message: 'A 6-digit code has been sent to your email. It expires in 10 minutes.',
-                emailConfigured: true,
+                message: 'If an account with that email exists, a reset code has been sent.',
             })
         }
 
@@ -116,7 +122,8 @@ export async function POST(request: Request) {
 
             const user = await withDbRetry(() => prisma.user.findUnique({ where: { email: normalizedEmail } }), 'forgot_password_reset_find')
             if (!user) {
-                return NextResponse.json({ error: 'ERR_NOT_FOUND' }, { status: 404 })
+                // Code was valid but email somehow not in DB (edge case) — generic error
+                return NextResponse.json({ error: 'ERR_RESET_FAILED' }, { status: 400 })
             }
             if (!password || password.length < 6) {
                 return NextResponse.json({ error: 'ERR_PW_TOO_SHORT' }, { status: 400 })

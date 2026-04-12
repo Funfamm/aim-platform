@@ -27,6 +27,7 @@ interface Submission {
     logline: string
     synopsis: string
     scriptText: string | null
+    scriptFilePath: string | null
     genre: string | null
     estimatedDuration: string | null
     status: string
@@ -985,7 +986,7 @@ export default function AdminScriptCallDetailPage() {
                                                 <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>{sub.synopsis}</div>
                                             </div>
 
-                                            {/* Full Script Toggle */}
+                                            {/* Full Script Toggle (pasted text) */}
                                             {sub.scriptText && (
                                                 <details style={{ borderRadius: '10px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
                                                     <summary style={{
@@ -1005,6 +1006,51 @@ export default function AdminScriptCallDetailPage() {
                                                         color: 'var(--text-secondary)',
                                                     }}>{sub.scriptText}</pre>
                                                 </details>
+                                            )}
+
+                                            {/* Uploaded Script File — download from R2 */}
+                                            {sub.scriptFilePath && (
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', gap: '10px',
+                                                    padding: '10px 14px', borderRadius: '10px',
+                                                    background: 'rgba(96,165,250,0.05)',
+                                                    border: '1px solid rgba(96,165,250,0.15)',
+                                                }}>
+                                                    <span style={{ fontSize: '1.1rem' }}>📎</span>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#60a5fa' }}>Script File Uploaded</div>
+                                                        <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                            {sub.scriptFilePath.split('/').pop()}
+                                                        </div>
+                                                    </div>
+                                                    <a
+                                                        href={sub.scriptFilePath}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        download
+                                                        style={{
+                                                            padding: '6px 14px', borderRadius: '7px', fontSize: '0.72rem', fontWeight: 700,
+                                                            background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.25)',
+                                                            color: '#60a5fa', textDecoration: 'none', whiteSpace: 'nowrap',
+                                                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                        }}
+                                                    >
+                                                        ⬇ Download
+                                                    </a>
+                                                    <a
+                                                        href={sub.scriptFilePath}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        style={{
+                                                            padding: '6px 14px', borderRadius: '7px', fontSize: '0.72rem', fontWeight: 700,
+                                                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                                                            color: 'var(--text-tertiary)', textDecoration: 'none', whiteSpace: 'nowrap',
+                                                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                        }}
+                                                    >
+                                                        🔗 Open
+                                                    </a>
+                                                </div>
                                             )}
                                         </div>
 
