@@ -110,5 +110,23 @@
     "guest": "访客",
     "discover": "探索",
     "about": "关于"
+  },
+  "verifyEmail": {
+    "badge": "邮箱验证",
+    "title": "查看您的邮箱 📧",
+    "subtitle": "我们已向以下地址发送了6位验证码",
+    "confirmBtn": "确认邮箱 →",
+    "confirmingBtn": "验证中...",
+    "didntReceive": "没有收到验证码？",
+    "resendCode": "重新发送验证码",
+    "resendIn": "{seconds}秒后重新发送",
+    "sending": "发送中...",
+    "hint": "💡 如果未收到邮件，请检查垃圾邮件文件夹。验证码将在15分钟后失效。",
+    "errorIncomplete": "请输入6位验证码。",
+    "errorFailed": "验证失败，请重试。",
+    "errorNetwork": "网络错误，请重试。",
+    "errorResend": "重新发送验证码失败。",
+    "successTitle": "邮箱已验证！",
+    "successMessage": "正在跳转到您的控制台..."
   }
 }

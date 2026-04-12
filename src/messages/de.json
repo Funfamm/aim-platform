@@ -110,5 +110,23 @@
     "guest": "Gast",
     "discover": "Entdecken",
     "about": "Über uns"
+  },
+  "verifyEmail": {
+    "badge": "E-Mail-Verifizierung",
+    "title": "Prüf dein Postfach 📧",
+    "subtitle": "Wir haben einen 6-stelligen Code gesendet an",
+    "confirmBtn": "E-Mail bestätigen →",
+    "confirmingBtn": "Wird überprüft...",
+    "didntReceive": "Keinen Code erhalten?",
+    "resendCode": "Code erneut senden",
+    "resendIn": "Erneut senden in {seconds}s",
+    "sending": "Wird gesendet...",
+    "hint": "💡 Prüf deinen Spam-Ordner, falls du die E-Mail nicht siehst. Der Code läuft in 15 Minuten ab.",
+    "errorIncomplete": "Bitte gib den 6-stelligen Code ein.",
+    "errorFailed": "Verifizierung fehlgeschlagen. Bitte erneut versuchen.",
+    "errorNetwork": "Netzwerkfehler. Bitte erneut versuchen.",
+    "errorResend": "Code konnte nicht erneut gesendet werden.",
+    "successTitle": "E-Mail verifiziert!",
+    "successMessage": "Du wirst zu deinem Dashboard weitergeleitet..."
   }
 }

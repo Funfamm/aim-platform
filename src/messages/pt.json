@@ -110,5 +110,23 @@
     "guest": "Convidado",
     "discover": "Explorar",
     "about": "Sobre"
+  },
+  "verifyEmail": {
+    "badge": "Verificação de e-mail",
+    "title": "Verifique seu e-mail 📧",
+    "subtitle": "Enviamos um código de 6 dígitos para",
+    "confirmBtn": "Confirmar e-mail →",
+    "confirmingBtn": "Verificando...",
+    "didntReceive": "Não recebeu o código?",
+    "resendCode": "Reenviar código",
+    "resendIn": "Reenviar em {seconds}s",
+    "sending": "Enviando...",
+    "hint": "💡 Verifique sua pasta de spam se não encontrar o e-mail. O código expira em 15 minutos.",
+    "errorIncomplete": "Por favor, insira o código de 6 dígitos.",
+    "errorFailed": "Falha na verificação. Por favor, tente novamente.",
+    "errorNetwork": "Erro de rede. Por favor, tente novamente.",
+    "errorResend": "Falha ao reenviar o código.",
+    "successTitle": "E-mail verificado!",
+    "successMessage": "Redirecionando para o seu painel..."
   }
 }

@@ -4,12 +4,14 @@ export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import CinematicBackground from '@/components/CinematicBackground'
 import Footer from '@/components/Footer'
 
 function VerifyEmailContent() {
     const searchParams = useSearchParams()
     const email = searchParams.get('email') || ''
+    const t = useTranslations('verifyEmail')
 
     const [code, setCode] = useState(['', '', '', '', '', ''])
     const [error, setError] = useState('')
@@ -22,8 +24,8 @@ function VerifyEmailContent() {
     // Cooldown timer
     useEffect(() => {
         if (resendCooldown > 0) {
-            const t = setTimeout(() => setResendCooldown(c => c - 1), 1000)
-            return () => clearTimeout(t)
+            const timer = setTimeout(() => setResendCooldown(c => c - 1), 1000)
+            return () => clearTimeout(timer)
         }
     }, [resendCooldown])
 
@@ -50,7 +52,7 @@ function VerifyEmailContent() {
 
     const handleVerify = async () => {
         const fullCode = code.join('')
-        if (fullCode.length !== 6) { setError('Please enter the 6-digit code.'); return }
+        if (fullCode.length !== 6) { setError(t('errorIncomplete')); return }
         setLoading(true); setError('')
         try {
             const res = await fetch('/api/auth/verify-email', {
@@ -64,10 +66,10 @@ function VerifyEmailContent() {
                 // Hard redirect so AuthProvider re-initializes with the new cookie
                 setTimeout(() => { window.location.href = '/dashboard' }, 1500)
             } else {
-                setError(data.error || 'Verification failed. Please try again.')
+                setError(data.error || t('errorFailed'))
             }
         } catch {
-            setError('Network error. Please try again.')
+            setError(t('errorNetwork'))
         }
         setLoading(false)
     }
@@ -87,10 +89,10 @@ function VerifyEmailContent() {
                 inputRefs.current[0]?.focus()
             } else {
                 const data = await res.json()
-                setError(data.error || 'Failed to resend code.')
+                setError(data.error || t('errorResend'))
             }
         } catch {
-            setError('Network error. Please try again.')
+            setError(t('errorNetwork'))
         }
         setResending(false)
     }
@@ -99,11 +101,17 @@ function VerifyEmailContent() {
         return (
             <div style={{ textAlign: 'center', padding: '40px 0' }}>
                 <div style={{ fontSize: '4rem', marginBottom: '16px' }}>✅</div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34d399', marginBottom: '8px' }}>Email Verified!</h2>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Redirecting you to your dashboard...</p>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#34d399', marginBottom: '8px' }}>
+                    {t('successTitle')}
+                </h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                    {t('successMessage')}
+                </p>
             </div>
         )
     }
+
+    const codeStr = code.join('')
 
     return (
         <>
@@ -118,13 +126,13 @@ function VerifyEmailContent() {
                     marginBottom: '16px',
                 }}>
                     <span style={{ width: '5px', height: '5px', background: 'var(--accent-gold)', borderRadius: '50%' }} />
-                    Email Verification
+                    {t('badge')}
                 </div>
                 <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 800, marginBottom: '8px' }}>
-                    Check Your Email 📧
+                    {t('title')}
                 </h1>
                 <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    We sent a 6-digit code to<br />
+                    {t('subtitle')}<br />
                     <strong style={{ color: 'var(--text-primary)' }}>{email}</strong>
                 </p>
             </div>
@@ -172,22 +180,22 @@ function VerifyEmailContent() {
                 {/* Verify Button */}
                 <button
                     onClick={handleVerify}
-                    disabled={loading || code.join('').length !== 6}
+                    disabled={loading || codeStr.length !== 6}
                     style={{
                         width: '100%', padding: '0.9rem', borderRadius: '12px', border: 'none',
-                        background: code.join('').length === 6 ? 'linear-gradient(135deg, #d4a853, #c49b3a)' : 'rgba(212,168,83,0.2)',
-                        color: code.join('').length === 6 ? '#0f1115' : '#d4a853',
-                        fontSize: '1rem', fontWeight: 700, cursor: code.join('').length === 6 ? 'pointer' : 'not-allowed',
+                        background: codeStr.length === 6 ? 'linear-gradient(135deg, #d4a853, #c49b3a)' : 'rgba(212,168,83,0.2)',
+                        color: codeStr.length === 6 ? '#0f1115' : '#d4a853',
+                        fontSize: '1rem', fontWeight: 700, cursor: codeStr.length === 6 ? 'pointer' : 'not-allowed',
                         opacity: loading ? 0.7 : 1, transition: 'all 0.2s',
                     }}
                 >
-                    {loading ? 'Verifying...' : 'Confirm Email →'}
+                    {loading ? t('confirmingBtn') : t('confirmBtn')}
                 </button>
 
                 {/* Resend */}
                 <div style={{ textAlign: 'center', marginTop: '20px' }}>
                     <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
-                        Didn&apos;t receive the code?
+                        {t('didntReceive')}
                     </p>
                     <button
                         onClick={handleResend}
@@ -198,7 +206,12 @@ function VerifyEmailContent() {
                             fontSize: '0.85rem', fontWeight: 600, padding: 0,
                         }}
                     >
-                        {resending ? 'Sending...' : resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                        {resending
+                            ? t('sending')
+                            : resendCooldown > 0
+                                ? t('resendIn').replace('{seconds}', String(resendCooldown))
+                                : t('resendCode')
+                        }
                     </button>
                 </div>
 
@@ -208,7 +221,7 @@ function VerifyEmailContent() {
                     background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.12)',
                     fontSize: '0.78rem', color: 'var(--text-tertiary)', lineHeight: 1.6,
                 }}>
-                    💡 Check your spam folder if you don&apos;t see the email. The code expires in 15 minutes.
+                    {t('hint')}
                 </div>
             </div>
         </>

@@ -252,5 +252,23 @@
     "guest": "Guest",
     "discover": "Discover",
     "about": "About"
+  },
+  "verifyEmail": {
+    "badge": "Email Verification",
+    "title": "Check Your Email 📧",
+    "subtitle": "We sent a 6-digit code to",
+    "confirmBtn": "Confirm Email →",
+    "confirmingBtn": "Verifying...",
+    "didntReceive": "Didn't receive the code?",
+    "resendCode": "Resend Code",
+    "resendIn": "Resend in {seconds}s",
+    "sending": "Sending...",
+    "hint": "💡 Check your spam folder if you don't see the email. The code expires in 15 minutes.",
+    "errorIncomplete": "Please enter the 6-digit code.",
+    "errorFailed": "Verification failed. Please try again.",
+    "errorNetwork": "Network error. Please try again.",
+    "errorResend": "Failed to resend code.",
+    "successTitle": "Email Verified!",
+    "successMessage": "Redirecting you to your dashboard..."
   }
 }

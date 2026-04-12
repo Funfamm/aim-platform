@@ -251,5 +251,23 @@
     "guest": "Invité",
     "discover": "Découvrir",
     "about": "À propos"
+  },
+  "verifyEmail": {
+    "badge": "Vérification par e-mail",
+    "title": "Vérifiez votre boîte mail 📧",
+    "subtitle": "Nous avons envoyé un code à 6 chiffres à",
+    "confirmBtn": "Confirmer l'e-mail →",
+    "confirmingBtn": "Vérification...",
+    "didntReceive": "Vous n'avez pas reçu le code ?",
+    "resendCode": "Renvoyer le code",
+    "resendIn": "Renvoyer dans {seconds}s",
+    "sending": "Envoi en cours...",
+    "hint": "💡 Vérifiez vos spams si vous ne voyez pas l'e-mail. Le code expire dans 15 minutes.",
+    "errorIncomplete": "Veuillez entrer le code à 6 chiffres.",
+    "errorFailed": "Échec de la vérification. Veuillez réessayer.",
+    "errorNetwork": "Erreur réseau. Veuillez réessayer.",
+    "errorResend": "Échec du renvoi du code.",
+    "successTitle": "E-mail vérifié !",
+    "successMessage": "Redirection vers votre tableau de bord..."
   }
 }

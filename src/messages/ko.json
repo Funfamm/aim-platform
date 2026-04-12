@@ -110,5 +110,23 @@
     "guest": "손님",
     "discover": "탐색",
     "about": "소개"
+  },
+  "verifyEmail": {
+    "badge": "이메일 인증",
+    "title": "이메일을 확인하세요 📧",
+    "subtitle": "6자리 코드를 발송했습니다",
+    "confirmBtn": "이메일 확인 →",
+    "confirmingBtn": "확인 중...",
+    "didntReceive": "코드를 받지 못하셨나요?",
+    "resendCode": "코드 재전송",
+    "resendIn": "{seconds}초 후 재전송",
+    "sending": "전송 중...",
+    "hint": "💡 이메일이 보이지 않으면 스팸 폴더를 확인하세요. 코드는 15분 후 만료됩니다.",
+    "errorIncomplete": "6자리 코드를 입력해 주세요.",
+    "errorFailed": "인증에 실패했습니다. 다시 시도해 주세요.",
+    "errorNetwork": "네트워크 오류입니다. 다시 시도해 주세요.",
+    "errorResend": "코드 재전송에 실패했습니다.",
+    "successTitle": "이메일 인증 완료!",
+    "successMessage": "대시보드로 이동 중..."
   }
 }
