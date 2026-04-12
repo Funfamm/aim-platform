@@ -225,7 +225,7 @@ export default async function ScriptCallsPage() {
                         <h1 className="script-hero" style={{
                             fontSize: 'clamp(1.9rem, 7vw, 3.4rem)',
                             fontWeight: 800, lineHeight: 1.08,
-                            marginBottom: '0',
+                            marginBottom: '20px',
                             letterSpacing: '-0.02em',
                         }}>
                             {t('heroTitle')}{' '}
@@ -240,6 +240,49 @@ export default async function ScriptCallsPage() {
                                 {t('heroAccent')}
                             </span>
                         </h1>
+
+                        {/* Stats pill — same style as Works / Casting / Upcoming */}
+                        {enabled && (
+                            <div className="script-stats-pill" style={{
+                                display: 'inline-flex',
+                                gap: 'var(--space-xl)',
+                                padding: '0.6rem 1.5rem',
+                                background: 'rgba(255,255,255,0.03)',
+                                borderRadius: 'var(--radius-full)',
+                                border: '1px solid var(--border-subtle)',
+                                backdropFilter: 'blur(12px)',
+                                WebkitBackdropFilter: 'blur(12px)',
+                                flexWrap: 'nowrap' as const,
+                                justifyContent: 'center',
+                            }}>
+                                <div>
+                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                        {calls.length}
+                                    </span>
+                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                        {t('openCallsStat')}
+                                    </span>
+                                </div>
+                                <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
+                                <div>
+                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                        {[...new Set(calls.map(c => c.genre).filter(Boolean))].length || '—'}
+                                    </span>
+                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                        {t('genresStat')}
+                                    </span>
+                                </div>
+                                <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
+                                <div>
+                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                        {[...new Set(calls.map(c => c.project?.title).filter(Boolean))].length || '—'}
+                                    </span>
+                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                        {t('projectsStat')}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </section>
 
@@ -410,27 +453,27 @@ export default async function ScriptCallsPage() {
                                                     {getLocalized(call, 'description', call.description)}
                                                 </p>
 
-                                                {/* Tags */}
+                                                {/* Tags — full-radius pill style */}
                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginBottom: '14px' }}>
                                                     {call.genre && (
                                                         <span style={{
                                                             fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
-                                                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
-                                                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                                                            background: 'rgba(212,168,83,0.1)', color: 'var(--accent-gold)',
+                                                            borderRadius: 'var(--radius-full)', border: '1px solid rgba(212,168,83,0.2)',
                                                         }}>{getLocalized(call, 'genre', call.genre)}</span>
                                                     )}
                                                     {call.targetLength && (
                                                         <span style={{
                                                             fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
-                                                            background: 'rgba(96,165,250,0.07)', color: '#60a5fa',
-                                                            borderRadius: '5px', border: '1px solid rgba(96,165,250,0.14)',
+                                                            background: 'rgba(96,165,250,0.1)', color: '#60a5fa',
+                                                            borderRadius: 'var(--radius-full)', border: '1px solid rgba(96,165,250,0.2)',
                                                         }}>{call.targetLength}</span>
                                                     )}
                                                     {call.deadline && (
                                                         <span style={{
                                                             fontSize: '0.6rem', padding: '2px 9px',
-                                                            background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.7)',
-                                                            borderRadius: '5px', border: '1px solid rgba(255,255,255,0.2)',
+                                                            background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.7)',
+                                                            borderRadius: 'var(--radius-full)', border: '1px solid rgba(255,255,255,0.12)',
                                                         }}>⏰ {call.deadline}</span>
                                                     )}
                                                 </div>
@@ -545,9 +588,9 @@ export default async function ScriptCallsPage() {
                                             {call.genre && (
                                                 <span style={{
                                                     display: 'inline-block',
-                                                    fontSize: '0.58rem', padding: '2px 8px', fontWeight: 600,
-                                                    background: 'rgba(212,168,83,0.05)', color: 'rgba(212,168,83,0.55)',
-                                                    borderRadius: '5px', border: '1px solid rgba(212,168,83,0.1)',
+                                                    fontSize: '0.58rem', padding: '2px 9px', fontWeight: 600,
+                                                    background: 'rgba(212,168,83,0.08)', color: 'rgba(212,168,83,0.6)',
+                                                    borderRadius: 'var(--radius-full)', border: '1px solid rgba(212,168,83,0.15)',
                                                     marginBottom: '12px',
                                                 }}>{getLocalized(call, 'genre', call.genre)}</span>
                                             )}

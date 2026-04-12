@@ -138,15 +138,39 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     alignItems: 'center',
                     marginBottom: 'var(--space-xs)',
                 }}>
+                    {/* Role type pill — matches Works card status pill */}
                     <span style={{
-                        fontSize: '0.65rem',
-                        fontWeight: 700,
-                        fontFamily: 'var(--font-display)',
+                        fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.1em',
                         textTransform: 'uppercase' as const,
-                        letterSpacing: '0.1em',
-                        color: 'var(--accent-gold)',
-                    }}>{roleTypeLabel} {t('role')}</span>
-                    <span className="badge badge-green" style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{t('open')}</span>
+                        color: call.roleType.toLowerCase() === 'lead'
+                            ? 'var(--accent-gold)'
+                            : call.roleType.toLowerCase() === 'supporting'
+                            ? 'var(--color-info)'
+                            : 'var(--text-secondary)',
+                        background: call.roleType.toLowerCase() === 'lead'
+                            ? 'rgba(212,168,83,0.1)'
+                            : call.roleType.toLowerCase() === 'supporting'
+                            ? 'rgba(96,165,250,0.1)'
+                            : 'rgba(255,255,255,0.06)',
+                        padding: '2px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        border: call.roleType.toLowerCase() === 'lead'
+                            ? '1px solid rgba(212,168,83,0.25)'
+                            : call.roleType.toLowerCase() === 'supporting'
+                            ? '1px solid rgba(96,165,250,0.25)'
+                            : '1px solid rgba(255,255,255,0.1)',
+                    }}>{roleTypeLabel}</span>
+
+                    {/* Open status pill */}
+                    <span style={{
+                        fontSize: '0.5rem', fontWeight: 600, letterSpacing: '0.08em',
+                        textTransform: 'uppercase' as const,
+                        color: 'var(--color-success)',
+                        background: 'rgba(52,211,153,0.1)',
+                        padding: '2px 8px',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid rgba(52,211,153,0.2)',
+                    }}>{t('open')}</span>
                 </div>
 
                 <h4 style={{
@@ -167,6 +191,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     {roleDescription.slice(0, 100)}{roleDescription.length > 100 ? '...' : ''}
                 </p>
 
+                {/* Metadata pills — full-radius, matching Works card tag style */}
                 <div style={{
                     display: 'flex',
                     gap: '5px',
@@ -176,8 +201,8 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     {call.ageRange && (
                         <span style={{
                             fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
-                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
-                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                            background: 'rgba(212,168,83,0.1)', color: 'var(--accent-gold)',
+                            borderRadius: 'var(--radius-full)', border: '1px solid rgba(212,168,83,0.2)',
                             display: 'inline-flex', alignItems: 'center', gap: '3px',
                         }}>
                             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0113 0" /></svg>
@@ -187,16 +212,15 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     {call.gender && (
                         <span style={{
                             fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
-                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
-                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                            background: 'rgba(212,168,83,0.1)', color: 'var(--accent-gold)',
+                            borderRadius: 'var(--radius-full)', border: '1px solid rgba(212,168,83,0.2)',
                         }}>{call.gender}</span>
                     )}
-
                     {call.deadline && (
                         <span style={{
                             fontSize: '0.6rem', padding: '2px 9px',
                             background: 'rgba(255,255,255,0.04)', color: 'var(--text-tertiary)',
-                            borderRadius: '5px', border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: 'var(--radius-full)', border: '1px solid rgba(255,255,255,0.08)',
                             display: 'inline-flex', alignItems: 'center', gap: '3px',
                         }}>
                             ⏰ {new Date(call.deadline).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}

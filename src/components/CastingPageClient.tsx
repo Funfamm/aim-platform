@@ -292,7 +292,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         </h1>
 
                         {/* Stats pill — same style as Works / Upcoming pages */}
-                        <div className="animate-fade-in-up delay-2" style={{
+                        <div className="animate-fade-in-up delay-2 casting-stats-pill" style={{
                             display: 'inline-flex',
                             gap: 'var(--space-xl)',
                             padding: '0.6rem 1.5rem',
@@ -301,7 +301,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             border: '1px solid var(--border-subtle)',
                             backdropFilter: 'blur(12px)',
                             WebkitBackdropFilter: 'blur(12px)',
-                            flexWrap: 'wrap' as const,
+                            flexWrap: 'nowrap' as const,
                             justifyContent: 'center',
                         }}>
                             <div>
@@ -370,6 +370,9 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
             <section id="roles" style={{
                 position: 'relative',
                 zIndex: 2,
+                background: 'var(--bg-primary)',
+                /* Soft fade from transparent at the very top so there's no hard cut */
+                backgroundImage: 'linear-gradient(180deg, rgba(13,15,20,0) 0px, var(--bg-primary) 60px)',
             }}>
 
 
@@ -499,6 +502,14 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         flex-direction: column !important;
                         gap: var(--space-xs) !important;
                         padding: var(--space-xs) var(--space-md) !important;
+                    }
+                    .casting-stats-pill {
+                        gap: var(--space-md) !important;
+                        padding: 0.5rem 1rem !important;
+                        flex-wrap: nowrap !important;
+                    }
+                    .casting-stats-pill span[style] {
+                        font-size: 0.55rem !important;
                     }
                 }
             `}</style>
