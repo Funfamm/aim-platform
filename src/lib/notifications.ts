@@ -650,12 +650,9 @@ export async function getAutoAdvanceStatus(
 // ─── Status email templates ───────────────────────────────────────────────────
 
 const STATUS_EMAIL_TEMPLATES: Record<string, { subject: string; heading: string; body: string; emoji: string }> = {
-    under_review: {
-        subject: 'Your Application is Being Reviewed',
-        heading: "We're Reviewing Your Application! 🔍",
-        body: "Great news! Our casting team is currently reviewing your application. We'll be in touch soon with next steps.",
-        emoji: '🔍',
-    },
+    // 'submitted' and 'under_review' are intentionally excluded:
+    // the applicant already got a confirmation on submission.
+    // Moving to "under review" is a silent internal admin action.
     shortlisted: {
         subject: "Congratulations, You've Been Shortlisted! ⭐",
         heading: "You're on the Shortlist!",
