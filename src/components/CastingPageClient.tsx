@@ -370,9 +370,6 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
             <section id="roles" style={{
                 position: 'relative',
                 zIndex: 2,
-                background: 'var(--bg-primary)',
-                /* Soft fade from transparent at the very top so there's no hard cut */
-                backgroundImage: 'linear-gradient(180deg, rgba(13,15,20,0) 0px, var(--bg-primary) 60px)',
             }}>
 
 
