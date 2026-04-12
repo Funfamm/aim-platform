@@ -92,5 +92,23 @@
     "micError": "마이크 접근이 거부되었습니다. 브라우저 설정에서 마이크를 허용하거나 파일 업로드 옵션을 사용하세요.",
     "uploadErrorType": "오디오 파일만 업로드해 주세요 (MP3, WAV, M4A, WebM, OGG, FLAC)",
     "uploadErrorSize": "오디오 파일은 50MB 미만이어야 합니다"
+  },
+  "nav": {
+    "home": "홈",
+    "works": "작품",
+    "upcoming": "예정",
+    "casting": "캐스팅",
+    "scripts": "대본",
+    "training": "교육",
+    "donate": "기부",
+    "dashboard": "대시보드",
+    "signOut": "로그아웃",
+    "signIn": "로그인",
+    "language": "언어",
+    "admin": "관리자",
+    "member": "회원",
+    "guest": "손님",
+    "discover": "탐색",
+    "about": "소개"
   }
 }

@@ -92,5 +92,23 @@
     "micError": "Mikrofonzugriff verweigert. Bitte erlaube den Mikrofonzugriff in deinen Browsereinstellungen oder nutze die Datei-Upload-Option.",
     "uploadErrorType": "Bitte lade nur eine Audiodatei hoch (MP3, WAV, M4A, WebM, OGG, FLAC)",
     "uploadErrorSize": "Die Audiodatei muss kleiner als 50 MB sein"
+  },
+  "nav": {
+    "home": "Startseite",
+    "works": "Werke",
+    "upcoming": "Demnächst",
+    "casting": "Casting",
+    "scripts": "Drehbücher",
+    "training": "Training",
+    "donate": "Spenden",
+    "dashboard": "Dashboard",
+    "signOut": "Abmelden",
+    "signIn": "Anmelden",
+    "language": "Sprache",
+    "admin": "Admin",
+    "member": "Mitglied",
+    "guest": "Gast",
+    "discover": "Entdecken",
+    "about": "Über uns"
   }
 }

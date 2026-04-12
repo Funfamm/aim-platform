@@ -234,5 +234,23 @@
     "pwGood": "Good",
     "pwStrong": "Strong",
     "pwExcellent": "Excellent"
+  },
+  "nav": {
+    "home": "Home",
+    "works": "Works",
+    "upcoming": "Upcoming",
+    "casting": "Casting",
+    "scripts": "Scripts",
+    "training": "Training",
+    "donate": "Donate",
+    "dashboard": "Dashboard",
+    "signOut": "Sign Out",
+    "signIn": "Sign In",
+    "language": "Language",
+    "admin": "Admin",
+    "member": "Member",
+    "guest": "Guest",
+    "discover": "Discover",
+    "about": "About"
   }
 }

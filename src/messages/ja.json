@@ -92,5 +92,23 @@
     "micError": "マイクへのアクセスが拒否されました。ブラウザの設定でマイクを許可するか、ファイルアップロードをお使いください。",
     "uploadErrorType": "音声ファイルのみアップロードできます（MP3、WAV、M4A、WebM、OGG、FLAC）",
     "uploadErrorSize": "音声ファイルは50MB未満にしてください"
+  },
+  "nav": {
+    "home": "ホーム",
+    "works": "作品",
+    "upcoming": "近日公開",
+    "casting": "キャスティング",
+    "scripts": "脚本",
+    "training": "トレーニング",
+    "donate": "寄付",
+    "dashboard": "ダッシュボード",
+    "signOut": "サインアウト",
+    "signIn": "サインイン",
+    "language": "言語",
+    "admin": "管理者",
+    "member": "会員",
+    "guest": "ゲスト",
+    "discover": "発見する",
+    "about": "について"
   }
 }

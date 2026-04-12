@@ -92,5 +92,23 @@
     "micError": "麦克风访问被拒绝。请在浏览器设置中允许麦克风访问，或使用文件上传选项。",
     "uploadErrorType": "请仅上传音频文件（MP3、WAV、M4A、WebM、OGG、FLAC）",
     "uploadErrorSize": "音频文件必须小于50MB"
+  },
+  "nav": {
+    "home": "首页",
+    "works": "作品",
+    "upcoming": "即将上线",
+    "casting": "选角",
+    "scripts": "剧本",
+    "training": "培训",
+    "donate": "捐款",
+    "dashboard": "仪表板",
+    "signOut": "退出登录",
+    "signIn": "登录",
+    "language": "语言",
+    "admin": "管理员",
+    "member": "成员",
+    "guest": "访客",
+    "discover": "探索",
+    "about": "关于"
   }
 }

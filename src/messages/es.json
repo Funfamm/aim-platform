@@ -92,5 +92,23 @@
     "micError": "Acceso al micrófono denegado. Permite el acceso al micrófono en la configuración de tu navegador o usa la opción de subir archivo.",
     "uploadErrorType": "Por favor sube solo un archivo de audio (MP3, WAV, M4A, WebM, OGG, FLAC)",
     "uploadErrorSize": "El archivo de audio debe ser menor de 50 MB"
+  },
+  "nav": {
+    "home": "Inicio",
+    "works": "Obras",
+    "upcoming": "Próximamente",
+    "casting": "Casting",
+    "scripts": "Guiones",
+    "training": "Formación",
+    "donate": "Donar",
+    "dashboard": "Panel",
+    "signOut": "Cerrar sesión",
+    "signIn": "Iniciar sesión",
+    "language": "Idioma",
+    "admin": "Admin",
+    "member": "Miembro",
+    "guest": "Invitado",
+    "discover": "Explorar",
+    "about": "Acerca de"
   }
 }

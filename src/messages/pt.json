@@ -92,5 +92,23 @@
     "micError": "Acesso ao microfone negado. Permita o acesso ao microfone nas configurações do navegador ou use a opção de envio de arquivo.",
     "uploadErrorType": "Por favor, envie apenas um arquivo de áudio (MP3, WAV, M4A, WebM, OGG, FLAC)",
     "uploadErrorSize": "O arquivo de áudio deve ter menos de 50 MB"
+  },
+  "nav": {
+    "home": "Início",
+    "works": "Obras",
+    "upcoming": "Em breve",
+    "casting": "Casting",
+    "scripts": "Roteiros",
+    "training": "Treinamento",
+    "donate": "Doar",
+    "dashboard": "Painel",
+    "signOut": "Sair",
+    "signIn": "Entrar",
+    "language": "Idioma",
+    "admin": "Admin",
+    "member": "Membro",
+    "guest": "Convidado",
+    "discover": "Explorar",
+    "about": "Sobre"
   }
 }

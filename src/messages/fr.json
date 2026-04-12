@@ -233,5 +233,23 @@
     "pwGood": "Bien",
     "pwStrong": "Fort",
     "pwExcellent": "Excellent"
+  },
+  "nav": {
+    "home": "Accueil",
+    "works": "Œuvres",
+    "upcoming": "À venir",
+    "casting": "Casting",
+    "scripts": "Scénarios",
+    "training": "Formation",
+    "donate": "Faire un don",
+    "dashboard": "Tableau de bord",
+    "signOut": "Se déconnecter",
+    "signIn": "Se connecter",
+    "language": "Langue",
+    "admin": "Admin",
+    "member": "Membre",
+    "guest": "Invité",
+    "discover": "Découvrir",
+    "about": "À propos"
   }
 }
