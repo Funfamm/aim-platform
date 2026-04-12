@@ -64,18 +64,32 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
     const roleDescription = tr?.roleDescription || call.roleDescription
     return (
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
+            {/* Outer shell */}
             <div style={{
-                background: 'rgba(255,255,255,0.08)',
-                backdropFilter: 'blur(40px) saturate(140%)',
-                WebkitBackdropFilter: 'blur(40px) saturate(140%)',
-                border: '1px solid rgba(212,168,83,0.18)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-md)',
-                transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
-                cursor: 'default',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-                animation: 'glowPulse 4s ease-in-out infinite',
+                position: 'relative',
+                borderRadius: '28px',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.30)',
+                overflow: 'hidden',
             }}>
+                {/* Dense frosted cream layer */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backdropFilter: 'blur(45px) saturate(160%)',
+                    WebkitBackdropFilter: 'blur(45px) saturate(160%)',
+                    background: 'rgba(255, 245, 235, 0.88)',
+                    borderRadius: 'inherit',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                }} />
+                {/* Content layer */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    padding: 'var(--space-md)',
+                    transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
+                }}>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -88,8 +102,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                         fontFamily: 'var(--font-display)',
                         textTransform: 'uppercase' as const,
                         letterSpacing: '0.1em',
-                        color: 'var(--accent-gold)',
-                        textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+                        color: '#b8882a',
                     }}>{roleTypeLabel} {t('role')}</span>
                     <span className="badge badge-green" style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{t('open')}</span>
                 </div>
@@ -98,18 +111,16 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     fontSize: '1.05rem', fontWeight: 800,
                     fontFamily: 'var(--font-display)',
                     marginBottom: 'var(--space-xs)',
-                    color: '#ffffff',
+                    color: '#1a1a2e',
                     letterSpacing: '-0.01em',
-                    textShadow: '0 2px 8px rgba(0,0,0,0.5)',
                 }}>
                     {roleName}
                 </h4>
 
                 <p style={{
                     fontSize: '0.78rem', lineHeight: 1.6,
-                    color: 'rgba(255,255,255,0.85)',
+                    color: 'rgba(30,30,50,0.72)',
                     marginBottom: 'var(--space-sm)',
-                    textShadow: '0 1px 3px rgba(0,0,0,0.4)',
                 }}>
                     {roleDescription.slice(0, 100)}{roleDescription.length > 100 ? '...' : ''}
                 </p>
@@ -123,8 +134,8 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     {call.ageRange && (
                         <span style={{
                             fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
-                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
-                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                            background: 'rgba(184,136,42,0.10)', color: '#b8882a',
+                            borderRadius: '5px', border: '1px solid rgba(184,136,42,0.22)',
                             display: 'inline-flex', alignItems: 'center', gap: '3px',
                         }}>
                             <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="7" r="4" /><path d="M5.5 21a6.5 6.5 0 0113 0" /></svg>
@@ -134,16 +145,16 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     {call.gender && (
                         <span style={{
                             fontSize: '0.6rem', padding: '2px 9px', fontWeight: 600,
-                            background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)',
-                            borderRadius: '5px', border: '1px solid rgba(212,168,83,0.18)',
+                            background: 'rgba(184,136,42,0.10)', color: '#b8882a',
+                            borderRadius: '5px', border: '1px solid rgba(184,136,42,0.22)',
                         }}>{call.gender}</span>
                     )}
 
                     {call.deadline && (
                         <span style={{
                             fontSize: '0.6rem', padding: '2px 9px',
-                            background: 'rgba(255,255,255,0.03)', color: 'var(--text-tertiary)',
-                            borderRadius: '5px', border: '1px solid rgba(255,255,255,0.07)',
+                            background: 'rgba(30,30,50,0.06)', color: 'rgba(30,30,50,0.55)',
+                            borderRadius: '5px', border: '1px solid rgba(30,30,50,0.10)',
                             display: 'inline-flex', alignItems: 'center', gap: '3px',
                         }}>
                             ⏰ {new Date(call.deadline).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}
@@ -154,7 +165,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                 {/* Applicant count & spots */}
                 <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    fontSize: '0.7rem', color: 'var(--text-tertiary)',
+                    fontSize: '0.7rem', color: 'rgba(30,30,50,0.50)',
                     marginBottom: 'var(--space-sm)',
                     padding: '4px 0',
                 }}>
@@ -167,7 +178,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                         </span>
                     </span>
                     {call.maxApplications && (call.maxApplications - (call._count?.applications ?? 0)) <= 10 && (call.maxApplications - (call._count?.applications ?? 0)) > 0 && (
-                        <span style={{ color: 'var(--color-warning)', fontWeight: 600 }}>
+                        <span style={{ color: '#c97c2a', fontWeight: 600 }}>
                             {call.maxApplications - (call._count?.applications ?? 0)} {t('spotsLeft')}
                         </span>
                     )}
@@ -277,6 +288,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                         {isWithdrawn ? '↩ ' + t('applyAgain') : t('apply')}
                     </Link>
                 )}
+                </div>
             </div>
         </ScrollReveal3D>
     )
