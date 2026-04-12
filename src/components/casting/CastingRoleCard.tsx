@@ -72,13 +72,24 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                 boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.30)',
                 overflow: 'hidden',
             }}>
-                {/* Dense frosted cream layer */}
+                {/* Frost layer 1 — primary heavy blur */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    backdropFilter: 'blur(45px) saturate(160%)',
-                    WebkitBackdropFilter: 'blur(45px) saturate(160%)',
+                    backdropFilter: 'blur(50px) saturate(170%)',
+                    WebkitBackdropFilter: 'blur(50px) saturate(170%)',
                     background: 'rgba(255, 245, 235, 0.30)',
+                    borderRadius: 'inherit',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                }} />
+                {/* Frost layer 2 — second pass for extra density */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backdropFilter: 'blur(50px) saturate(170%)',
+                    WebkitBackdropFilter: 'blur(50px) saturate(170%)',
+                    background: 'rgba(255, 248, 240, 0.22)',
                     borderRadius: 'inherit',
                     zIndex: 0,
                     pointerEvents: 'none',
