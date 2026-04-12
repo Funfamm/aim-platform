@@ -30,8 +30,19 @@ export default async function ScriptCallsPage() {
     try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift */ }
     const enabled = settings?.scriptCallsEnabled ?? false
 
+    // End-of-today cutoff so calls on the deadline day are still visible
+    const todayEnd = new Date()
+    todayEnd.setHours(23, 59, 59, 999)
+
     const calls = enabled ? await prisma.scriptCall.findMany({
-        where: { isPublic: true, status: 'open' },
+        where: {
+            isPublic: true,
+            status: 'open',
+            OR: [
+                { deadline: null },                    // no deadline — always visible
+                { deadline: { gte: todayEnd.toISOString().split('T')[0] } }, // deadline today or future
+            ],
+        },
         orderBy: { createdAt: 'desc' },
         take: 50,
         select: {

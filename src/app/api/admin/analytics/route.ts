@@ -56,6 +56,9 @@ export async function GET(req: NextRequest) {
             // Dashboard data (merged from separate endpoint)
             projectCount, castingCount, pendingCount, reviewedCount,
             recentApplications,
+            // Script submissions
+            scriptSubmissionCount, pendingScriptReviews,
+            recentScriptSubmissions,
         ] = await Promise.all([
             prisma.pageView.findMany({
                 where: { createdAt: { gte: fiveMin } },
@@ -92,6 +95,17 @@ export async function GET(req: NextRequest) {
                 select: {
                     id: true, fullName: true, status: true, aiScore: true, createdAt: true,
                     castingCall: { select: { roleName: true, project: { select: { title: true } } } },
+                },
+            }),
+            // Script submissions
+            prisma.scriptSubmission.count(),
+            prisma.scriptSubmission.count({ where: { status: 'submitted' } }),
+            prisma.scriptSubmission.findMany({
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                    id: true, authorName: true, title: true, status: true, createdAt: true,
+                    scriptCall: { select: { title: true } },
                 },
             }),
         ])
@@ -167,6 +181,16 @@ export async function GET(req: NextRequest) {
                     roleName: app.castingCall.roleName,
                     project: { title: app.castingCall.project.title },
                 },
+            })),
+            scriptSubmissionCount,
+            pendingScriptReviews,
+            recentScriptSubmissions: recentScriptSubmissions.map(s => ({
+                id: s.id,
+                authorName: s.authorName,
+                title: s.title,
+                status: s.status,
+                createdAt: s.createdAt.toISOString(),
+                scriptCallTitle: s.scriptCall?.title ?? null,
             })),
         }
 

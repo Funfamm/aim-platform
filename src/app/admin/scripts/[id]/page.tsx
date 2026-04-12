@@ -53,19 +53,25 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string; 
     withdrawn:   { label: 'Withdrawn',   color: '#6b7280', bg: 'rgba(107,114,128,0.08)', border: 'rgba(107,114,128,0.15)', dot: '#6b7280' },
 }
 
+// ── Status state machine ──────────────────────────────────────────────
+// Flow: submitted → analyzed → shortlisted → selected (terminal)
+//                         ↘               ↘
+//                       rejected        rejected  (terminal)
+// Once rejected or selected, the decision is final — no backward moves.
 const NEXT_STEPS: Record<string, string[]> = {
-    submitted:   ['analyzed', 'shortlisted', 'rejected'],
-    analyzed:    ['shortlisted', 'rejected'],
-    shortlisted: ['selected', 'rejected'],
-    selected:    ['analyzed'],
-    rejected:    ['analyzed'],
+    submitted:   ['analyzed', 'rejected'],   // review it or fast-reject
+    analyzed:    ['shortlisted', 'rejected'],// advance or reject after AI review
+    shortlisted: ['selected', 'rejected'],   // final decision
+    selected:    [],                         // TERMINAL — script chosen
+    rejected:    [],                         // TERMINAL — decision made
+    withdrawn:   [],                         // TERMINAL — author withdrew
 }
 
 const ACTION_META: Record<string, { label: string; icon: string; danger?: boolean; success?: boolean }> = {
     analyzed:    { label: 'Mark Analyzed',  icon: '✅' },
     shortlisted: { label: 'Shortlist',      icon: '⭐' },
     selected:    { label: 'Select',         icon: '🏆', success: true },
-    rejected:    { label: 'Reject',         icon: '✕',  danger: true },
+    rejected:    { label: 'Decline',        icon: '✕',  danger: true },
 }
 
 function ScoreBar({ label, score, color }: { label: string; score: number; color: string }) {
@@ -115,6 +121,7 @@ export default function AdminScriptCallDetailPage() {
     const [expanded, setExpanded] = useState<string | null>(null)
     const [confirmAction, setConfirmAction] = useState<{ subId: string; status: string } | null>(null)
     const [activeTab, setActiveTab] = useState<'all' | 'analyzed' | 'shortlisted' | 'selected'>('all')
+    const [scoreThreshold, setScoreThreshold] = useState(60) // default: 60 = shortlist bar
 
     const fetchData = useCallback(async () => {
         const [callRes, subRes] = await Promise.all([
@@ -381,6 +388,84 @@ export default function AdminScriptCallDetailPage() {
                 )}
             </div>
 
+            {/* ── Score Threshold Panel ── */}
+            {analyzed.length > 0 && (
+                <div style={{
+                    background: 'linear-gradient(135deg, rgba(96,165,250,0.04), rgba(139,92,246,0.03))',
+                    border: '1px solid rgba(96,165,250,0.12)',
+                    borderRadius: '14px', padding: '16px 20px',
+                    marginBottom: '24px',
+                    animation: 'fadeUp 0.38s ease 0.05s both',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '0.9rem' }}>🎚️</span>
+                            <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                Shortlist Threshold
+                            </span>
+                            <span style={{
+                                fontSize: '0.75rem', fontWeight: 900,
+                                color: '#60a5fa',
+                                background: 'rgba(96,165,250,0.12)',
+                                border: '1px solid rgba(96,165,250,0.25)',
+                                padding: '1px 9px', borderRadius: '99px',
+                            }}>{scoreThreshold}</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '16px', fontSize: '0.68rem' }}>
+                            <span style={{ color: '#34d399', fontWeight: 700 }}>
+                                ↑ {analyzed.filter(s => (s.analysis?.overallScore ?? 0) >= scoreThreshold).length} shortlist
+                            </span>
+                            <span style={{ color: '#f43f5e', fontWeight: 700 }}>
+                                ↓ {analyzed.filter(s => (s.analysis?.overallScore ?? 0) < scoreThreshold).length} decline
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Slider */}
+                    <div style={{ position: 'relative', marginBottom: '8px' }}>
+                        <input
+                            type="range" min={0} max={100} step={1}
+                            value={scoreThreshold}
+                            onChange={e => setScoreThreshold(Number(e.target.value))}
+                            style={{
+                                width: '100%', accentColor: '#60a5fa',
+                                height: '4px', cursor: 'pointer',
+                            }}
+                        />
+                        <div style={{
+                            display: 'flex', justifyContent: 'space-between',
+                            fontSize: '0.55rem', color: 'rgba(255,255,255,0.25)',
+                            marginTop: '2px', pointerEvents: 'none',
+                        }}>
+                            <span>0 — decline all</span>
+                            <span style={{ color: 'rgba(96,165,250,0.5)' }}>▲ {scoreThreshold}</span>
+                            <span>100 — shortlist all</span>
+                        </div>
+                    </div>
+
+                    {/* Score distribution bar */}
+                    {(() => {
+                        const total = analyzed.length
+                        const above = analyzed.filter(s => (s.analysis?.overallScore ?? 0) >= scoreThreshold).length
+                        const pct = total > 0 ? Math.round((above / total) * 100) : 0
+                        return (
+                            <div style={{ height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden', marginTop: '6px' }}>
+                                <div style={{
+                                    height: '100%', borderRadius: '4px',
+                                    width: `${pct}%`,
+                                    background: 'linear-gradient(90deg, #34d399, #60a5fa)',
+                                    transition: 'width 0.3s ease',
+                                }} />
+                            </div>
+                        )
+                    })()}
+                    <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+                        Scripts scoring ≥ <strong style={{ color: '#60a5fa' }}>{scoreThreshold}</strong> are recommended for shortlisting.
+                        Scores below are recommended for declining. This does not auto-change any status.
+                    </div>
+                </div>
+            )}
+
             {/* ── Top 3 Podium ── */}
             {topScores.length >= 2 && (
                 <div style={{
@@ -497,6 +582,23 @@ export default function AdminScriptCallDetailPage() {
                                             <span style={{ width: 5, height: 5, borderRadius: '50%', background: sc.dot, display: 'inline-block' }} />
                                             {sc.label}
                                         </span>
+                                        {/* Threshold recommendation badge — only for analyzed, non-terminal */}
+                                        {sub.analysis && sub.status === 'analyzed' && (() => {
+                                            const meets = sub.analysis.overallScore >= scoreThreshold
+                                            return (
+                                                <span title={`AI score ${Math.round(sub.analysis.overallScore)} is ${meets ? 'above' : 'below'} threshold of ${scoreThreshold}`} style={{
+                                                    fontSize: '0.55rem', fontWeight: 700,
+                                                    padding: '2px 8px', borderRadius: '5px',
+                                                    color: meets ? '#34d399' : '#f43f5e',
+                                                    background: meets ? 'rgba(52,211,153,0.08)' : 'rgba(244,63,94,0.08)',
+                                                    border: `1px solid ${meets ? 'rgba(52,211,153,0.2)' : 'rgba(244,63,94,0.2)'}`,
+                                                    display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    whiteSpace: 'nowrap',
+                                                }}>
+                                                    {meets ? '→ Shortlist' : '→ Decline'}
+                                                </span>
+                                            )
+                                        })()}
                                         {sub.genre && <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.04)', padding: '1px 7px', borderRadius: '4px' }}>{sub.genre}</span>}
                                     </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -525,12 +627,30 @@ export default function AdminScriptCallDetailPage() {
                                     )}
 
                                     {/* Status Action Buttons */}
-                                    {sub.status === 'withdrawn' ? (
-                                        <span style={{ fontSize: '0.62rem', color: '#6b7280', padding: '4px 10px', background: 'rgba(107,114,128,0.06)', border: '1px solid rgba(107,114,128,0.15)', borderRadius: '6px' }}>
-                                            ↩ Withdrawn
-                                        </span>
-                                    ) : (
-                                        (NEXT_STEPS[sub.status] || []).map(nextStatus => {
+                                    {(() => {
+                                        const nextSteps = NEXT_STEPS[sub.status] ?? []
+                                        const isTerminal = nextSteps.length === 0
+                                        const terminalConfig: Record<string, { icon: string; label: string; color: string }> = {
+                                            selected:  { icon: '🏆', label: 'Selected — Final',  color: '#34d399' },
+                                            rejected:  { icon: '🔒', label: 'Declined — Final',  color: '#f43f5e' },
+                                            withdrawn: { icon: '↩', label: 'Withdrawn',          color: '#6b7280' },
+                                        }
+                                        if (isTerminal) {
+                                            const tc = terminalConfig[sub.status]
+                                            return tc ? (
+                                                <span title="This decision is final and cannot be changed." style={{
+                                                    fontSize: '0.62rem', fontWeight: 700,
+                                                    padding: '4px 10px', borderRadius: '6px',
+                                                    color: tc.color,
+                                                    background: `${tc.color}10`,
+                                                    border: `1px solid ${tc.color}30`,
+                                                    cursor: 'default', userSelect: 'none',
+                                                }}>
+                                                    {tc.icon} {tc.label}
+                                                </span>
+                                            ) : null
+                                        }
+                                        return nextSteps.map(nextStatus => {
                                             const meta = ACTION_META[nextStatus]
                                             if (!meta) return null
                                             const gated = nextStatus === 'shortlisted' && !sub.analysis
@@ -556,7 +676,8 @@ export default function AdminScriptCallDetailPage() {
                                                 </button>
                                             )
                                         })
-                                    )}
+                                    })()}
+
 
                                     {/* Expand chevron */}
                                     <div style={{

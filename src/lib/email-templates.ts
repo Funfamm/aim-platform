@@ -848,26 +848,33 @@ export function auditResultRevealEmail(
 
 
 export async function scriptSubmissionConfirmationWithOverrides(name: string, title: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const scriptLabel = emailT('scriptSubmission', locale, 'scriptLabel') || 'Script'
+    const statusLabel = emailT('scriptSubmission', locale, 'statusLabel') || 'Status'
+    const statusValue = emailT('scriptSubmission', locale, 'statusValue') || '\u{1F4CB} Submitted'
+    const footer      = emailT('scriptSubmission', locale, 'footer')      || 'You received this because you submitted a script to AIM Studio.'
+    const subject     = (emailT('scriptSubmission', locale, 'subject') || 'Script "{title}" submitted successfully').replace('{title}', title)
     const f = await mergeFields('scriptSubmission', {
-        heading:    emailT('scriptSubmission', locale, 'heading') || 'Script Submitted! ✍️',
-        body:       emailT('scriptSubmission', locale, 'body') || 'Our team will review your screenplay submission. If selected, we may reach out for further discussion.',
-        thanks:     emailT('scriptSubmission', locale, 'thanks') || 'Thank you for sharing your creative work with us!',
+        heading:    emailT('scriptSubmission', locale, 'heading')    || 'Script Submitted! \u270d\ufe0f',
+        subtext:    emailT('scriptSubmission', locale, 'subtext')    || 'your submission has been received.',
+        body:       emailT('scriptSubmission', locale, 'body')       || 'Our team will review your screenplay submission. If selected, we may reach out for further discussion.',
+        thanks:     emailT('scriptSubmission', locale, 'thanks')     || 'Thank you for sharing your creative work with us!',
         buttonText: emailT('scriptSubmission', locale, 'buttonText') || 'View Your Dashboard',
         buttonUrl:  siteUrl ? `${siteUrl}/dashboard` : '',
     })
     return emailWrapper(`
         ${heading(f.heading)}
-        ${subtext(`Hi ${name}, ${emailT('scriptSubmission', locale, 'subtext') || 'your submission has been received.'}`)}
+        ${subtext(`Hi ${name}, ${f.subtext}`)}
         ${infoCard(`
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                ${infoRow('Script', title)}
-                ${infoRow('Status', '📋 Submitted')}
+                ${infoRow(scriptLabel, title)}
+                ${infoRow(statusLabel, statusValue)}
             </table>
         `, BRAND_COLOR)}
         ${paragraph(f.body)}
         ${paragraph(f.thanks)}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footer}</span>`)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
-    `, `Script "${title}" submitted successfully`)
+    `, subject)
 }
 
 // ── Broadcast Notification Templates ─────────────────────────────────────────

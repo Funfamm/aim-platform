@@ -79,14 +79,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     void (async () => {
         try {
             if (authorUser) {
-                await mirrorToNotificationBoard(
-                    authorUser.id,
-                    'system',
-                    `Script Submitted ✍️ "${title}"`,
-                    `Your screenplay "${title}" has been submitted. Our team will review it and reach out if selected.`,
-                    '/dashboard',
-                    `script-confirm-${submission.id}`,
-                )
+                const notifTitle = (emailT('scriptSubmission', authorLocale, 'notifTitle') || 'Script Submitted ✍️ "{title}"').replace('{title}', title)
+                const notifBody  = (emailT('scriptSubmission', authorLocale, 'notifBody')  || 'Your screenplay "{title}" has been submitted. Our team will review it and reach out if selected.').replace(/{title}/g, title)
+                await mirrorToNotificationBoard(authorUser.id, 'system', notifTitle, notifBody, '/dashboard', `script-confirm-${submission.id}`)
             }
         } catch { /* non-critical */ }
     })()

@@ -42,6 +42,8 @@ interface DashboardData {
     applicationCount: number
     pendingCount: number
     reviewedCount: number
+    scriptSubmissionCount: number
+    pendingScriptReviews: number
     recentApplications: {
         id: string
         fullName: string
@@ -52,6 +54,14 @@ interface DashboardData {
             roleName: string
             project: { title: string }
         }
+    }[]
+    recentScriptSubmissions: {
+        id: string
+        authorName: string
+        title: string
+        status: string
+        createdAt: string
+        scriptCallTitle: string | null
     }[]
 }
 
@@ -479,7 +489,7 @@ export default function AdminAnalyticsPage() {
                                 {data?.dashboard && (
                                     <>
                                         <div className="aa-cmd-strip" style={{
-                                            display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-sm)',
+                                            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-sm)',
                                             marginBottom: 'var(--space-lg)',
                                         }}>
                                             {[
@@ -487,6 +497,7 @@ export default function AdminAnalyticsPage() {
                                                 { label: 'Open Castings', value: data.dashboard.castingCount, icon: '🎭', color: '#f59e0b', gradient: 'rgba(245,158,11,0.05)' },
                                                 { label: 'Applications', value: data.dashboard.applicationCount, icon: '📋', color: '#3b82f6', gradient: 'rgba(59,130,246,0.05)' },
                                                 { label: 'Pending Review', value: data.dashboard.pendingCount, icon: '⌛', color: data.dashboard.pendingCount > 0 ? '#ef4444' : '#22c55e', gradient: data.dashboard.pendingCount > 0 ? 'rgba(239,68,68,0.05)' : 'rgba(34,197,94,0.04)' },
+                                                { label: 'Script Submissions', value: data.dashboard.scriptSubmissionCount, icon: '✍️', color: data.dashboard.pendingScriptReviews > 0 ? '#f59e0b' : '#a855f7', gradient: data.dashboard.pendingScriptReviews > 0 ? 'rgba(245,158,11,0.06)' : 'rgba(168,85,247,0.05)', badge: data.dashboard.pendingScriptReviews > 0 ? data.dashboard.pendingScriptReviews : null },
                                             ].map((stat, idx) => (
                                                 <div key={stat.label} className="cmd-card" style={{
                                                     background: `linear-gradient(135deg, ${stat.gradient}, var(--bg-secondary))`,
@@ -503,6 +514,15 @@ export default function AdminAnalyticsPage() {
                                                         background: `radial-gradient(circle, ${stat.gradient}, transparent)`,
                                                         opacity: 0.8, pointerEvents: 'none',
                                                     }} />
+                                                    {'badge' in stat && stat.badge != null && (
+                                                        <div style={{
+                                                            position: 'absolute', top: '8px', right: '8px',
+                                                            background: 'rgba(245,158,11,0.15)',
+                                                            border: '1px solid rgba(245,158,11,0.3)',
+                                                            color: '#f59e0b', fontSize: '0.55rem', fontWeight: 800,
+                                                            padding: '2px 6px', borderRadius: '99px',
+                                                        }}>{stat.badge} new</div>
+                                                    )}
                                                     <div style={{ fontSize: '1.3rem', marginBottom: '6px', position: 'relative', zIndex: 1 }}>{stat.icon}</div>
                                                     <div style={{ fontSize: '1.8rem', fontWeight: 900, color: stat.color, lineHeight: 1, position: 'relative', zIndex: 1 }}>
                                                         <AnimatedNumber value={stat.value} />
@@ -537,6 +557,19 @@ export default function AdminAnalyticsPage() {
                                                 background: 'rgba(239,68,68,0.15)', fontSize: '0.68rem',
                                                 fontWeight: 800, color: '#ef4444',
                                             }}>{data.dashboard.pendingCount}</span>}</Link>
+                                            <Link href="/admin/scripts" style={{
+                                                padding: '8px 16px', fontSize: '0.78rem', fontWeight: 700,
+                                                borderRadius: 'var(--radius-md)', textDecoration: 'none',
+                                                background: data.dashboard.pendingScriptReviews > 0 ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.04)',
+                                                border: `1px solid ${data.dashboard.pendingScriptReviews > 0 ? 'rgba(245,158,11,0.25)' : 'var(--border-subtle)'}`,
+                                                color: data.dashboard.pendingScriptReviews > 0 ? '#f59e0b' : 'var(--text-secondary)',
+                                                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                transition: 'all 0.2s',
+                                            }}>✍️ Review Scripts {data.dashboard.pendingScriptReviews > 0 && <span style={{
+                                                padding: '1px 7px', borderRadius: 'var(--radius-full)',
+                                                background: 'rgba(245,158,11,0.15)', fontSize: '0.68rem',
+                                                fontWeight: 800, color: '#f59e0b',
+                                            }}>{data.dashboard.pendingScriptReviews}</span>}</Link>
                                             <Link href="/admin/casting" style={{
                                                 padding: '8px 16px', fontSize: '0.78rem', fontWeight: 700,
                                                 borderRadius: 'var(--radius-md)', textDecoration: 'none',
@@ -553,7 +586,7 @@ export default function AdminAnalyticsPage() {
                                             <div style={{
                                                 ...cardStyle,
                                                 padding: 0, overflow: 'hidden',
-                                                marginBottom: 'var(--space-xl)',
+                                                marginBottom: 'var(--space-lg)',
                                             }}>
                                                 <div style={{
                                                     padding: '10px 16px',
@@ -613,6 +646,77 @@ export default function AdminAnalyticsPage() {
                                                                 }}>{app.status}</span>
                                                                 <div className="aa-app-date" style={{ color: 'var(--text-tertiary)', fontSize: '0.68rem', textAlign: 'right' }}>
                                                                     {new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                </div>
+                                                            </Link>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Recent Script Submissions */}
+                                        {data.dashboard.recentScriptSubmissions.length > 0 && (
+                                            <div style={{
+                                                ...cardStyle,
+                                                padding: 0, overflow: 'hidden',
+                                                marginBottom: 'var(--space-xl)',
+                                            }}>
+                                                <div style={{
+                                                    padding: '10px 16px',
+                                                    borderBottom: '1px solid var(--border-subtle)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{
+                                                            fontSize: '0.65rem', textTransform: 'uppercase',
+                                                            letterSpacing: '0.1em', color: '#f59e0b',
+                                                            fontWeight: 700,
+                                                        }}>✍️ Recent Script Submissions</div>
+                                                        {data.dashboard.pendingScriptReviews > 0 && (
+                                                            <span style={{
+                                                                padding: '1px 7px', borderRadius: 'var(--radius-full)',
+                                                                background: 'rgba(245,158,11,0.12)',
+                                                                border: '1px solid rgba(245,158,11,0.25)',
+                                                                fontSize: '0.6rem', fontWeight: 800, color: '#f59e0b',
+                                                            }}>{data.dashboard.pendingScriptReviews} unreviewed</span>
+                                                        )}
+                                                    </div>
+                                                    <Link href="/admin/scripts" style={{
+                                                        fontSize: '0.68rem', color: 'var(--text-tertiary)',
+                                                        textDecoration: 'none', fontWeight: 600,
+                                                    }}>View all →</Link>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                    {data.dashboard.recentScriptSubmissions.map((sub) => {
+                                                        const isNew = sub.status === 'submitted'
+                                                        return (
+                                                            <Link key={sub.id} href={`/admin/scripts`} style={{
+                                                                display: 'grid', gridTemplateColumns: '1fr auto 70px',
+                                                                alignItems: 'center', gap: '10px',
+                                                                padding: '10px 16px', textDecoration: 'none',
+                                                                borderBottom: '1px solid rgba(255,255,255,0.03)',
+                                                                background: isNew ? 'rgba(245,158,11,0.025)' : 'transparent',
+                                                                transition: 'background 0.15s',
+                                                            }}>
+                                                                <div style={{ minWidth: 0 }}>
+                                                                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                        {isNew && <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', flexShrink: 0, display: 'inline-block' }} />}
+                                                                        {sub.title}
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '1px' }}>
+                                                                        by {sub.authorName}{sub.scriptCallTitle ? ` · ${sub.scriptCallTitle}` : ''}
+                                                                    </div>
+                                                                </div>
+                                                                <span style={{
+                                                                    fontSize: '0.62rem', fontWeight: 700,
+                                                                    padding: '2px 8px', borderRadius: 'var(--radius-full)',
+                                                                    background: isNew ? 'rgba(245,158,11,0.12)' : 'rgba(107,114,128,0.08)',
+                                                                    color: isNew ? '#f59e0b' : '#6b7280',
+                                                                    border: `1px solid ${isNew ? 'rgba(245,158,11,0.2)' : 'transparent'}`,
+                                                                    textTransform: 'capitalize', whiteSpace: 'nowrap',
+                                                                }}>{isNew ? '🔔 New' : sub.status}</span>
+                                                                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.68rem', textAlign: 'right' }}>
+                                                                    {new Date(sub.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                                 </div>
                                                             </Link>
                                                         )
