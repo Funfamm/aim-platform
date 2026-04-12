@@ -64,18 +64,33 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
     const roleDescription = tr?.roleDescription || call.roleDescription
     return (
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
+            {/* Outer shell — holds shape, border, shadow. No filter so it doesn't block children. */}
             <div style={{
-                background: 'rgba(255, 255, 255, 0.14)',
-                backdropFilter: 'blur(40px) saturate(150%)',
-                WebkitBackdropFilter: 'blur(40px) saturate(150%)',
-                border: '1px solid rgba(255, 255, 255, 0.22)',
+                position: 'relative',
                 borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-md)',
-                transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
-                cursor: 'default',
-                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.22)',
+                border: '1px solid rgba(255, 255, 255, 0.28)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
                 animation: 'glowPulse 4s ease-in-out infinite',
+                overflow: 'hidden',
             }}>
+                {/* Frost layer — backdrop-filter lives here, isolated from the transform */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    backdropFilter: 'blur(32px) saturate(160%)',
+                    WebkitBackdropFilter: 'blur(32px) saturate(160%)',
+                    background: 'rgba(255, 255, 255, 0.22)',
+                    borderRadius: 'inherit',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                }} />
+                {/* Content sits above the frost layer */}
+                <div style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    padding: 'var(--space-md)',
+                    transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
+                }}>
                 <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -277,6 +292,7 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                         {isWithdrawn ? '↩ ' + t('applyAgain') : t('apply')}
                     </Link>
                 )}
+                </div>
             </div>
         </ScrollReveal3D>
     )
