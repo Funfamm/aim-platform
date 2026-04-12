@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import TranslationBadge, { getTranslationCoverage } from '@/components/TranslationBadge'
 
 interface Project {
     id: string
@@ -23,6 +24,7 @@ interface ScriptCall {
     maxSubmissions: number
     project: { title: string } | null
     _count: { submissions: number }
+    contentTranslations: string | null
 }
 
 const STATUS_META: Record<string, { color: string; bg: string; icon: string }> = {
@@ -120,7 +122,17 @@ export default function AdminScriptsPage() {
     }
 
     const togglePublic = async (call: ScriptCall) => {
-        await fetch(`/api/script-calls/${call.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isPublic: !call.isPublic }) })
+        const making = !call.isPublic
+        if (making) {
+            const { isComplete, count, total } = getTranslationCoverage(call.contentTranslations)
+            if (!isComplete) {
+                const ok = confirm(
+                    `⚠️ Translation Warning\n\nOnly ${count}/${total} languages have been translated for "${call.title}".\n\nPublishing now means international users will see untranslated content.\n\nContinue anyway?`
+                )
+                if (!ok) return
+            }
+        }
+        await fetch(`/api/script-calls/${call.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isPublic: making }) })
         fetchCalls()
     }
 
@@ -477,6 +489,7 @@ export default function AdminScriptsPage() {
                                                         🌐 Public
                                                     </span>
                                                 )}
+                                                <TranslationBadge translationsJson={call.contentTranslations} retry={{ type: 'script', id: call.id }} />
                                             </div>
                                         </div>
 

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
+import TranslationBadge, { getTranslationCoverage } from '@/components/TranslationBadge'
 
 /* ── Types ── */
 type Project = { id: string; title: string; slug: string; genre: string | null; year: string | null; coverImage: string | null }
@@ -11,6 +12,7 @@ type CastingCall = {
     roleName: string; roleType: string; roleDescription: string
     ageRange: string | null; gender: string | null; ethnicity: string | null
     requirements: string; compensation: string | null; deadline: string | null; status: string
+    translations: string | null
     _count: { applications: number }
 }
 
@@ -131,6 +133,17 @@ export default function AdminCastingPage() {
         }
         setSaving(true)
         setError('')
+        // ── Translation check: warn before opening without full translations
+        const editingCall = editingId ? castingCalls.find(c => c.id === editingId) : null
+        if (form.status === 'open' && editingCall) {
+            const { isComplete, count, total } = getTranslationCoverage(editingCall.translations)
+            if (!isComplete) {
+                const ok = confirm(
+                    `⚠️ Translation Warning\n\nOnly ${count}/${total} languages have been translated for "${form.roleName}".\n\nOpening this role means international users will see untranslated content.\n\nContinue anyway?`
+                )
+                if (!ok) { setSaving(false); return }
+            }
+        }
         try {
             const url = editingId ? `/api/admin/casting/${editingId}` : '/api/admin/casting'
             const method = editingId ? 'PUT' : 'POST'
@@ -386,6 +399,7 @@ export default function AdminCastingPage() {
                                                     <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{call.roleName}</span>
                                                     <span className={`badge ${roleClass}`} style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{call.roleType}</span>
                                                     <span className={`badge ${status.className}`} style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{status.label}</span>
+                                                    <TranslationBadge translationsJson={call.translations} retry={{ type: 'casting', id: call.id }} />
                                                 </div>
                                                 <div style={{ fontSize: '0.76rem', color: 'var(--text-tertiary)', lineHeight: 1.4, marginBottom: '6px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                     {call.roleDescription}

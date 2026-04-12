@@ -74,7 +74,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                         data: { contentTranslations: translations },
                     })
                 } catch { /* contentTranslations column may not exist in DB yet */ }
-            })
+            }, 'scripts')
         }
     }
 

@@ -36,7 +36,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             { roleName: castingCall.roleName, roleDescription: castingCall.roleDescription },
             async (translations) => {
                 await prisma.castingCall.update({ where: { id }, data: { translations } as any })
-            }
+            },
+            'audition'
         )
     }
 

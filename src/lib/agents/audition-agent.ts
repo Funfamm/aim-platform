@@ -817,7 +817,7 @@ export async function runAuditionAgent(input: AuditInput): Promise<AuditReport> 
 
         if (geminiKeys.length === 0) {
             console.log(`[AI Audit] No Gemini keys explicitly assigned to 'audition'. Querying fallback keys...`)
-            const fallbackKey = await getAvailableGeminiKey(dailyExhaustedKeys)
+            const fallbackKey = await getAvailableGeminiKey(dailyExhaustedKeys, 'audition')
             if (fallbackKey) {
                 geminiKeys.push(fallbackKey)
                 console.log(`[AI Audit] Used fallback Gemini key: ${fallbackKey.label}`)

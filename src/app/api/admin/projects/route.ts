@@ -68,7 +68,8 @@ export async function POST(req: Request) {
         { title: body.title, tagline: body.tagline || '', description: body.description, genre: body.genre || '' },
         async (translations) => {
             await prisma.project.update({ where: { id: project.id }, data: { translations } })
-        }
+        },
+        'all'
     )
 
     // Fire-and-forget: notify users if project is published immediately

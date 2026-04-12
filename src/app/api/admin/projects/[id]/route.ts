@@ -42,7 +42,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             { title: project.title, tagline: project.tagline, description: project.description, genre: project.genre || '' },
             async (translations) => {
                 await prisma.project.update({ where: { id }, data: { translations } })
-            }
+            },
+            'all'
         )
     }
 

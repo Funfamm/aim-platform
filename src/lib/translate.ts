@@ -9,25 +9,43 @@ const LOCALE_NAMES: Record<string, string> = {
 }
 
 /**
- * Translates a set of fields into all non-English locales using AI.
+ * Translates a set of fields into all non-English locales (or a subset) using AI.
  * Returns a map: { locale: { field: translatedValue } }
- * 
+ *
+ * @param fields       - The English source fields to translate
+ * @param agent        - Which API key pool to use
+ * @param onlyLocales  - If provided, only translate these specific locales (used for partial retries)
+ *
  * Example:
  *   translateContent({ title: "Neon Saints", tagline: "Every city has its gods" })
  *   → { zh: { title: "霓虹圣徒", tagline: "每座城市都有它的神" }, es: { ... }, ... }
  */
 export async function translateContent(
     fields: Record<string, string>,
-    agent: string = 'all'
+    agent: string = 'all',
+    onlyLocales?: string[]
 ): Promise<Record<string, Record<string, string>> | null> {
     // Filter out empty fields
     const nonEmpty = Object.entries(fields).filter(([, v]) => v && v.trim().length > 0)
     if (nonEmpty.length === 0) return null
 
+    // Determine which locales to request
+    const requestLocales = onlyLocales
+        ? TARGET_LOCALES.filter(l => onlyLocales.includes(l))
+        : [...TARGET_LOCALES]
+
+    if (requestLocales.length === 0) {
+        console.log('[translate] No locales to translate — all already done')
+        return null
+    }
+
     const fieldNames = nonEmpty.map(([k]) => k)
     const fieldList = nonEmpty.map(([k, v]) => `"${k}": "${v.replace(/"/g, '\\"')}"`).join(',\n    ')
+    const localeList = requestLocales.map(l => `"${l}" (${LOCALE_NAMES[l]})`).join(', ')
 
-    const localeList = TARGET_LOCALES.map(l => `"${l}" (${LOCALE_NAMES[l]})`).join(', ')
+    const localeBlock = requestLocales
+        .map(l => `  "${l}": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} }`)
+        .join(',\n')
 
     const prompt = `You are a professional translator. Translate the following content into these languages: ${localeList}.
 
@@ -38,16 +56,7 @@ Source content (English):
 
 Return ONLY a valid JSON object with this exact structure — no markdown, no code fences, no explanation:
 {
-  "es": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "fr": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "ar": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "zh": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "hi": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "pt": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "ru": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "ja": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "de": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} },
-  "ko": { ${fieldNames.map(f => `"${f}": "translated text"`).join(', ')} }
+${localeBlock}
 }
 
 Important rules:
@@ -56,7 +65,7 @@ Important rules:
 - Return ONLY the JSON object, nothing else.`
 
     try {
-        const result = await callGemini(prompt, 'audition')
+        const result = await callGemini(prompt, agent)
         if ('error' in result) {
             console.error('[translate] AI error:', result.error)
             return null
@@ -71,9 +80,9 @@ Important rules:
         const parsed = JSON.parse(text) as Record<string, Record<string, string>>
 
         // Validate structure
-        for (const locale of TARGET_LOCALES) {
+        for (const locale of requestLocales) {
             if (!parsed[locale] || typeof parsed[locale] !== 'object') {
-                console.warn(`[translate] Missing locale: ${locale}`)
+                console.warn(`[translate] Missing locale in response: ${locale}`)
             }
         }
 
@@ -85,14 +94,15 @@ Important rules:
 }
 
 /**
- * Fire-and-forget wrapper — translates and saves to DB.
+ * Fire-and-forget wrapper — translates all locales and saves to DB.
  * Use this in API routes after save so it doesn't block the response.
  */
 export function translateAndSave(
     fields: Record<string, string>,
-    saveCallback: (translations: string) => Promise<void>
+    saveCallback: (translations: string) => Promise<void>,
+    agent: string = 'all'
 ): void {
-    translateContent(fields)
+    translateContent(fields, agent)
         .then(async (result) => {
             if (result) {
                 await saveCallback(JSON.stringify(result))
@@ -101,6 +111,52 @@ export function translateAndSave(
         })
         .catch((err) => {
             console.error('[translate] Background save failed:', err)
+        })
+}
+
+/**
+ * Retry translation — only translates missing locales, merges with existing.
+ * Use this when a previous translateAndSave() completed partially (e.g. API hiccup)
+ * so we never waste quota re-translating what's already been done.
+ *
+ * @param fields              - The English source fields (current values)
+ * @param existingJson        - The current contentTranslations / translations JSON string from DB
+ * @param saveCallback        - Called with the merged full translations JSON string
+ * @param agent               - Which API key pool to use
+ */
+export function retryMissingTranslations(
+    fields: Record<string, string>,
+    existingJson: string | null | undefined,
+    saveCallback: (translations: string) => Promise<void>,
+    agent: string = 'all'
+): void {
+    // Parse existing so we know what's already done
+    let existing: Record<string, Record<string, string>> = {}
+    if (existingJson) {
+        try { existing = JSON.parse(existingJson) } catch { /* start fresh */ }
+    }
+
+    // Find locales that are genuinely missing (no entry at all)
+    const missingLocales = TARGET_LOCALES.filter(l => !existing[l] || Object.keys(existing[l]).length === 0)
+
+    if (missingLocales.length === 0) {
+        console.log('[translate] No missing locales — skipping retry')
+        return
+    }
+
+    console.log('[translate] Retrying missing locales:', missingLocales.join(', '))
+
+    translateContent(fields, agent, missingLocales)
+        .then(async (newTranslations) => {
+            if (newTranslations) {
+                // Merge: existing is the base, newTranslations fills the gaps
+                const merged = { ...existing, ...newTranslations }
+                await saveCallback(JSON.stringify(merged))
+                console.log('[translate] Retry: filled', missingLocales.length, 'missing locale(s)')
+            }
+        })
+        .catch((err) => {
+            console.error('[translate] Retry save failed:', err)
         })
 }
 
@@ -180,7 +236,7 @@ export async function translateStatusNote(
     // ── Tier 3: AI API call (only when nothing is cached) ────────────────────
     try {
         const prompt = `Translate this casting feedback message to ${targetLang}. Keep the warm, personal, and encouraging tone. Return ONLY the translated text with no explanation:\n\n${text}`
-        const result = await callGemini(prompt, 'all')
+        const result = await callGemini(prompt, 'audition')
         if ('error' in result || !result.text) return text
         const translated = result.text.trim() || text
 

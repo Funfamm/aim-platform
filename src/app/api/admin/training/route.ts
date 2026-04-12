@@ -84,7 +84,8 @@ export async function POST(req: Request) {
             { title: course.title, description: course.description },
             async (translations) => {
                 await prisma.course.update({ where: { id: course.id }, data: { translations } })
-            }
+            },
+            'training'
         )
 
         // Also translate each module and lesson
@@ -94,7 +95,8 @@ export async function POST(req: Request) {
                     { title: mod.title, ...(mod.description ? { description: mod.description } : {}) },
                     async (translations) => {
                         await prisma.courseModule.update({ where: { id: mod.id }, data: { translations } })
-                    }
+                    },
+                    'training'
                 )
             }
             for (const lesson of mod.lessons) {
@@ -103,7 +105,8 @@ export async function POST(req: Request) {
                         { title: lesson.title, ...(lesson.description ? { description: lesson.description } : {}) },
                         async (translations) => {
                             await prisma.lesson.update({ where: { id: lesson.id }, data: { translations } })
-                        }
+                        },
+                        'training'
                     )
                 }
             }

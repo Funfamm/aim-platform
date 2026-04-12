@@ -10,7 +10,11 @@ export async function GET() {
     const castingCalls = await prisma.castingCall.findMany({
         orderBy: { createdAt: 'desc' },
         take: 200,
-        include: {
+        select: {
+            id: true, projectId: true, roleName: true, roleType: true,
+            roleDescription: true, ageRange: true, gender: true, ethnicity: true,
+            requirements: true, compensation: true, deadline: true, status: true,
+            translations: true, createdAt: true,
             project: { select: { id: true, title: true, slug: true, genre: true, year: true, coverImage: true } },
             _count: { select: { applications: true } },
         },
@@ -53,7 +57,8 @@ export async function POST(req: Request) {
         { roleName: body.roleName, roleDescription: body.roleDescription },
         async (translations) => {
             await prisma.castingCall.update({ where: { id: castingCall.id }, data: { translations } })
-        }
+        },
+        'audition'
     )
 
     // Fire-and-forget: notify opted-in users about the new role

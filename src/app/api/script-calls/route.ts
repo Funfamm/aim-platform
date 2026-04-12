@@ -22,6 +22,7 @@ export async function GET() {
             toneKeywords: true, targetLength: true, deadline: true,
             status: true, isPublic: true, maxSubmissions: true,
             projectId: true, createdAt: true, updatedAt: true,
+            contentTranslations: true,
             project: { select: { title: true, slug: true, coverImage: true } },
             _count: { select: { submissions: true } },
         },
@@ -67,7 +68,7 @@ export async function POST(req: Request) {
                 data: { contentTranslations: translations },
             })
         } catch { /* contentTranslations column may not exist in DB yet */ }
-    })
+    }, 'scripts')
 
     return NextResponse.json(call)
 }
