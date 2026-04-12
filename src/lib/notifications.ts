@@ -295,7 +295,8 @@ interface StatusChangeOptions {
     projectTitle: string
     aiScore?: number | null
     statusNote?: string | null
-    userId?: string // if available, also write in-app notification
+    userId?: string  // if available, also write in-app notification
+    locale?: string  // applicant's locale at submission — used as fallback for guest applicants
 }
 
 export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Promise<void> {
@@ -311,8 +312,12 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
         const siteName = settings?.siteName || 'AIM Studio'
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || ''
 
-        // Resolve user locale from DB if userId is known
-        let locale = 'en'
+        // Resolve locale:
+        //  1. Prefer user.preferredLanguage from DB (registered applicants)
+        //  2. Fall back to opts.locale — the locale stored on Application at submission time
+        //     This ensures guest applicants get emails in the language they applied in.
+        //  3. Final fallback: 'en'
+        let locale = opts.locale || 'en'
         if (opts.userId) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const userLang = await (prisma as any).user.findUnique({

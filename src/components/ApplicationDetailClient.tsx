@@ -22,6 +22,8 @@ interface Props {
         statusNote: string | null
         auditState?: string | null
         adminRevealOverride?: boolean
+        pendingNotifyStatus?: string | null
+        notifyAfter?: string | null
     }
     castingCall: {
         roleName: string
@@ -103,6 +105,26 @@ export default function ApplicationDetailClient({ application, castingCall, phot
     const [feedbackSaved, setFeedbackSaved] = useState(false)
     const [bypassActive, setBypassActive] = useState(false)
     const [confirmAction, setConfirmAction] = useState<string | null>(null)
+    const [sendingNow, setSendingNow] = useState(false)
+
+    const notifyAfterDate = application.notifyAfter ? new Date(application.notifyAfter) : null
+    const notifyHoursLeft = notifyAfterDate ? Math.max(0, Math.ceil((notifyAfterDate.getTime() - Date.now()) / (1000 * 60 * 60))) : 0
+    const notifyMinutesLeft = notifyAfterDate ? Math.max(0, Math.ceil((notifyAfterDate.getTime() - Date.now()) / (1000 * 60))) : 0
+    const hasPendingNotification = !!application.pendingNotifyStatus && notifyAfterDate && notifyAfterDate > new Date()
+
+    const sendNotificationNow = async () => {
+        setSendingNow(true)
+        try {
+            await fetch(`/api/admin/applications/${application.id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                // revealNow clears pendingNotifyStatus and fires the notification immediately
+                body: JSON.stringify({ status: application.pendingNotifyStatus, revealNow: true }),
+            })
+            router.refresh()
+        } catch { /* */ }
+        finally { setSendingNow(false) }
+    }
 
     // Notification log
     const [notifOpen, setNotifOpen] = useState(false)
@@ -248,6 +270,43 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                 </div>
             )}
 
+            {/* ─── PENDING NOTIFICATION BANNER ─── */}
+            {hasPendingNotification && (
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    gap: '12px', padding: '12px 18px', marginBottom: '16px', borderRadius: '10px',
+                    background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03))',
+                    border: '1px solid rgba(245,158,11,0.25)',
+                    flexWrap: 'wrap',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '1.2rem' }}>⏳</span>
+                        <div>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#f59e0b' }}>
+                                Notification Queued — <span style={{ textTransform: 'capitalize' }}>{application.pendingNotifyStatus?.replace('_', ' ')}</span>
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                The applicant will be notified in ~{notifyHoursLeft > 0 ? `${notifyHoursLeft}h` : `${notifyMinutesLeft}m`}
+                                {notifyAfterDate && <> · Scheduled for {notifyAfterDate.toLocaleString()}</>}
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        onClick={sendNotificationNow}
+                        disabled={sendingNow}
+                        style={{
+                            padding: '7px 16px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '8px',
+                            border: '1px solid rgba(245,158,11,0.4)',
+                            background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(245,158,11,0.06))',
+                            color: '#f59e0b', cursor: sendingNow ? 'not-allowed' : 'pointer',
+                            opacity: sendingNow ? 0.6 : 1, whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {sendingNow ? '⏳ Sending...' : '📬 Send Now'}
+                    </button>
+                </div>
+            )}
+
             {/* ─── HEADER BAR ─── */}
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -389,9 +448,27 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {/* ── Reviewed indicator — replaces "Begin Review" once review has started ── */}
+                        {application.status !== 'submitted' && !bypassActive && (
+                            <div style={{
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                padding: '8px 14px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700,
+                                border: '1px solid rgba(34,197,94,0.2)',
+                                background: 'rgba(34,197,94,0.06)',
+                                color: 'var(--color-success)',
+                                cursor: 'default',
+                                userSelect: 'none',
+                            }}>
+                                ✓ Reviewed
+                            </div>
+                        )}
+
                         {allowedNextSteps.map(nextStatus => {
                             const meta = ACTION_LABELS[nextStatus]
                             if (!meta) return null
+                            // "Begin Review" is only ever valid from 'submitted' — once past that, hide it entirely
+                            // (the "✓ Reviewed" chip above takes its place)
+                            if (nextStatus === 'under_review') return null
                             const isShortlist = nextStatus === 'shortlisted'
                             const gated = isShortlist && shortlistGated
 
@@ -423,9 +500,14 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                             )
                         })}
 
-                        {allowedNextSteps.length === 0 && (
+                        {allowedNextSteps.filter(s => s !== 'under_review').length === 0 && application.status === 'submitted' && (
                             <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                 No further actions available for this status.
+                            </span>
+                        )}
+                        {allowedNextSteps.filter(s => s !== 'under_review').length === 0 && application.status !== 'submitted' && (
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                No further pipeline actions available.
                             </span>
                         )}
                     </div>

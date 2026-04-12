@@ -210,6 +210,8 @@ model Application {
   processingAttempts     Int                       @default(0)
   lastProcessingError    String?
   adminRevealOverride    Boolean                   @default(false)
+  pendingNotifyStatus    String?                   // status whose notification is scheduled — sent by cron when notifyAfter ≤ now
+  notifyAfter            DateTime?                 // fire delayed status notification at or after this time
   priority               Int                       @default(0)  // higher = processed first
   castingCall            CastingCall               @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
   user                   User?                     @relation(fields: [userId], references: [id])

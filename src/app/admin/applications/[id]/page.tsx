@@ -62,6 +62,8 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
                         statusNote: application.statusNote || null,
                         auditState: (application as any).auditState ?? null,
                         adminRevealOverride: (application as any).adminRevealOverride ?? false,
+                        pendingNotifyStatus: (application as any).pendingNotifyStatus ?? null,
+                        notifyAfter: (application as any).notifyAfter?.toISOString() ?? null,
                     }}
                     castingCall={{
                         roleName: application.castingCall.roleName,

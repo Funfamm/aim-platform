@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { runAuditionAgent } from '@/lib/agents/audition-agent'
-import { getAutoAdvanceStatus, notifyAuditResultRevealed } from '@/lib/notifications'
+import { getAutoAdvanceStatus, notifyAuditResultRevealed, notifyApplicantStatusChange } from '@/lib/notifications'
 import {
     getNextBatch,
     markProcessing,
@@ -30,6 +30,10 @@ export const maxDuration = 300 // 5 min — process as many as quota allows
  * Pass 2 — Reveal scored results:
  *   4. Find all scored_hidden apps whose resultVisibleAt ≤ now.
  *   5. Flip them to scored_visible and send notifications.
+ *
+ * Pass 3 — Fire delayed status notifications:
+ *   6. Find all apps with pendingNotifyStatus set and notifyAfter ≤ now.
+ *   7. Send the status notification then clear the pending fields.
  *
  * Security: Vercel sets Authorization: Bearer <CRON_SECRET> on each invocation.
  */
@@ -167,10 +171,53 @@ export async function GET(req: NextRequest) {
         console.log(`[Cron/Reveal] ✓ Result released for ${app.fullName}`)
     }
 
+    // ── Pass 3: Fire delayed manual status notifications ───────────────────
+    // Picks up applications where admin set audition/final_review with a 5-hour hold.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const dueNotifications = await (prisma as any).application.findMany({
+        where: {
+            pendingNotifyStatus: { not: null },
+            notifyAfter: { lte: new Date() },
+        },
+        include: {
+            castingCall: { include: { project: true } },
+        },
+    }).catch(() => [])
+
+    let sentDelayed = 0
+    for (const app of dueNotifications) {
+        try {
+            // Clear the pending fields first (idempotency — avoid double-send on crash/retry)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (prisma as any).application.update({
+                where: { id: app.id },
+                data: { pendingNotifyStatus: null, notifyAfter: null },
+            })
+
+            await notifyApplicantStatusChange({
+                applicationId: app.id,
+                recipientEmail: app.email,
+                recipientName: app.fullName,
+                newStatus: app.pendingNotifyStatus,
+                roleName: app.castingCall.roleName,
+                projectTitle: app.castingCall.project.title,
+                statusNote: app.statusNote,
+                userId: app.userId ?? undefined,
+                locale: app.locale ?? 'en',
+            })
+
+            sentDelayed++
+            console.log(`[Cron/DelayedNotify] ✓ Sent "${app.pendingNotifyStatus}" notification to ${app.fullName}`)
+        } catch (err) {
+            console.error(`[Cron/DelayedNotify] ✗ Failed for ${app.id}:`, err)
+        }
+    }
+
     return NextResponse.json({
         message: 'Cron run complete',
         pass1: { scored, skipped, failed, batchSize: BATCH_SIZE },
         pass2: { revealed },
+        pass3: { sentDelayed },
         maintenance: { resetWindows: resetCount, releasedStuck: stuckCount },
     })
 }
