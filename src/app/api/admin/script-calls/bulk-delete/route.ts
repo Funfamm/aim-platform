@@ -17,8 +17,8 @@ export async function DELETE(req: NextRequest) {
             return NextResponse.json({ error: 'No IDs provided' }, { status: 400 })
         }
 
-        // Delete submissions first (cascade may not be set), then the calls
-        await prisma.scriptSubmission.deleteMany({ where: { callId: { in: ids } } })
+        // ScriptSubmission has onDelete: Cascade, so deleting script calls
+        // automatically removes all related submissions via DB cascade.
         const result = await prisma.scriptCall.deleteMany({ where: { id: { in: ids } } })
 
         return NextResponse.json({ success: true, deleted: result.count })
