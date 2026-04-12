@@ -84,6 +84,8 @@
         "aiEnhanced": "AI 강화",
         "globalCasting": "글로벌 캐스팅",
         "openRoles": "오픈 역할",
+        "projects": "프로젝트",
+        "roleTypes": "역할 유형",
         "findRole": "{accent}을 찾아보세요",
         "roleAccent": "역할",
         "roleIntro": "이용 가능한 역할을 탐색하세요.",

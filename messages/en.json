@@ -84,6 +84,8 @@
         "aiEnhanced": "AI-Enhanced",
         "globalCasting": "Global Casting",
         "openRoles": "Open Roles",
+        "projects": "Projects",
+        "roleTypes": "Role Types",
         "findRole": "Find Your {accent}",
         "roleAccent": "Role",
         "roleIntro": "Browse available roles below. Click any role to see details and apply.",

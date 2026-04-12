@@ -84,6 +84,8 @@
         "aiEnhanced": "AI增强",
         "globalCasting": "全球选角",
         "openRoles": "开放角色",
+        "projects": "项目",
+        "roleTypes": "角色类型",
         "findRole": "找到你的{accent}",
         "roleAccent": "角色",
         "roleIntro": "浏览可用角色。",

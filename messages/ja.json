@@ -67,6 +67,8 @@
         "aiEnhanced": "AI強化",
         "globalCasting": "グローバルキャスティング",
         "openRoles": "オープンロール",
+        "projects": "プロジェクト",
+        "roleTypes": "役割タイプ",
         "findRole": "{accent}を見つけよう",
         "roleAccent": "役",
         "roleIntro": "利用可能な役を閲覧。",

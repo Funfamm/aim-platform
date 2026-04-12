@@ -291,36 +291,45 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             }}>{t('accent')}</span>
                         </h1>
 
-                        {/* Stats-style capsule row — white frosted glass */}
+                        {/* Stats pill — same style as Works / Upcoming pages */}
                         <div className="animate-fade-in-up delay-2" style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            gap: '6px',
-                            flexWrap: 'wrap',
-                            padding: '10px 20px',
-                            backdropFilter: 'blur(20px) saturate(180%)',
-                            WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                            display: 'inline-flex',
+                            gap: 'var(--space-xl)',
+                            padding: '0.6rem 1.5rem',
+                            background: 'rgba(255,255,255,0.03)',
                             borderRadius: 'var(--radius-full)',
-                            background: 'rgba(255,255,255,0.18)',
-                            border: '1px solid rgba(255,255,255,0.35)',
-                            boxShadow: '0 4px 16px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.5)',
+                            border: '1px solid var(--border-subtle)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            flexWrap: 'wrap' as const,
+                            justifyContent: 'center',
                         }}>
-                            {[
-                                { icon: '🌟', text: t('noExperience') },
-                                { icon: '🌍', text: t('allBackgrounds') },
-                                { icon: '⚡', text: t('aiEnhanced') },
-                                { icon: '🎬', text: t('globalCasting') },
-                            ].map((tag, i) => (
-                                <span key={tag.text} style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    fontSize: '0.65rem', fontWeight: 700,
-                                    color: 'rgba(15,15,20,0.85)',
-                                    letterSpacing: '0.03em',
-                                }}>
-                                    <span style={{ fontSize: '0.7rem' }}>{tag.icon}</span>
-                                    {tag.text}
-                                    {i < 3 && <span style={{ margin: '0 4px', opacity: 0.3, color: 'rgba(0,0,0,0.5)' }}>·</span>}
+                            <div>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                    {castingCalls.length}
                                 </span>
-                            ))}
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                    {t('openRoles')}
+                                </span>
+                            </div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
+                            <div>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    {Object.keys(castingCalls.reduce((acc, c) => ({ ...acc, [c.project.id]: true }), {} as Record<string, boolean>)).length}
+                                </span>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                    {t('projects')}
+                                </span>
+                            </div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
+                            <div>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                    {[...new Set(castingCalls.map(c => c.roleType))].length}
+                                </span>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                    {t('roleTypes')}
+                                </span>
+                            </div>
                         </div>
 
                         {/* CTA Button */}

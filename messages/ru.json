@@ -84,6 +84,8 @@
         "aiEnhanced": "ИИ-Усиленный",
         "globalCasting": "Глобальный Кастинг",
         "openRoles": "Открытые Роли",
+        "projects": "Проекты",
+        "roleTypes": "Типы Ролей",
         "findRole": "Найдите Свою {accent}",
         "roleAccent": "Роль",
         "roleIntro": "Просмотрите доступные роли.",
