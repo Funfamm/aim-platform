@@ -30,6 +30,7 @@ const HERO_VIDEO_PAGES = [
     { value: 'casting', label: '🎭 Casting', short: 'Casting' },
     { value: 'upcoming', label: '📅 Upcoming', short: 'Upcoming' },
     { value: 'training', label: '🎓 Training', short: 'Training' },
+    { value: 'scripts', label: '✍️ Scripts', short: 'Scripts' },
 ]
 
 const SIDEBAR_LINKS = [
