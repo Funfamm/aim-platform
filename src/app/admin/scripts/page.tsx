@@ -50,10 +50,16 @@ export default function AdminScriptsPage() {
     const [scriptsEnabled, setScriptsEnabled] = useState(false)
     const [togglingScripts, setTogglingScripts] = useState(false)
 
+    // ── Bulk selection ──
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+    const [bulkDeleting, setBulkDeleting] = useState(false)
+
     const fetchCalls = useCallback(async () => {
         const res = await fetch('/api/script-calls')
         if (res.ok) setCalls(await res.json())
         setLoading(false)
+        setSelectedIds(new Set())
     }, [])
 
     // ── Edit state ──
@@ -150,8 +156,31 @@ export default function AdminScriptsPage() {
     const filtered = filter === 'all' ? calls : calls.filter(c => c.status === filter)
     const totalSubs = calls.reduce((s, c) => s + c._count.submissions, 0)
     const openCount = calls.filter(c => c.status === 'open').length
+    const allSelected = filtered.length > 0 && filtered.every(c => selectedIds.has(c.id))
     // eslint-disable-next-line react-hooks/purity
     const now = Date.now()
+
+    const toggleSelect = (id: string) => setSelectedIds(prev => {
+        const next = new Set(prev)
+        if (next.has(id)) next.delete(id); else next.add(id)
+        return next
+    })
+    const toggleSelectAll = () => setSelectedIds(
+        allSelected ? new Set() : new Set(filtered.map(c => c.id))
+    )
+
+    const handleBulkDelete = async () => {
+        setBulkDeleting(true)
+        const ids = [...selectedIds]
+        await fetch('/api/admin/script-calls/bulk-delete', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids }),
+        })
+        setConfirmBulkDelete(false)
+        setBulkDeleting(false)
+        fetchCalls()
+    }
 
     const inp: React.CSSProperties = {
         width: '100%', padding: '8px 12px', background: 'rgba(255,255,255,0.04)',
@@ -237,7 +266,7 @@ export default function AdminScriptsPage() {
                 {/* ─── FILTER TABS ─── */}
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', overflowX: 'auto' }}>
                     {['all', 'draft', 'open', 'closed', 'archived'].map(f => (
-                        <button key={f} onClick={() => setFilter(f)} style={{
+                        <button key={f} onClick={() => { setFilter(f); setSelectedIds(new Set()) }} style={{
                             padding: '5px 14px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '6px',
                             border: 'none', cursor: 'pointer', textTransform: 'capitalize',
                             background: filter === f ? 'var(--accent-gold-glow)' : 'rgba(255,255,255,0.03)',
@@ -248,6 +277,32 @@ export default function AdminScriptsPage() {
                         </button>
                     ))}
                 </div>
+
+                {/* ─── BULK ACTION BAR ─── */}
+                {selectedIds.size > 0 && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: '10px',
+                        padding: '10px 16px', marginBottom: '12px',
+                        background: 'rgba(239,68,68,0.07)',
+                        border: '1px solid rgba(239,68,68,0.2)',
+                        borderRadius: '10px',
+                    }}>
+                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#ef4444' }}>
+                            {selectedIds.size} selected
+                        </span>
+                        <div style={{ flex: 1 }} />
+                        <button onClick={() => setSelectedIds(new Set())} style={{
+                            padding: '5px 12px', fontSize: '0.7rem', fontWeight: 600, borderRadius: '7px',
+                            background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'var(--text-tertiary)', cursor: 'pointer',
+                        }}>Clear</button>
+                        <button onClick={() => setConfirmBulkDelete(true)} style={{
+                            padding: '5px 14px', fontSize: '0.72rem', fontWeight: 700, borderRadius: '7px',
+                            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
+                            color: '#ef4444', cursor: 'pointer',
+                        }}>🗑 Delete {selectedIds.size} Call{selectedIds.size !== 1 ? 's' : ''}</button>
+                    </div>
+                )}
 
                 {/* ─── CREATE FORM ─── */}
                 {showCreate && (
@@ -429,15 +484,32 @@ export default function AdminScriptsPage() {
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* Select all row */}
+                        {filtered.length > 0 && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingBottom: '4px' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={allSelected}
+                                    onChange={toggleSelectAll}
+                                    style={{ width: '15px', height: '15px', accentColor: '#ef4444', cursor: 'pointer' }}
+                                />
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', cursor: 'pointer' }} onClick={toggleSelectAll}>
+                                    {allSelected ? 'Deselect all' : `Select all ${filtered.length}`}
+                                </span>
+                            </div>
+                        )}
                         {filtered.map(call => {
                             const meta = STATUS_META[call.status] || STATUS_META.draft
                             const daysLeft = call.deadline ? Math.ceil((new Date(call.deadline).getTime() - now) / 86400000) : null
+                            const isSelected = selectedIds.has(call.id)
 
                             return (
                                 <div key={call.id} style={{
                                     borderRadius: '14px',
-                                    background: 'linear-gradient(145deg, rgba(18,20,28,0.95), rgba(12,14,20,0.9))',
-                                    border: '1px solid rgba(255,255,255,0.07)',
+                                    background: isSelected
+                                        ? 'linear-gradient(145deg, rgba(239,68,68,0.06), rgba(12,14,20,0.9))'
+                                        : 'linear-gradient(145deg, rgba(18,20,28,0.95), rgba(12,14,20,0.9))',
+                                    border: isSelected ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(255,255,255,0.07)',
                                     overflow: 'hidden',
                                     transition: 'all 0.2s ease',
                                 }}>
@@ -451,18 +523,26 @@ export default function AdminScriptsPage() {
                                             ? 'linear-gradient(135deg, rgba(148,163,184,0.04), transparent)'
                                             : 'linear-gradient(135deg, rgba(245,158,11,0.04), transparent)',
                                     }}>
-                                        {/* Project badge (above title) */}
-                                        {call.project && (
-                                            <div style={{
-                                                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                                                padding: '4px 12px', borderRadius: '6px', marginBottom: '10px',
-                                                background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)',
-                                                fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)',
-                                                textTransform: 'uppercase', letterSpacing: '0.06em',
-                                            }}>
-                                                🎬 {call.project.title}
-                                            </div>
-                                        )}
+                                        {/* Checkbox + Project badge row */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => toggleSelect(call.id)}
+                                                style={{ width: '15px', height: '15px', accentColor: '#ef4444', cursor: 'pointer', flexShrink: 0 }}
+                                            />
+                                            {call.project && (
+                                                <div style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                                    padding: '4px 12px', borderRadius: '6px',
+                                                    background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)',
+                                                    fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)',
+                                                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                                                }}>
+                                                    🎬 {call.project.title}
+                                                </div>
+                                            )}
+                                        </div>
 
                                         {/* Title + Status row */}
                                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
@@ -574,6 +654,57 @@ export default function AdminScriptsPage() {
                     </div>
                 )}
             </main>
+
+            {/* ─── PERMANENT DELETE CONFIRM MODAL ─── */}
+            {confirmBulkDelete && (
+                <div style={{
+                    position: 'fixed', inset: 0, zIndex: 9999,
+                    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                }} onClick={() => !bulkDeleting && setConfirmBulkDelete(false)}>
+                    <div onClick={e => e.stopPropagation()} style={{
+                        background: 'var(--bg-card, #1a1d23)',
+                        border: '1px solid rgba(239,68,68,0.3)',
+                        borderRadius: '16px', padding: '28px',
+                        maxWidth: '440px', width: '100%',
+                        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+                    }}>
+                        <div style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '12px' }}>🗑️</div>
+                        <h2 style={{ fontSize: '1rem', fontWeight: 800, textAlign: 'center', marginBottom: '8px', color: '#ef4444' }}>
+                            Permanently Delete {selectedIds.size} Script Call{selectedIds.size !== 1 ? 's' : ''}?
+                        </h2>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', textAlign: 'center', marginBottom: '6px', lineHeight: 1.6 }}>
+                            This will permanently delete the selected script call{selectedIds.size !== 1 ? 's' : ''} and
+                            <strong style={{ color: 'var(--text-secondary)' }}> all associated submissions</strong>.
+                        </p>
+                        <p style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700, textAlign: 'center', marginBottom: '20px' }}>
+                            ⚠️ This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+                            <button
+                                onClick={() => setConfirmBulkDelete(false)}
+                                disabled={bulkDeleting}
+                                style={{
+                                    padding: '8px 22px', fontSize: '0.78rem', fontWeight: 700,
+                                    borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)',
+                                    background: 'transparent', color: 'var(--text-secondary)',
+                                    cursor: 'pointer', opacity: bulkDeleting ? 0.5 : 1,
+                                }}
+                            >Cancel</button>
+                            <button
+                                onClick={handleBulkDelete}
+                                disabled={bulkDeleting}
+                                style={{
+                                    padding: '8px 22px', fontSize: '0.78rem', fontWeight: 700,
+                                    borderRadius: '8px', border: '1px solid rgba(239,68,68,0.3)',
+                                    background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                                    cursor: 'pointer', opacity: bulkDeleting ? 0.6 : 1,
+                                }}
+                            >{bulkDeleting ? 'Deleting...' : `Delete ${selectedIds.size} Call${selectedIds.size !== 1 ? 's' : ''}`}</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
