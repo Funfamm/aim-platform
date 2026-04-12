@@ -89,9 +89,8 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
             const err = validateField(field, form[field])
             if (err) errors[field] = err
         }
-        // Either script text OR file must be provided
         if (!scriptProvided()) {
-            errors['scriptContent'] = 'Please paste your script or upload a file — at least one is required.'
+            errors['scriptContent'] = t('formScriptContentError')
         }
         if (Object.keys(errors).length > 0) {
             setFieldErrors(errors)
@@ -310,14 +309,14 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                                 📄 {t('formScriptTextLabel')} *
                             </span>
                             <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                                Paste text or upload a file
+                                {t('formScriptHint')}
                             </span>
                         </div>
 
                         {/* Paste textarea */}
                         <div>
                             <label style={{ ...labelStyle, color: form.scriptText.trim() ? '#10b981' : 'var(--text-tertiary)' }}>
-                                Option A — Paste script text
+                                {t('formScriptOptionA')}
                             </label>
                             <textarea
                                 style={{
@@ -348,7 +347,7 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                         {/* File upload */}
                         <div>
                             <label style={{ ...labelStyle, color: uploadState === 'done' ? '#10b981' : 'var(--text-tertiary)' }}>
-                                Option B — Upload script file
+                                {t('formScriptOptionB')}
                             </label>
                             <label
                                 htmlFor="script-file-upload"
@@ -397,7 +396,7 @@ export default function ScriptSubmissionForm({ callId }: { callId: string }) {
                                     onClick={() => { setUploadState('idle'); setUploadedPath(null); setUploadFileName(null) }}
                                     style={{ marginTop: '6px', fontSize: '0.7rem', color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                                 >
-                                    Remove file
+                                    {t('formScriptRemoveFile')}
                                 </button>
                             )}
                         </div>
