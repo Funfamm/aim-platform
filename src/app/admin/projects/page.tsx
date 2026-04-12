@@ -54,6 +54,9 @@ export default function AdminProjectsPage() {
     const [deleting, setDeleting] = useState<string | null>(null)
     const [subtitleStatus, setSubtitleStatus] = useState<Record<string, string>>({})
     const [subtitleProgress, setSubtitleProgress] = useState<Record<string, number>>({})
+    const [translationCount, setTranslationCount] = useState<Record<string, number>>({})
+
+    const TOTAL_LANGS = 11 // en, ar, de, es, fr, hi, ja, ko, pt, ru, zh
 
     useEffect(() => {
         fetch('/api/admin/projects')
@@ -66,8 +69,10 @@ export default function AdminProjectsPage() {
                         fetch(`/api/subtitles/${p.id}?lang=en`)
                             .then(r => r.json())
                             .then(sub => {
-                                if (sub.available && sub.available.length > 0) {
-                                    setSubtitleStatus(s => ({ ...s, [p.id]: `✓ ${sub.available.length} lang` }))
+                                const count = sub.available?.length ?? 0
+                                setTranslationCount(s => ({ ...s, [p.id]: count }))
+                                if (count > 0) {
+                                    setSubtitleStatus(s => ({ ...s, [p.id]: `✓ ${count} lang` }))
                                 }
                             })
                             .catch(() => {})
@@ -111,6 +116,18 @@ export default function AdminProjectsPage() {
         if (!form.title || !form.description) {
             setError('Please fill in title and description')
             return
+        }
+        // Gate: block publishing (completed) without full translations
+        if (form.status === 'completed' && editingId) {
+            const count = translationCount[editingId] ?? 0
+            if (count < TOTAL_LANGS) {
+                setError(
+                    `⚠️ Cannot publish without full translations. This project has ${
+                        count
+                    }/${TOTAL_LANGS} languages. Generate subtitles first using the CC button, then publish.`
+                )
+                return
+            }
         }
         setSaving(true)
         setError('')
@@ -281,10 +298,31 @@ export default function AdminProjectsPage() {
                                         <p style={{ fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 'var(--space-md)' }}>
                                             {project.description.length > 120 ? project.description.slice(0, 120) + '...' : project.description}
                                         </p>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                                 {project._count.castingCalls} casting call{project._count.castingCalls !== 1 ? 's' : ''}
                                             </span>
+                                            {/* Translation completeness badge */}
+                                            {project.filmUrl && (() => {
+                                                const count = translationCount[project.id] ?? -1
+                                                const isFull = count >= TOTAL_LANGS
+                                                const isPartial = count > 0 && count < TOTAL_LANGS
+                                                const isNone = count === 0
+                                                const isPending = count === -1
+                                                return (
+                                                    <span style={{
+                                                        fontSize: '0.62rem', fontWeight: 700,
+                                                        padding: '2px 8px', borderRadius: '6px',
+                                                        display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                        background: isFull ? 'rgba(52,211,153,0.1)' : isPartial ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.04)',
+                                                        border: `1px solid ${isFull ? 'rgba(52,211,153,0.25)' : isPartial ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}`,
+                                                        color: isFull ? '#34d399' : isPartial ? '#f59e0b' : 'var(--text-tertiary)',
+                                                    }}>
+                                                        {isPending ? '…' : isFull ? '✅' : isNone ? '🌐' : '⚠️'}
+                                                        {isPending ? 'checking' : `${Math.max(0, count)}/${TOTAL_LANGS} langs`}
+                                                    </span>
+                                                )
+                                            })()}
                                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                                                 {/* CC / Subtitle button */}
                                                 {project.filmUrl && (
@@ -323,6 +361,7 @@ export default function AdminProjectsPage() {
                                                                 })
                                                                 setSubtitleProgress(s => ({ ...s, [project.id]: 100 }))
                                                                 setSubtitleStatus(s => ({ ...s, [project.id]: '✓ Subtitles ready' }))
+                                                                setTranslationCount(s => ({ ...s, [project.id]: TOTAL_LANGS }))
                                                             } catch (err) {
                                                                 setSubtitleStatus(s => ({ ...s, [project.id]: '❌ Failed' }))
                                                                 setSubtitleProgress(s => ({ ...s, [project.id]: 0 }))
@@ -348,7 +387,7 @@ export default function AdminProjectsPage() {
                                                 >
                                                     {deleting === project.id ? '...' : '✕'}
                                                 </button>
-                                            </div>
+                                        </div>
                                         </div>
                                         {/* Progress bar for subtitle generation */}
                                         {subtitleProgress[project.id] > 0 && subtitleProgress[project.id] < 100 && (

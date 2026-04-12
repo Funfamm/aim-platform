@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
 interface ScriptAnalysis {
     originalityScore: number
@@ -164,15 +165,25 @@ export default function AdminScriptCallDetailPage() {
     }
 
     if (loading) return (
-        <div style={{ padding: '60px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '16px' }}>⏳</div>
-            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Loading submissions...</div>
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
+                <div style={{ padding: '60px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '16px' }}>⏳</div>
+                    <div style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>Loading submissions...</div>
+                </div>
+            </main>
         </div>
     )
     if (!call) return (
-        <div style={{ padding: '60px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🎬</div>
-            <div style={{ color: 'var(--text-tertiary)' }}>Script call not found</div>
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
+                <div style={{ padding: '60px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '16px' }}>🎬</div>
+                    <div style={{ color: 'var(--text-tertiary)' }}>Script call not found</div>
+                </div>
+            </main>
         </div>
     )
 
@@ -191,7 +202,10 @@ export default function AdminScriptCallDetailPage() {
         : selected
 
     return (
-        <>
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
+            <>
             <style>{`
                 @keyframes fadeUp {
                     from { opacity: 0; transform: translateY(12px); }
@@ -825,5 +839,7 @@ export default function AdminScriptCallDetailPage() {
                 </div>
             )}
         </>
+            </main>
+        </div>
     )
 }

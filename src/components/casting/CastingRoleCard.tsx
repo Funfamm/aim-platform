@@ -64,20 +64,64 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
     const roleDescription = tr?.roleDescription || call.roleDescription
     return (
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
-            <div style={{
-                position: 'relative',
-                borderRadius: 'var(--radius-lg)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                background: 'rgba(13, 15, 20, 0.88)',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.40), inset 0 1px 0 rgba(255,255,255,0.05)',
-                overflow: 'hidden',
-            }}>
-                {/* Blur enhancement — works when backdrop-filter isn't blocked by parent transform */}
+            <div
+                style={{
+                    position: 'relative',
+                    borderRadius: '18px',
+                    /* Dense opaque base — matches section header weight */
+                    background: 'rgba(10, 12, 18, 0.92)',
+                    /* Gold-tinted top edge + soft bottom depth */
+                    border: '1px solid rgba(212, 168, 83, 0.14)',
+                    borderTop: '1px solid rgba(212, 168, 83, 0.22)',
+                    boxShadow: [
+                        '0 2px 0 rgba(212,168,83,0.08)',         /* inner top gold line */
+                        '0 12px 40px rgba(0,0,0,0.55)',          /* deep lift shadow */
+                        '0 4px 12px rgba(0,0,0,0.35)',           /* close shadow */
+                        'inset 0 1px 0 rgba(255,255,255,0.07)',  /* inner ceiling glow */
+                        'inset 0 -1px 0 rgba(0,0,0,0.4)',        /* inner floor depth */
+                    ].join(', '),
+                    overflow: 'hidden',
+                    transition: 'transform 0.28s cubic-bezier(0.16,1,0.3,1), box-shadow 0.28s cubic-bezier(0.16,1,0.3,1)',
+                }}
+                onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLDivElement
+                    el.style.transform = 'translateY(-4px)'
+                    el.style.boxShadow = [
+                        '0 2px 0 rgba(212,168,83,0.14)',
+                        '0 20px 56px rgba(0,0,0,0.65)',
+                        '0 6px 18px rgba(0,0,0,0.4)',
+                        'inset 0 1px 0 rgba(255,255,255,0.10)',
+                        'inset 0 -1px 0 rgba(0,0,0,0.4)',
+                    ].join(', ')
+                }}
+                onMouseLeave={e => {
+                    const el = e.currentTarget as HTMLDivElement
+                    el.style.transform = 'translateY(0)'
+                    el.style.boxShadow = [
+                        '0 2px 0 rgba(212,168,83,0.08)',
+                        '0 12px 40px rgba(0,0,0,0.55)',
+                        '0 4px 12px rgba(0,0,0,0.35)',
+                        'inset 0 1px 0 rgba(255,255,255,0.07)',
+                        'inset 0 -1px 0 rgba(0,0,0,0.4)',
+                    ].join(', ')
+                }}
+            >
+                {/* Ambient glass overlay — blur where transform allows it */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    backdropFilter: 'blur(24px) saturate(150%)',
-                    WebkitBackdropFilter: 'blur(24px) saturate(150%)',
+                    backdropFilter: 'blur(28px) saturate(160%)',
+                    WebkitBackdropFilter: 'blur(28px) saturate(160%)',
+                    borderRadius: 'inherit',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                }} />
+                {/* Subtle top-catch gradient — simulates light hitting the card surface */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0,
+                    height: '40%',
+                    background: 'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, transparent 100%)',
                     borderRadius: 'inherit',
                     zIndex: 0,
                     pointerEvents: 'none',
@@ -87,7 +131,6 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
                     position: 'relative',
                     zIndex: 1,
                     padding: 'var(--space-md)',
-                    transition: 'all 0.35s cubic-bezier(0.16,1,0.3,1)',
                 }}>
                 <div style={{
                     display: 'flex',

@@ -505,8 +505,11 @@ export default function AdminApplicationsPage() {
                                             {isWithdrawn && <span style={{ color: '#f87171', fontWeight: 600 }}>⤺ Withdrawn by user</span>}
                                         </div>
                                     </div>
-                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>
-                                        {new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', flexShrink: 0, textAlign: 'right', lineHeight: 1.4 }}
+                                        title={new Date(app.createdAt).toLocaleString('en-US', { dateStyle: 'full', timeStyle: 'short' })}
+                                    >
+                                        <div>{new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                                        <div style={{ fontSize: '0.6rem', opacity: 0.7 }}>{new Date(app.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>
                                     </div>
                                 </div>
                             )

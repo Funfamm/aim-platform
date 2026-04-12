@@ -316,7 +316,7 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                     <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>{application.fullName}</h1>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '3px' }}>
                         <span style={{ color: 'var(--accent-gold)' }}>{castingCall.roleName}</span> · {castingCall.projectTitle}
-                        · Applied {new Date(application.createdAt).toLocaleDateString()}
+                        · Submitted {new Date(application.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(application.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                     </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -729,7 +729,11 @@ export default function ApplicationDetailClient({ application, castingCall, phot
                                 { label: 'Age', value: application.age },
                                 { label: 'Gender', value: application.gender },
                                 { label: 'Location', value: application.location },
-                                { label: 'Applied', value: new Date(application.createdAt).toLocaleDateString() },
+                                { label: 'Submitted', value:
+                                    new Date(application.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                                    + ' · '
+                                    + new Date(application.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+                                },
                             ].filter(f => f.value).map(f => (
                                 <div key={f.label}>
                                     <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{f.label}</div>
