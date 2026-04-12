@@ -364,7 +364,7 @@ export default async function ScriptCallsPage() {
 
                                                 {/* Title */}
                                                 <h3 style={{
-                                                    fontSize: '1.05rem', fontWeight: 800,
+                                                    fontSize: '1.3rem', fontWeight: 800,
                                                     fontFamily: 'var(--font-display)',
                                                     color: '#ffffff', lineHeight: 1.25,
                                                     margin: 0, letterSpacing: '-0.01em',
@@ -505,7 +505,7 @@ export default async function ScriptCallsPage() {
                                             )}
 
                                             <h3 style={{
-                                                fontSize: '0.95rem', fontWeight: 700,
+                                                fontSize: '1.1rem', fontWeight: 700,
                                                 color: 'var(--text-primary)', lineHeight: 1.3, opacity: 0.8,
                                                 marginBottom: '6px',
                                             }}>
