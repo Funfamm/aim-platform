@@ -64,31 +64,21 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
     const roleDescription = tr?.roleDescription || call.roleDescription
     return (
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
-            {/* Outer shell — shape, border, shadow only. No filter to avoid blocking backdrop-filter. */}
+            {/* Outer shell */}
             <div style={{
                 position: 'relative',
-                borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.42)',
-                boxShadow: [
-                    '0 10px 35px rgba(0, 0, 0, 0.10)',
-                    'inset 0 1px 0 rgba(255, 255, 255, 0.60)',
-                    'inset 0 -10px 22px rgba(255, 255, 255, 0.12)',
-                    'inset 4px 0 12px rgba(255, 255, 255, 0.06)',
-                    'inset -4px 0 12px rgba(255, 255, 255, 0.06)',
-                ].join(', '),
-                animation: 'glowPulse 4s ease-in-out infinite',
+                borderRadius: '28px',
+                border: '1px solid rgba(255, 255, 255, 0.22)',
+                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.30)',
                 overflow: 'hidden',
             }}>
-                {/* Frost + white-leather surface layer */}
+                {/* Dense frosted cream layer */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    backdropFilter: 'blur(44px) saturate(180%) brightness(1.08)',
-                    WebkitBackdropFilter: 'blur(44px) saturate(180%) brightness(1.08)',
-                    background: [
-                        'linear-gradient(170deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.30) 100%)',
-                        'rgba(255, 255, 255, 0.24)',
-                    ].join(', '),
+                    backdropFilter: 'blur(45px) saturate(160%)',
+                    WebkitBackdropFilter: 'blur(45px) saturate(160%)',
+                    background: 'rgba(255, 245, 235, 0.30)',
                     borderRadius: 'inherit',
                     zIndex: 0,
                     pointerEvents: 'none',
