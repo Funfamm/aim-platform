@@ -191,6 +191,19 @@ export default async function ScriptCallsPage() {
                 @media (max-width: 640px) {
                     .scripts-grid { grid-template-columns: 1fr !important; }
                     .coming-grid  { grid-template-columns: 1fr !important; }
+                    /* Stats pill — keep horizontal, shrink text to fit */
+                    .script-stats-pill {
+                        gap: 10px !important;
+                        padding: 0.45rem 0.9rem !important;
+                        flex-wrap: nowrap !important;
+                    }
+                    .script-stats-pill .stat-num {
+                        font-size: 1rem !important;
+                    }
+                    .script-stats-pill .stat-label {
+                        font-size: 0.42rem !important;
+                        letter-spacing: 0.06em !important;
+                    }
                 }
                 @media (min-width: 641px) and (max-width: 900px) {
                     .scripts-grid { grid-template-columns: 1fr !important; }
@@ -287,28 +300,28 @@ export default async function ScriptCallsPage() {
                                 justifyContent: 'center',
                             }}>
                                 <div>
-                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                    <span className="stat-num" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
                                         {calls.length}
                                     </span>
-                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                    <span className="stat-label" style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
                                         {t('openCallsStat')}
                                     </span>
                                 </div>
                                 <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
                                 <div>
-                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    <span className="stat-num" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                                         {[...new Set(calls.map(c => c.genre).filter(Boolean))].length || '—'}
                                     </span>
-                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                    <span className="stat-label" style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
                                         {t('genresStat')}
                                     </span>
                                 </div>
                                 <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
                                 <div>
-                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                    <span className="stat-num" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
                                         {[...new Set(calls.map(c => c.project?.title).filter(Boolean))].length || '—'}
                                     </span>
-                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                    <span className="stat-label" style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
                                         {t('projectsStat')}
                                     </span>
                                 </div>
