@@ -66,18 +66,17 @@ export default function CastingRoleCard({ call, index, hasApplied = false, appli
         <ScrollReveal3D direction="up" delay={index * 80} distance={30}>
             <div style={{
                 position: 'relative',
-                borderRadius: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255,255,255,0.06)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid rgba(255, 255, 255, 0.06)',
                 overflow: 'hidden',
             }}>
-                {/* Dark frosted glass layer */}
+                {/* Exact glass-panel style */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    backdropFilter: 'blur(40px) saturate(140%)',
-                    WebkitBackdropFilter: 'blur(40px) saturate(140%)',
-                    background: 'linear-gradient(145deg, rgba(18,20,30,0.92), rgba(12,14,22,0.95))',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    background: 'rgba(13, 15, 20, 0.6)',
                     borderRadius: 'inherit',
                     zIndex: 0,
                     pointerEvents: 'none',
