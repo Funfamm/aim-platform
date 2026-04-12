@@ -779,10 +779,12 @@ export default function AdminSettingsPage() {
     const [keyFilterStatus, setKeyFilterStatus] = useState('all')
     const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
     const [bulkActionLoading, setBulkActionLoading] = useState(false)
+    const [bulkAgent, setBulkAgent] = useState('all')
 
-    const handleBulkAction = async (action: 'enable' | 'disable' | 'delete' | 'clearErrors') => {
+    const handleBulkAction = async (action: 'enable' | 'disable' | 'delete' | 'clearErrors' | 'assignAgent') => {
         if (selectedKeys.size === 0) return
         if (action === 'delete' && !confirm(`Are you sure you want to delete ${selectedKeys.size} selected keys? This cannot be undone.`)) return
+        if (action === 'assignAgent' && !confirm(`Assign agent "${bulkAgent}" to ${selectedKeys.size} selected key${selectedKeys.size !== 1 ? 's' : ''}?`)) return
 
         setBulkActionLoading(true)
         try {
@@ -794,6 +796,7 @@ export default function AdminSettingsPage() {
                     if (action === 'enable') body.isActive = true
                     if (action === 'disable') body.isActive = false
                     if (action === 'clearErrors') body.clearError = true
+                    if (action === 'assignAgent') body.assignedAgent = bulkAgent
                     return fetch('/api/admin/api-keys', {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -1721,7 +1724,7 @@ export default function AdminSettingsPage() {
                                                         </div>
 
                                                         {/* Bulk Action Toolbar */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid var(--border-subtle)', paddingTop: '12px', flexWrap: 'wrap', gap: '10px' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', cursor: 'pointer', fontWeight: 600 }}>
                                                                     <input
@@ -1740,7 +1743,31 @@ export default function AdminSettingsPage() {
                                                                     </span>
                                                                 )}
                                                             </div>
-                                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                                                {/* ── Bulk Assign Agent ── */}
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '3px 4px 3px 8px', borderRadius: '6px', background: 'rgba(212,168,83,0.07)', border: '1px solid rgba(212,168,83,0.18)' }}>
+                                                                    <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)', whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>🤖 Agent:</span>
+                                                                    <select
+                                                                        value={bulkAgent}
+                                                                        onChange={e => setBulkAgent(e.target.value)}
+                                                                        style={{ padding: '2px 6px', fontSize: '0.7rem', borderRadius: '4px', border: 'none', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer', outline: 'none' }}
+                                                                    >
+                                                                        {Object.keys(agentLabels).map(key => (
+                                                                            <option key={key} value={key} style={{ background: 'var(--bg-card)' }}>
+                                                                                {agentLabels[key as keyof typeof agentLabels].icon} {agentLabels[key as keyof typeof agentLabels].label}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={selectedKeys.size === 0 || bulkActionLoading}
+                                                                        onClick={() => handleBulkAction('assignAgent')}
+                                                                        style={{ padding: '3px 10px', fontSize: '0.68rem', fontWeight: 700, borderRadius: '4px', border: 'none', background: selectedKeys.size > 0 ? 'rgba(212,168,83,0.25)' : 'rgba(255,255,255,0.05)', color: selectedKeys.size > 0 ? 'var(--accent-gold)' : 'var(--text-tertiary)', cursor: selectedKeys.size > 0 ? 'pointer' : 'not-allowed', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
+                                                                    >
+                                                                        {bulkActionLoading ? '...' : '✓ Assign'}
+                                                                    </button>
+                                                                </div>
+                                                                {/* ── Other bulk actions ── */}
                                                                 <button type="button" disabled={selectedKeys.size === 0 || bulkActionLoading} onClick={() => handleBulkAction('enable')}
                                                                     style={{ padding: '4px 10px', fontSize: '0.7rem', borderRadius: '4px', background: 'rgba(52,211,153,0.1)', color: 'var(--success)', border: '1px solid rgba(52,211,153,0.2)', cursor: selectedKeys.size ? 'pointer' : 'not-allowed', opacity: selectedKeys.size ? 1 : 0.5 }}>
                                                                     ▶ Enable
