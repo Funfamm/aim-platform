@@ -38,7 +38,7 @@ export default async function ScriptCallsPage() {
             id: true, title: true, description: true, genre: true,
             toneKeywords: true, targetLength: true, deadline: true,
             status: true, maxSubmissions: true, createdAt: true,
-            project: { select: { title: true, coverImage: true } },
+            project: { select: { title: true, coverImage: true, translations: true } },
             _count: { select: { submissions: true } },
         },
     }) : []
@@ -54,6 +54,16 @@ export default async function ScriptCallsPage() {
         } catch { return fallback }
     }
 
+    // Localize project title using the project's own translations JSON
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function getProjectTitle(project: Record<string, any>): string {
+        if (locale === 'en' || !project.translations) return project.title
+        try {
+            const map = JSON.parse(project.translations) as TransMap
+            return map[locale]?.title || project.title
+        } catch { return project.title }
+    }
+
     const comingSoon = enabled ? await prisma.scriptCall.findMany({
         where: { isPublic: true, status: { not: 'open' } },
         orderBy: { createdAt: 'desc' },
@@ -62,7 +72,7 @@ export default async function ScriptCallsPage() {
             id: true, title: true, description: true, genre: true,
             toneKeywords: true, targetLength: true, deadline: true,
             status: true, maxSubmissions: true, createdAt: true,
-            project: { select: { title: true, coverImage: true } },
+            project: { select: { title: true, coverImage: true, translations: true } },
         },
     }) : []
 
@@ -352,12 +362,12 @@ export default async function ScriptCallsPage() {
                                                             }} />
                                                         )}
                                                         <span style={{
-                                                            fontSize: '0.58rem', color: 'var(--accent-gold)',
-                                                            textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700,
+                                                            fontSize: '0.72rem', color: 'var(--accent-gold)',
+                                                            textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700,
                                                             fontFamily: 'var(--font-display)',
                                                             textShadow: '0 1px 4px rgba(0,0,0,0.6)',
                                                         }}>
-                                                            {t('forProject')}: {call.project.title}
+                                                            {t('forProject')}: {getProjectTitle(call.project)}
                                                         </span>
                                                     </div>
                                                 )}
@@ -496,10 +506,10 @@ export default async function ScriptCallsPage() {
                                                         }} />
                                                     )}
                                                     <span style={{
-                                                        fontSize: '0.58rem', color: 'rgba(212,168,83,0.6)',
+                                                        fontSize: '0.72rem', color: 'rgba(212,168,83,0.6)',
                                                         textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700,
                                                     }}>
-                                                        {t('forProject')}: {call.project.title}
+                                                        {t('forProject')}: {getProjectTitle(call.project)}
                                                     </span>
                                                 </div>
                                             )}
