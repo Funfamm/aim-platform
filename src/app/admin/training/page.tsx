@@ -87,12 +87,36 @@ export default function AdminTrainingPage() {
     }
 
     const togglePublish = async (course: Course) => {
+        // Fix #2a: Pre-flight coverage check before publishing from the list view.
+        // Unpublishing never needs a coverage check.
+        if (!course.published) {
+            try {
+                const coverageRes = await fetch(`/api/admin/training/${course.id}`)
+                const coverageData = await coverageRes.json()
+                const cov = coverageData?.translationCoverage
+                if (cov && cov.pct < 100) {
+                    alert(
+                        `⚠️ Cannot publish “${course.title}”\n\n` +
+                        `Translation is ${cov.pct}% complete (${cov.translated}/${cov.total} items).\n\n` +
+                        `Open the course editor and click Save to auto-translate all content before publishing.`
+                    )
+                    return
+                }
+            } catch {
+                // If coverage check fails, fall through and let the server gate handle it
+            }
+        }
         try {
-            await fetch(`/api/admin/training/${course.id}`, {
+            const res = await fetch(`/api/admin/training/${course.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...course, published: !course.published, modules: course.modules }),
             })
+            if (res.status === 422) {
+                const data = await res.json()
+                alert(`⚠️ Publish blocked by server:\n${data.details || 'Translation incomplete.'}`)
+                return
+            }
             loadCourses()
         } catch { alert('Failed to toggle publish') }
     }

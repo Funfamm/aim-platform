@@ -64,6 +64,49 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const body = await req.json()
 
     try {
+        // Fix #2: Server-side gate — refuse to publish an under-translated course.
+        // This protects against bypasses from the list page, API calls, etc.
+        if (body.published === true) {
+            const existing = await prisma.course.findUnique({
+                where: { id },
+                include: {
+                    modules: {
+                        include: {
+                            lessons: { select: { id: true, translations: true } },
+                            quiz: { include: { questions: { select: { id: true, translations: true } } } },
+                        },
+                    },
+                },
+            })
+            if (existing) {
+                const REQUIRED_LOCALES = 10
+                const hasTx = (tx: string | null): boolean => {
+                    if (!tx) return false
+                    try { return Object.keys(JSON.parse(tx)).length >= REQUIRED_LOCALES } catch { return false }
+                }
+                const items: boolean[] = [
+                    hasTx(existing.translations),
+                    ...existing.modules.flatMap(m => [
+                        hasTx(m.translations),
+                        ...m.lessons.map(l => hasTx(l.translations)),
+                        ...(m.quiz ? [
+                            hasTx(m.quiz.translations),
+                            ...m.quiz.questions.map(q => hasTx(q.translations)),
+                        ] : []),
+                    ]),
+                ]
+                const translated = items.filter(Boolean).length
+                const pct = items.length > 0 ? Math.round((translated / items.length) * 100) : 0
+                if (pct < 100) {
+                    return NextResponse.json({
+                        error: 'Translation incomplete',
+                        details: `${pct}% of content is translated (${translated}/${items.length} items). Save the course to auto-translate before publishing.`,
+                        translationCoverage: { total: items.length, translated, pct },
+                    }, { status: 422 })
+                }
+            }
+        }
+
         // Update course fields
         const course = await prisma.course.update({
             where: { id },

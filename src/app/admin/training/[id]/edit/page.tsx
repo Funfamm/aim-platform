@@ -67,6 +67,9 @@ const emptyModule = (): Module => ({
     title: '', description: '', sortOrder: 0, lessons: [emptyLesson()], quiz: null,
 })
 
+// Fix #3: type alias outside component — not re-evaluated on every render
+type CoverageData = { total: number; translated: number; pct: number; missing: string[] }
+
 const emptyQuestion = (): QuizQuestionType => ({
     questionText: '', questionType: 'single',
     options: [{ id: 'a', text: '' }, { id: 'b', text: '' }, { id: 'c', text: '' }, { id: 'd', text: '' }],
@@ -135,7 +138,6 @@ export default function StudyCanvasPage() {
     const [translateMsg, setTranslateMsg] = useState('')
 
     // Translation coverage state
-    type CoverageData = { total: number; translated: number; pct: number; missing: string[] }
     const [coverage, setCoverage] = useState<CoverageData | null>(null)
 
     // Duplicate-prevention refs
@@ -212,9 +214,11 @@ export default function StudyCanvasPage() {
             const res = await fetch(url, {
                 method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
             })
-            // Handle idempotency: 409 means the request already went through
+            // Handle idempotency: 409 means the first request already went through
             if (res.status === 409) {
-                setSuccess('Course already being saved—please wait.')
+                // Fix #1: rotate key immediately so the NEXT save attempt is not blocked
+                clientKeyRef.current = `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`
+                setSuccess('Course already being saved — no duplicate was created.')
                 setTimeout(() => { setSuccess('') }, 3000)
                 return
             }
@@ -251,12 +255,15 @@ export default function StudyCanvasPage() {
                         } catch { /* skip malformed lines */ }
                     }
                 }
-                // After save, refresh coverage from server
+                // Fix #4: delay coverage refresh by 3s to let async AI translation jobs
+                // finish writing back to the DB before we read coverage from the server.
                 if (!isNew) {
-                    fetch(`/api/admin/training/${courseId}`)
-                        .then(r => r.json())
-                        .then(d => { if (d.translationCoverage) setCoverage(d.translationCoverage) })
-                        .catch(() => {})
+                    setTimeout(() => {
+                        fetch(`/api/admin/training/${courseId}`)
+                            .then(r => r.json())
+                            .then(d => { if (d.translationCoverage) setCoverage(d.translationCoverage) })
+                            .catch(() => {})
+                    }, 3000)
                 }
                 if (isNew && finalData?.id) {
                     router.replace(`/admin/training/${finalData.id}/edit`)
@@ -587,11 +594,16 @@ export default function StudyCanvasPage() {
                             </div>
                             {/* Hard-block publish when translation coverage < 100% */}
                             {(() => {
-                                const isFullyTranslated = !isNew && coverage && coverage.pct === 100
-                                const canPublish = !published && (isNew || isFullyTranslated)
-                                const blockReason = !isNew && coverage && coverage.pct < 100
-                                    ? `${coverage.pct}% translated (${coverage.translated}/${coverage.total} items) — save first to complete translation`
-                                    : isNew ? 'Save the course first' : null
+                                const isFullyTranslated = !isNew && coverage !== null && coverage.pct === 100
+                                // Fix #5: require !isNew — unsaved drafts should never appear publish-able
+                                const canPublish = !published && !isNew && isFullyTranslated
+                                const blockReason = isNew
+                                    ? 'Save the course first to begin translation'
+                                    : coverage !== null && coverage.pct < 100
+                                        ? `${coverage.pct}% translated (${coverage.translated}/${coverage.total} items) — save to complete translation`
+                                        : coverage === null
+                                            ? 'Save the course to begin translation'
+                                            : null
                                 return (
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
                                         <button
