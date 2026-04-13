@@ -1599,6 +1599,9 @@ select::placeholder {
   bottom: 0;
   left: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
   z-index: 100;
 }
 
@@ -1709,6 +1712,7 @@ select::placeholder {
     height: auto;
     max-height: 60px;
     overflow: hidden;
+    overscroll-behavior: contain;
     z-index: 200;
     border-right: none;
     border-bottom: 1px solid var(--border-subtle);
@@ -1717,8 +1721,9 @@ select::placeholder {
   }
 
   .admin-sidebar.open {
-    max-height: 100vh;
+    max-height: 100dvh;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   .admin-sidebar-logo {
@@ -3077,16 +3082,9 @@ textarea:focus:not(:focus-visible) {
     font-size: 1rem;
   }
 
-  /* Admin sidebar horizontal scroll */
+  /* Admin sidebar — remove conflicting flex rules on small screens */
   .admin-sidebar-nav {
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .admin-sidebar-nav::-webkit-scrollbar {
-    display: none;
+    display: grid;  /* keep 2-col grid from the 768px breakpoint */
   }
 }
 
