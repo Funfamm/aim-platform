@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useRef, useState } from 'react'
 import './RichTextEditor.css'
 
 interface RichTextEditorProps {
@@ -22,6 +22,11 @@ export default function RichTextEditor({
     maxLength = 2000,
     disabled = false,
 }: RichTextEditorProps) {
+    // Track whether the last change came from inside the editor (not an external value prop change)
+    const isInternalChange = useRef(false)
+    const [showLinkInput, setShowLinkInput] = useState(false)
+    const [linkUrl, setLinkUrl] = useState('https://')
+
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -38,14 +43,17 @@ export default function RichTextEditor({
         content: value || '',
         editable: !disabled,
         onUpdate({ editor }) {
+            isInternalChange.current = true
             const html = editor.isEmpty ? '' : editor.getHTML()
             onChange(html)
+            isInternalChange.current = false
         },
     })
 
     // Sync external value changes (e.g. when draft loads or form resets)
+    // Guard with isInternalChange to prevent onChange → value → setContent loops
     useEffect(() => {
-        if (!editor) return
+        if (!editor || isInternalChange.current) return
         const currentHtml = editor.isEmpty ? '' : editor.getHTML()
         if (value !== currentHtml) {
             editor.commands.setContent(value || '', { emitUpdate: false })
@@ -55,16 +63,27 @@ export default function RichTextEditor({
     // Character count from plain text
     const charCount = editor?.getText().length ?? 0
 
-    const setLink = useCallback(() => {
+    const openLinkInput = useCallback(() => {
         if (!editor) return
         const prev = editor.getAttributes('link').href as string | undefined
-        const url = window.prompt('URL', prev ?? 'https://')
-        if (url === null) return
-        if (url === '') {
+        setLinkUrl(prev ?? 'https://')
+        setShowLinkInput(true)
+    }, [editor])
+
+    const applyLink = useCallback(() => {
+        if (!editor) return
+        setShowLinkInput(false)
+        if (!linkUrl || linkUrl === 'https://') {
             editor.chain().focus().extendMarkRange('link').unsetLink().run()
             return
         }
-        editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+        editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run()
+    }, [editor, linkUrl])
+
+    const removeLink = useCallback(() => {
+        if (!editor) return
+        setShowLinkInput(false)
+        editor.chain().focus().extendMarkRange('link').unsetLink().run()
     }, [editor])
 
     if (!editor) return null
@@ -112,8 +131,8 @@ export default function RichTextEditor({
                     1.
                 </button>
                 <button type="button" style={btn(editor.isActive('link'))}
-                    onClick={setLink}
-                    title="Link">
+                    onClick={openLinkInput}
+                    title="Insert link">
                     🔗
                 </button>
                 <button type="button" style={btn(false)}
@@ -125,6 +144,32 @@ export default function RichTextEditor({
                     {charCount}/{maxLength}
                 </span>
             </div>
+
+            {/* Inline link input — replaces window.prompt() */}
+            {showLinkInput && (
+                <div style={{
+                    display: 'flex', gap: '6px', alignItems: 'center',
+                    padding: '8px 10px', background: 'var(--bg-secondary)',
+                    borderBottom: '1px solid var(--border-subtle)',
+                }}>
+                    <input
+                        type="url"
+                        value={linkUrl}
+                        onChange={e => setLinkUrl(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') applyLink(); if (e.key === 'Escape') setShowLinkInput(false) }}
+                        placeholder="https://"
+                        autoFocus
+                        style={{
+                            flex: 1, padding: '5px 9px', borderRadius: '6px',
+                            border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)',
+                            color: 'var(--text-primary)', fontSize: '0.78rem', outline: 'none',
+                        }}
+                    />
+                    <button type="button" onClick={applyLink} style={btn(true)}>Apply</button>
+                    <button type="button" onClick={removeLink} style={{ ...btn(false), color: '#ef4444' }}>Remove</button>
+                    <button type="button" onClick={() => setShowLinkInput(false)} style={btn(false)}>✕</button>
+                </div>
+            )}
 
             {/* Editor area */}
             <EditorContent editor={editor} className="rte-content" />

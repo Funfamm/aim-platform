@@ -82,7 +82,11 @@ export default function AdminImageUpload({
             <div style={{ display: 'flex', gap: '14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
                 {/* Preview box */}
                 <div
+                    role="button"
+                    tabIndex={uploading ? -1 : 0}
+                    aria-label="Upload image — click or drag and drop"
                     onClick={() => !uploading && inputRef.current?.click()}
+                    onKeyDown={e => { if (!uploading && (e.key === 'Enter' || e.key === ' ')) inputRef.current?.click() }}
                     onDragOver={e => { e.preventDefault(); setDrag(true) }}
                     onDragLeave={() => setDrag(false)}
                     onDrop={e => { e.preventDefault(); setDrag(false); handleFiles(e.dataTransfer.files) }}

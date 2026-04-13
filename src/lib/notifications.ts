@@ -571,7 +571,9 @@ export async function notifyAnnouncement(
     title: string,
     message: string,
     link?: string,
-    prebuiltTranslations?: Record<string, Record<string, string>> | null
+    prebuiltTranslations?: Record<string, Record<string, string>> | null,
+    imageUrl?: string,
+    bodyHtml?: string,
 ): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/notifications'
@@ -608,9 +610,8 @@ export async function notifyAnnouncement(
         message,
         link: inAppLink,
         emailSubject: `📣 ${title} | AIM Studio`,
-        // The default English HTML template. It gets dynamically rebuilt in notifyUser
-        // for non-English users using their specific translation.
-        emailHtml: announcementEmail(title, message, link, siteUrl),
+        // Default English HTML — rebuilt per-user locale inside notifyUser()
+        emailHtml: announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml),
         translations,
     })
 }

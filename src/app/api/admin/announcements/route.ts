@@ -5,11 +5,12 @@ import { notifyAnnouncement } from '@/lib/notifications'
 /**
  * POST /api/admin/announcements
  * Broadcasts an announcement notification to all opted-in users.
- * Body: { title: string; message: string; link?: string; translations?: Record<string, Record<string, string>> }
+ * Body: { title, message, link?, translations?, bodyHtml?, imageUrl? }
  *
  * When `translations` is provided (pre-built by /api/admin/announcements/translate),
  * notifyAnnouncement will skip the auto-translate step and use them directly —
  * guaranteeing every user receives the announcement in their own language.
+ * bodyHtml and imageUrl are optional rich-content fields that appear in the email.
  */
 export async function POST(req: Request) {
     try { await requireAdmin() } catch {
@@ -17,11 +18,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { title, message, link, translations } = body as {
+    const { title, message, link, translations, bodyHtml, imageUrl } = body as {
         title?: string
         message?: string
         link?: string
         translations?: Record<string, Record<string, string>>
+        bodyHtml?: string
+        imageUrl?: string
     }
 
     if (!title || !message) {
@@ -37,9 +40,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'message must be 500 characters or fewer' }, { status: 400 })
     }
 
+    // Validate optional imageUrl — only https URLs allowed (prevents javascript: injection)
+    if (imageUrl && !/^https:\/\//.test(imageUrl)) {
+        return NextResponse.json({ error: 'imageUrl must be a valid https URL' }, { status: 400 })
+    }
 
     // Fire-and-forget — returns immediately; delivery is async
-    notifyAnnouncement(title, message, link, translations ?? null).catch((err) => {
+    notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml).catch((err) => {
         console.error('[announcements] broadcast failed:', err)
     })
 

@@ -23,6 +23,12 @@ export async function GET() {
     return NextResponse.json(castingCalls)
 }
 
+// Validates that a URL is http/https only — rejects javascript:, data:, etc.
+function isSafeUrl(url: string | undefined): boolean {
+    if (!url) return true
+    try { return /^https?:\/\//i.test(url) } catch { return false }
+}
+
 export async function POST(req: Request) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
@@ -30,6 +36,10 @@ export async function POST(req: Request) {
 
     if (!body.projectId || !body.roleName || !body.roleDescription || !body.requirements) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    }
+
+    if (!isSafeUrl(body.bannerUrl)) {
+        return NextResponse.json({ error: 'Invalid bannerUrl' }, { status: 400 })
     }
 
     const castingCall = await prisma.castingCall.create({

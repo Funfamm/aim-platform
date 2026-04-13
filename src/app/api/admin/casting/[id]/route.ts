@@ -3,11 +3,21 @@ import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
 
+// Validates that a URL is http/https only — rejects javascript:, data:, etc.
+function isSafeUrl(url: string | undefined): boolean {
+    if (!url) return true
+    try { return /^https?:\/\//i.test(url) } catch { return false }
+}
+
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     const { id } = await params
     const body = await req.json()
+
+    if (body.bannerUrl !== undefined && !isSafeUrl(body.bannerUrl)) {
+        return NextResponse.json({ error: 'Invalid bannerUrl' }, { status: 400 })
+    }
 
     const castingCall = await prisma.castingCall.update({
         where: { id },
