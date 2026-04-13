@@ -656,6 +656,29 @@ export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?
     `, 'Subscription confirmed! Welcome to AIM Studio')
 }
 
+
+/** Sent when a previously unsubscribed user re-subscribes — warm "welcome back" tone */
+export async function subscribeWelcomeBackWithOverrides(name?: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const f = await mergeFields('subscribe', {
+        heading:    emailT('subscribeWelcomeBack', locale, 'heading')    || 'Welcome Back! 🎬',
+        body:       emailT('subscribeWelcomeBack', locale, 'body')       || "You've re-joined our newsletter. You'll be the first to know about new projects, casting calls, behind-the-scenes content, and exclusive announcements.",
+        noSpam:     emailT('subscribeWelcomeBack', locale, 'noSpam')     || "We don't spam. Only meaningful updates when we have something worth sharing.",
+        buttonText: emailT('subscribeWelcomeBack', locale, 'buttonText') || 'Visit AIM Studio',
+        buttonUrl:  siteUrl || '',
+        footer:     emailT('subscribeWelcomeBack', locale, 'footer')     || 'You received this email because you re-subscribed to updates from AIM Studio.',
+    })
+    const subtextStr = emailT('subscribeWelcomeBack', locale, 'subtext') || 'Great to have you with us again!'
+    const subtextFinal = name ? subtextStr.replace('{name}', name) : subtextStr
+    return emailWrapper(
+        heading(f.heading) +
+        subtext(name ? `Hey ${name}, ${subtextFinal.toLowerCase()}` : subtextFinal) +
+        paragraph(f.body) +
+        paragraph(f.noSpam) +
+        (f.buttonUrl ? divider() + button(f.buttonText, f.buttonUrl) : ''),
+        emailT('subscribeWelcomeBack', locale, 'subject') || 'Welcome back to AIM Studio! 🎬'
+    )
+}
+
 export async function donationThankYouWithOverrides(name: string, amount: number, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('donation', {
         heading:          emailT('donationThankYou', locale, 'heading') || 'Thank You for Your Generosity! 💛',

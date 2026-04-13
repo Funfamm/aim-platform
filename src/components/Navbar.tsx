@@ -609,6 +609,36 @@ export default function Navbar() {
                         </span>
                         {t('sponsors')}
                     </Link>
+                    <Link href="/works" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/works' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" /><line x1="7" y1="2" x2="7" y2="22" /><line x1="17" y1="2" x2="17" y2="22" /><line x1="2" y1="12" x2="22" y2="12" />
+                            </svg>
+                        </span>
+                        {t('works')}
+                    </Link>
+
+                    <Link href="/upcoming" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/upcoming' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </span>
+                        {t('upcoming')}
+                    </Link>
+
+                    <Link href="/subscribe" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/subscribe' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                        </span>
+                        {tB('subscribe.title')}
+                    </Link>
+
                     <Link href={`/${locale}/notifications`} prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/notifications' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow" style={{ position: 'relative' }}>

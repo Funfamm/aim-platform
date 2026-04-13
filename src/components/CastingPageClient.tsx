@@ -304,29 +304,29 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                             flexWrap: 'nowrap' as const,
                             justifyContent: 'center',
                         }}>
-                            <div>
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                        <div>
+                                <span className="pill-num" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
                                     {castingCalls.length}
                                 </span>
-                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                <span className="pill-label" style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
                                     {t('openRoles')}
                                 </span>
                             </div>
                             <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
                             <div>
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                <span className="pill-num" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                                     {Object.keys(castingCalls.reduce((acc, c) => ({ ...acc, [c.project.id]: true }), {} as Record<string, boolean>)).length}
                                 </span>
-                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                <span className="pill-label" style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
                                     {t('projects')}
                                 </span>
                             </div>
                             <div style={{ width: '1px', background: 'var(--border-subtle)', alignSelf: 'stretch' }} />
                             <div>
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                <span className="pill-num" style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
                                     {[...new Set(castingCalls.map(c => c.roleType))].length}
                                 </span>
-                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
+                                <span className="pill-label" style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>
                                     {t('roleTypes')}
                                 </span>
                             </div>
@@ -505,8 +505,13 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         padding: 0.5rem 1rem !important;
                         flex-wrap: nowrap !important;
                     }
-                    .casting-stats-pill span[style] {
-                        font-size: 0.55rem !important;
+                    /* Pill numbers — keep large and legible */
+                    .casting-stats-pill .pill-num {
+                        font-size: 1.15rem !important;
+                    }
+                    /* Pill labels — bump up from 0.6rem for readability */
+                    .casting-stats-pill .pill-label {
+                        font-size: 0.58rem !important;
                     }
                 }
             `}</style>

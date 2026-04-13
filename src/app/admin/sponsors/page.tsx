@@ -35,11 +35,25 @@ const LOCALES = [
     { code: 'zh', flag: '🇨🇳', label: '中文' },
 ]
 
+const NON_EN_LOCALES = LOCALES.filter(l => l.code !== 'en')
+
 const emptyForm = {
     name: '', description: '', logoUrl: '', bannerUrl: '', website: '', tier: 'bronze',
     active: true, featured: false, displayOn: 'sponsors', contactEmail: '',
     startDate: '', endDate: '', sortOrder: 0, bannerDurationHours: 24,
     descriptionI18n: {} as Record<string, string>,
+}
+
+function resetI18nState(
+    setAutoTranslations: (v: Record<string, string>) => void,
+    setMissingI18n: (v: string[]) => void,
+    setHasI18nTranslated: (v: boolean) => void,
+    setExpandedI18n: (v: string | null) => void,
+) {
+    setAutoTranslations({})
+    setMissingI18n([])
+    setHasI18nTranslated(false)
+    setExpandedI18n(null)
 }
 
 export default function AdminSponsorsPage() {
@@ -55,7 +69,14 @@ export default function AdminSponsorsPage() {
     const [logoPreview, setLogoPreview] = useState('')
     const [bannerPreview, setBannerPreview] = useState('')
     const [filter, setFilter] = useState('all')
-    const [i18nLocale, setI18nLocale] = useState('en')
+
+    // ── Auto-translation state ──
+    const [translatingI18n, setTranslatingI18n]     = useState(false)
+    const [retryingI18n, setRetryingI18n]           = useState<string[]>([])
+    const [autoTranslations, setAutoTranslations]   = useState<Record<string, string>>({})
+    const [missingI18n, setMissingI18n]             = useState<string[]>([])
+    const [expandedI18n, setExpandedI18n]           = useState<string | null>(null)
+    const [hasI18nTranslated, setHasI18nTranslated] = useState(false)
 
     const fetchSponsors = useCallback(async () => {
         const res = await fetch('/api/admin/sponsors')
@@ -65,8 +86,6 @@ export default function AdminSponsorsPage() {
     }, [])
 
     useEffect(() => { fetchSponsors() }, [fetchSponsors])
-
-
 
     // File preview handlers
     const handleLogoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,6 +115,72 @@ export default function AdminSponsorsPage() {
         return data.url || data.path || ''
     }
 
+    // ── Auto-translate helpers ──
+    async function callI18nTranslate(onlyLocales?: string[]) {
+        const res = await fetch('/api/admin/announcements/translate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: form.name || 'Sponsor',
+                message: form.description.trim(),
+                ...(onlyLocales ? { onlyLocales } : {}),
+            }),
+        })
+        return await res.json() as { translations?: Record<string, Record<string, string>>; missing?: string[]; error?: string }
+    }
+
+    async function handleAutoTranslate() {
+        if (!form.description.trim()) return
+        setTranslatingI18n(true)
+        setAutoTranslations({})
+        setMissingI18n([])
+        setHasI18nTranslated(false)
+        try {
+            const data = await callI18nTranslate()
+            if (data.translations && Object.keys(data.translations).length > 0) {
+                const flat: Record<string, string> = {}
+                for (const [code, fields] of Object.entries(data.translations)) {
+                    if (fields.message) flat[code] = fields.message
+                }
+                setAutoTranslations(flat)
+                setMissingI18n(data.missing ?? [])
+                setHasI18nTranslated(true)
+            } else {
+                setMissingI18n(NON_EN_LOCALES.map(l => l.code))
+            }
+        } catch { setMissingI18n(NON_EN_LOCALES.map(l => l.code)) }
+        finally { setTranslatingI18n(false) }
+    }
+
+    async function retryI18nLocale(code: string) {
+        setRetryingI18n(prev => [...prev, code])
+        try {
+            const data = await callI18nTranslate([code])
+            if (data.translations?.[code]?.message) {
+                setAutoTranslations(prev => ({ ...prev, [code]: data.translations![code].message }))
+                setMissingI18n(prev => prev.filter(l => l !== code))
+            }
+        } catch { /* stays red */ }
+        finally { setRetryingI18n(prev => prev.filter(l => l !== code)) }
+    }
+
+    async function retryAllI18nFailed() {
+        if (missingI18n.length === 0) return
+        setRetryingI18n([...missingI18n])
+        try {
+            const data = await callI18nTranslate(missingI18n)
+            if (data.translations) {
+                const flat: Record<string, string> = { ...autoTranslations }
+                for (const [code, fields] of Object.entries(data.translations)) {
+                    if (fields.message) flat[code] = fields.message
+                }
+                setAutoTranslations(flat)
+                setMissingI18n(data.missing ?? [])
+            }
+        } catch { /* stays red */ }
+        finally { setRetryingI18n([]) }
+    }
+
     // Get today in YYYY-MM-DD format (timezone-safe)
     const getTodayStr = () => {
         const d = new Date()
@@ -119,9 +204,11 @@ export default function AdminSponsorsPage() {
             if (bannerFile) bannerUrl = await uploadFile(bannerFile)
 
             const body = { ...form, logoUrl: logoUrl || null, bannerUrl: bannerUrl || null,
-                descriptionI18n: Object.fromEntries(
-                    Object.entries(form.descriptionI18n).filter(([, v]) => v.trim())
-                ) || null,
+                descriptionI18n: Object.keys(autoTranslations).length > 0
+                    ? { en: form.description, ...autoTranslations }
+                    : (Object.fromEntries(
+                        Object.entries(form.descriptionI18n).filter(([, v]) => v.trim())
+                      ) || null),
             }
 
             let res: Response
@@ -145,12 +232,26 @@ export default function AdminSponsorsPage() {
 
             setShowForm(false); setEditing(null); setForm(emptyForm)
             setLogoFile(null); setBannerFile(null); setLogoPreview(''); setBannerPreview('')
+            resetI18nState(setAutoTranslations, setMissingI18n, setHasI18nTranslated, setExpandedI18n)
             await fetchSponsors()
         } catch (err) {
             setError('Network error: could not save sponsor')
             console.error(err)
         }
         setSaving(false)
+    }
+
+    const handleCancel = () => {
+        setShowForm(!showForm)
+        setEditing(null)
+        setForm(emptyForm)
+        setError('')
+        setLogoPreview('')
+        setBannerPreview('')
+        setLogoFile(null)
+        setBannerFile(null)
+        // Gap 2 fix: reset translation state so it doesn't leak into the next session
+        resetI18nState(setAutoTranslations, setMissingI18n, setHasI18nTranslated, setExpandedI18n)
     }
 
     const startEdit = (s: Sponsor) => {
@@ -164,6 +265,16 @@ export default function AdminSponsorsPage() {
             sortOrder: s.sortOrder, bannerDurationHours: s.bannerDurationHours || 24,
             descriptionI18n: (s.descriptionI18n as Record<string, string>) || {},
         })
+        // Restore existing translations into auto-translate state
+        const existing = (s.descriptionI18n as Record<string, string>) || {}
+        const nonEn: Record<string, string> = {}
+        for (const [k, v] of Object.entries(existing)) {
+            if (k !== 'en' && v) nonEn[k] = v
+        }
+        setAutoTranslations(nonEn)
+        setMissingI18n(NON_EN_LOCALES.filter(l => !nonEn[l.code]).map(l => l.code))
+        setHasI18nTranslated(Object.keys(nonEn).length > 0)
+        setExpandedI18n(null)
         setLogoPreview(s.logoUrl || ''); setBannerPreview(s.bannerUrl || '')
         setEditing(s.id); setShowForm(true)
     }
@@ -210,7 +321,6 @@ export default function AdminSponsorsPage() {
         color: 'var(--text-primary)', fontSize: '0.82rem', fontFamily: 'inherit',
         outline: 'none', transition: 'border-color 0.2s',
     }
-    // Dark select style — no white background
     const sel: React.CSSProperties = {
         ...inp, appearance: 'none' as const,
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
@@ -232,13 +342,13 @@ export default function AdminSponsorsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
                     <div>
                         <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, background: 'linear-gradient(135deg, var(--accent-gold), #f59e0b)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                            🤝 Sponsors & Partners
+                            Sponsors &amp; Partners
                         </h1>
                         <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                            Manage sponsor banners, website links, tiers & display locations
+                            Manage sponsor banners, website links, tiers &amp; display locations
                         </p>
                     </div>
-                    <button onClick={() => { setShowForm(!showForm); setEditing(null); setForm(emptyForm); setError(''); setLogoPreview(''); setBannerPreview(''); setLogoFile(null); setBannerFile(null) }} style={{
+                    <button onClick={handleCancel} style={{
                         padding: '10px 22px', fontSize: '0.8rem', fontWeight: 700, borderRadius: '10px', cursor: 'pointer',
                         border: showForm ? '1px solid rgba(239,68,68,0.3)' : 'none',
                         background: showForm ? 'rgba(239,68,68,0.06)' : 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(245,158,11,0.1))',
@@ -313,49 +423,128 @@ export default function AdminSponsorsPage() {
                                 <input style={inp} value={form.website} onChange={e => setForm(f => ({ ...f, website: e.target.value }))} placeholder="https://example.com" />
                             </div>
 
-                            {/* Row 2: Description (default) + i18n tabs */}
+                            {/* Row 2: Description + Auto-Translate */}
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={lbl}>Description (Default / English)</label>
-                                <textarea style={{ ...inp, minHeight: '60px', resize: 'vertical' }} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief description of the sponsor..." />
+                                <label style={lbl}>Description (English)</label>
+                                <textarea
+                                    style={{ ...inp, minHeight: '60px', resize: 'vertical' }}
+                                    value={form.description}
+                                    onChange={e => {
+                                        setForm(f => ({ ...f, description: e.target.value }))
+                                        // Clear translations when source changes
+                                        if (hasI18nTranslated) {
+                                            setAutoTranslations({}); setMissingI18n([]); setHasI18nTranslated(false)
+                                        }
+                                    }}
+                                    placeholder="Brief description of the sponsor..."
+                                />
 
-                                {/* i18n translations panel */}
-                                <div style={{ marginTop: '10px', border: '1px solid rgba(212,168,83,0.12)', borderRadius: '10px', overflow: 'hidden' }}>
-                                    <div style={{ padding: '7px 12px', background: 'rgba(212,168,83,0.04)', borderBottom: '1px solid rgba(212,168,83,0.08)', fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                        🌐 Translations <span style={{ fontWeight: 400, color: 'var(--text-tertiary)' }}>— enter sponsor description in each language</span>
+                                {/* Gap 1 fix: warn when description exists but not yet translated */}
+                                {form.description.trim() && !hasI18nTranslated && (
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                        marginTop: '6px', padding: '5px 10px', borderRadius: '7px',
+                                        background: 'rgba(245,158,11,0.06)',
+                                        border: '1px solid rgba(245,158,11,0.18)',
+                                        fontSize: '0.62rem', color: '#f59e0b',
+                                    }}>
+                                        <span>⚠️</span>
+                                        <span>Description not yet translated — all users will see English. Click <strong>Auto Translate</strong> before saving.</span>
                                     </div>
-                                    {/* Language selector tabs */}
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', padding: '8px 10px', background: 'rgba(0,0,0,0.15)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                                        {LOCALES.map(({ code, flag, label }) => (
-                                            <button key={code} type="button"
-                                                onClick={() => setI18nLocale(code)}
-                                                style={{
-                                                    padding: '3px 9px', fontSize: '0.65rem', borderRadius: '6px',
-                                                    border: i18nLocale === code ? '1px solid rgba(212,168,83,0.35)' : '1px solid rgba(255,255,255,0.05)',
-                                                    background: i18nLocale === code ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.02)',
-                                                    color: i18nLocale === code ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                                                    cursor: 'pointer', fontWeight: i18nLocale === code ? 700 : 400,
-                                                    display: 'flex', alignItems: 'center', gap: '4px',
-                                                }}>
-                                                {flag} {code.toUpperCase()}
-                                                {form.descriptionI18n[code] && <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {/* Active locale textarea */}
-                                    <div style={{ padding: '10px' }}>
-                                        <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginBottom: '5px' }}>
-                                            {LOCALES.find(l => l.code === i18nLocale)?.flag} {LOCALES.find(l => l.code === i18nLocale)?.label}
+                                )}
+
+                                {/* Auto-translate panel */}
+                                <div style={{ marginTop: '10px', border: `1px solid ${hasI18nTranslated && missingI18n.length === 0 ? 'rgba(52,211,153,0.2)' : missingI18n.length > 0 && hasI18nTranslated ? 'rgba(239,68,68,0.2)' : 'rgba(212,168,83,0.12)'}`, borderRadius: '10px', overflow: 'hidden' }}>
+                                    {/* Header + buttons */}
+                                    <div style={{ padding: '7px 12px', background: 'rgba(212,168,83,0.04)', borderBottom: '1px solid rgba(212,168,83,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                                        <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: hasI18nTranslated && missingI18n.length === 0 ? '#34d399' : 'var(--accent-gold)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            🌐 Translations
+                                            <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', textTransform: 'none' as const }}>
+                                                {hasI18nTranslated && missingI18n.length === 0
+                                                    ? '— all 10 languages ready'
+                                                    : missingI18n.length > 0 && hasI18nTranslated
+                                                    ? `— ${missingI18n.length} language${missingI18n.length !== 1 ? 's' : ''} failed`
+                                                    : '— auto-translated from description'}
+                                            </span>
                                         </div>
-                                        <textarea
-                                            style={{ ...inp, minHeight: '54px', resize: 'vertical' }}
-                                            value={form.descriptionI18n[i18nLocale] || ''}
-                                            onChange={e => setForm(f => ({
-                                                ...f,
-                                                descriptionI18n: { ...f.descriptionI18n, [i18nLocale]: e.target.value },
-                                            }))}
-                                            placeholder={`Description in ${LOCALES.find(l => l.code === i18nLocale)?.label || i18nLocale}...`}
-                                        />
+                                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                            {missingI18n.length > 0 && hasI18nTranslated && (
+                                                <button type="button" onClick={retryAllI18nFailed}
+                                                    disabled={retryingI18n.length > 0}
+                                                    style={{ padding: '4px 12px', fontSize: '0.62rem', fontWeight: 700, borderRadius: '6px', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', cursor: 'pointer' }}>
+                                                    🔄 Retry {missingI18n.length} Failed
+                                                </button>
+                                            )}
+                                            <button type="button" onClick={handleAutoTranslate}
+                                                disabled={translatingI18n || !form.description.trim()}
+                                                style={{
+                                                    padding: '4px 12px', fontSize: '0.62rem', fontWeight: 700, borderRadius: '6px',
+                                                    border: '1px solid rgba(212,168,83,0.3)',
+                                                    background: !form.description.trim() || translatingI18n ? 'rgba(212,168,83,0.06)' : 'rgba(212,168,83,0.12)',
+                                                    color: 'var(--accent-gold)', cursor: translatingI18n ? 'wait' : 'pointer',
+                                                    opacity: !form.description.trim() ? 0.5 : 1,
+                                                }}>
+                                                {translatingI18n ? '⏳ Translating…' : hasI18nTranslated ? '🔄 Re-Translate All' : '🌐 Auto Translate'}
+                                            </button>
+                                        </div>
                                     </div>
+
+                                    {/* Locale status grid */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))', gap: '6px', padding: '10px' }}>
+                                        {NON_EN_LOCALES.map(loc => {
+                                            const translated  = !!autoTranslations[loc.code]
+                                            const isMissing   = missingI18n.includes(loc.code)
+                                            const isRetrying  = retryingI18n.includes(loc.code)
+                                            const isExpanded  = expandedI18n === loc.code
+
+                                            let statusIcon = '○'; let iconColor = 'rgba(255,255,255,0.2)'
+                                            if (translatingI18n || isRetrying)         { statusIcon = '⏳'; iconColor = 'rgba(212,168,83,0.6)' }
+                                            else if (translated && !isMissing)          { statusIcon = '✅'; iconColor = '#34d399' }
+                                            else if (isMissing && hasI18nTranslated)   { statusIcon = '🔴'; iconColor = '#ef4444' }
+
+                                            return (
+                                                <div key={loc.code} style={{
+                                                    borderRadius: '8px', overflow: 'hidden',
+                                                    border: `1px solid ${translated && !isMissing ? 'rgba(52,211,153,0.18)' : isMissing && hasI18nTranslated ? 'rgba(239,68,68,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                                                    background: translated && !isMissing ? 'rgba(52,211,153,0.03)' : isMissing && hasI18nTranslated ? 'rgba(239,68,68,0.03)' : 'rgba(255,255,255,0.015)',
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '7px 10px' }}>
+                                                        <span style={{ fontSize: '0.95rem' }}>{loc.flag}</span>
+                                                        <span style={{ fontSize: '0.68rem', fontWeight: 600, flex: 1, color: 'var(--text-primary)' }}>{loc.label}</span>
+                                                        <span style={{ fontSize: '0.75rem', color: iconColor }}>{statusIcon}</span>
+                                                        {isMissing && hasI18nTranslated && !isRetrying && (
+                                                            <button type="button" onClick={() => retryI18nLocale(loc.code)}
+                                                                style={{ padding: '1px 6px', fontSize: '0.55rem', fontWeight: 700, borderRadius: '4px', border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: '#ef4444', cursor: 'pointer' }}>
+                                                                Retry
+                                                            </button>
+                                                        )}
+                                                        {translated && !isMissing && (
+                                                            <button type="button" onClick={() => setExpandedI18n(isExpanded ? null : loc.code)}
+                                                                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '0.6rem', padding: 0 }}>
+                                                                {isExpanded ? '▲' : '▼'}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    {isExpanded && translated && (
+                                                        <div style={{ padding: '0 8px 8px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                                            <textarea
+                                                                value={autoTranslations[loc.code] || ''}
+                                                                onChange={e => setAutoTranslations(prev => ({ ...prev, [loc.code]: e.target.value }))}
+                                                                rows={3}
+                                                                style={{ ...inp, fontSize: '0.72rem', padding: '6px 8px', resize: 'vertical' as const, marginTop: '6px', lineHeight: 1.5 }}
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+
+                                    {!hasI18nTranslated && (
+                                        <div style={{ padding: '6px 12px 10px', fontSize: '0.62rem', color: 'var(--text-tertiary)' }}>
+                                            🔒 Write a description above, then click <strong style={{ color: 'var(--accent-gold)' }}>Auto Translate</strong> — all 10 languages fill automatically
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

@@ -480,6 +480,16 @@ export default function AnnouncementsAdminPage() {
                                 </span>
                             ))}
                         </div>
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            gap: '6px', fontSize: '0.68rem', color: 'var(--text-tertiary)',
+                            padding: '7px 14px', borderRadius: '8px',
+                            background: 'rgba(255,255,255,0.02)',
+                            border: '1px solid rgba(255,255,255,0.04)',
+                        }}>
+                            <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>ℹ️</span>
+                            <span>Only opted-in users are notified. Emails delivered in each user&apos;s language simultaneously.</span>
+                        </div>
 
                         <button
                             type="submit"
@@ -503,9 +513,6 @@ export default function AnnouncementsAdminPage() {
                                 : '🔒 Translate All Languages First'}
                         </button>
 
-                        <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textAlign: 'center', lineHeight: 1.5 }}>
-                            Only opted-in users are notified. Emails delivered in each user&apos;s language simultaneously.
-                        </p>
                     </div>
                 </form>
             </main>

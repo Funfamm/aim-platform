@@ -198,10 +198,10 @@ export default async function ScriptCallsPage() {
                         flex-wrap: nowrap !important;
                     }
                     .script-stats-pill .stat-num {
-                        font-size: 1rem !important;
+                        font-size: 1.15rem !important;
                     }
                     .script-stats-pill .stat-label {
-                        font-size: 0.42rem !important;
+                        font-size: 0.58rem !important;
                         letter-spacing: 0.06em !important;
                     }
                 }
