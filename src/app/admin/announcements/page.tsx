@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
+import dynamic from 'next/dynamic'
+import AdminImageUpload from '@/components/AdminImageUpload'
+
+// Dynamically import TipTap editor to avoid SSR issues
+const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
 
 const DRAFT_KEY = 'aim_announcement_draft'
 
@@ -34,9 +39,11 @@ type Translations = Record<string, LocaleTranslation>
 export default function AnnouncementsAdminPage() {
     // ── English source — seeded from localStorage draft if present ──
     const draft = typeof window !== 'undefined' ? loadDraft() : null
-    const [title, setTitle]     = useState<string>(draft?.title   ?? '')
-    const [message, setMessage] = useState<string>(draft?.message ?? '')
-    const [link, setLink]       = useState<string>(draft?.link    ?? '')
+    const [title, setTitle]     = useState<string>(draft?.title      ?? '')
+    const [message, setMessage] = useState<string>(draft?.message    ?? '')
+    const [bodyHtml, setBodyHtml] = useState<string>(draft?.bodyHtml ?? '')
+    const [imageUrl, setImageUrl] = useState<string>(draft?.imageUrl  ?? '')
+    const [link, setLink]       = useState<string>(draft?.link        ?? '')
 
     // ── Translation state — also restored from draft ──
     const [translating, setTranslating]               = useState(false)
@@ -54,16 +61,16 @@ export default function AnnouncementsAdminPage() {
     // ── Persist draft to localStorage whenever relevant state changes ──
     useEffect(() => {
         // Only save if there's something meaningful to preserve
-        if (!title && !message && Object.keys(translations).length === 0) {
+        if (!title && !message && !bodyHtml && Object.keys(translations).length === 0) {
             localStorage.removeItem(DRAFT_KEY)
             return
         }
         try {
             localStorage.setItem(DRAFT_KEY, JSON.stringify({
-                title, message, link, translations, missingLocales, hasTranslated,
+                title, message, bodyHtml, imageUrl, link, translations, missingLocales, hasTranslated,
             }))
         } catch { /* storage full — non-fatal */ }
-    }, [title, message, link, translations, missingLocales, hasTranslated])
+    }, [title, message, bodyHtml, imageUrl, link, translations, missingLocales, hasTranslated])
 
     // ── Derived ──
     const allTranslated = hasTranslated && missingLocales.length === 0
@@ -169,6 +176,8 @@ export default function AnnouncementsAdminPage() {
                 body: JSON.stringify({
                     title: title.trim(),
                     message: message.trim(),
+                    bodyHtml: bodyHtml || undefined,
+                    imageUrl: imageUrl.trim() || undefined,
                     link: link.trim() || undefined,
                     translations,
                 }),
@@ -177,7 +186,7 @@ export default function AnnouncementsAdminPage() {
             if (res.ok) {
                 setResult({ success: true })
                 // Clear form + draft — announcement has been sent
-                setTitle(''); setMessage(''); setLink('')
+                setTitle(''); setMessage(''); setBodyHtml(''); setImageUrl(''); setLink('')
                 setTranslations({}); setMissingLocales([]); setHasTranslated(false)
                 localStorage.removeItem(DRAFT_KEY)
             } else {
@@ -248,18 +257,38 @@ export default function AnnouncementsAdminPage() {
                             <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '4px', textAlign: 'right' }}>{title.length}/100</div>
                         </div>
                         <div>
-                            <label style={lbl}>Message <span style={{ color: '#ef4444' }}>*</span></label>
+                            <label style={lbl}>Summary <span style={{ color: '#ef4444' }}>*</span><span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none' }}> — used in emails &amp; notifications</span></label>
                             <textarea
                                 id="announcement-message"
                                 value={message}
                                 onChange={e => onSourceChange(setMessage, e.target.value)}
                                 maxLength={500}
-                                rows={5}
-                                placeholder="What would you like to tell your community?"
+                                rows={3}
+                                placeholder="Short summary for emails and push notifications…"
                                 required
                                 style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }}
                             />
                             <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '4px', textAlign: 'right' }}>{message.length}/500</div>
+                        </div>
+                        <div>
+                            <label style={lbl}>Rich Body <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none' }}>(optional — displayed on website with formatting)</span></label>
+                            <RichTextEditor
+                                value={bodyHtml}
+                                onChange={html => {
+                                    setBodyHtml(html)
+                                    if (hasTranslated) { setTranslations({}); setMissingLocales([]); setHasTranslated(false) }
+                                }}
+                                placeholder="Add formatted body content with headings, bold, lists and links…"
+                            />
+                        </div>
+                        <div>
+                            <AdminImageUpload
+                                value={imageUrl}
+                                onChange={url => setImageUrl(url)}
+                                category="announcements"
+                                label="Banner Image (optional)"
+                                hint="Displayed at the top of the announcement on the website. Recommended 1200×628px."
+                            />
                         </div>
                         <div>
                             <label style={lbl}>

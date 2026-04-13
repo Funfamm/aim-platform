@@ -1196,5 +1196,15 @@
         "title": "트레이닝 허브: 출시 예정",
         "description": "영화 제작자, 배우, 크리에이터를 꿈꾸는 분들을 위한 세계적인 수준의 트레이닝 경험을 구축하고 있습니다.",
         "backHome": "← 홈으로 돌아가기"
+    },
+    "announcements": {
+        "pageTitle": "공지사항",
+        "pageSubtitle": "AIM Studio의 최신 소식과 업데이트를 확인하세요.",
+        "noAnnouncements": "아직 공지사항이 없습니다",
+        "noAnnouncementsDesc": "스튜디오 업데이트를 위해 곧 다시 방문해 주세요.",
+        "readMore": "더 읽기",
+        "learnMore": "자세히 알아보기",
+        "postedOn": "게시일",
+        "backToAnnouncements": "공지사항으로 돌아가기"
     }
 }

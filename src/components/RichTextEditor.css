@@ -1,0 +1,140 @@
+/* ── Rich Text Editor styles ──────────────────────────────────────────── */
+
+.rte-wrapper {
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    background: var(--bg-primary);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.rte-wrapper:focus-within {
+    border-color: rgba(212, 168, 83, 0.4);
+    box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.06);
+}
+
+.rte-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.02);
+    flex-wrap: wrap;
+}
+
+.rte-content {
+    min-height: 160px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 12px 14px;
+    font-size: 0.88rem;
+    line-height: 1.65;
+    color: var(--text-primary);
+    font-family: inherit;
+}
+
+/* ProseMirror editor area */
+.rte-content .ProseMirror {
+    outline: none;
+    min-height: 140px;
+}
+
+/* Placeholder */
+.rte-content .ProseMirror p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    color: var(--text-tertiary);
+    pointer-events: none;
+    height: 0;
+}
+
+/* Typography within editor */
+.rte-content h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 12px 0 6px;
+    color: var(--text-primary);
+}
+
+.rte-content h3 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 10px 0 5px;
+}
+
+.rte-content p {
+    margin: 0 0 8px;
+}
+
+.rte-content ul,
+.rte-content ol {
+    padding-left: 20px;
+    margin: 6px 0;
+}
+
+.rte-content li {
+    margin: 2px 0;
+}
+
+.rte-content a {
+    color: var(--accent-gold);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.rte-content strong {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.rte-content em {
+    font-style: italic;
+}
+
+/* ── Rich Text Renderer (public-facing) ────────────────────────────────── */
+
+.rtr-body {
+    font-size: 0.92rem;
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+.rtr-body h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 14px 0 7px;
+}
+
+.rtr-body h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 12px 0 6px;
+}
+
+.rtr-body p {
+    margin: 0 0 10px;
+}
+
+.rtr-body ul,
+.rtr-body ol {
+    padding-left: 22px;
+    margin: 8px 0;
+}
+
+.rtr-body li {
+    margin: 3px 0;
+}
+
+.rtr-body a {
+    color: var(--accent-gold);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.rtr-body strong {
+    font-weight: 700;
+    color: var(--text-primary);
+}

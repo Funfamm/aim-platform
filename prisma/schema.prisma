@@ -160,6 +160,7 @@ model CastingCall {
   compensation    String?
   deadline        String?
   translations    String?
+  bannerUrl       String?
   maxApplications Int           @default(50)
   status          String        @default("open")
   createdAt       DateTime      @default(now())

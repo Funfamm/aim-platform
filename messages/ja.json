@@ -1197,5 +1197,15 @@
         "title": "トレーニングハブ：近日公開",
         "description": "映画制作者、俳優、クリエイターを志す方々のために、ワールドクラスのトレーニング体験を構築しています。",
         "backHome": "← ホームに戻る"
+    },
+    "announcements": {
+        "pageTitle": "お知らせ",
+        "pageSubtitle": "AIM Studioの最新ニュースとアップデートをご確認ください。",
+        "noAnnouncements": "まだお知らせはありません",
+        "noAnnouncementsDesc": "スタジオからのアップデートを近日中にご確認ください。",
+        "readMore": "続きを読む",
+        "learnMore": "詳しく見る",
+        "postedOn": "投稿日",
+        "backToAnnouncements": "お知らせに戻る"
     }
 }

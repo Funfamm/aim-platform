@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
 import TranslationBadge, { getTranslationCoverage } from '@/components/TranslationBadge'
+import AdminImageUpload from '@/components/AdminImageUpload'
 
 /* ── Types ── */
 type Project = { id: string; title: string; slug: string; genre: string | null; year: string | null; coverImage: string | null }
@@ -20,12 +21,14 @@ type FormData = {
     projectId: string; roleName: string; roleType: string; roleDescription: string
     ageRange: string; gender: string; ethnicity: string
     requirements: string; compensation: string; deadline: string; status: string
+    bannerUrl: string
 }
 
 const EMPTY_FORM: FormData = {
     projectId: '', roleName: '', roleType: 'lead', roleDescription: '',
     ageRange: '', gender: '', ethnicity: '',
     requirements: '', compensation: 'Voluntary', deadline: '', status: 'open',
+    bannerUrl: '',
 }
 
 const ROLE_TYPES = ['lead', 'supporting', 'extra', 'voice']
@@ -110,6 +113,7 @@ export default function AdminCastingPage() {
             compensation: c.compensation || '',
             deadline: c.deadline || '',
             status: c.status,
+            bannerUrl: (c as unknown as { bannerUrl?: string }).bannerUrl || '',
         })
         setShowModal(true)
         setError('')
@@ -587,6 +591,16 @@ export default function AdminCastingPage() {
                                         </select>
                                     </div>
                                 </div>
+
+                                {/* Banner Image */}
+                                <AdminImageUpload
+                                    value={form.bannerUrl}
+                                    onChange={url => updateField('bannerUrl', url)}
+                                    category="casting"
+                                    label="Banner Image (optional)"
+                                    hint="Hero image displayed on the casting call page. Recommended 1200×400px."
+                                    previewSize={72}
+                                />
 
                                 {error && (
                                     <div style={{

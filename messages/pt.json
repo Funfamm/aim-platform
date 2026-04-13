@@ -1196,5 +1196,15 @@
         "title": "Centro de Treinamento: Em breve",
         "description": "Estamos construindo uma experiência de treinamento de classe mundial para aspirantes a cineastas, atores e criativos.",
         "backHome": "← Voltar ao Início"
+    },
+    "announcements": {
+        "pageTitle": "Anúncios",
+        "pageSubtitle": "Fique por dentro das últimas notícias e atualizações do AIM Studio.",
+        "noAnnouncements": "Nenhum anúncio ainda",
+        "noAnnouncementsDesc": "Volte em breve para ver as novidades do estúdio.",
+        "readMore": "Leia mais",
+        "learnMore": "Saiba mais",
+        "postedOn": "Publicado em",
+        "backToAnnouncements": "Voltar aos anúncios"
     }
 }
