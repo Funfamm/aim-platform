@@ -14,8 +14,27 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
         }
 
+        // Resolve session once — used for both identity enforcement and notification mirroring
+        const session = await getSessionAndRefresh()
+
+        // Fix #3: If authenticated, resolve verified identity from session + DB.
+        // TokenPayload carries email; name requires a DB lookup.
+        // This prevents client spoofing by ignoring submitted name/email for logged-in users.
+        let resolvedName = name
+        let resolvedEmail = email
+        if (session?.userId) {
+            const dbUser = await prisma.user.findUnique({
+                where: { id: session.userId as string },
+                select: { name: true, email: true },
+            })
+            if (dbUser) {
+                resolvedName = dbUser.name || name
+                resolvedEmail = dbUser.email || email
+            }
+        }
+
         await prisma.contactMessage.create({
-            data: { name, email, subject, message },
+            data: { name: resolvedName, email: resolvedEmail, subject, message },
         })
 
         const lang = locale || 'en'
@@ -23,33 +42,28 @@ export async function POST(request: Request) {
         // Localized email subject from i18n map (falls back to English)
         const localizedSubject = (emailT('contactAcknowledgment', lang, 'subject') || 'We received your message: {subject}').replace('{subject}', subject)
 
-        // Fire-and-forget: auto-reply to sender + mirror to notification board if logged in
+        // Fire-and-forget: auto-reply to sender
         sendEmail({
-            to: email,
+            to: resolvedEmail,
             subject: localizedSubject,
-            html: await contactAcknowledgmentWithOverrides(name, subject, undefined, lang),
+            html: await contactAcknowledgmentWithOverrides(resolvedName, subject, undefined, lang),
         })
 
         // Localized notification board strings
-        const notifTitle = emailT('contactAcknowledgment', lang, 'heading') || 'Message Received ✓'
+        const notifTitle = emailT('contactAcknowledgment', lang, 'heading') || 'Message Received \u2713'
         const notifBody = (emailT('contactAcknowledgment', lang, 'bodyIntro') || 'Your message regarding "{subject}" has been received. Our team will review it and get back to you as soon as possible.').replace(/{subject}/g, subject)
 
         // Mirror to notification board — only if the sender has a registered account
-        void (async () => {
-            try {
-                const session = await getSessionAndRefresh()
-                if (session?.userId) {
-                    await mirrorToNotificationBoard(
-                        session.userId,
-                        'system',
-                        notifTitle,
-                        notifBody,
-                        '/contact',
-                        `contact-${session.userId}-${Date.now()}`,
-                    )
-                }
-            } catch { /* non-critical */ }
-        })()
+        if (session?.userId) {
+            void mirrorToNotificationBoard(
+                session.userId,
+                'system',
+                notifTitle,
+                notifBody,
+                '/contact',
+                `contact-${session.userId}-${Date.now()}`,
+            ).catch(() => { /* non-critical */ })
+        }
 
         // Fire-and-forget: notify admin
         const settings = await prisma.siteSettings.findFirst({
@@ -59,9 +73,9 @@ export async function POST(request: Request) {
         if (adminEmail) {
             sendEmail({
                 to: adminEmail,
-                subject: `📬 New Contact: ${subject}`,
-                html: contactAdminNotification(name, email, subject, message),
-                replyTo: email,
+                subject: `\uD83D\uDCEC New Contact: ${subject}`,
+                html: contactAdminNotification(resolvedName, resolvedEmail, subject, message),
+                replyTo: resolvedEmail,
             })
         }
 

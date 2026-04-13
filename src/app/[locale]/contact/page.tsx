@@ -10,21 +10,12 @@ import { useAuth } from '@/components/AuthProvider'
 export default function ContactPage() {
     const t = useTranslations('contact')
     const locale = useLocale()
-    const { user } = useAuth()
+    const { user, loading: authLoading } = useAuth()
+    // Unified form state — guests use all 4 fields;
+    // logged-in users: name & email are read from session, only subject & message go into state
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [heroImage, setHeroImage] = useState('')
-
-    // Pre-fill name & email from session when user is logged in
-    useEffect(() => {
-        if (user) {
-            setForm(prev => ({
-                ...prev,
-                name: prev.name || user.name || '',
-                email: prev.email || user.email || '',
-            }))
-        }
-    }, [user])
 
     useEffect(() => {
         fetch('/api/page-media?page=contact')
@@ -39,14 +30,18 @@ export default function ContactPage() {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
         setStatus('sending')
+        // Always resolve identity from session for logged-in users — prevents client spoofing
+        const resolvedName = user ? (user.name || '') : form.name
+        const resolvedEmail = user ? (user.email || '') : form.email
         try {
             const res = await fetch('/api/contact', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...form, locale }),
+                body: JSON.stringify({ name: resolvedName, email: resolvedEmail, subject: form.subject, message: form.message, locale }),
             })
             if (res.ok) {
                 setStatus('sent')
+                // Reset only the free-text fields — name/email are always re-derived from session
                 setForm({ name: '', email: '', subject: '', message: '' })
             } else {
                 setStatus('error')
@@ -142,16 +137,22 @@ export default function ContactPage() {
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSubmit}>
+                                        {/* Loading guard — prevents flash of empty fields while auth hydrates */}
+                                        {authLoading ? (
+                                            <div style={{ textAlign: 'center', padding: 'var(--space-xl) 0', color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>
+                                                {t('loading')}
+                                            </div>
+                                        ) : (
                                         <div className="form-grid-2col" style={{ marginBottom: 'var(--space-md)' }}>
                                             <div>
                                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                                                     {t('name')}
-                                                    {user && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700, letterSpacing: '0.04em' }}>🔒 {t('autoFilled') || 'AUTO-FILLED'}</span>}
+                                                    {user && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700, letterSpacing: '0.04em' }}>🔒 {t('autoFilled')}</span>}
                                                 </label>
                                                 <input
                                                     type="text"
-                                                    value={form.name}
-                                                    onChange={(e) => !user && setForm({ ...form, name: e.target.value })}
+                                                    value={user ? (user.name || '') : form.name}
+                                                    onChange={(e) => !user && setForm(prev => ({ ...prev, name: e.target.value }))}
                                                     readOnly={!!user}
                                                     required
                                                     placeholder={t('namePlaceholder')}
@@ -166,12 +167,12 @@ export default function ContactPage() {
                                             <div>
                                                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
                                                     {t('email')}
-                                                    {user && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700, letterSpacing: '0.04em' }}>🔒 {t('autoFilled') || 'AUTO-FILLED'}</span>}
+                                                    {user && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700, letterSpacing: '0.04em' }}>🔒 {t('autoFilled')}</span>}
                                                 </label>
                                                 <input
                                                     type="email"
-                                                    value={form.email}
-                                                    onChange={(e) => !user && setForm({ ...form, email: e.target.value })}
+                                                    value={user ? (user.email || '') : form.email}
+                                                    onChange={(e) => !user && setForm(prev => ({ ...prev, email: e.target.value }))}
                                                     readOnly={!!user}
                                                     required
                                                     placeholder={t('emailPlaceholder')}
@@ -184,6 +185,7 @@ export default function ContactPage() {
                                                 />
                                             </div>
                                         </div>
+                                        )}
                                         <div style={{ marginBottom: 'var(--space-md)' }}>
                                             <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('subject')}</label>
                                             <input type="text" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required placeholder={t('subjectPlaceholder')} style={inputStyle}
