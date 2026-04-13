@@ -23,6 +23,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.compensation !== undefined && { compensation: body.compensation || null }),
             ...(body.deadline !== undefined && { deadline: body.deadline || null }),
             ...(body.status !== undefined && { status: body.status }),
+            ...(body.bannerUrl !== undefined && { bannerUrl: body.bannerUrl || null }),
         },
         include: {
             project: { select: { id: true, title: true, slug: true, genre: true, year: true, coverImage: true } },

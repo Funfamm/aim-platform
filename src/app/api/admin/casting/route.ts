@@ -14,7 +14,7 @@ export async function GET() {
             id: true, projectId: true, roleName: true, roleType: true,
             roleDescription: true, ageRange: true, gender: true, ethnicity: true,
             requirements: true, compensation: true, deadline: true, status: true,
-            translations: true, createdAt: true,
+            translations: true, bannerUrl: true, createdAt: true,
             project: { select: { id: true, title: true, slug: true, genre: true, year: true, coverImage: true } },
             _count: { select: { applications: true } },
         },
@@ -45,6 +45,7 @@ export async function POST(req: Request) {
             compensation: body.compensation || null,
             deadline: body.deadline || null,
             status: body.status || 'open',
+            bannerUrl: body.bannerUrl || null,
         },
         include: {
             project: { select: { id: true, title: true, slug: true, genre: true, year: true, coverImage: true } },
