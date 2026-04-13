@@ -3,6 +3,10 @@ import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
 
+// ── Idempotency guard: prevent duplicate POSTs from double-clicks ──
+const inflightKeys = new Map<string, number>() // key -> expiry timestamp
+const KEY_TTL_MS = 60_000
+
 export async function GET() {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
@@ -36,6 +40,17 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json()
+
+        // Deduplicate rapid double-submits using a client-generated key
+        if (body.clientKey) {
+            const now = Date.now()
+            // Prune stale keys
+            for (const [k, exp] of inflightKeys) { if (exp < now) inflightKeys.delete(k) }
+            if (inflightKeys.has(body.clientKey)) {
+                return NextResponse.json({ error: 'Duplicate request', duplicate: true }, { status: 409 })
+            }
+            inflightKeys.set(body.clientKey, now + KEY_TTL_MS)
+        }
         const slug = (body.title || 'course')
             .toLowerCase()
             .replace(/[^a-z0-9]+/g, '-')

@@ -22,7 +22,39 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     })
 
     if (!course) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    return NextResponse.json(course)
+
+    // ── Compute translation coverage ──
+    const REQUIRED_LOCALES = 10 // es, fr, ar, zh, hi, pt, ru, ja, de, ko
+    const hasTx = (tx: string | null): boolean => {
+        if (!tx) return false
+        try {
+            const p = JSON.parse(tx)
+            return Object.keys(p).length >= REQUIRED_LOCALES
+        } catch { return false }
+    }
+    const coverageItems: { label: string; ok: boolean }[] = []
+    coverageItems.push({ label: `Course: ${course.title}`, ok: hasTx(course.translations) })
+    for (const mod of course.modules) {
+        coverageItems.push({ label: `Module: ${mod.title}`, ok: hasTx(mod.translations) })
+        for (const lesson of mod.lessons) {
+            coverageItems.push({ label: `Lesson: ${lesson.title}`, ok: hasTx(lesson.translations) })
+        }
+        if (mod.quiz) {
+            coverageItems.push({ label: `Quiz: ${mod.quiz.title}`, ok: hasTx(mod.quiz.translations) })
+            for (const q of mod.quiz.questions) {
+                coverageItems.push({ label: `Q: ${q.questionText.slice(0, 50)}`, ok: hasTx(q.translations) })
+            }
+        }
+    }
+    const translatedCount = coverageItems.filter(i => i.ok).length
+    const translationCoverage = {
+        total: coverageItems.length,
+        translated: translatedCount,
+        pct: coverageItems.length > 0 ? Math.round((translatedCount / coverageItems.length) * 100) : 0,
+        missing: coverageItems.filter(i => !i.ok).map(i => i.label),
+    }
+
+    return NextResponse.json({ ...course, translationCoverage })
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

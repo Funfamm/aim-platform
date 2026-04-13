@@ -134,6 +134,14 @@ export default function StudyCanvasPage() {
     const [translating, setTranslating] = useState(false)
     const [translateMsg, setTranslateMsg] = useState('')
 
+    // Translation coverage state
+    type CoverageData = { total: number; translated: number; pct: number; missing: string[] }
+    const [coverage, setCoverage] = useState<CoverageData | null>(null)
+
+    // Duplicate-prevention refs
+    const saveInFlightRef = useRef(false)
+    const clientKeyRef = useRef(`ck-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+
     // Load existing course
     useEffect(() => {
         if (!isNew) {
@@ -151,6 +159,8 @@ export default function StudyCanvasPage() {
                         try { setTranslations(typeof data.translations === 'string' ? JSON.parse(data.translations) : data.translations) }
                         catch { setTranslations(null) }
                     }
+                    // Load server-computed coverage
+                    if (data.translationCoverage) setCoverage(data.translationCoverage)
                     setModules(data.modules?.length ? data.modules.map((m: Module & { translations?: string | null; quiz?: any }) => ({
                         ...m, description: m.description || '',
                         _translations: m.translations ? (typeof m.translations === 'string' ? JSON.parse(m.translations) : m.translations) : null,
@@ -185,14 +195,29 @@ export default function StudyCanvasPage() {
     // Auto-save debounce
     const handleSave = useCallback(async () => {
         if (!title.trim()) { setError('Course title is required'); return }
+        // Prevent double-submit
+        if (saveInFlightRef.current) return
+        saveInFlightRef.current = true
         setSaving(true); setError(''); setSuccess(''); setSaveProgress(0); setSaveStep('Saving course data...')
         try {
-            const body = { title, description, category, level, duration: duration || null, thumbnail: thumbnail || null, published, modules, sourceContent: sourceContent || null }
+            const body = {
+                title, description, category, level,
+                duration: duration || null, thumbnail: thumbnail || null,
+                published, modules, sourceContent: sourceContent || null,
+                // clientKey only on new courses to deduplicate POST
+                ...(isNew ? { clientKey: clientKeyRef.current } : {}),
+            }
             const url = isNew ? '/api/admin/training' : `/api/admin/training/${courseId}`
             const method = isNew ? 'POST' : 'PUT'
             const res = await fetch(url, {
                 method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
             })
+            // Handle idempotency: 409 means the request already went through
+            if (res.status === 409) {
+                setSuccess('Course already being saved—please wait.')
+                setTimeout(() => { setSuccess('') }, 3000)
+                return
+            }
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}))
                 throw new Error(errData.details || errData.error || 'Save failed')
@@ -226,6 +251,13 @@ export default function StudyCanvasPage() {
                         } catch { /* skip malformed lines */ }
                     }
                 }
+                // After save, refresh coverage from server
+                if (!isNew) {
+                    fetch(`/api/admin/training/${courseId}`)
+                        .then(r => r.json())
+                        .then(d => { if (d.translationCoverage) setCoverage(d.translationCoverage) })
+                        .catch(() => {})
+                }
                 if (isNew && finalData?.id) {
                     router.replace(`/admin/training/${finalData.id}/edit`)
                 }
@@ -233,13 +265,15 @@ export default function StudyCanvasPage() {
                 // POST (new course) — normal JSON response
                 const data = await res.json()
                 if (isNew && data.id) {
+                    // Rotate clientKey so a subsequent manual save on the edit page works
+                    clientKeyRef.current = `ck-${Date.now()}-${Math.random().toString(36).slice(2)}`
                     router.replace(`/admin/training/${data.id}/edit`)
                 }
             }
             setSuccess('Course saved & translated!')
             setTimeout(() => { setSuccess(''); setSaveProgress(0); setSaveStep('') }, 3000)
         } catch (e) { setError(e instanceof Error ? e.message : 'Failed to save course') }
-        finally { setSaving(false) }
+        finally { setSaving(false); saveInFlightRef.current = false }
     }, [title, description, category, level, duration, thumbnail, published, modules, sourceContent, isNew, courseId, router])
 
     // Module/lesson helpers
@@ -551,12 +585,46 @@ export default function StudyCanvasPage() {
                                     {published ? 'Visible to students' : 'Hidden from the public'}
                                 </div>
                             </div>
-                            <button onClick={() => setPublished(!published)} style={{
-                                padding: '8px 18px', fontSize: '0.8rem', fontWeight: 700,
-                                border: 'none', borderRadius: '10px', cursor: 'pointer',
-                                background: published ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)',
-                                color: published ? '#ef4444' : '#34d399',
-                            }}>{published ? 'Unpublish' : 'Publish'}</button>
+                            {/* Hard-block publish when translation coverage < 100% */}
+                            {(() => {
+                                const isFullyTranslated = !isNew && coverage && coverage.pct === 100
+                                const canPublish = !published && (isNew || isFullyTranslated)
+                                const blockReason = !isNew && coverage && coverage.pct < 100
+                                    ? `${coverage.pct}% translated (${coverage.translated}/${coverage.total} items) — save first to complete translation`
+                                    : isNew ? 'Save the course first' : null
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                        <button
+                                            onClick={() => {
+                                                if (published) { setPublished(false); return }
+                                                if (!canPublish) return
+                                                setPublished(true)
+                                            }}
+                                            disabled={!published && !canPublish}
+                                            title={!published && blockReason ? blockReason : undefined}
+                                            style={{
+                                                padding: '8px 18px', fontSize: '0.8rem', fontWeight: 700,
+                                                border: 'none', borderRadius: '10px',
+                                                cursor: (!published && !canPublish) ? 'not-allowed' : 'pointer',
+                                                background: published
+                                                    ? 'rgba(239,68,68,0.1)'
+                                                    : canPublish
+                                                        ? 'rgba(52,211,153,0.1)'
+                                                        : 'rgba(255,255,255,0.03)',
+                                                color: published ? '#ef4444' : canPublish ? '#34d399' : 'rgba(255,255,255,0.25)',
+                                                opacity: (!published && !canPublish) ? 0.7 : 1,
+                                            }}
+                                        >
+                                            {published ? 'Unpublish' : '🚀 Publish'}
+                                        </button>
+                                        {!published && blockReason && (
+                                            <span style={{ fontSize: '0.65rem', color: '#f59e0b', textAlign: 'right', maxWidth: '200px', lineHeight: 1.3 }}>
+                                                ⚠️ {blockReason}
+                                            </span>
+                                        )}
+                                    </div>
+                                )
+                            })()}
                         </div>
                         {/* ── AI Course Generation ── */}
                         <div style={{
@@ -772,45 +840,70 @@ export default function StudyCanvasPage() {
                             )}
                         </div>
 
-                        {/* Translation Status */}
+                        {/* ── Translation Coverage Meter ── */}
                         <div style={{
                             padding: '16px 20px', borderRadius: '12px',
                             background: 'rgba(59,130,246,0.03)', border: '1px solid rgba(59,130,246,0.08)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '1rem' }}>🌐</span>
                                     <div>
-                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Auto Translation</div>
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>Translation Coverage</div>
                                         <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '1px' }}>
-                                            {translations ? `Translated to ${Object.keys(translations).length} languages` : 'Will translate on save'}
+                                            {isNew
+                                                ? 'Save the course to begin translation'
+                                                : coverage
+                                                    ? `${coverage.translated} of ${coverage.total} items translated`
+                                                    : 'Will translate on save'}
                                         </div>
                                     </div>
                                 </div>
-                                {translations && (
-                                    <button onClick={() => setShowTranslations(!showTranslations)} style={{
-                                        padding: '5px 12px', fontSize: '0.72rem', fontWeight: 600,
-                                        border: '1px solid rgba(59,130,246,0.15)', borderRadius: '8px',
-                                        cursor: 'pointer', background: 'transparent', color: '#3b82f6',
-                                    }}>{showTranslations ? 'Hide' : 'Preview'}</button>
+                                {coverage && (
+                                    <span style={{
+                                        fontSize: '0.9rem', fontWeight: 800,
+                                        color: coverage.pct === 100 ? '#34d399' : coverage.pct >= 50 ? '#f59e0b' : '#ef4444',
+                                    }}>
+                                        {coverage.pct}%
+                                    </span>
                                 )}
                             </div>
-                            {showTranslations && translations && (
-                                <div style={{ marginTop: '12px', display: 'grid', gap: '8px' }}>
-                                    {Object.entries(translations).map(([locale, fields]) => (
-                                        <div key={locale} style={{
-                                            padding: '8px 12px', borderRadius: '8px',
-                                            background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
-                                        }}>
-                                            <span style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', color: '#3b82f6', letterSpacing: '0.05em' }}>{locale}</span>
-                                            {typeof fields === 'object' && fields && Object.entries(fields as Record<string, string>).map(([key, val]) => (
-                                                <div key={key} style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                                                    <span style={{ color: 'var(--text-tertiary)', fontSize: '0.65rem' }}>{key}: </span>{val}
+
+                            {/* Progress Bar */}
+                            {coverage && (
+                                <>
+                                    <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: '10px' }}>
+                                        <div style={{
+                                            height: '100%', borderRadius: '3px', transition: 'width 0.5s ease',
+                                            width: `${coverage.pct}%`,
+                                            background: coverage.pct === 100
+                                                ? 'linear-gradient(90deg, #22c55e, #34d399)'
+                                                : coverage.pct >= 50
+                                                    ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+                                                    : 'linear-gradient(90deg, #ef4444, #f87171)',
+                                        }} />
+                                    </div>
+                                    {/* Missing items list */}
+                                    {coverage.missing.length > 0 && (
+                                        <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'grid', gap: '3px' }}>
+                                            {coverage.missing.map((label, i) => (
+                                                <div key={i} style={{
+                                                    fontSize: '0.68rem', color: '#f59e0b',
+                                                    padding: '2px 8px', borderRadius: '4px',
+                                                    background: 'rgba(245,158,11,0.06)',
+                                                    display: 'flex', alignItems: 'center', gap: '5px',
+                                                }}>
+                                                    <span style={{ opacity: 0.6 }}>⚠️</span> {label}
                                                 </div>
                                             ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    )}
+                                    {coverage.pct === 100 && (
+                                        <div style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 600 }}>
+                                            ✅ All items fully translated — ready to publish
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
 
@@ -841,6 +934,11 @@ export default function StudyCanvasPage() {
                                                 const data = await res.json()
                                                 if (!res.ok) throw new Error(data.error || 'Translation failed')
                                                 setTranslateMsg(`✅ ${data.message}`)
+                                                // Refresh coverage after translation
+                                                fetch(`/api/admin/training/${courseId}`)
+                                                    .then(r => r.json())
+                                                    .then(d => { if (d.translationCoverage) setCoverage(d.translationCoverage) })
+                                                    .catch(() => {})
                                                 setTimeout(() => setTranslateMsg(''), 8000)
                                             } catch (err) {
                                                 setTranslateMsg('')
