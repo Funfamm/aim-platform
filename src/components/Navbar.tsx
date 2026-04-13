@@ -33,6 +33,7 @@ export default function Navbar() {
         scripts: settings?.scriptCallsEnabled ?? false,
         training: settings?.trainingEnabled ?? false,
         donations: settings?.donationsEnabled ?? false,
+        sponsors: settings?.sponsorsPageEnabled ?? false,
     };
     const pathname = usePathname()
     const router = useRouter()
@@ -655,15 +656,17 @@ export default function Navbar() {
                     </Link>
 
                     {/* 11. Sponsors — least frequent, bottom */}
-                    <Link href="/sponsors" prefetch={false} onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/sponsors' ? 'active-page' : ''}`}>
-                        <span className="drawer-icon-glow">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                            </svg>
-                        </span>
-                        {t('sponsors')}
-                    </Link>
+                    {sections.sponsors && (
+                        <Link href="/sponsors" prefetch={false} onClick={() => setMobileOpen(false)}
+                            className={`drawer-item ${pathname === '/sponsors' ? 'active-page' : ''}`}>
+                            <span className="drawer-icon-glow">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                                </svg>
+                            </span>
+                            {t('sponsors')}
+                        </Link>
+                    )}
                 </div>
 
 

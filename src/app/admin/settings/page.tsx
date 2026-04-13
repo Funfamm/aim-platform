@@ -62,6 +62,7 @@ type Settings = {
     scriptCallsEnabled: boolean
     castingCallsEnabled: boolean
     trainingEnabled: boolean
+    sponsorsPageEnabled: boolean
     // OAuth
     googleClientId: string; googleClientSecret: string
     appleClientId: string; appleTeamId: string; appleKeyId: string; applePrivateKey: string
@@ -729,6 +730,7 @@ export default function AdminSettingsPage() {
         scriptCallsEnabled: false,
         castingCallsEnabled: true,
         trainingEnabled: false,
+        sponsorsPageEnabled: true,
         googleClientId: '', googleClientSecret: '',
         appleClientId: '', appleTeamId: '', appleKeyId: '', applePrivateKey: '',
         // Email
@@ -2138,6 +2140,7 @@ export default function AdminSettingsPage() {
                                             { key: 'castingCallsEnabled' as const, icon: '🎭', label: 'Casting Calls', desc: 'Show casting section and allow applications' },
                                             { key: 'scriptCallsEnabled' as const, icon: '✍️', label: 'Script Calls', desc: 'Show script submissions page' },
                                             { key: 'trainingEnabled' as const, icon: '🎓', label: 'Training Hub', desc: 'Show training courses and workshops' },
+                                            { key: 'sponsorsPageEnabled' as const, icon: '🤝', label: 'Sponsors Page', desc: 'Publish the public sponsors page — homepage sponsor widgets are unaffected' },
                                         ].map(section => (
                                             <div key={section.key} style={{
                                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',

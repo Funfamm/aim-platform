@@ -9,6 +9,7 @@ interface SiteSettings {
   trainingEnabled?: boolean;
   donationsEnabled?: boolean;
   searchBetaEnabled?: boolean;
+  sponsorsPageEnabled?: boolean;
 }
 
 // Stable defaults — match what an unconfigured server returns.
@@ -20,6 +21,7 @@ const STABLE_DEFAULTS: SiteSettings = {
   trainingEnabled: false,
   donationsEnabled: false,
   searchBetaEnabled: false,
+  sponsorsPageEnabled: false,
 };
 
 const CACHE_KEY = 'aim_site_settings_v1';
