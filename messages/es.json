@@ -618,6 +618,8 @@
     "training": {
         "hub": "Centro de Formación",
         "label": "Centro de Formación",
+        "heroLine1": "ELEVA TU",
+        "heroLine2": "",
         "heroTitle": "Perfecciona tu",
         "heroAccent": "Arte",
         "heroDesc": "Cursos y recursos para transformar creativos en cineastas.",
@@ -988,6 +990,8 @@
         "metaTitle": "Convocatorias de guiones | AIM Studio",
         "metaDesc": "Envía tu guion para tener la oportunidad de que AIM Studio lo produzca.",
         "badge": "Convocatorias abiertas",
+        "heroLine1": "ELEVA TU",
+        "heroLine2": "",
         "heroTitle": "Envío de",
         "heroAccent": "Guiones",
         "exploreCta": "Explorar Convocatorias",

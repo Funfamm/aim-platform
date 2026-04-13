@@ -618,6 +618,8 @@
     "training": {
         "hub": "Centro de Formação",
         "label": "Centro de Formação",
+        "heroLine1": "ELEVE SUA",
+        "heroLine2": "",
         "heroTitle": "Aperfeiçoe sua",
         "heroAccent": "Arte",
         "heroDesc": "Cursos e recursos para transformar criativos em cineastas.",
@@ -988,6 +990,8 @@
         "metaTitle": "Chamadas de Roteiros | AIM Studio",
         "metaDesc": "Envie seu roteiro para ter a chance de ser produzido pela AIM Studio.",
         "badge": "Chamadas abertas",
+        "heroLine1": "ELEVE SUA",
+        "heroLine2": "",
         "heroTitle": "Envio de",
         "heroAccent": "Roteiros",
         "exploreCta": "Explorar Chamadas Abertas",

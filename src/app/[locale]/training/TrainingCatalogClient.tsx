@@ -181,7 +181,7 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
 
                         {/* Title — premium cinematic mixed-font layout */}
                         <div style={{ marginBottom: '36px' }}>
-                            {/* Line 1: LEVEL UP — wide cinematic caps */}
+                            {/* Line 1: LEVEL UP — wide cinematic caps (translated) */}
                             <div className="training-title-row" style={{
                                 display: 'flex', alignItems: 'baseline', justifyContent: 'center',
                                 gap: 'clamp(6px, 1.2vw, 14px)', lineHeight: 1,
@@ -195,8 +195,8 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                                     letterSpacing: '0.06em',
                                     lineHeight: 1,
                                     textShadow: '0 6px 40px rgba(0,0,0,0.7)',
-                                }}>LEVEL</span>
-                                {/* Thin gold rule between words */}
+                                }}>{t('heroLine1')}</span>
+                                {/* Thin gold rule */}
                                 <span style={{
                                     display: 'inline-block',
                                     width: 'clamp(18px, 2.5vw, 32px)',
@@ -205,32 +205,25 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                                     alignSelf: 'center',
                                     flexShrink: 0,
                                 }} />
-                                <span style={{
-                                    fontFamily: "'Bebas Neue', 'Impact', sans-serif",
-                                    fontSize: 'clamp(3.2rem, 7.5vw, 6.4rem)',
-                                    fontWeight: 400,
-                                    color: '#fff',
-                                    letterSpacing: '0.06em',
-                                    lineHeight: 1,
-                                    textShadow: '0 6px 40px rgba(0,0,0,0.7)',
-                                }}>UP</span>
                             </div>
 
-                            {/* Line 2: Your Craft — italic serif + gold shimmer */}
+                            {/* Line 2: your CRAFT — italic serif prefix + gold shimmer (translated) */}
                             <div className="training-title-row-2" style={{
                                 display: 'flex', alignItems: 'baseline', justifyContent: 'center',
                                 gap: 'clamp(8px, 1.5vw, 18px)', lineHeight: 1,
                             }}>
-                                <span style={{
-                                    fontFamily: "'Playfair Display', 'Georgia', serif",
-                                    fontStyle: 'italic',
-                                    fontSize: 'clamp(1.6rem, 3.6vw, 3rem)',
-                                    fontWeight: 700,
-                                    color: 'rgba(255,255,255,0.75)',
-                                    letterSpacing: '-0.01em',
-                                    lineHeight: 1,
-                                    textShadow: '0 4px 20px rgba(0,0,0,0.6)',
-                                }}>your</span>
+                                {t('heroLine2') && (
+                                    <span style={{
+                                        fontFamily: "'Playfair Display', 'Georgia', serif",
+                                        fontStyle: 'italic',
+                                        fontSize: 'clamp(1.6rem, 3.6vw, 3rem)',
+                                        fontWeight: 700,
+                                        color: 'rgba(255,255,255,0.75)',
+                                        letterSpacing: '-0.01em',
+                                        lineHeight: 1,
+                                        textShadow: '0 4px 20px rgba(0,0,0,0.6)',
+                                    }}>{t('heroLine2')}</span>
+                                )}
                                 <span
                                     className="craft-shimmer"
                                     style={{
@@ -240,7 +233,7 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                                         letterSpacing: '0.04em',
                                         lineHeight: 1,
                                     }}
-                                >CRAFT</span>
+                                >{t('heroAccent')}</span>
                             </div>
                         </div>
 

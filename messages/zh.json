@@ -618,6 +618,8 @@
     "training": {
         "hub": "培训中心",
         "label": "培训中心",
+        "heroLine1": "提升你的",
+        "heroLine2": "",
         "heroTitle": "精进你的",
         "heroAccent": "艺术",
         "heroDesc": "将创作者转变为电影人的课程和资源。",
@@ -988,6 +990,8 @@
         "metaTitle": "剧本征集 | AIM Studio",
         "metaDesc": "提交您的剧本，有机会由AIM Studio制作。",
         "badge": "公开征集",
+        "heroLine1": "提升你的",
+        "heroLine2": "",
         "heroTitle": "剧本",
         "heroAccent": "征集",
         "exploreCta": "查看开放征稿",

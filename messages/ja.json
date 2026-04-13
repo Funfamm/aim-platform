@@ -601,6 +601,8 @@
     "training": {
         "hub": "トレーニングハブ",
         "label": "トレーニングハブ",
+        "heroLine1": "スキルを",
+        "heroLine2": "",
         "heroTitle": "あなたの",
         "heroAccent": "アートを磨く",
         "heroDesc": "クリエイターを映画制作者に変えるコースとリソース。",
@@ -989,6 +991,8 @@
         "metaTitle": "スクリプト募集 | AIM Studio",
         "metaDesc": "AIM Studioによる制作のチャンスをつかむため、脚本を投稿してください。",
         "badge": "募集中",
+        "heroLine1": "スキルを",
+        "heroLine2": "",
         "heroTitle": "脚本",
         "heroAccent": "募集",
         "exploreCta": "公募一覧を見る",

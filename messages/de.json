@@ -618,6 +618,8 @@
     "training": {
         "hub": "Ausbildungszentrum",
         "label": "Ausbildungszentrum",
+        "heroLine1": "PERFEKTIONIERE DEIN",
+        "heroLine2": "",
         "heroTitle": "Perfektionieren Sie Ihre",
         "heroAccent": "Kunst",
         "heroDesc": "Kurse und Ressourcen für angehende Filmemacher.",
@@ -988,6 +990,8 @@
         "metaTitle": "Drehbuch-Einreichungen | AIM Studio",
         "metaDesc": "Reiche dein Drehbuch ein für eine Chance, von AIM Studio produziert zu werden.",
         "badge": "Offene Ausschreibungen",
+        "heroLine1": "PERFEKTIONIERE DEIN",
+        "heroLine2": "",
         "heroTitle": "Drehbuch-",
         "heroAccent": "Einreichungen",
         "exploreCta": "Offene Aufrufe Erkunden",

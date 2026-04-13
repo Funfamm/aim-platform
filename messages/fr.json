@@ -618,6 +618,8 @@
     "training": {
         "hub": "Centre de Formation",
         "label": "Centre de Formation",
+        "heroLine1": "HAUSSEZ VOTRE",
+        "heroLine2": "",
         "heroTitle": "Perfectionnez votre",
         "heroAccent": "Art",
         "heroDesc": "Cours et ressources pour transformer les créatifs en cinéastes.",
@@ -988,6 +990,8 @@
         "metaTitle": "Appels à scénarios | AIM Studio",
         "metaDesc": "Soumettez votre scénario pour une chance d'être produit par AIM Studio.",
         "badge": "Appels ouverts",
+        "heroLine1": "HAUSSEZ VOTRE",
+        "heroLine2": "",
         "heroTitle": "Soumissions de",
         "heroAccent": "Scénarios",
         "exploreCta": "Explorer les Appels Ouverts",

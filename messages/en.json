@@ -615,6 +615,8 @@
     "training": {
         "hub": "Training Hub",
         "label": "Training Hub",
+        "heroLine1": "LEVEL UP",
+        "heroLine2": "your",
         "heroTitle": "Level Up Your",
         "heroAccent": "Craft",
         "heroDesc": "Courses, workshops, and resources designed to transform aspiring creatives into industry-ready filmmakers, actors, and storytellers.",
@@ -985,6 +987,8 @@
         "metaTitle": "Script Calls | AIM Studio",
         "metaDesc": "Submit your screenplay for a chance to have it produced by AIM Studio.",
         "badge": "Open Calls",
+        "heroLine1": "LEVEL UP",
+        "heroLine2": "your",
         "heroTitle": "Script",
         "heroAccent": "Submissions",
         "exploreCta": "Explore Open Calls",

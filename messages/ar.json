@@ -620,6 +620,8 @@
     "training": {
         "hub": "مركز التدريب",
         "label": "مركز التدريب",
+        "heroLine1": "ارفع مستوى",
+        "heroLine2": "",
         "heroTitle": "أتقن",
         "heroAccent": "فنّك",
         "heroDesc": "دورات وموارد لتحويل المبدعين إلى صناع أفلام.",
@@ -990,6 +992,8 @@
         "metaTitle": "طلبات النصوص | AIM Studio",
         "metaDesc": "قدِّم سيناريوك للحصول على فرصة إنتاجه من قِبَل AIM Studio.",
         "badge": "الطلبات المفتوحة",
+        "heroLine1": "ارفع مستوى",
+        "heroLine2": "",
         "heroTitle": "تقديم",
         "heroAccent": "السيناريوهات",
         "exploreCta": "استكشاف الطلبات المفتوحة",
