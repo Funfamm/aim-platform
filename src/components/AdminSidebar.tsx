@@ -12,7 +12,6 @@ const NAV_ITEMS = [
     { href: '/admin/scripts', label: '✍️ Scripts' },
     { href: '/admin/training', label: '🎓 Training' },
     { href: '/admin/media', label: '🖼️ Media' },
-    { href: '/admin/videos', label: '🎥 Videos' },
     { href: '/admin/sponsors', label: '🤝 Sponsors' },
     { href: '/admin/donations', label: '💰 Donations' },
     { href: '/admin/users', label: '👥 Users' },

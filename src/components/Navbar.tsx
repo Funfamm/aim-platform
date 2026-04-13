@@ -525,18 +525,19 @@ export default function Navbar() {
                 {/* ── Discover Section ── */}
                 <div className="drawer-section">
                     <span className="drawer-section-label">{t('discover')}</span>
-                    <Link href="/about" prefetch={false} onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/about' ? 'active-page' : ''}`}>
+
+                    {/* 1. Works — always visible */}
+                    <Link href="/works" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/works' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" />
-                                <line x1="12" y1="16" x2="12" y2="12" />
-                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" /><line x1="7" y1="2" x2="7" y2="22" /><line x1="17" y1="2" x2="17" y2="22" /><line x1="2" y1="12" x2="22" y2="12" />
                             </svg>
                         </span>
-                        {t('about')}
+                        {t('works')}
                     </Link>
 
+                    {/* 2. Casting — when enabled */}
                     {sections.casting && (
                         <Link href="/casting" prefetch={false} onClick={() => setMobileOpen(false)}
                             className={`drawer-item ${pathname === '/casting' ? 'active-page' : ''}`}>
@@ -552,6 +553,7 @@ export default function Navbar() {
                         </Link>
                     )}
 
+                    {/* 3. Scripts — when enabled */}
                     {sections.scripts && (
                         <Link href="/scripts" prefetch={false} onClick={() => setMobileOpen(false)}
                             className={`drawer-item ${pathname.startsWith('/scripts') ? 'active-page' : ''}`}>
@@ -565,6 +567,7 @@ export default function Navbar() {
                         </Link>
                     )}
 
+                    {/* 4. Training — when enabled */}
                     {sections.training && (
                         <Link href="/training" prefetch={false} onClick={() => setMobileOpen(false)}
                             className={`drawer-item ${pathname.startsWith('/training') ? 'active-page' : ''}`}>
@@ -578,6 +581,18 @@ export default function Navbar() {
                         </Link>
                     )}
 
+                    {/* 5. Upcoming */}
+                    <Link href="/upcoming" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/upcoming' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+                            </svg>
+                        </span>
+                        {t('upcoming')}
+                    </Link>
+
+                    {/* 6. Donate — when enabled */}
                     {sections.donations && (
                         <Link href="/donate" prefetch={false} onClick={() => setMobileOpen(false)}
                             className={`drawer-item ${pathname === '/donate' ? 'active-page' : ''}`}>
@@ -590,45 +605,7 @@ export default function Navbar() {
                         </Link>
                     )}
 
-                    <Link href="/contact" prefetch={false} onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/contact' ? 'active-page' : ''}`}>
-                        <span className="drawer-icon-glow">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                                <polyline points="22,6 12,13 2,6" />
-                            </svg>
-                        </span>
-                        {t('contact')}
-                    </Link>
-                    <Link href="/sponsors" prefetch={false} onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/sponsors' ? 'active-page' : ''}`}>
-                        <span className="drawer-icon-glow">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                            </svg>
-                        </span>
-                        {t('sponsors')}
-                    </Link>
-                    <Link href="/works" prefetch={false} onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/works' ? 'active-page' : ''}`}>
-                        <span className="drawer-icon-glow">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" /><line x1="7" y1="2" x2="7" y2="22" /><line x1="17" y1="2" x2="17" y2="22" /><line x1="2" y1="12" x2="22" y2="12" />
-                            </svg>
-                        </span>
-                        {t('works')}
-                    </Link>
-
-                    <Link href="/upcoming" prefetch={false} onClick={() => setMobileOpen(false)}
-                        className={`drawer-item ${pathname === '/upcoming' ? 'active-page' : ''}`}>
-                        <span className="drawer-icon-glow">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
-                            </svg>
-                        </span>
-                        {t('upcoming')}
-                    </Link>
-
+                    {/* 7. Subscribe */}
                     <Link href="/subscribe" prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/subscribe' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow">
@@ -639,6 +616,7 @@ export default function Navbar() {
                         {tB('subscribe.title')}
                     </Link>
 
+                    {/* 8. Notifications */}
                     <Link href={`/${locale}/notifications`} prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/notifications' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow" style={{ position: 'relative' }}>
@@ -650,7 +628,44 @@ export default function Navbar() {
                         </span>
                         {t('notifications')}
                     </Link>
+
+                    {/* 9. About */}
+                    <Link href="/about" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/about' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                        </span>
+                        {t('about')}
+                    </Link>
+
+                    {/* 10. Contact — utility, pre-filled for logged-in users */}
+                    <Link href="/contact" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/contact' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                                <polyline points="22,6 12,13 2,6" />
+                            </svg>
+                        </span>
+                        {t('contact')}
+                    </Link>
+
+                    {/* 11. Sponsors — least frequent, bottom */}
+                    <Link href="/sponsors" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/sponsors' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                        </span>
+                        {t('sponsors')}
+                    </Link>
                 </div>
+
 
                 {/* ── Language Switcher ── */}
                 <div className="drawer-section">

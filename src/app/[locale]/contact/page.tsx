@@ -4,14 +4,27 @@ import { useState, useEffect, FormEvent } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
+import { useAuth } from '@/components/AuthProvider'
 
 
 export default function ContactPage() {
     const t = useTranslations('contact')
     const locale = useLocale()
+    const { user } = useAuth()
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [heroImage, setHeroImage] = useState('')
+
+    // Pre-fill name & email from session when user is logged in
+    useEffect(() => {
+        if (user) {
+            setForm(prev => ({
+                ...prev,
+                name: prev.name || user.name || '',
+                email: prev.email || user.email || '',
+            }))
+        }
+    }, [user])
 
     useEffect(() => {
         fetch('/api/page-media?page=contact')
@@ -131,15 +144,41 @@ export default function ContactPage() {
                                     <form onSubmit={handleSubmit}>
                                         <div className="form-grid-2col" style={{ marginBottom: 'var(--space-md)' }}>
                                             <div>
-                                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('name')}</label>
-                                                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required placeholder={t('namePlaceholder')} style={inputStyle}
+                                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                                                    {t('name')}
+                                                    {user && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700, letterSpacing: '0.04em' }}>🔒 {t('autoFilled') || 'AUTO-FILLED'}</span>}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={form.name}
+                                                    onChange={(e) => !user && setForm({ ...form, name: e.target.value })}
+                                                    readOnly={!!user}
+                                                    required
+                                                    placeholder={t('namePlaceholder')}
+                                                    style={{
+                                                        ...inputStyle,
+                                                        ...(user ? { opacity: 0.65, cursor: 'default', background: 'rgba(255,255,255,0.03)' } : {}),
+                                                    }}
                                                     onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
                                                     onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
                                                 />
                                             </div>
                                             <div>
-                                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>{t('email')}</label>
-                                                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required placeholder={t('emailPlaceholder')} style={inputStyle}
+                                                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '6px' }}>
+                                                    {t('email')}
+                                                    {user && <span style={{ marginLeft: '6px', fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700, letterSpacing: '0.04em' }}>🔒 {t('autoFilled') || 'AUTO-FILLED'}</span>}
+                                                </label>
+                                                <input
+                                                    type="email"
+                                                    value={form.email}
+                                                    onChange={(e) => !user && setForm({ ...form, email: e.target.value })}
+                                                    readOnly={!!user}
+                                                    required
+                                                    placeholder={t('emailPlaceholder')}
+                                                    style={{
+                                                        ...inputStyle,
+                                                        ...(user ? { opacity: 0.65, cursor: 'default', background: 'rgba(255,255,255,0.03)' } : {}),
+                                                    }}
                                                     onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
                                                     onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
                                                 />
