@@ -111,6 +111,12 @@ export default function AdminProjectsPage() {
     const [castError, setCastError] = useState('')
     const [translatingId, setTranslatingId] = useState<string | null>(null)
 
+    // ── Movie Roll assignment (inside project modal) ──────────────────────
+    type RollOption = { id: string; title: string; icon: string; displayOn: string; visible: boolean }
+    const [allRolls, setAllRolls] = useState<RollOption[]>([])
+    const [selectedRollIds, setSelectedRollIds] = useState<string[]>([])
+    const [rollsLoading, setRollsLoading] = useState(false)
+
     const TOTAL_LANGS = 11 // en, ar, de, es, fr, hi, ja, ko, pt, ru, zh
 
     useEffect(() => {
@@ -143,8 +149,16 @@ export default function AdminProjectsPage() {
     const openCreate = () => {
         setEditingId(null)
         setForm(EMPTY_FORM)
+        setSelectedRollIds([])
         setShowModal(true)
         setError('')
+        // Fetch available rolls
+        setRollsLoading(true)
+        fetch('/api/admin/movie-rolls')
+            .then(r => r.ok ? r.json() : [])
+            .then(setAllRolls)
+            .catch(() => {})
+            .finally(() => setRollsLoading(false))
     }
 
     const openEdit = (p: Project) => {
@@ -164,8 +178,18 @@ export default function AdminProjectsPage() {
             filmUrl: p.filmUrl || '',
             projectType: p.projectType || 'movie',
         })
+        setSelectedRollIds([])
         setShowModal(true)
         setError('')
+        // Fetch rolls + current assignments in parallel
+        setRollsLoading(true)
+        Promise.all([
+            fetch('/api/admin/movie-rolls').then(r => r.ok ? r.json() : []),
+            fetch(`/api/admin/projects/${p.id}/rolls`).then(r => r.ok ? r.json() : []),
+        ]).then(([rolls, assignedIds]) => {
+            setAllRolls(rolls)
+            setSelectedRollIds(assignedIds)
+        }).catch(() => {}).finally(() => setRollsLoading(false))
     }
 
     const handleSave = async (e: React.FormEvent) => {
@@ -205,6 +229,12 @@ export default function AdminProjectsPage() {
                 throw new Error(data.error || 'Failed to save')
             }
             const saved = await res.json()
+            // Save roll assignments (fire-and-forget — non-blocking)
+            fetch(`/api/admin/projects/${saved.id}/rolls`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rollIds: selectedRollIds }),
+            }).catch(() => {})
             if (editingId) {
                 setProjects(prev => prev.map(p => p.id === editingId ? saved : p))
             } else {
@@ -857,6 +887,80 @@ export default function AdminProjectsPage() {
                                             When set, a &quot;Watch Now&quot; button appears on the project page (login required).
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* ── Movie Rolls Assignment ── */}
+                                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>
+                                        🎞️ Movie Rolls
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
+                                        Select which rolls this project should appear in. You can choose multiple or all.
+                                    </div>
+                                    {rollsLoading ? (
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', padding: '0.5rem 0' }}>Loading rolls…</div>
+                                    ) : allRolls.length === 0 ? (
+                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic', padding: '0.25rem 0' }}>
+                                            No rolls yet — create rolls from the <strong>Movie Rolls</strong> page first.
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            {/* Select All / Clear */}
+                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                                                <button type="button"
+                                                    onClick={() => setSelectedRollIds(allRolls.map(r => r.id))}
+                                                    style={{
+                                                        padding: '3px 10px', borderRadius: '6px', fontSize: '0.72rem',
+                                                        fontWeight: 700, cursor: 'pointer',
+                                                        background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.25)',
+                                                        color: 'var(--accent-gold)',
+                                                    }}
+                                                >Select All</button>
+                                                <button type="button"
+                                                    onClick={() => setSelectedRollIds([])}
+                                                    style={{
+                                                        padding: '3px 10px', borderRadius: '6px', fontSize: '0.72rem',
+                                                        fontWeight: 700, cursor: 'pointer',
+                                                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                                                        color: 'var(--text-tertiary)',
+                                                    }}
+                                                >Clear All</button>
+                                            </div>
+                                            {allRolls.map(roll => {
+                                                const isSelected = selectedRollIds.includes(roll.id)
+                                                return (
+                                                    <label key={roll.id} style={{
+                                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                                        padding: '8px 12px', borderRadius: '9px', cursor: 'pointer',
+                                                        background: isSelected ? 'rgba(212,168,83,0.08)' : 'rgba(255,255,255,0.025)',
+                                                        border: `1px solid ${isSelected ? 'rgba(212,168,83,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                                                        transition: 'all 0.15s',
+                                                    }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isSelected}
+                                                            onChange={e => {
+                                                                if (e.target.checked) setSelectedRollIds(prev => [...prev, roll.id])
+                                                                else setSelectedRollIds(prev => prev.filter(id => id !== roll.id))
+                                                            }}
+                                                            style={{ width: '16px', height: '16px', accentColor: 'var(--accent-gold)', flexShrink: 0 }}
+                                                        />
+                                                        <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{roll.icon}</span>
+                                                        <div style={{ flex: 1 }}>
+                                                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: isSelected ? '#fff' : 'var(--text-secondary)' }}>
+                                                                {roll.title}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
+                                                                {roll.displayOn === 'both' ? 'Homepage + Works' : roll.displayOn === 'homepage' ? 'Homepage only' : 'Works only'}
+                                                                {!roll.visible && <span style={{ color: 'rgba(239,68,68,0.7)', marginLeft: '6px' }}>· hidden</span>}
+                                                            </div>
+                                                        </div>
+                                                        {isSelected && <span style={{ fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700 }}>✓ Added</span>}
+                                                    </label>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {error && (

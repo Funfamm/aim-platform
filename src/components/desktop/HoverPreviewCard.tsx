@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 import type { ProjectCard } from '@/components/mobile/MovieCard'
@@ -54,6 +55,8 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose, onK
     const pos        = useRef(computePosition(anchor)).current
     const loc        = getLocalizedProject(project, locale)
     const t          = useTranslations('works')
+    const router     = useRouter()
+    const movieHref  = project.filmUrl ? `/works/${project.slug}#watch` : `/works/${project.slug}`
 
     // Portal mount
     useEffect(() => {
@@ -172,8 +175,15 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose, onK
                     pointerEvents: 'auto',
                 }}
             >
-                {/* VIDEO SECTION */}
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#0a0a10', overflow: 'hidden' }}>
+                {/* VIDEO SECTION — clicking navigates to the movie page */}
+                <div
+                    onClick={() => { onClose(); router.push(movieHref) }}
+                    style={{
+                        position: 'relative', width: '100%', aspectRatio: '16/9',
+                        background: '#0a0a10', overflow: 'hidden',
+                        cursor: 'pointer',
+                    }}
+                >
                     {project.trailerUrl && !videoError ? (
                         <video
                             ref={videoRef}
@@ -198,9 +208,9 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose, onK
                         </div>
                     )}
 
-                    {/* Sound toggle */}
+                    {/* Sound toggle — stopPropagation so click doesn't navigate */}
                     <button
-                        onClick={toggleMute}
+                        onClick={e => { e.stopPropagation(); toggleMute() }}
                         title={muted ? 'Unmute' : 'Mute'}
                         style={{
                             position: 'absolute', bottom: '10px', right: '10px',
@@ -210,12 +220,32 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose, onK
                             color: '#fff', cursor: 'pointer', fontSize: '0.75rem',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             transition: 'all 0.2s',
+                            zIndex: 2,
                         }}
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.8)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.6)' }}
                     >
                         {muted ? '🔇' : '🔊'}
                     </button>
+
+                    {/* Hover-to-navigate hint overlay */}
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        opacity: 0, transition: 'opacity 0.18s',
+                        background: 'rgba(0,0,0,0.35)',
+                        zIndex: 1,
+                    }}
+                        className="video-hover-hint"
+                    >
+                        <span style={{
+                            fontSize: '0.78rem', fontWeight: 700, color: '#fff',
+                            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
+                            padding: '6px 14px', borderRadius: '20px',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            letterSpacing: '0.04em',
+                        }}>▶ View Film</span>
+                    </div>
 
                     {/* Bottom gradient into the card body */}
                     <div style={{
