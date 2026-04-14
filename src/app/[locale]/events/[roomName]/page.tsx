@@ -144,6 +144,8 @@ export default async function EventPage({ params }: EventPageProps) {
                     padding: 0.75rem 1rem;
                     background: rgba(255,255,255,0.03);
                     border-bottom: 1px solid rgba(255,255,255,0.06);
+                    position: relative;
+                    z-index: 10;
                 }
                 .room-live-badge {
                     font-size: 0.65rem;
@@ -337,17 +339,87 @@ export default async function EventPage({ params }: EventPageProps) {
                     color: rgba(255,255,255,0.4);
                 }
                 .language-selector-select {
+                    appearance: none;
+                    -webkit-appearance: none;
                     background: rgba(255,255,255,0.06);
                     border: 1px solid rgba(255,255,255,0.12);
                     border-radius: 8px;
-                    padding: 0.25rem 0.6rem;
+                    padding: 0.3rem 1.8rem 0.3rem 0.6rem;
                     font-size: 0.75rem;
                     color: #fff;
                     cursor: pointer;
                     outline: none;
+                    color-scheme: dark;
+                    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='rgba(255,255,255,0.4)' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+                    background-repeat: no-repeat;
+                    background-position: right 0.5rem center;
+                    background-size: 10px 6px;
+                    transition: border-color 0.15s, background 0.15s;
+                }
+                .language-selector-select:hover {
+                    background-color: rgba(255,255,255,0.09);
+                    border-color: rgba(255,255,255,0.2);
                 }
                 .language-selector-select:focus {
                     border-color: rgba(212,168,83,0.5);
+                }
+                .language-selector-select option {
+                    background: #1a1a2e;
+                    color: #fff;
+                    padding: 0.4rem;
+                }
+
+                /* ── Room shell action buttons ── */
+                .room-shell-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    margin-left: 0.5rem;
+                    flex-shrink: 0;
+                }
+                .room-shell-leave-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.3rem;
+                    padding: 0.35rem 0.85rem;
+                    border-radius: 8px;
+                    border: 1px solid rgba(239,68,68,0.35);
+                    background: rgba(239,68,68,0.1);
+                    color: #fca5a5;
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                    white-space: nowrap;
+                }
+                .room-shell-leave-btn:hover {
+                    background: rgba(239,68,68,0.2);
+                    border-color: rgba(239,68,68,0.5);
+                    color: #fecaca;
+                }
+                .room-shell-end-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.3rem;
+                    padding: 0.35rem 0.85rem;
+                    border-radius: 8px;
+                    border: 1px solid rgba(255,255,255,0.08);
+                    background: rgba(255,255,255,0.04);
+                    color: rgba(255,255,255,0.45);
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 0.15s;
+                    white-space: nowrap;
+                }
+                .room-shell-end-btn:hover:not(:disabled) {
+                    background: rgba(239,68,68,0.08);
+                    border-color: rgba(239,68,68,0.3);
+                    color: #fca5a5;
+                }
+                .room-shell-end-btn:disabled {
+                    opacity: 0.4;
+                    cursor: not-allowed;
                 }
 
                 /* ── Teaser card (unauthenticated) ── */
@@ -383,6 +455,7 @@ export default async function EventPage({ params }: EventPageProps) {
                 }
                 .event-ended h2 { color: rgba(255,255,255,0.6); margin-bottom: 0.5rem; }
             `}</style>
+
 
             <main className="event-page">
                 <div className="event-page-header">
@@ -429,7 +502,7 @@ export default async function EventPage({ params }: EventPageProps) {
                             </Link>
                         </div>
                     ) : (
-                        <RoomShell roomName={roomName} role={role} />
+                        <RoomShell roomName={roomName} role={role} exitPath="/" />
                     )}
                 </div>
             </main>
