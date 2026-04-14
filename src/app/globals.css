@@ -359,7 +359,6 @@ html {
   overflow-x: hidden;
   touch-action: pan-y;
   overscroll-behavior: none;
-  overscroll-behavior-y: none;
   scroll-behavior: smooth;
 }
 
@@ -374,7 +373,6 @@ body {
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
-  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -2684,10 +2682,21 @@ select::placeholder {
   transform: none;
 }
 
-.tilt-card-3d .project-card:hover {
-  transform: none;
-  border-color: var(--border-accent);
-  box-shadow: var(--shadow-glow-strong), var(--shadow-lg);
+@media (hover: hover) and (pointer: fine) {
+  .tilt-card-3d .project-card:hover {
+    transform: none;
+    border-color: var(--border-accent);
+    box-shadow: var(--shadow-glow-strong), var(--shadow-lg);
+  }
+}
+
+
+/* Premium mobile card hover — desktop only */
+@media (hover: hover) and (pointer: fine) {
+  .movie-card-premium:hover {
+    border-color: rgba(212,168,83,0.2) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(212,168,83,0.08);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════

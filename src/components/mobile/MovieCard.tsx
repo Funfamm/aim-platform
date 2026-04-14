@@ -67,7 +67,6 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
             className="movie-card-premium"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={onHoverEnd}
-            onClick={trackView}
             style={{
                 flexShrink: 0,
                 width: '155px',
@@ -168,6 +167,7 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                 {/* Title */}
                 <Link
                     href={`/works/${project.slug}`}
+                    onClick={trackView}
                     style={{
                         display: 'block',
                         fontSize: '0.78rem', fontWeight: 700, color: '#fff',
@@ -213,16 +213,6 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                     }}
                 >{primaryAction.label}</Link>
             </div>
-
-            {/* Inline hover effects — desktop only */}
-            <style>{`
-                @media (hover: hover) and (pointer: fine) {
-                    .movie-card-premium:hover {
-                        border-color: rgba(212,168,83,0.2) !important;
-                        box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(212,168,83,0.08);
-                    }
-                }
-            `}</style>
         </div>
     )
 }

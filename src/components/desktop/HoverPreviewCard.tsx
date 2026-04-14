@@ -124,7 +124,6 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose }: H
     const content = (
         <div
             ref={cardRef}
-            onMouseLeave={onClose}
             style={{
                 position: 'absolute',
                 top: `${pos.top}px`,
@@ -357,5 +356,31 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose }: H
         </div>
     )
 
-    return createPortal(content, document.body)
+    // Bridge element: invisible connector between the anchor card and the portal
+    // Prevents the hover from dismissing when the cursor crosses the gap
+    const scrollY = typeof window !== 'undefined' ? window.scrollY : 0
+    const anchorTop = anchor.top + scrollY
+    const anchorBottom = anchorTop + anchor.height
+    const bridgeTop = Math.min(anchorTop, pos.top)
+    const bridgeBottom = Math.max(anchorBottom, pos.top + CARD_H)
+    const bridgeLeft = Math.min(anchor.left, pos.left)
+    const bridgeRight = Math.max(anchor.left + anchor.width, pos.left + CARD_W)
+
+    const portalContent = (
+        <div onMouseLeave={onClose} style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, zIndex: 9998 }}>
+            {/* Invisible bridge to keep cursor connected */}
+            <div style={{
+                position: 'absolute',
+                top: `${bridgeTop}px`,
+                left: `${bridgeLeft}px`,
+                width: `${bridgeRight - bridgeLeft}px`,
+                height: `${bridgeBottom - bridgeTop}px`,
+                zIndex: 9998,
+                pointerEvents: 'auto',
+            }} />
+            {content}
+        </div>
+    )
+
+    return createPortal(portalContent, document.body)
 }
