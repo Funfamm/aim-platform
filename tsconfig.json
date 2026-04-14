@@ -12,7 +12,8 @@
     "noEmit": true,
     "esModuleInterop": true,
     "types": [
-      "node"
+      "node",
+      "jest"
     ],
     "module": "esnext",
     "moduleResolution": "bundler",

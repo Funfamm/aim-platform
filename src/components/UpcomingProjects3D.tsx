@@ -4,7 +4,9 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import Scene3D from '@/components/Scene3D'
+import CastingCard from '@/components/mobile/CastingCard'
 import { useTranslations, useLocale } from 'next-intl'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface UpcomingProject {
     id: string
@@ -32,6 +34,7 @@ interface HeroVideo {
 export default function UpcomingProjects3D({ projects }: { projects: UpcomingProject[] }) {
     const t = useTranslations('upcomingHero')
     const locale = useLocale()
+    const isMobile = useIsMobile()
     const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
     const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
@@ -492,6 +495,113 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                         </ScrollReveal3D>
 
                         {/* Project cards */}
+                        {isMobile ? (
+                            /* ═══ MOBILE — horizontal scroll strips by status ═══ */
+                            <div>
+                                {/* In Production row */}
+                                {projects.filter(p => p.status === 'in-production').length > 0 && (
+                                    <div style={{ marginBottom: 'var(--space-xl)' }}>
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            marginBottom: 'var(--space-sm)',
+                                            padding: '0 4px',
+                                        }}>
+                                            <span style={{ fontSize: '1rem' }}>🎬</span>
+                                            <span style={{
+                                                fontSize: '0.85rem', fontWeight: 700, color: '#fff',
+                                                letterSpacing: '0.02em',
+                                            }}>{t('inProduction')}</span>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex', gap: '12px',
+                                            overflowX: 'auto', overflowY: 'hidden',
+                                            scrollSnapType: 'x mandatory',
+                                            WebkitOverflowScrolling: 'touch',
+                                            paddingBottom: '8px',
+                                            margin: '0 -16px', padding: '0 16px 8px',
+                                        }}>
+                                            {projects.filter(p => p.status === 'in-production').map(project => (
+                                                <div key={project.id} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
+                                                    <CastingCard
+                                                        project={project}
+                                                        locale={locale}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Coming Soon row */}
+                                {projects.filter(p => p.status === 'upcoming').length > 0 && (
+                                    <div style={{ marginBottom: 'var(--space-xl)' }}>
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            marginBottom: 'var(--space-sm)',
+                                            padding: '0 4px',
+                                        }}>
+                                            <span style={{ fontSize: '1rem' }}>✨</span>
+                                            <span style={{
+                                                fontSize: '0.85rem', fontWeight: 700, color: '#fff',
+                                                letterSpacing: '0.02em',
+                                            }}>{t('comingSoon')}</span>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex', gap: '12px',
+                                            overflowX: 'auto', overflowY: 'hidden',
+                                            scrollSnapType: 'x mandatory',
+                                            WebkitOverflowScrolling: 'touch',
+                                            paddingBottom: '8px',
+                                            margin: '0 -16px', padding: '0 16px 8px',
+                                        }}>
+                                            {projects.filter(p => p.status === 'upcoming').map(project => (
+                                                <div key={project.id} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
+                                                    <CastingCard
+                                                        project={project}
+                                                        locale={locale}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Open Casting row */}
+                                {projects.filter(p => p.castingCalls.length > 0).length > 0 && (
+                                    <div>
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            marginBottom: 'var(--space-sm)',
+                                            padding: '0 4px',
+                                        }}>
+                                            <span style={{ fontSize: '1rem' }}>🎭</span>
+                                            <span style={{
+                                                fontSize: '0.85rem', fontWeight: 700, color: '#fff',
+                                                letterSpacing: '0.02em',
+                                            }}>{t('openCasting')}</span>
+                                        </div>
+                                        <div style={{
+                                            display: 'flex', gap: '12px',
+                                            overflowX: 'auto', overflowY: 'hidden',
+                                            scrollSnapType: 'x mandatory',
+                                            WebkitOverflowScrolling: 'touch',
+                                            paddingBottom: '8px',
+                                            margin: '0 -16px', padding: '0 16px 8px',
+                                        }}>
+                                            {projects.filter(p => p.castingCalls.length > 0).map(project => (
+                                                <div key={project.id} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
+                                                    <CastingCard
+                                                        project={project}
+                                                        locale={locale}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            /* ═══ DESKTOP — existing 2-column grid ═══ */
                         <div className="form-grid-2col">
                             {projects.map((project, index) => {
                                 const ptr = (() => {
@@ -640,6 +750,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                                 )
                             })}
                         </div>
+                        )}
                     </div>
                 </div>
             </section>

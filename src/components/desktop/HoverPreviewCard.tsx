@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 import type { ProjectCard } from '@/components/mobile/MovieCard'
 
@@ -50,6 +51,7 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose }: H
     // Compute position once on mount — stable ref prevents re-calc on re-renders
     const pos        = useRef(computePosition(anchor)).current
     const loc        = getLocalizedProject(project, locale)
+    const t          = useTranslations('works')
 
     // Portal mount
     useEffect(() => {
@@ -263,7 +265,7 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose }: H
                             onMouseEnter={e => { e.currentTarget.style.background = '#e8e8e8'; e.currentTarget.style.transform = 'scale(1.03)' }}
                             onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.transform = 'scale(1)' }}
                         >
-                            ▶ {project.filmUrl ? 'Watch' : project.trailerUrl ? 'Trailer' : 'Details'}
+                            ▶ {project.filmUrl ? t('watch') : project.trailerUrl ? t('trailer') : t('details')}
                         </Link>
 
                         <button
@@ -324,7 +326,7 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose }: H
                                 padding: '2px 7px', borderRadius: '4px',
                                 border: '1px solid rgba(96,165,250,0.2)',
                             }}>
-                                📺 {project.episodeCount} Episodes
+                                📺 {project.episodeCount} {t('episodes')}
                             </span>
                         )}
                         {watchProgress !== null && watchProgress > 0.05 && (

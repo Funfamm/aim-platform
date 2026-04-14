@@ -357,7 +357,8 @@ html {
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
   overflow-x: hidden;
-  overscroll-behavior: none;
+  /* Let pull-to-refresh work; contain horizontal overscroll only */
+  overscroll-behavior-x: none;
   scroll-behavior: smooth;
 }
 
@@ -371,7 +372,8 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior: none;
+  overscroll-behavior-x: none;           /* prevent horizontal rubber-band */
+  overscroll-behavior-y: auto;           /* allow pull-to-refresh */
   -webkit-overflow-scrolling: touch;
 }
 
@@ -777,6 +779,92 @@ select::placeholder {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   MOBILE NATIVE FEEL — Phase A
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Press feedback: tap scale on all interactive elements ── */
+.press-feedback {
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s ease-out, opacity 0.12s ease-out;
+  touch-action: manipulation;
+  user-select: none;
+}
+.press-feedback:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+/* Larger tap targets get a softer press */
+.press-feedback-sm:active {
+  transform: scale(0.94);
+}
+
+/* ── Horizontal scroll rows: edge fades + zero scrollbar ── */
+.scroll-row-wrap {
+  position: relative;
+}
+.scroll-row-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 48px;
+  background: linear-gradient(to left, var(--bg-primary) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 0;
+  transition: opacity 0.25s ease;
+}
+.scroll-row-wrap.at-end::after {
+  opacity: 0;
+}
+.scroll-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain; /* stop scroll from propagating to page */
+  padding-bottom: 8px;
+}
+.scroll-row::-webkit-scrollbar { display: none; }
+
+/* ── content-visibility: skip painting off-screen sections ── */
+@media (max-width: 768px) {
+  .section {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 400px; /* hint browser of approximate height */
+  }
+}
+
+/* ── GPU promotion for card animations ── */
+@media (max-width: 768px) {
+  /* Promote scroll containers to own GPU layer */
+  .scroll-row,
+  .movie-strip {
+    transform: translateZ(0);
+    will-change: scroll-position;
+  }
+
+  /* Only transition compositor-safe properties on mobile cards */
+  a, button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Remove box-shadow transitions on mobile — triggers expensive repaint */
+  .glass-panel,
+  .card,
+  .project-card {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    /* NOT: box-shadow, border-color, background */
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
    PREMIUM ANIMATIONS
    ═══════════════════════════════════════════════════════════ */
 @keyframes fadeIn {
@@ -805,6 +893,18 @@ select::placeholder {
   from {
     opacity: 0;
     transform: translateX(-40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
   }
 
   to {

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getUserSession } from '@/lib/auth'
+import { getSessionAndRefresh } from '@/lib/auth'
 import { createAccessToken, getRoomServiceClient } from '@/lib/livekit/server'
 import { grantsForRole, type LiveKitRole } from '@/lib/livekit/grants'
 import { canJoinRoom } from '@/lib/livekit/permissions'
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
         const rateLimited = livekitTokenLimiter.check(req)
         if (rateLimited) return rateLimited
 
-        const session = await getUserSession()
+        const session = await getSessionAndRefresh()
         if (!session?.userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -92,7 +92,8 @@ export async function POST(req: Request) {
             role: isAdmin ? 'admin' : role,
         })
     } catch (error) {
-        console.error('[livekit/token] error', error)
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+        console.error('[livekit/token] error', error instanceof Error ? error.message : error)
+        const msg = error instanceof Error ? error.message : 'Internal server error'
+        return NextResponse.json({ error: msg }, { status: 500 })
     }
 }

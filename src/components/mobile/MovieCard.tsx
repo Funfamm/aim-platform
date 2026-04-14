@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 
 export interface ProjectCard {
@@ -30,17 +31,19 @@ interface MovieCardProps {
     onHoverEnd?: () => void
 }
 
-const STATUS_BADGE: Record<string, { color: string; bg: string; border: string; label: string }> = {
-    completed:       { color: '#34d399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.2)',  label: '✓ Released' },
-    'in-production': { color: '#d4a853', bg: 'rgba(212,168,83,0.08)', border: 'rgba(212,168,83,0.2)',  label: '🎬 In Production' },
-    upcoming:        { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',  label: '✨ Coming Soon' },
-}
 
 export default function MovieCard({ project, locale, onHover, onHoverEnd }: MovieCardProps) {
     const [imgLoaded, setImgLoaded] = useState(false)
     const [imgError, setImgError] = useState(false)
+    const t = useTranslations('works')
     const loc = getLocalizedProject(project, locale)
-    const badge = STATUS_BADGE[project.status]
+
+    const STATUS_BADGE_I18N: Record<string, { color: string; bg: string; border: string; label: string }> = {
+        completed:       { color: '#34d399', bg: 'rgba(52,211,153,0.08)',  border: 'rgba(52,211,153,0.2)',  label: `✓ ${t('released')}` },
+        'in-production': { color: '#d4a853', bg: 'rgba(212,168,83,0.08)', border: 'rgba(212,168,83,0.2)',  label: `🎬 ${t('inProduction')}` },
+        upcoming:        { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)',  label: `✨ ${t('comingSoon')}` },
+    }
+    const badge = STATUS_BADGE_I18N[project.status]
 
     const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
         if (onHover) onHover(project, e.currentTarget.getBoundingClientRect())
@@ -57,14 +60,14 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
 
     // ── Determine primary action based on production status ──
     const primaryAction = project.filmUrl
-        ? { href: `/works/${project.slug}#watch`, label: '▶ Watch Now',  color: '#34d399', bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.3)' }
+        ? { href: `/works/${project.slug}#watch`, label: `▶ ${t('watchNow')}`,  color: '#34d399', bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.3)' }
         : project.trailerUrl
-        ? { href: `/works/${project.slug}#trailer`, label: '▶ Trailer', color: '#d4a853', bg: 'rgba(212,168,83,0.12)', border: 'rgba(212,168,83,0.3)' }
-        : { href: `/works/${project.slug}`, label: 'Details →',          color: '#b0a998', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.12)' }
+        ? { href: `/works/${project.slug}#trailer`, label: `▶ ${t('trailer')}`, color: '#d4a853', bg: 'rgba(212,168,83,0.12)', border: 'rgba(212,168,83,0.3)' }
+        : { href: `/works/${project.slug}`, label: `${t('details')} →`,          color: '#b0a998', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.12)' }
 
     return (
         <div
-            className="movie-card-premium"
+            className="movie-card-premium press-feedback"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={onHoverEnd}
             style={{
@@ -75,7 +78,7 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                 position: 'relative',
                 background: 'rgba(13,15,22,0.95)',
                 border: '1px solid rgba(255,255,255,0.06)',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
+                /* transition handled by .press-feedback */
             }}
         >
             {/* ── Cover image — taller portrait aspect ── */}

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import ScrollReveal3D from './ScrollReveal3D'
-import MovieCard from './mobile/MovieCard'
+import CinematicPosterCard from './mobile/CinematicPosterCard'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -23,38 +23,23 @@ export default function FeaturedProjects3D({ projects }: { projects: ProjectData
     const locale = useLocale()
     const isMobile = useIsMobile()
 
-    // ── Mobile: horizontal scroll strip with new premium card design ──
+    // ── Mobile: cinematic poster strip — large, minimal, image-forward ──
     if (isMobile) {
         return (
-            <div style={{
-                display: 'flex',
-                gap: '12px',
-                overflowX: 'auto',
-                overflowY: 'hidden',
-                scrollSnapType: 'x mandatory',
-                WebkitOverflowScrolling: 'touch',
-                paddingBottom: '8px',
-                margin: '0 -16px',
-                padding: '0 16px 8px',
-            }}>
-                {projects.map(project => (
-                    <div key={project.id} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
-                        <MovieCard
-                            project={{
-                                ...project,
-                                status: 'completed',
-                                projectType: 'film',
-                                filmUrl: null,
-                                featured: true,
-                                viewCount: 0,
-                                year: null,
-                                duration: null,
-                                episodeCount: 0,
-                            }}
-                            locale={locale}
-                        />
-                    </div>
-                ))}
+            <div className="scroll-row-wrap" style={{ margin: '0 -16px' }}>
+                <div
+                    className="scroll-row"
+                    style={{ padding: '0 16px 8px', gap: '14px' }}
+                >
+                    {projects.map(project => (
+                        <div key={project.id} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
+                            <CinematicPosterCard
+                                project={project}
+                                locale={locale}
+                            />
+                        </div>
+                    ))}
+                </div>
             </div>
         )
     }

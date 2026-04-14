@@ -927,3 +927,34 @@ model LiveEvent {
   @@index([hostUserId])
   @@index([projectId])
 }
+
+// ── Admin-curated movie collections for homepage/works page rows ──
+
+model MovieRoll {
+  id           String             @id @default(cuid())
+  title        String             // Display name, e.g. "Award Winners"
+  titleI18n    String?            // JSON i18n: { "fr": "Primés", "es": "Premiados", ... }
+  icon         String             @default("🎬") // Emoji or symbol shown beside the title
+  slug         String             @unique        // URL-safe identifier
+  displayOn    String             @default("both") // "homepage" | "works" | "both"
+  visible      Boolean            @default(true)
+  sortOrder    Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  projects     MovieRollProject[]
+
+  @@index([visible, sortOrder])
+  @@index([displayOn])
+}
+
+model MovieRollProject {
+  id         String    @id @default(cuid())
+  rollId     String
+  projectId  String
+  sortOrder  Int       @default(0)
+  roll       MovieRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+
+  @@unique([rollId, projectId])
+  @@index([rollId, sortOrder])
+}

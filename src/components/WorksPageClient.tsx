@@ -7,6 +7,7 @@ import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import dynamic from 'next/dynamic'
 import type { ProjectCard } from '@/components/mobile/MovieCard'
 
@@ -51,18 +52,20 @@ interface WorksPageClientProps {
 // ── Detects mobile viewport after hydration (SSR-safe) ──────────────────────
 
 
-// ── Mobile row definitions ───────────────────────────────────────────────────
-const FIXED_ROWS: Array<{ id: string; icon: string; title: string; query: Record<string, string | boolean | number> }> = [
-    { id: 'featured',  icon: '★', title: 'Staff Picks',   query: { featured: true } },
-    { id: 'trending',  icon: '🔥', title: 'Trending',     query: { sort: 'trending' } },
-    { id: 'newest',    icon: '🆕', title: 'New Releases', query: { sort: 'newest'   } },
-    { id: 'completed', icon: '✅', title: 'Now Available', query: { status: 'completed', sort: 'newest' } },
-]
 
 export default function WorksPageClient({ projects, completedCount, inProdCount, genres }: WorksPageClientProps) {
     const t = useTranslations('works')
     const locale = useLocale()
     const isMobile = useIsMobile()
+    useScrollRestoration('works')
+
+    // ── Mobile row definitions (inside component for i18n access) ──
+    const FIXED_ROWS: Array<{ id: string; icon: string; title: string; query: Record<string, string | boolean | number> }> = [
+        { id: 'featured',  icon: '★', title: t('staffPicks'),   query: { featured: true } },
+        { id: 'trending',  icon: '🔥', title: t('trending'),     query: { sort: 'trending' } },
+        { id: 'newest',    icon: '🆕', title: t('newReleases'), query: { sort: 'newest'   } },
+        { id: 'completed', icon: '✅', title: t('nowAvailable'), query: { status: 'completed', sort: 'newest' } },
+    ]
 
     // ── Desktop hover card state ─────────────────────────────────────────────
     const [hoverProject, setHoverProject] = useState<Project | null>(null)

@@ -90,17 +90,16 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <div style={{ position: 'relative', zIndex: 2 }} tabIndex={0} role="region" aria-label="Page content">
 
       {/* ═══ FEATURED WORKS ═══ */}
-      <section className="section" style={{ position: 'relative', paddingBottom: 'var(--space-lg)' }}>
-        {/* Subtle section background */}
+      <section className="section" style={{ position: 'relative', paddingBottom: 0 }}>
+        {/* Dark overlay behind cards — full-bleed, ensures readability over hero video */}
         <div style={{
           position: 'absolute',
-          top: 0,
-          left: '50%',
+          top: 0, left: '50%', right: 0, bottom: 0,
+          width: '100vw',
           transform: 'translateX(-50%)',
-          width: '800px',
-          height: '400px',
-          background: 'radial-gradient(ellipse, rgba(212,168,83,0.03) 0%, transparent 70%)',
+          background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
           pointerEvents: 'none',
+          zIndex: 0,
         }} />
         <div className="container">
           <div className="glass-panel" style={{
@@ -149,7 +148,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           }))} />
 
 
-          <div style={{ textAlign: 'center', marginTop: 'var(--space-2xl)' }}>
+          <div style={{ textAlign: 'center', marginTop: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
             <Link href="/works" className="btn btn-secondary">
               {t('viewAllWorks')}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
