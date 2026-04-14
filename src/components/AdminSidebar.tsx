@@ -1,8 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { usePathname } from 'next/navigation'
+
+const MIN_WIDTH = 180
+const MAX_WIDTH = 380
+const DEFAULT_WIDTH = 260
 
 const NAV_ITEMS = [
     { href: '/admin/analytics', label: '📊 Analytics' },
@@ -22,6 +26,50 @@ const NAV_ITEMS = [
 export default function AdminSidebar() {
     const pathname = usePathname()
     const [open, setOpen] = useState(false)
+    const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH)
+    const isResizing = useRef(false)
+    const startX = useRef(0)
+    const startW = useRef(DEFAULT_WIDTH)
+
+    // Restore persisted width on mount (desktop only)
+    useEffect(() => {
+        if (typeof window === 'undefined' || window.innerWidth <= 768) return
+        const saved = parseInt(localStorage.getItem('adminSidebarWidth') || '', 10)
+        if (saved >= MIN_WIDTH && saved <= MAX_WIDTH) setSidebarWidth(saved)
+    }, [])
+
+    // Apply --sidebar-w to `:root` so admin-main margin tracks the sidebar
+    useEffect(() => {
+        if (window.innerWidth <= 768) return
+        document.documentElement.style.setProperty('--sidebar-w', `${sidebarWidth}px`)
+    }, [sidebarWidth])
+
+    const startResize = useCallback((e: React.MouseEvent) => {
+        if (window.innerWidth <= 768) return
+        e.preventDefault()
+        isResizing.current = true
+        startX.current = e.clientX
+        startW.current = sidebarWidth
+
+        const onMove = (ev: MouseEvent) => {
+            if (!isResizing.current) return
+            const delta = ev.clientX - startX.current
+            const newW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW.current + delta))
+            setSidebarWidth(newW)
+        }
+        const onUp = () => {
+            if (!isResizing.current) return
+            isResizing.current = false
+            setSidebarWidth(w => {
+                localStorage.setItem('adminSidebarWidth', String(w))
+                return w
+            })
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onUp)
+        }
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onUp)
+    }, [sidebarWidth])
 
     // Close nav when route changes (user tapped a link on mobile)
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -72,7 +120,10 @@ export default function AdminSidebar() {
                 />
             )}
 
-            <aside className={`admin-sidebar${open ? ' open' : ''}`}>
+            <aside
+                className={`admin-sidebar${open ? ' open' : ''}`}
+                style={{ width: `${sidebarWidth}px` }}
+            >
                 <div className="admin-sidebar-logo">
                     <Link href="/" prefetch={false} style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, textDecoration: 'none', color: 'inherit' }}>
                         <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
@@ -111,6 +162,14 @@ export default function AdminSidebar() {
                         <Link href="/" prefetch={false} style={{ color: 'var(--text-tertiary)' }}>← Back to Site</Link>
                     </li>
                 </ul>
+
+                {/* ── Resize handle — desktop only ── */}
+                <div
+                    className="admin-sidebar-resize-handle"
+                    onMouseDown={startResize}
+                    title="Drag to resize sidebar"
+                    aria-hidden="true"
+                />
             </aside>
         </>
     )

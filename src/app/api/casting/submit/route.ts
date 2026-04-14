@@ -25,6 +25,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to parse form data.' }, { status: 400 });
   }
 
+  // Honeypot: bots fill the hidden 'website' field; humans never see it
+  if (form.get('website')) {
+    return NextResponse.json({ error: 'Bad request.' }, { status: 400 });
+  }
+
   // Validate audio upload
   const validationResult = await validateAudio(form);
   if (validationResult) return validationResult;

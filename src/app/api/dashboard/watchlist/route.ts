@@ -43,3 +43,42 @@ export async function GET(request: NextRequest) {
         hasMore,
     })
 }
+
+// DELETE a single watchlist item by projectId
+export async function DELETE(request: NextRequest) {
+    const session = await getUserSession()
+    if (!session?.userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    try {
+        const { projectId } = await request.json()
+        if (!projectId) return NextResponse.json({ error: 'projectId required' }, { status: 400 })
+        await prisma.watchlist.deleteMany({
+            where: { userId: session.userId, projectId },
+        })
+        return NextResponse.json({ success: true })
+    } catch {
+        return NextResponse.json({ error: 'Failed to remove' }, { status: 500 })
+    }
+}
+
+// POST /api/dashboard/watchlist  with { bulk: true, projectIds: [] } — bulk remove
+export async function POST(request: NextRequest) {
+    const session = await getUserSession()
+    if (!session?.userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    try {
+        const body = await request.json()
+        if (!body.bulk || !Array.isArray(body.projectIds) || body.projectIds.length === 0) {
+            return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+        }
+        const ids: string[] = body.projectIds.slice(0, 100) // safety cap
+        await prisma.watchlist.deleteMany({
+            where: { userId: session.userId, projectId: { in: ids } },
+        })
+        return NextResponse.json({ success: true, removed: ids.length })
+    } catch {
+        return NextResponse.json({ error: 'Failed to remove items' }, { status: 500 })
+    }
+}

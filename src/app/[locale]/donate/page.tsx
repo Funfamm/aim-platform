@@ -347,7 +347,8 @@ export default function DonatePage() {
 
                         <ScrollReveal3D direction="up" delay={150} distance={30}>
                             <div className="glass-panel" style={{
-                                backdropFilter: 'blur(20px)',
+                                backdropFilter: 'blur(28px)',
+                                WebkitBackdropFilter: 'blur(28px)',
                                 borderRadius: 'var(--radius-xl)', padding: 'var(--space-xl)', textAlign: 'left',
                             }}>
                                 {/* Donations Disabled State */}

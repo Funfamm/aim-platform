@@ -109,6 +109,10 @@ export default function DashboardPage() {
     const [loadingWatchlist, setLoadingWatchlist] = useState(true)
     const [loadingHistory, setLoadingHistory] = useState(true)
     const [loadingDonations, setLoadingDonations] = useState(true)
+    // Watchlist bulk-select state
+    const [watchBulkMode, setWatchBulkMode] = useState(false)
+    const [watchSelected, setWatchSelected] = useState<Set<string>>(new Set())
+    const [bulkDeleting, setBulkDeleting] = useState(false)
     const searchParams = useSearchParams()
     const [activeTab, setActiveTab] = useState<TabType>(() => {
         const tab = searchParams.get('tab')
@@ -389,44 +393,143 @@ export default function DashboardPage() {
                             ) : watchlist.length === 0 ? (
                                 <EmptyState icon="🎬" title={t('noWatchTitle')} desc={t('noWatchDesc')} linkHref="/works" linkText={t('noWatchCta')} />
                             ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-md)' }}>
-                                    {watchlist.map((item, i) => {
-                                        const wTr = (() => {
-                                            if (locale === 'en' || !item.project.translations) return null
-                                            try { return JSON.parse(item.project.translations)?.[locale] || null } catch { return null }
-                                        })()
-                                        const wTitle = wTr?.title || item.project.title
-                                        const wTagline = wTr?.tagline || item.project.tagline
-                                        const wGenre = wTr?.genre || item.project.genre
-                                        return (
-                                        <ScrollReveal3D key={item.id} direction="up" delay={250 + i * 60} distance={15}>
-                                            <Link href={`/works/${item.project.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
-                                                <div style={{
-                                                    background: 'var(--bg-glass-light)', border: '1px solid var(--border-subtle)',
-                                                    borderRadius: 'var(--radius-lg)', overflow: 'hidden', transition: 'all 0.3s',
-                                                }}>
-                                                    <div style={{
-                                                        height: '140px',
-                                                        backgroundImage: item.project.coverImage ? `url(${item.project.coverImage})` : 'linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.02))',
-                                                        backgroundSize: 'cover', backgroundPosition: 'center',
-                                                    }} />
-                                                    <div style={{ padding: 'var(--space-md)' }}>
-                                                        <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '4px', color: 'var(--text-primary)' }}>{wTitle}</h4>
-                                                        {wTagline && <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '8px', lineHeight: 1.4 }}>{wTagline.slice(0, 80)}</p>}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            {wGenre && <span style={{ fontSize: '0.6rem', padding: '2px 8px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{wGenre}</span>}
-                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('saved')} {new Date(item.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        </ScrollReveal3D>
-                                    )})}
-                                    {pagination.watchHasMore && (
-                                        <button onClick={() => loadMore('watchlist')} disabled={pagination.loadingMore === 'watchlist'} style={loadMoreStyle}>
-                                            {pagination.loadingMore === 'watchlist' ? t('loading') : t('loadMore')}
+                                <div>
+                                    {/* Manage bar */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)', flexWrap: 'wrap', gap: '8px' }}>
+                                        <button
+                                            onClick={() => { setWatchBulkMode(m => !m); setWatchSelected(new Set()) }}
+                                            style={{
+                                                padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600, borderRadius: 'var(--radius-md)',
+                                                border: watchBulkMode ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(212,168,83,0.25)',
+                                                background: watchBulkMode ? 'rgba(239,68,68,0.07)' : 'rgba(212,168,83,0.06)',
+                                                color: watchBulkMode ? '#f87171' : 'var(--accent-gold)', cursor: 'pointer', transition: 'all 0.2s',
+                                            }}
+                                        >
+                                            {watchBulkMode ? '✕ Cancel' : '✏️ Manage'}
                                         </button>
-                                    )}
+                                        {watchBulkMode && (
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                <button
+                                                    onClick={() => setWatchSelected(watchSelected.size === watchlist.length ? new Set() : new Set(watchlist.map(w => w.project.id)))}
+                                                    style={{
+                                                        padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600, borderRadius: 'var(--radius-md)',
+                                                        border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)',
+                                                        color: 'var(--text-secondary)', cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    {watchSelected.size === watchlist.length ? 'Deselect All' : 'Select All'}
+                                                </button>
+                                                {watchSelected.size > 0 && (
+                                                    <button
+                                                        disabled={bulkDeleting}
+                                                        onClick={async () => {
+                                                            if (!confirm(`Remove ${watchSelected.size} saved item${watchSelected.size > 1 ? 's' : ''} from your watchlist?`)) return
+                                                            setBulkDeleting(true)
+                                                            try {
+                                                                await fetch('/api/dashboard/watchlist', {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ bulk: true, projectIds: [...watchSelected] }),
+                                                                })
+                                                                setWatchlist(prev => prev.filter(w => !watchSelected.has(w.project.id)))
+                                                                setWatchSelected(new Set())
+                                                                setWatchBulkMode(false)
+                                                            } catch { /* */ }
+                                                            finally { setBulkDeleting(false) }
+                                                        }}
+                                                        style={{
+                                                            padding: '6px 16px', fontSize: '0.75rem', fontWeight: 700, borderRadius: 'var(--radius-md)',
+                                                            border: '1px solid rgba(239,68,68,0.35)',
+                                                            background: bulkDeleting ? 'rgba(239,68,68,0.03)' : 'rgba(239,68,68,0.1)',
+                                                            color: '#f87171', cursor: bulkDeleting ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                                                        }}
+                                                    >
+                                                        {bulkDeleting ? '⏳ Removing...' : `🗑 Remove (${watchSelected.size})`}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-md)' }}>
+                                        {watchlist.map((item, i) => {
+                                            const wTr = (() => {
+                                                if (locale === 'en' || !item.project.translations) return null
+                                                try { return JSON.parse(item.project.translations)?.[locale] || null } catch { return null }
+                                            })()
+                                            const wTitle = wTr?.title || item.project.title
+                                            const wTagline = wTr?.tagline || item.project.tagline
+                                            const wGenre = wTr?.genre || item.project.genre
+                                            const isChecked = watchSelected.has(item.project.id)
+                                            return (
+                                            <ScrollReveal3D key={item.id} direction="up" delay={250 + i * 60} distance={15}>
+                                                <div style={{ position: 'relative' }}>
+                                                    {watchBulkMode && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setWatchSelected(prev => {
+                                                                    const next = new Set(prev)
+                                                                    if (next.has(item.project.id)) next.delete(item.project.id)
+                                                                    else next.add(item.project.id)
+                                                                    return next
+                                                                })
+                                                            }}
+                                                            style={{
+                                                                position: 'absolute', top: '10px', right: '10px', zIndex: 10,
+                                                                width: '22px', height: '22px', borderRadius: '6px',
+                                                                border: isChecked ? '2px solid #f87171' : '2px solid rgba(255,255,255,0.25)',
+                                                                background: isChecked ? 'rgba(239,68,68,0.2)' : 'rgba(0,0,0,0.5)',
+                                                                cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                color: '#f87171', transition: 'all 0.15s',
+                                                                backdropFilter: 'blur(4px)',
+                                                            }}
+                                                            aria-label={isChecked ? 'Deselect' : 'Select'}
+                                                        >
+                                                            {isChecked ? '✓' : ''}
+                                                        </button>
+                                                    )}
+                                                    <Link href={watchBulkMode ? '#' : `/works/${item.project.slug}`}
+                                                        onClick={watchBulkMode ? (e) => {
+                                                            e.preventDefault()
+                                                            setWatchSelected(prev => {
+                                                                const next = new Set(prev)
+                                                                if (next.has(item.project.id)) next.delete(item.project.id)
+                                                                else next.add(item.project.id)
+                                                                return next
+                                                            })
+                                                        } : undefined}
+                                                        style={{ textDecoration: 'none', display: 'block' }}
+                                                    >
+                                                        <div style={{
+                                                            background: 'var(--bg-glass-light)',
+                                                            border: isChecked ? '1px solid rgba(239,68,68,0.4)' : '1px solid var(--border-subtle)',
+                                                            borderRadius: 'var(--radius-lg)', overflow: 'hidden', transition: 'all 0.3s',
+                                                            opacity: watchBulkMode && !isChecked ? 0.7 : 1,
+                                                        }}>
+                                                            <div style={{
+                                                                height: '140px',
+                                                                backgroundImage: item.project.coverImage ? `url(${item.project.coverImage})` : 'linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.02))',
+                                                                backgroundSize: 'cover', backgroundPosition: 'center',
+                                                            }} />
+                                                            <div style={{ padding: 'var(--space-md)' }}>
+                                                                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '4px', color: 'var(--text-primary)' }}>{wTitle}</h4>
+                                                                {wTagline && <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: '8px', lineHeight: 1.4 }}>{wTagline.slice(0, 80)}</p>}
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                    {wGenre && <span style={{ fontSize: '0.6rem', padding: '2px 8px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{wGenre}</span>}
+                                                                    <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('saved')} {new Date(item.createdAt).toLocaleDateString(locale, { month: 'short', day: 'numeric' })}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                </div>
+                                            </ScrollReveal3D>
+                                        )})}
+                                        {pagination.watchHasMore && (
+                                            <button onClick={() => loadMore('watchlist')} disabled={pagination.loadingMore === 'watchlist'} style={loadMoreStyle}>
+                                                {pagination.loadingMore === 'watchlist' ? t('loading') : t('loadMore')}
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </>

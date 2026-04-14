@@ -87,7 +87,8 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
     const totalLessons = courses.reduce((s, c) => s + c.modules.reduce((ms, m) => ms + m.lessons.length, 0), 0)
     const totalEnrollments = courses.reduce((s, c) => s + c._count.enrollments, 0)
 
-    const categories = ['all', ...Array.from(new Set(courses.map(c => c.category)))]
+    // Filter 'all' from dynamic categories to prevent a duplicate "All" filter pill
+    const categories = ['all', ...Array.from(new Set(courses.map(c => c.category).filter(c => c !== 'all')))]
     const filtered = activeFilter === 'all' ? courses : courses.filter(c => c.category === activeFilter)
 
     return (

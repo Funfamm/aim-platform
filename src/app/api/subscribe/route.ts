@@ -25,7 +25,10 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
         }
 
-        const { email, name, locale } = await request.json()
+        const { email, name, locale, website } = await request.json()
+
+        // Honeypot: bots fill this hidden field; humans never see it
+        if (website) return NextResponse.json({ success: true })
 
         if (!email || typeof email !== 'string') {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
