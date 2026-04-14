@@ -5,6 +5,7 @@ import {
     VideoTrack,
     useParticipants,
     useConnectionState,
+    isTrackReference,
 } from '@livekit/components-react'
 import { Track, ConnectionState } from 'livekit-client'
 import type { LiveKitRole } from '@/lib/livekit/grants'
@@ -81,7 +82,10 @@ export default function ParticipantGrid({ role = 'viewer' }: ParticipantGridProp
                             className={`participant-tile${isLocal ? ' participant-tile--local' : ''}`}
                             data-identity={identity}
                         >
-                            {trackRef.publication?.isSubscribed || isLocal ? (
+                            {/* VideoTrack only accepts TrackReference (not placeholder). isTrackReference
+                                narrows the type so the prop assignment is type-safe.
+                                Placeholder refs fall through to the avatar block below. */}
+                            {(trackRef.publication?.isSubscribed || isLocal) && isTrackReference(trackRef) ? (
                                 <VideoTrack
                                     trackRef={trackRef}
                                     className="participant-video"

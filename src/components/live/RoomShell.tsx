@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { LiveKitRoom, RoomAudioRenderer } from '@livekit/components-react'
+import type { ReconnectContext } from 'livekit-client'
 import ParticipantGrid from './ParticipantGrid'
 import CaptionOverlay from './CaptionOverlay'
 import LanguageSelector from './LanguageSelector'
@@ -182,9 +183,8 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
                     reconnectPolicy: {
                         // Returning null signals the SDK to stop retrying and fire
                         // onDisconnected, handing control back to handleDisconnected.
-                        // maxRetries is NOT a valid field on ReconnectPolicy — this is
-                        // the correct way to cap SDK-level retries.
-                        nextRetryDelayMs: (ctx) =>
+                        // The correct method name is nextRetryDelayInMs (not nextRetryDelayMs).
+                        nextRetryDelayInMs: (ctx: ReconnectContext) =>
                             ctx.retryCount >= SDK_MAX_RETRIES
                                 ? null
                                 : Math.min(1_000 * 2 ** ctx.retryCount, 30_000),
