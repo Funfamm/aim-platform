@@ -54,36 +54,66 @@ export default function FileUploader({
         setUploading(true)
         setProgress(10)
 
+        const progressTimer = setInterval(() => {
+            setProgress(p => Math.min(p + 10, 85))
+        }, 400)
+
         try {
-            const formData = new FormData()
-            formData.append('file', file)
-            formData.append('category', category)
+            const isVideoFile = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
 
-            // Simulate progress (we can't get real progress with fetch)
-            const progressTimer = setInterval(() => {
-                setProgress(p => Math.min(p + 10, 90))
-            }, 300)
+            if (isVideoFile) {
+                // ── Presigned direct-to-R2 upload (bypasses Vercel body limit) ──
+                const signRes = await fetch('/api/upload/presign', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: file.name, fileType: file.type || 'video/mp4', kind: 'video' }),
+                })
+                if (!signRes.ok) {
+                    const errText = await signRes.text()
+                    let errMsg = `Presign failed (${signRes.status})`
+                    try { errMsg = JSON.parse(errText).error || errMsg } catch { errMsg = errText || errMsg }
+                    throw new Error(errMsg)
+                }
+                const { presignedUrl, finalUrl } = await signRes.json()
+                setProgress(30)
 
-            const res = await fetch('/api/admin/upload', {
-                method: 'POST',
-                body: formData,
-            })
+                const putRes = await fetch(presignedUrl, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': file.type || 'video/mp4' },
+                    credentials: 'omit',
+                    body: file,
+                })
+                if (!putRes.ok) throw new Error(`R2 upload failed (${putRes.status})`)
 
-            clearInterval(progressTimer)
+                clearInterval(progressTimer)
+                setProgress(100)
+                setPreview(finalUrl)
+                onUpload(finalUrl)
+            } else {
+                // ── Buffered upload for images / documents (under 10MB / 50MB) ──
+                const formData = new FormData()
+                formData.append('file', file)
+                formData.append('category', category)
 
-            if (!res.ok) {
+                const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+                clearInterval(progressTimer)
+
+                if (!res.ok) {
+                    const rawText = await res.text()
+                    let errMsg = `Upload failed (${res.status})`
+                    try { errMsg = JSON.parse(rawText).error || errMsg } catch { errMsg = rawText || errMsg }
+                    throw new Error(errMsg)
+                }
+
                 const data = await res.json()
-                throw new Error(data.error || 'Upload failed')
+                setProgress(100)
+                setPreview(data.url)
+                onUpload(data.url)
             }
 
-            const data = await res.json()
-            setProgress(100)
-            setPreview(data.url)
-            onUpload(data.url)
-
-            // Reset progress after a moment
             setTimeout(() => setProgress(0), 1000)
         } catch (err) {
+            clearInterval(progressTimer)
             setError(err instanceof Error ? err.message : 'Upload failed')
             setProgress(0)
         } finally {

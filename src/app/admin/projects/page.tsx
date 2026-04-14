@@ -210,6 +210,21 @@ export default function AdminProjectsPage() {
             } else {
                 setProjects(prev => [...prev, saved])
             }
+            // Re-check subtitle status if this project has a film URL (new or updated)
+            if (saved.filmUrl) {
+                fetch(`/api/subtitles/${saved.id}?lang=en`)
+                    .then(r => r.json())
+                    .then(sub => {
+                        const count = sub.available?.length ?? 0
+                        setTranslationCount(s => ({ ...s, [saved.id]: count }))
+                        setTranslateStatus(s => ({ ...s, [saved.id]: sub.translateStatus ?? 'pending' }))
+                        if (count > 0) {
+                            setSubtitleStatus(s => ({ ...s, [saved.id]: count >= TOTAL_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
+                            setSubtitlePhase(s => ({ ...s, [saved.id]: 'done' }))
+                        }
+                    })
+                    .catch(() => {})
+            }
             setShowModal(false)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save')

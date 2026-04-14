@@ -22,12 +22,16 @@ const ALLOWED_AUDIO_TYPES = [
     'audio/mpeg', 'audio/mp3', 'audio/mp4', 'audio/wav', 'audio/x-wav',
     'audio/webm', 'audio/ogg', 'audio/aac', 'audio/m4a', 'audio/x-m4a', 'audio/flac',
 ]
+const ALLOWED_VIDEO_TYPES = [
+    'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo',
+    'video/x-matroska', 'video/ogg',
+]
 const ALLOWED_DOCUMENT_TYPES = [
     'application/pdf',
-    'application/x-fdx',           // Final Draft .fdx
-    'application/vnd.final-draft', // alternate FDX MIME
-    'text/plain',                   // .txt scripts
-    'application/octet-stream',     // fallback for unknown file types
+    'application/x-fdx',
+    'application/vnd.final-draft',
+    'text/plain',
+    'application/octet-stream',
 ]
 
 function slugify(value: string) {
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
         } = body as {
             fileName: string
             fileType: string
-            kind: 'image' | 'audio' | 'document'
+            kind: 'image' | 'audio' | 'document' | 'video'
             name?: string
             castingCallId?: string
             scriptCallId?: string
@@ -93,8 +97,12 @@ export async function POST(req: NextRequest) {
                 jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
                 webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
                 mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav',
-                webm: 'audio/webm', ogg: 'audio/ogg', flac: 'audio/flac',
-                aac: 'audio/aac', mp4: 'audio/mp4',
+                webm: kind === 'video' ? 'video/webm' : 'audio/webm',
+                ogg: kind === 'video' ? 'video/ogg' : 'audio/ogg',
+                flac: 'audio/flac', aac: 'audio/aac',
+                mp4: kind === 'video' ? 'video/mp4' : 'audio/mp4',
+                mov: 'video/quicktime', avi: 'video/x-msvideo',
+                mkv: 'video/x-matroska',
             }
             resolvedType = mimeMap[ext] || fileType
         }
@@ -105,6 +113,9 @@ export async function POST(req: NextRequest) {
         }
         if (kind === 'audio' && !ALLOWED_AUDIO_TYPES.includes(resolvedType)) {
             return NextResponse.json({ error: `Unsupported audio type: ${resolvedType}` }, { status: 400 })
+        }
+        if (kind === 'video' && !ALLOWED_VIDEO_TYPES.includes(resolvedType)) {
+            return NextResponse.json({ error: `Unsupported video type: ${resolvedType}. Allowed: MP4, WebM, MOV, AVI, MKV.` }, { status: 400 })
         }
         if (kind === 'document') {
             const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
@@ -120,9 +131,11 @@ export async function POST(req: NextRequest) {
         // scan exactly one casting call's applicants without trawling all uploads.
         const nameSlug   = name ? slugify(name) : 'applicant'
         const nameHash   = shortHash(name || 'applicant')
-        const category   = kind === 'image' ? 'photos' : kind === 'audio' ? 'audio' : 'scripts'
+        const category   = kind === 'image' ? 'photos' : kind === 'audio' ? 'audio' : kind === 'video' ? 'videos' : 'scripts'
         const folder     = kind === 'document'
             ? `scripts/calls/${scriptCallId}/${nameSlug}-${nameHash}/scripts`
+            : kind === 'video'
+            ? `uploads/videos/admin`
             : `casting/calls/${castingCallId}/${nameSlug}-${nameHash}/${category}`
         const ext        = extFrom(fileName)
         const r2Key      = `${folder}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}${ext}`
