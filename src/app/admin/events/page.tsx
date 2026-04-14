@@ -116,9 +116,9 @@ export default function AdminEventsPage() {
     const endedCount = events.filter(e => e.status === 'ended').length
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#06060f' }}>
+        <div className="admin-layout" style={{ background: '#06060f' }}>
             <AdminSidebar />
-            <main style={{ flex: 1, padding: '2rem 2.5rem', color: '#f0f0f5', fontFamily: "'Inter', system-ui, sans-serif", overflowX: 'hidden' }}>
+            <main className="admin-main" style={{ color: '#f0f0f5', fontFamily: "'Inter', system-ui, sans-serif", overflowX: 'hidden' }}>
                 <style>{`
                     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
