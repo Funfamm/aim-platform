@@ -82,9 +82,8 @@ function RollModal({
     onSubmit: (e: React.FormEvent) => void
     titleInputRef: React.RefObject<HTMLInputElement | null>
 }) {
-    const [mounted, setMounted] = useState(false)
-    useEffect(() => { setMounted(true) }, [])
-    if (!mounted) return null
+    // Client-only guard — avoids setState-in-effect lint warning
+    if (typeof document === 'undefined') return null
 
     return createPortal(
         <div

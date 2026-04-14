@@ -228,25 +228,6 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose, onK
                         {muted ? '🔇' : '🔊'}
                     </button>
 
-                    {/* Hover-to-navigate hint overlay */}
-                    <div style={{
-                        position: 'absolute', inset: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        opacity: 0, transition: 'opacity 0.18s',
-                        background: 'rgba(0,0,0,0.35)',
-                        zIndex: 1,
-                    }}
-                        className="video-hover-hint"
-                    >
-                        <span style={{
-                            fontSize: '0.78rem', fontWeight: 700, color: '#fff',
-                            background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
-                            padding: '6px 14px', borderRadius: '20px',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            letterSpacing: '0.04em',
-                        }}>▶ View Film</span>
-                    </div>
-
                     {/* Bottom gradient into the card body */}
                     <div style={{
                         position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',

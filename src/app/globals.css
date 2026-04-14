@@ -4830,12 +4830,3 @@ img, video, iframe, canvas {
   .room-name-label     { font-size: 0.75rem; }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   DESKTOP HOVER PREVIEW — video click hint
-   ═══════════════════════════════════════════════════════════ */
-@media (hover: hover) {
-  /* Show the ▶ View Film overlay when cursor enters the video area */
-  [style*="cursor: pointer"]:hover > .video-hover-hint {
-    opacity: 1 !important;
-  }
-}

@@ -87,7 +87,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}
-      <div style={{ position: 'relative', zIndex: 2 }} tabIndex={0} role="region" aria-label="Page content">
+      <div style={{ position: 'relative', zIndex: 2, background: 'var(--bg-primary)' }} tabIndex={0} role="region" aria-label="Page content">
 
       {/* ═══ FEATURED WORKS ═══ */}
       <section className="section" style={{ position: 'relative', paddingBottom: 0 }}>
