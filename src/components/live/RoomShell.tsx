@@ -29,6 +29,9 @@ interface TokenData {
 const MAX_RECONNECT_ATTEMPTS = 4
 const BASE_RECONNECT_DELAY_MS = 1_500
 const SDK_MAX_RETRIES = 5
+// How long to suppress onDisconnected after we intentionally swap the token key.
+// LiveKitRoom unmount fires onDisconnected synchronously, so 500 ms is plenty.
+const REMOUNT_SUPPRESS_MS = 500
 
 export default function RoomShell({
     roomName,
@@ -45,12 +48,16 @@ export default function RoomShell({
     const [reconnecting, setReconnecting] = useState(false)
     const [endingEvent, setEndingEvent]   = useState(false)
 
-    // ── Refs that NEVER go stale in closures ─────────────────────────────────
+    // ── Refs — never go stale inside closures ────────────────────────────────
     const isMounted         = useRef(true)
     const tokenFetched      = useRef(false)   // StrictMode double-invoke guard
-    const leftRoomRef       = useRef(false)   // deliberate leave flag (ref = no stale closure)
+    const leftRoomRef       = useRef(false)   // deliberate leave flag
     const reconnectAttempts = useRef(0)
     const reconnectTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
+    // When we get a fresh token the new key on <LiveKitRoom> causes the old
+    // instance to unmount, which fires onDisconnected synchronously.
+    // This flag suppresses that spurious disconnect event.
+    const remountingRef     = useRef(false)
 
     useEffect(() => {
         isMounted.current = true
@@ -61,11 +68,9 @@ export default function RoomShell({
     }, [])
 
     // ── Token fetch ───────────────────────────────────────────────────────────
-    // leftRoom removed from deps — we read leftRoomRef.current instead,
-    // which always has the current value without stale-closure risk.
     const fetchToken = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
         if (!isMounted.current) return
-        if (leftRoomRef.current) return          // deliberate leave — never reconnect
+        if (leftRoomRef.current) return
         setError(null)
         if (!silent) setLoading(true)
         try {
@@ -81,6 +86,14 @@ export default function RoomShell({
             const data: TokenData = await res.json()
             if (!isMounted.current) return
             reconnectAttempts.current = 0
+
+            if (silent) {
+                // Raise the flag BEFORE setTokenData so the key change that
+                // unmounts LiveKitRoom doesn't trigger another reconnect loop.
+                remountingRef.current = true
+                setTimeout(() => { remountingRef.current = false }, REMOUNT_SUPPRESS_MS)
+            }
+
             setTokenData(data)
         } catch (err) {
             if (!isMounted.current) return
@@ -91,7 +104,7 @@ export default function RoomShell({
                 tokenFetched.current = true
             }
         }
-    }, [roomName, role])   // leftRoom NOT in deps — read via ref
+    }, [roomName, role])
 
     // StrictMode guard: run exactly once on first true mount
     useEffect(() => {
@@ -104,7 +117,9 @@ export default function RoomShell({
 
     // ── Disconnect handler ────────────────────────────────────────────────────
     const handleDisconnected = useCallback(() => {
-        if (!isMounted.current || leftRoomRef.current) return
+        // Ignore: deliberate leave OR intentional token-swap remount
+        if (!isMounted.current || leftRoomRef.current || remountingRef.current) return
+
         reconnectAttempts.current += 1
 
         if (reconnectAttempts.current > MAX_RECONNECT_ATTEMPTS) {
@@ -124,16 +139,18 @@ export default function RoomShell({
             await fetchToken({ silent: true })
             if (isMounted.current) setReconnecting(false)
         }, delay)
-    }, [fetchToken])   // leftRoom NOT in deps — read via ref
+    }, [fetchToken])
 
     const handleConnected = useCallback(() => {
+        // Successful connect clears all reconnect state and the remount flag
+        remountingRef.current     = false
         reconnectAttempts.current = 0
         setReconnecting(false)
     }, [])
 
     // ── Leave room ────────────────────────────────────────────────────────────
     const handleLeave = useCallback(() => {
-        leftRoomRef.current = true   // set ref first — prevents any in-flight reconnect
+        leftRoomRef.current = true
         if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
         if (exitPath) {
             router.push(exitPath)
@@ -145,7 +162,6 @@ export default function RoomShell({
     // ── End event (admin/host only) ───────────────────────────────────────────
     const handleEndEvent = useCallback(async () => {
         if (!onEndEvent) return
-        // SSR-safe confirm — component is client-only but guard prevents any edge case
         const confirmed = typeof window !== 'undefined'
             ? window.confirm('End the event for all participants? This cannot be undone.')
             : false
@@ -211,7 +227,6 @@ export default function RoomShell({
                 <LanguageSelector value={captionLang} onChange={setCaptionLang} />
 
                 <div className="room-shell-actions">
-                    {/* End Event — admin/host only, SSR-safe confirm */}
                     {isHost && onEndEvent && (
                         <button
                             id="room-shell-end-event-btn"
@@ -223,8 +238,6 @@ export default function RoomShell({
                             {endingEvent ? 'Ending…' : '⏹ End Event'}
                         </button>
                     )}
-
-                    {/* Leave / Exit — always visible */}
                     <button
                         id="room-shell-leave-btn"
                         className="room-shell-leave-btn"
@@ -245,8 +258,9 @@ export default function RoomShell({
 
             {/*
               key={tokenData.token}: a new token from silent retry triggers a clean
-              LiveKitRoom remount. SDK handles transient disconnects internally via
-              reconnectPolicy — so no flash on normal network hiccups.
+              LiveKitRoom remount. The remountingRef flag above suppresses the
+              onDisconnected that fires when the OLD instance unmounts — preventing
+              the self-reinforcing reconnect loop.
             */}
             <LiveKitRoom
                 key={tokenData.token}
