@@ -242,9 +242,63 @@ export default async function EventPage({ params }: EventPageProps) {
                 }
                 .participant-grid-empty {
                     grid-column: 1/-1;
-                    display: flex; align-items: center; justify-content: center;
-                    color: rgba(255,255,255,0.3); font-size: 0.85rem;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    color: rgba(255,255,255,0.3);
+                    font-size: 0.85rem;
                     min-height: 480px;
+                    gap: 0.5rem;
+                }
+                .participant-grid-waiting-icon {
+                    font-size: 2.5rem;
+                    margin-bottom: 0.5rem;
+                    opacity: 0.6;
+                }
+                .participant-grid-hint {
+                    font-size: 0.72rem;
+                    color: rgba(255,255,255,0.18);
+                    max-width: 280px;
+                    text-align: center;
+                    line-height: 1.5;
+                }
+                .participant-grid-spinner {
+                    width: 28px; height: 28px;
+                    border: 2.5px solid rgba(212,168,83,0.15);
+                    border-top-color: #d4a853;
+                    border-radius: 50%;
+                    animation: spin 0.8s linear infinite;
+                    margin-bottom: 0.5rem;
+                }
+                .participant-tile--local {
+                    opacity: 0.85;
+                }
+                .participant-you {
+                    color: rgba(212,168,83,0.7);
+                    font-size: 0.6rem;
+                    margin-left: 0.2rem;
+                }
+
+                /* Reconnecting banner — sits above video, doesn't unmount LiveKitRoom */
+                .room-reconnecting-banner {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    padding: 0.6rem 1rem;
+                    background: rgba(251,191,36,0.08);
+                    border-bottom: 1px solid rgba(251,191,36,0.2);
+                    color: #fbbf24;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                }
+                .room-reconnecting-spinner {
+                    width: 14px; height: 14px;
+                    border: 2px solid rgba(251,191,36,0.2);
+                    border-top-color: #fbbf24;
+                    border-radius: 50%;
+                    animation: spin 0.7s linear infinite;
+                    flex-shrink: 0;
                 }
 
                 /* ── Caption overlay ── */
