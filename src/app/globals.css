@@ -1,4 +1,4 @@
-﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&display=swap');
 
 /* ═══════════════════════════════════════════════════════════
    AIM STUDIO — ULTRA-PREMIUM CINEMATIC DESIGN SYSTEM
@@ -1665,7 +1665,6 @@ select::placeholder {
 }
 @media (max-width: 768px) {
   .admin-sidebar-resize-handle { display: none; }
-  .admin-sidebar { width: 85vw !important; }
 }
 
 /* Dark-themed dropdowns for admin */
@@ -1805,7 +1804,7 @@ select::placeholder {
 /* Landscape mobile / small tablets */
 @media (min-width: 769px) and (max-width: 1024px) {
   .admin-sidebar {
-    width: 200px;
+    width: var(--sidebar-w, 200px);
   }
 
   .admin-sidebar-nav a {
@@ -1814,7 +1813,7 @@ select::placeholder {
   }
 
   .admin-main {
-    margin-left: 200px;
+    margin-left: var(--sidebar-w, 200px);
     padding: var(--space-lg) var(--space-lg);
   }
 

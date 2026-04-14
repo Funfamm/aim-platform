@@ -31,16 +31,21 @@ export default function AdminSidebar() {
     const startX = useRef(0)
     const startW = useRef(DEFAULT_WIDTH)
 
-    // Restore persisted width on mount (desktop only)
+    // Restore persisted width on mount (desktop + tablet)
     useEffect(() => {
         if (typeof window === 'undefined' || window.innerWidth <= 768) return
+        const isTablet = window.innerWidth <= 1024
+        const defaultForViewport = isTablet ? 200 : DEFAULT_WIDTH
         const saved = parseInt(localStorage.getItem('adminSidebarWidth') || '', 10)
-        if (saved >= MIN_WIDTH && saved <= MAX_WIDTH) setSidebarWidth(saved)
+        const width = (saved >= MIN_WIDTH && saved <= MAX_WIDTH) ? saved : defaultForViewport
+        setSidebarWidth(width)
+        // Apply immediately to avoid layout shift
+        document.documentElement.style.setProperty('--sidebar-w', `${width}px`)
     }, [])
 
-    // Apply --sidebar-w to `:root` so admin-main margin tracks the sidebar
+    // Keep CSS variable in sync during drag
     useEffect(() => {
-        if (window.innerWidth <= 768) return
+        if (typeof window === 'undefined' || window.innerWidth <= 768) return
         document.documentElement.style.setProperty('--sidebar-w', `${sidebarWidth}px`)
     }, [sidebarWidth])
 
@@ -122,7 +127,6 @@ export default function AdminSidebar() {
 
             <aside
                 className={`admin-sidebar${open ? ' open' : ''}`}
-                style={{ width: `${sidebarWidth}px` }}
             >
                 <div className="admin-sidebar-logo">
                     <Link href="/" prefetch={false} style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, textDecoration: 'none', color: 'inherit' }}>
