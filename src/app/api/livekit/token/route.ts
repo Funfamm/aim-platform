@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
-import { createAccessToken } from '@/lib/livekit/server'
+import { createAccessToken, getRoomServiceClient } from '@/lib/livekit/server'
 import { grantsForRole, type LiveKitRole } from '@/lib/livekit/grants'
 import { canJoinRoom } from '@/lib/livekit/permissions'
 import { rateLimit } from '@/lib/rate-limit'
+import { prisma } from '@/lib/db'
 
 // 20 token mints per minute per IP — tight because each mint hits canJoinRoom() (DB read)
 const livekitTokenLimiter = rateLimit({ interval: 60_000, limit: 20 })
@@ -34,10 +35,39 @@ export async function POST(req: Request) {
 
         const isAdmin = session.role === 'admin' || session.role === 'superadmin'
 
-        // Authorization check — verifies room exists and user is permitted
+        // Authorization check — verifies room exists in DB and user is permitted
         const { allowed, reason } = await canJoinRoom(session.userId, roomName, role, isAdmin)
         if (!allowed) {
             return NextResponse.json({ error: reason || 'Forbidden' }, { status: 403 })
+        }
+
+        // ── Just-in-time room provisioning ─────────────────────────────────
+        // LiveKit's createRoom is idempotent — if the room already exists it
+        // returns the existing room, if it was garbage-collected or never
+        // created it provisions a fresh one. This ensures the WebSocket
+        // connect will always succeed after the token is issued.
+        const roomSvc = getRoomServiceClient()
+        const event = await prisma.liveEvent.findUnique({
+            where: { roomName },
+            select: { title: true, eventType: true, status: true },
+        })
+
+        await roomSvc.createRoom({
+            name: roomName,
+            emptyTimeout: 300,       // auto-close 5 min after last participant leaves
+            maxParticipants: 100,
+            metadata: JSON.stringify({
+                title: event?.title ?? roomName,
+                eventType: event?.eventType ?? 'general',
+            }),
+        })
+
+        // Transition scheduled → live on first join
+        if (event?.status === 'scheduled') {
+            await prisma.liveEvent.update({
+                where: { roomName },
+                data: { status: 'live', startedAt: new Date() },
+            })
         }
 
         // Mint short-lived token (10 min)

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
-import { getRoomServiceClient } from '@/lib/livekit/server'
 import { prisma } from '@/lib/db'
 
 export async function POST(req: Request) {
@@ -19,14 +18,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'roomName must be alphanumeric with _ or -' }, { status: 400 })
         }
 
-        // Create the room in LiveKit
-        const client = getRoomServiceClient()
-        await client.createRoom({
-            name: roomName,
-            emptyTimeout: 300,      // close after 5 min if empty
-            maxParticipants: 100,
-            metadata: JSON.stringify({ title, eventType }),
-        })
+        // NOTE: We do NOT create the room on LiveKit here.
+        // LiveKit rooms with emptyTimeout auto-delete after N seconds with no
+        // participants, so creating at schedule time means the room will be
+        // garbage-collected before anyone joins.
+        // Instead, the room is lazily created in /api/livekit/token when the
+        // first participant requests a token ("just-in-time provisioning").
 
         // Persist in DB
         const event = await prisma.liveEvent.create({
