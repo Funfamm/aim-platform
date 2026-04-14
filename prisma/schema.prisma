@@ -132,16 +132,20 @@ model Episode {
 }
 
 model FilmSubtitle {
-  id           String   @id @default(cuid())
-  projectId    String
-  episodeId    String?
-  language     String   @default("en")
-  segments     String
-  translations String?
-  status       String   @default("pending")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id              String   @id @default(cuid())
+  projectId       String
+  episodeId       String?
+  language        String   @default("en")
+  segments        String   // JSON: TranscriptSegment[] (English source)
+  translations    String?  // JSON: Record<lang, TranscriptSegment[]>
+  status          String   @default("pending")
+  translateStatus String   @default("pending") // pending|partial|complete|failed
+  qcIssues        String?  // JSON: QCResult[] — Netflix-spec checks on English track
+  generatedWith   String?  // key label used for translation e.g. "My Gemini Key 1"
+  transcribedWith String?  // ASR model used e.g. "whisper-medium"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, episodeId])
   @@index([projectId])

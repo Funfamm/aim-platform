@@ -117,7 +117,7 @@ export async function callGemini(
             try {
                 const defaultModels: Record<string, string> = {
                     groq: 'llama-3.3-70b-versatile',
-                    gemini: 'gemini-2.0-flash',
+                    gemini: 'gemini-2.5-flash-latest', // upgraded from deprecated gemini-2.0-flash
                     openai: 'gpt-4o-mini',
                 }
                 const useModel = (detectProvider(model) === key.provider && model) ? model : defaultModels[key.provider]

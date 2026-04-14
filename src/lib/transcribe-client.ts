@@ -42,11 +42,13 @@ async function getFFmpeg(): Promise<FFmpeg> {
 
     const ffmpeg = new FFmpeg()
 
-    // Load WASM from CDN
-    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
+    // Load WASM — prefer self-hosted CDN (R2) to avoid unpkg single-point-of-failure
+    const cdnBase = process.env.NEXT_PUBLIC_CDN_URL
+        ? `${process.env.NEXT_PUBLIC_CDN_URL}/ffmpeg/0.12.6`
+        : 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd'
     await ffmpeg.load({
-        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+        coreURL: await toBlobURL(`${cdnBase}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${cdnBase}/ffmpeg-core.wasm`, 'application/wasm'),
     })
 
     ffmpegInstance = ffmpeg
@@ -55,9 +57,9 @@ async function getFFmpeg(): Promise<FFmpeg> {
 
 /**
  * Load and cache the Whisper ASR pipeline.
- * Uses whisper-small (multilingual) — supports 99 languages and auto-detects
- * language per chunk, so it handles code-switching (mixing languages in one video).
- * First download is ~244MB, cached after that.
+ * Uses whisper-medium — 33% lower WER than whisper-small, still feasible in browser.
+ * Supports 99 languages, auto-detects language per chunk.
+ * First download is ~464MB, cached after that.
  */
 async function getTranscriber() {
     if (transcriberPipeline) return transcriberPipeline
@@ -65,7 +67,7 @@ async function getTranscriber() {
     const { pipeline } = await import('@huggingface/transformers')
     transcriberPipeline = await pipeline(
         'automatic-speech-recognition',
-        'Xenova/whisper-small',
+        'Xenova/whisper-medium', // upgraded from whisper-small for better accuracy
     )
     return transcriberPipeline
 }
@@ -118,7 +120,7 @@ export async function transcribeVideo(
         const audioUrl = URL.createObjectURL(wavBlob)
 
         // 5. Load Whisper model
-        report('loading-model', 'Loading AI speech model (~244MB first time)...')
+        report('loading-model', 'Loading AI speech model (~464MB first time)...')
         const transcriber = await getTranscriber()
 
         // 6. Transcribe — Whisper auto-detects language and translates to English

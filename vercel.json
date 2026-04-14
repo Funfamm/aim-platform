@@ -9,6 +9,9 @@
   "functions": {
     "src/app/api/upload/stream/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/admin/subtitles/translate/route.ts": {
+      "maxDuration": 300
     }
   }
 }
