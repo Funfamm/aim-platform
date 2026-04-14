@@ -19,6 +19,7 @@ interface LiveEvent {
     startedAt: string | null
     endedAt: string | null
     createdAt: string
+    participantCount: number   // real-time count from LiveKit (live rooms only)
 }
 
 interface Project { id: string; title: string }
@@ -50,6 +51,11 @@ export default function AdminEventsPage() {
     const [filterStatus, setFilterStatus] = useState<string>('all')
     const [recording, setRecording]     = useState<string | null>(null)
     const [copied, setCopied]           = useState<string | null>(null)
+    const [shareEventId, setShareEventId] = useState<string | null>(null)  // eventId currently in share modal
+    const [shareTarget, setShareTarget]   = useState<'all' | 'emails'>('all')
+    const [shareEmails, setShareEmails]   = useState('')  // newline-separated custom emails
+    const [sharing, setSharing]           = useState(false)
+    const [shareResult, setShareResult]   = useState<string | null>(null)
 
     const [form, setForm] = useState({
         title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '',
@@ -108,6 +114,27 @@ export default function AdminEventsPage() {
         const slug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32)
         const suffix = Math.random().toString(36).slice(2, 6)
         setForm(f => ({ ...f, roomName: slug ? `${slug}-${suffix}` : `room-${suffix}` }))
+    }
+
+    const shareEvent = events.find(e => e.id === shareEventId)
+
+    const handleShare = async () => {
+        if (!shareEventId) return
+        setSharing(true); setShareResult(null)
+        try {
+            const emails = shareTarget === 'emails'
+                ? shareEmails.split(/[\n,]+/).map(e => e.trim()).filter(Boolean)
+                : []
+            const res = await fetch('/api/livekit/rooms/share', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ eventId: shareEventId, target: shareTarget, emails }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to send invites')
+            setShareResult(`✓ Invites sent to ${data.sent} recipient${data.sent !== 1 ? 's' : ''}`)
+        } catch (err) {
+            setShareResult(`✗ ${err instanceof Error ? err.message : 'Failed'}`)
+        } finally { setSharing(false) }
     }
 
     const filteredEvents = filterStatus === 'all' ? events : events.filter(e => e.status === filterStatus)
@@ -452,6 +479,21 @@ export default function AdminEventsPage() {
                     }
                     .le-btn--end:hover:not(:disabled) { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.25); color: #fca5a5; }
 
+
+                    .le-btn--share {
+                        background: rgba(52,211,153,0.06); border-color: rgba(52,211,153,0.18); color: #6ee7b7;
+                    }
+                    .le-btn--share:hover { background: rgba(52,211,153,0.12); border-color: rgba(52,211,153,0.32); }
+
+                    .le-participant-count {
+                        display: inline-flex; align-items: center; gap: 4px;
+                        font-size: 0.62rem; font-weight: 700;
+                        color: rgba(52,211,153,0.8);
+                        background: rgba(52,211,153,0.06);
+                        border: 1px solid rgba(52,211,153,0.15);
+                        padding: 2px 7px; border-radius: 100px;
+                        white-space: nowrap;
+                    }
                     /* ── Empty State ── */
                     .le-empty {
                         display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -667,13 +709,24 @@ export default function AdminEventsPage() {
                                                 <h3 className="le-card-title">{event.title}</h3>
                                                 <div className="le-card-room">{event.roomName}</div>
                                             </div>
-                                            <span
-                                                className="le-status-badge"
-                                                style={{ background: sc.bg, border: `1px solid ${sc.glow}`, color: sc.color }}
-                                            >
-                                                <span className={`le-status-dot${isLive ? ' le-status-dot--live' : ''}`} style={{ background: sc.color }} />
-                                                {sc.label}
-                                            </span>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.4rem' }}>
+                                                <span
+                                                    className="le-status-badge"
+                                                    style={{ background: sc.bg, border: `1px solid ${sc.glow}`, color: sc.color }}
+                                                >
+                                                    <span className={`le-status-dot${isLive ? ' le-status-dot--live' : ''}`} style={{ background: sc.color }} />
+                                                    {sc.label}
+                                                </span>
+                                                {/* Participant count — visible only for live rooms */}
+                                                {isLive && (
+                                                    <span className="le-participant-count" title={`${event.participantCount} participant(s) in room`}>
+                                                        <svg width="9" height="9" viewBox="0 0 10 10" fill="none"><circle cx="4" cy="3" r="2" stroke="currentColor" strokeWidth="1.4"/><path d="M1 9c0-1.66 1.34-3 3-3s3 1.34 3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                                                        {event.participantCount > 0
+                                                            ? `${event.participantCount} in room`
+                                                            : 'No participants yet'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
 
                                         <div className="le-card-meta">
@@ -793,6 +846,22 @@ export default function AdminEventsPage() {
                                                         : '⏺ Record'}
                                                 </button>
                                             )}
+                                            {/* Share button — all non-ended rooms */}
+                                            {!isEnded && (
+                                                <button
+                                                    id={`ae-share-btn-${event.id}`}
+                                                    className="le-btn le-btn--share"
+                                                    onClick={() => {
+                                                        setShareEventId(event.id)
+                                                        setShareTarget('all')
+                                                        setShareEmails('')
+                                                        setShareResult(null)
+                                                    }}
+                                                >
+                                                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="7.5" cy="2" r="1.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="7.5" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="2" cy="5" r="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M3.4 4.2l2.7-1.6M3.4 5.8l2.7 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+                                                    Share
+                                                </button>
+                                            )}
                                             {!isEnded && (
                                                 <button
                                                     id={`ae-end-btn-${event.id}`}
@@ -810,6 +879,152 @@ export default function AdminEventsPage() {
                         </div>
                     )}
                 </div>
+
+                {/* ── Share Modal ── */}
+                {shareEventId && shareEvent && (
+                    <div
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 1000,
+                            background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: '1.5rem',
+                        }}
+                        onClick={e => { if (e.target === e.currentTarget) setShareEventId(null) }}
+                    >
+                        <div style={{
+                            background: '#0f0f1c', border: '1px solid rgba(212,168,83,0.2)',
+                            borderRadius: '20px', padding: '0', width: '100%', maxWidth: '480px',
+                            boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+                            overflow: 'hidden',
+                        }}>
+                            {/* Modal header */}
+                            <div style={{
+                                background: 'linear-gradient(135deg, rgba(212,168,83,0.1), rgba(139,92,246,0.06))',
+                                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                padding: '1.25rem 1.5rem',
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#d4a853', fontWeight: 700, marginBottom: '2px' }}>
+                                        📨 Share Room Invite
+                                    </div>
+                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff' }}>{shareEvent.title}</div>
+                                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', marginTop: '2px' }}>{shareEvent.roomName}</div>
+                                </div>
+                                <button
+                                    onClick={() => setShareEventId(null)}
+                                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', width: 30, height: 30, cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >✕</button>
+                            </div>
+
+                            <div style={{ padding: '1.5rem' }}>
+                                {/* Audience selector */}
+                                <div style={{ marginBottom: '1.25rem' }}>
+                                    <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginBottom: '0.6rem' }}>Send to</div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        {[{ value: 'all', label: '👥 All Platform Users', hint: 'respects notification prefs' }, { value: 'emails', label: '✉️ Custom Emails', hint: 'external/manual list' }].map(opt => (
+                                            <button
+                                                key={opt.value}
+                                                onClick={() => setShareTarget(opt.value as 'all' | 'emails')}
+                                                style={{
+                                                    flex: 1, padding: '0.7rem 0.5rem', borderRadius: '10px',
+                                                    border: `1px solid ${shareTarget === opt.value ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                                    background: shareTarget === opt.value ? 'rgba(212,168,83,0.08)' : 'rgba(255,255,255,0.03)',
+                                                    color: shareTarget === opt.value ? '#d4a853' : 'rgba(255,255,255,0.5)',
+                                                    cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700,
+                                                    transition: 'all 0.15s', textAlign: 'center',
+                                                }}
+                                            >
+                                                <div>{opt.label}</div>
+                                                <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 500, marginTop: '2px' }}>{opt.hint}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Custom emails textarea */}
+                                {shareTarget === 'emails' && (
+                                    <div style={{ marginBottom: '1.25rem' }}>
+                                        <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginBottom: '0.5rem' }}>Email addresses</div>
+                                        <textarea
+                                            value={shareEmails}
+                                            onChange={e => setShareEmails(e.target.value)}
+                                            placeholder={"john@example.com\njane@example.com"}
+                                            rows={4}
+                                            style={{
+                                                width: '100%', background: 'rgba(255,255,255,0.04)',
+                                                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px',
+                                                color: '#f0f0f5', padding: '0.75rem', fontSize: '0.8rem',
+                                                resize: 'vertical', fontFamily: 'monospace', lineHeight: 1.6, outline: 'none',
+                                            }}
+                                        />
+                                        <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '4px' }}>One email per line. Email will be sent in English.</div>
+                                    </div>
+                                )}
+
+                                {/* Room link preview */}
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                                    borderRadius: '10px', padding: '0.75rem 1rem', marginBottom: '1.25rem',
+                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                }}>
+                                    <span style={{ fontSize: '0.65rem', color: '#60a5fa', fontWeight: 700, whiteSpace: 'nowrap' }}>🔗 Room link</span>
+                                    <code style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.45)', wordBreak: 'break-all' }}>
+                                        {typeof window !== 'undefined' ? window.location.origin : 'https://impactaistudio.com'}/en/events/{shareEvent.roomName}
+                                    </code>
+                                </div>
+
+                                {/* Translation note */}
+                                <div style={{
+                                    background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.15)',
+                                    borderRadius: '8px', padding: '0.6rem 0.85rem', marginBottom: '1.25rem',
+                                    fontSize: '0.68rem', color: 'rgba(52,211,153,0.8)', lineHeight: 1.5,
+                                }}>
+                                    🌐 Emails and notifications are automatically delivered in each user&apos;s preferred language (11 locales supported — no external API call).
+                                </div>
+
+                                {/* Result feedback */}
+                                {shareResult && (
+                                    <div style={{
+                                        padding: '0.65rem 1rem', borderRadius: '8px', marginBottom: '1rem',
+                                        background: shareResult.startsWith('✓') ? 'rgba(52,211,153,0.08)' : 'rgba(239,68,68,0.08)',
+                                        border: `1px solid ${shareResult.startsWith('✓') ? 'rgba(52,211,153,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                                        color: shareResult.startsWith('✓') ? '#34d399' : '#ef4444',
+                                        fontSize: '0.8rem', fontWeight: 600,
+                                    }}>
+                                        {shareResult}
+                                    </div>
+                                )}
+
+                                {/* Actions */}
+                                <div style={{ display: 'flex', gap: '0.6rem' }}>
+                                    <button
+                                        id="ae-share-send-btn"
+                                        onClick={handleShare}
+                                        disabled={sharing || (shareTarget === 'emails' && !shareEmails.trim())}
+                                        style={{
+                                            flex: 1, padding: '0.75rem', borderRadius: '10px',
+                                            background: sharing ? 'rgba(212,168,83,0.15)' : 'linear-gradient(135deg, #d4a853, #b8903f)',
+                                            border: 'none', color: sharing ? '#d4a853' : '#000',
+                                            fontWeight: 800, fontSize: '0.85rem', cursor: sharing ? 'not-allowed' : 'pointer',
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        {sharing ? '⏳ Sending…' : '📨 Send Invites'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShareEventId(null)}
+                                        style={{
+                                            padding: '0.75rem 1rem', borderRadius: '10px',
+                                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                                            color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                                        }}
+                                    >Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     )
