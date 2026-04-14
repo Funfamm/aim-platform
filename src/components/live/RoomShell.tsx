@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { LiveKitRoom, RoomAudioRenderer } from '@livekit/components-react'
-import '@livekit/components-styles'
 import ParticipantGrid from './ParticipantGrid'
 import CaptionOverlay from './CaptionOverlay'
 import LanguageSelector from './LanguageSelector'

@@ -2,13 +2,12 @@ import {
     Room,
     RoomEvent,
     RemoteTrack,
-    Track,
+    RemoteAudioTrack,
     AudioStream,
     RemoteParticipant,
     RemoteTrackPublication,
-    AccessToken,
-    VideoGrants,
 } from '@livekit/rtc-node'
+import { AccessToken, type VideoGrant } from 'livekit-server-sdk'
 import { config } from './config'
 import { AudioBuffer } from './audio-buffer'
 import { transcribeChunk } from './whisper-stt'
@@ -46,7 +45,7 @@ export class RoomAgent {
             return
         }
 
-        const token = this.mintAgentToken()
+        const token = await this.mintAgentToken()
         this.room = new Room()
         this.publisher = new CaptionPublisher(this.room)
 
@@ -81,8 +80,8 @@ export class RoomAgent {
 
     // ── Private ──────────────────────────────────────────────────────────────
 
-    private mintAgentToken(): string {
-        const grants: VideoGrants = {
+    private async mintAgentToken(): Promise<string> {
+        const grants: VideoGrant = {
             roomJoin: true,
             room: this.roomName,
             canSubscribe: true,
@@ -99,7 +98,7 @@ export class RoomAgent {
             ttl: '4h',
         })
         at.addGrant(grants)
-        // Return synchronously — rtc-node AccessToken.toJwt() is sync unlike the server-sdk
+        // toJwt() is async in livekit-server-sdk v2
         return at.toJwt()
     }
 
@@ -108,7 +107,7 @@ export class RoomAgent {
         _pub: RemoteTrackPublication,
         participant: RemoteParticipant,
     ): void {
-        if (track.kind !== Track.Kind.Audio) return
+        if (!(track instanceof RemoteAudioTrack)) return
 
         const identity = participant.identity
         const name = participant.name ?? identity
@@ -174,10 +173,11 @@ export class RoomAgent {
 
     private async consumeAudioStream(track: RemoteTrack, buffer: AudioBuffer): Promise<void> {
         try {
-            const audioStream = new AudioStream(track, {
-                sampleRate: config.audio.sampleRate,
-                numChannels: config.audio.numChannels,
-            })
+            const audioStream = new AudioStream(
+                track,
+                config.audio.sampleRate,
+                config.audio.numChannels,
+            )
             for await (const frame of audioStream) {
                 // frame.data is Int16Array — push directly to the buffer
                 buffer.push(frame.data)

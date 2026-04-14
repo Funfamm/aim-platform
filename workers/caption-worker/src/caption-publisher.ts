@@ -1,5 +1,4 @@
 import type { Room } from '@livekit/rtc-node'
-import { DataPacketKind } from '@livekit/rtc-node'
 import type { CaptionSegment, TranslatedCaption } from './types'
 import { CAPTION_TOPICS } from './types'
 
@@ -45,11 +44,10 @@ export class CaptionPublisher {
     private async publish(topic: string, text: string, senderIdentity: string): Promise<void> {
         const payload = new TextEncoder().encode(text)
         try {
-            await this.room.localParticipant.publishData(payload, {
-                kind: DataPacketKind.RELIABLE,
+            await this.room.localParticipant?.publishData(payload, {
+                reliable: true,          // guaranteed delivery for captions
                 topic,
-                // Destination: empty = all participants (broadcast)
-                destinationIdentities: [],
+                destination_identities: [], // empty = broadcast to all participants
             })
             console.debug(`[publisher] ${topic} → "${text.slice(0, 60)}..." (from: ${senderIdentity})`)
         } catch (err) {
