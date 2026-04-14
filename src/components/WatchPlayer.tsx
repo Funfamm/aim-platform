@@ -91,11 +91,15 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
 
     // Fetch subtitle availability from DB on mount / episode change
     useEffect(() => {
-        setCcChecked(false)
-        setCcAvailable([])
-        setCcEnabled(false)
-        setCcSegments([])
-        setActiveTrackUrl(null) // Rec 1 fix: clear stale iOS track when episode changes
+        // Reset all CC state atomically when episode changes
+        const resetCC = () => {
+            setCcChecked(false)
+            setCcAvailable([])
+            setCcEnabled(false)
+            setCcSegments([])
+            setActiveTrackUrl(null) // Rec 1 fix: clear stale iOS track when episode changes
+        }
+        resetCC()
         const episodeId = activeEpisode?.id || ''
         const url = `/api/subtitles/${project.id}?lang=en${episodeId ? `&episodeId=${episodeId}` : ''}`
         fetch(url)

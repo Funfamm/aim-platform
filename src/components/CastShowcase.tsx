@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -100,10 +100,12 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
         setParallax((prev) => ({ ...prev, [idx]: { x: 0, y: 0 } }))
     }, [])
 
-    if (cast.length === 0 && !castingHref) return null
+    // Rec 3: trim stale refs after render so disconnected elements don't linger
+    useLayoutEffect(() => {
+        cardRefs.current = cardRefs.current.slice(0, cast.length + 1)
+    }, [cast.length])
 
-    // Rec 3: trim stale refs so disconnected elements don't linger in the array
-    cardRefs.current = cardRefs.current.slice(0, cast.length + 1)
+    if (cast.length === 0 && !castingHref) return null
 
     return (
         <>
