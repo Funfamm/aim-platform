@@ -12,6 +12,8 @@ interface HoverPreviewCardProps {
     anchor: DOMRect
     locale: string
     onClose: () => void
+    /** Called when cursor re-enters the hover zone — cancels any pending dismiss timer */
+    onKeepAlive?: () => void
 }
 
 const CARD_W = 420
@@ -37,7 +39,7 @@ function computePosition(anchor: DOMRect) {
     return { left, top, transformOrigin }
 }
 
-export default function HoverPreviewCard({ project, anchor, locale, onClose }: HoverPreviewCardProps) {
+export default function HoverPreviewCard({ project, anchor, locale, onClose, onKeepAlive }: HoverPreviewCardProps) {
     const [mounted, setMounted] = useState(false)
     const [visible, setVisible] = useState(false)
     const [muted, setMuted] = useState(true)
@@ -138,6 +140,7 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose }: H
     return createPortal(
         <div
             onMouseLeave={onClose}
+            onMouseEnter={onKeepAlive}  // cursor re-entered the zone — cancel pending dismiss
             style={{
                 position: 'absolute',
                 top: `${bridgeTop}px`,

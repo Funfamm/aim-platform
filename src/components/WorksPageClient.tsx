@@ -83,11 +83,21 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
 
     const handleCardHoverEnd = useCallback(() => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
-        // 700ms grace — gives user time to move cursor to the expanded hover card
+        // 1200ms grace — plenty of time to move cursor into the expanded preview card.
+        // The bridge overlay's onMouseEnter will cancel this if cursor arrives in time.
         hoverTimeoutRef.current = setTimeout(() => {
             setHoverProject(null)
             setHoverAnchor(null)
-        }, 700)
+        }, 1200)
+    }, [])
+
+    // Called when cursor enters the bridge div of HoverPreviewCard —
+    // immediately cancels any pending close timer so the preview stays alive.
+    const handleHoverKeepAlive = useCallback(() => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current)
+            hoverTimeoutRef.current = null
+        }
     }, [])
 
     const handleHoverCardClose = useCallback(() => {
@@ -725,6 +735,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                     anchor={hoverAnchor}
                     locale={locale}
                     onClose={handleHoverCardClose}
+                    onKeepAlive={handleHoverKeepAlive}
                 />
             )}
         </main>
