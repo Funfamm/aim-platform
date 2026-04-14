@@ -81,6 +81,7 @@ export default function CaptionOverlay({
 
     // Clear lines when language switches
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLines([])
     }, [lang])
 

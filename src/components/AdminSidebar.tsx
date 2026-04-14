@@ -27,21 +27,24 @@ const NAV_ITEMS = [
 export default function AdminSidebar() {
     const pathname = usePathname()
     const [open, setOpen] = useState(false)
-    const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_WIDTH)
+    const [sidebarWidth, setSidebarWidth] = useState(() => {
+        // Lazy initialiser runs only on the client — safe for SSR because
+        // the server renders the DEFAULT_WIDTH and hydration corrects it.
+        if (typeof window === 'undefined') return DEFAULT_WIDTH
+        const isTablet = window.innerWidth <= 1024
+        const defaultForViewport = (window.innerWidth <= 768) ? DEFAULT_WIDTH : isTablet ? 200 : DEFAULT_WIDTH
+        const saved = parseInt(localStorage.getItem('adminSidebarWidth') || '', 10)
+        return (saved >= MIN_WIDTH && saved <= MAX_WIDTH) ? saved : defaultForViewport
+    })
     const isResizing = useRef(false)
     const startX = useRef(0)
     const startW = useRef(DEFAULT_WIDTH)
 
-    // Restore persisted width on mount (desktop + tablet)
+    // Apply initial CSS variable on mount without triggering an extra render
     useEffect(() => {
         if (typeof window === 'undefined' || window.innerWidth <= 768) return
-        const isTablet = window.innerWidth <= 1024
-        const defaultForViewport = isTablet ? 200 : DEFAULT_WIDTH
-        const saved = parseInt(localStorage.getItem('adminSidebarWidth') || '', 10)
-        const width = (saved >= MIN_WIDTH && saved <= MAX_WIDTH) ? saved : defaultForViewport
-        setSidebarWidth(width)
-        // Apply immediately to avoid layout shift
-        document.documentElement.style.setProperty('--sidebar-w', `${width}px`)
+        document.documentElement.style.setProperty('--sidebar-w', `${sidebarWidth}px`)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     // Keep CSS variable in sync during drag

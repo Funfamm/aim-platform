@@ -74,6 +74,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
 
     // Rec 4: reset parallax map when cast list changes to avoid stale index accumulation
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setParallax({})
     }, [cast.length])
 

@@ -10,12 +10,12 @@ import { prisma } from '@/lib/db'
 
 export async function DELETE(
     _req: Request,
-    { params }: { params: { id: string } },
+    { params }: { params: Promise<{ id: string }> },
 ) {
     try {
         await requireAdmin()
 
-        const { id } = params
+        const { id } = await params
         if (!id) {
             return NextResponse.json({ error: 'Event ID is required' }, { status: 400 })
         }
@@ -34,7 +34,7 @@ export async function DELETE(
             // Run a lightweight check to return the right HTTP status.
             const exists = await prisma.liveEvent.findUnique({
                 where: { id },
-                select: { status: true, title: true },
+                select: { status: true },
             })
 
             if (!exists) {
