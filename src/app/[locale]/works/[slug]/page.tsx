@@ -61,10 +61,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         })),
     }
 
-    // Only show casting CTA when this project has open casting calls
-    const castingHref = project.castingCalls.length > 0
-        ? `/works/${slug}#casting`
-        : undefined
+    // Direct to specific apply page when one call, or listing when multiple
+    const castingHref = project.castingCalls.length === 1
+        ? `/casting/${project.castingCalls[0].id}/apply`
+        : project.castingCalls.length > 1
+            ? `/casting`
+            : undefined
 
     return (
         <>
