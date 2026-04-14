@@ -49,14 +49,15 @@ export default function AdminSidebar() {
         document.documentElement.style.setProperty('--sidebar-w', `${sidebarWidth}px`)
     }, [sidebarWidth])
 
-    const startResize = useCallback((e: React.MouseEvent) => {
+    const startResize = useCallback((e: React.PointerEvent) => {
         if (window.innerWidth <= 768) return
         e.preventDefault()
         isResizing.current = true
         startX.current = e.clientX
         startW.current = sidebarWidth
+        ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
 
-        const onMove = (ev: MouseEvent) => {
+        const onMove = (ev: PointerEvent) => {
             if (!isResizing.current) return
             const delta = ev.clientX - startX.current
             const newW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, startW.current + delta))
@@ -69,12 +70,23 @@ export default function AdminSidebar() {
                 localStorage.setItem('adminSidebarWidth', String(w))
                 return w
             })
-            window.removeEventListener('mousemove', onMove)
-            window.removeEventListener('mouseup', onUp)
+            window.removeEventListener('pointermove', onMove)
+            window.removeEventListener('pointerup', onUp)
         }
-        window.addEventListener('mousemove', onMove)
-        window.addEventListener('mouseup', onUp)
+        window.addEventListener('pointermove', onMove)
+        window.addEventListener('pointerup', onUp)
     }, [sidebarWidth])
+
+    // Rec 3: Clean up CSS variable when viewport drops to mobile
+    useEffect(() => {
+        const onResize = () => {
+            if (window.innerWidth <= 768) {
+                document.documentElement.style.removeProperty('--sidebar-w')
+            }
+        }
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+    }, [])
 
     // Close nav when route changes (user tapped a link on mobile)
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -170,9 +182,10 @@ export default function AdminSidebar() {
                 {/* ── Resize handle — desktop only ── */}
                 <div
                     className="admin-sidebar-resize-handle"
-                    onMouseDown={startResize}
+                    onPointerDown={startResize}
                     title="Drag to resize sidebar"
                     aria-hidden="true"
+                    style={{ touchAction: 'none' }}
                 />
             </aside>
         </>

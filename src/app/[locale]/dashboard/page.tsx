@@ -113,6 +113,7 @@ export default function DashboardPage() {
     const [watchBulkMode, setWatchBulkMode] = useState(false)
     const [watchSelected, setWatchSelected] = useState<Set<string>>(new Set())
     const [bulkDeleting, setBulkDeleting] = useState(false)
+    const [bulkError, setBulkError] = useState('')
     const searchParams = useSearchParams()
     const [activeTab, setActiveTab] = useState<TabType>(() => {
         const tab = searchParams.get('tab')
@@ -397,7 +398,7 @@ export default function DashboardPage() {
                                     {/* Manage bar */}
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)', flexWrap: 'wrap', gap: '8px' }}>
                                         <button
-                                            onClick={() => { setWatchBulkMode(m => !m); setWatchSelected(new Set()) }}
+                                            onClick={() => { setWatchBulkMode(m => !m); setWatchSelected(new Set()); setBulkError('') }}
                                             style={{
                                                 padding: '6px 14px', fontSize: '0.75rem', fontWeight: 600, borderRadius: 'var(--radius-md)',
                                                 border: watchBulkMode ? '1px solid rgba(239,68,68,0.4)' : '1px solid rgba(212,168,83,0.25)',
@@ -434,7 +435,10 @@ export default function DashboardPage() {
                                                                 setWatchlist(prev => prev.filter(w => !watchSelected.has(w.project.id)))
                                                                 setWatchSelected(new Set())
                                                                 setWatchBulkMode(false)
-                                                            } catch { /* */ }
+                                                            } catch {
+                                                                setBulkError('Failed to remove items. Please try again.')
+                                                                setTimeout(() => setBulkError(''), 4000)
+                                                            }
                                                             finally { setBulkDeleting(false) }
                                                         }}
                                                         style={{
@@ -450,6 +454,18 @@ export default function DashboardPage() {
                                             </div>
                                         )}
                                     </div>
+
+                                    {/* Bulk delete error banner */}
+                                    {bulkError && (
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                            padding: '10px 14px', marginBottom: 'var(--space-sm)', borderRadius: 'var(--radius-md)',
+                                            background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)',
+                                            fontSize: '0.78rem', color: '#f87171', fontWeight: 600,
+                                        }}>
+                                            <span>⚠️</span> {bulkError}
+                                        </div>
+                                    )}
 
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-md)' }}>
                                         {watchlist.map((item, i) => {

@@ -1817,6 +1817,7 @@ select::placeholder {
     padding: var(--space-lg) var(--space-lg);
   }
 
+  .grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 }

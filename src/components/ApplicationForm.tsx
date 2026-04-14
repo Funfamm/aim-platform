@@ -74,6 +74,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
     const [error, setError] = useState('')
+    const [honeypot, setHoneypot] = useState('') // bot trap — should always be empty
 
     // ── Saved media profile ──────────────────────────────────────────────────
     const [savedMedia, setSavedMedia] = useState<MediaProfile | null>(null)
@@ -319,6 +320,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
             Object.entries(formData).forEach(([key, value]) => { if (value) data.append(key, value) })
             data.append('castingCallId', castingCall.id)
             data.append('locale', locale)
+            data.append('website', honeypot) // honeypot field — server rejects if non-empty
             for (const [key, url] of Object.entries(photoUrls)) {
                 data.append(`photo_${key}`, url)
             }
@@ -482,6 +484,12 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
                 <div className="animate-fade-in-up">
                     <h3 style={{ marginBottom: 'var(--space-xs)' }}>{t('basicsTitle')}</h3>
                     <p style={{ fontSize: '0.9rem', marginBottom: 'var(--space-xl)' }}>{t('basicsDesc')}</p>
+
+                    {/* Honeypot field: off-screen, only visible to bots */}
+                    <div style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }} aria-hidden="true">
+                        <label htmlFor="hp-website">Website</label>
+                        <input id="hp-website" name="website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={e => setHoneypot(e.target.value)} />
+                    </div>
 
                     <div className="grid-2" style={{ gap: 'var(--space-md)' }}>
                         <div className="form-group">

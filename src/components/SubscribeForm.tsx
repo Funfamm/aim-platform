@@ -13,10 +13,14 @@ export default function SubscribeForm() {
         e.preventDefault()
         setStatus('sending')
         try {
+            const form = e.target as HTMLFormElement
+            // Honeypot: if 'website' field has been filled, silently do nothing
+            const botField = (form.elements.namedItem('website') as HTMLInputElement)?.value
+            if (botField) { setStatus('sent'); return } // fake success, don't call API
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, locale }),
+                body: JSON.stringify({ email, locale, website: '' }),
             })
             if (res.ok) {
                 setStatus('sent')
@@ -49,6 +53,15 @@ export default function SubscribeForm() {
             gap: 'var(--space-sm)',
             maxWidth: '480px',
         }}>
+            {/* Honeypot field — invisible to humans, filled by bots */}
+            <input
+                name="website"
+                type="text"
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+            />
             <input
                 type="email"
                 value={email}
