@@ -128,5 +128,20 @@
     "errorResend": "コードの再送信に失敗しました。",
     "successTitle": "メール認証完了！",
     "successMessage": "ダッシュボードにリダイレクトしています..."
+  },
+  "works": {
+    "label": "作品一覧",
+    "title": "コレクションを",
+    "titleAccent": "探索する",
+    "description": "大胆な短編映画から壮大なシリーズまで — スタジオのすべての作品を発見してください。",
+    "completed": "公開中",
+    "inProduction": "制作中",
+    "upcoming": "公開予定",
+    "series": "シリーズ",
+    "watchTrailer": "トレーラー",
+    "watchNow": "今すぐ見る",
+    "episodes": "エピソード",
+    "viewDetails": "キャスト募集を見る",
+    "film": "映画"
   }
 }

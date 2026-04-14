@@ -76,6 +76,7 @@ model Project {
   credits      String?
   featured     Boolean        @default(false)
   sortOrder    Int            @default(0)
+  viewCount    Int            @default(0)  // cached counter — incremented by /api/projects/view
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   country      String?
@@ -90,8 +91,13 @@ model Project {
   watchHistory WatchHistory[]
   watchlist    Watchlist[]
   liveEvents   LiveEvent[]
+  views        ProjectView[]
 
   @@index([title, tagline])
+  @@index([viewCount])           // trending sort
+  @@index([featured, sortOrder]) // featured row
+  @@index([createdAt])           // new releases sort
+  @@index([genre, viewCount])    // genre rows sorted by popularity
 }
 
 model FilmCast {
@@ -122,6 +128,23 @@ model Watchlist {
   @@index([userId])
 }
 
+// ── Project analytics events — powers trending, recommendations, watch time ──
+model ProjectView {
+  id         String   @id @default(cuid())
+  projectId  String
+  userId     String?  // null for anonymous visitors
+  source     String   @default("browse") // browse | search | recommendation | hover | share
+  locale     String   @default("en")
+  durationMs Int?     // how long they stayed (set on page leave)
+  createdAt  DateTime @default(now())
+  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([projectId, createdAt]) // for 30-day trending window queries
+}
+
 model WatchHistory {
   id        String   @id @default(cuid())
   userId    String
@@ -132,6 +155,7 @@ model WatchHistory {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, watchedAt])
+  @@index([userId, projectId]) // for fast per-project lookup
 }
 
 model Episode {
@@ -895,7 +919,7 @@ model LiveEvent {
   recordingUrl   String?   // set by egress worker after recording completes
   egressId       String?   // LiveKit egress ID while a recording is in progress
   captionsActive Boolean   @default(false) // true while caption worker is connected
-  project        Project?  @relation(fields: [projectId], references: [id])
+  project        Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 

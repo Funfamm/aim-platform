@@ -45,6 +45,7 @@ export default function AdminEventsPage() {
     const [loading, setLoading]         = useState(true)
     const [creating, setCreating]       = useState(false)
     const [ending, setEnding]           = useState<string | null>(null)
+    const [deleting, setDeleting]       = useState<string | null>(null)  // eventId being deleted
     const [error, setError]             = useState<string | null>(null)
     const [success, setSuccess]         = useState<string | null>(null)
     const [showForm, setShowForm]       = useState(false)
@@ -123,6 +124,24 @@ export default function AdminEventsPage() {
         const slug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32)
         const suffix = Math.random().toString(36).slice(2, 6)
         setForm(f => ({ ...f, roomName: slug ? `${slug}-${suffix}` : `room-${suffix}` }))
+    }
+
+    const handleDelete = async (id: string, title: string, status: string) => {
+        if (status === 'live') {
+            setError('Cannot delete a live room. End the event first.')
+            return
+        }
+        if (!confirm(`Permanently delete "${title}"? This cannot be undone.`)) return
+        setDeleting(id); setError(null)
+        try {
+            const res = await fetch(`/api/livekit/rooms/${id}`, { method: 'DELETE' })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed to delete event')
+            showSuccess(`"${title}" deleted`)
+            // Remove from local state immediately — no need to refetch
+            setEvents(prev => prev.filter(e => e.id !== id))
+        } catch (err) { setError(err instanceof Error ? err.message : 'Failed to delete event') }
+        finally { setDeleting(null) }
     }
 
     const shareEvent = events.find(e => e.id === shareEventId)
@@ -492,6 +511,11 @@ export default function AdminEventsPage() {
                     }
                     .le-btn--end:hover:not(:disabled) { background: rgba(239,68,68,0.07); border-color: rgba(239,68,68,0.25); color: #fca5a5; }
 
+                    .le-btn--delete {
+                        background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.18); color: rgba(239,68,68,0.6);
+                    }
+                    .le-btn--delete:hover:not(:disabled) { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.4); color: #fca5a5; }
+                    .le-btn--delete:disabled { opacity: 0.3; cursor: not-allowed; }
 
                     .le-btn--share {
                         background: rgba(52,211,153,0.06); border-color: rgba(52,211,153,0.18); color: #6ee7b7;
@@ -885,6 +909,31 @@ export default function AdminEventsPage() {
                                                     {ending === event.roomName ? '⏳ Ending…' : '⏹ End Room'}
                                                 </button>
                                             )}
+                                            {/* Delete — blocked on live rooms AND while ending */}
+                                            <button
+                                                id={`ae-delete-btn-${event.id}`}
+                                                className="le-btn le-btn--delete"
+                                                disabled={deleting === event.id || event.status === 'live' || ending === event.roomName}
+                                                title={
+                                                    event.status === 'live'
+                                                        ? 'End the room first before deleting'
+                                                        : ending === event.roomName
+                                                            ? 'Waiting for room to end…'
+                                                            : `Delete "${event.title}" permanently`
+                                                }
+                                                onClick={() => handleDelete(event.id, event.title, event.status)}
+                                            >
+                                                {deleting === event.id ? (
+                                                    '⏳ Deleting…'
+                                                ) : (
+                                                    <>
+                                                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                                            <path d="M1 2.5h8M3.5 2.5V1.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M2 2.5l.5 6a.5.5 0 00.5.5h4a.5.5 0 00.5-.5l.5-6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                                                        </svg>
+                                                        Delete
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
                                 )

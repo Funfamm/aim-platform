@@ -6,6 +6,13 @@ import Scene3D from '@/components/Scene3D'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
+import dynamic from 'next/dynamic'
+import type { ProjectCard } from '@/components/mobile/MovieCard'
+
+// Mobile-only components — code-split so desktop never loads them
+const SearchBar        = dynamic(() => import('@/components/mobile/SearchBar'),         { ssr: false })
+const MovieRow         = dynamic(() => import('@/components/mobile/MovieRow'),           { ssr: false })
+const HoverPreviewCard = dynamic(() => import('@/components/desktop/HoverPreviewCard'), { ssr: false })
 
 interface Project {
     id: string
@@ -22,6 +29,9 @@ interface Project {
     filmUrl: string | null
     episodeCount: number
     translations: string | null
+    // Required by ProjectCard / HoverPreviewCard:
+    featured: boolean
+    viewCount: number
 }
 
 interface HeroVideo {
@@ -34,11 +44,68 @@ interface WorksPageClientProps {
     projects: Project[]
     completedCount: number
     inProdCount: number
+    genres: string[]  // distinct genres from DB for mobile filter chips
 }
 
-export default function WorksPageClient({ projects, completedCount, inProdCount }: WorksPageClientProps) {
+// ── Detects mobile viewport after hydration (SSR-safe) ──────────────────────
+function useIsMobile() {
+    const [isMobile, setIsMobile] = useState(false)
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768)
+        check()
+        const mq = window.matchMedia('(max-width: 767px)')
+        mq.addEventListener('change', check)
+        return () => mq.removeEventListener('change', check)
+    }, [])
+    return isMobile
+}
+
+// ── Mobile row definitions ───────────────────────────────────────────────────
+const FIXED_ROWS: Array<{ id: string; icon: string; title: string; query: Record<string, string | boolean | number> }> = [
+    { id: 'featured',  icon: '★', title: 'Staff Picks',   query: { featured: true } },
+    { id: 'trending',  icon: '🔥', title: 'Trending',     query: { sort: 'trending' } },
+    { id: 'newest',    icon: '🆕', title: 'New Releases', query: { sort: 'newest'   } },
+    { id: 'completed', icon: '✅', title: 'Now Available', query: { status: 'completed', sort: 'newest' } },
+]
+
+export default function WorksPageClient({ projects, completedCount, inProdCount, genres }: WorksPageClientProps) {
     const t = useTranslations('works')
     const locale = useLocale()
+    const isMobile = useIsMobile()
+
+    // ── Desktop hover card state ─────────────────────────────────────────────
+    const [hoverProject, setHoverProject] = useState<Project | null>(null)
+    const [hoverAnchor, setHoverAnchor]   = useState<DOMRect | null>(null)
+    const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    const handleCardHover = useCallback((project: Project, rect: DOMRect) => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+        // 500ms delay — prevents accidental trigger on mouse-over
+        hoverTimeoutRef.current = setTimeout(() => {
+            setHoverProject(project)
+            setHoverAnchor(rect)
+        }, 500)
+    }, [])
+
+    const handleCardHoverEnd = useCallback(() => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+        // Don't immediately close — give user time to move mouse to the hover card
+        hoverTimeoutRef.current = setTimeout(() => {
+            setHoverProject(null)
+            setHoverAnchor(null)
+        }, 300)
+    }, [])
+
+    const handleHoverCardClose = useCallback(() => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+        setHoverProject(null)
+        setHoverAnchor(null)
+    }, [])
+
+    useEffect(() => () => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    }, [])
+
     const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
     const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
@@ -412,7 +479,35 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                     {t('description')}
                                 </p>
                             </div>
+                        ) : isMobile ? (
+                            // ═══ MOBILE — Netflix-style categorized rows ═══
+                            <div>
+                                <SearchBar />
+
+                                {/* Fixed rows: Featured, Trending, New, Completed */}
+                                {FIXED_ROWS.map(row => (
+                                    <MovieRow
+                                        key={row.id}
+                                        title={row.title}
+                                        icon={row.icon}
+                                        query={row.query}
+                                        locale={locale}
+                                    />
+                                ))}
+
+                                {/* Dynamic genre rows — one per distinct genre */}
+                                {genres.map(genre => (
+                                    <MovieRow
+                                        key={genre}
+                                        title={genre}
+                                        icon="🎭"
+                                        query={{ genre, sort: 'trending' }}
+                                        locale={locale}
+                                    />
+                                ))}
+                            </div>
                         ) : (
+                            // ═══ DESKTOP — existing grid with hover preview ═══
                             <div className="works-grid">
                                 {projects.map((project, index) => {
                                     const loc = getLocalizedProject(project, locale)
@@ -420,10 +515,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                                     <ScrollReveal3D key={project.id} direction="up" delay={index * 120} distance={40}>
                                         <div
                                             className="project-card"
+                                            onMouseEnter={e => handleCardHover(project, e.currentTarget.getBoundingClientRect())}
+                                            onMouseLeave={handleCardHoverEnd}
                                             style={{
                                                 aspectRatio: '16/10',
                                                 borderRadius: 'var(--radius-lg)',
                                                 position: 'relative',
+                                                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                                             }}
                                         >
                                             {/* Clickable image area -> project detail */}
@@ -610,6 +708,16 @@ export default function WorksPageClient({ projects, completedCount, inProdCount 
                     </div>
                 </section>
             </ScrollReveal3D>
+
+            {/* ═══ DESKTOP HOVER PREVIEW CARD — Portal ═══ */}
+            {hoverProject && hoverAnchor && !isMobile && (
+                <HoverPreviewCard
+                    project={hoverProject as unknown as ProjectCard}
+                    anchor={hoverAnchor}
+                    locale={locale}
+                    onClose={handleHoverCardClose}
+                />
+            )}
         </main>
     )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { LiveKitRoom, RoomAudioRenderer } from '@livekit/components-react'
 import type { ReconnectContext } from 'livekit-client'
 import ParticipantGrid from './ParticipantGrid'
@@ -12,6 +13,10 @@ import type { LiveKitRole } from '@/lib/livekit/grants'
 interface RoomShellProps {
     roomName: string
     role?: LiveKitRole
+    /** Called when admin clicks "End Event" — optional, only shown to hosts/admins */
+    onEndEvent?: () => Promise<void>
+    /** Where to navigate after leaving (default: router.back()) */
+    exitPath?: string
 }
 
 interface TokenData {
@@ -23,23 +28,31 @@ interface TokenData {
 
 const MAX_RECONNECT_ATTEMPTS = 4
 const BASE_RECONNECT_DELAY_MS = 1_500
-// Max retries the LiveKit SDK makes internally before firing onDisconnected.
-// NOTE: ReconnectPolicy only exposes nextRetryDelayMs — return null to stop.
 const SDK_MAX_RETRIES = 5
 
-export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps) {
+export default function RoomShell({
+    roomName,
+    role = 'viewer',
+    onEndEvent,
+    exitPath,
+}: RoomShellProps) {
+    const router = useRouter()
+
     const [tokenData, setTokenData]       = useState<TokenData | null>(null)
     const [captionLang, setCaptionLang]   = useState<CaptionLang>('en')
-    const [loading, setLoading]           = useState(true)   // initial connect only
+    const [loading, setLoading]           = useState(true)
     const [error, setError]               = useState<string | null>(null)
-    const [reconnecting, setReconnecting] = useState(false)  // non-destructive banner
+    const [reconnecting, setReconnecting] = useState(false)
+    const [endingEvent, setEndingEvent]   = useState(false)
+
+    // ── Refs that NEVER go stale in closures ─────────────────────────────────
+    const isMounted         = useRef(true)
+    const tokenFetched      = useRef(false)   // StrictMode double-invoke guard
+    const leftRoomRef       = useRef(false)   // deliberate leave flag (ref = no stale closure)
     const reconnectAttempts = useRef(0)
     const reconnectTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
-    const isMounted         = useRef(true)
 
     useEffect(() => {
-        // Re-set to true on every effect run (needed in React 18 StrictMode:
-        // the cleanup sets it to false, then the effect re-runs on the same instance).
         isMounted.current = true
         return () => {
             isMounted.current = false
@@ -47,14 +60,12 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
         }
     }, [])
 
-    // ── Token fetch ──────────────────────────────────────────────────────────
-    // silent=true  → skip setLoading(true) so LiveKitRoom stays mounted during
-    //               reconnect token refreshes. Only the initial fetch shows the
-    //               full loading screen.
-    // captionLang intentionally excluded from deps — changing language only
-    // affects CaptionOverlay and must never trigger a full remount.
+    // ── Token fetch ───────────────────────────────────────────────────────────
+    // leftRoom removed from deps — we read leftRoomRef.current instead,
+    // which always has the current value without stale-closure risk.
     const fetchToken = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
         if (!isMounted.current) return
+        if (leftRoomRef.current) return          // deliberate leave — never reconnect
         setError(null)
         if (!silent) setLoading(true)
         try {
@@ -75,21 +86,25 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
             if (!isMounted.current) return
             setError(err instanceof Error ? err.message : 'Connection failed')
         } finally {
-            // Only reset the loading screen if we showed it (non-silent path).
-            if (isMounted.current && !silent) setLoading(false)
+            if (isMounted.current && !silent) {
+                setLoading(false)
+                tokenFetched.current = true
+            }
         }
-    }, [roomName, role])
+    }, [roomName, role])   // leftRoom NOT in deps — read via ref
 
-    useEffect(() => { fetchToken() }, [fetchToken])
+    // StrictMode guard: run exactly once on first true mount
+    useEffect(() => {
+        if (!tokenFetched.current) {
+            tokenFetched.current = true
+            fetchToken()
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     // ── Disconnect handler ────────────────────────────────────────────────────
-    // Does NOT call setLoading(true) — that would unmount LiveKitRoom and flash
-    // the loading screen for every transient disconnect.
-    // Shows a lightweight amber banner instead, then fetches a new token silently
-    // once the SDK has exhausted its own retry policy. The new token re-keys
-    // LiveKitRoom (clean reconnect) without showing the full loading UI.
     const handleDisconnected = useCallback(() => {
-        if (!isMounted.current) return
+        if (!isMounted.current || leftRoomRef.current) return
         reconnectAttempts.current += 1
 
         if (reconnectAttempts.current > MAX_RECONNECT_ATTEMPTS) {
@@ -105,17 +120,45 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
         )
 
         reconnectTimer.current = setTimeout(async () => {
-            if (!isMounted.current) return
-            // silent=true: new token replaces key without triggering the loading screen
+            if (!isMounted.current || leftRoomRef.current) return
             await fetchToken({ silent: true })
             if (isMounted.current) setReconnecting(false)
         }, delay)
-    }, [fetchToken])
+    }, [fetchToken])   // leftRoom NOT in deps — read via ref
 
     const handleConnected = useCallback(() => {
         reconnectAttempts.current = 0
         setReconnecting(false)
     }, [])
+
+    // ── Leave room ────────────────────────────────────────────────────────────
+    const handleLeave = useCallback(() => {
+        leftRoomRef.current = true   // set ref first — prevents any in-flight reconnect
+        if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
+        if (exitPath) {
+            router.push(exitPath)
+        } else {
+            router.back()
+        }
+    }, [exitPath, router])
+
+    // ── End event (admin/host only) ───────────────────────────────────────────
+    const handleEndEvent = useCallback(async () => {
+        if (!onEndEvent) return
+        // SSR-safe confirm — component is client-only but guard prevents any edge case
+        const confirmed = typeof window !== 'undefined'
+            ? window.confirm('End the event for all participants? This cannot be undone.')
+            : false
+        if (!confirmed) return
+        setEndingEvent(true)
+        try {
+            await onEndEvent()
+            handleLeave()
+        } catch (err) {
+            console.error('[RoomShell] End event failed:', err)
+            setEndingEvent(false)
+        }
+    }, [onEndEvent, handleLeave])
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -132,16 +175,25 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
         return (
             <div className="room-shell-error" role="alert">
                 <p>{error}</p>
-                <button
-                    id="room-shell-retry-btn"
-                    className="room-shell-retry-btn"
-                    onClick={() => {
-                        reconnectAttempts.current = 0
-                        fetchToken()
-                    }}
-                >
-                    Retry
-                </button>
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '12px' }}>
+                    <button
+                        id="room-shell-retry-btn"
+                        className="room-shell-retry-btn"
+                        onClick={() => {
+                            reconnectAttempts.current = 0
+                            fetchToken()
+                        }}
+                    >
+                        Retry
+                    </button>
+                    <button
+                        id="room-shell-leave-btn"
+                        className="room-shell-leave-btn"
+                        onClick={handleLeave}
+                    >
+                        Leave
+                    </button>
+                </div>
             </div>
         )
     }
@@ -149,6 +201,7 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
     if (!tokenData) return null
 
     const canPublish = role !== 'viewer'
+    const isHost     = role === 'host' || role === 'admin'
 
     return (
         <div className="room-shell" data-room={roomName}>
@@ -156,6 +209,31 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
                 <span className="room-live-badge" aria-label="Live indicator">● LIVE</span>
                 <span className="room-name-label">{roomName}</span>
                 <LanguageSelector value={captionLang} onChange={setCaptionLang} />
+
+                <div className="room-shell-actions">
+                    {/* End Event — admin/host only, SSR-safe confirm */}
+                    {isHost && onEndEvent && (
+                        <button
+                            id="room-shell-end-event-btn"
+                            className="room-shell-end-btn"
+                            onClick={handleEndEvent}
+                            disabled={endingEvent}
+                            title="End event for all participants"
+                        >
+                            {endingEvent ? 'Ending…' : '⏹ End Event'}
+                        </button>
+                    )}
+
+                    {/* Leave / Exit — always visible */}
+                    <button
+                        id="room-shell-leave-btn"
+                        className="room-shell-leave-btn"
+                        onClick={handleLeave}
+                        title="Leave the room"
+                    >
+                        ✕ Leave
+                    </button>
+                </div>
             </div>
 
             {reconnecting && (
@@ -166,24 +244,21 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
             )}
 
             {/*
-              key={tokenData.token}: A new token (from silent retry) remounts LiveKitRoom
-              cleanly. Normal transient disconnects are handled by the SDK's own reconnect
-              policy and never change the token — so LiveKitRoom stays mounted, no flash.
+              key={tokenData.token}: a new token from silent retry triggers a clean
+              LiveKitRoom remount. SDK handles transient disconnects internally via
+              reconnectPolicy — so no flash on normal network hiccups.
             */}
             <LiveKitRoom
                 key={tokenData.token}
                 token={tokenData.token}
                 serverUrl={tokenData.wsUrl}
-                audio={canPublish}   // viewers receive only — don't publish audio
-                video={canPublish}   // viewers receive only — don't publish video
+                audio={canPublish}
+                video={canPublish}
                 connect={true}
                 onDisconnected={handleDisconnected}
                 onConnected={handleConnected}
                 options={{
                     reconnectPolicy: {
-                        // Returning null signals the SDK to stop retrying and fire
-                        // onDisconnected, handing control back to handleDisconnected.
-                        // The correct method name is nextRetryDelayInMs (not nextRetryDelayMs).
                         nextRetryDelayInMs: (ctx: ReconnectContext) =>
                             ctx.retryCount >= SDK_MAX_RETRIES
                                 ? null

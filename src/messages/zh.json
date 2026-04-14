@@ -128,5 +128,20 @@
     "errorResend": "重新发送验证码失败。",
     "successTitle": "邮箱已验证！",
     "successMessage": "正在跳转到您的控制台..."
+  },
+  "works": {
+    "label": "我们的作品",
+    "title": "探索",
+    "titleAccent": "作品集",
+    "description": "从大胆的短片到史诗级剧集——探索我们工作室精心打造的每一个项目。",
+    "completed": "已上线",
+    "inProduction": "制作中",
+    "upcoming": "即将上映",
+    "series": "剧集",
+    "watchTrailer": "预告片",
+    "watchNow": "立即观看",
+    "episodes": "集",
+    "viewDetails": "查看选角角色",
+    "film": "电影"
   }
 }

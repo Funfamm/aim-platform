@@ -2338,6 +2338,59 @@ select::placeholder {
   }
 }
 
+/* ── Movie row horizontal strip — shimmer + scrollbar ─────────────── */
+@keyframes shimmerSweep {
+  0%   { background-position: -400px 0; }
+  100% { background-position:  400px 0; }
+}
+
+.movie-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Skeleton card — shared across all rows, defined once here to prevent
+   per-instance <style> injection (would duplicate N × row_count times) */
+.skeleton-card {
+  flex-shrink: 0;
+  width: 175px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.skeleton-img {
+  width: 175px;
+  height: 110px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmerSweep 1.4s ease-in-out infinite;
+}
+
+.skeleton-text {
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skeleton-line {
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 400px 100%;
+  animation: shimmerSweep 1.4s ease-in-out infinite;
+}
+
 /* ═══════════════════════════════════════════════════════════
    LOGIN PAGE
    ═══════════════════════════════════════════════════════════ */
@@ -4448,4 +4501,206 @@ img, video, iframe, canvas {
   body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 
   /* Hide the floating admin button on mobile — it overlaps the tab bar */
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIVE EVENT — ROOM SHELL
+   ═══════════════════════════════════════════════════════════ */
+
+.room-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100dvh;
+  background: #0a0a10;
+  color: #fff;
+  font-family: var(--font-sans, sans-serif);
+}
+
+/* Header bar */
+.room-shell-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: rgba(10,10,18,0.95);
+  border-bottom: 1px solid rgba(212,168,83,0.12);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.room-live-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #ef4444;
+  background: rgba(239,68,68,0.12);
+  border: 1px solid rgba(239,68,68,0.25);
+  padding: 3px 8px;
+  border-radius: 999px;
+  animation: roomPulse 2s ease-in-out infinite;
+}
+
+@keyframes roomPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.65; }
+}
+
+.room-name-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #e8e8ec;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Action buttons container — pushed to the right */
+.room-shell-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* Leave button — always visible */
+.room-shell-leave-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.room-shell-leave-btn:hover {
+  background: rgba(239,68,68,0.22);
+  border-color: rgba(239,68,68,0.5);
+  transform: scale(1.03);
+}
+
+/* End event button — admin/host only, more destructive */
+.room-shell-end-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(239,68,68,0.18);
+  border: 1px solid rgba(239,68,68,0.4);
+  color: #fca5a5;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.room-shell-end-btn:hover:not(:disabled) {
+  background: rgba(239,68,68,0.35);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+.room-shell-end-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Retry button (in error state) */
+.room-shell-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: rgba(212,168,83,0.12);
+  border: 1px solid rgba(212,168,83,0.3);
+  color: var(--accent-gold, #d4a853);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.room-shell-retry-btn:hover {
+  background: rgba(212,168,83,0.25);
+  border-color: rgba(212,168,83,0.5);
+}
+
+/* Loading & Error states */
+.room-shell-loading,
+.room-shell-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  gap: 16px;
+  background: #0a0a10;
+  color: #e8e8ec;
+  text-align: center;
+  padding: 32px;
+}
+
+.room-shell-error p {
+  color: #fca5a5;
+  font-size: 0.9rem;
+  max-width: 360px;
+}
+
+.room-shell-spinner,
+.room-reconnecting-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(212,168,83,0.2);
+  border-top-color: var(--accent-gold, #d4a853);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.room-reconnecting-spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+/* Reconnecting banner */
+.room-reconnecting-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: rgba(245,158,11,0.1);
+  border-bottom: 1px solid rgba(245,158,11,0.2);
+  color: #fbbf24;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* Video area */
+.room-shell-video-area {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Mobile tweaks */
+@media (max-width: 640px) {
+  .room-shell-header { padding: 8px 12px; gap: 8px; }
+  .room-shell-leave-btn,
+  .room-shell-end-btn  { padding: 5px 10px; font-size: 0.7rem; }
+  .room-name-label     { font-size: 0.75rem; }
 }

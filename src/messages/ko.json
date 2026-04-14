@@ -128,5 +128,20 @@
     "errorResend": "코드 재전송에 실패했습니다.",
     "successTitle": "이메일 인증 완료!",
     "successMessage": "대시보드로 이동 중..."
+  },
+  "works": {
+    "label": "우리의 작품",
+    "title": "컬렉션을",
+    "titleAccent": "탐색하세요",
+    "description": "대담한 단편 영화부터 웅장한 시리즈까지 — 스튜디오의 모든 프로젝트를 발견하세요.",
+    "completed": "공개 중",
+    "inProduction": "제작 중",
+    "upcoming": "출시 예정",
+    "series": "시리즈",
+    "watchTrailer": "예고편",
+    "watchNow": "지금 보기",
+    "episodes": "에피소드",
+    "viewDetails": "캐스팅 역할 보기",
+    "film": "영화"
   }
 }

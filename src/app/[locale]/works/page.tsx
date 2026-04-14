@@ -11,30 +11,42 @@ export const metadata = {
 }
 
 export default async function WorksPage() {
-    const projects = await prisma.project.findMany({
-        orderBy: { sortOrder: 'asc' },
-        include: { _count: { select: { episodes: true } } },
-    })
+    // Fetch projects + distinct genres in parallel
+    const [projects, genreRows] = await Promise.all([
+        prisma.project.findMany({
+            orderBy: { sortOrder: 'asc' },
+            include: { _count: { select: { episodes: true } } },
+        }),
+        prisma.project.findMany({
+            where:    { genre: { not: null } },
+            select:   { genre: true },
+            distinct: ['genre'],
+            orderBy:  { viewCount: 'desc' },
+            take: 12, // max 12 genre rows on mobile
+        }),
+    ])
 
-    // ---- NEW: sanitize BigInt fields ----
     const projectsWithCounts = projects.map(p => ({
         ...sanitizeBigInt(p),
         episodeCount: p._count.episodes,
     }))
-    // ------------------------------------
+
+    const genres = genreRows
+        .map(r => r.genre as string)
+        .filter(Boolean)
 
     const completedCount = projectsWithCounts.filter(p => p.status === 'completed').length
-    const inProdCount = projectsWithCounts.filter(p => p.status === 'in-production').length
+    const inProdCount    = projectsWithCounts.filter(p => p.status === 'in-production').length
 
     return (
         <>
-<WorksPageClient
+            <WorksPageClient
                 projects={projectsWithCounts}
                 completedCount={completedCount}
                 inProdCount={inProdCount}
+                genres={genres}
             />
             <Footer />
         </>
     )
 }
-

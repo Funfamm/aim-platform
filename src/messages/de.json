@@ -128,5 +128,20 @@
     "errorResend": "Code konnte nicht erneut gesendet werden.",
     "successTitle": "E-Mail verifiziert!",
     "successMessage": "Du wirst zu deinem Dashboard weitergeleitet..."
+  },
+  "works": {
+    "label": "Unsere Werke",
+    "title": "Entdecken Sie die",
+    "titleAccent": "Kollektion",
+    "description": "Von kühnen Kurzfilmen bis hin zu epischen Serien — entdecken Sie jedes Projekt unseres Studios.",
+    "completed": "Verfügbar",
+    "inProduction": "In Produktion",
+    "upcoming": "Demnächst",
+    "series": "Serie",
+    "watchTrailer": "Trailer",
+    "watchNow": "Jetzt Ansehen",
+    "episodes": "Episoden",
+    "viewDetails": "Casting-Rollen Ansehen",
+    "film": "Film"
   }
 }

@@ -269,5 +269,20 @@
     "errorResend": "Échec du renvoi du code.",
     "successTitle": "E-mail vérifié !",
     "successMessage": "Redirection vers votre tableau de bord..."
+  },
+  "works": {
+    "label": "Notre Travail",
+    "title": "Découvrez la",
+    "titleAccent": "Collection",
+    "description": "Des courts métrages audacieux aux séries épiques — découvrez chaque projet de notre studio.",
+    "completed": "Disponible",
+    "inProduction": "En Production",
+    "upcoming": "À Venir",
+    "series": "Série",
+    "watchTrailer": "Bande-annonce",
+    "watchNow": "Regarder",
+    "episodes": "Épisodes",
+    "viewDetails": "Voir les Rôles",
+    "film": "Film"
   }
 }

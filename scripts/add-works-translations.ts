@@ -1,0 +1,191 @@
+import fs from 'fs'
+import path from 'path'
+
+// Run with: npx ts-node --project tsconfig.node.json scripts/add-works-translations.ts
+// DO NOT use PowerShell Set-Content — it adds BOM
+
+const messagesDir = path.join(process.cwd(), 'src', 'messages')
+
+const translations: Record<string, Record<string, string>> = {
+  en: {
+    label: 'Our Work',
+    title: 'Explore the',
+    titleAccent: 'Collection',
+    description: 'From bold short films to epic series — discover every project crafted by our studio.',
+    completed: 'Available',
+    inProduction: 'In Production',
+    upcoming: 'Upcoming',
+    series: 'Series',
+    watchTrailer: 'Trailer',
+    watchNow: 'Watch Now',
+    episodes: 'Episodes',
+    viewDetails: 'View Casting Roles',
+    film: 'Film',
+  },
+  es: {
+    label: 'Nuestro Trabajo',
+    title: 'Explora la',
+    titleAccent: 'Colección',
+    description: 'Desde cortometrajes atrevidos hasta series épicas — descubre cada proyecto de nuestro estudio.',
+    completed: 'Disponible',
+    inProduction: 'En Producción',
+    upcoming: 'Próximamente',
+    series: 'Serie',
+    watchTrailer: 'Tráiler',
+    watchNow: 'Ver Ahora',
+    episodes: 'Episodios',
+    viewDetails: 'Ver Roles de Casting',
+    film: 'Película',
+  },
+  fr: {
+    label: 'Notre Travail',
+    title: 'Découvrez la',
+    titleAccent: 'Collection',
+    description: "Des courts métrages audacieux aux séries épiques — découvrez chaque projet de notre studio.",
+    completed: 'Disponible',
+    inProduction: 'En Production',
+    upcoming: 'À Venir',
+    series: 'Série',
+    watchTrailer: 'Bande-annonce',
+    watchNow: 'Regarder',
+    episodes: 'Épisodes',
+    viewDetails: 'Voir les Rôles',
+    film: 'Film',
+  },
+  ar: {
+    label: 'أعمالنا',
+    title: 'استكشف',
+    titleAccent: 'المجموعة',
+    description: 'من الأفلام القصيرة الجريئة إلى المسلسلات الملحمية — اكتشف كل مشاريع استوديويا.',
+    completed: 'متاح',
+    inProduction: 'قيد الإنتاج',
+    upcoming: 'قريباً',
+    series: 'مسلسل',
+    watchTrailer: 'إعلان',
+    watchNow: 'شاهد الآن',
+    episodes: 'حلقات',
+    viewDetails: 'عرض أدوار الكاستينج',
+    film: 'فيلم',
+  },
+  zh: {
+    label: '我们的作品',
+    title: '探索',
+    titleAccent: '作品集',
+    description: '从大胆的短片到史诗级剧集——探索我们工作室精心打造的每一个项目。',
+    completed: '已上线',
+    inProduction: '制作中',
+    upcoming: '即将上映',
+    series: '剧集',
+    watchTrailer: '预告片',
+    watchNow: '立即观看',
+    episodes: '集',
+    viewDetails: '查看选角角色',
+    film: '电影',
+  },
+  hi: {
+    label: 'हमारा काम',
+    title: 'खोजें',
+    titleAccent: 'संग्रह',
+    description: 'साहसी लघु फिल्मों से लेकर महाकाव्य श्रृंखलाओं तक — हमारे स्टूडियो के हर प्रोजेक्ट की खोज करें।',
+    completed: 'उपलब्ध',
+    inProduction: 'निर्माण में',
+    upcoming: 'जल्द आ रहा है',
+    series: 'श्रृंखला',
+    watchTrailer: 'ट्रेलर',
+    watchNow: 'अभी देखें',
+    episodes: 'एपिसोड',
+    viewDetails: 'कास्टिंग भूमिकाएं देखें',
+    film: 'फ़िल्म',
+  },
+  pt: {
+    label: 'Nosso Trabalho',
+    title: 'Explore a',
+    titleAccent: 'Coleção',
+    description: 'De curtas-metragens ousados a séries épicas — descubra cada projeto do nosso estúdio.',
+    completed: 'Disponível',
+    inProduction: 'Em Produção',
+    upcoming: 'Em Breve',
+    series: 'Série',
+    watchTrailer: 'Trailer',
+    watchNow: 'Assistir Agora',
+    episodes: 'Episódios',
+    viewDetails: 'Ver Papéis de Casting',
+    film: 'Filme',
+  },
+  ru: {
+    label: 'Наши Работы',
+    title: 'Изучите',
+    titleAccent: 'Коллекцию',
+    description: 'От дерзких короткометражек до эпических сериалов — откройте для себя каждый проект нашей студии.',
+    completed: 'Доступно',
+    inProduction: 'В Производстве',
+    upcoming: 'Скоро',
+    series: 'Сериал',
+    watchTrailer: 'Трейлер',
+    watchNow: 'Смотреть',
+    episodes: 'Эпизоды',
+    viewDetails: 'Смотреть Роли',
+    film: 'Фильм',
+  },
+  ja: {
+    label: '作品一覧',
+    title: 'コレクションを',
+    titleAccent: '探索する',
+    description: '大胆な短編映画から壮大なシリーズまで — スタジオのすべての作品を発見してください。',
+    completed: '公開中',
+    inProduction: '制作中',
+    upcoming: '公開予定',
+    series: 'シリーズ',
+    watchTrailer: 'トレーラー',
+    watchNow: '今すぐ見る',
+    episodes: 'エピソード',
+    viewDetails: 'キャスト募集を見る',
+    film: '映画',
+  },
+  de: {
+    label: 'Unsere Werke',
+    title: 'Entdecken Sie die',
+    titleAccent: 'Kollektion',
+    description: 'Von kühnen Kurzfilmen bis hin zu epischen Serien — entdecken Sie jedes Projekt unseres Studios.',
+    completed: 'Verfügbar',
+    inProduction: 'In Produktion',
+    upcoming: 'Demnächst',
+    series: 'Serie',
+    watchTrailer: 'Trailer',
+    watchNow: 'Jetzt Ansehen',
+    episodes: 'Episoden',
+    viewDetails: 'Casting-Rollen Ansehen',
+    film: 'Film',
+  },
+  ko: {
+    label: '우리의 작품',
+    title: '컬렉션을',
+    titleAccent: '탐색하세요',
+    description: '대담한 단편 영화부터 웅장한 시리즈까지 — 스튜디오의 모든 프로젝트를 발견하세요.',
+    completed: '공개 중',
+    inProduction: '제작 중',
+    upcoming: '출시 예정',
+    series: '시리즈',
+    watchTrailer: '예고편',
+    watchNow: '지금 보기',
+    episodes: '에피소드',
+    viewDetails: '캐스팅 역할 보기',
+    film: '영화',
+  },
+}
+
+// Inject "works" key into each locale file using fs.writeFileSync (UTF-8NoBOM)
+for (const [locale, strings] of Object.entries(translations)) {
+  const filePath = path.join(messagesDir, `${locale}.json`)
+  if (!fs.existsSync(filePath)) {
+    console.warn(`SKIP: ${filePath} not found`)
+    continue
+  }
+  const raw = fs.readFileSync(filePath, 'utf8')
+  const json = JSON.parse(raw)
+  json.works = strings
+  // writeFileSync with 'utf8' encoding — NO BOM
+  fs.writeFileSync(filePath, JSON.stringify(json, null, 2), { encoding: 'utf8' })
+  console.log(`✓ Updated ${locale}.json`)
+}
+console.log('Done.')

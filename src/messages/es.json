@@ -128,5 +128,20 @@
     "errorResend": "Error al reenviar el código.",
     "successTitle": "¡Correo verificado!",
     "successMessage": "Redirigiendo a tu panel..."
+  },
+  "works": {
+    "label": "Nuestro Trabajo",
+    "title": "Explora la",
+    "titleAccent": "Colección",
+    "description": "Desde cortometrajes atrevidos hasta series épicas — descubre cada proyecto de nuestro estudio.",
+    "completed": "Disponible",
+    "inProduction": "En Producción",
+    "upcoming": "Próximamente",
+    "series": "Serie",
+    "watchTrailer": "Tráiler",
+    "watchNow": "Ver Ahora",
+    "episodes": "Episodios",
+    "viewDetails": "Ver Roles de Casting",
+    "film": "Película"
   }
 }

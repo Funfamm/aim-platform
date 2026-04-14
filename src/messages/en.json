@@ -270,5 +270,20 @@
     "errorResend": "Failed to resend code.",
     "successTitle": "Email Verified!",
     "successMessage": "Redirecting you to your dashboard..."
+  },
+  "works": {
+    "label": "Our Work",
+    "title": "Explore the",
+    "titleAccent": "Collection",
+    "description": "From bold short films to epic series — discover every project crafted by our studio.",
+    "completed": "Available",
+    "inProduction": "In Production",
+    "upcoming": "Upcoming",
+    "series": "Series",
+    "watchTrailer": "Trailer",
+    "watchNow": "Watch Now",
+    "episodes": "Episodes",
+    "viewDetails": "View Casting Roles",
+    "film": "Film"
   }
 }
