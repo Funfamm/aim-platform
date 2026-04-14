@@ -6,6 +6,7 @@ import Scene3D from '@/components/Scene3D'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import dynamic from 'next/dynamic'
 import type { ProjectCard } from '@/components/mobile/MovieCard'
 
@@ -48,17 +49,7 @@ interface WorksPageClientProps {
 }
 
 // ── Detects mobile viewport after hydration (SSR-safe) ──────────────────────
-function useIsMobile() {
-    const [isMobile, setIsMobile] = useState(false)
-    useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 768)
-        check()
-        const mq = window.matchMedia('(max-width: 767px)')
-        mq.addEventListener('change', check)
-        return () => mq.removeEventListener('change', check)
-    }, [])
-    return isMobile
-}
+
 
 // ── Mobile row definitions ───────────────────────────────────────────────────
 const FIXED_ROWS: Array<{ id: string; icon: string; title: string; query: Record<string, string | boolean | number> }> = [
@@ -424,11 +415,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                 zIndex: 2,
                 marginTop: '-30px',
             }}>
-                {/* Dark overlay behind cards — keeps video playing but ensures readability */}
+                {/* Dark overlay behind cards — full-bleed, connects into footer */}
                 <div style={{
                     position: 'absolute',
-                    top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 8%, rgba(13,15,20,0.92) 20%, rgba(13,15,20,0.97) 40%, var(--bg-primary) 60%)',
+                    top: 0, left: '50%', right: 0, bottom: 0,
+                    width: '100vw',
+                    transform: 'translateX(-50%)',
+                    background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
                     pointerEvents: 'none',
                     zIndex: 0,
                 }} />
@@ -689,7 +682,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
 
             {/* ═══ COMPACT CTA ═══ */}
             <ScrollReveal3D direction="up" distance={50} rotate={5}>
-                <section style={{ position: 'relative', zIndex: 2, padding: '0 0 var(--space-3xl)' }}>
+                <section style={{ position: 'relative', zIndex: 2, padding: '0 0 var(--space-3xl)', background: 'var(--bg-primary)' }}>
                     <div className="container">
                         <div className="works-cta-bar" style={{
                             display: 'flex',

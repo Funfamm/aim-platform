@@ -357,7 +357,6 @@ html {
   -webkit-text-size-adjust: 100%;
   -ms-text-size-adjust: 100%;
   overflow-x: hidden;
-  touch-action: pan-y;
   overscroll-behavior: none;
   scroll-behavior: smooth;
 }
@@ -368,7 +367,7 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   overflow-x: hidden;
-  touch-action: pan-y;
+  touch-action: manipulation;
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
