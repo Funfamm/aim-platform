@@ -1728,6 +1728,7 @@ select::placeholder {
     right: 0;
     bottom: auto;
     width: 100%;
+    min-width: 0;
     height: auto;
     max-height: 60px;
     overflow: hidden;
@@ -2785,17 +2786,6 @@ textarea:focus:not(:focus-visible) {
   /* Hero section */
   .hero {
     min-height: 85vh;
-  }
-
-  /* Admin layout */
-  .admin-sidebar {
-    width: 200px;
-    min-width: 200px;
-  }
-
-  .admin-sidebar-nav a {
-    font-size: 0.78rem;
-    padding: 0.5rem 0.8rem;
   }
 
   /* Footer grid */

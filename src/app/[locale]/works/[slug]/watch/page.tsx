@@ -88,9 +88,10 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
         createdAt: m.createdAt.toISOString(),
     }))
 
+    // Only show casting CTA when this project has open casting calls
     const castingHref = project.castingCalls.length > 0
         ? `/works/${slug}#casting`
-        : `/casting`
+        : undefined
 
     return (
         <>

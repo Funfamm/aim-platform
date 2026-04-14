@@ -75,15 +75,24 @@ export default function FileUploader({
                     throw new Error(errMsg)
                 }
                 const { presignedUrl, finalUrl } = await signRes.json()
-                setProgress(30)
+                setProgress(15)
+                clearInterval(progressTimer) // real progress takes over from here
 
-                const putRes = await fetch(presignedUrl, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': file.type || 'video/mp4' },
-                    credentials: 'omit',
-                    body: file,
+                // XHR gives us real upload progress, fetch does not
+                await new Promise<void>((resolve, reject) => {
+                    const xhr = new XMLHttpRequest()
+                    xhr.open('PUT', presignedUrl)
+                    xhr.setRequestHeader('Content-Type', file.type || 'video/mp4')
+                    xhr.upload.onprogress = (ev) => {
+                        if (ev.lengthComputable) {
+                            // Scale 15→98 to leave room for completion flash
+                            setProgress(15 + Math.round((ev.loaded / ev.total) * 83))
+                        }
+                    }
+                    xhr.onload = () => xhr.status < 300 ? resolve() : reject(new Error(`R2 upload failed (${xhr.status})`))
+                    xhr.onerror = () => reject(new Error('Network error during upload'))
+                    xhr.send(file)
                 })
-                if (!putRes.ok) throw new Error(`R2 upload failed (${putRes.status})`)
 
                 clearInterval(progressTimer)
                 setProgress(100)

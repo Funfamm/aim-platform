@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import crypto from 'crypto'
+import { requireAdmin } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -86,6 +87,13 @@ export async function POST(req: NextRequest) {
 
         if (!fileName || !fileType || !kind) {
             return NextResponse.json({ error: 'Missing fileName, fileType or kind' }, { status: 400 })
+        }
+
+        // Video uploads are admin-only — gate with session check
+        if (kind === 'video') {
+            try { await requireAdmin() } catch {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
         }
 
         // ── Infer MIME from extension when browser sends empty/generic type ──

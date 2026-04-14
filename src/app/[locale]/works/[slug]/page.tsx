@@ -61,10 +61,10 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         })),
     }
 
-    // Link to the casting section or first open casting call
+    // Only show casting CTA when this project has open casting calls
     const castingHref = project.castingCalls.length > 0
         ? `/works/${slug}#casting`
-        : `/casting`
+        : undefined
 
     return (
         <>
