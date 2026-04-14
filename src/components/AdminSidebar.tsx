@@ -141,24 +141,24 @@ export default function AdminSidebar() {
                 className={`admin-sidebar${open ? ' open' : ''}`}
             >
                 <div className="admin-sidebar-logo">
-                    <Link href="/" prefetch={false} style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, textDecoration: 'none', color: 'inherit' }}>
-                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                    </Link>
+                    {/* Hamburger on the LEFT on mobile */}
+                    <button
+                        className={`admin-hamburger${open ? ' is-open' : ''}`}
+                        onClick={() => setOpen(o => !o)}
+                        aria-label={open ? 'Close menu' : 'Open menu'}
+                        aria-expanded={open}
+                    >
+                        <span />
+                        <span />
+                        <span />
+                    </button>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }} className="admin-sidebar-subtitle">
                             Admin Panel
                         </div>
-                        {/* Hamburger / X toggle — animates between states */}
-                        <button
-                            className={`admin-hamburger${open ? ' is-open' : ''}`}
-                            onClick={() => setOpen(o => !o)}
-                            aria-label={open ? 'Close menu' : 'Open menu'}
-                            aria-expanded={open}
-                        >
-                            <span />
-                            <span />
-                            <span />
-                        </button>
+                        <Link href="/" prefetch={false} style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, textDecoration: 'none', color: 'inherit' }}>
+                            <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
+                        </Link>
                     </div>
                 </div>
 
@@ -174,7 +174,7 @@ export default function AdminSidebar() {
                             </Link>
                         </li>
                     ))}
-                    <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', gridColumn: '1 / -1' }}>
+                    <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)' }}>
                         <Link href="/" prefetch={false} style={{ color: 'var(--text-tertiary)' }}>← Back to Site</Link>
                     </li>
                 </ul>

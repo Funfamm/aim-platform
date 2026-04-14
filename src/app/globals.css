@@ -1756,8 +1756,8 @@ select::placeholder {
 
   .admin-sidebar-nav {
     padding: 0 var(--space-sm) var(--space-lg);
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    flex-direction: column;
     gap: 2px;
   }
 

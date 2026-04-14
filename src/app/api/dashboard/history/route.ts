@@ -84,3 +84,33 @@ export async function POST(req: Request) {
 
     return NextResponse.json(entry)
 }
+
+export async function DELETE(req: Request) {
+    const session = await getUserSession()
+    if (!session?.userId) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await req.json()
+
+    if (body.clearAll) {
+        // Clear entire watch history for this user
+        const result = await prisma.watchHistory.deleteMany({
+            where: { userId: session.userId },
+        })
+        return NextResponse.json({ deleted: result.count })
+    }
+
+    if (body.ids && Array.isArray(body.ids) && body.ids.length > 0) {
+        // Delete specific history entries (must belong to this user)
+        const result = await prisma.watchHistory.deleteMany({
+            where: {
+                id: { in: body.ids },
+                userId: session.userId,
+            },
+        })
+        return NextResponse.json({ deleted: result.count })
+    }
+
+    return NextResponse.json({ error: 'Provide clearAll:true or ids:[]' }, { status: 400 })
+}

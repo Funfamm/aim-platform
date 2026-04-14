@@ -114,6 +114,10 @@ export default function DashboardPage() {
     const [watchSelected, setWatchSelected] = useState<Set<string>>(new Set())
     const [bulkDeleting, setBulkDeleting] = useState(false)
     const [bulkError, setBulkError] = useState('')
+    // History clear state
+    const [historyClearing, setHistoryClearing] = useState(false)
+    const [historyClearConfirm, setHistoryClearConfirm] = useState(false)
+    const [historyItemRemoving, setHistoryItemRemoving] = useState<string | null>(null)
     const searchParams = useSearchParams()
     const [activeTab, setActiveTab] = useState<TabType>(() => {
         const tab = searchParams.get('tab')
@@ -197,6 +201,45 @@ export default function DashboardPage() {
             }
         } catch { setPagination(p => ({ ...p, loadingMore: null })) }
     }, [pagination.appsCursor, pagination.watchCursor, pagination.historyCursor, pagination.donationsCursor])
+
+    // Clear entire watch history
+    const clearAllHistory = useCallback(async () => {
+        setHistoryClearing(true)
+        const snapshot = history
+        setHistory([])
+        setHistoryClearConfirm(false)
+        try {
+            const res = await fetch('/api/dashboard/history', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ clearAll: true }),
+            })
+            if (!res.ok) throw new Error('Failed')
+        } catch {
+            setHistory(snapshot) // revert on error
+        } finally {
+            setHistoryClearing(false)
+        }
+    }, [history])
+
+    // Remove a single history item
+    const removeHistoryItem = useCallback(async (id: string) => {
+        setHistoryItemRemoving(id)
+        const snapshot = history
+        setHistory(prev => prev.filter(h => h.id !== id))
+        try {
+            const res = await fetch('/api/dashboard/history', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [id] }),
+            })
+            if (!res.ok) throw new Error('Failed')
+        } catch {
+            setHistory(snapshot) // revert on error
+        } finally {
+            setHistoryItemRemoving(null)
+        }
+    }, [history])
 
     if (loading || !user) {
         return (
@@ -559,6 +602,54 @@ export default function DashboardPage() {
                                 <EmptyState icon="📺" title={t('noHistoryTitle')} desc={t('noHistoryDesc')} linkHref="/works" linkText={t('noHistoryCta')} />
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+
+                                    {/* ── History header: count + clear all ── */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-xs)' }}>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                                            {history.length} {history.length === 1 ? 'title' : 'titles'} watched
+                                        </span>
+                                        {!historyClearConfirm ? (
+                                            <button
+                                                onClick={() => setHistoryClearConfirm(true)}
+                                                style={{
+                                                    padding: '5px 14px', fontSize: '0.72rem', fontWeight: 600,
+                                                    borderRadius: 'var(--radius-md)', cursor: 'pointer', transition: 'all 0.2s',
+                                                    border: '1px solid rgba(239,68,68,0.25)',
+                                                    background: 'rgba(239,68,68,0.06)', color: '#f87171',
+                                                }}
+                                            >
+                                                🗑 Clear All
+                                            </button>
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Remove all history?</span>
+                                                <button
+                                                    onClick={clearAllHistory}
+                                                    disabled={historyClearing}
+                                                    style={{
+                                                        padding: '4px 12px', fontSize: '0.72rem', fontWeight: 700,
+                                                        borderRadius: 'var(--radius-md)', cursor: historyClearing ? 'not-allowed' : 'pointer',
+                                                        border: '1px solid rgba(239,68,68,0.5)',
+                                                        background: 'rgba(239,68,68,0.15)', color: '#f87171', transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    {historyClearing ? '⏳' : 'Yes, clear'}
+                                                </button>
+                                                <button
+                                                    onClick={() => setHistoryClearConfirm(false)}
+                                                    style={{
+                                                        padding: '4px 12px', fontSize: '0.72rem', fontWeight: 600,
+                                                        borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                                                        border: '1px solid var(--border-subtle)',
+                                                        background: 'transparent', color: 'var(--text-tertiary)', transition: 'all 0.2s',
+                                                    }}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
                                     {history.map((item, i) => {
                                         const hTr = (() => {
                                             if (locale === 'en' || !item.project.translations) return null
@@ -566,42 +657,65 @@ export default function DashboardPage() {
                                         })()
                                         const hTitle = hTr?.title || item.project.title
                                         const hGenre = hTr?.genre || item.project.genre
+                                        const isRemoving = historyItemRemoving === item.id
                                         return (
                                         <ScrollReveal3D key={item.id} direction="up" delay={250 + i * 60} distance={15}>
-                                            <Link href={`/works/${item.project.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
-                                                <div className="dash-history-card">
-                                                    <div className="dash-history-thumb" style={{
-                                                        width: '100px', height: '60px', borderRadius: 'var(--radius-md)', flexShrink: 0,
-                                                        backgroundImage: item.project.coverImage ? `url(${item.project.coverImage})` : 'linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.02))',
-                                                        backgroundSize: 'cover', backgroundPosition: 'center',
-                                                    }} />
-                                                    <div style={{ flex: 1 }}>
-                                                        <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', color: 'var(--text-primary)' }}>{hTitle}</h4>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                                            {/* Content type badge — Film vs Series */}
-                                                            <span style={{
-                                                                fontSize: '0.55rem', padding: '1px 6px', borderRadius: 'var(--radius-full)',
-                                                                fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em',
-                                                                background: item.project.projectType === 'series' ? 'rgba(96,165,250,0.1)' : 'rgba(139,92,246,0.1)',
-                                                                color: item.project.projectType === 'series' ? '#60a5fa' : '#a78bfa',
-                                                                border: `1px solid ${item.project.projectType === 'series' ? 'rgba(96,165,250,0.2)' : 'rgba(139,92,246,0.2)'}`,
-                                                            }}>
-                                                                {item.project.projectType === 'series' ? '📺 Series' : '🎬 Film'}
-                                                            </span>
-                                                            {hGenre && <span style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{hGenre}</span>}
-                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('watched')} {new Date(item.watchedAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                                                        </div>
-                                                        {item.progress > 0 && (
-                                                            <div style={{ marginTop: '6px', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', width: '100%' }}>
-                                                                <div style={{ height: '100%', width: `${item.progress}%`, background: 'var(--accent-gold)', borderRadius: '2px', transition: 'width 0.3s' }} />
+                                            <div style={{ position: 'relative' }}>
+                                                {/* Per-item remove button */}
+                                                <button
+                                                    onClick={() => removeHistoryItem(item.id)}
+                                                    disabled={isRemoving}
+                                                    title="Remove from history"
+                                                    aria-label="Remove from history"
+                                                    style={{
+                                                        position: 'absolute', top: '10px', right: '10px', zIndex: 10,
+                                                        width: '22px', height: '22px', borderRadius: '50%',
+                                                        border: '1px solid rgba(239,68,68,0.35)',
+                                                        background: 'rgba(239,68,68,0.12)',
+                                                        color: '#f87171', cursor: isRemoving ? 'not-allowed' : 'pointer',
+                                                        fontSize: '0.7rem', fontWeight: 700,
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        transition: 'all 0.2s', backdropFilter: 'blur(4px)',
+                                                        opacity: isRemoving ? 0.5 : 1,
+                                                    }}
+                                                >
+                                                    {isRemoving ? '…' : '✕'}
+                                                </button>
+                                                <Link href={`/works/${item.project.slug}`} style={{ textDecoration: 'none', display: 'block' }}>
+                                                    <div className="dash-history-card">
+                                                        <div className="dash-history-thumb" style={{
+                                                            width: '100px', height: '60px', borderRadius: 'var(--radius-md)', flexShrink: 0,
+                                                            backgroundImage: item.project.coverImage ? `url(${item.project.coverImage})` : 'linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.02))',
+                                                            backgroundSize: 'cover', backgroundPosition: 'center',
+                                                        }} />
+                                                        <div style={{ flex: 1 }}>
+                                                            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', color: 'var(--text-primary)' }}>{hTitle}</h4>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                                {/* Content type badge — Film vs Series */}
+                                                                <span style={{
+                                                                    fontSize: '0.55rem', padding: '1px 6px', borderRadius: 'var(--radius-full)',
+                                                                    fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                                                                    background: item.project.projectType === 'series' ? 'rgba(96,165,250,0.1)' : 'rgba(139,92,246,0.1)',
+                                                                    color: item.project.projectType === 'series' ? '#60a5fa' : '#a78bfa',
+                                                                    border: `1px solid ${item.project.projectType === 'series' ? 'rgba(96,165,250,0.2)' : 'rgba(139,92,246,0.2)'}`,
+                                                                }}>
+                                                                    {item.project.projectType === 'series' ? '📺 Series' : '🎬 Film'}
+                                                                </span>
+                                                                {hGenre && <span style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{hGenre}</span>}
+                                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('watched')} {new Date(item.watchedAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                                             </div>
-                                                        )}
+                                                            {item.progress > 0 && (
+                                                                <div style={{ marginTop: '6px', height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', width: '100%' }}>
+                                                                    <div style={{ height: '100%', width: `${item.progress}%`, background: 'var(--accent-gold)', borderRadius: '2px', transition: 'width 0.3s' }} />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        {item.project.duration && <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{item.project.duration}</span>}
                                                     </div>
-                                                    {item.project.duration && <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{item.project.duration}</span>}
-                                                </div>
-                                            </Link>
+                                                </Link>
+                                            </div>
                                         </ScrollReveal3D>
-                                    )})}
+                                        )})}
                                     {pagination.historyHasMore && (
                                         <button onClick={() => loadMore('history')} disabled={pagination.loadingMore === 'history'} style={loadMoreStyle}>
                                             {pagination.loadingMore === 'history' ? t('loading') : t('loadMoreHistory')}
