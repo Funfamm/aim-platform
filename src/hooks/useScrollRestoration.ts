@@ -23,12 +23,12 @@ export function useScrollRestoration(key: string) {
         const saved = sessionStorage.getItem(storageKey)
         if (saved) {
             const y = parseInt(saved, 10)
-            // Use rAF to ensure DOM is painted before scrolling
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    window.scrollTo({ top: y, behavior: 'instant' })
-                })
-            })
+            // Use a small timeout so content-visibility:auto sections finish
+            // measuring before we attempt to scroll. rAF alone is too early
+            // when sections are off-screen and deferred by the browser engine.
+            setTimeout(() => {
+                window.scrollTo({ top: y, behavior: 'instant' })
+            }, 150)
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])

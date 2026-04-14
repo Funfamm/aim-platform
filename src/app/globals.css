@@ -1583,7 +1583,8 @@ select::placeholder {
 
 @media (max-width: 768px) {
   .footer {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 100px) !important;
+    /* Clear the fixed mobile tab bar (≈70px) + safe-area + comfortable gap */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
   }
 }
 

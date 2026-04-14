@@ -110,8 +110,9 @@ export default function MobileTabBar() {
     const debouncedQuery = useDebounce(searchQuery, 300)
 
     const isActive = (href: string) => {
-        if (href === '/') return pathname === '/'
-        return pathname.startsWith(href)
+        if (href === '/') return pathname === '/' || pathname === ''
+        // Exact match OR starts with the href + '/' (prevents /works matching /workshop)
+        return pathname === href || pathname.startsWith(href + '/')
     }
 
     const castingEnabled = settings?.castingCallsEnabled ?? false
