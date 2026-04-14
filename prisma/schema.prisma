@@ -89,6 +89,7 @@ model Project {
   scriptCalls  ScriptCall[]
   watchHistory WatchHistory[]
   watchlist    Watchlist[]
+  liveEvents   LiveEvent[]
 
   @@index([title, tagline])
 }
@@ -876,4 +877,29 @@ model AdminAuditLog {
   @@index([action])
   @@index([actor])
   @@index([createdAt])
+}
+
+// ─── LiveKit Live Events ───────────────────────────────────────────────────────
+// Backs every realtime room: live auditions, premieres, Q&A, watch parties.
+model LiveEvent {
+  id             String    @id @default(cuid())
+  title          String
+  roomName       String    @unique
+  status         String    @default("scheduled") // scheduled | live | ended
+  eventType      String    @default("general")   // general | audition | q_and_a | watch_party
+  startedAt      DateTime?
+  endedAt        DateTime?
+  hostUserId     String
+  projectId      String?
+  castingCallId  String?   // for audition rooms — ties room to a specific CastingCall
+  recordingUrl   String?   // set by egress worker after recording completes
+  egressId       String?   // LiveKit egress ID while a recording is in progress
+  captionsActive Boolean   @default(false) // true while caption worker is connected
+  project        Project?  @relation(fields: [projectId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([status])
+  @@index([hostUserId])
+  @@index([projectId])
 }

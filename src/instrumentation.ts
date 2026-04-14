@@ -34,6 +34,10 @@ export async function register() {
     } else {
       console.warn('[AIM] ⚠️  REDIS_URL not set — notification queue worker is disabled. Set REDIS_URL (Upstash) to enable background email/in-app delivery.')
     }
+
+    // ── LiveKit OTel metrics ────────────────────────────────────────────────
+    const { registerTelemetry } = await import('@/lib/telemetry/instrumentation')
+    await registerTelemetry()
   }
 
   if (process.env.NEXT_RUNTIME === 'edge') {

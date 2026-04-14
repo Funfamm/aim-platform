@@ -1,0 +1,28 @@
+# Exclude files that must NOT go into the Docker build context
+# Without this, Docker COPY sends node_modules, .env files, and the git history
+# to the build daemon — inflating build time and risking secret leakage.
+
+# Runtime artifacts
+node_modules
+dist
+*.log
+
+# Local environment files - NEVER include these in an image
+.env
+.env.*
+!.env.example
+
+# Source control
+.git
+.gitignore
+.gitattributes
+
+# Editor/OS
+.vscode
+.idea
+*.DS_Store
+Thumbs.db
+
+# Docs / CI (not needed in the image)
+*.md
+.github

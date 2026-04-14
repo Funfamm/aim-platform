@@ -106,3 +106,74 @@ npx prisma migrate deploy
 ## Rolling Back
 
 Vercel keeps every deployment. Go to **Deployments** → click a previous build → **Promote to Production**.
+
+---
+
+## Phase 3 — Caption Worker Deployment (Railway)
+
+The caption worker is a separate Node.js service deployed independently of Vercel.
+
+### 1. Add to Vercel (main app) — required on both Vercel AND Railway
+
+```env
+# URL of the deployed caption worker (Railway public domain)
+CAPTION_WORKER_URL=https://your-worker.railway.app
+
+# Shared secret — generate with: openssl rand -hex 32
+WORKER_WEBHOOK_SECRET=your_strong_random_secret
+```
+
+### 2. Deploy worker to Railway
+
+1. Push repo to GitHub (workers/ folder is included).
+2. [railway.app](https://railway.app) → **New Project → Deploy from GitHub Repo**.
+3. Set **Root Directory** → `workers/caption-worker`.
+4. Railway auto-detects the `Dockerfile`.
+5. Set all env vars from `workers/caption-worker/.env.example`:
+
+```env
+WORKER_LIVEKIT_URL=wss://your-project.livekit.cloud
+WORKER_LIVEKIT_API_KEY=APIKEYWORKER          # DEDICATED key, not the main app's
+WORKER_LIVEKIT_API_SECRET=your_worker_secret
+OPENAI_API_KEY=sk-...
+GEMINI_API_KEY=AIza...
+WORKER_WEBHOOK_SECRET=your_strong_random_secret   # must match Vercel
+PORT=8080
+ENABLE_TRANSLATION=true
+TRANSLATE_LANGS=en,ar,de,es,fr,hi,ja,ko,pt,ru,zh
+AUDIO_CHUNK_DURATION_SEC=3
+```
+
+6. Railway exposes the worker at `https://your-worker.railway.app` — set this as `CAPTION_WORKER_URL` in Vercel.
+
+### 3. Verify
+
+- `GET https://your-worker.railway.app/health` → should return `{"status":"ok",...}`
+- Start a live room → caption worker auto-connects and publishes to captions.* topics.
+
+---
+
+## Phase 4 — Egress Recording (LiveKit → R2)
+
+No additional services needed — egress runs inside LiveKit Cloud and pushes to R2.
+
+### Required env vars (Vercel only — already configured)
+
+```env
+R2_ACCOUNT_ID=...
+R2_ACCESS_KEY_ID=...
+R2_SECRET_ACCESS_KEY=...
+R2_BUCKET_NAME=aim-platform-videos
+R2_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+R2_PUBLIC_URL=https://pub-<hash>.r2.dev   # optional — for public recording links
+```
+
+### Usage
+
+1. Start a live room.
+2. In Admin → Live Events, click **⏺ Record** on a live room.
+3. LiveKit starts a room composite egress → dumps MP4 to R2 `recordings/` prefix.
+4. Click **⏹ Stop Rec** to finalize.
+5. The `egress_ended` webhook fires → `LiveEvent.recordingUrl` is set automatically.
+6. The recording link appears in the event card.
+

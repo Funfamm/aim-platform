@@ -1,0 +1,28 @@
+{
+  "name": "@aim/caption-worker",
+  "version": "1.0.0",
+  "description": "LiveKit caption and translation worker — STT via OpenAI Whisper, translation via Gemini",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "@livekit/rtc-node": "^0.12.0",
+    "openai": "^4.60.0",
+    "wav": "^1.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/wav": "^1.0.4",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

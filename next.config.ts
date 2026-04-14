@@ -104,7 +104,7 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: [
           // Existing
-          { key: 'Permissions-Policy', value: 'display-capture=()' },
+          { key: 'Permissions-Policy', value: 'camera=*, microphone=*, display-capture=(self)' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           // New — transport security
@@ -119,8 +119,8 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudinary.com https://*.unsplash.com https://lh3.googleusercontent.com https://*.r2.dev https://*.r2.cloudflarestorage.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://fonts.googleapis.com https://fonts.gstatic.com",
-              "media-src 'self' blob: https://*.r2.dev https://*.r2.cloudflarestorage.com",
+              "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://fonts.googleapis.com https://fonts.gstatic.com wss://rtc.impactaistudio.com wss://*.livekit.cloud https://*.livekit.cloud",
+              "media-src 'self' blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.livekit.cloud",
               "frame-ancestors 'self'",
               "base-uri 'self'",
               "form-action 'self' https://accounts.google.com https://www.paypal.com",

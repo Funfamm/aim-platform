@@ -12,6 +12,7 @@ const NAV_ITEMS = [
     { href: '/admin/analytics', label: '📊 Analytics' },
     { href: '/admin/projects', label: '🎬 Projects' },
     { href: '/admin/casting', label: '🎭 Casting' },
+    { href: '/admin/events', label: '📡 Live Events' },
     { href: '/admin/applications', label: '📋 Applications' },
     { href: '/admin/scripts', label: '✍️ Scripts' },
     { href: '/admin/training', label: '🎓 Training' },
