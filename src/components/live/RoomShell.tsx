@@ -22,18 +22,23 @@ interface TokenData {
 
 const MAX_RECONNECT_ATTEMPTS = 4
 const BASE_RECONNECT_DELAY_MS = 1_500
+// Max retries the LiveKit SDK makes internally before firing onDisconnected.
+// NOTE: ReconnectPolicy only exposes nextRetryDelayMs — return null to stop.
+const SDK_MAX_RETRIES = 5
 
 export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps) {
-    const [tokenData, setTokenData]   = useState<TokenData | null>(null)
-    const [captionLang, setCaptionLang] = useState<CaptionLang>('en')
-    const [loading, setLoading]         = useState(true)   // initial token fetch only
-    const [error, setError]             = useState<string | null>(null)
-    const [reconnecting, setReconnecting] = useState(false) // overlay — doesn't unmount LiveKitRoom
+    const [tokenData, setTokenData]       = useState<TokenData | null>(null)
+    const [captionLang, setCaptionLang]   = useState<CaptionLang>('en')
+    const [loading, setLoading]           = useState(true)   // initial connect only
+    const [error, setError]               = useState<string | null>(null)
+    const [reconnecting, setReconnecting] = useState(false)  // non-destructive banner
     const reconnectAttempts = useRef(0)
     const reconnectTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
     const isMounted         = useRef(true)
 
     useEffect(() => {
+        // Re-set to true on every effect run (needed in React 18 StrictMode:
+        // the cleanup sets it to false, then the effect re-runs on the same instance).
         isMounted.current = true
         return () => {
             isMounted.current = false
@@ -42,29 +47,25 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
     }, [])
 
     // ── Token fetch ──────────────────────────────────────────────────────────
-    // NOTE: captionLang is intentionally NOT in deps.
-    // Changing caption language only affects the client-side CaptionOverlay —
-    // it does NOT require a new token / LiveKitRoom remount.
-    const fetchToken = useCallback(async () => {
+    // silent=true  → skip setLoading(true) so LiveKitRoom stays mounted during
+    //               reconnect token refreshes. Only the initial fetch shows the
+    //               full loading screen.
+    // captionLang intentionally excluded from deps — changing language only
+    // affects CaptionOverlay and must never trigger a full remount.
+    const fetchToken = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
         if (!isMounted.current) return
         setError(null)
-        setLoading(true)
+        if (!silent) setLoading(true)
         try {
             const res = await fetch('/api/livekit/token', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    roomName,
-                    role,
-                    preferredCaptionLang: 'en', // static default — user preference stored client-side
-                }),
+                body: JSON.stringify({ roomName, role, preferredCaptionLang: 'en' }),
             })
-
             if (!res.ok) {
                 const d = await res.json().catch(() => ({}))
                 throw new Error(d.error || `Token request failed (${res.status})`)
             }
-
             const data: TokenData = await res.json()
             if (!isMounted.current) return
             reconnectAttempts.current = 0
@@ -73,17 +74,19 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
             if (!isMounted.current) return
             setError(err instanceof Error ? err.message : 'Connection failed')
         } finally {
-            if (isMounted.current) setLoading(false)
+            // Only reset the loading screen if we showed it (non-silent path).
+            if (isMounted.current && !silent) setLoading(false)
         }
-    }, [roomName, role]) // captionLang intentionally omitted
+    }, [roomName, role])
 
     useEffect(() => { fetchToken() }, [fetchToken])
 
-    // ── LiveKit disconnect handler ────────────────────────────────────────────
-    // IMPORTANT: We do NOT call setLoading(true) here.
-    // That would unmount <LiveKitRoom> and cause the flash.
-    // Instead we show a non-destructive reconnecting banner while LiveKit SDK
-    // retries internally. Only after exhausting retries do we fetch a new token.
+    // ── Disconnect handler ────────────────────────────────────────────────────
+    // Does NOT call setLoading(true) — that would unmount LiveKitRoom and flash
+    // the loading screen for every transient disconnect.
+    // Shows a lightweight amber banner instead, then fetches a new token silently
+    // once the SDK has exhausted its own retry policy. The new token re-keys
+    // LiveKitRoom (clean reconnect) without showing the full loading UI.
     const handleDisconnected = useCallback(() => {
         if (!isMounted.current) return
         reconnectAttempts.current += 1
@@ -102,8 +105,8 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
 
         reconnectTimer.current = setTimeout(async () => {
             if (!isMounted.current) return
-            // Fetch a fresh token → React will re-key <LiveKitRoom> with new token
-            await fetchToken()
+            // silent=true: new token replaces key without triggering the loading screen
+            await fetchToken({ silent: true })
             if (isMounted.current) setReconnecting(false)
         }, delay)
     }, [fetchToken])
@@ -162,24 +165,29 @@ export default function RoomShell({ roomName, role = 'viewer' }: RoomShellProps)
             )}
 
             {/*
-              key={tokenData.token}: A fresh token (from retry) creates a new LiveKitRoom instance.
-              Normal disconnects handled internally by SDK — no remount, no flash.
+              key={tokenData.token}: A new token (from silent retry) remounts LiveKitRoom
+              cleanly. Normal transient disconnects are handled by the SDK's own reconnect
+              policy and never change the token — so LiveKitRoom stays mounted, no flash.
             */}
             <LiveKitRoom
                 key={tokenData.token}
                 token={tokenData.token}
                 serverUrl={tokenData.wsUrl}
-                audio={canPublish}   // viewers don't need to publish audio
-                video={canPublish}   // viewers only receive, not send
+                audio={canPublish}   // viewers receive only — don't publish audio
+                video={canPublish}   // viewers receive only — don't publish video
                 connect={true}
                 onDisconnected={handleDisconnected}
                 onConnected={handleConnected}
                 options={{
-                    // Reconnect automatically before giving up
                     reconnectPolicy: {
-                        maxRetries: 5,
-                        nextRetryDelayMs: (context) =>
-                            Math.min(1_000 * 2 ** context.retryCount, 30_000),
+                        // Returning null signals the SDK to stop retrying and fire
+                        // onDisconnected, handing control back to handleDisconnected.
+                        // maxRetries is NOT a valid field on ReconnectPolicy — this is
+                        // the correct way to cap SDK-level retries.
+                        nextRetryDelayMs: (ctx) =>
+                            ctx.retryCount >= SDK_MAX_RETRIES
+                                ? null
+                                : Math.min(1_000 * 2 ** ctx.retryCount, 30_000),
                     },
                 }}
             >

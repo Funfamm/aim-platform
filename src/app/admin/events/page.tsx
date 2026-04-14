@@ -77,6 +77,15 @@ export default function AdminEventsPage() {
         fetch('/api/admin/casting').then(r => r.json()).then((d: CastingCall[]) => setCastingCalls(Array.isArray(d) ? d : [])).catch(() => {})
     }, [fetchEvents])
 
+    // Auto-refresh participant counts every 30 s while any rooms are live.
+    // Stops automatically when all rooms end or the component unmounts.
+    useEffect(() => {
+        const hasLive = events.some(e => e.status === 'live')
+        if (!hasLive) return
+        const interval = setInterval(fetchEvents, 30_000)
+        return () => clearInterval(interval)
+    }, [events, fetchEvents])
+
     const showSuccess = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(null), 5000) }
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -131,7 +140,11 @@ export default function AdminEventsPage() {
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Failed to send invites')
-            setShareResult(`✓ Invites sent to ${data.sent} recipient${data.sent !== 1 ? 's' : ''}`)
+            setShareResult(
+                shareTarget === 'all'
+                    ? `✓ Invite queued for ${data.targeted} eligible user${data.targeted !== 1 ? 's' : ''}`
+                    : `✓ Invite sent to ${data.targeted} address${data.targeted !== 1 ? 'es' : ''}`
+            )
         } catch (err) {
             setShareResult(`✗ ${err instanceof Error ? err.message : 'Failed'}`)
         } finally { setSharing(false) }
@@ -883,6 +896,9 @@ export default function AdminEventsPage() {
                 {/* ── Share Modal ── */}
                 {shareEventId && shareEvent && (
                     <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="share-modal-title"
                         style={{
                             position: 'fixed', inset: 0, zIndex: 1000,
                             background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
@@ -890,6 +906,7 @@ export default function AdminEventsPage() {
                             padding: '1.5rem',
                         }}
                         onClick={e => { if (e.target === e.currentTarget) setShareEventId(null) }}
+                        onKeyDown={e => { if (e.key === 'Escape') setShareEventId(null) }}
                     >
                         <div style={{
                             background: '#0f0f1c', border: '1px solid rgba(212,168,83,0.2)',
@@ -908,10 +925,11 @@ export default function AdminEventsPage() {
                                     <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#d4a853', fontWeight: 700, marginBottom: '2px' }}>
                                         📨 Share Room Invite
                                     </div>
-                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#fff' }}>{shareEvent.title}</div>
+                                    <div id="share-modal-title" style={{ fontWeight: 800, fontSize: '1rem', color: '#fff' }}>{shareEvent.title}</div>
                                     <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace', marginTop: '2px' }}>{shareEvent.roomName}</div>
                                 </div>
                                 <button
+                                    aria-label="Close share dialog"
                                     onClick={() => setShareEventId(null)}
                                     style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff', width: 30, height: 30, cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >✕</button>

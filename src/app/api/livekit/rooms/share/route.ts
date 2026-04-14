@@ -7,26 +7,31 @@ import { announcementEmail } from '@/lib/email-templates'
 // POST /api/livekit/rooms/share — send room invite via email + in-app notification
 // Body: { eventId: string, target: 'all' | 'emails', emails?: string[] }
 
-// Static translations — no runtime API call, no PowerShell, pure TypeScript
+// ── Static translations ───────────────────────────────────────────────────────
+// All 11 locales hardcoded as pure TypeScript — no runtime API call, no PowerShell.
 const LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'hi', 'ja', 'ko', 'pt', 'ru', 'zh'] as const
 type Locale = typeof LOCALES[number]
 
+// Validate target at the type level
+const VALID_TARGETS = ['all', 'emails'] as const
+type ShareTarget = typeof VALID_TARGETS[number]
+
 interface RoomInviteStrings {
-    subject: (title: string) => string
-    notifTitle: (title: string) => string
+    subject:      (title: string) => string
+    notifTitle:   (title: string) => string
     notifMessage: (title: string, type: string) => string
-    emailBody: (title: string, type: string) => string
-    badgeText: string
-    buttonText: string
-    footerOptIn: string
-    managePrefs: string
+    emailBody:    (title: string, type: string) => string
+    badgeText:    string
+    buttonText:   string
+    footerOptIn:  string
+    managePrefs:  string
 }
 
 const EVENT_TYPE_LABELS: Record<string, Record<Locale, string>> = {
-    general:     { en:'Live Event',    ar:'حدث مباشر',         de:'Live-Event',      es:'Evento en vivo',      fr:'Événement en direct', hi:'लाइव इवेंट',   ja:'ライブイベント',      ko:'라이브 이벤트',    pt:'Evento ao vivo',      ru:'Прямой эфир',       zh:'直播活动' },
-    audition:    { en:'Live Audition', ar:'تصفية مباشرة',      de:'Live-Vorsprechen', es:'Audición en vivo',    fr:'Audition en direct',  hi:'लाइव ऑडिशन',  ja:'ライブオーディション', ko:'라이브 오디션',    pt:'Audição ao vivo',     ru:'Кастинг онлайн',    zh:'直播试镜' },
-    q_and_a:     { en:'Live Q&A',      ar:'أسئلة وأجوبة مباشرة', de:'Live-Q&A',       es:'Q&A en vivo',         fr:'Q&A en direct',       hi:'लाइव Q&A',     ja:'ライブQ&A',         ko:'라이브 Q&A',       pt:'Q&A ao vivo',         ru:'Q&A в прямом эфире', zh:'直播问答' },
-    watch_party: { en:'Watch Party',   ar:'حفلة مشاهدة',       de:'Watch Party',     es:'Ver juntos',          fr:'Watch Party',         hi:'वॉच पार्टी',  ja:'ウォッチパーティー',  ko:'워치 파티',        pt:'Watch Party',         ru:'Совместный просмотр', zh:'共同观看' },
+    general:     { en:'Live Event',    ar:'حدث مباشر',            de:'Live-Event',       es:'Evento en vivo',      fr:'Événement en direct', hi:'लाइव इवेंट',  ja:'ライブイベント',      ko:'라이브 이벤트', pt:'Evento ao vivo',      ru:'Прямой эфир',        zh:'直播活动' },
+    audition:    { en:'Live Audition', ar:'تصفية مباشرة',         de:'Live-Vorsprechen', es:'Audición en vivo',    fr:'Audition en direct',  hi:'लाइव ऑडिशन', ja:'ライブオーディション', ko:'라이브 오디션', pt:'Audição ao vivo',     ru:'Кастинг онлайн',     zh:'直播试镜' },
+    q_and_a:     { en:'Live Q&A',      ar:'أسئلة وأجوبة مباشرة',  de:'Live-Q&A',         es:'Q&A en vivo',         fr:'Q&A en direct',       hi:'लाइव Q&A',    ja:'ライブQ&A',          ko:'라이브 Q&A',    pt:'Q&A ao vivo',         ru:'Q&A в прямом эфире', zh:'直播问答' },
+    watch_party: { en:'Watch Party',   ar:'حفلة مشاهدة',          de:'Watch Party',      es:'Ver juntos',          fr:'Watch Party',         hi:'वॉच पार्टी',  ja:'ウォッチパーティー',  ko:'워치 파티',     pt:'Watch Party',         ru:'Совместный просмотр', zh:'共同观看' },
 }
 
 const INVITE_STRINGS: Record<Locale, RoomInviteStrings> = {
@@ -37,7 +42,7 @@ const INVITE_STRINGS: Record<Locale, RoomInviteStrings> = {
         emailBody:    (t, tp) => `You have been invited to join <strong>${t}</strong>, a live ${tp} on AIM Studio. Click the button below to join the room now.`,
         badgeText: 'Live Event Invitation',
         buttonText: '▶ Join the Room Now →',
-        footerOptIn: "You received this invitation from the AIM Studio admin team.",
+        footerOptIn: 'You received this invitation from the AIM Studio admin team.',
         managePrefs: 'Manage preferences',
     },
     ar: {
@@ -142,24 +147,60 @@ const INVITE_STRINGS: Record<Locale, RoomInviteStrings> = {
     },
 }
 
+// ── Simple in-process rate limiter (per-admin, per-event) ─────────────────────
+// Prevents accidental double-sends or quota exhaustion.
+// 3 shares per admin per event per minute is generous for legitimate use.
+const RATE_WINDOW_MS = 60_000
+const RATE_LIMIT     = 3
+const rateLimitMap   = new Map<string, { count: number; resetAt: number }>()
+
+function checkRateLimit(adminId: string, eventId: string): boolean {
+    const key = `${adminId}:${eventId}`
+    const now = Date.now()
+    const entry = rateLimitMap.get(key)
+
+    if (!entry || now > entry.resetAt) {
+        rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS })
+        return true // allowed
+    }
+    if (entry.count >= RATE_LIMIT) return false // blocked
+    entry.count += 1
+    return true // allowed
+}
+
 export async function POST(req: Request) {
     try {
-        await requireAdmin()
+        const session = await requireAdmin()
+        const adminId = session.userId
 
         const body = await req.json()
         const { eventId, target, emails } = body as {
             eventId: string
-            target: 'all' | 'emails'
-            emails?: string[]    // used when target === 'emails'
+            target: string          // validated below — don't trust the cast
+            emails?: string[]
         }
 
-        if (!eventId || !target) {
-            return NextResponse.json({ error: 'eventId and target are required' }, { status: 400 })
+        // ── Input validation ────────────────────────────────────────────────
+        if (!eventId) {
+            return NextResponse.json({ error: 'eventId is required' }, { status: 400 })
+        }
+        if (!VALID_TARGETS.includes(target as ShareTarget)) {
+            return NextResponse.json(
+                { error: `target must be one of: ${VALID_TARGETS.join(', ')}` },
+                { status: 400 },
+            )
         }
 
-        // Load the event
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const event = await (prisma as any).liveEvent.findUnique({
+        // ── Rate limiting ───────────────────────────────────────────────────
+        if (!checkRateLimit(adminId, eventId)) {
+            return NextResponse.json(
+                { error: `Too many share requests — wait a minute before resending` },
+                { status: 429 },
+            )
+        }
+
+        // ── Load the event (typed — no `as any`) ────────────────────────────
+        const event = await prisma.liveEvent.findUnique({
             where: { id: eventId },
             select: { id: true, title: true, eventType: true, roomName: true, status: true },
         })
@@ -168,90 +209,99 @@ export async function POST(req: Request) {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
         const roomUrl = `${siteUrl}/en/events/${event.roomName}`
 
-        // Pre-build per-locale translations (static — no runtime API call)
+        // ── Build per-locale translations (static — no runtime API call) ────
         const translations: Record<string, Record<string, string>> = {}
         for (const loc of LOCALES) {
-            const s = INVITE_STRINGS[loc]
-            const typeLbl = EVENT_TYPE_LABELS[event.eventType]?.[loc] ?? EVENT_TYPE_LABELS.general[loc]
+            const s       = INVITE_STRINGS[loc]
+            const typeLbl = EVENT_TYPE_LABELS[event.eventType]?.[loc]
+                          ?? EVENT_TYPE_LABELS.general[loc]
             translations[loc] = {
                 title:   s.notifTitle(event.title),
                 message: s.notifMessage(event.title, typeLbl),
-                // Per-locale room link uses the locale prefix
+                // Locale-specific room URL (e.g. /fr/events/… for French users)
                 link: `${siteUrl}/${loc}/events/${event.roomName}`,
             }
         }
 
-        // English email HTML (rebuilt per-locale inside notifyUser for non-English users)
-        const enS = INVITE_STRINGS['en']
+        // ── English email HTML (fallback; notifyUser rebuilds for other locales) ──
+        const enS    = INVITE_STRINGS['en']
         const enType = EVENT_TYPE_LABELS[event.eventType]?.['en'] ?? 'Live Event'
         const emailHtml = announcementEmail(
             enS.notifTitle(event.title),
-            enS.emailBody(event.title, enType),
+            enS.emailBody(event.title, enType),  // paragraph() renders HTML tags correctly
             roomUrl,
             siteUrl,
             {
-                badgeText:  enS.badgeText,
-                buttonText: enS.buttonText,
+                badgeText:   enS.badgeText,
+                buttonText:  enS.buttonText,
                 footerOptIn: enS.footerOptIn,
                 managePrefs: enS.managePrefs,
             },
         )
 
-        let sent = 0
+        let targeted = 0   // number of users/addresses targeted (not confirmed deliveries)
 
         if (target === 'all') {
-            // Broadcast to all users with announcement preference
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const users: { id: string; notificationPreference: Record<string, boolean> | null }[] =
-                await (prisma as any).user.findMany({
-                    select: {
-                        id: true,
-                        notificationPreference: { select: { announcement: true, inApp: true, email: true } },
-                    },
-                })
+            // Fetch only IDs + preference flags — minimal projection.
+            const users = await prisma.user.findMany({
+                select: {
+                    id: true,
+                    notificationPreference: { select: { announcement: true } },
+                },
+            })
 
+            // Only send to users who have NOT explicitly opted out of announcements
             const eligible = users.filter(u =>
                 !u.notificationPreference || u.notificationPreference.announcement !== false
             )
+            targeted = eligible.length
 
+            // Process in batches of 50.
+            // NOTE: For very large user bases (5 000+) this sequential loop may approach
+            // Vercel's function timeout. If that becomes an issue, move to a background
+            // queue via broadcastNotification() or a dedicated worker endpoint.
             const BATCH = 50
             for (let i = 0; i < eligible.length; i += BATCH) {
                 const batch = eligible.slice(i, i + BATCH)
-                const results = await Promise.allSettled(
+                await Promise.allSettled(
                     batch.map(u => notifyUser({
-                        userId: u.id,
-                        type: 'announcement',
-                        title: enS.notifTitle(event.title),
-                        message: enS.notifMessage(event.title, enType),
-                        link: roomUrl,
+                        userId:       u.id,
+                        type:         'announcement',
+                        title:        enS.notifTitle(event.title),
+                        message:      enS.notifMessage(event.title, enType),
+                        link:         roomUrl,
                         emailSubject: enS.subject(event.title),
                         emailHtml,
-                        translations,
+                        translations, // notifyUser selects the right locale from DB
                     }))
                 )
-                sent += results.filter(r => r.status === 'fulfilled').length
             }
-        } else if (target === 'emails') {
-            // Send to manually specified email addresses
-            // These are not platform users, so we send email directly
+        } else {
+            // target === 'emails': external invites — plain email, English only
             const { sendEmail } = await import('@/lib/mailer')
-            const rawEmails: string[] = emails?.filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim())) ?? []
+            const rawEmails = (emails ?? [])
+                .map(e => e.trim())
+                .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) // basic format check
 
+            targeted = rawEmails.length
             await Promise.allSettled(
                 rawEmails.map(email =>
                     sendEmail({
-                        to: email.trim(),
+                        to:      email,
                         subject: enS.subject(event.title),
-                        html: emailHtml,
+                        html:    emailHtml,
                     })
                 )
             )
-            sent = rawEmails.length
         }
 
-        return NextResponse.json({ sent, eventTitle: event.title })
+        // NOTE ON `targeted` vs `delivered`:
+        // `targeted` = number of users/addresses the invite was dispatched to.
+        // Actual delivery success is tracked by the mailer transport — we cannot
+        // report confirmed delivery counts here without async receipt hooks.
+        return NextResponse.json({ targeted, eventTitle: event.title })
     } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Internal server error'
+        const msg    = error instanceof Error ? error.message : 'Internal server error'
         const status = msg === 'Unauthorized' ? 401 : msg.startsWith('Forbidden') ? 403 : 500
         return NextResponse.json({ error: msg }, { status })
     }
