@@ -38,46 +38,80 @@ export default function AdminSidebar() {
         return () => document.removeEventListener('mousedown', handler)
     }, [open])
 
-    return (
-        <aside className={`admin-sidebar${open ? ' open' : ''}`}>
-            <div className="admin-sidebar-logo">
-                <Link href="/" prefetch={false} style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, textDecoration: 'none', color: 'inherit' }}>
-                    <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
-                </Link>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }} className="admin-sidebar-subtitle">
-                        Admin Panel
-                    </div>
-                    {/* Hamburger — only visible on mobile via CSS */}
-                    <button
-                        className="admin-hamburger"
-                        onClick={() => setOpen(o => !o)}
-                        aria-label={open ? 'Close menu' : 'Open menu'}
-                        aria-expanded={open}
-                    >
-                        <span />
-                        <span />
-                        <span />
-                    </button>
-                </div>
-            </div>
+    // Close on ESC key
+    useEffect(() => {
+        if (!open) return
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+        document.addEventListener('keydown', handler)
+        return () => document.removeEventListener('keydown', handler)
+    }, [open])
 
-            <ul className="admin-sidebar-nav">
-                {NAV_ITEMS.map(item => (
-                    <li key={item.href}>
-                        <Link
-                            href={item.href}
-                            prefetch={false}
-                            className={pathname === item.href || pathname.startsWith(item.href + '/') ? 'active' : ''}
+    // Lock body scroll while drawer is open on mobile
+    useEffect(() => {
+        const isMobile = window.innerWidth <= 768
+        if (!isMobile) return
+        document.body.style.overflow = open ? 'hidden' : ''
+        return () => { document.body.style.overflow = '' }
+    }, [open])
+
+
+    return (
+        <>
+            {/* Backdrop overlay — dims main content while drawer is open on mobile */}
+            {open && (
+                <div
+                    aria-hidden="true"
+                    onClick={() => setOpen(false)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 199,
+                        background: 'rgba(0,0,0,0.52)',
+                        backdropFilter: 'blur(2px)',
+                        WebkitBackdropFilter: 'blur(2px)',
+                        animation: 'fadeIn 0.18s ease',
+                    }}
+                />
+            )}
+
+            <aside className={`admin-sidebar${open ? ' open' : ''}`}>
+                <div className="admin-sidebar-logo">
+                    <Link href="/" prefetch={false} style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, textDecoration: 'none', color: 'inherit' }}>
+                        <span style={{ color: 'var(--accent-gold)' }}>AIM</span> Studio
+                    </Link>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }} className="admin-sidebar-subtitle">
+                            Admin Panel
+                        </div>
+                        {/* Hamburger / X toggle — animates between states */}
+                        <button
+                            className={`admin-hamburger${open ? ' is-open' : ''}`}
+                            onClick={() => setOpen(o => !o)}
+                            aria-label={open ? 'Close menu' : 'Open menu'}
+                            aria-expanded={open}
                         >
-                            {item.label}
-                        </Link>
+                            <span />
+                            <span />
+                            <span />
+                        </button>
+                    </div>
+                </div>
+
+                <ul className="admin-sidebar-nav">
+                    {NAV_ITEMS.map(item => (
+                        <li key={item.href}>
+                            <Link
+                                href={item.href}
+                                prefetch={false}
+                                className={pathname === item.href || pathname.startsWith(item.href + '/') ? 'active' : ''}
+                            >
+                                {item.label}
+                            </Link>
+                        </li>
+                    ))}
+                    <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', gridColumn: '1 / -1' }}>
+                        <Link href="/" prefetch={false} style={{ color: 'var(--text-tertiary)' }}>← Back to Site</Link>
                     </li>
-                ))}
-                <li style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 'var(--space-md)', paddingTop: 'var(--space-md)', gridColumn: '1 / -1' }}>
-                    <Link href="/" prefetch={false} style={{ color: 'var(--text-tertiary)' }}>← Back to Site</Link>
-                </li>
-            </ul>
-        </aside>
+                </ul>
+            </aside>
+        </>
     )
 }

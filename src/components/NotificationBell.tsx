@@ -68,9 +68,20 @@ export function NotificationBell() {
     }, [])
 
     async function markAllRead() {
-        await fetch('/api/notifications', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })
+        // Optimistic update — badge clears immediately
+        ctxMarkAllRead()
         setNotifications(n => n.map(x => ({ ...x, read: true })))
-        ctxMarkAllRead() // update global context badge too
+        // Persist to server in background; roll back optimistic update on failure
+        const res = await fetch('/api/notifications', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+        }).catch(() => null)
+        if (!res?.ok) {
+            // Server failed — restore accurate count from server so badge doesn't
+            // falsely show 0 until the next 60s poll corrects it
+            refresh()
+        }
     }
 
     // Tap 1: clicking a notification in the dropdown → always go to /notifications page.
@@ -97,7 +108,16 @@ export function NotificationBell() {
             <button
                 id="notification-bell-btn"
                 className={styles.bellBtn}
-                onClick={() => { setOpen(o => !o); if (!open) fetchNotifications() }}
+                onClick={() => {
+                    const opening = !open
+                    setOpen(opening)
+                    if (opening) {
+                        fetchNotifications()
+                        // Optimistically clear the badge as soon as the panel opens;
+                        // the server is updated in the background via markAllRead()
+                        if (unreadCount > 0) markAllRead()
+                    }
+                }}
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

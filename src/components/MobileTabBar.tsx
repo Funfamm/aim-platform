@@ -89,7 +89,7 @@ function useDebounce<T>(value: T, delay: number): T {
 export default function MobileTabBar() {
     const pathname = usePathname()
     const router = useRouter()
-    const settings = useSiteSettings()
+    const { settings } = useSiteSettings()
     const t = useTranslations('nav')
     const tSearch = useTranslations('search')
     const locale = useLocale()

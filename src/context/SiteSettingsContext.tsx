@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 
 interface SiteSettings {
   siteName?: string;
@@ -10,6 +10,11 @@ interface SiteSettings {
   donationsEnabled?: boolean;
   searchBetaEnabled?: boolean;
   sponsorsPageEnabled?: boolean;
+}
+
+interface SiteSettingsContextValue {
+  settings: SiteSettings;
+  refresh: () => void;
 }
 
 // Stable defaults — match what an unconfigured server returns.
@@ -40,30 +45,51 @@ function writeCache(data: SiteSettings) {
   try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* quota */ }
 }
 
-const SiteSettingsContext = createContext<SiteSettings>(STABLE_DEFAULTS);
+export function clearSiteSettingsCache() {
+  try { localStorage.removeItem(CACHE_KEY); } catch { /* */ }
+}
+
+const SiteSettingsContext = createContext<SiteSettingsContextValue>({
+  settings: STABLE_DEFAULTS,
+  refresh: () => {},
+});
 
 export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
   // Initialise from cache instantly (no null flash), fallback to stable defaults.
   const [settings, setSettings] = useState<SiteSettings>(() => readCache() ?? STABLE_DEFAULTS);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchSettings = useCallback(() => {
     fetch('/api/site-settings')
       .then((r) => r.json())
       .then((data: SiteSettings) => {
-        if (!cancelled) {
-          setSettings(data);
-          writeCache(data);
-        }
+        setSettings(data);
+        writeCache(data);
       })
       .catch(() => {
         // Fetch failed — keep cached/default values, don't blank the nav
       });
-    return () => { cancelled = true; };
   }, []);
 
+  const refresh = useCallback(() => {
+    clearSiteSettingsCache();
+    fetchSettings();
+  }, [fetchSettings]);
+
+  useEffect(() => {
+    fetchSettings();
+    // Listen for storage events so admin saves in other tabs apply immediately
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === CACHE_KEY && e.newValue === null) {
+        // Cache was cleared (admin saved settings) — re-fetch
+        fetchSettings();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [fetchSettings]);
+
   return (
-    <SiteSettingsContext.Provider value={settings}>
+    <SiteSettingsContext.Provider value={{ settings, refresh }}>
       {children}
     </SiteSettingsContext.Provider>
   );

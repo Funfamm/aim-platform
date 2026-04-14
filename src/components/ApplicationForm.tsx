@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import ApplicationSuccess from '@/components/application/ApplicationSuccess'
 import VoiceRecorder from '@/components/application/VoiceRecorder'
 import { useTranslations, useLocale } from 'next-intl'
+import { useAuth } from '@/components/AuthProvider'
 
 interface CastingCallInfo {
     id: string
@@ -68,6 +69,7 @@ const CONSENT_ITEMS = [
 export default function ApplicationForm({ castingCall, isAdmin = false }: { castingCall: CastingCallInfo; isAdmin?: boolean }) {
     const t = useTranslations('castingForm')
     const locale = useLocale()
+    const { user } = useAuth()
     const [step, setStep] = useState(1)
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
@@ -79,9 +81,9 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
     const [useSavedAudio, setUseSavedAudio] = useState(false)
 
     // Form state
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
+    const [formData, setFormData] = useState(() => ({
+        fullName: user?.name ?? '',
+        email: user?.email ?? '',
         phone: '',
         age: '',
         gender: '',
@@ -98,7 +100,7 @@ export default function ApplicationForm({ castingCall, isAdmin = false }: { cast
         socialUsername: '',
         socialPlatform2: '',
         socialUsername2: '',
-    })
+    }))
 
     const [photos, setPhotos] = useState<Record<string, File | null>>({
         front_headshot: null,

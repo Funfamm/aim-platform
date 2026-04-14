@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
-import { LANGUAGE_NAMES } from '@/lib/subtitle-translator'
+import { LANGUAGE_NAMES } from '@/lib/subtitle-languages'
 
 interface Episode {
     id: string
@@ -57,14 +57,45 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
     const [ccAvailable, setCcAvailable] = useState<string[]>([])
     const [ccLoading, setCcLoading] = useState(false)
     const [ccStatusText, setCcStatusText] = useState('')
+    const [ccChecked, setCcChecked] = useState(false) // true once initial fetch is done
+    // Native <track> for iOS Safari fullscreen — blob URL avoids CORS on the video element
+    const [activeTrackUrl, setActiveTrackUrl] = useState<string | null>(null)
+    // Cleanup blob URL when it changes (prevents memory leak)
+    const prevTrackUrl = useRef<string | null>(null)
+    useEffect(() => {
+        if (prevTrackUrl.current && prevTrackUrl.current !== activeTrackUrl) {
+            URL.revokeObjectURL(prevTrackUrl.current)
+        }
+        prevTrackUrl.current = activeTrackUrl
+        return () => {
+            if (prevTrackUrl.current) URL.revokeObjectURL(prevTrackUrl.current)
+        }
+    }, [activeTrackUrl])
+    // Hide native track rendering on desktop — custom overlay handles it.
+    // iOS Safari native fullscreen reads <track> directly from DOM regardless of mode.
+    useEffect(() => {
+        const vid = videoRef.current
+        if (!vid || !activeTrackUrl) return
+        const t = setTimeout(() => {
+            for (let i = 0; i < vid.textTracks.length; i++) {
+                vid.textTracks[i].mode = ccEnabled ? 'hidden' : 'disabled'
+            }
+        }, 150)
+        return () => clearTimeout(t)
+    }, [activeTrackUrl, ccEnabled])
     // Derive current subtitle based on video time (no effect/setState needed)
     const activeSubtitle = useMemo(() => {
         if (!ccEnabled || ccSegments.length === 0) return ''
         return ccSegments.find(s => currentTime >= s.start && currentTime <= s.end)?.text || ''
     }, [currentTime, ccEnabled, ccSegments])
 
-    // Fetch subtitles from DB on mount
+    // Fetch subtitle availability from DB on mount / episode change
     useEffect(() => {
+        setCcChecked(false)
+        setCcAvailable([])
+        setCcEnabled(false)
+        setCcSegments([])
+        setActiveTrackUrl(null) // Rec 1 fix: clear stale iOS track when episode changes
         const episodeId = activeEpisode?.id || ''
         const url = `/api/subtitles/${project.id}?lang=en${episodeId ? `&episodeId=${episodeId}` : ''}`
         fetch(url)
@@ -72,47 +103,93 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
             .then(data => {
                 if (data.available && data.available.length > 0) {
                     setCcAvailable(data.available)
+                    // Auto-load English if available so the first CC click is instant
+                    if (data.segments && data.segments.length > 0) {
+                        setCcSegments(data.segments)
+                        setCcLang('en')
+                    }
                 }
             })
             .catch(() => {})
+            .finally(() => setCcChecked(true))
     }, [project.id, activeEpisode])
 
     // Load subtitles for a specific language
     const loadSubtitles = useCallback(async (lang: string) => {
+        const episodeId = activeEpisode?.id || ''
+        const baseUrl = `/api/subtitles/${project.id}?lang=${lang}${episodeId ? `&episodeId=${episodeId}` : ''}`
+
+        // If English is already pre-loaded for the custom overlay, skip the JSON fetch
+        // but still fetch VTT for iOS native track
+        if (lang === 'en' && ccSegments.length > 0 && ccLang === 'en') {
+            setCcEnabled(true)
+            setShowLangMenu(false)
+            // Fetch VTT for native iOS track
+            try {
+                const vttText = await fetch(`${baseUrl}&format=vtt`).then(r => r.text())
+                const blob = new Blob([vttText], { type: 'text/vtt' })
+                setActiveTrackUrl(URL.createObjectURL(blob))
+            } catch { /* non-critical */ }
+            return
+        }
+
         setCcLoading(true)
         setCcStatusText(`Loading ${LANGUAGE_NAMES[lang] || lang}...`)
-        const episodeId = activeEpisode?.id || ''
         try {
-            const url = `/api/subtitles/${project.id}?lang=${lang}${episodeId ? `&episodeId=${episodeId}` : ''}`
-            const res = await fetch(url)
-            const data = await res.json()
+            // Fetch JSON segments (for custom desktop overlay) and VTT (for iOS native track) in parallel
+            const [jsonRes, vttRes] = await Promise.all([
+                fetch(baseUrl),
+                fetch(`${baseUrl}&format=vtt`),
+            ])
+            const data = await jsonRes.json()
+
             if (data.segments && data.segments.length > 0) {
                 setCcSegments(data.segments)
                 setCcLang(lang)
                 setCcEnabled(true)
+                setShowLangMenu(false)
                 setCcStatusText('')
+
+                // Set blob URL for native <track> (iOS Safari fullscreen)
+                const vttText = await vttRes.text()
+                const blob = new Blob([vttText], { type: 'text/vtt' })
+                setActiveTrackUrl(URL.createObjectURL(blob))
             } else {
-                setCcStatusText('No subtitles available')
-                setTimeout(() => setCcStatusText(''), 2000)
+                setCcStatusText('No subtitles for this language')
+                setTimeout(() => setCcStatusText(''), 2500)
             }
         } catch {
             setCcStatusText('Failed to load subtitles')
             setTimeout(() => setCcStatusText(''), 2000)
         }
         setCcLoading(false)
-    }, [project.id, activeEpisode])
+    }, [project.id, activeEpisode, ccSegments, ccLang])
 
-    // Toggle CC button — only shows language menu (no in-browser processing)
+    // Toggle CC — if subtitles are pre-loaded (English), toggle directly.
+    // Otherwise show language picker.
     const toggleCC = useCallback(() => {
         if (ccEnabled) {
             setCcEnabled(false)
             setShowLangMenu(false)
             return
         }
-        if (ccAvailable.length > 0) {
-            setShowLangMenu(!showLangMenu)
+        if (!ccChecked) return // still loading availability info
+        if (ccAvailable.length === 0) {
+            // No subtitles exist — show a brief message
+            setCcStatusText('No subtitles available for this film')
+            setTimeout(() => setCcStatusText(''), 2500)
+            return
         }
-    }, [ccEnabled, ccAvailable, showLangMenu])
+        // Rec 2 fix: delegate to loadSubtitles even for pre-loaded English.
+        // loadSubtitles fast-paths the JSON (skips re-fetch) but still fetches VTT
+        // so iOS Safari native fullscreen gets a <track> blob URL.
+        if (ccSegments.length > 0) {
+            loadSubtitles('en').catch(() => {})
+            return
+        }
+        // Otherwise show language picker
+        setShowLangMenu(m => !m)
+    }, [ccEnabled, ccChecked, ccAvailable, ccSegments, loadSubtitles])
 
 
 
@@ -246,7 +323,23 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
                             onContextMenu={(e) => e.preventDefault()}
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                             playsInline
-                        />
+                        >
+                            {/* Native subtitle track for iOS Safari fullscreen.
+                                Blob URL avoids needing crossOrigin on the video element.
+                                key forces React to recreate the track on language change.
+                                mode is set to 'hidden' by useEffect so desktop doesn't
+                                double-render — iOS native fullscreen reads it anyway. */}
+                            {activeTrackUrl && ccEnabled && (
+                                <track
+                                    key={activeTrackUrl}
+                                    kind="subtitles"
+                                    src={activeTrackUrl}
+                                    srcLang={ccLang}
+                                    label={LANGUAGE_NAMES[ccLang] || ccLang}
+                                    default
+                                />
+                            )}
+                        </video>
                     ) : (
                         <div style={{
                             display: 'flex', flexDirection: 'column',
@@ -380,24 +473,61 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
                                         color: 'var(--accent-gold)',
                                         opacity: 0.7,
                                     }}>AIM Studio</span>
-                                    {/* CC Button + Language Menu — only shown when subtitles exist */}
-                                    {ccAvailable.length > 0 && (
+                                    {/* CC Button + Language Menu — always rendered when video exists */}
+                                    {currentVideoUrl && ccChecked && (
                                     <div style={{ position: 'relative' }}>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); toggleCC() }}
-                                            title={ccEnabled ? 'Turn off subtitles' : 'Turn on subtitles'}
+                                            title={
+                                                ccAvailable.length === 0
+                                                    ? 'No subtitles available'
+                                                    : ccEnabled
+                                                        ? `Subtitles on (${(LANGUAGE_NAMES[ccLang] || ccLang)}) — click to turn off`
+                                                        : 'Turn on subtitles'
+                                            }
                                             style={{
-                                                background: ccEnabled ? 'rgba(212,168,83,0.25)' : 'none',
-                                                border: ccEnabled ? '1px solid rgba(212,168,83,0.5)' : '1px solid transparent',
-                                                color: ccEnabled ? 'var(--accent-gold)' : 'white',
-                                                cursor: 'pointer', padding: '3px 6px',
+                                                background: ccEnabled
+                                                    ? 'rgba(212,168,83,0.25)'
+                                                    : ccAvailable.length === 0
+                                                        ? 'transparent'
+                                                        : 'rgba(255,255,255,0.08)',
+                                                border: ccEnabled
+                                                    ? '1px solid rgba(212,168,83,0.5)'
+                                                    : ccAvailable.length === 0
+                                                        ? '1px solid rgba(255,255,255,0.15)'
+                                                        : '1px solid rgba(255,255,255,0.25)',
+                                                color: ccEnabled
+                                                    ? 'var(--accent-gold)'
+                                                    : ccAvailable.length === 0
+                                                        ? 'rgba(255,255,255,0.3)'
+                                                        : 'white',
+                                                cursor: 'pointer', padding: '3px 8px',
                                                 borderRadius: '4px', fontSize: '0.7rem',
                                                 fontWeight: 700, letterSpacing: '0.05em',
                                                 transition: 'all 0.2s',
+                                                display: 'flex', alignItems: 'center', gap: '4px',
                                             }}
                                         >
-                                            CC{ccEnabled && ccLang !== 'en' ? ` (${ccLang.toUpperCase()})` : ''}
+                                            {ccLoading ? '⏳' : 'CC'}
+                                            {ccEnabled && ccLang !== 'en' && ` (${ccLang.toUpperCase()})`}
+                                            {ccAvailable.length > 1 && !ccEnabled && (
+                                                <span style={{ fontSize: '0.55rem', opacity: 0.7 }}>▾</span>
+                                            )}
                                         </button>
+                                        {/* Status toast — shown for errors and no-subtitle messages */}
+                                        {ccStatusText && !ccLoading && (
+                                            <div style={{
+                                                position: 'absolute', bottom: '120%', right: 0,
+                                                background: 'rgba(13,15,20,0.95)',
+                                                border: '1px solid rgba(255,255,255,0.12)',
+                                                borderRadius: '6px', padding: '5px 10px',
+                                                fontSize: '0.72rem', color: 'var(--text-secondary)',
+                                                whiteSpace: 'nowrap', pointerEvents: 'none',
+                                                backdropFilter: 'blur(10px)',
+                                            }}>
+                                                {ccStatusText}
+                                            </div>
+                                        )}
                                         {/* Language dropdown */}
                                         {showLangMenu && ccAvailable.length > 0 && (
                                             <div style={{

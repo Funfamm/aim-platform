@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Footer from '@/components/Footer'
 import ProjectDetailClient from '@/components/ProjectDetailClient2'
+import CastShowcase from '@/components/CastShowcase'
 import { prisma } from '@/lib/db'
 import { cache } from 'react'
 
@@ -14,6 +14,9 @@ const getProject = cache(async (slug: string) => {
         include: {
             castingCalls: {
                 where: { status: 'open' },
+            },
+            cast: {
+                orderBy: { sortOrder: 'asc' },
             },
             episodes: {
                 orderBy: [{ season: 'asc' }, { number: 'asc' }],
@@ -52,11 +55,27 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             ...e,
             createdAt: e.createdAt.toISOString(),
         })),
+        cast: project.cast.map(m => ({
+            ...m,
+            createdAt: m.createdAt.toISOString(),
+        })),
     }
+
+    // Link to the casting section or first open casting call
+    const castingHref = project.castingCalls.length > 0
+        ? `/works/${slug}#casting`
+        : `/casting`
 
     return (
         <>
-<ProjectDetailClient project={serializedProject} />
+            <ProjectDetailClient project={serializedProject} />
+            {serializedProject.cast.length > 0 && (
+                <CastShowcase
+                    cast={serializedProject.cast}
+                    castingHref={castingHref}
+                    projectTitle={project.title}
+                />
+            )}
             <Footer />
         </>
     )

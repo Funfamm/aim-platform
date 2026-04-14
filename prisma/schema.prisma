@@ -81,6 +81,7 @@ model Project {
   country      String?
   ownerId      String?
   castingCalls CastingCall[]
+  cast         FilmCast[]
   donations    Donation[]
   episodes     Episode[]
   subtitles    FilmSubtitle[]
@@ -92,6 +93,22 @@ model Project {
   @@index([title, tagline])
 }
 
+model FilmCast {
+  id              String   @id @default(cuid())
+  projectId       String
+  name            String
+  jobTitle        String   // Actor, Director, Producer, etc.
+  character       String?  // Character name in the film
+  bio             String?  @db.Text
+  photoUrl        String?
+  instagramUrl    String?
+  bioTranslations String?  @db.Text // JSON: Record<lang, {bio:string,character:string}>
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+}
 model Watchlist {
   id        String   @id @default(cuid())
   userId    String

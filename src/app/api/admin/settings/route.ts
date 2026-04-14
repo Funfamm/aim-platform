@@ -84,6 +84,7 @@ export async function PUT(req: Request) {
             scriptCallsEnabled: body.scriptCallsEnabled ?? false,
             castingCallsEnabled: body.castingCallsEnabled ?? true,
             trainingEnabled: body.trainingEnabled ?? false,
+            sponsorsPageEnabled: body.sponsorsPageEnabled ?? true,
             // OAuth
             googleClientId: body.googleClientId || null,
             googleClientSecret: body.googleClientSecret || null,

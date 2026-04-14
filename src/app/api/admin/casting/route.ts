@@ -8,6 +8,11 @@ export async function GET() {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     const castingCalls = await prisma.castingCall.findMany({
+        where: {
+            // Exclude soft-deleted calls — they are archived and no longer actively managed.
+            // Deleted calls still exist in the DB preserving all applications; this is intentional.
+            status: { not: 'deleted' },
+        },
         orderBy: { createdAt: 'desc' },
         take: 200,
         select: {

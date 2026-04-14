@@ -35,6 +35,16 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
     const t = useTranslations('training')
     const locale = useLocale()
 
+    /** Format raw minutes into '1h 30m', '45m', '2h', etc. */
+    function fmtDuration(totalMin: number): string {
+        if (totalMin <= 0) return ''
+        const h = Math.floor(totalMin / 60)
+        const m = totalMin % 60
+        if (h > 0 && m > 0) return `${h}h ${m}m`
+        if (h > 0) return `${h}h`
+        return `${m}m`
+    }
+
     const [heroVideos, setHeroVideos] = useState<HeroVideoItem[]>([])
     const [currentVideoIdx, setCurrentVideoIdx] = useState(0)
     const heroVideoRef = useRef<HTMLVideoElement>(null)
@@ -449,7 +459,7 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                                                         </span>
                                                         {totalMin > 0 && (
                                                             <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                ⏱️ <strong style={{ color: 'var(--text-secondary)' }}>{totalMin}</strong> min
+                                                                ⏱️ <strong style={{ color: 'var(--text-secondary)' }}>{fmtDuration(totalMin)}</strong>
                                                             </span>
                                                         )}
                                                         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>

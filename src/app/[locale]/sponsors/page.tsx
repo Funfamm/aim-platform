@@ -9,7 +9,7 @@ import type { Sponsor } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
 import { getTranslations, getLocale } from 'next-intl/server'
-import Link from 'next/link'
+import SponsorInquiryForm from '@/components/SponsorInquiryForm'
 
 export const metadata: Metadata = {
     title: 'Sponsors & Partners | AIM Studio',
@@ -451,51 +451,11 @@ export default async function SponsorsPage() {
                     </div>
                 </section>
 
-                {/* ─── CTA ─── */}
+                {/* ─── SPONSOR INQUIRY FORM ─── */}
                 <section style={{ padding: '0 0 var(--space-5xl)' }}>
                     <div className="container" style={{ maxWidth: '720px' }}>
                         <ScrollReveal3D direction="up" delay={100}>
-                            <div style={{
-                                background: 'linear-gradient(145deg, rgba(212,168,83,0.07), var(--bg-glass-light))',
-                                border: '1px solid rgba(212,168,83,0.14)',
-                                borderRadius: '28px',
-                                padding: 'var(--space-3xl) var(--space-2xl)',
-                                textAlign: 'center',
-                                position: 'relative', overflow: 'hidden',
-                                backdropFilter: 'blur(20px)',
-                                WebkitBackdropFilter: 'blur(20px)',
-                            }}>
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.35), transparent)' }} />
-                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.15), transparent)' }} />
-                                <div style={{ fontSize: '2.8rem', marginBottom: 'var(--space-lg)', filter: 'drop-shadow(0 0 20px rgba(212,168,83,0.3))' }}>🤝</div>
-                                <h3 style={{ fontSize: 'clamp(1.25rem, 3vw, 1.6rem)', fontWeight: 800, marginBottom: 'var(--space-sm)', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-                                    {hasSponsor ? t('ctaTitle') : t('becomePartner')}
-                                </h3>
-                                <p style={{ color: 'var(--text-tertiary)', marginBottom: 'var(--space-xl)', fontSize: '0.9rem', maxWidth: '460px', margin: '0 auto var(--space-xl)', lineHeight: 1.75 }}>
-                                    {hasSponsor ? t('ctaDesc') : t('becomeDesc')}
-                                </p>
-                                <Link
-                                    href="/contact"
-                                    style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                        padding: '14px 32px',
-                                        background: 'linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark))',
-                                        color: 'var(--bg-primary)',
-                                        borderRadius: '999px',
-                                        fontWeight: 800, fontSize: '0.88rem',
-                                        textDecoration: 'none',
-                                        letterSpacing: '0.03em',
-                                        boxShadow: '0 4px 24px rgba(212,168,83,0.32), 0 0 40px rgba(212,168,83,0.08)',
-                                        transition: 'all 0.3s ease',
-                                    }}
-                                >
-                                    {hasSponsor ? t('ctaBtn') : t('getInTouch')}
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                        <line x1="5" y1="12" x2="19" y2="12" />
-                                        <polyline points="12 5 19 12 12 19" />
-                                    </svg>
-                                </Link>
-                            </div>
+                            <SponsorInquiryForm hasSponsor={hasSponsor} />
                         </ScrollReveal3D>
                     </div>
                 </section>

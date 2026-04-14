@@ -233,13 +233,28 @@ export default function AdminMediaPage() {
             setTimeout(() => setVidUploadMsg(''), 2000)
             return
         }
+        // Warn if file is very large (>100 MB) — server proxy may reject it
+        if (file.size > 100 * 1024 * 1024) {
+            setVidUploadMsg(`⚠️ File is ${(file.size / 1024 / 1024).toFixed(0)} MB — large files may fail via the proxy. Consider using a CDN URL instead.`)
+            setTimeout(() => setVidUploadMsg(''), 5000)
+        }
         setVidUploading(true)
-        setVidUploadMsg(`Uploading ${file.name}...`)
+        setVidUploadMsg(`Uploading ${file.name}…`)
         const formData = new FormData()
         formData.append('file', file)
         formData.append('directory', 'videos')
         try {
             const res = await fetch('/api/admin/upload', { method: 'POST', body: formData })
+            if (!res.ok) {
+                // Read raw text to avoid JSON parse crash on HTML error responses (e.g. Vercel 413)
+                const errText = await res.text().catch(() => res.statusText)
+                const friendlyMsg = res.status === 413
+                    ? '⚠️ File too large for proxy upload (>4.5 MB). Use a direct CDN URL or reduce file size.'
+                    : `❌ Upload failed (${res.status}): ${errText.slice(0, 120)}`
+                setVidUploadMsg(friendlyMsg)
+                setTimeout(() => { setVidUploading(false); setVidUploadMsg('') }, 6000)
+                return
+            }
             const data = await res.json()
             if (data.url) {
                 const label = file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ')
@@ -249,10 +264,13 @@ export default function AdminMediaPage() {
                 setTimeout(() => vidFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
                 setVidUploadMsg('✓ Uploaded, configure below')
                 setTimeout(() => { setVidUploadMsg(''); setVidUploading(false) }, 2000)
+            } else {
+                setVidUploadMsg(`❌ Upload response missing URL: ${JSON.stringify(data).slice(0, 80)}`)
+                setTimeout(() => { setVidUploading(false); setVidUploadMsg('') }, 4000)
             }
-        } catch {
-            setVidUploadMsg('Upload failed')
-            setTimeout(() => { setVidUploading(false); setVidUploadMsg('') }, 2000)
+        } catch (err) {
+            setVidUploadMsg(`❌ Upload failed: ${err instanceof Error ? err.message : 'Network error'}`)
+            setTimeout(() => { setVidUploading(false); setVidUploadMsg('') }, 4000)
         }
     }, [heroVideos.length])
 

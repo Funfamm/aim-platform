@@ -49,6 +49,8 @@ export default function AdminScriptsPage() {
     const [filter, setFilter] = useState<string>('all')
     const [scriptsEnabled, setScriptsEnabled] = useState(false)
     const [togglingScripts, setTogglingScripts] = useState(false)
+    const [showTranslations, setShowTranslations] = useState(false)
+    const [retranslating, setRetranslating] = useState(false)
 
     // ── Bulk selection ──
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -85,6 +87,7 @@ export default function AdminScriptsPage() {
             isPublic: call.isPublic,
             status: call.status,
         })
+        setShowTranslations(false)
     }
 
     const handleEdit = async (e: React.FormEvent) => {
@@ -462,6 +465,97 @@ export default function AdminScriptsPage() {
                                         {editSaving ? 'Saving...' : '💾 Save Changes'}
                                     </button>
                                 </div>
+
+                                {/* ─── Translations Preview Panel ─── */}
+                                {(() => {
+                                    let translations: Record<string, Record<string, string>> | null = null
+                                    try { translations = editTarget?.contentTranslations ? JSON.parse(editTarget.contentTranslations) : null } catch { /* ignore */ }
+                                    const LANG_LABELS: Record<string, string> = {
+                                        ar: 'AR 🇸🇦', de: 'DE 🇩🇪', es: 'ES 🇪🇸', fr: 'FR 🇫🇷',
+                                        hi: 'HI 🇮🇳', ja: 'JA 🇯🇵', ko: 'KO 🇰🇷', pt: 'PT 🇵🇹',
+                                        ru: 'RU 🇷🇺', zh: 'ZH 🇨🇳',
+                                    }
+                                    const coverage = translations ? Object.keys(LANG_LABELS).filter(l => translations![l]?.title).length : 0
+                                    const total = Object.keys(LANG_LABELS).length
+                                    return (
+                                        <div style={{
+                                            gridColumn: '1 / -1', borderRadius: '10px', overflow: 'hidden',
+                                            border: '1px solid rgba(255,255,255,0.07)',
+                                            background: 'rgba(255,255,255,0.02)', marginTop: '4px',
+                                        }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowTranslations(t => !t)}
+                                                style={{
+                                                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                    padding: '10px 14px', background: 'none', border: 'none',
+                                                    cursor: 'pointer', color: 'var(--text-secondary)',
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                                    🌐 Translations
+                                                </span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{
+                                                        fontSize: '0.6rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px',
+                                                        background: coverage === total ? 'rgba(52,211,153,0.12)' : 'rgba(245,158,11,0.12)',
+                                                        color: coverage === total ? '#34d399' : '#f59e0b',
+                                                        border: `1px solid ${coverage === total ? 'rgba(52,211,153,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                                                    }}>{coverage}/{total} langs</span>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>{showTranslations ? '▲' : '▼'}</span>
+                                                </span>
+                                            </button>
+                                            {showTranslations && (
+                                                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 14px' }}>
+                                                    {translations ? (
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '10px' }}>
+                                                            {Object.entries(LANG_LABELS).map(([locale, label]) => {
+                                                                const tr = translations![locale]
+                                                                const hasData = tr?.title
+                                                                return (
+                                                                    <div key={locale} style={{
+                                                                        padding: '6px 10px', borderRadius: '6px',
+                                                                        background: hasData ? 'rgba(52,211,153,0.04)' : 'rgba(239,68,68,0.04)',
+                                                                        border: `1px solid ${hasData ? 'rgba(52,211,153,0.12)' : 'rgba(239,68,68,0.1)'}`,
+                                                                        fontSize: '0.65rem',
+                                                                    }}>
+                                                                        <div style={{ fontWeight: 700, color: hasData ? '#34d399' : '#ef4444', marginBottom: '2px' }}>{label}</div>
+                                                                        {hasData && <div style={{ color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tr.title}</div>}
+                                                                        {!hasData && <div style={{ color: 'rgba(239,68,68,0.5)' }}>Not translated</div>}
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: '10px' }}>No translations yet.</p>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        disabled={retranslating}
+                                                        onClick={async () => {
+                                                            if (!editTarget) return
+                                                            setRetranslating(true)
+                                                            try {
+                                                                await fetch(`/api/script-calls/${editTarget.id}/translate`, { method: 'POST' })
+                                                                fetchCalls()
+                                                            } catch { /* silent */ }
+                                                            setRetranslating(false)
+                                                        }}
+                                                        style={{
+                                                            padding: '5px 14px', fontSize: '0.68rem', fontWeight: 700,
+                                                            borderRadius: '6px', border: '1px solid rgba(212,168,83,0.25)',
+                                                            background: 'rgba(212,168,83,0.07)', color: 'var(--accent-gold)',
+                                                            cursor: retranslating ? 'not-allowed' : 'pointer',
+                                                            opacity: retranslating ? 0.6 : 1,
+                                                        }}
+                                                    >
+                                                        {retranslating ? '⏳ Translating...' : '🌐 Re-translate'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })()}
                             </div>
                         </form>
                     </div>

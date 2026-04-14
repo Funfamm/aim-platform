@@ -1832,6 +1832,87 @@ select::placeholder {
   .admin-sidebar-subtitle { display: none; }
 }
 
+/* ── Hamburger → X morphing animation ── */
+.admin-hamburger.is-open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.admin-hamburger.is-open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.admin-hamburger.is-open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+.admin-hamburger span {
+  transform-origin: center;
+  transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), opacity 0.2s ease;
+}
+
+/* Backdrop fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── ㉒ Resizable Admin Content Panels ── */
+/* Apply .admin-panel-resizable to any two-pane admin layout wrapper */
+.admin-panel-resizable {
+  display: flex;
+  gap: 0;
+  min-width: 0;
+}
+
+.admin-panel-resizable > .admin-panel-main {
+  flex: 1;
+  min-width: 200px;
+  overflow: auto;
+}
+
+.admin-panel-resizable > .admin-panel-side {
+  width: 340px;
+  min-width: 200px;
+  max-width: 560px;
+  flex-shrink: 0;
+  resize: horizontal;
+  overflow: auto;
+  border-left: 1px solid var(--border-subtle);
+  padding-left: var(--space-lg);
+  position: relative;
+}
+
+/* Visible resize grip on the left edge of the side panel */
+.admin-panel-resizable > .admin-panel-side::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s;
+}
+.admin-panel-resizable > .admin-panel-side:hover::before {
+  background: rgba(212,168,83,0.25);
+  border-radius: 3px;
+}
+
+/* Hide side panels on small screens */
+@media (max-width: 900px) {
+  .admin-panel-resizable {
+    flex-direction: column;
+  }
+  .admin-panel-resizable > .admin-panel-side {
+    width: 100%;
+    max-width: 100%;
+    resize: none;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    padding-left: 0;
+    padding-top: var(--space-lg);
+  }
+}
+
 .admin-header {
   display: flex;
   justify-content: space-between;

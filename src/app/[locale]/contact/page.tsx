@@ -16,6 +16,8 @@ export default function ContactPage() {
     const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [heroImage, setHeroImage] = useState('')
+    // Honeypot — must remain empty; bots auto-fill hidden fields
+    const [gotcha, setGotcha] = useState('')
 
     useEffect(() => {
         fetch('/api/page-media?page=contact')
@@ -37,7 +39,7 @@ export default function ContactPage() {
             const res = await fetch('/api/contact', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: resolvedName, email: resolvedEmail, subject: form.subject, message: form.message, locale }),
+                body: JSON.stringify({ name: resolvedName, email: resolvedEmail, subject: form.subject, message: form.message, locale, _gotcha: gotcha }),
             })
             if (res.ok) {
                 setStatus('sent')
@@ -211,6 +213,17 @@ export default function ContactPage() {
                                                 {t('errorMsg')}
                                             </div>
                                         )}
+                                        {/* Honeypot — hidden from humans, auto-filled by bots */}
+                                        <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}>
+                                            <input
+                                                type="text"
+                                                name="_gotcha"
+                                                tabIndex={-1}
+                                                autoComplete="off"
+                                                value={gotcha}
+                                                onChange={e => setGotcha(e.target.value)}
+                                            />
+                                        </div>
                                         <button type="submit" disabled={status === 'sending'} className="btn btn-primary" style={{ width: '100%', padding: '0.85rem', fontSize: '0.95rem', fontWeight: 700, opacity: status === 'sending' ? 0.7 : 1 }}>
                                             {status === 'sending' ? t('sending') : t('sendMessage')}
                                         </button>

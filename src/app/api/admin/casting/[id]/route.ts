@@ -60,7 +60,21 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
     const { id } = await params
 
-    await prisma.castingCall.delete({ where: { id } })
-
-    return NextResponse.json({ success: true })
+    try {
+        // Soft delete: mark as 'deleted' instead of destroying the record.
+        // This preserves all application data and lets applicants see a "Role Closed" banner
+        // instead of a 404. Hard-delete is intentionally avoided because the Application
+        // relation uses onDelete: Cascade — destroying a CastingCall destroys all applications.
+        await prisma.castingCall.update({
+            where: { id },
+            data: { status: 'deleted', updatedAt: new Date() },
+        })
+        return NextResponse.json({ success: true })
+    } catch (err: unknown) {
+        // P2025 = record not found — return clean 404 instead of silent 500
+        if ((err as { code?: string })?.code === 'P2025') {
+            return NextResponse.json({ error: 'Casting call not found' }, { status: 404 })
+        }
+        return NextResponse.json({ error: 'Failed to delete casting call' }, { status: 500 })
+    }
 }

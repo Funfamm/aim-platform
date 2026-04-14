@@ -49,7 +49,7 @@ interface HistoryItem {
     project: {
         id: string; title: string; slug: string
         coverImage: string | null; genre: string | null
-        duration: string | null
+        duration: string | null; projectType: string
         translations?: string | null
     }
 }
@@ -458,7 +458,17 @@ export default function DashboardPage() {
                                                     }} />
                                                     <div style={{ flex: 1 }}>
                                                         <h4 style={{ fontSize: '0.9rem', fontWeight: 700, marginBottom: '2px', color: 'var(--text-primary)' }}>{hTitle}</h4>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                                            {/* Content type badge — Film vs Series */}
+                                                            <span style={{
+                                                                fontSize: '0.55rem', padding: '1px 6px', borderRadius: 'var(--radius-full)',
+                                                                fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.08em',
+                                                                background: item.project.projectType === 'series' ? 'rgba(96,165,250,0.1)' : 'rgba(139,92,246,0.1)',
+                                                                color: item.project.projectType === 'series' ? '#60a5fa' : '#a78bfa',
+                                                                border: `1px solid ${item.project.projectType === 'series' ? 'rgba(96,165,250,0.2)' : 'rgba(139,92,246,0.2)'}`,
+                                                            }}>
+                                                                {item.project.projectType === 'series' ? '📺 Series' : '🎬 Film'}
+                                                            </span>
                                                             {hGenre && <span style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{hGenre}</span>}
                                                             <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('watched')} {new Date(item.watchedAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                                         </div>

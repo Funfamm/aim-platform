@@ -3,6 +3,7 @@ import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import Footer from '@/components/Footer'
 import WatchPlayer from '@/components/WatchPlayer'
+import CastShowcase from '@/components/CastShowcase'
 import { getLocale } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
@@ -47,6 +48,13 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
             episodes: {
                 orderBy: [{ season: 'asc' }, { number: 'asc' }],
             },
+            cast: {
+                orderBy: { sortOrder: 'asc' },
+            },
+            castingCalls: {
+                where: { status: 'open' },
+                select: { id: true },
+            },
         },
     })
 
@@ -75,9 +83,25 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
         })),
     }
 
+    const serializedCast = project.cast.map(m => ({
+        ...m,
+        createdAt: m.createdAt.toISOString(),
+    }))
+
+    const castingHref = project.castingCalls.length > 0
+        ? `/works/${slug}#casting`
+        : `/casting`
+
     return (
         <>
-<WatchPlayer project={serializedProject} />
+            <WatchPlayer project={serializedProject} />
+            {serializedCast.length > 0 && (
+                <CastShowcase
+                    cast={serializedCast}
+                    castingHref={castingHref}
+                    projectTitle={project.title}
+                />
+            )}
             <Footer />
         </>
     )

@@ -899,6 +899,9 @@ export default function AdminSettingsPage() {
                 throw new Error(errData.details || errData.error || `Save failed (${res.status})`)
             }
             setSaved(true); setDirty(false)
+            // Bust the SiteSettings cache so Navbar and other consumers reload
+            // the new brand name / logo / section visibility immediately
+            try { localStorage.removeItem('aim_site_settings_v1') } catch { /* */ }
             setTimeout(() => setSaved(false), 3000)
         } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save settings') }
         finally { setSaving(false) }
@@ -980,6 +983,19 @@ export default function AdminSettingsPage() {
         }
     }
 
+    // Warn admin before closing tab / navigating away with unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (!dirty) return
+            e.preventDefault()
+            // Modern browsers show their own generic message; setting returnValue
+            // triggers the prompt in all major browsers.
+            e.returnValue = ''
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [dirty])
+
     const autoSaveBoolean = async (field: keyof Settings, value: boolean) => {
         try {
             const currentSettings = await fetch('/api/admin/settings').then(r => r.json())
@@ -990,13 +1006,16 @@ export default function AdminSettingsPage() {
                     : JSON.stringify(currentSettings.socialLinks || {}),
                 [field]: value,
             }
-            await fetch('/api/admin/settings', {
+            const res = await fetch('/api/admin/settings', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
             })
+            // Only clear dirty flag when the value was successfully persisted
+            if (res.ok) setDirty(false)
         } catch (e) {
             console.warn('Auto-save failed for', field, e)
+            // dirty stays true — value was not persisted, warn on navigation is correct
         }
     }
 
@@ -1664,19 +1683,29 @@ export default function AdminSettingsPage() {
                                     )}
 
                                     {(() => {
-                                        const filteredKeys = apiKeys.filter(k => {
+                                        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+                                        let filteredKeys = apiKeys.filter(k => {
                                             if (keyFilterProvider !== 'all' && k.provider !== keyFilterProvider) return false
+                                            // 'all_agents' = only keys assigned to the pool (assignedAgent === 'all')
                                             if (keyFilterAgent === 'all_agents' && k.assignedAgent !== 'all') return false
+                                            // specific agent filter — match exact agent name (excluding 'all' and 'all_agents')
                                             if (keyFilterAgent !== 'all' && keyFilterAgent !== 'all_agents' && k.assignedAgent !== keyFilterAgent) return false
                                             if (keyFilterStatus === 'active' && !k.isActive) return false
                                             if (keyFilterStatus === 'inactive' && k.isActive) return false
                                             if (keyFilterStatus === 'error' && !k.lastError) return false
+                                            if (keyFilterStatus === 'recently-used' && (!k.lastUsed || k.lastUsed < sevenDaysAgo)) return false
                                             if (keySearch) {
                                                 const s = keySearch.toLowerCase()
                                                 if (!k.label.toLowerCase().includes(s) && !k.key.toLowerCase().includes(s)) return false
                                             }
                                             return true
                                         })
+                                        // Sort recently-used results by lastUsed descending
+                                        if (keyFilterStatus === 'recently-used') {
+                                            filteredKeys = [...filteredKeys].sort((a, b) =>
+                                                (b.lastUsed ?? '').localeCompare(a.lastUsed ?? '')
+                                            )
+                                        }
 
                                         const agentLabels: Record<string, { icon: string; label: string; color: string }> = {
                                             all: { icon: '🌐', label: 'All', color: 'var(--accent-gold)' },
@@ -1719,9 +1748,10 @@ export default function AdminSettingsPage() {
                                                             </select>
                                                             <select className="admin-input" value={keyFilterStatus} onChange={e => setKeyFilterStatus(e.target.value)} style={{ width: 'auto' }}>
                                                                 <option value="all">Status: All</option>
-                                                                <option value="active">Active</option>
-                                                                <option value="inactive">Inactive</option>
-                                                                <option value="error">Has Errors</option>
+                                                                <option value="active">✅ Active</option>
+                                                                <option value="inactive">⏸ Inactive</option>
+                                                                <option value="error">⚠️ Has Error</option>
+                                                                <option value="recently-used">🕐 Recently Used (7d)</option>
                                                             </select>
                                                         </div>
 
