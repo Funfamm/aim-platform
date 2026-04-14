@@ -49,6 +49,7 @@ export default function AdminEventsPage() {
     const [showForm, setShowForm]       = useState(false)
     const [filterStatus, setFilterStatus] = useState<string>('all')
     const [recording, setRecording]     = useState<string | null>(null)
+    const [copied, setCopied]           = useState<string | null>(null)
 
     const [form, setForm] = useState({
         title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '',
@@ -428,6 +429,11 @@ export default function AdminEventsPage() {
                     }
                     .le-btn--view:hover { background: rgba(212,168,83,0.14); border-color: rgba(212,168,83,0.35); }
 
+                    .le-btn--copy {
+                        background: rgba(99,179,237,0.07); border-color: rgba(99,179,237,0.18); color: #90cdf4;
+                    }
+                    .le-btn--copy:hover { background: rgba(99,179,237,0.13); border-color: rgba(99,179,237,0.32); }
+
                     .le-btn--captions {
                         background: rgba(139,92,246,0.07); border-color: rgba(139,92,246,0.22); color: #c4b5fd;
                     }
@@ -720,6 +726,25 @@ export default function AdminEventsPage() {
                                                     View Room
                                                 </a>
                                             )}
+                                            {/* Copy participant link */}
+                                            <button
+                                                id={`ae-copy-link-${event.id}`}
+                                                className="le-btn le-btn--copy"
+                                                title={`Copy participant link: ${typeof window !== 'undefined' ? window.location.origin : ''}/en/events/${event.roomName}`}
+                                                onClick={() => {
+                                                    const url = `${window.location.origin}/en/events/${event.roomName}`
+                                                    navigator.clipboard.writeText(url).then(() => {
+                                                        setCopied(event.id)
+                                                        setTimeout(() => setCopied(null), 2000)
+                                                    })
+                                                }}
+                                            >
+                                                {copied === event.id ? (
+                                                    <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg> Copied!</>
+                                                ) : (
+                                                    <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="3" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5"/><path d="M3 3V2a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> Copy Link</>
+                                                )}
+                                            </button>
                                             {isLive && (
                                                 <button
                                                     id={`ae-captions-btn-${event.id}`}
