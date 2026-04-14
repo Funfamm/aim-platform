@@ -80,20 +80,20 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
 
     const handleCardHover = useCallback((project: Project, rect: DOMRect) => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
-        // 500ms delay — prevents accidental trigger on mouse-over
+        // 300ms delay — fast enough to feel responsive, slow enough to prevent accidental trigger
         hoverTimeoutRef.current = setTimeout(() => {
             setHoverProject(project)
             setHoverAnchor(rect)
-        }, 500)
+        }, 300)
     }, [])
 
     const handleCardHoverEnd = useCallback(() => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
-        // Don't immediately close — give user time to move mouse to the hover card
+        // 700ms grace — gives user time to move cursor to the expanded hover card
         hoverTimeoutRef.current = setTimeout(() => {
             setHoverProject(null)
             setHoverAnchor(null)
-        }, 300)
+        }, 700)
     }, [])
 
     const handleHoverCardClose = useCallback(() => {
@@ -424,6 +424,14 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                 zIndex: 2,
                 marginTop: '-30px',
             }}>
+                {/* Dark overlay behind cards — keeps video playing but ensures readability */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 8%, rgba(13,15,20,0.92) 20%, rgba(13,15,20,0.97) 40%, var(--bg-primary) 60%)',
+                    pointerEvents: 'none',
+                    zIndex: 0,
+                }} />
                 <div style={{
                     position: 'relative',
                     zIndex: 1,
@@ -507,8 +515,12 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                 ))}
                             </div>
                         ) : (
-                            // ═══ DESKTOP — existing grid with hover preview ═══
-                            <div className="works-grid">
+                            // ═══ DESKTOP — grid with hover preview + search ═══
+                            <>
+                                <div style={{ maxWidth: '400px', marginLeft: 'auto', marginBottom: 'var(--space-lg)' }}>
+                                    <SearchBar />
+                                </div>
+                                <div className="works-grid">
                                 {projects.map((project, index) => {
                                     const loc = getLocalizedProject(project, locale)
                                     return (
@@ -669,6 +681,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                     )
                                 })}
                             </div>
+                            </>
                         )}
                     </div>
                 </div>

@@ -358,6 +358,9 @@ html {
   -ms-text-size-adjust: 100%;
   overflow-x: hidden;
   touch-action: pan-y;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -370,7 +373,9 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-x: none;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Ultra-fine grain texture overlay */
@@ -1298,10 +1303,11 @@ select::placeholder {
   transition: all var(--transition-slow);
 }
 
-.project-card:hover {
-  border-color: var(--border-accent);
-  box-shadow: var(--shadow-glow-strong), var(--shadow-lg);
-  transform: translateY(-6px);
+/* Desktop-only hover — mobile never gets these effects */
+@media (hover: hover) and (pointer: fine) {
+  .project-card:hover {
+    border-color: var(--border-accent);
+  }
 }
 
 .project-card-image {
@@ -1312,8 +1318,10 @@ select::placeholder {
   transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.project-card:hover .project-card-image {
-  transform: scale(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .project-card:hover .project-card-image {
+    transform: scale(1.04);
+  }
 }
 
 .project-card-overlay {
@@ -1323,8 +1331,10 @@ select::placeholder {
   transition: background var(--transition-slow);
 }
 
-.project-card:hover .project-card-overlay {
-  background: linear-gradient(180deg, transparent 10%, rgba(13, 15, 20, 0.92) 100%);
+@media (hover: hover) and (pointer: fine) {
+  .project-card:hover .project-card-overlay {
+    background: linear-gradient(180deg, transparent 10%, rgba(13, 15, 20, 0.92) 100%);
+  }
 }
 
 .project-card-content {
@@ -1337,8 +1347,10 @@ select::placeholder {
   transition: transform var(--transition-base);
 }
 
-.project-card:hover .project-card-content {
-  transform: translateY(0);
+@media (hover: hover) and (pointer: fine) {
+  .project-card:hover .project-card-content {
+    transform: translateY(0);
+  }
 }
 
 .project-card-genre {
@@ -1365,9 +1377,11 @@ select::placeholder {
   transition: all var(--transition-base);
 }
 
-.project-card:hover p {
-  opacity: 1;
-  transform: translateY(0);
+@media (hover: hover) and (pointer: fine) {
+  .project-card:hover p {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .project-card-play {
@@ -1387,9 +1401,11 @@ select::placeholder {
   box-shadow: 0 0 40px rgba(212, 168, 83, 0.3);
 }
 
-.project-card:hover .project-card-play {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+@media (hover: hover) and (pointer: fine) {
+  .project-card:hover .project-card-play {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .project-card-play svg {
@@ -2788,7 +2804,7 @@ textarea:focus:not(:focus-visible) {
 .works-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-md);
+  gap: 10px;
 }
 
 /* Form-level 2-column grids (first name / last name, etc.) */

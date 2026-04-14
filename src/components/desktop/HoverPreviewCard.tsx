@@ -13,8 +13,8 @@ interface HoverPreviewCardProps {
     onClose: () => void
 }
 
-const CARD_W = 380
-const CARD_H = 310
+const CARD_W = 420
+const CARD_H = 370
 
 function computePosition(anchor: DOMRect) {
     const vw = window.innerWidth
