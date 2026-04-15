@@ -13,7 +13,6 @@ import type { ProjectCard } from '@/components/mobile/MovieCard'
 
 // Mobile-only components — code-split so desktop never loads them
 const SearchBar        = dynamic(() => import('@/components/mobile/SearchBar'),         { ssr: false })
-const MovieRow         = dynamic(() => import('@/components/mobile/MovieRow'),           { ssr: false })
 const RollRow          = dynamic(() => import('@/components/mobile/RollRow'),            { ssr: false })
 const HoverPreviewCard = dynamic(() => import('@/components/desktop/HoverPreviewCard'), { ssr: false })
 
@@ -68,13 +67,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
     const isMobile = useIsMobile()
     useScrollRestoration('works')
 
-    // ── Mobile row definitions (inside component for i18n access) ──
-    const FIXED_ROWS: Array<{ id: string; icon: string; title: string; query: Record<string, string | boolean | number> }> = [
-        { id: 'featured',  icon: '★', title: t('staffPicks'),   query: { featured: true } },
-        { id: 'trending',  icon: '🔥', title: t('trending'),     query: { sort: 'trending' } },
-        { id: 'newest',    icon: '🆕', title: t('newReleases'), query: { sort: 'newest'   } },
-        { id: 'completed', icon: '✅', title: t('nowAvailable'), query: { status: 'completed', sort: 'newest' } },
-    ]
+    // FIXED_ROWS removed — mobile shows only admin-curated rolls
 
     // ── Desktop hover card state ─────────────────────────────────────────────
     const [hoverProject, setHoverProject] = useState<Project | null>(null)
@@ -503,45 +496,29 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                 </p>
                             </div>
                         ) : isMobile ? (
-                            // ═══ MOBILE — Netflix-style categorized rows ═══
+                            // ═══ MOBILE — admin-curated rolls only ═══
                             <div>
                                 <SearchBar />
 
-                                {/* ✨ Admin-curated rolls — shown first, above fixed rows */}
-                                {rolls.map(roll => (
-                                    <RollRow
-                                        key={roll.id}
-                                        title={roll.title}
-                                        titleI18n={roll.titleI18n}
-                                        icon={roll.icon}
-                                        projects={roll.projects as unknown as import('@/components/mobile/MovieCard').ProjectCard[]}
-                                        locale={locale}
-                                        onCardHover={handleCardHover as unknown as (p: import('@/components/mobile/MovieCard').ProjectCard, r: DOMRect) => void}
-                                        onCardHoverEnd={handleCardHoverEnd}
-                                    />
-                                ))}
-
-                                {/* Fixed rows: Featured, Trending, New, Completed */}
-                                {FIXED_ROWS.map(row => (
-                                    <MovieRow
-                                        key={row.id}
-                                        title={row.title}
-                                        icon={row.icon}
-                                        query={row.query}
-                                        locale={locale}
-                                    />
-                                ))}
-
-                                {/* Dynamic genre rows — one per distinct genre */}
-                                {genres.map(genre => (
-                                    <MovieRow
-                                        key={genre}
-                                        title={genre}
-                                        icon="🎭"
-                                        query={{ genre, sort: 'trending' }}
-                                        locale={locale}
-                                    />
-                                ))}
+                                {rolls.length > 0 ? (
+                                    rolls.map(roll => (
+                                        <RollRow
+                                            key={roll.id}
+                                            title={roll.title}
+                                            titleI18n={roll.titleI18n}
+                                            icon={roll.icon}
+                                            projects={roll.projects as unknown as import('@/components/mobile/MovieCard').ProjectCard[]}
+                                            locale={locale}
+                                            onCardHover={handleCardHover as unknown as (p: import('@/components/mobile/MovieCard').ProjectCard, r: DOMRect) => void}
+                                            onCardHoverEnd={handleCardHoverEnd}
+                                        />
+                                    ))
+                                ) : (
+                                    <div style={{ textAlign: 'center', padding: 'var(--space-4xl) 0', color: 'var(--text-tertiary)' }}>
+                                        <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-md)' }}>🎬</div>
+                                        <p style={{ fontSize: '0.9rem' }}>No collections yet — check back soon.</p>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             // ═══ DESKTOP — grid with hover preview + search ═══
