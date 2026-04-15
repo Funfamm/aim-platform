@@ -194,7 +194,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
       {/* ═══ CURATED ROLL ROWS (admin-defined) ═══ */}
       {homeRolls.length > 0 && (
-        <section style={{ position: 'relative', zIndex: 2, background: 'var(--bg-primary)', padding: '0 0 var(--space-2xl)' }}>
+        <section className="mobile-only" style={{ position: 'relative', zIndex: 2, background: 'var(--bg-primary)', padding: '0 0 var(--space-2xl)' }}>
           <div className="container">
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',

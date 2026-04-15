@@ -377,6 +377,14 @@ body {
   /* -webkit-overflow-scrolling removed: deprecated and causes bounce on iOS 16+ */
 }
 
+/* ── Responsive visibility utilities ── */
+.mobile-only  { display: none !important; }
+.desktop-only { display: block !important; }
+@media (max-width: 768px) {
+  .mobile-only  { display: block !important; }
+  .desktop-only { display: none  !important; }
+}
+
 /* Ultra-fine grain texture overlay */
 body::before {
   content: '';
