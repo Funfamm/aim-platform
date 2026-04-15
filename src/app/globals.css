@@ -1937,6 +1937,54 @@ select::placeholder {
   }
 }
 
+/* ── Admin ultra-small portrait (≤ 480 px) ── */
+@media (max-width: 480px) {
+  .admin-main {
+    padding: 64px 12px 24px;
+  }
+
+  /* Single-column everything on very small screens */
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stat card values scale down */
+  .stat-card-value {
+    font-size: 1.8rem;
+  }
+
+  /* Table wrapper always scrolls horizontally */
+  .admin-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Prevent any admin card from overflowing the viewport */
+  .admin-main > * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+/* ── Admin landscape mobile (short screen, landscape orientation) ── */
+@media (max-height: 500px) and (orientation: landscape) {
+  .admin-sidebar {
+    max-height: 48px;
+  }
+
+  .admin-sidebar.open {
+    max-height: 100dvh;
+  }
+
+  .admin-main {
+    padding-top: 56px;
+  }
+}
+
 /* ── Movie Rolls page — mobile action menu ── */
 .mr-actions-expanded {
   display: none;

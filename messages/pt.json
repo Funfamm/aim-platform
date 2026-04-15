@@ -1240,5 +1240,20 @@
       "Cinematographer": "Cinematógrafo",
       "Other": "Outro"
     }
+  },
+  "liveRoom": {
+    "connecting": "Conectando \u00e0 sala...",
+    "reconnecting": "Reconectando...",
+    "failedToJoin": "Falha ao entrar na sala",
+    "leaveRoom": "Sair da sala",
+    "endEvent": "Encerrar evento",
+    "couldNotJoin": "N\u00e3o foi poss\u00edvel entrar"
+  },
+  "eventRoom": {
+    "signInTitle": "Entrar para participar",
+    "signInDesc": "Voc\u00ea precisa estar conectado para participar.",
+    "signInCta": "Entrar",
+    "endedTitle": "Este evento terminou",
+    "endedDesc": "Obrigado pela presen\u00e7a."
   }
 }

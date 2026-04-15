@@ -1240,5 +1240,20 @@
       "Cinematographer": "Kameramann",
       "Other": "Sonstige"
     }
+  },
+  "liveRoom": {
+    "connecting": "Verbindung zum Raum wird hergestellt...",
+    "reconnecting": "Verbindung wird wiederhergestellt...",
+    "failedToJoin": "Beitritt zum Raum fehlgeschlagen",
+    "leaveRoom": "Raum verlassen",
+    "endEvent": "Veranstaltung beenden",
+    "couldNotJoin": "Beitritt nicht m\u00f6glich"
+  },
+  "eventRoom": {
+    "signInTitle": "Anmelden zum Beitreten",
+    "signInDesc": "Sie m\u00fcssen angemeldet sein, um an diesem Live-Event teilzunehmen.",
+    "signInCta": "Anmelden",
+    "endedTitle": "Dieses Event ist beendet",
+    "endedDesc": "Danke f\u00fcr Ihre Teilnahme."
   }
 }

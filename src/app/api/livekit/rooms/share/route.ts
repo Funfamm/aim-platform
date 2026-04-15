@@ -13,7 +13,7 @@ const LOCALES = ['en', 'ar', 'de', 'es', 'fr', 'hi', 'ja', 'ko', 'pt', 'ru', 'zh
 type Locale = typeof LOCALES[number]
 
 // Validate target at the type level
-const VALID_TARGETS = ['all', 'emails'] as const
+const VALID_TARGETS = ['all', 'emails', 'users'] as const
 type ShareTarget = typeof VALID_TARGETS[number]
 
 interface RoomInviteStrings {
@@ -174,10 +174,11 @@ export async function POST(req: Request) {
         const adminId = session.userId
 
         const body = await req.json()
-        const { eventId, target, emails } = body as {
+        const { eventId, target, emails, userIds } = body as {
             eventId: string
             target: string          // validated below — don't trust the cast
             emails?: string[]
+            userIds?: string[]      // for target === 'users'
         }
 
         // ── Input validation ────────────────────────────────────────────────
@@ -276,6 +277,28 @@ export async function POST(req: Request) {
                     }))
                 )
             }
+        } else if (target === 'users') {
+            // Specific user invite — only to the selected user IDs
+            if (!userIds?.length) {
+                return NextResponse.json({ error: 'At least one user must be selected' }, { status: 400 })
+            }
+            const selectedUsers = await prisma.user.findMany({
+                where: { id: { in: userIds } },
+                select: { id: true },
+            })
+            targeted = selectedUsers.length
+            await Promise.allSettled(
+                selectedUsers.map(u => notifyUser({
+                    userId:       u.id,
+                    type:         'announcement',
+                    title:        enS.notifTitle(event.title),
+                    message:      enS.notifMessage(event.title, enType),
+                    link:         roomUrl,
+                    emailSubject: enS.subject(event.title),
+                    emailHtml,
+                    translations,
+                }))
+            )
         } else {
             // target === 'emails': external invites — plain email, English only
             const { sendEmail } = await import('@/lib/mailer')

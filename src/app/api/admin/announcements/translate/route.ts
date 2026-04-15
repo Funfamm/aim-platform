@@ -26,11 +26,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { title, message, link, onlyLocales } = body as {
+    const { title, message, link, onlyLocales, bodyText } = body as {
         title?: string
         message?: string
         link?: string
         onlyLocales?: string[]
+        /** Optional plain-text extracted from rich HTML body (client strips tags before sending) */
+        bodyText?: string
     }
 
     if (!title?.trim() || !message?.trim()) {
@@ -42,15 +44,22 @@ export async function POST(req: NextRequest) {
         ? ALL_LOCALES.filter(l => onlyLocales.includes(l))
         : ALL_LOCALES
 
+    // Build fields: always title + message + UI strings, optionally bodyText
+    const fieldsToTranslate: Record<string, string> = {
+        title: title.trim(),
+        message: message.trim(),
+        badgeText: 'Platform Announcement',
+        buttonText: link ? 'View Announcement →' : 'View in Notifications →',
+        footerOptIn: "You're receiving this because you opted in to platform announcements.",
+        managePrefs: 'Manage preferences',
+    }
+    // Only include bodyText if non-empty — avoids wasting tokens on blank rich editors
+    if (bodyText?.trim()) {
+        fieldsToTranslate.bodyText = bodyText.trim().slice(0, 2000) // cap at 2000 chars
+    }
+
     const translations = await translateContent(
-        {
-            title: title.trim(),
-            message: message.trim(),
-            badgeText: 'Platform Announcement',
-            buttonText: link ? 'View Announcement →' : 'View in Notifications →',
-            footerOptIn: "You're receiving this because you opted in to platform announcements.",
-            managePrefs: 'Manage preferences',
-        },
+        fieldsToTranslate,
         'all',
         targetLocales,
     )

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { getTranslations } from 'next-intl/server'
 import RoomShell from '@/components/live/RoomShell'
 import type { LiveKitRole } from '@/lib/livekit/grants'
 import Link from 'next/link'
@@ -30,8 +31,9 @@ export async function generateMetadata({ params }: EventPageProps) {
 }
 
 export default async function EventPage({ params }: EventPageProps) {
-    const { roomName } = await params
+    const { roomName, locale } = await params
     const session = await getSession()
+    const t = await getTranslations({ locale, namespace: 'eventRoom' })
 
     const event = await prisma.liveEvent.findUnique({
         where: { roomName },
@@ -54,6 +56,15 @@ export default async function EventPage({ params }: EventPageProps) {
     let role: LiveKitRole = 'viewer'
     if (isAdmin) role = 'admin'
     else if (isHost) role = 'host'
+    else if (event.eventType === 'audition' && event.castingCallId && session?.userId) {
+        // Check applicant status server-side so the token route receives the correct role
+        // and permissions.ts can allow entry without the "not the applicant" error
+        const application = await prisma.application.findFirst({
+            where: { castingCallId: event.castingCallId, userId: session.userId },
+            select: { id: true },
+        })
+        if (application) role = 'speaker'
+    }
 
     const eventEnded = event.status === 'ended'
     const isAuthenticated = !!session?.userId
@@ -486,19 +497,16 @@ export default async function EventPage({ params }: EventPageProps) {
                 <div className="event-room-wrap">
                     {eventEnded ? (
                         <div className="event-ended">
-                            <h2>This event has ended</h2>
-                            <p>Thank you for attending. Recordings will be available shortly if enabled.</p>
+                            <h2>{t('endedTitle')}</h2>
+                            <p>{t('endedDesc')}</p>
                         </div>
                     ) : !isAuthenticated ? (
                         <div className="event-teaser">
                             <div className="event-teaser-icon">🎭</div>
-                            <h2>Sign in to join the room</h2>
-                            <p>
-                                This is a live {eventTypeLabels[event.eventType]?.toLowerCase() ?? 'event'}.
-                                Sign in to your AIM Studio account to access the live room.
-                            </p>
+                            <h2>{t('signInTitle')}</h2>
+                            <p>{t('signInDesc')}</p>
                             <Link href="/login" className="event-teaser-btn">
-                                Sign in to Join →
+                                {t('signInCta')}
                             </Link>
                         </div>
                     ) : (

@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
+/**
+ * @legacy  /api/admin/videos — HeroVideo model (prisma.heroVideo)
+ *
+ * STATUS: Legacy infrastructure. As of the 2026-04 audit, this route has ZERO active frontend
+ * consumers. The live data path for hero videos is:
+ *
+ *   Write: POST /api/admin/media   (type='hero-video') → prisma.pageMedia
+ *   Read:  GET  /api/admin/media?type=hero-video       → prisma.pageMedia
+ *   Render: ScriptVideoBackground.tsx, CinematicBackground.tsx, etc.
+ *
+ * The HeroVideo DB table (prisma.heroVideo) was found to have 0 rows in production.
+ * Do NOT route new hero-video writes here without also updating the frontend video components.
+ *
+ * The route is kept intact (not deleted) so that any migration script or future feature
+ * that wishes to promote HeroVideo to the primary model can do so without re-creating the API.
+ */
 // GET: Fetch hero videos (public — filtered by page, or admin — all)
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)

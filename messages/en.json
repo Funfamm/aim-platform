@@ -1204,5 +1204,20 @@
       "Cinematographer": "Cinematographer",
       "Other": "Other"
     }
+  },
+  "liveRoom": {
+    "connecting": "Connecting to room...",
+    "reconnecting": "Reconnecting...",
+    "failedToJoin": "Failed to join room",
+    "leaveRoom": "Leave Room",
+    "endEvent": "End Event",
+    "couldNotJoin": "Could not join"
+  },
+  "eventRoom": {
+    "signInTitle": "Sign In to Join",
+    "signInDesc": "You need to be signed in to join this live event.",
+    "signInCta": "Sign In to Join ->",
+    "endedTitle": "This event has ended",
+    "endedDesc": "Thank you for attending. Check back for future events."
   }
 }

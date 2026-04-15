@@ -70,7 +70,14 @@ export default function AdminSponsorsPage() {
     const [bannerPreview, setBannerPreview] = useState('')
     const [filter, setFilter] = useState('all')
 
-    // ── Auto-translation state ──
+    // ── Sponsor notify modal ──
+    const [notifyTarget, setNotifyTarget] = useState<Sponsor | null>(null)
+    const [notifySubject, setNotifySubject] = useState('')
+    const [notifyMessage, setNotifyMessage] = useState('')
+    const [notifyTranslate, setNotifyTranslate] = useState(false)
+    const [notifySending, setNotifySending] = useState(false)
+    const [notifyResult, setNotifyResult] = useState<{ ok?: boolean; error?: string } | null>(null)
+
     const [translatingI18n, setTranslatingI18n]     = useState(false)
     const [retryingI18n, setRetryingI18n]           = useState<string[]>([])
     const [autoTranslations, setAutoTranslations]   = useState<Record<string, string>>({})
@@ -301,9 +308,12 @@ export default function AdminSponsorsPage() {
         fetchSponsors()
     }
 
-    const filtered = filter === 'all' ? sponsors
-        : filter === 'active' ? sponsors.filter(s => s.active)
-        : filter === 'featured' ? sponsors.filter(s => s.featured)
+    const filtered =
+        filter === 'all'       ? sponsors
+        : filter === 'active'  ? sponsors.filter(s => s.active)
+        : filter === 'featured'? sponsors.filter(s => s.featured)
+        : filter === 'expired' ? sponsors.filter(s => isExpired(s))
+        : filter === 'expiring'? sponsors.filter(s => { const d = daysLeft(s); return d !== null && d > 0 && d <= 2 })
         : sponsors.filter(s => s.tier === filter)
 
     const isExpired = (s: Sponsor) => s.endDate && new Date(s.endDate) < new Date()
@@ -383,14 +393,27 @@ export default function AdminSponsorsPage() {
 
                 {/* Filters */}
                 <div style={{ display: 'flex', gap: '5px', marginBottom: '16px', flexWrap: 'wrap', padding: '4px', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.04)' }}>
-                    {['all', 'active', 'featured', 'platinum', 'gold', 'silver', 'bronze'].map(f => (
-                        <button key={f} onClick={() => setFilter(f)} style={{
-                            padding: '6px 14px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '8px',
-                            border: 'none', cursor: 'pointer', textTransform: 'capitalize',
-                            background: filter === f ? 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))' : 'transparent',
-                            color: filter === f ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                    {([
+                        { id: 'all',      label: `All`,      count: sponsors.length },
+                        { id: 'active',   label: `Active`,   count: sponsors.filter(s => s.active).length },
+                        { id: 'featured', label: `Featured`, count: sponsors.filter(s => s.featured).length },
+                        { id: 'expiring', label: `⏰ Expiring < 2d`, count: sponsors.filter(s => { const d = daysLeft(s); return d !== null && d > 0 && d <= 2 }).length, accent: '#f97316' },
+                        { id: 'expired',  label: `❌ Expired`,  count: sponsors.filter(s => isExpired(s)).length, accent: '#ef4444' },
+                        { id: 'platinum', label: `💎 Platinum`, count: sponsors.filter(s => s.tier === 'platinum').length },
+                        { id: 'gold',     label: `🥇 Gold`,     count: sponsors.filter(s => s.tier === 'gold').length },
+                        { id: 'silver',   label: `🥈 Silver`,   count: sponsors.filter(s => s.tier === 'silver').length },
+                        { id: 'bronze',   label: `🥉 Bronze`,   count: sponsors.filter(s => s.tier === 'bronze').length },
+                    ] as { id: string; label: string; count: number; accent?: string }[]).map(f => (
+                        <button key={f.id} onClick={() => setFilter(f.id)} style={{
+                            padding: '6px 12px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '8px',
+                            border: 'none', cursor: 'pointer',
+                            background: filter === f.id ? 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))' : 'transparent',
+                            color: filter === f.id ? (f.accent ?? 'var(--accent-gold)') : 'var(--text-tertiary)',
                             transition: 'all 0.2s',
-                        }}>{f === 'all' ? `All (${sponsors.length})` : f}</button>
+                            outline: filter === f.id && f.accent ? `1px solid ${f.accent}44` : 'none',
+                        }}>
+                            {f.label} <span style={{ opacity: 0.6, marginLeft: '3px' }}>({f.count})</span>
+                        </button>
                     ))}
                 </div>
 
@@ -746,6 +769,18 @@ export default function AdminSponsorsPage() {
 
                                     {/* Actions */}
                                     <div style={{ display: 'flex', gap: '5px', flexShrink: 0, alignItems: 'flex-start' }}>
+                                        {/* Send update button — only shown when sponsor has contactEmail */}
+                                        {s.contactEmail && (
+                                            <button
+                                                onClick={() => { setNotifyTarget(s); setNotifySubject(''); setNotifyMessage(''); setNotifyResult(null) }}
+                                                title={`Send update to ${s.contactEmail}`}
+                                                style={{
+                                                    padding: '5px 9px', fontSize: '0.72rem', borderRadius: '8px', cursor: 'pointer',
+                                                    background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)',
+                                                    color: '#818cf8', transition: 'all 0.2s',
+                                                }}
+                                            >✉️</button>
+                                        )}
                                         <button onClick={() => toggleActive(s)} title={s.active ? 'Deactivate' : 'Activate'} style={{
                                             padding: '5px 9px', fontSize: '0.72rem', borderRadius: '8px', cursor: 'pointer',
                                             background: s.active ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.02)',
@@ -784,6 +819,92 @@ export default function AdminSponsorsPage() {
                     </div>
                 </div>
             </main>
+
+            {/* ── Sponsor Notify Modal ── */}
+            {notifyTarget && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+                }} onClick={() => setNotifyTarget(null)}>
+                    <div style={{
+                        background: '#111', border: '1px solid rgba(212,168,83,0.15)', borderRadius: '16px',
+                        padding: '24px', maxWidth: '480px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#d4a853' }}>
+                                ✉️ Send Update — {notifyTarget.name}
+                            </div>
+                            <button onClick={() => setNotifyTarget(null)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '1.1rem', lineHeight: 1 }}>✕</button>
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: '14px' }}>To: {notifyTarget.contactEmail}</div>
+
+                        {notifyResult?.ok && (
+                            <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)', color: '#22c55e', fontSize: '0.78rem', marginBottom: '12px' }}>
+                                ✅ Email sent to {notifyTarget.contactEmail}
+                            </div>
+                        )}
+                        {notifyResult?.error && (
+                            <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', fontSize: '0.78rem', marginBottom: '12px' }}>
+                                ⚠️ {notifyResult.error}
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <div>
+                                <label style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', display: 'block', marginBottom: '5px' }}>Subject *</label>
+                                <input
+                                    value={notifySubject}
+                                    onChange={e => setNotifySubject(e.target.value)}
+                                    placeholder="e.g. Your Sponsorship Renewal"
+                                    style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }}
+                                />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', display: 'block', marginBottom: '5px' }}>Message *</label>
+                                <textarea
+                                    value={notifyMessage}
+                                    onChange={e => setNotifyMessage(e.target.value)}
+                                    rows={5}
+                                    placeholder="Write your message to the sponsor here..."
+                                    style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', color: 'var(--text-primary)', fontSize: '0.82rem', fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                                />
+                            </div>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                <input type="checkbox" checked={notifyTranslate} onChange={e => setNotifyTranslate(e.target.checked)} />
+                                Auto-translate message (Gemini AI)
+                            </label>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '18px', justifyContent: 'flex-end' }}>
+                            <button onClick={() => setNotifyTarget(null)} style={{ padding: '9px 18px', borderRadius: '9px', border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: 'var(--text-secondary)', fontSize: '0.78rem', cursor: 'pointer' }}>Cancel</button>
+                            <button
+                                disabled={notifySending || !notifySubject.trim() || !notifyMessage.trim()}
+                                onClick={async () => {
+                                    setNotifySending(true); setNotifyResult(null)
+                                    try {
+                                        const res = await fetch('/api/admin/sponsors/notify', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                sponsorId: notifyTarget.id,
+                                                subject: notifySubject.trim(),
+                                                message: notifyMessage.trim(),
+                                                translate: notifyTranslate,
+                                            }),
+                                        })
+                                        const data = await res.json()
+                                        setNotifyResult(res.ok ? { ok: true } : { error: data.error || 'Send failed' })
+                                    } catch { setNotifyResult({ error: 'Network error — could not reach server' }) }
+                                    finally { setNotifySending(false) }
+                                }}
+                                style={{ padding: '9px 20px', borderRadius: '9px', border: 'none', background: 'linear-gradient(135deg, rgba(212,168,83,0.25), rgba(212,168,83,0.1))', color: '#d4a853', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', opacity: notifySending ? 0.6 : 1 }}
+                            >
+                                {notifySending ? '⏳ Sending...' : '📨 Send Email'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 select option { background: #1a1a2e !important; color: #e2e8f0 !important; }

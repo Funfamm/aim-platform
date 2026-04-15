@@ -53,10 +53,17 @@ export default function AdminEventsPage() {
     const [recording, setRecording]     = useState<string | null>(null)
     const [copied, setCopied]           = useState<string | null>(null)
     const [shareEventId, setShareEventId] = useState<string | null>(null)  // eventId currently in share modal
-    const [shareTarget, setShareTarget]   = useState<'all' | 'emails'>('all')
+    const [shareTarget, setShareTarget]   = useState<'all' | 'emails' | 'users'>('all')
     const [shareEmails, setShareEmails]   = useState('')  // newline-separated custom emails
     const [sharing, setSharing]           = useState(false)
     const [shareResult, setShareResult]   = useState<string | null>(null)
+    // User search-to-select state
+    const [userSearch, setUserSearch]       = useState('')
+    const [userResults, setUserResults]     = useState<{ id: string; name: string; email: string }[]>([])
+    const [selectedUsers, setSelectedUsers] = useState<{ id: string; name: string; email: string }[]>([])
+    const [searchingUsers, setSearchingUsers] = useState(false)
+    // Caption worker availability — checked once on mount via GET /api/livekit/captions/start
+    const [captionWorkerOk, setCaptionWorkerOk] = useState<boolean | null>(null)
 
     const [form, setForm] = useState({
         title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '',
@@ -76,18 +83,44 @@ export default function AdminEventsPage() {
         fetchEvents()
         fetch('/api/admin/projects').then(r => r.json()).then((d: Project[]) => setProjects(Array.isArray(d) ? d : [])).catch(() => {})
         fetch('/api/admin/casting').then(r => r.json()).then((d: CastingCall[]) => setCastingCalls(Array.isArray(d) ? d : [])).catch(() => {})
+        // Check caption worker availability once on mount (non-blocking)
+        fetch('/api/livekit/captions/start')
+            .then(r => r.json())
+            .then((d: { configured?: boolean; reachable?: boolean }) => {
+                setCaptionWorkerOk(d.configured === true && d.reachable === true)
+            })
+            .catch(() => setCaptionWorkerOk(false))
     }, [fetchEvents])
 
-    // Auto-refresh participant counts every 30 s while any rooms are live.
+    // Auto-refresh participant counts every 15 s while any rooms are live.
     // Stops automatically when all rooms end or the component unmounts.
     useEffect(() => {
         const hasLive = events.some(e => e.status === 'live')
         if (!hasLive) return
-        const interval = setInterval(fetchEvents, 30_000)
+        const interval = setInterval(fetchEvents, 15_000)
         return () => clearInterval(interval)
     }, [events, fetchEvents])
 
     const showSuccess = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(null), 5000) }
+
+    // Debounced user search — only fires when shareTarget === 'users'
+    useEffect(() => {
+        if (shareTarget !== 'users' || !userSearch.trim()) { setUserResults([]); return }
+        const t = setTimeout(async () => {
+            setSearchingUsers(true)
+            try {
+                const res = await fetch(`/api/admin/users?search=${encodeURIComponent(userSearch.trim())}&limit=8`)
+                if (res.ok) {
+                    const data = await res.json()
+                    const hits = (data.users ?? []) as { id: string; name: string; email: string }[]
+                    // Exclude already-selected users
+                    setUserResults(hits.filter(h => !selectedUsers.some(s => s.id === h.id)))
+                }
+            } catch { /* ignore */ }
+            finally { setSearchingUsers(false) }
+        }, 280) // 280 ms debounce
+        return () => clearTimeout(t)
+    }, [userSearch, shareTarget, selectedUsers])
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -153,9 +186,12 @@ export default function AdminEventsPage() {
             const emails = shareTarget === 'emails'
                 ? shareEmails.split(/[\n,]+/).map(e => e.trim()).filter(Boolean)
                 : []
+            const userIds = shareTarget === 'users'
+                ? selectedUsers.map(u => u.id)
+                : []
             const res = await fetch('/api/livekit/rooms/share', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ eventId: shareEventId, target: shareTarget, emails }),
+                body: JSON.stringify({ eventId: shareEventId, target: shareTarget, emails, userIds }),
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Failed to send invites')
@@ -836,23 +872,35 @@ export default function AdminEventsPage() {
                                                 )}
                                             </button>
                                             {isLive && (
-                                                <button
-                                                    id={`ae-captions-btn-${event.id}`}
-                                                    className="le-btn le-btn--captions"
-                                                    onClick={async () => {
-                                                        try {
-                                                            const res = await fetch('/api/livekit/captions/start', {
-                                                                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ roomName: event.roomName }),
-                                                            })
-                                                            const data = await res.json()
-                                                            if (!res.ok) setError(data.error || 'Failed to start captions')
-                                                            else showSuccess(`Captions started for ${event.roomName}`)
-                                                        } catch { setError('Failed to reach caption worker') }
-                                                    }}
-                                                >
-                                                    ▶ Captions
-                                                </button>
+                                                captionWorkerOk === false ? (
+                                                    <button
+                                                        id={`ae-captions-btn-${event.id}`}
+                                                        className="le-btn le-btn--captions"
+                                                        disabled
+                                                        title="Caption worker not configured. Set CAPTION_WORKER_URL and WORKER_WEBHOOK_SECRET in your environment variables."
+                                                        style={{ opacity: 0.35, cursor: 'not-allowed', position: 'relative' }}
+                                                    >
+                                                        ⚠ Captions
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        id={`ae-captions-btn-${event.id}`}
+                                                        className="le-btn le-btn--captions"
+                                                        onClick={async () => {
+                                                            try {
+                                                                const res = await fetch('/api/livekit/captions/start', {
+                                                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ roomName: event.roomName }),
+                                                                })
+                                                                const data = await res.json()
+                                                                if (!res.ok) setError(data.error || 'Failed to start captions')
+                                                                else showSuccess(`Captions started for ${event.roomName}`)
+                                                            } catch { setError('Failed to reach caption worker') }
+                                                        }}
+                                                    >
+                                                        ▶ Captions
+                                                    </button>
+                                                )
                                             )}
                                             {isLive && (
                                                 <button
@@ -893,6 +941,9 @@ export default function AdminEventsPage() {
                                                         setShareTarget('all')
                                                         setShareEmails('')
                                                         setShareResult(null)
+                                                        setUserSearch('')
+                                                        setUserResults([])
+                                                        setSelectedUsers([])
                                                     }}
                                                 >
                                                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="7.5" cy="2" r="1.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="7.5" cy="8" r="1.5" stroke="currentColor" strokeWidth="1.4"/><circle cx="2" cy="5" r="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M3.4 4.2l2.7-1.6M3.4 5.8l2.7 1.6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
@@ -985,29 +1036,116 @@ export default function AdminEventsPage() {
                             </div>
 
                             <div style={{ padding: '1.5rem' }}>
-                                {/* Audience selector */}
+                                {/* Audience selector — 3 tabs */}
                                 <div style={{ marginBottom: '1.25rem' }}>
                                     <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginBottom: '0.6rem' }}>Send to</div>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        {[{ value: 'all', label: '👥 All Platform Users', hint: 'respects notification prefs' }, { value: 'emails', label: '✉️ Custom Emails', hint: 'external/manual list' }].map(opt => (
+                                        {([
+                                            { value: 'all',    label: '👥 All Users',      hint: 'respects prefs' },
+                                            { value: 'users',  label: '👤 Specific Users',  hint: 'search & select' },
+                                            { value: 'emails', label: '✉️ Custom Emails',   hint: 'external list' },
+                                        ] as const).map(opt => (
                                             <button
                                                 key={opt.value}
-                                                onClick={() => setShareTarget(opt.value as 'all' | 'emails')}
+                                                onClick={() => setShareTarget(opt.value)}
                                                 style={{
-                                                    flex: 1, padding: '0.7rem 0.5rem', borderRadius: '10px',
+                                                    flex: 1, padding: '0.7rem 0.4rem', borderRadius: '10px',
                                                     border: `1px solid ${shareTarget === opt.value ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`,
                                                     background: shareTarget === opt.value ? 'rgba(212,168,83,0.08)' : 'rgba(255,255,255,0.03)',
                                                     color: shareTarget === opt.value ? '#d4a853' : 'rgba(255,255,255,0.5)',
-                                                    cursor: 'pointer', fontSize: '0.75rem', fontWeight: 700,
+                                                    cursor: 'pointer', fontSize: '0.7rem', fontWeight: 700,
                                                     transition: 'all 0.15s', textAlign: 'center',
                                                 }}
                                             >
                                                 <div>{opt.label}</div>
-                                                <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 500, marginTop: '2px' }}>{opt.hint}</div>
+                                                <div style={{ fontSize: '0.58rem', opacity: 0.6, fontWeight: 500, marginTop: '2px' }}>{opt.hint}</div>
                                             </button>
                                         ))}
                                     </div>
                                 </div>
+
+                                {/* Specific user search-to-select */}
+                                {shareTarget === 'users' && (
+                                    <div style={{ marginBottom: '1.25rem' }}>
+                                        <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginBottom: '0.5rem' }}>
+                                            Search users
+                                        </div>
+                                        <div style={{ position: 'relative' }}>
+                                            <input
+                                                autoFocus
+                                                value={userSearch}
+                                                onChange={e => setUserSearch(e.target.value)}
+                                                placeholder="Name or email..."
+                                                style={{
+                                                    width: '100%', background: 'rgba(255,255,255,0.04)',
+                                                    border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px',
+                                                    color: '#f0f0f5', padding: '0.65rem 0.85rem', fontSize: '0.82rem',
+                                                    outline: 'none', boxSizing: 'border-box',
+                                                }}
+                                            />
+                                            {searchingUsers && (
+                                                <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)' }}>
+                                                    searching…
+                                                </span>
+                                            )}
+                                        </div>
+                                        {/* Search results */}
+                                        {userResults.length > 0 && (
+                                            <div style={{
+                                                marginTop: '4px', background: '#111', border: '1px solid rgba(255,255,255,0.1)',
+                                                borderRadius: '10px', overflow: 'hidden', maxHeight: '180px', overflowY: 'auto',
+                                            }}>
+                                                {userResults.map(u => (
+                                                    <button
+                                                        key={u.id}
+                                                        onClick={() => {
+                                                            setSelectedUsers(prev => [...prev, u])
+                                                            setUserSearch('')
+                                                            setUserResults([])
+                                                        }}
+                                                        style={{
+                                                            width: '100%', padding: '0.55rem 0.85rem', background: 'transparent',
+                                                            border: 'none', borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                                            color: '#f0f0f5', textAlign: 'left', cursor: 'pointer',
+                                                            display: 'flex', flexDirection: 'column', gap: '1px',
+                                                            transition: 'background 0.1s',
+                                                        }}
+                                                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(212,168,83,0.06)')}
+                                                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                                    >
+                                                        <span style={{ fontSize: '0.78rem', fontWeight: 600 }}>{u.name}</span>
+                                                        <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)' }}>{u.email}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {/* Selected user chips */}
+                                        {selectedUsers.length > 0 && (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px' }}>
+                                                {selectedUsers.map(u => (
+                                                    <div key={u.id} style={{
+                                                        display: 'flex', alignItems: 'center', gap: '5px',
+                                                        background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)',
+                                                        borderRadius: '100px', padding: '3px 10px 3px 8px',
+                                                        fontSize: '0.72rem', color: '#d4a853', fontWeight: 600,
+                                                    }}>
+                                                        <span>👤</span>
+                                                        <span>{u.name}</span>
+                                                        <button
+                                                            onClick={() => setSelectedUsers(prev => prev.filter(x => x.id !== u.id))}
+                                                            style={{ background: 'none', border: 'none', color: 'rgba(212,168,83,0.6)', cursor: 'pointer', padding: 0, fontSize: '0.75rem', lineHeight: 1 }}
+                                                        >✕</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {selectedUsers.length === 0 && !userSearch && (
+                                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '6px' }}>
+                                                Type a name or email to search platform users.
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Custom emails textarea */}
                                 {shareTarget === 'emails' && (
@@ -1068,7 +1206,7 @@ export default function AdminEventsPage() {
                                     <button
                                         id="ae-share-send-btn"
                                         onClick={handleShare}
-                                        disabled={sharing || (shareTarget === 'emails' && !shareEmails.trim())}
+                                        disabled={sharing || (shareTarget === 'emails' && !shareEmails.trim()) || (shareTarget === 'users' && selectedUsers.length === 0)}
                                         style={{
                                             flex: 1, padding: '0.75rem', borderRadius: '10px',
                                             background: sharing ? 'rgba(212,168,83,0.15)' : 'linear-gradient(135deg, #d4a853, #b8903f)',

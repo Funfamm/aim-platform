@@ -5,7 +5,9 @@ import type { LiveKitRole } from './grants'
  * Checks whether a user is authorized to join a LiveKit room with a given role.
  *
  * Access rules:
- * - Platform admins (isAdmin=true) can join ANY room in ANY role
+ * - Platform admins (isAdmin=true) can join ANY room in ANY role.
+ *   `isAdmin` must be pre-computed by the caller using a null-safe role check:
+ *     const isAdmin = ['admin','superadmin'].includes(session.role ?? '')
  * - Audition rooms (eventType='audition') restrict access to:
  *   → the exact applicant linked to the castingCallId, or an admin
  * - General / q_and_a / watch_party rooms:
@@ -19,7 +21,8 @@ export async function canJoinRoom(
     role: LiveKitRole,
     isAdmin: boolean,
 ): Promise<{ allowed: boolean; reason?: string }> {
-    // Platform admins bypass all room-level checks
+    // Platform admins bypass all room-level checks.
+    // isAdmin MUST be validated by the caller — never derive it from userId alone.
     if (isAdmin) return { allowed: true }
 
     const event = await prisma.liveEvent.findUnique({
@@ -46,7 +49,7 @@ export async function canJoinRoom(
             select: { id: true },
         })
         if (!application) {
-            return { allowed: false, reason: 'You are not the applicant for this audition room' }
+            return { allowed: false, reason: 'You must have an active application for this casting call to join the audition room.' }
         }
         return { allowed: true }
     }

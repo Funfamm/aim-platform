@@ -80,6 +80,11 @@ export default function AnnouncementsAdminPage() {
     // ─────────────────────────────────────────────────────────────────────────
     // Core translate call — handles both full translate and per-locale retries
     async function callTranslate(onlyLocales?: string[]) {
+        // Extract plain text from bodyHtml (strip tags) for translation
+        const bodyText = bodyHtml
+            ? bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+            : undefined
+
         const res = await fetch('/api/admin/announcements/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -87,6 +92,7 @@ export default function AnnouncementsAdminPage() {
                 title: title.trim(),
                 message: message.trim(),
                 link: link.trim() || undefined,
+                ...(bodyText ? { bodyText } : {}),
                 ...(onlyLocales ? { onlyLocales } : {}),
             }),
         })
@@ -176,10 +182,22 @@ export default function AnnouncementsAdminPage() {
                 body: JSON.stringify({
                     title: title.trim(),
                     message: message.trim(),
+                    // bodyHtml: use translated bodyText (wrapped in <p>) per-locale if available,
+                    // otherwise fall back to the original rich HTML (English-only)
                     bodyHtml: bodyHtml || undefined,
                     imageUrl: imageUrl.trim() || undefined,
                     link: link.trim() || undefined,
-                    translations,
+                    // Thread translated bodyText back as bodyHtml in each locale's translation entry
+                    translations: Object.fromEntries(
+                        Object.entries(translations).map(([locale, t]) => [
+                            locale,
+                            {
+                                ...t,
+                                // If AI returned a bodyText for this locale, use it as the translated bodyHtml
+                                ...(t.bodyText ? { bodyHtml: `<p>${t.bodyText}</p>` } : {}),
+                            },
+                        ])
+                    ),
                 }),
             })
             const data = await res.json()
@@ -272,14 +290,18 @@ export default function AnnouncementsAdminPage() {
                         </div>
                         <div>
                             <label style={lbl}>Rich Body <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none' }}>(optional — displayed on website with formatting)</span></label>
-                            <RichTextEditor
-                                value={bodyHtml}
-                                onChange={html => {
-                                    setBodyHtml(html)
-                                    if (hasTranslated) { setTranslations({}); setMissingLocales([]); setHasTranslated(false) }
-                                }}
-                                placeholder="Add formatted body content with headings, bold, lists and links…"
-                            />
+                            {/* overflow-x: auto prevents TipTap toolbar from causing page-level horizontal scroll on mobile */}
+                            <div style={{ overflowX: 'auto', maxWidth: '100%', boxSizing: 'border-box' }}>
+                                <RichTextEditor
+                                    value={bodyHtml}
+                                    onChange={html => {
+                                        setBodyHtml(html)
+                                        if (hasTranslated) { setTranslations({}); setMissingLocales([]); setHasTranslated(false) }
+                                    }}
+                                    placeholder="Add formatted body content with headings, bold, lists and links…"
+                                />
+                            </div>
+                            {bodyHtml && <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '5px' }}>Rich body will be translated as plain text — formatting is preserved in English.</div>}
                         </div>
                         <div>
                             <AdminImageUpload

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { LiveKitRoom, RoomAudioRenderer } from '@livekit/components-react'
 import type { ReconnectContext } from 'livekit-client'
 import ParticipantGrid from './ParticipantGrid'
@@ -40,6 +41,7 @@ export default function RoomShell({
     exitPath,
 }: RoomShellProps) {
     const router = useRouter()
+    const t = useTranslations('liveRoom')
 
     const [tokenData, setTokenData]       = useState<TokenData | null>(null)
     const [captionLang, setCaptionLang]   = useState<CaptionLang>('en')
@@ -189,7 +191,7 @@ export default function RoomShell({
         return (
             <div className="room-shell-loading" aria-live="polite">
                 <div className="room-shell-spinner" />
-                <p>Connecting to room…</p>
+                <p>{t('connecting')}</p>
             </div>
         )
     }
@@ -242,7 +244,7 @@ export default function RoomShell({
                             disabled={endingEvent}
                             title="End event for all participants"
                         >
-                            {endingEvent ? 'Ending…' : '⏹ End Event'}
+                            {endingEvent ? 'Ending…' : `⏹ ${t('endEvent')}`}
                         </button>
                     )}
                     <button
@@ -251,7 +253,7 @@ export default function RoomShell({
                         onClick={handleLeave}
                         title="Leave the room"
                     >
-                        ✕ Leave
+                        ✕ {t('leaveRoom')}
                     </button>
                 </div>
             </div>
@@ -259,7 +261,7 @@ export default function RoomShell({
             {reconnecting && (
                 <div className="room-reconnecting-banner" role="status" aria-live="polite">
                     <div className="room-reconnecting-spinner" />
-                    Reconnecting… (attempt {reconnectAttempts.current}/{MAX_RECONNECT_ATTEMPTS})
+                    {t('reconnecting')} (attempt {reconnectAttempts.current}/{MAX_RECONNECT_ATTEMPTS})
                 </div>
             )}
 

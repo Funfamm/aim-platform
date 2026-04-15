@@ -1240,5 +1240,20 @@
       "Cinematographer": "촬영감독",
       "Other": "기타"
     }
+  },
+  "liveRoom": {
+    "connecting": "\ub8f8\uc5d0 \uc5f0\uacb0 \uc911...",
+    "reconnecting": "\uc7ac\uc5f0\uacb0 \uc911...",
+    "failedToJoin": "\ub8f8 \ucc38\uc5ec \uc2e4\ud328",
+    "leaveRoom": "\ub8f8 \ub098\uac00\uae30",
+    "endEvent": "\uc774\ubca4\ud2b8 \uc885\ub8cc",
+    "couldNotJoin": "\ucc38\uc5ec\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4"
+  },
+  "eventRoom": {
+    "signInTitle": "\ucc38\uc5ec\ud558\ub824\uba74 \ub85c\uadf8\uc778\ud558\uc138\uc694",
+    "signInDesc": "\uc774 \ub77c\uc774\ube0c \uc774\ubca4\ud2b8\uc5d0 \ucc38\uc5ec\ud558\ub824\uba74 \ub85c\uadf8\uc778\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.",
+    "signInCta": "\ub85c\uadf8\uc778",
+    "endedTitle": "\uc774 \uc774\ubca4\ud2b8\uac00 \uc885\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
+    "endedDesc": "\ucc38\uc11d\ud574 \uc8fc\uc154\uc11c \uac10\uc0ac\ud569\ub2c8\ub2e4."
   }
 }

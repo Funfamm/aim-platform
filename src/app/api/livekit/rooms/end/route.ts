@@ -22,9 +22,25 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Room already ended' }, { status: 409 })
         }
 
-        // Remove all participants and delete the LiveKit room
+        // Remove all participants and delete the LiveKit room.
+        // The room may have been garbage-collected by LiveKit already (empty timeout),
+        // so we tolerate "not found" errors here — the goal is just to update our DB.
         const client = getRoomServiceClient()
-        await client.deleteRoom(roomName)
+        try {
+            await client.deleteRoom(roomName)
+        } catch (err) {
+            const msg = String(err)
+            const alreadyGone =
+                msg.includes('room not found') ||
+                msg.includes('room_not_found') ||
+                msg.includes('NOT_FOUND') ||
+                msg.includes('status code 5')
+            if (!alreadyGone) {
+                // Unexpected error — re-throw so the outer catch can log it
+                throw err
+            }
+            console.warn(`[rooms/end] LiveKit room '${roomName}' was already GC'd — proceeding to mark as ended in DB`)
+        }
 
         // Mark as ended in DB
         const updated = await prisma.liveEvent.update({
