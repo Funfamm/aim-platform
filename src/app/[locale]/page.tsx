@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import HomeHero from '@/components/HomeHero'
 const Scene3D = dynamic(() => import('@/components/Scene3D'))
 const FeaturedProjects3D = dynamic(() => import('@/components/FeaturedProjects3D'))
-const RollRow = dynamic(() => import('@/components/mobile/RollRow'), { ssr: false })
+const RollRow = dynamic(() => import('@/components/mobile/RollRow'))
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import SponsorBannerSection from '@/components/SponsorBannerSection'
 import { prisma } from '@/lib/db'
