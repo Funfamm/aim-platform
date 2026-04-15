@@ -14,6 +14,7 @@ type Project = {
     status: string; genre: string | null; year: string | null; duration: string | null
     featured: boolean; sortOrder: number; coverImage: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
+    viewCount: number
     _count: { castingCalls: number }
 }
 
@@ -80,6 +81,7 @@ type ReviewSubtitle = {
 export default function AdminProjectsPage() {
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
+    const [sortBy, setSortBy] = useState<'default' | 'views'>('default')
     const [showModal, setShowModal] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
     const [form, setForm] = useState<FormData>(EMPTY_FORM)
@@ -466,9 +468,42 @@ export default function AdminProjectsPage() {
                         </div>
                     </div>
                 ) : (
+                    <>
+                    {/* Sort / filter bar */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        marginBottom: 'var(--space-md)',
+                        padding: '8px 12px',
+                        background: 'var(--bg-secondary)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--border-subtle)',
+                    }}>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginRight: '4px' }}>Sort by</span>
+                        {(['default', 'views'] as const).map(opt => (
+                            <button
+                                key={opt}
+                                onClick={() => setSortBy(opt)}
+                                style={{
+                                    padding: '3px 12px', borderRadius: 'var(--radius-full)',
+                                    fontSize: '0.72rem', fontWeight: 700, border: 'none', cursor: 'pointer',
+                                    background: sortBy === opt ? 'var(--accent-gold)' : 'rgba(255,255,255,0.05)',
+                                    color: sortBy === opt ? '#0a0a0a' : 'var(--text-tertiary)',
+                                    transition: 'all 0.15s',
+                                }}
+                            >
+                                {opt === 'default' ? '📋 Manual order' : '👁 Most viewed'}
+                            </button>
+                        ))}
+                        <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                            {projects.length} project{projects.length !== 1 ? 's' : ''} · {projects.reduce((s, p) => s + p.viewCount, 0).toLocaleString()} total views
+                        </span>
+                    </div>
                     <div className="grid-auto-fill">
-                        {projects.map((project) => {
+                        {[...projects].sort((a, b) => sortBy === 'views' ? b.viewCount - a.viewCount : 0).map((project, idx, arr) => {
                             const status = statusConfig[project.status] || statusConfig.upcoming
+                            const maxViews = Math.max(...arr.map(p => p.viewCount), 1)
+                            const viewPct = Math.round((project.viewCount / maxViews) * 100)
+                            const isTrending = sortBy === 'views' ? idx === 0 : project.viewCount === maxViews && project.viewCount > 0
                             return (
                                 <div key={project.id} className="glass-card" style={{ overflow: 'hidden', opacity: deleting === project.id ? 0.4 : 1, transition: 'opacity 0.3s' }}>
                                     {/* Cover Image */}
@@ -478,9 +513,10 @@ export default function AdminProjectsPage() {
                                         backgroundSize: 'cover', backgroundPosition: 'center', position: 'relative',
                                     }}>
                                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, var(--bg-glass) 100%)' }} />
-                                        <div style={{ position: 'absolute', top: 'var(--space-md)', right: 'var(--space-md)', display: 'flex', gap: '4px' }}>
+                                        <div style={{ position: 'absolute', top: 'var(--space-md)', right: 'var(--space-md)', display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                             <span className={`badge ${status.className}`}>{status.label}</span>
                                             {project.featured && <span className="badge badge-gold">★ Featured</span>}
+                                            {isTrending && <span className="badge badge-gold">🔥 Trending</span>}
                                         </div>
                                     </div>
 
@@ -493,6 +529,30 @@ export default function AdminProjectsPage() {
                                         <p style={{ fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 'var(--space-md)' }}>
                                             {project.description.length > 120 ? project.description.slice(0, 120) + '...' : project.description}
                                         </p>
+                                        {/* Engagement bar */}
+                                        <div style={{ marginBottom: 'var(--space-sm)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                                                    👁 {project.viewCount.toLocaleString()} view{project.viewCount !== 1 ? 's' : ''}
+                                                </span>
+                                                {viewPct > 0 && (
+                                                    <span style={{ fontSize: '0.55rem', color: isTrending ? 'var(--accent-gold)' : 'var(--text-tertiary)', fontWeight: 700 }}>
+                                                        {viewPct}% of top
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div style={{ height: '3px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    height: '100%', borderRadius: '2px',
+                                                    width: `${viewPct}%`,
+                                                    background: isTrending
+                                                        ? 'linear-gradient(90deg, var(--accent-gold), #e8c547)'
+                                                        : 'linear-gradient(90deg, rgba(59,130,246,0.6), rgba(96,165,250,0.4))',
+                                                    transition: 'width 0.6s ease',
+                                                }} />
+                                            </div>
+                                        </div>
+
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                                 {project._count.castingCalls} casting call{project._count.castingCalls !== 1 ? 's' : ''}
@@ -726,6 +786,7 @@ export default function AdminProjectsPage() {
                             )
                         })}
                     </div>
+                    </>
                 )}
             </main>
 

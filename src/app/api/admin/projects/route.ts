@@ -10,7 +10,12 @@ export async function GET() {
     const projects = await prisma.project.findMany({
         orderBy: { sortOrder: 'asc' },
         take: 200,
-        include: {
+        select: {
+            id: true, title: true, slug: true, tagline: true, description: true,
+            status: true, genre: true, year: true, duration: true,
+            featured: true, sortOrder: true, coverImage: true,
+            trailerUrl: true, filmUrl: true, projectType: true,
+            viewCount: true,
             _count: { select: { castingCalls: true } },
         },
     })
