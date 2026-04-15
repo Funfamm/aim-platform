@@ -118,6 +118,7 @@ export default function AdminProjectsPage() {
     const [allRolls, setAllRolls] = useState<RollOption[]>([])
     const [selectedRollIds, setSelectedRollIds] = useState<string[]>([])
     const [rollsLoading, setRollsLoading] = useState(false)
+    const [rollError, setRollError] = useState(false)
 
     const TOTAL_LANGS = 11 // en, ar, de, es, fr, hi, ja, ko, pt, ru, zh
 
@@ -212,8 +213,17 @@ export default function AdminProjectsPage() {
                 return
             }
         }
+        // Gate: at least one roll must be selected
+        if (allRolls.length > 0 && selectedRollIds.length === 0) {
+            setError('🎬 This project must be assigned to at least one Movie Roll before saving.')
+            setRollError(true)
+            // Scroll the roll section into view
+            document.getElementById('roll-assignment-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            return
+        }
         setSaving(true)
         setError('')
+        setRollError(false)
         try {
             const payload = {
                 ...form,
@@ -985,12 +995,27 @@ export default function AdminProjectsPage() {
                                 </div>
 
                                 {/* ── Movie Rolls Assignment ── */}
-                                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
-                                    <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>
+                                <div
+                                    id="roll-assignment-section"
+                                    style={{
+                                        borderTop: rollError ? 'none' : '1px solid var(--border-subtle)',
+                                        paddingTop: rollError ? 0 : 'var(--space-md)',
+                                        marginTop: rollError ? 'var(--space-md)' : undefined,
+                                        padding: rollError ? '14px' : undefined,
+                                        borderRadius: rollError ? '10px' : undefined,
+                                        background: rollError ? 'rgba(239,68,68,0.04)' : undefined,
+                                        border: rollError ? '1px solid rgba(239,68,68,0.4)' : undefined,
+                                        transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: rollError ? '#ef4444' : 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         🎞️ Movie Rolls
+                                        {rollError && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '1px 8px', borderRadius: '99px', border: '1px solid rgba(239,68,68,0.25)', textTransform: 'none' }}>⚠ required — pick at least one</span>}
                                     </div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
-                                        Select which rolls this project should appear in. You can choose multiple or all.
+                                    <div style={{ fontSize: '0.75rem', color: rollError ? '#ef4444' : 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
+                                        {rollError
+                                            ? 'A project must belong to at least one roll before it can be saved.'
+                                            : 'Select which rolls this project should appear in. You can choose multiple or all.'}
                                     </div>
                                     {rollsLoading ? (
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', padding: '0.5rem 0' }}>Loading rolls…</div>
@@ -1024,7 +1049,9 @@ export default function AdminProjectsPage() {
                                             {allRolls.map(roll => {
                                                 const isSelected = selectedRollIds.includes(roll.id)
                                                 return (
-                                                    <label key={roll.id} style={{
+                                                    <label key={roll.id}
+                                                        onClick={() => setRollError(false)}
+                                                        style={{
                                                         display: 'flex', alignItems: 'center', gap: '10px',
                                                         padding: '8px 12px', borderRadius: '9px', cursor: 'pointer',
                                                         background: isSelected ? 'rgba(212,168,83,0.08)' : 'rgba(255,255,255,0.025)',
