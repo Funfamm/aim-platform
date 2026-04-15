@@ -158,7 +158,7 @@ export default function MovieRow({ title, icon, query, locale, onCardHover, onCa
                     msOverflowStyle: 'none',
                     scrollSnapType: 'x mandatory',
                     overscrollBehaviorX: 'contain',
-                    touchAction: 'pan-x',
+                    touchAction: 'pan-x pan-y',
                 }}
             >
                 <style>{`.movie-strip::-webkit-scrollbar{display:none}`}</style>

@@ -12,12 +12,27 @@ interface Particle {
     hue: number
 }
 
+/**
+ * Scene3D — Ambient particle background.
+ *
+ * PERF: On mobile devices the 60-fps canvas + radial-gradient draws +
+ * O(n²) connection-line checks generate significant CPU/GPU heat.
+ * → Mobile: skip rendering entirely (the page already has hero videos
+ *   or CinematicBackground for ambience).
+ * → Desktop: throttle to ~30 fps and reduce particle count.
+ */
 export default function Scene3D() {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const particlesRef = useRef<Particle[]>([])
     const rafRef = useRef<number>(0)
 
     useEffect(() => {
+        // ── Skip on mobile / tablet (≤1024px) to save battery ──
+        if (window.innerWidth <= 1024) return
+
+        // ── Also skip if user prefers reduced motion ──
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
         const canvas = canvasRef.current
         if (!canvas) return
 
@@ -31,8 +46,8 @@ export default function Scene3D() {
         resize()
         window.addEventListener('resize', resize)
 
-        // Create particles at different Z-depths
-        const count = 60
+        // Reduced particle count (was 60)
+        const count = 35
         particlesRef.current = Array.from({ length: count }, () => ({
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
@@ -43,8 +58,19 @@ export default function Scene3D() {
             hue: 38 + Math.random() * 10,
         }))
 
-        const animate = () => {
+        // Throttle to ~30 fps (was uncapped ~60 fps)
+        let lastFrame = 0
+        const FRAME_INTERVAL = 33 // ms ≈ 30 fps
+
+        const animate = (now: number) => {
             if (!ctx || !canvas) return
+
+            // Skip frame if too soon
+            if (now - lastFrame < FRAME_INTERVAL) {
+                rafRef.current = requestAnimationFrame(animate)
+                return
+            }
+            lastFrame = now
 
             ctx.clearRect(0, 0, canvas.width, canvas.height)
 

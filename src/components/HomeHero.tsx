@@ -194,28 +194,30 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                     </div>
                 )}
 
-                {/* Floating ambient particles */}
-                <div style={{
-                    position: 'absolute', top: '15%', right: '20%',
-                    width: '3px', height: '3px',
-                    background: 'var(--accent-gold)', borderRadius: '50%',
-                    opacity: 0.4, animation: 'float 6s ease-in-out infinite',
-                    boxShadow: '0 0 20px rgba(212,168,83,0.3)',
-                }} />
-                <div style={{
-                    position: 'absolute', top: '40%', right: '10%',
-                    width: '2px', height: '2px',
-                    background: 'var(--accent-gold)', borderRadius: '50%',
-                    opacity: 0.25, animation: 'float 8s ease-in-out infinite 1s',
-                    boxShadow: '0 0 15px rgba(212,168,83,0.2)',
-                }} />
-                <div style={{
-                    position: 'absolute', top: '60%', right: '35%',
-                    width: '2px', height: '2px',
-                    background: 'var(--accent-gold)', borderRadius: '50%',
-                    opacity: 0.2, animation: 'float 10s ease-in-out infinite 2s',
-                    boxShadow: '0 0 12px rgba(212,168,83,0.15)',
-                }} />
+                {/* Floating ambient particles — desktop only (infinite animation + box-shadow = GPU heat on mobile) */}
+                <div className="desktop-only" aria-hidden="true">
+                    <div style={{
+                        position: 'absolute', top: '15%', right: '20%',
+                        width: '3px', height: '3px',
+                        background: 'var(--accent-gold)', borderRadius: '50%',
+                        opacity: 0.4, animation: 'float 6s ease-in-out infinite',
+                        boxShadow: '0 0 20px rgba(212,168,83,0.3)',
+                    }} />
+                    <div style={{
+                        position: 'absolute', top: '40%', right: '10%',
+                        width: '2px', height: '2px',
+                        background: 'var(--accent-gold)', borderRadius: '50%',
+                        opacity: 0.25, animation: 'float 8s ease-in-out infinite 1s',
+                        boxShadow: '0 0 15px rgba(212,168,83,0.2)',
+                    }} />
+                    <div style={{
+                        position: 'absolute', top: '60%', right: '35%',
+                        width: '2px', height: '2px',
+                        background: 'var(--accent-gold)', borderRadius: '50%',
+                        opacity: 0.2, animation: 'float 10s ease-in-out infinite 2s',
+                        boxShadow: '0 0 12px rgba(212,168,83,0.15)',
+                    }} />
+                </div>
 
                 <div className="hero-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
                     <span className="text-label animate-fade-in-up" style={{ display: 'block', marginBottom: 'var(--space-sm)' }}>

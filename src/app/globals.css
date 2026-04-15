@@ -880,7 +880,7 @@ select::placeholder {
   /* Lock movie strip horizontal scroll from leaking into vertical page scroll */
   .movie-strip {
     overscroll-behavior-x: contain;
-    touch-action: pan-x;
+    touch-action: pan-x pan-y;   /* Allow BOTH directions — browser picks axis based on gesture angle */
     overflow-y: hidden !important; /* iOS converts visible→auto causing bounce */
   }
 }
@@ -4873,5 +4873,54 @@ img, video, iframe, canvas {
   .room-shell-leave-btn,
   .room-shell-end-btn  { padding: 5px 10px; font-size: 0.7rem; }
   .room-name-label     { font-size: 0.75rem; }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE PERFORMANCE — Thermal & Battery Optimizations
+   ═══════════════════════════════════════════════════════════════
+   Problem: backdrop-filter:blur() creates a GPU compositing layer
+   for EVERY element using it. With 50+ instances, mobile GPUs
+   overheat trying to re-composite all layers during scroll.
+   
+   Solution: Replace blur with solid semi-transparent backgrounds
+   on mobile. Visually nearly identical, GPU cost reduced from
+   50+ compositing layers to zero blur layers.
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── Kill all backdrop-filter blur on mobile ── */
+  * {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* ── Disable film grain pseudo-element (full-viewport SVG filter) ── */
+  body::before {
+    display: none !important;
+  }
+
+  /* ── Hide Scene3D canvas entirely (JS also skips, but belt-and-suspenders) ── */
+  .scene-3d-canvas {
+    display: none !important;
+  }
+
+  /* ── Stop all infinite animations (shimmer, float, pulse, glow, etc.) ── */
+  *[style*="animation"] {
+    animation-play-state: paused !important;
+  }
+}
+
+/* ── Respect prefers-reduced-motion globally ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .scene-3d-canvas {
+    display: none !important;
+  }
 }
 

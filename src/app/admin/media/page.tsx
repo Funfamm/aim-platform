@@ -13,14 +13,20 @@ interface MediaItem {
     sortOrder: number
     duration: number
     active: boolean
+    target: string  // 'all' | 'desktop' | 'mobile'
 }
 
 const PAGES = [
+    { value: 'home', label: 'Homepage' },
+    { value: 'works', label: 'Works Page' },
+    { value: 'casting', label: 'Casting Page' },
+    { value: 'upcoming', label: 'Upcoming Page' },
+    { value: 'training', label: 'Training Page' },
+    { value: 'scripts', label: 'Scripts Page' },
+    { value: 'about', label: 'About Page' },
     { value: 'donate', label: 'Donate Page' },
     { value: 'subscribe', label: 'Notification Page' },
-    { value: 'about', label: 'About Page' },
     { value: 'contact', label: 'Contact Page' },
-    { value: 'home', label: 'Homepage' },
 ]
 
 const HERO_VIDEO_PAGES = [
@@ -57,14 +63,14 @@ export default function AdminMediaPage() {
     const [filterPage, setFilterPage] = useState<string>('all')
     const [uploading, setUploading] = useState(false)
     const [showForm, setShowForm] = useState(false)
-    const [form, setForm] = useState({ page: 'donate', title: '', url: '', type: 'background', sortOrder: 1, duration: 10 })
+    const [form, setForm] = useState({ page: 'donate', title: '', url: '', type: 'background', sortOrder: 1, duration: 10, target: 'all' })
     const [editingId, setEditingId] = useState<string | null>(null)
     const fileRef = useRef<HTMLInputElement>(null)
 
     // ─── Hero Videos state ───
     const [heroVideos, setHeroVideos] = useState<MediaItem[]>([])
     const [showVidForm, setShowVidForm] = useState(false)
-    const [vidForm, setVidForm] = useState({ title: '', url: '', pages: ['all'] as string[], duration: 10, sortOrder: 1, active: true })
+    const [vidForm, setVidForm] = useState({ title: '', url: '', pages: ['all'] as string[], duration: 10, sortOrder: 1, active: true, target: 'all' })
     const [vidEditingId, setVidEditingId] = useState<string | null>(null)
     const vidFileRef = useRef<HTMLInputElement>(null)
     const vidFormRef = useRef<HTMLDivElement>(null)
@@ -102,7 +108,7 @@ export default function AdminMediaPage() {
     const resetForm = () => {
         const defaultPage = filterPage !== 'all' ? filterPage : 'donate'
         const nextSort = media.length > 0 ? Math.max(...media.map(m => m.sortOrder)) + 1 : 1
-        setForm({ page: defaultPage, title: '', url: '', type: 'background', sortOrder: nextSort, duration: 10 })
+        setForm({ page: defaultPage, title: '', url: '', type: 'background', sortOrder: nextSort, duration: 10, target: 'all' })
         setEditingId(null)
         setShowForm(false)
         if (fileRef.current) fileRef.current.value = ''
@@ -135,7 +141,7 @@ export default function AdminMediaPage() {
     }
 
     const handleEdit = (item: MediaItem) => {
-        setForm({ page: item.page, title: item.title, url: item.url, type: item.type, sortOrder: item.sortOrder, duration: item.duration || 10 })
+        setForm({ page: item.page, title: item.title, url: item.url, type: item.type, sortOrder: item.sortOrder, duration: item.duration || 10, target: item.target || 'all' })
         setEditingId(item.id)
         setShowForm(true)
     }
@@ -165,7 +171,7 @@ export default function AdminMediaPage() {
     // ─── Hero Video handlers ───
     const resetVidForm = () => {
         const nextSort = heroVideos.length > 0 ? Math.max(...heroVideos.map(v => v.sortOrder)) + 1 : 1
-        setVidForm({ title: '', url: '', pages: ['all'], duration: 10, sortOrder: nextSort, active: true })
+        setVidForm({ title: '', url: '', pages: ['all'], duration: 10, sortOrder: nextSort, active: true, target: 'all' })
         setVidEditingId(null)
         setShowVidForm(false)
     }
@@ -197,6 +203,7 @@ export default function AdminMediaPage() {
             duration: vidForm.duration,
             sortOrder: vidForm.sortOrder,
             active: vidForm.active,
+            target: vidForm.target,
         }
         try {
             let res: Response
@@ -219,7 +226,7 @@ export default function AdminMediaPage() {
 
     const handleVidEdit = (item: MediaItem) => {
         const pages = item.page ? item.page.split(',').filter(Boolean) : ['all']
-        setVidForm({ title: item.title, url: item.url, pages, duration: item.duration || 10, sortOrder: item.sortOrder, active: item.active })
+        setVidForm({ title: item.title, url: item.url, pages, duration: item.duration || 10, sortOrder: item.sortOrder, active: item.active, target: item.target || 'all' })
         setVidEditingId(item.id)
         setShowVidForm(true)
         setTimeout(() => vidFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
@@ -444,6 +451,28 @@ export default function AdminMediaPage() {
                                             <img src={form.url} alt="Preview" style={{ width: '100%', height: '100px', objectFit: 'cover' }} />
                                         </div>
                                     )}
+                                    {/* Device target */}
+                                    <div style={{ marginBottom: 'var(--space-sm)' }}>
+                                        <label style={labelStyle}>Show On Device</label>
+                                        <div style={{ display: 'flex', gap: '5px', marginTop: '3px' }}>
+                                            {[
+                                                { value: 'all', label: '🌐 All' },
+                                                { value: 'desktop', label: '🖥️ Desktop' },
+                                                { value: 'mobile', label: '📱 Mobile' },
+                                            ].map(opt => {
+                                                const sel = form.target === opt.value
+                                                return (
+                                                    <button key={opt.value} type="button" onClick={() => setForm(prev => ({ ...prev, target: opt.value }))} style={{
+                                                        padding: '3px 9px', fontSize: '0.65rem', fontWeight: 600,
+                                                        borderRadius: 'var(--radius-full)', cursor: 'pointer',
+                                                        border: `1px solid ${sel ? 'var(--accent-gold)' : 'var(--border-subtle)'}`,
+                                                        background: sel ? 'rgba(212,168,83,0.12)' : 'transparent',
+                                                        color: sel ? 'var(--accent-gold)' : 'var(--text-tertiary)', transition: 'all 0.15s',
+                                                    }}>{opt.label}</button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
                                     <button type="submit" className="btn btn-primary btn-sm" style={{ fontSize: '0.78rem' }}>
                                         {editingId ? 'Update Media' : 'Add Media'}
                                     </button>
@@ -637,6 +666,28 @@ export default function AdminMediaPage() {
                                             })}
                                         </div>
                                     </div>
+                                    {/* Device target */}
+                                    <div style={{ marginTop: 'var(--space-sm)' }}>
+                                        <label style={labelStyle}>Show On Device</label>
+                                        <div style={{ display: 'flex', gap: '5px', marginTop: '3px' }}>
+                                            {[
+                                                { value: 'all', label: '🌐 All Devices' },
+                                                { value: 'desktop', label: '🖥️ Desktop Only' },
+                                                { value: 'mobile', label: '📱 Mobile Only' },
+                                            ].map(opt => {
+                                                const sel = vidForm.target === opt.value
+                                                return (
+                                                    <button key={opt.value} type="button" onClick={() => setVidForm(prev => ({ ...prev, target: opt.value }))} style={{
+                                                        padding: '3px 9px', fontSize: '0.65rem', fontWeight: 600,
+                                                        borderRadius: 'var(--radius-full)', cursor: 'pointer',
+                                                        border: `1px solid ${sel ? 'var(--accent-gold)' : 'var(--border-subtle)'}`,
+                                                        background: sel ? 'rgba(212,168,83,0.12)' : 'transparent',
+                                                        color: sel ? 'var(--accent-gold)' : 'var(--text-tertiary)', transition: 'all 0.15s',
+                                                    }}>{opt.label}</button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.78rem' }}>
                                             <input type="checkbox" checked={vidForm.active} onChange={e => setVidForm({ ...vidForm, active: e.target.checked })}
@@ -721,6 +772,15 @@ export default function AdminMediaPage() {
                                                         color: 'var(--accent-gold)', fontWeight: 600,
                                                     }}>{pill.icon} {pill.label}</span>
                                                 ))}
+                                                {/* Device target pill */}
+                                                {v.target && v.target !== 'all' && (
+                                                    <span style={{
+                                                        fontSize: '0.55rem', padding: '1px 6px', borderRadius: 'var(--radius-full)',
+                                                        background: v.target === 'mobile' ? 'rgba(59,130,246,0.08)' : 'rgba(139,92,246,0.08)',
+                                                        border: `1px solid ${v.target === 'mobile' ? 'rgba(59,130,246,0.15)' : 'rgba(139,92,246,0.15)'}`,
+                                                        color: v.target === 'mobile' ? '#60a5fa' : '#a78bfa', fontWeight: 600,
+                                                    }}>{v.target === 'mobile' ? '📱' : '🖥️'} {v.target}</span>
+                                                )}
                                             </div>
                                         </div>
 

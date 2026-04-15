@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import HeroBackground from '@/components/HeroBackground'
 import Link from 'next/link'
 import Scene3D from '@/components/Scene3D'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
@@ -112,97 +113,19 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
     }, [])
 
-    const [videos, setVideos] = useState<HeroVideo[]>([])
-    const [currentIdx, setCurrentIdx] = useState(0)
-    const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
     const [mounted, setMounted] = useState(false)
-    const videoARef = useRef<HTMLVideoElement>(null)
-    const videoBRef = useRef<HTMLVideoElement>(null)
-    const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
+    // HeroBackground state — drives the video dots
+    const [currentIdx, setCurrentIdx] = useState(0)
+    const [videoCount, setVideoCount] = useState(0)
+    const jumpToVideoRef = useRef<((idx: number) => void) | null>(null)
 
     // Page-entry fade-in
     useEffect(() => { setMounted(true) }, [])
 
-    // Fetch videos from admin-controlled API
-    useEffect(() => {
-        fetch('/api/admin/media?type=hero-video&page=works')
-            .then(r => r.json())
-            .then((data: HeroVideo[]) => {
-                if (data.length > 0) setVideos(data)
-            })
-            .catch(() => { })
-    }, [])
-
-    // Start the first video once loaded
-    useEffect(() => {
-        if (videos.length === 0) return
-        const videoA = videoARef.current
-        if (!videoA) return
-
-        videoA.src = videos[0].url
-        videoA.load()
-        videoA.play().catch(() => { })
-        setActiveSlot('A')
-
-        // Schedule crossfade to next video (if multiple)
-        if (videos.length > 1) {
-            const durationMs = (videos[0].duration || 10) * 1000
-            videoTimerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
-        }
-
-        return () => {
-            if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videos])
-
-    // Crossfade: preload next video in inactive slot, then swap
-    const crossfadeToNext = useCallback((prevIdx: number) => {
-        if (videos.length <= 1) return
-
-        const nextIdx = (prevIdx + 1) % videos.length
-        setCurrentIdx(nextIdx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = videos[nextIdx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        const durationMs = (videos[nextIdx].duration || 10) * 1000
-        if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
-        videoTimerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
-    }, [videos])
-
-    // Manual dot click
-    const jumpToVideo = useCallback((idx: number) => {
-        if (idx === currentIdx) return
+    const handleVideoChange = useCallback((idx: number, total: number) => {
         setCurrentIdx(idx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = videos[idx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        // Reschedule auto-rotation from this video
-        if (videos.length > 1) {
-            const durationMs = (videos[idx].duration || 10) * 1000
-            if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
-            videoTimerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
-        }
-    }, [currentIdx, videos, crossfadeToNext])
+        setVideoCount(total)
+    }, [])
 
     return (
         <main id="main-content" style={{
@@ -212,72 +135,20 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             {/* 3D Particle Background */}
             <Scene3D />
 
-            {/* ═══ FIXED VIDEO BACKGROUND — always rendered dark base + crossfading video slots ═══ */}
-            <div className="works-video-bg" style={{
-                position: 'fixed',
-                top: 0, left: 0,
-                width: '100%', height: '100dvh',
-                zIndex: 0,
-                background: '#0d0f14',
-            }}>
-                {/* Static poster shown until first video loads */}
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    backgroundImage: 'url(/images/works-bg.png)',
-                    backgroundSize: 'cover', backgroundPosition: 'center',
-                    opacity: videos.length === 0 ? 0.3 : 0,
-                    transition: 'opacity 0.8s ease',
-                }} />
-                <video
-                    ref={videoARef}
-                    autoPlay muted playsInline loop
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                    poster="/images/works-bg.png"
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: videos.length > 0 && activeSlot === 'A' ? 1 : 0,
-                        transition: 'opacity 1.2s ease-in-out',
-                        zIndex: activeSlot === 'A' ? 1 : 0,
-                    }}
-                />
-                <video
-                    ref={videoBRef}
-                    autoPlay muted playsInline loop
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: videos.length > 0 && activeSlot === 'B' ? 1 : 0,
-                        transition: 'opacity 1.2s ease-in-out',
-                        zIndex: activeSlot === 'B' ? 1 : 0,
-                    }}
-                />
-            </div>
-
-            {/* ═══ SINGLE FIXED GRADIENT OVERLAY — covers the entire viewport over the video ═══ */}
-            <div style={{
-                position: 'fixed',
-                top: 0, left: 0,
-                width: '100%', height: '100dvh',
-                zIndex: 0,
-                background: 'linear-gradient(180deg, rgba(13,15,20,0.25) 0%, rgba(13,15,20,0.1) 25%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.5) 75%, rgba(13,15,20,0.8) 100%)',
-                pointerEvents: 'none',
-            }} />
+            {/* ═══ HERO BACKGROUND — images (priority) or videos (fallback) ═══ */}
+            <HeroBackground
+                page="works"
+                isMobile={isMobile}
+                poster="/images/works-bg.png"
+                className="works-video-bg"
+                onVideoChange={handleVideoChange}
+                jumpToVideoRef={jumpToVideoRef}
+            />
 
             {/* ═══ HERO CONTENT — scrolls away as user scrolls ═══ */}
             <section style={{
                 position: 'relative',
                 height: '100dvh',
-                overflow: 'hidden',
                 zIndex: 1,
             }}>
                 {/* Content overlay — sits on top of the video */}
@@ -398,12 +269,12 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                             </svg>
                         </a>
 
-                        {videos.length > 1 && (
+                        {videoCount > 1 && (
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                                {videos.map((_, i) => (
+                                {Array.from({ length: videoCount }, (_, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => jumpToVideo(i)}
+                                        onClick={() => jumpToVideoRef.current?.(i)}
                                         style={{
                                             width: currentIdx === i ? '28px' : '6px',
                                             height: '6px',
@@ -569,7 +440,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                                     overflowY: 'hidden',
                                                     scrollSnapType: 'x mandatory',
                                                     overscrollBehaviorX: 'contain',
-                                                    touchAction: 'pan-x',
+                                                    touchAction: 'pan-x pan-y',
                                                     paddingBottom: '12px',
                                                     scrollbarWidth: 'none',
                                                     msOverflowStyle: 'none',

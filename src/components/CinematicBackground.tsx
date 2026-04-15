@@ -5,6 +5,11 @@
  * don't have admin-uploaded Page Media. Provides a premium, cinematic feel
  * with animated gradients and optional film grain.
  *
+ * PERF: On mobile, animations are disabled (static gradients only).
+ * Each animated fixed-position div creates a compositing layer — with 3
+ * running simultaneously + film grain texture, this causes significant
+ * GPU heat on mobile devices.
+ *
  * Variants:
  *  - "auth"       → Warm gold + deep blue, evokes studio entrance
  *  - "dashboard"  → Subtle cool gradient, professional & clean
@@ -55,32 +60,41 @@ export default function CinematicBackground({ variant = 'auth' }: Props) {
 
     return (
         <>
-            {/* Primary ambient gradient — slow drift animation */}
-            <div style={{
+            {/* 
+                PERF: On mobile, all 3 gradient layers are collapsed into a single
+                static composite div to avoid 3 GPU compositing layers + animation.
+                Desktop still gets the drift animations.
+            */}
+
+            {/* Mobile: single static composite gradient (1 layer instead of 3) */}
+            <div className="cinematic-bg-mobile" style={{
+                position: 'fixed', inset: 0, zIndex: 0,
+                background: `${v.gradient1}, ${v.gradient2}, ${v.gradient3}`,
+                pointerEvents: 'none',
+            }} />
+
+            {/* Desktop: separate animated layers */}
+            <div className="cinematic-bg-desktop" style={{
                 position: 'fixed', inset: 0, zIndex: 0,
                 background: v.gradient1,
                 animation: 'cinematicDrift1 20s ease-in-out infinite alternate',
                 pointerEvents: 'none',
             }} />
-
-            {/* Secondary gradient — opposing drift */}
-            <div style={{
+            <div className="cinematic-bg-desktop" style={{
                 position: 'fixed', inset: 0, zIndex: 0,
                 background: v.gradient2,
                 animation: 'cinematicDrift2 25s ease-in-out infinite alternate',
                 pointerEvents: 'none',
             }} />
-
-            {/* Tertiary accent glow */}
-            <div style={{
+            <div className="cinematic-bg-desktop" style={{
                 position: 'fixed', inset: 0, zIndex: 0,
                 background: v.gradient3,
                 animation: 'cinematicPulse 15s ease-in-out infinite alternate',
                 pointerEvents: 'none',
             }} />
 
-            {/* Subtle film grain texture */}
-            <div style={{
+            {/* Film grain — desktop only (creates compositing layer) */}
+            <div className="cinematic-bg-desktop" style={{
                 position: 'fixed', inset: 0, zIndex: 0,
                 backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E")`,
                 backgroundRepeat: 'repeat',
@@ -88,7 +102,7 @@ export default function CinematicBackground({ variant = 'auth' }: Props) {
                 pointerEvents: 'none',
             }} />
 
-            {/* Bottom vignette for depth */}
+            {/* Bottom vignette for depth — static, cheap on both */}
             <div style={{
                 position: 'fixed', inset: 0, zIndex: 0,
                 background: 'linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(10,10,16,0.4) 100%)',
@@ -107,6 +121,21 @@ export default function CinematicBackground({ variant = 'auth' }: Props) {
                 @keyframes cinematicPulse {
                     0% { opacity: 0.5; }
                     100% { opacity: 1; }
+                }
+
+                /* Mobile: show composite, hide animated layers */
+                @media (max-width: 768px) {
+                    .cinematic-bg-desktop { display: none !important; }
+                    .cinematic-bg-mobile  { display: block !important; }
+                }
+                /* Desktop: show animated layers, hide composite */
+                @media (min-width: 769px) {
+                    .cinematic-bg-desktop { display: block; }
+                    .cinematic-bg-mobile  { display: none !important; }
+                }
+                /* Respect user preference */
+                @media (prefers-reduced-motion: reduce) {
+                    .cinematic-bg-desktop { animation: none !important; }
                 }
             `}</style>
         </>

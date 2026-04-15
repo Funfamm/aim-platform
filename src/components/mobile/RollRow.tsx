@@ -104,7 +104,7 @@ export default function RollRow({ title, titleI18n, icon, projects, locale, onCa
                     msOverflowStyle: 'none',
                     scrollSnapType: 'x mandatory',
                     overscrollBehaviorX: 'contain', // stop x-scroll from propagating to body y-scroll
-                    touchAction: 'pan-x',           // only consume horizontal touch events
+                    touchAction: 'pan-x pan-y',     // allow both directions — browser picks axis
                 }}
             >
                 <style>{`.movie-strip::-webkit-scrollbar{display:none}`}</style>
