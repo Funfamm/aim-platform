@@ -97,13 +97,14 @@ export default function RollRow({ title, titleI18n, icon, projects, locale, onCa
                     display: 'flex',
                     gap: '10px',
                     overflowX: 'auto',
-                    overflowY: 'visible',
+                    overflowY: 'hidden',          // must be hidden, not visible — iOS auto-converts visible→auto causing bounce
                     paddingBottom: '6px',
                     paddingTop: '2px',
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none',
-                    WebkitOverflowScrolling: 'touch',
                     scrollSnapType: 'x mandatory',
+                    overscrollBehaviorX: 'contain', // stop x-scroll from propagating to body y-scroll
+                    touchAction: 'pan-x',           // only consume horizontal touch events
                 }}
             >
                 <style>{`.movie-strip::-webkit-scrollbar{display:none}`}</style>

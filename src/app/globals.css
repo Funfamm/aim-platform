@@ -374,7 +374,7 @@ body {
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-x: none;           /* prevent horizontal rubber-band */
   overscroll-behavior-y: auto;           /* allow pull-to-refresh */
-  -webkit-overflow-scrolling: touch;
+  /* -webkit-overflow-scrolling removed: deprecated and causes bounce on iOS 16+ */
 }
 
 /* Ultra-fine grain texture overlay */
@@ -823,12 +823,13 @@ select::placeholder {
   display: flex;
   gap: 12px;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: hidden;                      /* must not be visible — iOS turns it into auto = bounce */
   scrollbar-width: none;
   -ms-overflow-style: none;
-  -webkit-overflow-scrolling: touch;
+  /* -webkit-overflow-scrolling removed: causes rubber-band on modern iOS */
   scroll-snap-type: x mandatory;
-  overscroll-behavior-x: contain; /* stop scroll from propagating to page */
+  overscroll-behavior-x: contain;          /* stop x-scroll from triggering y-scroll */
+  touch-action: pan-x;                     /* only consume horizontal touch events */
   padding-bottom: 8px;
 }
 .scroll-row::-webkit-scrollbar { display: none; }
@@ -843,11 +844,10 @@ select::placeholder {
 
 /* ── GPU promotion for card animations ── */
 @media (max-width: 768px) {
-  /* Promote scroll containers to own GPU layer */
+  /* Promote scroll containers to own GPU layer — no will-change: scroll-position (causes jitter) */
   .scroll-row,
   .movie-strip {
     transform: translateZ(0);
-    will-change: scroll-position;
   }
 
   /* Only transition compositor-safe properties on mobile cards */

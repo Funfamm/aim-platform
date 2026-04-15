@@ -151,13 +151,14 @@ export default function MovieRow({ title, icon, query, locale, onCardHover, onCa
                     display: 'flex',
                     gap: '10px',
                     overflowX: 'auto',
-                    overflowY: 'visible',
+                    overflowY: 'hidden',          // not visible — iOS converts visible→auto = bounce
                     paddingBottom: '6px',
                     paddingTop: '2px',
                     scrollbarWidth: 'none',
                     msOverflowStyle: 'none',
-                    WebkitOverflowScrolling: 'touch',
                     scrollSnapType: 'x mandatory',
+                    overscrollBehaviorX: 'contain',
+                    touchAction: 'pan-x',
                 }}
             >
                 <style>{`.movie-strip::-webkit-scrollbar{display:none}`}</style>
