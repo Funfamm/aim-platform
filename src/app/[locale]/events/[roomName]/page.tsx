@@ -502,7 +502,11 @@ export default async function EventPage({ params }: EventPageProps) {
                             </Link>
                         </div>
                     ) : (
-                        <RoomShell roomName={roomName} role={role} exitPath="/" />
+                        <RoomShell
+                            roomName={roomName}
+                            role={role}
+                            exitPath={isAdmin ? '/admin/events' : '/events'}
+                        />
                     )}
                 </div>
             </main>
