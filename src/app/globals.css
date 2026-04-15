@@ -1916,6 +1916,28 @@ select::placeholder {
   }
 }
 
+/* ── Movie Rolls page — mobile action menu ── */
+.mr-actions-expanded {
+  display: none;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  padding: 0.55rem 0.75rem;
+  gap: 8px;
+}
+.mr-act-btn {
+  flex: 1; padding: 0.65rem 0; border-radius: 10px; border: none;
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8);
+  font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-family: inherit;
+}
+.mr-act-edit   { background: rgba(96,165,250,0.09) !important; color: #60a5fa !important; }
+.mr-act-delete { background: rgba(239,68,68,0.09)  !important; color: #f87171 !important; }
+@media (max-width: 640px) {
+  .mr-actions-desktop  { display: none !important; }
+  .mr-actions-menu-btn { display: flex !important; }
+  .mr-actions-expanded { display: flex !important; }
+}
+
 /* Landscape mobile / small tablets */
 @media (min-width: 769px) and (max-width: 1024px) {
   .admin-sidebar {

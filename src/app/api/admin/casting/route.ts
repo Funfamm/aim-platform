@@ -16,7 +16,7 @@ export async function GET() {
         orderBy: { createdAt: 'desc' },
         take: 200,
         select: {
-            id: true, projectId: true, roleName: true, roleType: true,
+            id: true, projectId: true, roleName: true, roleType: true, genre: true,
             roleDescription: true, ageRange: true, gender: true, ethnicity: true,
             requirements: true, compensation: true, deadline: true, status: true,
             translations: true, bannerUrl: true, createdAt: true,
@@ -53,6 +53,7 @@ export async function POST(req: Request) {
             roleName: body.roleName,
             roleType: body.roleType || 'lead',
             roleDescription: body.roleDescription,
+            genre: body.genre || null,
             ageRange: body.ageRange || null,
             gender: body.gender || null,
             ethnicity: body.ethnicity || null,

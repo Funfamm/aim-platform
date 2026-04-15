@@ -199,6 +199,7 @@ model CastingCall {
   roleName        String
   roleType        String        @default("lead")
   roleDescription String
+  genre           String?
   ageRange        String?
   gender          String?
   ethnicity       String?
@@ -217,6 +218,7 @@ model CastingCall {
   @@index([roleName, roleDescription])
   @@index([status])
   @@index([projectId])
+  @@index([genre])
 }
 
 model Application {

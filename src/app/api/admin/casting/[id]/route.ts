@@ -26,6 +26,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.roleName !== undefined && { roleName: body.roleName }),
             ...(body.roleType !== undefined && { roleType: body.roleType }),
             ...(body.roleDescription !== undefined && { roleDescription: body.roleDescription }),
+            ...(body.genre !== undefined && { genre: body.genre || null }),
             ...(body.ageRange !== undefined && { ageRange: body.ageRange || null }),
             ...(body.gender !== undefined && { gender: body.gender || null }),
             ...(body.ethnicity !== undefined && { ethnicity: body.ethnicity || null }),

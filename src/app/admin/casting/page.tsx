@@ -19,18 +19,23 @@ type CastingCall = {
 
 type FormData = {
     projectId: string; roleName: string; roleType: string; roleDescription: string
-    ageRange: string; gender: string; ethnicity: string
+    genre: string; ageRange: string; gender: string; ethnicity: string
     requirements: string; compensation: string; deadline: string; status: string
     bannerUrl: string
 }
 
 const EMPTY_FORM: FormData = {
     projectId: '', roleName: '', roleType: 'lead', roleDescription: '',
-    ageRange: '', gender: '', ethnicity: '',
+    genre: '', ageRange: '', gender: '', ethnicity: '',
     requirements: '', compensation: 'Voluntary', deadline: '', status: 'open',
     bannerUrl: '',
 }
 
+const GENRES = [
+    'Action', 'Adventure', 'Animation', 'Biography', 'Comedy', 'Crime',
+    'Documentary', 'Drama', 'Fantasy', 'Historical', 'Horror', 'Musical',
+    'Mystery', 'Romance', 'Sci-Fi', 'Short Film', 'Thriller', 'War', 'Western',
+]
 const ROLE_TYPES = ['lead', 'supporting', 'extra', 'voice']
 const STATUSES = ['open', 'closed', 'filled']
 
@@ -109,6 +114,7 @@ export default function AdminCastingPage() {
             roleName: c.roleName,
             roleType: c.roleType,
             roleDescription: c.roleDescription,
+            genre: (c as unknown as { genre?: string }).genre || '',
             ageRange: c.ageRange || '',
             gender: c.gender || '',
             ethnicity: c.ethnicity || '',
@@ -407,6 +413,11 @@ export default function AdminCastingPage() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                                                     <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{call.roleName}</span>
                                                     <span className={`badge ${roleClass}`} style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{call.roleType}</span>
+                                                    {(call as unknown as { genre?: string }).genre && (
+                                                        <span style={{ fontSize: '0.6rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(212,168,83,0.1)', color: 'var(--accent-gold)', fontWeight: 700, border: '1px solid rgba(212,168,83,0.2)' }}>
+                                                            {(call as unknown as { genre?: string }).genre}
+                                                        </span>
+                                                    )}
                                                     <span className={`badge ${status.className}`} style={{ fontSize: '0.6rem', padding: '2px 8px' }}>{status.label}</span>
                                                     <TranslationBadge translationsJson={call.translations} retry={{ type: 'casting', id: call.id }} />
                                                 </div>
@@ -540,6 +551,16 @@ export default function AdminCastingPage() {
                                     <textarea className="admin-textarea" rows={3} value={form.roleDescription}
                                         onChange={e => updateField('roleDescription', e.target.value)}
                                         placeholder="Describe the character and their role in the story..." required />
+                                </div>
+
+                                {/* Genre */}
+                                <div>
+                                    <label className="admin-label">Genre (for this role)</label>
+                                    <select className="admin-input" value={form.genre} onChange={e => updateField('genre', e.target.value)}
+                                        style={{ cursor: 'pointer', appearance: 'auto' }}>
+                                        <option value="">Any / Not specified</option>
+                                        {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                    </select>
                                 </div>
 
                                 {/* Age, Gender, Ethnicity */}

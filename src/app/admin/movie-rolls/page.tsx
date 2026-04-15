@@ -61,6 +61,101 @@ const S = {
     } as React.CSSProperties,
 }
 
+/* ── Roll Card (mobile-aware ⋯ menu) ────────────────────────── */
+function RollCard({
+    roll, idx, onToggleVisibility, onEdit, onDelete,
+}: {
+    roll: Roll; idx: number
+    onToggleVisibility: (r: Roll) => void
+    onEdit: (r: Roll) => void
+    onDelete: (r: Roll) => void
+}) {
+    const [menuOpen, setMenuOpen] = useState(false)
+
+    return (
+        <div style={{
+            borderRadius: '12px',
+            border: `1px solid ${roll.visible ? 'rgba(212,168,83,0.2)' : 'rgba(255,255,255,0.07)'}`,
+            background: 'rgba(255,255,255,0.022)', overflow: 'hidden',
+        }}>
+            {/* Main info row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.9rem 1rem' }}>
+                <span style={{
+                    width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
+                    background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center',
+                    justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800,
+                    color: 'rgba(255,255,255,0.35)',
+                }}>{idx + 1}</span>
+
+                <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>{roll.icon}</span>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff' }}>{roll.title}</span>
+                        <span style={{
+                            fontSize: '0.58rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px',
+                            background: roll.visible ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.05)',
+                            color: roll.visible ? '#34d399' : 'rgba(255,255,255,0.35)',
+                            textTransform: 'uppercase',
+                        }}>{roll.visible ? 'Live' : 'Hidden'}</span>
+                        <span style={{
+                            fontSize: '0.58rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px',
+                            background: 'rgba(96,165,250,0.1)', color: '#60a5fa',
+                        }}>{DISPLAY_LABELS[roll.displayOn] ?? roll.displayOn}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>
+                        {roll._count.projects} project{roll._count.projects !== 1 ? 's' : ''} assigned · /{roll.slug}
+                    </div>
+                </div>
+
+                {/* Desktop actions */}
+                <div className="mr-actions-desktop" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                    <button style={S.btnGhost} onClick={() => onToggleVisibility(roll)}>
+                        {roll.visible ? '👁 Hide' : '✦ Show'}
+                    </button>
+                    <button style={S.btnGhost} onClick={() => onEdit(roll)}>✏️ Edit</button>
+                    <button style={S.btnDanger} onClick={() => onDelete(roll)}>🗑️</button>
+                </div>
+
+                {/* Mobile ⋯ button */}
+                <button
+                    className="mr-actions-menu-btn"
+                    onClick={() => setMenuOpen(o => !o)}
+                    aria-label="Actions"
+                    style={{
+                        width: '36px', height: '36px', borderRadius: '9px', flexShrink: 0,
+                        background: menuOpen ? 'rgba(212,168,83,0.12)' : 'rgba(255,255,255,0.05)',
+                        border: `1px solid ${menuOpen ? 'rgba(212,168,83,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                        color: menuOpen ? '#d4a853' : 'rgba(255,255,255,0.6)',
+                        fontSize: '1.25rem', cursor: 'pointer',
+                        display: 'none', /* CSS switch on mobile */
+                        alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.18s', lineHeight: 1,
+                    }}
+                >⋯</button>
+            </div>
+
+            {/* Expanded mobile actions */}
+            {menuOpen && (
+                <div className="mr-actions-expanded">
+                    <button className="mr-act-btn"
+                        onClick={() => { onToggleVisibility(roll); setMenuOpen(false) }}>
+                        {roll.visible ? '👁 Hide' : '✦ Show'}
+                    </button>
+                    <button className="mr-act-btn mr-act-edit"
+                        onClick={() => { onEdit(roll); setMenuOpen(false) }}>
+                        ✏️ Edit
+                    </button>
+                    <button className="mr-act-btn mr-act-delete"
+                        onClick={() => { onDelete(roll); setMenuOpen(false) }}>
+                        🗑️ Delete
+                    </button>
+                </div>
+            )}
+        </div>
+    )
+}
+
 /* ── Custom Select Dropdown ─────────────────────────────────── */
 function CustomSelect({
     value, onChange, options,
@@ -465,48 +560,14 @@ export default function MovieRollsAdmin() {
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                             {rolls.map((roll, idx) => (
-                                <div key={roll.id} style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                    padding: '0.9rem 1rem', borderRadius: '12px',
-                                    border: `1px solid ${roll.visible ? 'rgba(212,168,83,0.2)' : 'rgba(255,255,255,0.07)'}`,
-                                    background: 'rgba(255,255,255,0.022)',
-                                }}>
-                                    <span style={{
-                                        width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
-                                        background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center',
-                                        justifyContent: 'center', fontSize: '0.72rem', fontWeight: 800,
-                                        color: 'rgba(255,255,255,0.35)',
-                                    }}>{idx + 1}</span>
-
-                                    <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>{roll.icon}</span>
-
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fff' }}>{roll.title}</span>
-                                            <span style={{
-                                                fontSize: '0.58rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px',
-                                                background: roll.visible ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.05)',
-                                                color: roll.visible ? '#34d399' : 'rgba(255,255,255,0.35)',
-                                                textTransform: 'uppercase',
-                                            }}>{roll.visible ? 'Live' : 'Hidden'}</span>
-                                            <span style={{
-                                                fontSize: '0.58rem', fontWeight: 700, padding: '2px 7px', borderRadius: '5px',
-                                                background: 'rgba(96,165,250,0.1)', color: '#60a5fa',
-                                            }}>{DISPLAY_LABELS[roll.displayOn] ?? roll.displayOn}</span>
-                                        </div>
-                                        <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', marginTop: '3px' }}>
-                                            {roll._count.projects} project{roll._count.projects !== 1 ? 's' : ''} assigned · /{roll.slug}
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-                                        <button style={S.btnGhost} onClick={() => toggleVisibility(roll)}>
-                                            {roll.visible ? '👁 Hide' : '✦ Show'}
-                                        </button>
-                                        <button style={S.btnGhost} onClick={() => openEdit(roll)}>✏️ Edit</button>
-                                        <button style={S.btnDanger} onClick={() => deleteRoll(roll)}>🗑️</button>
-                                    </div>
-                                </div>
+                                <RollCard
+                                    key={roll.id}
+                                    roll={roll}
+                                    idx={idx}
+                                    onToggleVisibility={toggleVisibility}
+                                    onEdit={openEdit}
+                                    onDelete={deleteRoll}
+                                />
                             ))}
                         </div>
                     )}
