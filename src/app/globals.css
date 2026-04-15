@@ -870,6 +870,19 @@ select::placeholder {
     transition: transform 0.2s ease, opacity 0.2s ease;
     /* NOT: box-shadow, border-color, background */
   }
+
+  /* Fix iOS bounce: position:fixed inside scrolling container causes rubber-band.
+     Switch to position:absolute on mobile — the page scroll handles movement. */
+  .works-video-bg {
+    position: absolute !important;
+  }
+
+  /* Lock movie strip horizontal scroll from leaking into vertical page scroll */
+  .movie-strip {
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
+    overflow-y: hidden !important; /* iOS converts visible→auto causing bounce */
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════

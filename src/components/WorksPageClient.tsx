@@ -209,12 +209,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             overflowX: 'hidden', width: '100%',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 0.4s ease',
+            overscrollBehavior: 'contain',  // prevent whole-page bounce
         }}>
             {/* 3D Particle Background */}
             <Scene3D />
 
             {/* ═══ FIXED VIDEO BACKGROUND — always rendered dark base + crossfading video slots ═══ */}
-            <div style={{
+            <div className="works-video-bg" style={{
                 position: 'fixed',
                 top: 0, left: 0,
                 width: '100%', height: '100dvh',
