@@ -54,7 +54,8 @@ export async function POST(req: Request) {
 
         await roomSvc.createRoom({
             name: roomName,
-            emptyTimeout: 300,       // auto-close 5 min after last participant leaves
+            emptyTimeout: 7200,      // keep room alive 2 hrs after last participant leaves
+            departureTimeout: 120,   // 2 min grace after all participants depart before teardown
             maxParticipants: 100,
             metadata: JSON.stringify({
                 title: event?.title ?? roomName,

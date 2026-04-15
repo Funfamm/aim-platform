@@ -76,8 +76,11 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                 borderRadius: '12px',
                 overflow: 'hidden',
                 position: 'relative',
-                background: 'rgba(13,15,22,0.95)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'linear-gradient(160deg, rgba(16,18,28,0.82) 0%, rgba(10,11,20,0.78) 100%)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: '0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)',
                 /* transition handled by .press-feedback */
             }}
         >
@@ -165,7 +168,8 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
             {/* ── Info panel ── */}
             <div style={{
                 padding: '10px 10px 8px',
-                borderTop: '1px solid rgba(212,168,83,0.06)',
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                background: 'linear-gradient(180deg, rgba(8,9,18,0.6) 0%, rgba(6,7,14,0.85) 100%)',
             }}>
                 {/* Title */}
                 <Link
@@ -181,16 +185,21 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                     }}
                 >{loc.title}</Link>
 
-                {/* Genre */}
+                {/* Genre pills */}
                 {loc.genre && (
-                    <div style={{
-                        fontSize: '0.55rem', fontWeight: 600,
-                        color: 'var(--accent-gold)', letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        marginBottom: '6px',
-                        opacity: 0.8,
-                    }}>{loc.genre}</div>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                        {loc.genre.split(',').map(g => g.trim()).filter(Boolean).slice(0, 2).map((g, i) => (
+                            <span key={i} style={{
+                                fontSize: '0.5rem', fontWeight: 700,
+                                color: 'var(--accent-gold)', letterSpacing: '0.08em',
+                                textTransform: 'uppercase',
+                                background: 'rgba(212,168,83,0.08)',
+                                border: '1px solid rgba(212,168,83,0.18)',
+                                padding: '1px 6px', borderRadius: '20px',
+                                opacity: 0.9,
+                            }}>{g}</span>
+                        ))}
+                    </div>
                 )}
 
                 {/* Action button — changes based on production status */}

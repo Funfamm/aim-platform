@@ -4,9 +4,11 @@ import Footer from '@/components/Footer'
 import HomeHero from '@/components/HomeHero'
 const Scene3D = dynamic(() => import('@/components/Scene3D'))
 const FeaturedProjects3D = dynamic(() => import('@/components/FeaturedProjects3D'))
+const RollRow = dynamic(() => import('@/components/mobile/RollRow'), { ssr: false })
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import SponsorBannerSection from '@/components/SponsorBannerSection'
 import { prisma } from '@/lib/db'
+import { sanitizeBigInt } from '@/lib/serializer'
 import { getTranslations } from 'next-intl/server'
 
 // ISR: regenerate at most every 60 seconds
@@ -27,7 +29,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       throw err;
     }
   };
-  const [featuredProjects, completedCount, upcomingCount, openCastings, homeSponsors, siteSettings] = await safeQuery(() =>
+  const [featuredProjects, completedCount, upcomingCount, openCastings, homeSponsors, siteSettings, rawRolls] = await safeQuery(() =>
     Promise.all([
       prisma.project.findMany({
         where: { featured: true },
@@ -61,6 +63,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         },
       }),
       prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true } }).catch(() => null),
+      prisma.movieRoll.findMany({
+        where: {
+          visible: true,
+          displayOn: { in: ['homepage', 'both'] },
+        },
+        orderBy: { sortOrder: 'asc' },
+        include: { projects: { orderBy: { sortOrder: 'asc' }, select: { projectId: true, sortOrder: true } } },
+      }),
     ])
   );
 
@@ -69,6 +79,29 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     const i18n = s.descriptionI18n as Record<string, string> | null
     return { ...s, description: i18n?.[locale] || i18n?.['en'] || s.description, descriptionI18n: undefined }
   })
+
+  // Normalize homepage rolls — two-step: first collect all projectIds, then batch-fetch
+  const allRollProjectIds = [...new Set(rawRolls.flatMap((r: { projects: Array<{ projectId: string }> }) => r.projects.map(p => p.projectId)))] as string[]
+  const rollProjects = allRollProjectIds.length > 0
+    ? await prisma.project.findMany({
+        where: { id: { in: allRollProjectIds } },
+        include: { _count: { select: { episodes: true } } },
+      })
+    : [] as Awaited<ReturnType<typeof prisma.project.findMany>>
+  const rollProjectMap = new Map(rollProjects.map(p => [p.id, { ...sanitizeBigInt({ ...p, _count: undefined }), episodeCount: (p as typeof p & { _count: { episodes: number } })._count?.episodes ?? 0 }]))
+
+  const homeRolls = rawRolls
+    .map((roll: { id: string; title: string; titleI18n: unknown; icon: string; slug: string; projects: Array<{ projectId: string; sortOrder: number }> }) => ({
+      id:        roll.id,
+      title:     roll.title,
+      titleI18n: roll.titleI18n as string | null,
+      icon:      roll.icon,
+      slug:      roll.slug,
+      projects:  roll.projects
+        .map(rp => rollProjectMap.get(rp.projectId))
+        .filter(Boolean),
+    }))
+    .filter((roll: { projects: unknown[] }) => roll.projects.length > 0)
 
   type Project = typeof featuredProjects[number]
 
@@ -159,7 +192,33 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </div>
       </section>
 
-
+      {/* ═══ CURATED ROLL ROWS (admin-defined) ═══ */}
+      {homeRolls.length > 0 && (
+        <section style={{ position: 'relative', zIndex: 2, background: 'var(--bg-primary)', padding: '0 0 var(--space-2xl)' }}>
+          <div className="container">
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              marginBottom: 'var(--space-lg)',
+              paddingTop: 'var(--space-lg)',
+            }}>
+              <div style={{ width: '24px', height: '2px', background: 'var(--accent-gold)', borderRadius: '2px' }} />
+              <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent-gold)' }}>
+                Curated Collections
+              </span>
+            </div>
+            {(homeRolls as Array<{ id: string; title: string; titleI18n: string | null; icon: string; slug: string; projects: unknown[] }>).map((roll) => (
+              <RollRow
+                key={roll.id}
+                title={roll.title}
+                titleI18n={roll.titleI18n}
+                icon={roll.icon}
+                projects={roll.projects as unknown as import('@/components/mobile/MovieCard').ProjectCard[]}
+                locale={locale}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ═══ SPONSORS & CASTING CTA ═══ */}
       <SponsorBannerSection sponsors={localizedSponsors} />

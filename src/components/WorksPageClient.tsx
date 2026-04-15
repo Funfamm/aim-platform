@@ -14,6 +14,7 @@ import type { ProjectCard } from '@/components/mobile/MovieCard'
 // Mobile-only components — code-split so desktop never loads them
 const SearchBar        = dynamic(() => import('@/components/mobile/SearchBar'),         { ssr: false })
 const MovieRow         = dynamic(() => import('@/components/mobile/MovieRow'),           { ssr: false })
+const RollRow          = dynamic(() => import('@/components/mobile/RollRow'),            { ssr: false })
 const HoverPreviewCard = dynamic(() => import('@/components/desktop/HoverPreviewCard'), { ssr: false })
 
 interface Project {
@@ -47,13 +48,21 @@ interface WorksPageClientProps {
     completedCount: number
     inProdCount: number
     genres: string[]  // distinct genres from DB for mobile filter chips
+    rolls?: Array<{
+        id: string
+        title: string
+        titleI18n: string | null
+        icon: string
+        slug: string
+        projects: Project[]
+    }>
 }
 
 // ── Detects mobile viewport after hydration (SSR-safe) ──────────────────────
 
 
 
-export default function WorksPageClient({ projects, completedCount, inProdCount, genres }: WorksPageClientProps) {
+export default function WorksPageClient({ projects, completedCount, inProdCount, genres, rolls = [] }: WorksPageClientProps) {
     const t = useTranslations('works')
     const locale = useLocale()
     const isMobile = useIsMobile()
@@ -498,6 +507,20 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                             <div>
                                 <SearchBar />
 
+                                {/* ✨ Admin-curated rolls — shown first, above fixed rows */}
+                                {rolls.map(roll => (
+                                    <RollRow
+                                        key={roll.id}
+                                        title={roll.title}
+                                        titleI18n={roll.titleI18n}
+                                        icon={roll.icon}
+                                        projects={roll.projects as unknown as import('@/components/mobile/MovieCard').ProjectCard[]}
+                                        locale={locale}
+                                        onCardHover={handleCardHover as unknown as (p: import('@/components/mobile/MovieCard').ProjectCard, r: DOMRect) => void}
+                                        onCardHoverEnd={handleCardHoverEnd}
+                                    />
+                                ))}
+
                                 {/* Fixed rows: Featured, Trending, New, Completed */}
                                 {FIXED_ROWS.map(row => (
                                     <MovieRow
@@ -565,7 +588,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                                     <span style={{
                                                         fontSize: '0.5rem', fontWeight: 600, letterSpacing: '0.14em',
                                                         textTransform: 'uppercase' as const, color: 'var(--accent-gold)',
-                                                    }}>{loc.genre}</span>
+                                                    }}>{loc.genre ? loc.genre.split(',').map(g => g.trim()).filter(Boolean).join(' · ') : ''}</span>
                                                     {project.status === 'completed' && (
                                                         <span style={{
                                                             fontSize: '0.45rem', fontWeight: 600, letterSpacing: '0.08em',

@@ -54,6 +54,7 @@ export default function RoomShell({
     const leftRoomRef       = useRef(false)   // deliberate leave flag
     const reconnectAttempts = useRef(0)
     const reconnectTimer    = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const connectedOnce     = useRef(false)   // tracks whether we've ever had a good connection
     // When we get a fresh token the new key on <LiveKitRoom> causes the old
     // instance to unmount, which fires onDisconnected synchronously.
     // This flag suppresses that spurious disconnect event.
@@ -123,7 +124,12 @@ export default function RoomShell({
         reconnectAttempts.current += 1
 
         if (reconnectAttempts.current > MAX_RECONNECT_ATTEMPTS) {
-            setError(`Connection lost after ${MAX_RECONNECT_ATTEMPTS} attempts. Please refresh.`)
+            // If we never had a successful connection this is likely a room-provisioning
+            // issue (room was GC'd by LiveKit). Show a friendlier message.
+            const msg = connectedOnce.current
+                ? `Connection lost after ${MAX_RECONNECT_ATTEMPTS} attempts. Please refresh.`
+                : 'Room is starting up — please wait a moment and retry.'
+            setError(msg)
             return
         }
 
@@ -145,6 +151,7 @@ export default function RoomShell({
         // Successful connect clears all reconnect state and the remount flag
         remountingRef.current     = false
         reconnectAttempts.current = 0
+        connectedOnce.current     = true
         setReconnecting(false)
     }, [])
 

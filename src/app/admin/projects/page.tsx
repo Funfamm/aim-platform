@@ -785,35 +785,48 @@ export default function AdminProjectsPage() {
                                         placeholder="Full synopsis or description of the project..." required />
                                 </div>
 
-                                {/* Genre, Year, Duration */}
-                                <div className="admin-form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
-                                    <div>
-                                        <label className="admin-label">Genre</label>
-                                        <select className="admin-input" value={form.genre}
-                                            onChange={e => updateField('genre', e.target.value)}
-                                            style={{ cursor: 'pointer', appearance: 'auto' }}>
-                                            <option value="">Select genre…</option>
-                                            <option value="Action">Action</option>
-                                            <option value="Adventure">Adventure</option>
-                                            <option value="Animation">Animation</option>
-                                            <option value="Biography">Biography</option>
-                                            <option value="Comedy">Comedy</option>
-                                            <option value="Crime">Crime</option>
-                                            <option value="Documentary">Documentary</option>
-                                            <option value="Drama">Drama</option>
-                                            <option value="Fantasy">Fantasy</option>
-                                            <option value="Historical">Historical</option>
-                                            <option value="Horror">Horror</option>
-                                            <option value="Musical">Musical</option>
-                                            <option value="Mystery">Mystery</option>
-                                            <option value="Romance">Romance</option>
-                                            <option value="Sci-Fi">Sci-Fi</option>
-                                            <option value="Short Film">Short Film</option>
-                                            <option value="Thriller">Thriller</option>
-                                            <option value="War">War</option>
-                                            <option value="Western">Western</option>
-                                        </select>
+                                {/* Genre (multi-select pills), Year, Duration */}
+                                <div>
+                                    <label className="admin-label">Genre <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(select all that apply)</span></label>
+                                    {form.genre && (
+                                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                            {form.genre.split(',').filter(Boolean).map(g => (
+                                                <span key={g} style={{
+                                                    fontSize: '0.65rem', fontWeight: 700,
+                                                    color: 'var(--accent-gold)',
+                                                    background: 'rgba(212,168,83,0.12)',
+                                                    border: '1px solid rgba(212,168,83,0.3)',
+                                                    padding: '2px 8px', borderRadius: '20px',
+                                                }}>{g.trim()}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                        {['Action','Adventure','Animation','Biography','Comedy','Crime','Documentary','Drama','Fantasy','Historical','Horror','Musical','Mystery','Romance','Sci-Fi','Short Film','Thriller','War','Western'].map(g => {
+                                            const selected = form.genre?.split(',').map(x => x.trim()).includes(g)
+                                            return (
+                                                <button key={g} type="button"
+                                                    onClick={() => {
+                                                        const current = form.genre ? form.genre.split(',').map(x => x.trim()).filter(Boolean) : []
+                                                        const next = selected ? current.filter(x => x !== g) : [...current, g]
+                                                        updateField('genre', next.join(', '))
+                                                    }}
+                                                    style={{
+                                                        fontSize: '0.65rem', fontWeight: 600,
+                                                        padding: '4px 10px', borderRadius: '20px', cursor: 'pointer',
+                                                        border: selected ? '1px solid rgba(212,168,83,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                                                        background: selected ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
+                                                        color: selected ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                >{g}</button>
+                                            )
+                                        })}
                                     </div>
+                                </div>
+
+                                {/* Year, Duration */}
+                                <div className="admin-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
                                     <div>
                                         <label className="admin-label">Year</label>
                                         <input className="admin-input" value={form.year}
