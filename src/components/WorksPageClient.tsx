@@ -206,10 +206,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
 
     return (
         <main id="main-content" style={{
-            overflowX: 'hidden', width: '100%',
             opacity: mounted ? 1 : 0,
             transition: 'opacity 0.4s ease',
-            overscrollBehavior: 'contain',  // prevent whole-page bounce
         }}>
             {/* 3D Particle Background */}
             <Scene3D />
