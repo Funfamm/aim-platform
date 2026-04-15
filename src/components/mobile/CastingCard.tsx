@@ -40,6 +40,11 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
     const isInProduction = project.status === 'in-production'
 
     return (
+        <Link
+            href={`/works/${project.slug}`}
+            style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+            aria-label={`View details for ${loc.title}`}
+        >
         <div className="press-feedback" style={{
             width: '200px',
             flexShrink: 0,
@@ -214,8 +219,8 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
                     display: 'flex', gap: '6px',
                     marginTop: '10px',
                 }}>
-                    <Link
-                        href={`/works/${project.slug}`}
+                    {/* Details button — same destination as the card wrapper link */}
+                    <span
                         className="press-feedback-sm"
                         style={{
                             flex: 1,
@@ -231,11 +236,12 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
                         }}
                     >
                         {t('details')}
-                    </Link>
+                    </span>
                     {openRoles.length > 0 && (
                         <Link
                             href="/casting"
                             className="press-feedback-sm"
+                            onClick={e => e.stopPropagation()}
                             style={{
                                 flex: 1,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -255,5 +261,6 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
                 </div>
             </div>
         </div>
+        </Link>
     )
 }
