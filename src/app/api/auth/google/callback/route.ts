@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
+import { SUBTITLE_TARGET_LANGS } from '@/lib/subtitle-languages'
 
 interface GoogleTokenResponse {
     access_token: string
@@ -49,9 +50,8 @@ export async function GET(req: Request) {
     // Capture the visitor's locale BEFORE login so we can localise the welcome message.
     // next-intl sets a NEXT_LOCALE cookie on every page visit. The Google OAuth
     // redirect_uri is not under /[locale]/ so we must read it from cookies here.
-    const supportedLocales = ['es', 'fr', 'ar', 'zh', 'hi', 'pt', 'ru', 'ja', 'de', 'ko']
     const rawLocale = cookieStore.get('NEXT_LOCALE')?.value || 'en'
-    const detectedLocale = supportedLocales.includes(rawLocale) ? rawLocale : 'en'
+    const detectedLocale = (SUBTITLE_TARGET_LANGS as readonly string[]).includes(rawLocale) ? rawLocale : 'en'
 
     try {
         // Get Google OAuth credentials from env or DB settings

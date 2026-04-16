@@ -1,14 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { SUBTITLE_TARGET_LANGS, TOTAL_SUBTITLE_LANGS } from '@/lib/subtitle-languages'
 
-const ALL_LOCALES = ['es', 'fr', 'ar', 'zh', 'hi', 'pt', 'ru', 'ja', 'de', 'ko']
+// Keep emoji labels local — these are only for display in this component
 const LOCALE_LABELS: Record<string, string> = {
     es: '🇪🇸 Spanish', fr: '🇫🇷 French', ar: '🇸🇦 Arabic', zh: '🇨🇳 Chinese',
     hi: '🇮🇳 Hindi', pt: '🇧🇷 Portuguese', ru: '🇷🇺 Russian',
     ja: '🇯🇵 Japanese', de: '🇩🇪 German', ko: '🇰🇷 Korean',
 }
-const TOTAL = ALL_LOCALES.length
+const ALL_LOCALES = [...SUBTITLE_TARGET_LANGS]
+const TOTAL = TOTAL_SUBTITLE_LANGS
 
 /** Optional config to enable the "Retry missing" button */
 export interface RetryConfig {

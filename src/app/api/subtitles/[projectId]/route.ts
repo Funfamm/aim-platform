@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { getVttUrl } from '@/lib/vtt-storage'
+import { segmentsToVtt, getVttUrl } from '@/lib/vtt-storage'
+import { findSubtitle } from '@/lib/subtitle-repo'
 
 // GET /api/subtitles/[projectId]?lang=es&episodeId=xxx
 export async function GET(
@@ -13,12 +13,8 @@ export async function GET(
     const episodeId = searchParams.get('episodeId') || null
     const format = searchParams.get('format') || 'json'
 
-    const subtitle = await prisma.filmSubtitle.findFirst({
-        where: {
-            projectId,
-            episodeId: episodeId || null,
-        },
-    })
+    // ── Repository lookup — no direct Prisma dependency (DIP) ─────────────────
+    const subtitle = await findSubtitle(projectId, episodeId)
 
     if (!subtitle) {
         return NextResponse.json({ segments: null, available: [] })
@@ -61,8 +57,9 @@ export async function GET(
                 },
             })
         }
-        // Fallback: runtime VTT generation
-        return new NextResponse(toWebVTT(segments), {
+
+        // Fallback: runtime VTT generation — reuses segmentsToVtt from vtt-storage (DRY/SRP)
+        return new NextResponse(segmentsToVtt(segments), {
             headers: {
                 'Content-Type': 'text/vtt',
                 'Access-Control-Allow-Origin': '*',
@@ -80,26 +77,7 @@ export async function GET(
         translateStatus: subtitle.translateStatus,
     }, {
         headers: {
-            // Subtitles are static after generation — safe to cache for 60s
-            // Short TTL allows re-fetching after re-generation without stale data
             'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
         },
     })
-}
-
-// Converts segments to WebVTT format for HTML5 <track> element
-function toWebVTT(segments: { start: number; end: number; text: string }[]): string {
-    const pad = (n: number) => String(Math.floor(n)).padStart(2, '0')
-    const formatTime = (s: number) => {
-        const h = Math.floor(s / 3600)
-        const m = Math.floor((s % 3600) / 60)
-        const sec = Math.floor(s % 60)
-        const ms = Math.round((s % 1) * 1000)
-        return `${pad(h)}:${pad(m)}:${pad(sec)}.${String(ms).padStart(3, '0')}`
-    }
-    const cues = segments
-        .filter(s => s.text?.trim())
-        .map((s, i) => `${i + 1}\n${formatTime(s.start)} --> ${formatTime(s.end)} line:85% align:center\n${s.text.trim()}`)
-        .join('\n\n')
-    return `WEBVTT\n\n${cues}`
 }

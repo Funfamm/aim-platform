@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { SUBTITLE_TARGET_LANGS } from '@/lib/subtitle-languages'
 
 // GET — Fetch transcript for a lesson
 export async function GET(req: NextRequest) {
@@ -98,11 +99,10 @@ async function translateTranscriptSegments(
         const texts = segments.map(s => s.text)
         const numberedLines = texts.map((t, i) => `${i}: ${t}`).join('\n')
 
-        const TARGET_LOCALES = ['es', 'fr', 'ar', 'zh', 'hi', 'pt', 'ru', 'ja', 'de', 'ko']
         const translations: Record<string, { start: number; end: number; text: string }[]> = {}
 
         // Translate to each locale (could batch, but safer to do per-locale)
-        for (const locale of TARGET_LOCALES) {
+        for (const locale of SUBTITLE_TARGET_LANGS) {
             try {
                 const prompt = `Translate each numbered line to ${locale}. Keep the same numbering. Return ONLY the translated lines in format "N: translated text", nothing else.\n\n${numberedLines}`
                 const geminiResult = await callGemini(prompt, 'training')

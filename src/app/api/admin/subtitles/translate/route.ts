@@ -4,6 +4,7 @@ import { hasAdminRole } from '@/lib/roles'
 import { SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES } from '@/lib/subtitle-languages'
 import { translateTextsForLang, buildTranslatedSegments } from '@/lib/subtitle-service'
 import { cacheVttToR2 } from '@/lib/vtt-storage'
+import { SSE_ERR } from '@/lib/sse-errors'
 import {
     findSubtitle,
     markLangsProcessing,
@@ -15,13 +16,7 @@ import {
 // Vercel Pro: allows this SSE route to stream for up to 5 minutes
 export const maxDuration = 300
 
-// SSE numeric error codes for client-side discrimination
-const ERR = {
-    RATE_LIMITED: 409,
-    NOT_FOUND: 404,
-    PARSE_FAILED: 500,
-    TRANSLATE_FAILED: 502,
-} as const
+// SSE numeric error codes — imported from shared sse-errors.ts
 
 /**
  * POST /api/admin/subtitles/translate
@@ -53,7 +48,7 @@ export async function POST(req: NextRequest) {
     if (!subtitle) {
         return NextResponse.json(
             { error: 'No transcription found for this project. Run transcription first.' },
-            { status: ERR.NOT_FOUND }
+            { status: SSE_ERR.NOT_FOUND }
         )
     }
 
@@ -62,7 +57,7 @@ export async function POST(req: NextRequest) {
     try {
         englishSegments = JSON.parse(subtitle.segments)
     } catch {
-        return NextResponse.json({ error: 'Failed to parse subtitle segments' }, { status: ERR.PARSE_FAILED })
+        return NextResponse.json({ error: 'Failed to parse subtitle segments' }, { status: SSE_ERR.PARSE_FAILED })
     }
 
     const existingTranslations: Record<string, { start: number; end: number; text: string }[]> =
@@ -77,9 +72,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(
             {
                 error: 'A translation job is already running for this project. Please wait.',
-                code: ERR.RATE_LIMITED,
+                code: SSE_ERR.RATE_LIMITED,
             },
-            { status: ERR.RATE_LIMITED }
+            { status: SSE_ERR.RATE_LIMITED }
         )
     }
 
@@ -154,7 +149,7 @@ export async function POST(req: NextRequest) {
                 } catch (err) {
                     const errMsg = err instanceof Error ? err.message : 'Unknown error'
                     langStatus[lang] = 'failed'
-                    emit({ lang, langName, phase: 'error', error: errMsg, code: ERR.TRANSLATE_FAILED })
+                    emit({ lang, langName, phase: 'error', error: errMsg, code: SSE_ERR.TRANSLATE_FAILED })
                     await failLang(subtitle.id, lang, langStatus)
                     // Continue to next language — don't abort the whole job
                 }

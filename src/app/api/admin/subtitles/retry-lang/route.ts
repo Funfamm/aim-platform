@@ -4,14 +4,8 @@ import { hasAdminRole } from '@/lib/roles'
 import { SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES } from '@/lib/subtitle-languages'
 import { translateTextsForLang, buildTranslatedSegments, type Segment } from '@/lib/subtitle-service'
 import { cacheVttToR2 } from '@/lib/vtt-storage'
-import { findSubtitle, failLang, finalizeSingleLang } from '@/lib/subtitle-repo'
-
-// SSE numeric error codes — mirrors translate/route.ts for consistency
-const ERR = {
-    NOT_FOUND: 404,
-    PARSE_FAILED: 500,
-    TRANSLATE_FAILED: 502,
-} as const
+import { findSubtitle, markLangsProcessing, failLang, finalizeSingleLang } from '@/lib/subtitle-repo'
+import { SSE_ERR } from '@/lib/sse-errors'
 
 /**
  * POST /api/admin/subtitles/retry-lang
@@ -46,8 +40,8 @@ export async function POST(req: NextRequest) {
     const subtitle = await findSubtitle(projectId, episodeId)
     if (!subtitle) {
         return NextResponse.json(
-            { error: 'No subtitle record found for this project', code: ERR.NOT_FOUND },
-            { status: ERR.NOT_FOUND }
+            { error: 'No subtitle record found for this project', code: SSE_ERR.NOT_FOUND },
+            { status: SSE_ERR.NOT_FOUND }
         )
     }
 
@@ -57,8 +51,8 @@ export async function POST(req: NextRequest) {
         englishSegments = JSON.parse(subtitle.segments)
     } catch {
         return NextResponse.json(
-            { error: 'Failed to parse subtitle segments', code: ERR.PARSE_FAILED },
-            { status: ERR.PARSE_FAILED }
+            { error: 'Failed to parse subtitle segments', code: SSE_ERR.PARSE_FAILED },
+            { status: SSE_ERR.PARSE_FAILED }
         )
     }
 
@@ -67,6 +61,9 @@ export async function POST(req: NextRequest) {
 
     const existingLangStatus = (subtitle.langStatus as Record<string, string> | null) ?? {}
     const existingVttPaths   = (subtitle.vttPaths  as Record<string, string> | null) ?? {}
+
+    // ── Mark as processing (static import — no dynamic import antipattern) ─
+    await markLangsProcessing(subtitle.id, [lang], existingLangStatus)
 
     // ── SSE stream ─────────────────────────────────────────────────────────
     const encoder = new TextEncoder()
@@ -81,11 +78,6 @@ export async function POST(req: NextRequest) {
 
             const langName = LANGUAGE_NAMES[lang] ?? lang
             emit({ lang, langName, phase: 'translating', pct: 0 })
-
-            // Mark as processing — prevent concurrent retries on the same lang
-            await import('@/lib/subtitle-repo').then(r =>
-                r.markLangsProcessing(subtitle.id, [lang], existingLangStatus)
-            )
 
             try {
                 const texts       = englishSegments.map(s => s.text)
@@ -106,21 +98,22 @@ export async function POST(req: NextRequest) {
                 }
 
                 // Persist result via repository
+                // Caller determines translateStatus — repo no longer needs allTargetLangs/allTranslations
+                const allDone = SUBTITLE_TARGET_LANGS.every(l => !!existingTranslations[l])
                 await finalizeSingleLang(
                     subtitle.id,
                     lang,
                     JSON.stringify(existingTranslations),
                     existingLangStatus,
                     existingVttPaths,
-                    SUBTITLE_TARGET_LANGS,
-                    existingTranslations,
+                    allDone ? 'complete' : 'partial',
                 )
 
                 emit({ lang, langName, phase: 'done', pct: 100 })
 
             } catch (err) {
                 const errMsg = err instanceof Error ? err.message : 'Unknown error'
-                emit({ lang, langName, phase: 'error', error: errMsg, code: ERR.TRANSLATE_FAILED })
+                emit({ lang, langName, phase: 'error', error: errMsg, code: SSE_ERR.TRANSLATE_FAILED })
                 await failLang(subtitle.id, lang, existingLangStatus)
             }
 

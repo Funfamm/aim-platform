@@ -1,8 +1,8 @@
 import { callGemini } from '@/lib/gemini'
 import { prisma } from '@/lib/db'
+import { SUBTITLE_TARGET_LANGS } from '@/lib/subtitle-languages'
 
-const TARGET_LOCALES = ['es', 'fr', 'ar', 'zh', 'hi', 'pt', 'ru', 'ja', 'de', 'ko'] as const
-
+// Human-readable language names for prompt construction
 const LOCALE_NAMES: Record<string, string> = {
     es: 'Spanish', fr: 'French', ar: 'Arabic', zh: 'Chinese (Simplified)',
     hi: 'Hindi', pt: 'Portuguese', ru: 'Russian', ja: 'Japanese', de: 'German', ko: 'Korean',
@@ -31,8 +31,8 @@ export async function translateContent(
 
     // Determine which locales to request
     const requestLocales = onlyLocales
-        ? TARGET_LOCALES.filter(l => onlyLocales.includes(l))
-        : [...TARGET_LOCALES]
+        ? SUBTITLE_TARGET_LANGS.filter(l => onlyLocales.includes(l))
+        : [...SUBTITLE_TARGET_LANGS]
 
     if (requestLocales.length === 0) {
         console.log('[translate] No locales to translate — all already done')
@@ -137,7 +137,7 @@ export function retryMissingTranslations(
     }
 
     // Find locales that are genuinely missing (no entry at all)
-    const missingLocales = TARGET_LOCALES.filter(l => !existing[l] || Object.keys(existing[l]).length === 0)
+    const missingLocales = SUBTITLE_TARGET_LANGS.filter(l => !existing[l] || Object.keys(existing[l]).length === 0)
 
     if (missingLocales.length === 0) {
         console.log('[translate] No missing locales — skipping retry')

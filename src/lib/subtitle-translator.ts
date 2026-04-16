@@ -1,5 +1,7 @@
 'use client'
 
+import { LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+
 /**
  * Client-side subtitle translation using Opus-MT models via Transformers.js.
  * Runs entirely in the browser — zero API cost.
@@ -49,19 +51,6 @@ export type TranslationStatus = {
     detail?: string
 }
 
-export const LANGUAGE_NAMES: Record<string, string> = {
-    en: 'English',
-    es: 'Español',
-    fr: 'Français',
-    de: 'Deutsch',
-    pt: 'Português',
-    ru: 'Русский',
-    zh: '中文',
-    ar: 'العربية',
-    ja: '日本語',
-    ko: '한국어',
-    hi: 'हिन्दी',
-}
 
 /**
  * Load a translation pipeline by model ID.
