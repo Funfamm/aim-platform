@@ -309,6 +309,18 @@ export default function WatchPlayer({
         return () => document.removeEventListener('fullscreenchange', onFsChange)
     }, [])
 
+    // Auto-enter fullscreen and lock to landscape on mobile when the player loads
+    useEffect(() => {
+        if (typeof window !== 'undefined' && window.innerWidth <= 768 && !document.fullscreenElement) {
+            // Needs a tiny timeout to ensure DOM layout is complete before requesting Fullscreen
+            const t = setTimeout(() => {
+                toggleFullscreen().catch(() => {})
+            }, 300)
+            return () => clearTimeout(t)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     const handleTimeUpdate = () => {
         const vid = videoRef.current
         if (vid) setCurrentTime(vid.currentTime)
