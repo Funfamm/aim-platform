@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
-import { LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { LANGUAGE_NAMES, SUBTITLE_TARGET_LANGS } from '@/lib/subtitle-languages'
+import FallbackNotice from '@/components/player/FallbackNotice'
 
 interface Episode {
     id: string
@@ -31,7 +32,13 @@ interface WatchProject {
     episodes: Episode[]
 }
 
-export default function WatchPlayer({ project }: { project: WatchProject }) {
+export default function WatchPlayer({
+    project,
+    userPreferredLang = 'en',
+}: {
+    project: WatchProject
+    userPreferredLang?: string
+}) {
     const videoRef = useRef<HTMLVideoElement>(null)
     const [isPlaying, setIsPlaying] = useState(false)
     const [currentTime, setCurrentTime] = useState(0)
@@ -57,7 +64,8 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
     const [ccAvailable, setCcAvailable] = useState<string[]>([])
     const [ccLoading, setCcLoading] = useState(false)
     const [ccStatusText, setCcStatusText] = useState('')
-    const [ccChecked, setCcChecked] = useState(false) // true once initial fetch is done
+    const [ccChecked, setCcChecked] = useState(false)
+    const [showFallbackNotice, setShowFallbackNotice] = useState(false)
     // Native <track> for iOS Safari fullscreen — blob URL avoids CORS on the video element
     const [activeTrackUrl, setActiveTrackUrl] = useState<string | null>(null)
     // Cleanup blob URL when it changes (prevents memory leak)
@@ -91,13 +99,13 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
 
     // Fetch subtitle availability from DB on mount / episode change
     useEffect(() => {
-        // Reset all CC state atomically when episode changes
         const resetCC = () => {
             setCcChecked(false)
             setCcAvailable([])
             setCcEnabled(false)
             setCcSegments([])
-            setActiveTrackUrl(null) // Rec 1 fix: clear stale iOS track when episode changes
+            setActiveTrackUrl(null)
+            setShowFallbackNotice(false)
         }
         resetCC()
         const episodeId = activeEpisode?.id || ''
@@ -107,16 +115,26 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
             .then(data => {
                 if (data.available && data.available.length > 0) {
                     setCcAvailable(data.available)
-                    // Auto-load English if available so the first CC click is instant
                     if (data.segments && data.segments.length > 0) {
                         setCcSegments(data.segments)
                         setCcLang('en')
+                    }
+                    // Auto-select user's preferred language if available
+                    const safePref = (SUBTITLE_TARGET_LANGS as readonly string[]).includes(userPreferredLang) || userPreferredLang === 'en'
+                        ? userPreferredLang : 'en'
+                    if (safePref !== 'en' && data.available.includes(safePref)) {
+                        // Load preferred lang silently
+                        loadSubtitles(safePref).catch(() => {})
+                    } else if (safePref !== 'en' && !data.available.includes(safePref) && data.available.length > 0) {
+                        // Preferred lang not available — auto-load English + show notice
+                        setShowFallbackNotice(true)
                     }
                 }
             })
             .catch(() => {})
             .finally(() => setCcChecked(true))
-    }, [project.id, activeEpisode])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [project.id, activeEpisode, userPreferredLang])
 
     // Load subtitles for a specific language
     const loadSubtitles = useCallback(async (lang: string) => {
@@ -213,6 +231,20 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
         return () => clearTimeout(t)
     }, [isPlaying])
 
+    // ── Session-end beacon — fires on video end and component unmount ──
+    const sendSessionEnd = useCallback(() => {
+        if (!currentVideoUrl) return
+        const payload = JSON.stringify({
+            projectId: project.id,
+            episodeId: activeEpisode?.id ?? null,
+            subtitleLang: ccEnabled ? ccLang : null,
+            audioLang: 'en',
+            captionsOn: ccEnabled,
+            completePct: totalDuration > 0 ? Math.min(1, currentTime / totalDuration) : 0,
+        })
+        navigator.sendBeacon('/api/watch/session-end', new Blob([payload], { type: 'application/json' }))
+    }, [project.id, activeEpisode, ccEnabled, ccLang, currentTime, totalDuration, currentVideoUrl])
+
     const togglePlay = () => {
         const vid = videoRef.current
         if (!vid) return
@@ -224,6 +256,12 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
             setIsPlaying(false)
         }
     }
+
+    // Fire beacon on unmount (tab close / navigation)
+    useEffect(() => {
+        return () => { sendSessionEnd() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const toggleFullscreen = () => {
         const el = containerRef.current
@@ -322,7 +360,7 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
                             onLoadedMetadata={handleLoadedMetadata}
                             onPlay={() => setIsPlaying(true)}
                             onPause={() => setIsPlaying(false)}
-                            onEnded={() => setIsPlaying(false)}
+                            onEnded={() => { setIsPlaying(false); sendSessionEnd() }}
                             controlsList="nodownload"
                             onContextMenu={(e) => e.preventDefault()}
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
@@ -355,7 +393,13 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
                         </div>
                     )}
 
-                    {/* Play overlay */}
+                    {/* Fallback notice: shown when preferredLang is unavailable */}
+                    {showFallbackNotice && (
+                        <FallbackNotice
+                            lang={userPreferredLang}
+                            langName={LANGUAGE_NAMES[userPreferredLang] || userPreferredLang}
+                        />
+                    )}
                     {!isPlaying && currentVideoUrl && (
                         <div style={{
                             position: 'absolute', inset: 0,
@@ -377,7 +421,7 @@ export default function WatchPlayer({ project }: { project: WatchProject }) {
                         </div>
                     )}
 
-                    {/* ── Subtitle overlay ── */}
+                    {/* Subtitle overlay — uses textContent (never innerHTML) to prevent XSS */}
                     {ccEnabled && (
                         <div style={{
                             position: 'absolute', bottom: '80px', left: '10%', right: '10%',

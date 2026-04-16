@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getVttUrl } from '@/lib/vtt-storage'
 
 // GET /api/subtitles/[projectId]?lang=es&episodeId=xxx
 export async function GET(
@@ -49,11 +50,23 @@ export async function GET(
     }
 
     if (format === 'vtt') {
+        // Serve from R2 cache if available (version-hashed key → CDN-safe)
+        const vttPaths = subtitle.vttPaths as Record<string, string> | null
+        const cachedUrl = getVttUrl(lang, vttPaths)
+        if (cachedUrl) {
+            return NextResponse.redirect(cachedUrl, {
+                headers: {
+                    'Cache-Control': 'public, max-age=3600',
+                    'Access-Control-Allow-Origin': '*',
+                },
+            })
+        }
+        // Fallback: runtime VTT generation
         return new NextResponse(toWebVTT(segments), {
             headers: {
                 'Content-Type': 'text/vtt',
-                'Access-Control-Allow-Origin': '*', // required for HTML5 <track> cross-origin
-                'Cache-Control': 'public, max-age=3600', // subtitles are static after generation
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
             },
         })
     }

@@ -1255,5 +1255,6 @@
     "signInCta": "Entrar",
     "endedTitle": "Este evento terminou",
     "endedDesc": "Obrigado pela presen\u00e7a."
-  }
+  },
+  "videoPlayer": {"subtitlesOff": "Desligado","subtitlesLabel": "Legendas","audioLabel": "\u00c1udio","loadingSubtitles": "A carregar...","fallbackNotice": "Legendas n\u00e3o dispon\u00edveis neste idioma \u2014 mostrando ingl\u00eas","noSubtitles": "Sem legendas dispon\u00edveis","subtitleLoadError": "Falha ao carregar legendas"}
 }

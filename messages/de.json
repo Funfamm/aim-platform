@@ -1255,5 +1255,6 @@
     "signInCta": "Anmelden",
     "endedTitle": "Dieses Event ist beendet",
     "endedDesc": "Danke f\u00fcr Ihre Teilnahme."
-  }
+  },
+  "videoPlayer": {"subtitlesOff": "Aus","subtitlesLabel": "Untertitel","audioLabel": "Audio","loadingSubtitles": "Wird geladen...","fallbackNotice": "Untertitel in dieser Sprache nicht verf\u00fcgbar \u2014 Englisch wird angezeigt","noSubtitles": "Keine Untertitel verf\u00fcgbar","subtitleLoadError": "Untertitel konnten nicht geladen werden"}
 }

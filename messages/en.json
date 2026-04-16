@@ -1226,5 +1226,6 @@
     "typeAudition": "Live Audition",
     "typeQA": "Q&A Session",
     "typeWatchParty": "Watch Party"
-  }
+  },
+  "videoPlayer": {"subtitlesOff": "Off","subtitlesLabel": "Subtitles","audioLabel": "Audio","loadingSubtitles": "Loading...","fallbackNotice": "Subtitles not yet available in this language \u2014 showing English","noSubtitles": "No subtitles available","subtitleLoadError": "Failed to load subtitles"}
 }

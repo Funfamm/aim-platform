@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
+import { hasAdminRole } from '@/lib/roles'
 import { callGemini } from '@/lib/gemini'
 import { LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { cacheVttToR2 } from '@/lib/vtt-storage'
 
 // Vercel Pro: allows this SSE route to stream for up to 5 minutes
 export const maxDuration = 300
@@ -80,7 +82,7 @@ export async function POST(req: NextRequest) {
     if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    if (session.role !== 'admin' && session.role !== 'superadmin') {
+    if (!hasAdminRole(session.role)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -113,6 +115,18 @@ export async function POST(req: NextRequest) {
     const existingTranslations: Record<string, { start: number; end: number; text: string }[]> =
         subtitle.translations ? JSON.parse(subtitle.translations) : {}
 
+    const existingLangStatus = (subtitle.langStatus as Record<string, string> | null) ?? {}
+    const existingVttPaths = (subtitle.vttPaths as Record<string, string> | null) ?? {}
+
+    // Rate-limit: reject if any language is already in 'processing' state
+    const alreadyProcessing = Object.values(existingLangStatus).some(s => s === 'processing')
+    if (alreadyProcessing) {
+        return NextResponse.json(
+            { error: 'A translation job is already running for this project. Please wait for it to complete.' },
+            { status: 409 }
+        )
+    }
+
     // Skip languages already translated (checkpoint resume)
     const pending = TARGET_LANGS.filter(l => !existingTranslations[l])
 
@@ -120,16 +134,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'All languages already translated', status: 'complete' })
     }
 
-    // ── Mark as in-progress ─────────────────────────────────────────
+    // ── Mark all pending langs as 'processing' ──────────────────────────────
+    const processingStatus = {
+        ...existingLangStatus,
+        ...Object.fromEntries(pending.map(l => [l, 'processing'])),
+    }
     await prisma.filmSubtitle.update({
         where: { id: subtitle.id },
-        data: { translateStatus: 'partial' },
+        data: { translateStatus: 'partial', langStatus: processingStatus },
     })
 
     // ── SSE stream ──────────────────────────────────────────────────
     const encoder = new TextEncoder()
     let completedCount = 0
     let lastKeyLabel = ''
+    const langStatus = { ...processingStatus }
+    const vttPaths = { ...existingVttPaths }
 
     const stream = new ReadableStream({
         async start(controller) {
@@ -140,6 +160,11 @@ export async function POST(req: NextRequest) {
             }
 
             emit({ phase: 'start', total: pending.length, langs: pending })
+
+            // ── 30-second heartbeat — prevents proxy/Vercel timeout ──────────
+            const heartbeatInterval = setInterval(() => {
+                emit({ phase: 'heartbeat', ts: Date.now() })
+            }, 30_000)
 
             for (const lang of pending) {
                 const langName = LANGUAGE_NAMES[lang] || lang
@@ -164,12 +189,24 @@ export async function POST(req: NextRequest) {
                     existingTranslations[lang] = translatedSegments
                     completedCount++
 
+                    // Cache VTT to R2 — errors are non-fatal
+                    try {
+                        const vttKey = await cacheVttToR2(projectId, lang, translatedSegments)
+                        vttPaths[lang] = vttKey
+                    } catch (vttErr) {
+                        console.error(`[translate] VTT cache failed for ${lang}:`, vttErr)
+                    }
+
+                    langStatus[lang] = 'completed'
+
                     // ✅ Checkpoint save — persisted even if stream drops
                     await prisma.filmSubtitle.update({
                         where: { id: subtitle.id },
                         data: {
                             translations: JSON.stringify(existingTranslations),
                             generatedWith: lastKeyLabel,
+                            langStatus,
+                            vttPaths,
                         },
                     })
 
@@ -183,9 +220,16 @@ export async function POST(req: NextRequest) {
                 } catch (err) {
                     const errMsg = err instanceof Error ? err.message : 'Unknown error'
                     emit({ lang, langName, phase: 'error', error: errMsg })
+                    langStatus[lang] = 'failed'
+                    await prisma.filmSubtitle.update({
+                        where: { id: subtitle.id },
+                        data: { langStatus },
+                    })
                     // Continue to next language — don't abort the whole job
                 }
             }
+
+            clearInterval(heartbeatInterval)
 
             // ── Final status update ──────────────────────────────────
             const allLangsDone = TARGET_LANGS.every(l => existingTranslations[l])
@@ -194,6 +238,8 @@ export async function POST(req: NextRequest) {
                 data: {
                     translateStatus: allLangsDone ? 'complete' : 'partial',
                     status: 'completed',
+                    langStatus,
+                    vttPaths,
                 },
             })
 

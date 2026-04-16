@@ -1255,5 +1255,6 @@
     "signInCta": "Iniciar sesi\u00f3n",
     "endedTitle": "Este evento ha finalizado",
     "endedDesc": "Gracias por asistir. Vuelve para futuros eventos."
-  }
+  },
+  "videoPlayer": {"subtitlesOff": "Apagado","subtitlesLabel": "Subt\u00edtulos","audioLabel": "Audio","loadingSubtitles": "Cargando...","fallbackNotice": "Subt\u00edtulos no disponibles en este idioma \u2014 mostrando ingl\u00e9s","noSubtitles": "No hay subt\u00edtulos disponibles","subtitleLoadError": "Error al cargar subt\u00edtulos"}
 }

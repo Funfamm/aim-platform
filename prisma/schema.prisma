@@ -86,6 +86,7 @@ model Project {
   donations    Donation[]
   episodes     Episode[]
   subtitles    FilmSubtitle[]
+  audioTracks  AudioTrack[]   // Phase 2: dubbed audio tracks
   owner        User?          @relation(fields: [ownerId], references: [id])
   scriptCalls  ScriptCall[]
   watchHistory WatchHistory[]
@@ -98,6 +99,23 @@ model Project {
   @@index([featured, sortOrder]) // featured row
   @@index([createdAt])           // new releases sort
   @@index([genre, viewCount])    // genre rows sorted by popularity
+}
+
+// Phase 2 — Dubbed audio track per language per project/episode
+model AudioTrack {
+  id          String   @id @default(cuid())
+  projectId   String
+  episodeId   String?  // null = applies to the full film
+  language    String   // ISO 639-1 e.g. "es"
+  label       String   // Display label e.g. "Español (Doblaje)"
+  audioUrl    String   // R2 object URL
+  isPrimary   Boolean  @default(false)  // true = original/source audio
+  status      String   @default("ready") // ready | processing | failed
+  createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, episodeId, language])
+  @@index([projectId])
 }
 
 model FilmCast {
@@ -146,13 +164,17 @@ model ProjectView {
 }
 
 model WatchHistory {
-  id        String   @id @default(cuid())
-  userId    String
-  projectId String
-  watchedAt DateTime @default(now())
-  progress  Float    @default(0)
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  userId       String
+  projectId    String
+  watchedAt    DateTime @default(now())
+  progress     Float    @default(0)
+  subtitleLang String?  // ISO 639-1 code of subtitle used, null if captions off
+  audioLang    String?  // ISO 639-1 code of audio track used
+  captionsOn   Boolean  @default(false)
+  completePct  Float?   // 0.0–1.0 fraction of video watched at session end
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, watchedAt])
   @@index([userId, projectId]) // for fast per-project lookup
@@ -174,20 +196,23 @@ model Episode {
 }
 
 model FilmSubtitle {
-  id              String   @id @default(cuid())
-  projectId       String
-  episodeId       String?
-  language        String   @default("en")
-  segments        String   // JSON: TranscriptSegment[] (English source)
-  translations    String?  // JSON: Record<lang, TranscriptSegment[]>
-  status          String   @default("pending")
-  translateStatus String   @default("pending") // pending|partial|complete|failed
-  qcIssues        String?  // JSON: QCResult[] — Netflix-spec checks on English track
-  generatedWith   String?  // key label used for translation e.g. "My Gemini Key 1"
-  transcribedWith String?  // ASR model used e.g. "whisper-medium"
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id               String   @id @default(cuid())
+  projectId        String
+  episodeId        String?
+  language         String   @default("en")
+  originalLanguage String   @default("en")   // source language of the video content
+  segments         String   // JSON: TranscriptSegment[] (source language)
+  translations     String?  // JSON: Record<lang, TranscriptSegment[]>
+  status           String   @default("pending")
+  translateStatus  String   @default("pending") // pending|partial|complete|failed
+  langStatus       Json?    // Record<lang, 'pending'|'processing'|'completed'|'failed'|'reviewed'>
+  vttPaths         Json?    // Record<lang, string> — versioned R2 object keys e.g. "subtitles/{id}/{lang}-{hash}.vtt"
+  qcIssues         String?  // JSON: QCResult[] — Netflix-spec checks on English track
+  generatedWith    String?  // key label used for translation e.g. "My Gemini Key 1"
+  transcribedWith  String?  // ASR model used e.g. "whisper-medium"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  project          Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, episodeId])
   @@index([projectId])
