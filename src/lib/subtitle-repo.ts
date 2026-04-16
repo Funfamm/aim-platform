@@ -1,11 +1,14 @@
 /**
- * subtitle-repo.ts — Repository layer for FilmSubtitle DB operations.
+ * subtitle-repo.ts — Repository layer for FilmSubtitle DB operations (SRP Fix).
  *
- * Single source of truth for all Prisma reads/writes touching FilmSubtitle.
- * Routes import these functions instead of calling prisma directly (DIP).
+ * Single responsibility: pure CRUD against the FilmSubtitle table.
+ * Status-transition logic (markLangsProcessing, checkpointLang, etc.) has been
+ * moved to subtitle-status-service.ts so this file only reads from and writes
+ * to Prisma — it contains zero business rules.
  *
- * Prisma Json? fields (langStatus, vttPaths) require explicit cast to
- * Prisma.InputJsonValue — plain TS objects are not assignable without the cast.
+ * Dependency graph:
+ *   SubtitleStatusService → updateSubtitleById (here)
+ *   Routes               → findSubtitle, upsertSubtitle (here)
  */
 
 import { prisma } from '@/lib/db'
@@ -13,7 +16,7 @@ import { Prisma } from '@prisma/client'
 
 export type SubtitleSegment = { start: number; end: number; text: string }
 
-/** Input shape for create/update subtitle record (upsert) */
+/** Input shape for upsert (create or update) */
 export type UpsertSubtitleData = {
     projectId: string
     episodeId?: string | null
@@ -26,11 +29,20 @@ export type UpsertSubtitleData = {
     qcIssues?: string | null
 }
 
+/** Input shape for a partial update (used by status-service) */
+export type SubtitleUpdateData = {
+    translations?: string
+    translateStatus?: string
+    status?: string
+    langStatus?: Prisma.InputJsonValue
+    vttPaths?: Prisma.InputJsonValue
+    generatedWith?: string
+}
+
 // ── Internal helper ───────────────────────────────────────────────────────────
 
 /**
  * Cast a plain Record to Prisma.InputJsonValue so Json? fields accept it.
- * This is the canonical way to assign typed objects to Prisma Json fields.
  */
 function toJson<T extends object>(value: T): Prisma.InputJsonValue {
     return value as unknown as Prisma.InputJsonValue
@@ -52,7 +64,7 @@ export async function findSubtitle(projectId: string, episodeId?: string | null)
 
 /**
  * Upsert a subtitle record — create if none exists, update otherwise.
- * Used by the admin POST /api/admin/subtitles route after transcription completes.
+ * Used by POST /api/admin/subtitles after transcription completes.
  * Preserves existing translateStatus if partial/complete (never resets progress).
  */
 export async function upsertSubtitle(data: UpsertSubtitleData) {
@@ -95,103 +107,26 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
 }
 
 /**
- * Mark a set of languages as 'processing' before a translation job begins.
- * Merges into the existing langStatus so previously-completed langs are preserved.
+ * Generic partial update for a subtitle record by its internal ID.
+ * Used exclusively by subtitle-status-service.ts — routes should not call this directly.
+ *
+ * Keeping this as a thin wrapper around prisma.update ensures the repo
+ * remains the sole Prisma access point (DIP boundary for DB).
  */
-export async function markLangsProcessing(
+export async function updateSubtitleById(
     id: string,
-    langs: string[],
-    existingLangStatus: Record<string, string>,
-): Promise<Record<string, string>> {
-    const updated = {
-        ...existingLangStatus,
-        ...Object.fromEntries(langs.map(l => [l, 'processing'])),
-    }
-    await prisma.filmSubtitle.update({
-        where: { id },
-        data: { translateStatus: 'partial', langStatus: toJson(updated) },
-    })
-    return updated
-}
-
-/**
- * Checkpoint a successfully-translated language.
- * Writes translations + vttPaths + langStatus in a single atomic update.
- */
-export async function checkpointLang(
-    id: string,
-    _lang: string,
-    translationsJson: string,
-    langStatus: Record<string, string>,
-    vttPaths: Record<string, string>,
-    generatedWith?: string,
+    data: SubtitleUpdateData,
 ): Promise<void> {
-    await prisma.filmSubtitle.update({
-        where: { id },
-        data: {
-            translations: translationsJson,
-            langStatus: toJson(langStatus),
-            vttPaths: toJson(vttPaths),
-            ...(generatedWith ? { generatedWith } : {}),
-        },
-    })
-}
+    // Build a clean update payload — exclude undefined fields so Prisma
+    // doesn't attempt to nullify optional columns unintentionally.
+    const payload: Prisma.FilmSubtitleUpdateInput = {}
 
-/**
- * Mark a single language as 'failed'.
- */
-export async function failLang(
-    id: string,
-    lang: string,
-    existingLangStatus: Record<string, string>,
-): Promise<void> {
-    await prisma.filmSubtitle.update({
-        where: { id },
-        data: { langStatus: toJson({ ...existingLangStatus, [lang]: 'failed' }) },
-    })
-}
+    if (data.translations   !== undefined) payload.translations   = data.translations
+    if (data.translateStatus !== undefined) payload.translateStatus = data.translateStatus
+    if (data.status          !== undefined) payload.status          = data.status
+    if (data.generatedWith   !== undefined) payload.generatedWith   = data.generatedWith
+    if (data.langStatus      !== undefined) payload.langStatus      = toJson(data.langStatus as object)
+    if (data.vttPaths        !== undefined) payload.vttPaths        = toJson(data.vttPaths as object)
 
-/**
- * Final update after all languages have been processed.
- * Sets translateStatus to 'complete' or 'partial' and persists final langStatus/vttPaths.
- */
-export async function finalizeTranslation(
-    id: string,
-    translateStatus: 'complete' | 'partial',
-    langStatus: Record<string, string>,
-    vttPaths: Record<string, string>,
-): Promise<void> {
-    await prisma.filmSubtitle.update({
-        where: { id },
-        data: {
-            translateStatus,
-            status: 'completed',
-            langStatus: toJson(langStatus),
-            vttPaths: toJson(vttPaths),
-        },
-    })
-}
-
-/**
- * Finalize a single-language retry.
- * Caller computes whether all languages are done and passes translateStatus directly
- * (ISP fix: repo no longer needs to know allTargetLangs/allTranslations).
- */
-export async function finalizeSingleLang(
-    id: string,
-    lang: string,
-    translationsJson: string,
-    existingLangStatus: Record<string, string>,
-    vttPaths: Record<string, string>,
-    translateStatus: 'complete' | 'partial',
-): Promise<void> {
-    await prisma.filmSubtitle.update({
-        where: { id },
-        data: {
-            translations: translationsJson,
-            langStatus: toJson({ ...existingLangStatus, [lang]: 'completed' }),
-            vttPaths: toJson(vttPaths),
-            translateStatus,
-        },
-    })
+    await prisma.filmSubtitle.update({ where: { id }, data: payload })
 }

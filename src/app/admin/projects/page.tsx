@@ -6,8 +6,9 @@ import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
 import { transcribeVideo } from '@/lib/transcribe-client'
 import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
-import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS } from '@/lib/subtitle-languages'
+import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl, requiresTranslationGate } from '@/config/subtitles'
 import LangStatusGrid from '@/components/admin/LangStatusGrid'
+import PublishGateModal from '@/components/admin/PublishGateModal'
 
 /* â”€â”€ Types â”€â”€ */
 type Project = {
@@ -209,8 +210,7 @@ export default function AdminProjectsPage() {
         }
         // Gate: translation confirmation required before setting a public status
         // on a project that has a film. Admin must explicitly override if incomplete.
-        const isPublicStatus = form.status === 'completed' || form.status === 'in-production'
-        if (!override && isPublicStatus && editingId && form.filmUrl) {
+        if (!override && requiresTranslationGate(form.status, form.filmUrl) && editingId) {
             const count = translationCount[editingId] ?? 0
             if (count < TOTAL_SUBTITLE_LANGS) {
                 setShowPublishWarning(true)
@@ -680,16 +680,9 @@ export default function AdminProjectsPage() {
                                                             const isResume = translateStatus[pid] === 'partial'
 
                                                             if (!isResume) {
-                                                                // ── Step 1: URL compatibility guard ─────────────────────
-                                                                // Streaming platforms block browser fetch() via CORS.
-                                                                // Transcription only works with a direct, accessible video URL.
-                                                                const BLOCKED_HOSTS = [
-                                                                    'youtube.com', 'youtu.be', 'vimeo.com', 'player.vimeo.com',
-                                                                    'drive.google.com', 'dropbox.com', 'dai.ly', 'dailymotion.com',
-                                                                    'twitch.tv', 'facebook.com', 'instagram.com', 'tiktok.com',
-                                                                ]
-                                                                const filmHost = (() => { try { return new URL(project.filmUrl!).hostname.replace('www.', '') } catch { return '' } })()
-                                                                if (BLOCKED_HOSTS.some(h => filmHost.endsWith(h))) {
+                                                                // ── Step 1: URL compatibility guard (OCP: host list lives in config/subtitles.ts) ─
+                                                                const { blocked, hostname: filmHost } = isBlockedStreamingUrl(project.filmUrl!)
+                                                                if (blocked) {
                                                                     setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                                                                     setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
                                                                     setSubtitleStatus(s => ({ ...s, [pid]: '❌ Streaming URL not supported' }))
@@ -1576,118 +1569,14 @@ export default function AdminProjectsPage() {
                 </div>
             )}
 
-            {/* ── Translation Incomplete — Publish Confirmation Gate ── */}
-            {showPublishWarning && editingId && (() => {
-                const count = translationCount[editingId] ?? 0
-                const missing = TOTAL_SUBTITLE_LANGS - count
-                return (
-                    <div
-                        style={{
-                            position: 'fixed', inset: 0, zIndex: 1100,
-                            background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(6px)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            padding: 'var(--space-xl)',
-                        }}
-                        onClick={() => setShowPublishWarning(false)}
-                    >
-                        <div
-                            onClick={e => e.stopPropagation()}
-                            style={{
-                                background: 'var(--bg-secondary)',
-                                border: '1px solid rgba(245,158,11,0.35)',
-                                borderRadius: 'var(--radius-xl)',
-                                padding: 'var(--space-xl)',
-                                width: '100%', maxWidth: '480px',
-                                boxShadow: '0 24px 64px rgba(0,0,0,0.55), 0 0 0 1px rgba(245,158,11,0.1)',
-                                animation: 'fadeIn 0.15s ease',
-                            }}
-                        >
-                            {/* Header */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: 'var(--space-lg)' }}>
-                                <div style={{
-                                    width: '44px', height: '44px', borderRadius: '50%', flexShrink: 0,
-                                    background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem',
-                                }}>⚠️</div>
-                                <div>
-                                    <h3 style={{ fontSize: '1.05rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
-                                        Translation Incomplete
-                                    </h3>
-                                    <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 600, marginTop: '3px' }}>
-                                        {count} of {TOTAL_SUBTITLE_LANGS} languages translated
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Body */}
-                            <div style={{
-                                background: 'rgba(245,158,11,0.05)',
-                                border: '1px solid rgba(245,158,11,0.15)',
-                                borderRadius: 'var(--radius-md)',
-                                padding: 'var(--space-md)',
-                                marginBottom: 'var(--space-lg)',
-                                fontSize: '0.875rem', lineHeight: 1.65,
-                                color: 'var(--text-secondary)',
-                            }}>
-                                Publishing this project with only{' '}
-                                <strong style={{ color: 'var(--text-primary)' }}>{count}/{TOTAL_SUBTITLE_LANGS} languages</strong>{' '}
-                                means{' '}
-                                <strong style={{ color: '#ef4444' }}>
-                                    {missing} language{missing !== 1 ? 's' : ''} will have no subtitles
-                                </strong>{' '}
-                                for viewers who speak those languages.
-                                <div style={{
-                                    marginTop: '10px', paddingTop: '10px',
-                                    borderTop: '1px solid rgba(245,158,11,0.1)',
-                                    fontSize: '0.78rem', color: 'var(--text-tertiary)',
-                                }}>
-                                    <strong style={{ color: 'var(--text-secondary)' }}>Recommended:</strong>{' '}
-                                    Close this dialog, use the <strong>CC</strong> button on the project card to complete all translations, then publish.
-                                </div>
-                            </div>
-
-                            {/* Progress indicator */}
-                            <div style={{ marginBottom: 'var(--space-lg)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '0.68rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                    <span>Translation Progress</span>
-                                    <span>{Math.round((count / TOTAL_SUBTITLE_LANGS) * 100)}%</span>
-                                </div>
-                                <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
-                                    <div style={{
-                                        height: '100%', borderRadius: '3px',
-                                        background: count === 0 ? 'rgba(239,68,68,0.5)' : 'linear-gradient(90deg, #f59e0b, #e8c547)',
-                                        width: `${Math.round((count / TOTAL_SUBTITLE_LANGS) * 100)}%`,
-                                        transition: 'width 0.3s ease',
-                                    }} />
-                                </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                                <button
-                                    onClick={() => setShowPublishWarning(false)}
-                                    className="btn btn-ghost btn-sm"
-                                    style={{ fontWeight: 600 }}
-                                >
-                                    Complete Translations First
-                                </button>
-                                <button
-                                    onClick={handlePublishOverride}
-                                    disabled={saving}
-                                    className="btn btn-sm"
-                                    style={{
-                                        background: 'rgba(239,68,68,0.12)',
-                                        border: '1px solid rgba(239,68,68,0.3)',
-                                        color: '#ef4444', fontWeight: 700,
-                                    }}
-                                >
-                                    {saving ? 'Publishing...' : 'Publish Anyway'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            })()}
+            {/* ── Publish Confirmation Gate (SRP: rendered by PublishGateModal component) ── */}
+            <PublishGateModal
+                isOpen={showPublishWarning && !!editingId}
+                translatedCount={editingId ? (translationCount[editingId] ?? 0) : 0}
+                saving={saving}
+                onCancel={() => setShowPublishWarning(false)}
+                onConfirm={handlePublishOverride}
+            />
         </div>
     )
 }

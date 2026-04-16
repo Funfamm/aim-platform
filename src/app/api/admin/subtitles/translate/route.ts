@@ -1,22 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
-import { SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES } from '@/config/subtitles'
 import { translateTextsForLang, buildTranslatedSegments } from '@/lib/subtitle-service'
 import { cacheVttToR2 } from '@/lib/vtt-storage'
 import { SSE_ERR } from '@/lib/sse-errors'
+import { findSubtitle } from '@/lib/subtitle-repo'
 import {
-    findSubtitle,
     markLangsProcessing,
     checkpointLang,
     failLang,
     finalizeTranslation,
-} from '@/lib/subtitle-repo'
+} from '@/lib/subtitle-status-service'
 
 // Vercel Pro: allows this SSE route to stream for up to 5 minutes
 export const maxDuration = 300
-
-// SSE numeric error codes — imported from shared sse-errors.ts
 
 /**
  * POST /api/admin/subtitles/translate
@@ -112,11 +110,11 @@ export async function POST(req: NextRequest) {
                 emit({ lang, langName, phase: 'translating', pct: Math.round((completedCount / pending.length) * 100) })
 
                 try {
-                    const texts      = englishSegments.map(s => s.text)
-                    const keyLabelOut = { value: '' }
+                    const texts = englishSegments.map(s => s.text)
 
-                    const translatedTexts = await translateTextsForLang(texts, lang, keyLabelOut)
-                    lastKeyLabel = keyLabelOut.value
+                    // ISP Fix: destructure result instead of mutating keyLabelOut
+                    const { translations: translatedTexts, keyLabel } = await translateTextsForLang(texts, lang)
+                    if (keyLabel) lastKeyLabel = keyLabel
 
                     const translatedSegments = buildTranslatedSegments(englishSegments, translatedTexts)
                     existingTranslations[lang] = translatedSegments

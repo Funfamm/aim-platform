@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
-import { SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES } from '@/config/subtitles'
 import { translateTextsForLang, buildTranslatedSegments, type Segment } from '@/lib/subtitle-service'
 import { cacheVttToR2 } from '@/lib/vtt-storage'
-import { findSubtitle, markLangsProcessing, failLang, finalizeSingleLang } from '@/lib/subtitle-repo'
+import { findSubtitle } from '@/lib/subtitle-repo'
+import { markLangsProcessing, failLang, finalizeSingleLang } from '@/lib/subtitle-status-service'
 import { SSE_ERR } from '@/lib/sse-errors'
 
 /**
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
     const existingLangStatus = (subtitle.langStatus as Record<string, string> | null) ?? {}
     const existingVttPaths   = (subtitle.vttPaths  as Record<string, string> | null) ?? {}
 
-    // ── Mark as processing (static import — no dynamic import antipattern) ─
+    // ── Mark as processing ─────────────────────────────────────────────────
     await markLangsProcessing(subtitle.id, [lang], existingLangStatus)
 
     // ── SSE stream ─────────────────────────────────────────────────────────
@@ -80,10 +81,10 @@ export async function POST(req: NextRequest) {
             emit({ lang, langName, phase: 'translating', pct: 0 })
 
             try {
-                const texts       = englishSegments.map(s => s.text)
-                const keyLabelOut = { value: '' }
+                const texts = englishSegments.map(s => s.text)
 
-                const translatedTexts = await translateTextsForLang(texts, lang, keyLabelOut)
+                // ISP Fix: destructure result instead of mutating keyLabelOut
+                const { translations: translatedTexts } = await translateTextsForLang(texts, lang)
                 emit({ lang, langName, phase: 'translating', pct: 85 })
 
                 const translatedSegments = buildTranslatedSegments(englishSegments, translatedTexts)
@@ -97,8 +98,7 @@ export async function POST(req: NextRequest) {
                     console.error('[retry-lang] VTT cache failed:', e)
                 }
 
-                // Persist result via repository
-                // Caller determines translateStatus — repo no longer needs allTargetLangs/allTranslations
+                // Persist result via status service
                 const allDone = SUBTITLE_TARGET_LANGS.every(l => !!existingTranslations[l])
                 await finalizeSingleLang(
                     subtitle.id,
