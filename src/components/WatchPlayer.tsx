@@ -47,6 +47,8 @@ export default function WatchPlayer({
     const prevTrackUrl = useRef<string | null>(null)
     const resumeDismissedRef = useRef(false)
     const volumeBeforeMute = useRef(1)
+    // Ref for live playback position — avoids stale closure in unmount beacon
+    const liveProgressRef = useRef({ currentTime: 0, totalDuration: 0 })
 
     /* ── Derived ── */
     const isSeries = project.projectType === 'series' && project.episodes.length > 0
@@ -216,19 +218,23 @@ export default function WatchPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [volume, isPlaying])
 
-    /* Session-end beacon */
+    /* Session-end beacon
+     * Uses liveProgressRef so the unmount cleanup always has the latest time,
+     * avoiding the stale-closure bug where useEffect(()=>,[]) captures time=0. */
     const sendSessionEnd = useCallback(() => {
         if (!currentVideoUrl) return
+        const { currentTime: ct, totalDuration: td } = liveProgressRef.current
         const payload = JSON.stringify({
             projectId: project.id,
             episodeId: activeEpisode?.id ?? null,
             subtitleLang: ccEnabled ? ccLang : null,
             audioLang: 'en',
             captionsOn: ccEnabled,
-            completePct: totalDuration > 0 ? Math.min(1, currentTime / totalDuration) : 0,
+            completePct: td > 0 ? Math.min(1, ct / td) : 0,
         })
         navigator.sendBeacon('/api/watch/session-end', new Blob([payload], { type: 'application/json' }))
-    }, [project.id, activeEpisode, ccEnabled, ccLang, currentTime, totalDuration, currentVideoUrl])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [project.id, activeEpisode, ccEnabled, ccLang, currentVideoUrl])
 
     useEffect(() => { return () => { sendSessionEnd() } }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -368,6 +374,7 @@ export default function WatchPlayer({
         const vid = videoRef.current
         if (!vid) return
         setCurrentTime(vid.currentTime)
+        liveProgressRef.current.currentTime = vid.currentTime
         if (vid.buffered.length > 0) {
             setBuffered(vid.buffered.end(vid.buffered.length - 1))
         }
@@ -376,6 +383,7 @@ export default function WatchPlayer({
         const vid = videoRef.current
         if (!vid) return
         setTotalDuration(vid.duration)
+        liveProgressRef.current.totalDuration = vid.duration
     }
 
     /* ══════════ JSX ══════════ */
@@ -520,6 +528,15 @@ export default function WatchPlayer({
                 )}
 
                 {/* ══════════════ VIDEO PLAYER ══════════════ */}
+                {/*
+                  * ARCHITECTURE: Two-layer container.
+                  * Outer (containerRef): position:relative, NO overflow:hidden
+                  *   → allows speed/CC dropdown menus to escape upward
+                  *   → receives fullscreen/touch events
+                  * Inner (.aim-video-box): overflow:hidden + border-radius
+                  *   → clips the video and overlays to rounded corners
+                  *   → does NOT affect absolute-positioned controls/dropdowns
+                  */}
                 <div
                     ref={containerRef}
                     onMouseMove={resetControlsTimer}
@@ -529,12 +546,18 @@ export default function WatchPlayer({
                         aspectRatio: '16/9',
                         background: '#000',
                         borderRadius: isFullscreen ? 0 : 'var(--radius-xl)',
-                        overflow: 'hidden',
-                        cursor: showControls ? 'default' : 'none',
                         border: isFullscreen ? 'none' : '1px solid var(--border-subtle)',
                         userSelect: 'none',
+                        // NO overflow:hidden here — dropdowns must be able to escape
                     }}
                 >
+                    {/* Inner video box — overflow:hidden clips video corners only */}
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        borderRadius: isFullscreen ? 0 : 'var(--radius-xl)',
+                        overflow: 'hidden',
+                        background: '#000',
+                    }}>
                     {/* ── Video element ── */}
                     {currentVideoUrl ? (
                         <video
@@ -647,7 +670,11 @@ export default function WatchPlayer({
                         />
                     )}
 
-                    {/* ══════════ CONTROLS BAR ══════════ */}
+                    </div>{/* /inner video box */}
+
+                    {/* ══════════ CONTROLS BAR ══════════
+                     * Lives OUTSIDE the inner overflow:hidden box so that
+                     * speed/CC dropdown menus can extend above the player. */}
                     {currentVideoUrl && (
                         <div
                             style={{
@@ -658,6 +685,7 @@ export default function WatchPlayer({
                                 transition: 'opacity 0.3s',
                                 pointerEvents: showControls ? 'auto' : 'none',
                                 zIndex: 10,
+                                borderRadius: isFullscreen ? 0 : '0 0 var(--radius-xl) var(--radius-xl)',
                             }}
                         >
                             {/* ── Seek bar ── */}
@@ -714,19 +742,22 @@ export default function WatchPlayer({
                                         {fmt(seekPreview.time)}
                                     </div>
                                 )}
-                                {/* Invisible scrubber input */}
+                                {/* Invisible scrubber input — touch-action:none enables drag on mobile */}
                                 <input
                                     type="range" className="aim-progress-thumb"
                                     min="0" max={totalDuration || 0}
                                     value={currentTime}
                                     onMouseDown={() => setIsSeeking(true)}
                                     onMouseUp={() => setIsSeeking(false)}
+                                    onTouchStart={() => setIsSeeking(true)}
+                                    onTouchEnd={() => setIsSeeking(false)}
                                     onChange={seek}
                                     style={{
-                                        position: 'absolute', top: '-8px', left: 0,
-                                        width: '100%', height: '20px',
+                                        position: 'absolute', top: '-10px', left: 0,
+                                        width: '100%', height: '28px',
                                         opacity: 0, cursor: 'pointer',
                                         WebkitAppearance: 'none',
+                                        touchAction: 'none',
                                     }}
                                 />
                             </div>
