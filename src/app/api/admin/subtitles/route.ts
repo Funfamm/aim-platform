@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
-import { findSubtitle, upsertSubtitle } from '@/lib/subtitle-repo'
+import { findSubtitle } from '@/lib/subtitle-repo'
+import { upsertSubtitleRecord } from '@/lib/subtitle-status-service'
 
 // ── Auth guard helper ──────────────────────────────────────────────
 async function requireAdmin() {
@@ -24,12 +25,11 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'projectId required' }, { status: 400 })
     }
 
-    // ── Delegated to repository (DIP satisfied) ──────────────────────────
     const subtitle = await findSubtitle(projectId, episodeId)
     return NextResponse.json({ subtitle })
 }
 
-// POST — save/update subtitles (called after browser transcription completes)
+// POST — save/update subtitles (called after browser transcription or SRT upload completes)
 export async function POST(req: NextRequest) {
     const denied = await requireAdmin()
     if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status })
@@ -50,8 +50,9 @@ export async function POST(req: NextRequest) {
             ? (typeof qcIssues === 'string' ? qcIssues : JSON.stringify(qcIssues))
             : null
 
-        // ── Delegated to repository (DIP + OCP satisfied) ────────────────────
-        const subtitle = await upsertSubtitle({
+        // ── Delegated to status service (SRP fix: business logic lives in service, not repo) ──
+        // upsertSubtitleRecord computes the correct translateStatus before calling the repo.
+        const subtitle = await upsertSubtitleRecord({
             projectId,
             episodeId: episodeId || null,
             language,

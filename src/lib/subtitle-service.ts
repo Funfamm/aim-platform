@@ -1,21 +1,17 @@
 /**
- * subtitle-service.ts — Shared server-side translation service (DIP + ISP Fix).
+ * subtitle-service.ts — Shared server-side translation service (DIP + ISP + OCP fix).
  *
- * DIP Fix: high-level translation logic now depends on ITranslator (abstraction),
- * NOT on the concrete GeminiTranslator. The default is GeminiTranslator, but any
- * ITranslator-compliant provider can be injected (e.g. for testing or future providers).
+ * DIP Fix: depends only on ITranslator abstraction. Default provider is
+ * resolved via the translator registry — NOT imported concretely at module level.
  *
- * ISP Fix: translateTextsForLang no longer accepts a mutable keyLabelOut object.
- * It returns { translations, keyLabel? } — callers that need the key label destructure it;
- * those that don't can ignore it without allocating a dummy object.
+ * ISP Fix: returns { translations, keyLabel? } instead of mutating keyLabelOut.
  *
- * SRP: this service only orchestrates chunking + segment mapping.
- *      Gemini interaction lives in GeminiTranslator.
- *      Status transitions live in subtitle-status-service.ts.
+ * OCP Fix: swapping the platform-wide default translator requires only a call
+ * to registerTranslator() in the registry — this file never changes.
  */
 
 import { MAX_SEGMENTS_PER_CALL } from '@/config/subtitles'
-import { geminiTranslator } from '@/lib/translators/GeminiTranslator'
+import { getTranslator } from '@/lib/translators/registry'
 import type { ITranslator, TranslationResult } from '@/lib/interfaces/ITranslator'
 
 export type Segment = { start: number; end: number; text: string }
@@ -27,19 +23,18 @@ export type Segment = { start: number; end: number; text: string }
  *
  * @param texts      - Raw source text lines (one per subtitle segment)
  * @param langCode   - ISO 639-1 language code to translate into
- * @param translator - Translation provider (defaults to GeminiTranslator; inject for testing)
- * @returns          - { translations: translated lines, keyLabel?: audit key used }
+ * @param translator - Optional override; defaults to the registered platform provider
+ * @returns          - { translations, keyLabel? }
  */
 export async function translateTextsForLang(
     texts: string[],
     langCode: string,
-    translator: ITranslator = geminiTranslator,
+    translator: ITranslator = getTranslator(),
 ): Promise<TranslationResult> {
     if (texts.length <= MAX_SEGMENTS_PER_CALL) {
         return translator.translateChunk(texts, langCode)
     }
 
-    // Large film: split into batches, translate each, merge results
     const allTranslations: string[] = []
     let lastKeyLabel: string | undefined
 
@@ -56,9 +51,6 @@ export async function translateTextsForLang(
 /**
  * Map translated text lines back onto their original timing segments.
  * Falls back to the original English text for any empty translation slots.
- *
- * @param original        - Original English segments (with start/end timestamps)
- * @param translatedTexts - Translated text lines in the same order
  */
 export function buildTranslatedSegments(
     original: Segment[],
@@ -67,6 +59,6 @@ export function buildTranslatedSegments(
     return original.map((seg, i) => ({
         start: seg.start,
         end: seg.end,
-        text: translatedTexts[i] || seg.text, // fallback to English if empty
+        text: translatedTexts[i] || seg.text,
     }))
 }

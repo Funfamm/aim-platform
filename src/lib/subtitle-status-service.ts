@@ -1,32 +1,71 @@
 /**
- * src/lib/subtitle-status-service.ts — Subtitle status-transition service (SRP Fix).
+ * src/lib/subtitle-status-service.ts — Subtitle status-transition service (SRP fix).
  *
- * Previously, status-transition logic (markLangsProcessing, checkpointLang, etc.)
- * lived inside subtitle-repo.ts, mixing business rules with persistence.
+ * Owns ALL status-transition business logic.
+ * subtitle-repo.ts is pure CRUD.
+ * Both use toJson from shared prisma-utils.ts (DRY fix — Gap 6).
  *
- * This service owns ALL status-transition logic.
- * subtitle-repo.ts becomes pure CRUD (findSubtitle, upsertSubtitle, updateSubtitleById).
- * Routes call this service — they never touch the repo directly for status transitions.
+ * Changes vs previous version:
+ * - toJson imported from prisma-utils (no more duplicate local definition)
+ * - Removed isJobAlreadyRunning (was dead — never called by routes; route
+ *   performs the same check inline against already-loaded data, avoiding
+ *   an extra DB round-trip)
+ * - Added computeTranslateStatus (pure function) + upsertSubtitleRecord (Gap 1 fix)
  *
  * Dependency graph:
- *   Route → SubtitleStatusService → SubtitleRepo (CRUD only)
+ *   Routes → SubtitleStatusService → SubtitleRepo (CRUD only)
  */
 
 import {
     findSubtitle,
+    upsertSubtitle,
     updateSubtitleById,
+    type UpsertSubtitleData,
     type SubtitleUpdateData,
 } from '@/lib/subtitle-repo'
+import { toJson } from '@/lib/prisma-utils'
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Pure business logic ───────────────────────────────────────────────────────
 
 /**
- * Cast a plain Record to the shape Prisma Json fields expect.
- * Kept here (not in repo) since it's only needed for status updates.
+ * Compute the correct translateStatus for a subtitle upsert.
+ *
+ * Rules:
+ * - If translations are included → 'complete'
+ * - If no translations but existing status was already partial/complete → preserve it
+ * - Otherwise → 'pending'
+ *
+ * Previously this logic lived inside subtitle-repo's upsertSubtitle,
+ * mixing business rules with persistence. Now it's a pure function here.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function toJson<T extends object>(value: T): any {
-    return value
+export function computeTranslateStatus(
+    hasTranslations: boolean,
+    existingTranslateStatus: string | null | undefined,
+): string {
+    if (hasTranslations) return 'complete'
+    if (existingTranslateStatus === 'partial' || existingTranslateStatus === 'complete') {
+        return existingTranslateStatus
+    }
+    return 'pending'
+}
+
+/**
+ * Service-level upsert — applies the translateStatus business rule before
+ * delegating to the repo.
+ *
+ * Callers (routes) should use this instead of upsertSubtitle from the repo
+ * when they want the standard status-preservation behaviour.
+ * The repo's upsertSubtitle now only writes exactly what it's given.
+ */
+export async function upsertSubtitleRecord(
+    data: Omit<UpsertSubtitleData, 'translateStatus'>,
+): Promise<ReturnType<typeof upsertSubtitle>> {
+    const existing = await findSubtitle(data.projectId, data.episodeId)
+    const translateStatus = computeTranslateStatus(
+        !!data.translations,
+        existing?.translateStatus ?? null,
+    )
+    return upsertSubtitle({ ...data, translateStatus })
 }
 
 // ── Status transitions ────────────────────────────────────────────────────────
@@ -124,16 +163,5 @@ export async function finalizeSingleLang(
     })
 }
 
-/**
- * Convenience: load a subtitle record and check if a job is already running.
- * Used by routes before starting a new translation job (rate-limit guard).
- */
-export async function isJobAlreadyRunning(
-    projectId: string,
-    episodeId?: string | null,
-): Promise<boolean> {
-    const subtitle = await findSubtitle(projectId, episodeId)
-    if (!subtitle) return false
-    const langStatus = (subtitle.langStatus as Record<string, string> | null) ?? {}
-    return Object.values(langStatus).some(s => s === 'processing')
-}
+// Re-export types callers may need
+export type { UpsertSubtitleData, SubtitleUpdateData }

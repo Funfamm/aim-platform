@@ -9,6 +9,7 @@ import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
 import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl, requiresTranslationGate } from '@/config/subtitles'
 import LangStatusGrid from '@/components/admin/LangStatusGrid'
 import PublishGateModal from '@/components/admin/PublishGateModal'
+import { uploadSubtitleFile } from '@/lib/subtitle-file-parser'
 
 /* â”€â”€ Types â”€â”€ */
 type Project = {
@@ -47,60 +48,7 @@ function slugify(text: string) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
 
-// ── Subtitle file parsers ─────────────────────────────────────────────────────
 
-function parseSRT(text: string): { start: number; end: number; text: string }[] {
-    const parseTime = (s: string) => {
-        const [h, m, sc] = s.trim().replace(',', '.').split(':')
-        return parseInt(h) * 3600 + parseInt(m) * 60 + parseFloat(sc)
-    }
-    return text.trim().split(/\n\n+/).flatMap(block => {
-        const lines = block.trim().split('\n')
-        const timeLine = lines.find(l => l.includes('-->'))
-        if (!timeLine) return []
-        const [startStr, endStr] = timeLine.split('-->')
-        const textLines = lines
-            .filter(l => !l.includes('-->') && !/^\d+$/.test(l.trim()) && l.trim())
-            .map(l => l.replace(/<[^>]+>/g, '').trim())
-        if (textLines.length === 0) return []
-        return [{ start: parseTime(startStr), end: parseTime(endStr), text: textLines.join(' ') }]
-    })
-}
-
-function parseVTT(text: string): { start: number; end: number; text: string }[] {
-    const parseTime = (s: string) => {
-        const clean = s.trim().split(' ')[0]
-        const parts = clean.split(':')
-        if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1].replace(',', '.'))
-        return parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 + parseFloat(parts[2].replace(',', '.'))
-    }
-    const lines = text.split('\n')
-    const segments: { start: number; end: number; text: string }[] = []
-    let i = 0
-    while (i < lines.length) {
-        const line = lines[i].trim()
-        if (line.includes('-->')) {
-            const [startStr, endStr] = line.split('-->')
-            i++
-            const textLines: string[] = []
-            while (i < lines.length && lines[i].trim() !== '') {
-                const t = lines[i].replace(/<[^>]+>/g, '').trim()
-                if (t) textLines.push(t)
-                i++
-            }
-            if (textLines.length > 0) {
-                segments.push({ start: parseTime(startStr), end: parseTime(endStr), text: textLines.join(' ') })
-            }
-        } else { i++ }
-    }
-    return segments
-}
-
-function parseSubtitleFile(filename: string, content: string) {
-    return (filename.endsWith('.vtt') || content.trimStart().startsWith('WEBVTT'))
-        ? parseVTT(content)
-        : parseSRT(content)
-}
 
 type FilmCastMember = {
     id: string
@@ -347,47 +295,21 @@ export default function AdminProjectsPage() {
 
     /**
      * Handle manual SRT/VTT transcript upload.
-     * Parses the file client-side and POSTs segments to /api/admin/subtitles.
-     * Admin can then click CC to run translation from the saved English track.
+     * Delegates all parsing and API logic to subtitle-file-parser.ts (SRP fix).
+     * This function only wires React state setters to the upload callbacks.
      */
     const handleSrtUpload = async (projectId: string, file: File) => {
         const pid = projectId
-        try {
-            const content = await file.text()
-            const segments = parseSubtitleFile(file.name, content)
-            if (segments.length === 0) {
-                setError('No valid subtitle segments found in this file. Make sure it is a valid .srt or .vtt file.')
-                return
-            }
-            setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
-            setSubtitleStatus(s => ({ ...s, [pid]: `💾 Saving ${segments.length} segments...` }))
-            setSubtitleProgress(s => ({ ...s, [pid]: 20 }))
-
-            const res = await fetch('/api/admin/subtitles', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    projectId: pid,
-                    language: 'en',
-                    segments,
-                    transcribedWith: 'manual-upload',
-                    status: 'pending',
-                }),
-            })
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}))
-                throw new Error(data.error || 'Failed to save transcript')
-            }
-            setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
-            setSubtitleStatus(s => ({ ...s, [pid]: `✓ ${segments.length} segments loaded — click CC to translate` }))
-            setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
-            setTranslationCount(s => ({ ...s, [pid]: 1 })) // English only at this point
-            setTranslateStatus(s => ({ ...s, [pid]: 'pending' }))
-        } catch (err) {
-            setSubtitleStatus(s => ({ ...s, [pid]: `❌ Upload failed` }))
-            setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
-            setError(err instanceof Error ? err.message : 'SRT upload failed')
-        }
+        await uploadSubtitleFile(pid, file, {
+            onPhase:    (phase) => setSubtitlePhase(s    => ({ ...s, [pid]: phase })),
+            onStatus:   (msg)   => setSubtitleStatus(s   => ({ ...s, [pid]: msg })),
+            onProgress: (pct)   => setSubtitleProgress(s => ({ ...s, [pid]: pct })),
+            onCountReady: () => {
+                setTranslationCount(s => ({ ...s, [pid]: 1 })) // English only at this point
+                setTranslateStatus(s  => ({ ...s, [pid]: 'pending' }))
+            },
+            onError: setError,
+        })
     }
 
     const handleDelete = async (id: string, title: string) => {

@@ -2,9 +2,10 @@
  * subtitle-repo.ts — Repository layer for FilmSubtitle DB operations (SRP Fix).
  *
  * Single responsibility: pure CRUD against the FilmSubtitle table.
- * Status-transition logic (markLangsProcessing, checkpointLang, etc.) has been
- * moved to subtitle-status-service.ts so this file only reads from and writes
- * to Prisma — it contains zero business rules.
+ * Contains ZERO business logic — no status-transition rules, no derive logic.
+ *
+ * All status-transition logic lives in subtitle-status-service.ts.
+ * All Prisma Json casting uses the shared toJson from prisma-utils.ts (DRY fix).
  *
  * Dependency graph:
  *   SubtitleStatusService → updateSubtitleById (here)
@@ -13,10 +14,11 @@
 
 import { prisma } from '@/lib/db'
 import { Prisma } from '@prisma/client'
+import { toJson } from '@/lib/prisma-utils'
 
 export type SubtitleSegment = { start: number; end: number; text: string }
 
-/** Input shape for upsert (create or update) */
+/** Input shape for upsert (create or update). All business defaults are the caller's responsibility. */
 export type UpsertSubtitleData = {
     projectId: string
     episodeId?: string | null
@@ -24,12 +26,13 @@ export type UpsertSubtitleData = {
     segments: string
     translations?: string | null
     status?: string
+    /** Must be computed by the caller (via subtitle-status-service). Defaults to 'pending'. */
     translateStatus?: string
     transcribedWith?: string
     qcIssues?: string | null
 }
 
-/** Input shape for a partial update (used by status-service) */
+/** Input shape for a partial update (used exclusively by subtitle-status-service). */
 export type SubtitleUpdateData = {
     translations?: string
     translateStatus?: string
@@ -37,15 +40,6 @@ export type SubtitleUpdateData = {
     langStatus?: Prisma.InputJsonValue
     vttPaths?: Prisma.InputJsonValue
     generatedWith?: string
-}
-
-// ── Internal helper ───────────────────────────────────────────────────────────
-
-/**
- * Cast a plain Record to Prisma.InputJsonValue so Json? fields accept it.
- */
-function toJson<T extends object>(value: T): Prisma.InputJsonValue {
-    return value as unknown as Prisma.InputJsonValue
 }
 
 // ── Read ──────────────────────────────────────────────────────────────────────
@@ -64,12 +58,17 @@ export async function findSubtitle(projectId: string, episodeId?: string | null)
 
 /**
  * Upsert a subtitle record — create if none exists, update otherwise.
- * Used by POST /api/admin/subtitles after transcription completes.
- * Preserves existing translateStatus if partial/complete (never resets progress).
+ *
+ * PURE CRUD: this function writes exactly what it receives.
+ * translateStatus business logic is owned by subtitle-status-service.ts.
+ * Callers are responsible for passing a pre-computed translateStatus.
  */
 export async function upsertSubtitle(data: UpsertSubtitleData) {
     const { projectId, episodeId, ...fields } = data
     const existing = await findSubtitle(projectId, episodeId)
+
+    // Use the explicitly provided translateStatus — no derivation here.
+    const translateStatus = fields.translateStatus ?? 'pending'
 
     if (existing) {
         return prisma.filmSubtitle.update({
@@ -79,12 +78,7 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
                 segments: fields.segments,
                 translations: fields.translations ?? null,
                 status: fields.status ?? 'completed',
-                // Preserve partial/complete translate status — don't wipe resume progress
-                translateStatus: fields.translations
-                    ? 'complete'
-                    : (existing.translateStatus === 'partial' || existing.translateStatus === 'complete'
-                        ? existing.translateStatus
-                        : 'pending'),
+                translateStatus,
                 transcribedWith: fields.transcribedWith ?? 'whisper-medium',
                 qcIssues: fields.qcIssues ?? null,
             },
@@ -99,7 +93,7 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
             segments: fields.segments,
             translations: fields.translations ?? null,
             status: fields.status ?? 'completed',
-            translateStatus: fields.translations ? 'complete' : 'pending',
+            translateStatus,
             transcribedWith: fields.transcribedWith ?? 'whisper-medium',
             qcIssues: fields.qcIssues ?? null,
         },
@@ -108,17 +102,12 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
 
 /**
  * Generic partial update for a subtitle record by its internal ID.
- * Used exclusively by subtitle-status-service.ts — routes should not call this directly.
- *
- * Keeping this as a thin wrapper around prisma.update ensures the repo
- * remains the sole Prisma access point (DIP boundary for DB).
+ * Used exclusively by subtitle-status-service.ts — routes must not call this directly.
  */
 export async function updateSubtitleById(
     id: string,
     data: SubtitleUpdateData,
 ): Promise<void> {
-    // Build a clean update payload — exclude undefined fields so Prisma
-    // doesn't attempt to nullify optional columns unintentionally.
     const payload: Prisma.FilmSubtitleUpdateInput = {}
 
     if (data.translations   !== undefined) payload.translations   = data.translations
