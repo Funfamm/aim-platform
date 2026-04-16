@@ -251,6 +251,10 @@ export default function WatchPlayer({
         if (vid.paused) {
             vid.play().catch(() => { })
             setIsPlaying(true)
+            // On mobile, auto-enter fullscreen and lock landscape when hitting play
+            if (window.innerWidth <= 768 && !document.fullscreenElement) {
+                toggleFullscreen().catch(() => {})
+            }
         } else {
             vid.pause()
             setIsPlaying(false)
@@ -265,6 +269,7 @@ export default function WatchPlayer({
 
     const toggleFullscreen = async () => {
         const el = containerRef.current
+        const vid = videoRef.current as any
         if (!el) return
         if (document.fullscreenElement) {
             // Unlock orientation before exiting fullscreen
@@ -273,11 +278,22 @@ export default function WatchPlayer({
             setIsFullscreen(false)
         } else {
             try {
-                await el.requestFullscreen()
-                setIsFullscreen(true)
-                // Lock to landscape on mobile for immersive viewing
-                try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* unsupported */ }
-            } catch { /* fullscreen denied */ }
+                if (el.requestFullscreen) {
+                    await el.requestFullscreen()
+                    setIsFullscreen(true)
+                    // Lock to landscape on mobile for immersive viewing
+                    try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* unsupported */ }
+                } else if (vid && vid.webkitEnterFullscreen) {
+                    vid.webkitEnterFullscreen()
+                    setIsFullscreen(true)
+                }
+            } catch {
+                // If container requestFullscreen fails (e.g. iOS Safari edge case), try video directly
+                if (vid && vid.webkitEnterFullscreen) {
+                    vid.webkitEnterFullscreen()
+                    setIsFullscreen(true)
+                }
+            }
         }
     }
 
