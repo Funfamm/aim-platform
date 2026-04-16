@@ -169,6 +169,14 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     }
                 }
 
+                /* Disable entrance animation on reduced-motion devices — cards just appear */
+                @media (prefers-reduced-motion: reduce) {
+                    .cast-card {
+                        animation: none !important;
+                        opacity: 1 !important;
+                    }
+                }
+
                 /* ── Mobile ≤ 640px ── */
                 @media (max-width: 640px) {
                     .cast-section-header {
@@ -320,8 +328,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                         overflow: 'hidden',
                                         position: 'relative',
                                         cursor: 'pointer',
-                                        // Staggered entrance animation
-                                        opacity: isVisible ? 1 : 0,
+                                        // Staggered entrance animation — cards always visible as fallback
                                         animation: isVisible
                                             ? `castCardIn 0.6s cubic-bezier(0.22,1,0.36,1) ${idx * 80}ms both`
                                             : 'none',

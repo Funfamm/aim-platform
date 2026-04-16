@@ -142,17 +142,8 @@ export default function WatchPlayer({
     }, [project.id, activeEpisode, userPreferredLang])
 
     // ── Lock orientation to landscape on mobile immediately on mount ──
-    useEffect(() => {
-        if (typeof window === 'undefined' || window.innerWidth > 768) return
-        const lockLandscape = async () => {
-            try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* unsupported */ }
-        }
-        lockLandscape()
-        // Re-lock whenever orientation changes (e.g. user rotates back to portrait)
-        const onOrientationChange = () => { lockLandscape() }
-        screen.orientation?.addEventListener?.('change', onOrientationChange)
-        return () => screen.orientation?.removeEventListener?.('change', onOrientationChange)
-    }, [])
+    // Note: screen.orientation.lock() only works when in fullscreen on most browsers.
+    // We do NOT auto-lock here — orientation is locked only when user explicitly taps fullscreen.
 
     // ── Resume playback: fetch saved position on mount (movie only, not series) ──
     useEffect(() => {
@@ -288,10 +279,6 @@ export default function WatchPlayer({
         if (vid.paused) {
             vid.play().catch(() => { })
             setIsPlaying(true)
-            // On mobile, auto-enter fullscreen and lock landscape when hitting play
-            if (window.innerWidth <= 768 && !document.fullscreenElement) {
-                toggleFullscreen().catch(() => {})
-            }
         } else {
             vid.pause()
             setIsPlaying(false)
@@ -306,7 +293,6 @@ export default function WatchPlayer({
 
     const toggleFullscreen = async () => {
         const el = containerRef.current
-        const vid = videoRef.current as any
         if (!el) return
         if (document.fullscreenElement) {
             // Unlock orientation before exiting fullscreen
@@ -315,22 +301,11 @@ export default function WatchPlayer({
             setIsFullscreen(false)
         } else {
             try {
-                if (el.requestFullscreen) {
-                    await el.requestFullscreen()
-                    setIsFullscreen(true)
-                    // Lock to landscape on mobile for immersive viewing
-                    try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* unsupported */ }
-                } else if (vid && vid.webkitEnterFullscreen) {
-                    vid.webkitEnterFullscreen()
-                    setIsFullscreen(true)
-                }
-            } catch {
-                // If container requestFullscreen fails (e.g. iOS Safari edge case), try video directly
-                if (vid && vid.webkitEnterFullscreen) {
-                    vid.webkitEnterFullscreen()
-                    setIsFullscreen(true)
-                }
-            }
+                await el.requestFullscreen()
+                setIsFullscreen(true)
+                // Lock to landscape on mobile for immersive viewing
+                try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* unsupported */ }
+            } catch { /* fullscreen not supported or denied */ }
         }
     }
 
@@ -346,17 +321,8 @@ export default function WatchPlayer({
         return () => document.removeEventListener('fullscreenchange', onFsChange)
     }, [])
 
-    // Auto-enter fullscreen and lock to landscape on mobile when the player loads
-    useEffect(() => {
-        if (typeof window !== 'undefined' && window.innerWidth <= 768 && !document.fullscreenElement) {
-            // Needs a tiny timeout to ensure DOM layout is complete before requesting Fullscreen
-            const t = setTimeout(() => {
-                toggleFullscreen().catch(() => {})
-            }, 300)
-            return () => clearTimeout(t)
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    // NOTE: Auto-fullscreen on mount removed — it triggered the native mobile player
+    // instead of our custom player. Users tap the fullscreen button explicitly.
 
     const handleTimeUpdate = () => {
         const vid = videoRef.current
