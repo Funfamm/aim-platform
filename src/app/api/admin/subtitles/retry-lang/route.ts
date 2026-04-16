@@ -1,21 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
-import { callGemini } from '@/lib/gemini'
-import { LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { translateTextsForLang, buildTranslatedSegments, type Segment } from '@/lib/subtitle-service'
 import { cacheVttToR2 } from '@/lib/vtt-storage'
+import { findSubtitle, failLang, finalizeSingleLang } from '@/lib/subtitle-repo'
+
+// SSE numeric error codes — mirrors translate/route.ts for consistency
+const ERR = {
+    NOT_FOUND: 404,
+    PARSE_FAILED: 500,
+    TRANSLATE_FAILED: 502,
+} as const
 
 /**
  * POST /api/admin/subtitles/retry-lang
  *
- * Re-translates a single language for a given project/episode.
- * Uses the same SSE event shape as the full /translate endpoint
- * so the client can reuse the same handler.
+ * Re-translates a single language for a given project/episode via SSE.
+ * Uses the same SSE event shape as /translate so the client can reuse handlers.
  *
  * Body: { projectId: string, episodeId?: string, lang: string }
+ * Response: text/event-stream
  */
 export async function POST(req: NextRequest) {
+    // ── Auth guard ─────────────────────────────────────────────────────────
     const session = await getUserSession()
     if (!session?.userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -34,116 +42,86 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'projectId and lang are required' }, { status: 400 })
     }
 
-    const subtitle = await prisma.filmSubtitle.findFirst({
-        where: { projectId, episodeId: episodeId || null },
-    })
-
+    // ── Load subtitle record via repository ────────────────────────────────
+    const subtitle = await findSubtitle(projectId, episodeId)
     if (!subtitle) {
-        return NextResponse.json({ error: 'No subtitle record found for this project' }, { status: 404 })
+        return NextResponse.json(
+            { error: 'No subtitle record found for this project', code: ERR.NOT_FOUND },
+            { status: ERR.NOT_FOUND }
+        )
     }
 
-    let englishSegments: { start: number; end: number; text: string }[] = []
+    // ── Parse source data ──────────────────────────────────────────────────
+    let englishSegments: Segment[] = []
     try {
         englishSegments = JSON.parse(subtitle.segments)
     } catch {
-        return NextResponse.json({ error: 'Failed to parse subtitle segments' }, { status: 500 })
+        return NextResponse.json(
+            { error: 'Failed to parse subtitle segments', code: ERR.PARSE_FAILED },
+            { status: ERR.PARSE_FAILED }
+        )
     }
 
-    const existingTranslations: Record<string, { start: number; end: number; text: string }[]> =
+    const existingTranslations: Record<string, Segment[]> =
         subtitle.translations ? JSON.parse(subtitle.translations) : {}
 
     const existingLangStatus = (subtitle.langStatus as Record<string, string> | null) ?? {}
-    const existingVttPaths = (subtitle.vttPaths as Record<string, string> | null) ?? {}
+    const existingVttPaths   = (subtitle.vttPaths  as Record<string, string> | null) ?? {}
 
-    // ── SSE stream ──────────────────────────────────────────────────────────
+    // ── SSE stream ─────────────────────────────────────────────────────────
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
         async start(controller) {
             const emit = (data: object) => {
-                try { controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`)) } catch { /* closed */ }
+                try {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
+                } catch { /* connection closed */ }
             }
 
-            const langName = LANGUAGE_NAMES[lang] || lang
+            const langName = LANGUAGE_NAMES[lang] ?? lang
             emit({ lang, langName, phase: 'translating', pct: 0 })
 
-            // Mark as processing — prevent concurrent retries on same lang
-            await prisma.filmSubtitle.update({
-                where: { id: subtitle.id },
-                data: {
-                    langStatus: { ...existingLangStatus, [lang]: 'processing' },
-                },
-            })
+            // Mark as processing — prevent concurrent retries on the same lang
+            await import('@/lib/subtitle-repo').then(r =>
+                r.markLangsProcessing(subtitle.id, [lang], existingLangStatus)
+            )
 
             try {
-                const texts = englishSegments.map(s => s.text)
-                const MAX_PER_CALL = 500
-                const translatedTexts: string[] = []
+                const texts       = englishSegments.map(s => s.text)
+                const keyLabelOut = { value: '' }
 
-                for (let i = 0; i < texts.length; i += MAX_PER_CALL) {
-                    const chunk = texts.slice(i, i + MAX_PER_CALL)
-                    const prompt = [
-                        `You are a professional subtitle translator for a film platform.`,
-                        `Translate the following ${chunk.length} subtitle lines to ${langName} (code: ${lang}).`,
-                        `Return ONLY a JSON array of exactly ${chunk.length} translated strings, same order.`,
-                        `Preserve names, technical terms, and cinematic register. No extra text outside the JSON.`,
-                        `Input:`,
-                        JSON.stringify(chunk),
-                    ].join('\n')
+                const translatedTexts = await translateTextsForLang(texts, lang, keyLabelOut)
+                emit({ lang, langName, phase: 'translating', pct: 85 })
 
-                    const result = await callGemini(prompt, 'subtitles')
-                    if ('error' in result) throw new Error(result.error)
-
-                    const jsonMatch = result.text.match(/\[[\s\S]*\]/)
-                    if (!jsonMatch) throw new Error('No JSON array in Gemini response')
-                    const parsed: string[] = JSON.parse(jsonMatch[0])
-                    while (parsed.length < chunk.length) parsed.push('')
-                    translatedTexts.push(...parsed)
-
-                    emit({ lang, langName, phase: 'translating', pct: Math.round(((i + chunk.length) / texts.length) * 80) })
-                }
-
-                const translatedSegments = englishSegments.map((seg, i) => ({
-                    start: seg.start,
-                    end: seg.end,
-                    text: translatedTexts[i] || seg.text,
-                }))
-
+                const translatedSegments = buildTranslatedSegments(englishSegments, translatedTexts)
                 existingTranslations[lang] = translatedSegments
 
-                // Cache VTT to R2
-                let newVttKey: string | null = null
+                // Cache VTT to R2 — non-fatal
                 try {
-                    newVttKey = await cacheVttToR2(projectId, lang, translatedSegments)
-                    existingVttPaths[lang] = newVttKey
+                    existingVttPaths[lang] = await cacheVttToR2(projectId, lang, translatedSegments)
                     emit({ lang, langName, phase: 'translating', pct: 95 })
                 } catch (e) {
                     console.error('[retry-lang] VTT cache failed:', e)
                 }
 
-                const allDone = ['es', 'fr', 'de', 'pt', 'ru', 'zh', 'ar', 'ja', 'ko', 'hi'].every(
-                    l => existingTranslations[l]
+                // Persist result via repository
+                await finalizeSingleLang(
+                    subtitle.id,
+                    lang,
+                    JSON.stringify(existingTranslations),
+                    existingLangStatus,
+                    existingVttPaths,
+                    SUBTITLE_TARGET_LANGS,
+                    existingTranslations,
                 )
-
-                await prisma.filmSubtitle.update({
-                    where: { id: subtitle.id },
-                    data: {
-                        translations: JSON.stringify(existingTranslations),
-                        langStatus: { ...existingLangStatus, [lang]: 'completed' },
-                        vttPaths: existingVttPaths,
-                        translateStatus: allDone ? 'complete' : 'partial',
-                    },
-                })
 
                 emit({ lang, langName, phase: 'done', pct: 100 })
 
             } catch (err) {
                 const errMsg = err instanceof Error ? err.message : 'Unknown error'
-                emit({ lang, langName, phase: 'error', error: errMsg })
-                await prisma.filmSubtitle.update({
-                    where: { id: subtitle.id },
-                    data: { langStatus: { ...existingLangStatus, [lang]: 'failed' } },
-                })
+                emit({ lang, langName, phase: 'error', error: errMsg, code: ERR.TRANSLATE_FAILED })
+                await failLang(subtitle.id, lang, existingLangStatus)
             }
 
             emit({ phase: 'complete', lang })

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
@@ -6,9 +6,10 @@ import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
 import { transcribeVideo } from '@/lib/transcribe-client'
 import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
-import { LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS } from '@/lib/subtitle-languages'
+import LangStatusGrid from '@/components/admin/LangStatusGrid'
 
-/* ── Types ── */
+/* â”€â”€ Types â”€â”€ */
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
@@ -101,7 +102,7 @@ export default function AdminProjectsPage() {
     const [reviewLang, setReviewLang] = useState('en')
     const [reviewLoading, setReviewLoading] = useState(false)
     const [retryingLang, setRetryingLang] = useState<string | null>(null)  // lang currently being retried
-    // Generational counter — guards openReview against async race conditions.
+    // Generational counter â€” guards openReview against async race conditions.
     // If admin clicks Review on project B before project A's fetch resolves,
     // A's response is silently discarded.
     const reviewRequestRef = useRef(0)
@@ -115,14 +116,14 @@ export default function AdminProjectsPage() {
     const [castError, setCastError] = useState('')
     const [translatingId, setTranslatingId] = useState<string | null>(null)
 
-    // ── Movie Roll assignment (inside project modal) ──────────────────────
+    // â”€â”€ Movie Roll assignment (inside project modal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     type RollOption = { id: string; title: string; icon: string; displayOn: string; visible: boolean }
     const [allRolls, setAllRolls] = useState<RollOption[]>([])
     const [selectedRollIds, setSelectedRollIds] = useState<string[]>([])
     const [rollsLoading, setRollsLoading] = useState(false)
     const [rollError, setRollError] = useState(false)
 
-    const TOTAL_LANGS = 11 // en, ar, de, es, fr, hi, ja, ko, pt, ru, zh
+    // TOTAL_SUBTITLE_LANGS comes from subtitle-languages.ts â€” canonical constant, not hard-coded
 
     useEffect(() => {
         fetch('/api/admin/projects')
@@ -139,7 +140,7 @@ export default function AdminProjectsPage() {
                                 setTranslationCount(s => ({ ...s, [p.id]: count }))
                                 setTranslateStatus(s => ({ ...s, [p.id]: sub.translateStatus ?? 'pending' }))
                                 if (count > 0) {
-                                    setSubtitleStatus(s => ({ ...s, [p.id]: count >= TOTAL_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
+                                    setSubtitleStatus(s => ({ ...s, [p.id]: count >= TOTAL_SUBTITLE_LANGS ? 'âœ“ All languages ready' : `âœ“ ${count} lang` }))
                                     setSubtitlePhase(s => ({ ...s, [p.id]: 'done' }))
                                 }
                             })
@@ -206,18 +207,18 @@ export default function AdminProjectsPage() {
         // Gate: block publishing (completed) without full translations
         if (form.status === 'completed' && editingId) {
             const count = translationCount[editingId] ?? 0
-            if (count < TOTAL_LANGS) {
+            if (count < TOTAL_SUBTITLE_LANGS) {
                 setError(
-                    `⚠️ Cannot publish without full translations. This project has ${
+                    `âš ï¸ Cannot publish without full translations. This project has ${
                         count
-                    }/${TOTAL_LANGS} languages. Use the CC / Generate button to generate subtitles first, then publish.`
+                    }/${TOTAL_SUBTITLE_LANGS} languages. Use the CC / Generate button to generate subtitles first, then publish.`
                 )
                 return
             }
         }
         // Gate: at least one roll must be selected
         if (allRolls.length > 0 && selectedRollIds.length === 0) {
-            setError('🎬 This project must be assigned to at least one Movie Roll before saving.')
+            setError('ðŸŽ¬ This project must be assigned to at least one Movie Roll before saving.')
             setRollError(true)
             // Scroll the roll section into view
             document.getElementById('roll-assignment-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -243,7 +244,7 @@ export default function AdminProjectsPage() {
                 throw new Error(data.error || 'Failed to save')
             }
             const saved = await res.json()
-            // Save roll assignments (fire-and-forget — non-blocking)
+            // Save roll assignments (fire-and-forget â€” non-blocking)
             fetch(`/api/admin/projects/${saved.id}/rolls`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -263,7 +264,7 @@ export default function AdminProjectsPage() {
                         setTranslationCount(s => ({ ...s, [saved.id]: count }))
                         setTranslateStatus(s => ({ ...s, [saved.id]: sub.translateStatus ?? 'pending' }))
                         if (count > 0) {
-                            setSubtitleStatus(s => ({ ...s, [saved.id]: count >= TOTAL_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
+                            setSubtitleStatus(s => ({ ...s, [saved.id]: count >= TOTAL_SUBTITLE_LANGS ? 'âœ“ All languages ready' : `âœ“ ${count} lang` }))
                             setSubtitlePhase(s => ({ ...s, [saved.id]: 'done' }))
                         }
                     })
@@ -448,7 +449,7 @@ export default function AdminProjectsPage() {
             if (!res.ok) throw new Error()
             const { member } = await res.json()
             setCastMembers(prev => prev.map(c => c.id === m.id ? { ...c, bioTranslations: member.bioTranslations } : c))
-        } catch { alert('Translation failed — check API key or try again.') }
+        } catch { alert('Translation failed â€” check API key or try again.') }
         setTranslatingId(null)
     }
 
@@ -515,7 +516,7 @@ export default function AdminProjectsPage() {
                         <div style={{
                             fontSize: '3.5rem', marginBottom: 'var(--space-lg)',
                             filter: 'drop-shadow(0 4px 12px rgba(212,168,83,0.2))',
-                        }}>🎬</div>
+                        }}>ðŸŽ¬</div>
                         <h3 style={{
                             fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)',
                             marginBottom: 'var(--space-xs)',
@@ -541,7 +542,7 @@ export default function AdminProjectsPage() {
                             opacity: 0.6, display: 'flex', justifyContent: 'center', alignItems: 'center',
                             gap: '4px', width: '100%',
                         }}>
-                            💡 Tip: Add a cover image and trailer to make your project shine on the public site.
+                            ðŸ’¡ Tip: Add a cover image and trailer to make your project shine on the public site.
                         </div>
                     </div>
                 ) : (
@@ -568,11 +569,11 @@ export default function AdminProjectsPage() {
                                     transition: 'all 0.15s',
                                 }}
                             >
-                                {opt === 'default' ? '📋 Manual order' : '👁 Most viewed'}
+                                {opt === 'default' ? 'ðŸ“‹ Manual order' : 'ðŸ‘ Most viewed'}
                             </button>
                         ))}
                         <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
-                            {projects.length} project{projects.length !== 1 ? 's' : ''} · {projects.reduce((s, p) => s + p.viewCount, 0).toLocaleString()} total views
+                            {projects.length} project{projects.length !== 1 ? 's' : ''} Â· {projects.reduce((s, p) => s + p.viewCount, 0).toLocaleString()} total views
                         </span>
                     </div>
                     <div className="grid-auto-fill">
@@ -592,8 +593,8 @@ export default function AdminProjectsPage() {
                                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, var(--bg-glass) 100%)' }} />
                                         <div style={{ position: 'absolute', top: 'var(--space-md)', right: 'var(--space-md)', display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                             <span className={`badge ${status.className}`}>{status.label}</span>
-                                            {project.featured && <span className="badge badge-gold">★ Featured</span>}
-                                            {isTrending && <span className="badge badge-gold">🔥 Trending</span>}
+                                            {project.featured && <span className="badge badge-gold">â˜… Featured</span>}
+                                            {isTrending && <span className="badge badge-gold">ðŸ”¥ Trending</span>}
                                         </div>
                                     </div>
 
@@ -601,7 +602,7 @@ export default function AdminProjectsPage() {
                                     <div style={{ padding: 'var(--space-lg)' }}>
                                         <h3 style={{ marginBottom: '4px' }}>{project.title}</h3>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
-                                            {project.genre} {project.year ? `• ${project.year}` : ''} {project.duration ? `• ${project.duration}` : ''}
+                                            {project.genre} {project.year ? `â€¢ ${project.year}` : ''} {project.duration ? `â€¢ ${project.duration}` : ''}
                                         </div>
                                         <p style={{ fontSize: '0.85rem', lineHeight: 1.6, marginBottom: 'var(--space-md)' }}>
                                             {project.description.length > 120 ? project.description.slice(0, 120) + '...' : project.description}
@@ -610,7 +611,7 @@ export default function AdminProjectsPage() {
                                         <div style={{ marginBottom: 'var(--space-sm)' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                                                 <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-                                                    👁 {project.viewCount.toLocaleString()} view{project.viewCount !== 1 ? 's' : ''}
+                                                    ðŸ‘ {project.viewCount.toLocaleString()} view{project.viewCount !== 1 ? 's' : ''}
                                                 </span>
                                                 {viewPct > 0 && (
                                                     <span style={{ fontSize: '0.55rem', color: isTrending ? 'var(--accent-gold)' : 'var(--text-tertiary)', fontWeight: 700 }}>
@@ -637,8 +638,8 @@ export default function AdminProjectsPage() {
                                             {/* Translation completeness badge */}
                                             {project.filmUrl && (() => {
                                                 const count = translationCount[project.id] ?? -1
-                                                const isFull = count >= TOTAL_LANGS
-                                                const isPartial = count > 0 && count < TOTAL_LANGS
+                                                const isFull = count >= TOTAL_SUBTITLE_LANGS
+                                                const isPartial = count > 0 && count < TOTAL_SUBTITLE_LANGS
                                                 const isNone = count === 0
                                                 const isPending = count === -1
                                                 return (
@@ -650,8 +651,8 @@ export default function AdminProjectsPage() {
                                                         border: `1px solid ${isFull ? 'rgba(52,211,153,0.25)' : isPartial ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}`,
                                                         color: isFull ? '#34d399' : isPartial ? '#f59e0b' : 'var(--text-tertiary)',
                                                     }}>
-                                                        {isPending ? '…' : isFull ? '✅' : isNone ? '🌐' : '⚠️'}
-                                                        {isPending ? 'checking' : `${Math.max(0, count)}/${TOTAL_LANGS} langs`}
+                                                        {isPending ? 'â€¦' : isFull ? 'âœ…' : isNone ? 'ðŸŒ' : 'âš ï¸'}
+                                                        {isPending ? 'checking' : `${Math.max(0, count)}/${TOTAL_SUBTITLE_LANGS} langs`}
                                                     </span>
                                                 )
                                             })()}
@@ -667,13 +668,13 @@ export default function AdminProjectsPage() {
                                                             const isResume = translateStatus[pid] === 'partial'
 
                                                             if (!isResume) {
-                                                                // ── Step 1: Browser transcription (Whisper-medium) ──────────────
+                                                                // â”€â”€ Step 1: Browser transcription (Whisper-medium) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                                                                 setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
-                                                                setSubtitleStatus(s => ({ ...s, [pid]: '⏳ Loading audio engine...' }))
+                                                                setSubtitleStatus(s => ({ ...s, [pid]: 'â³ Loading audio engine...' }))
                                                                 setSubtitleProgress(s => ({ ...s, [pid]: 2 }))
                                                                 try {
                                                                     const result = await transcribeVideo(project.filmUrl!, (status, detail) => {
-                                                                        setSubtitleStatus(s => ({ ...s, [pid]: `⏳ ${detail || status}` }))
+                                                                        setSubtitleStatus(s => ({ ...s, [pid]: `â³ ${detail || status}` }))
                                                                         const phaseProgress: Record<string, number> = {
                                                                             'loading-ffmpeg': 5, 'extracting-audio': 15,
                                                                             'loading-model': 25, 'transcribing': 42,
@@ -685,7 +686,7 @@ export default function AdminProjectsPage() {
                                                                     const qcSummary = runQC(result.segments)
 
                                                                     // Save English segments to DB
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: '💾 Saving transcript...' }))
+                                                                    setSubtitleStatus(s => ({ ...s, [pid]: 'ðŸ’¾ Saving transcript...' }))
                                                                     setSubtitleProgress(s => ({ ...s, [pid]: 48 }))
                                                                     await fetch('/api/admin/subtitles', {
                                                                         method: 'POST',
@@ -700,9 +701,9 @@ export default function AdminProjectsPage() {
                                                                         }),
                                                                     })
                                                                     setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
+                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `âœ… Transcript saved â€” ${formatQCSummary(qcSummary)}` }))
                                                                 } catch (err) {
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `❌ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
+                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
                                                                     setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                                                                     setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
                                                                     return
@@ -711,9 +712,9 @@ export default function AdminProjectsPage() {
                                                                 setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
                                                             }
 
-                                                            // ── Step 2: Server-side SSE translation ─────────────────────────
+                                                            // â”€â”€ Step 2: Server-side SSE translation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                                                             setSubtitlePhase(s => ({ ...s, [pid]: 'translating' }))
-                                                            setSubtitleStatus(s => ({ ...s, [pid]: '🌐 Starting server translation...' }))
+                                                            setSubtitleStatus(s => ({ ...s, [pid]: 'ðŸŒ Starting server translation...' }))
 
                                                             try {
                                                                 const res = await fetch('/api/admin/subtitles/translate', {
@@ -749,7 +750,7 @@ export default function AdminProjectsPage() {
                                                                                 allDone?: boolean; error?: string;
                                                                             }
                                                                             if (data.phase === 'translating' && data.langName) {
-                                                                                setSubtitleStatus(s => ({ ...s, [pid]: `🌐 Translating ${data.langName}...` }))
+                                                                                setSubtitleStatus(s => ({ ...s, [pid]: `ðŸŒ Translating ${data.langName}...` }))
                                                                                 setSubtitleProgress(s => ({ ...s, [pid]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
                                                                             } else if (data.phase === 'done') {
                                                                                 completed++
@@ -757,18 +758,18 @@ export default function AdminProjectsPage() {
                                                                             } else if (data.phase === 'complete') {
                                                                                 const allDone = data.allDone ?? false
                                                                                 setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
-                                                                                setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `✓ All ${TOTAL_LANGS} languages ready` : `✓ ${completed + 1} languages ready` }))
+                                                                                setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `âœ“ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `âœ“ ${completed + 1} languages ready` }))
                                                                                 setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
                                                                                 setTranslateStatus(s => ({ ...s, [pid]: allDone ? 'complete' : 'partial' }))
-                                                                                setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_LANGS : completed + 1 }))
+                                                                                setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
                                                                             } else if (data.phase === 'error' && data.lang) {
-                                                                                setSubtitleStatus(s => ({ ...s, [pid]: `⚠️ ${data.lang} failed — continuing...` }))
+                                                                                setSubtitleStatus(s => ({ ...s, [pid]: `âš ï¸ ${data.lang} failed â€” continuing...` }))
                                                                             }
                                                                         } catch { /* malformed event */ }
                                                                     }
                                                                 }
                                                             } catch (err) {
-                                                                setSubtitleStatus(s => ({ ...s, [pid]: `❌ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
+                                                                setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
                                                                 setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                                                                 setTranslateStatus(s => ({ ...s, [pid]: 'partial' }))
                                                             }
@@ -778,8 +779,8 @@ export default function AdminProjectsPage() {
                                                         title={
                                                             translateStatus[project.id] === 'partial'
                                                                 ? 'Resume translation (some languages already done)'
-                                                                : translationCount[project.id] >= TOTAL_LANGS
-                                                                    ? 'All subtitles generated — click to regenerate'
+                                                                : translationCount[project.id] >= TOTAL_SUBTITLE_LANGS
+                                                                    ? 'All subtitles generated â€” click to regenerate'
                                                                     : 'Generate multi-language subtitles'
                                                         }
                                                         style={{
@@ -791,14 +792,14 @@ export default function AdminProjectsPage() {
                                                                     : undefined,
                                                         }}
                                                     >
-                                                        {subtitlePhase[project.id] === 'transcribing' ? '⏳'
-                                                            : subtitlePhase[project.id] === 'translating' ? '🌐'
-                                                            : translateStatus[project.id] === 'partial' ? '↻ Resume'
-                                                            : subtitlePhase[project.id] === 'done' ? 'CC ✓'
+                                                        {subtitlePhase[project.id] === 'transcribing' ? 'â³'
+                                                            : subtitlePhase[project.id] === 'translating' ? 'ðŸŒ'
+                                                            : translateStatus[project.id] === 'partial' ? 'â†» Resume'
+                                                            : subtitlePhase[project.id] === 'done' ? 'CC âœ“'
                                                             : 'CC'}
                                                     </button>
                                                 )}
-                                                {/* Review button — appears when subtitles exist */}
+                                                {/* Review button â€” appears when subtitles exist */}
                                                 {project.filmUrl && (
                                                     translateStatus[project.id] === 'complete' ||
                                                     translateStatus[project.id] === 'partial' ||
@@ -810,7 +811,7 @@ export default function AdminProjectsPage() {
                                                         title="Review subtitles and QC report before publishing"
                                                         style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)', opacity: 0.85 }}
                                                     >
-                                                        🔍 Review
+                                                        ðŸ” Review
                                                     </button>
                                                 )}
                                                 <button
@@ -819,7 +820,7 @@ export default function AdminProjectsPage() {
                                                     title="Manage cast & crew for this project"
                                                     style={{ fontSize: '0.65rem', fontWeight: 700 }}
                                                 >
-                                                    🎭 Cast
+                                                    ðŸŽ­ Cast
                                                 </button>
                                                 <button onClick={() => openEdit(project)} className="btn btn-ghost btn-sm">Edit</button>
                                                 <button
@@ -828,7 +829,7 @@ export default function AdminProjectsPage() {
                                                     className="btn btn-ghost btn-sm"
                                                     style={{ color: 'var(--error)' }}
                                                 >
-                                                    {deleting === project.id ? '...' : '✕'}
+                                                    {deleting === project.id ? '...' : 'âœ•'}
                                                 </button>
                                         </div>
                                         </div>
@@ -853,7 +854,7 @@ export default function AdminProjectsPage() {
                                                     marginTop: '2px', display: 'flex',
                                                     justifyContent: 'space-between',
                                                 }}>
-                                                    <span>{subtitleStatus[project.id]?.replace(/^[⏳🌐💾✓❌]\s?/, '')}</span>
+                                                    <span>{subtitleStatus[project.id]?.replace(/^[â³ðŸŒðŸ’¾âœ“âŒ]\s?/, '')}</span>
                                                     <span>{subtitleProgress[project.id]}%</span>
                                                 </div>
                                             </div>
@@ -867,7 +868,7 @@ export default function AdminProjectsPage() {
                 )}
             </main>
 
-            {/* ── Modal ── */}
+            {/* â”€â”€ Modal â”€â”€ */}
             {showModal && (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 1000,
@@ -886,7 +887,7 @@ export default function AdminProjectsPage() {
                         }}
                     >
                         <h2 style={{ marginBottom: 'var(--space-lg)', fontSize: '1.2rem' }}>
-                            {editingId ? '✏️ Edit Project' : '🎬 New Project'}
+                            {editingId ? 'âœï¸ Edit Project' : 'ðŸŽ¬ New Project'}
                         </h2>
 
                         <form onSubmit={handleSave}>
@@ -998,12 +999,12 @@ export default function AdminProjectsPage() {
                                             <input type="checkbox" checked={form.featured}
                                                 onChange={e => updateField('featured', e.target.checked)}
                                                 style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }} />
-                                            ★ Featured on homepage
+                                            â˜… Featured on homepage
                                         </label>
                                     </div>
                                 </div>
 
-                                {/* Cover Image — Drag & Drop */}
+                                {/* Cover Image â€” Drag & Drop */}
                                 <FileUploader
                                     label="Cover Image"
                                     accept="image/*"
@@ -1032,7 +1033,7 @@ export default function AdminProjectsPage() {
                                         <div />
                                     </div>
 
-                                    {/* Trailer — Drag & Drop */}
+                                    {/* Trailer â€” Drag & Drop */}
                                     <div style={{ marginTop: 'var(--space-md)' }}>
                                         <FileUploader
                                             label="Trailer (public)"
@@ -1045,7 +1046,7 @@ export default function AdminProjectsPage() {
                                         />
                                     </div>
 
-                                    {/* Full Film — Drag & Drop */}
+                                    {/* Full Film â€” Drag & Drop */}
                                     <div style={{ marginTop: 'var(--space-md)' }}>
                                         <FileUploader
                                             label="Full Film (members only)"
@@ -1061,7 +1062,7 @@ export default function AdminProjectsPage() {
                                     </div>
                                 </div>
 
-                                {/* ── Movie Rolls Assignment ── */}
+                                {/* â”€â”€ Movie Rolls Assignment â”€â”€ */}
                                 <div
                                     id="roll-assignment-section"
                                     style={{
@@ -1076,8 +1077,8 @@ export default function AdminProjectsPage() {
                                     }}
                                 >
                                     <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: rollError ? '#ef4444' : 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        🎞️ Movie Rolls
-                                        {rollError && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '1px 8px', borderRadius: '99px', border: '1px solid rgba(239,68,68,0.25)', textTransform: 'none' }}>⚠ required — pick at least one</span>}
+                                        ðŸŽžï¸ Movie Rolls
+                                        {rollError && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '1px 8px', borderRadius: '99px', border: '1px solid rgba(239,68,68,0.25)', textTransform: 'none' }}>âš  required â€” pick at least one</span>}
                                     </div>
                                     <div style={{ fontSize: '0.75rem', color: rollError ? '#ef4444' : 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
                                         {rollError
@@ -1085,10 +1086,10 @@ export default function AdminProjectsPage() {
                                             : 'Select which rolls this project should appear in. You can choose multiple or all.'}
                                     </div>
                                     {rollsLoading ? (
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', padding: '0.5rem 0' }}>Loading rolls…</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', padding: '0.5rem 0' }}>Loading rollsâ€¦</div>
                                     ) : allRolls.length === 0 ? (
                                         <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic', padding: '0.25rem 0' }}>
-                                            No rolls yet — create rolls from the <strong>Movie Rolls</strong> page first.
+                                            No rolls yet â€” create rolls from the <strong>Movie Rolls</strong> page first.
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -1141,10 +1142,10 @@ export default function AdminProjectsPage() {
                                                             </div>
                                                             <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
                                                                 {roll.displayOn === 'both' ? 'Homepage + Works' : roll.displayOn === 'homepage' ? 'Homepage only' : 'Works only'}
-                                                                {!roll.visible && <span style={{ color: 'rgba(239,68,68,0.7)', marginLeft: '6px' }}>· hidden</span>}
+                                                                {!roll.visible && <span style={{ color: 'rgba(239,68,68,0.7)', marginLeft: '6px' }}>Â· hidden</span>}
                                                             </div>
                                                         </div>
-                                                        {isSelected && <span style={{ fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700 }}>✓ Added</span>}
+                                                        {isSelected && <span style={{ fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700 }}>âœ“ Added</span>}
                                                     </label>
                                                 )
                                             })}
@@ -1156,13 +1157,13 @@ export default function AdminProjectsPage() {
                                     <div style={{
                                         fontSize: '0.85rem', fontWeight: 600, padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)',
                                         color: 'var(--error)', background: 'rgba(239,68,68,0.1)',
-                                    }}>✗ {error}</div>
+                                    }}>âœ— {error}</div>
                                 )}
 
                                 <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)' }}>
                                     <button type="button" onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
                                     <button type="submit" className="btn btn-primary" disabled={saving}>
-                                        {saving ? 'Saving...' : editingId ? '💾 Update' : '🎬 Create'}
+                                        {saving ? 'Saving...' : editingId ? 'ðŸ’¾ Update' : 'ðŸŽ¬ Create'}
                                     </button>
                                 </div>
                             </div>
@@ -1170,8 +1171,8 @@ export default function AdminProjectsPage() {
                     </div>
                 </div>
             )}
-            {/* ── Subtitle Review Modal ─────────────────────────────────── */}
-            {/* ── Cast Management Modal ──────────────────────────────────── */}
+            {/* â”€â”€ Subtitle Review Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* â”€â”€ Cast Management Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <style>{`
                 @media (max-width: 540px) {
                     .cast-admin-form-grid { grid-template-columns: 1fr !important; }
@@ -1202,16 +1203,16 @@ export default function AdminProjectsPage() {
                             borderBottom: '1px solid var(--border-subtle)',
                         }}>
                             <div>
-                                <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '2px' }}>🎭 Cast & Crew</h2>
-                                <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{castProjectTitle} · {castMembers.length} member{castMembers.length !== 1 ? 's' : ''}</p>
+                                <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '2px' }}>ðŸŽ­ Cast & Crew</h2>
+                                <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{castProjectTitle} Â· {castMembers.length} member{castMembers.length !== 1 ? 's' : ''}</p>
                             </div>
-                            <button onClick={closeCastModal} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
+                            <button onClick={closeCastModal} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}>âœ•</button>
                         </div>
 
                         <div style={{ overflowY: 'auto', flex: 1 }}>
                             {/* Existing members */}
                             {castLoading ? (
-                                <div style={{ padding: 'var(--space-xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>⏳ Loading...</div>
+                                <div style={{ padding: 'var(--space-xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>â³ Loading...</div>
                             ) : castMembers.length > 0 ? (
                                 <div style={{ padding: 'var(--space-md) var(--space-xl)' }}>
                                     <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>Current Members</div>
@@ -1232,13 +1233,13 @@ export default function AdminProjectsPage() {
                                                     fontSize: '1.2rem', opacity: m.photoUrl ? 1 : 0.4,
                                                     userSelect: 'none',
                                                 }}>
-                                                    {!m.photoUrl && '🎭'}
+                                                    {!m.photoUrl && 'ðŸŽ­'}
                                                 </div>
                                                 <div style={{ flex: 1, minWidth: 0 }}>
                                                     <div style={{ fontSize: '0.85rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {m.name}
                                                         {m.bioTranslations && (
-                                                            <span title="Bio translated into all languages" style={{ marginLeft: '6px', fontSize: '0.6rem', color: '#4ade80', fontWeight: 800 }}>✓ 10 langs</span>
+                                                            <span title="Bio translated into all languages" style={{ marginLeft: '6px', fontSize: '0.6rem', color: '#4ade80', fontWeight: 800 }}>âœ“ 10 langs</span>
                                                         )}
                                                     </div>
                                                     <div style={{ fontSize: '0.68rem', color: 'var(--accent-gold)', fontWeight: 600 }}>{m.jobTitle}</div>
@@ -1258,13 +1259,13 @@ export default function AdminProjectsPage() {
                                                         }}
                                                         title="Translate bio & character to all 10 languages"
                                                     >
-                                                        {translatingId === m.id ? '⏳' : '🌐'}
+                                                        {translatingId === m.id ? 'â³' : 'ðŸŒ'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteCastMember(m.id)}
                                                         style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', fontSize: '0.9rem', padding: '4px', flexShrink: 0 }}
                                                         title="Remove member"
-                                                    >✕</button>
+                                                    >âœ•</button>
                                                 </div>
                                             </div>
                                         ))}
@@ -1382,23 +1383,23 @@ export default function AdminProjectsPage() {
                         }}>
                             <div>
                                 <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '2px' }}>
-                                    🔍 Subtitle Review
+                                    ðŸ” Subtitle Review
                                 </h2>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                     {reviewProjectTitle}
-                                    {reviewData && ` · ${reviewData.segments.length} segments`}
-                                    {reviewData?.transcribedWith && ` · ${reviewData.transcribedWith}`}
+                                    {reviewData && ` Â· ${reviewData.segments.length} segments`}
+                                    {reviewData?.transcribedWith && ` Â· ${reviewData.transcribedWith}`}
                                 </p>
                             </div>
                             <button
                                 onClick={closeReview}
                                 style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}
-                            >✕</button>
+                            >âœ•</button>
                         </div>
 
                         {reviewLoading && (
                             <div style={{ padding: 'var(--space-2xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                                ⏳ Loading subtitle data...
+                                â³ Loading subtitle data...
                             </div>
                         )}
 
@@ -1417,85 +1418,20 @@ export default function AdminProjectsPage() {
 
                             return (
                                 <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                                    {/* ── Panel 1: Language Status Grid ── */}
-                                    <div style={{ padding: 'var(--space-lg) var(--space-xl)', borderBottom: '1px solid var(--border-subtle)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)' }}>
-                                                Subtitle Language Status
-                                            </div>
-                                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>
-                                                {Object.keys(reviewData.translations).length + 1} / {Object.keys(LANGUAGE_NAMES).length} languages
-                                            </span>
-                                        </div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '6px' }}>
-                                            {[
-                                                { code: 'en', label: 'English', isSource: true },
-                                                ...Object.keys(LANGUAGE_NAMES).filter(c => c !== 'en').map(code => ({
-                                                    code, label: LANGUAGE_NAMES[code] || code, isSource: false,
-                                                }))
-                                            ].map(({ code, label, isSource }) => {
-                                                const hasSubs = isSource ? reviewData.segments.length > 0 : !!reviewData.translations[code]?.length
-                                                const statusFromDb = reviewData.langStatus?.[code]
-                                                const isRetrying = retryingLang === code
-                                                const status = isRetrying ? 'processing'
-                                                    : statusFromDb ?? (hasSubs ? 'completed' : 'pending')
+                                    {/* â”€â”€ Panel 1: Language Status Grid â”€â”€ */}
+                                    <LangStatusGrid
+                                        translations={reviewData.translations}
+                                        langStatus={reviewData.langStatus}
+                                        sourceSegmentCount={reviewData.segments.length}
+                                        retryingLang={retryingLang}
+                                        onRetry={retryLang}
+                                    />
 
-                                                const statusColors: Record<string, { bg: string; border: string; color: string; icon: string }> = {
-                                                    completed: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', color: '#10b981', icon: '✓' },
-                                                    reviewed: { bg: 'rgba(212,168,83,0.1)', border: 'rgba(212,168,83,0.3)', color: 'var(--accent-gold)', icon: '⭐' },
-                                                    processing: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.25)', color: '#60a5fa', icon: '⏳' },
-                                                    failed: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', color: '#ef4444', icon: '✗' },
-                                                    pending: { bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', color: 'var(--text-tertiary)', icon: '○' },
-                                                }
-                                                const sc = statusColors[status] ?? statusColors.pending
-                                                const canRetry = !isSource && (status === 'failed' || status === 'pending') && !retryingLang
-
-                                                return (
-                                                    <div key={code} style={{
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                        padding: '5px 10px', borderRadius: '8px', gap: '6px',
-                                                        background: sc.bg, border: `1px solid ${sc.border}`,
-                                                    }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                                                            <span style={{ color: sc.color, fontSize: '0.7rem', flexShrink: 0 }}>{sc.icon}</span>
-                                                            <span style={{ fontSize: '0.75rem', color: sc.color, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                {label}
-                                                            </span>
-                                                            {isSource && <span style={{ fontSize: '0.55rem', opacity: 0.5, flexShrink: 0 }}>source</span>}
-                                                            {hasSubs && !isSource && <span style={{ fontSize: '0.6rem', opacity: 0.5, flexShrink: 0 }}>{reviewData.translations[code]?.length}</span>}
-                                                        </div>
-                                                        {canRetry && (
-                                                            <button
-                                                                onClick={() => retryLang(code)}
-                                                                style={{
-                                                                    background: 'rgba(239,68,68,0.15)',
-                                                                    border: '1px solid rgba(239,68,68,0.3)',
-                                                                    borderRadius: '5px',
-                                                                    color: '#ef4444', fontSize: '0.6rem',
-                                                                    fontWeight: 700, cursor: 'pointer',
-                                                                    padding: '2px 7px', flexShrink: 0,
-                                                                    transition: 'all 0.15s',
-                                                                }}
-                                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.25)' }}
-                                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)' }}
-                                                            >
-                                                                ↻ Retry
-                                                            </button>
-                                                        )}
-                                                        {isRetrying && (
-                                                            <span style={{ fontSize: '0.6rem', color: '#60a5fa', flexShrink: 0 }}>running...</span>
-                                                        )}
-                                                    </div>
-                                                )
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    {/* ── Panel 2: QC Report ── */}
+                                    {/* â”€â”€ Panel 2: QC Report â”€â”€ */}
                                     {reviewData.qcIssues.length > 0 && (
                                         <div style={{ padding: 'var(--space-md) var(--space-xl)', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(245,158,11,0.04)' }}>
                                             <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#f59e0b', marginBottom: 'var(--space-sm)' }}>
-                                                ⚠️ QC Issues — {reviewData.qcIssues.length} / {reviewData.segments.length} segments flagged
+                                                âš ï¸ QC Issues â€” {reviewData.qcIssues.length} / {reviewData.segments.length} segments flagged
                                             </div>
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                                 {(Object.entries(
@@ -1509,14 +1445,14 @@ export default function AdminProjectsPage() {
                                                         background: 'rgba(245,158,11,0.15)', color: '#f59e0b',
                                                         border: '1px solid rgba(245,158,11,0.3)',
                                                     }}>
-                                                        {count}× {type.replace(/-/g, ' ')}
+                                                        {count}Ã— {type.replace(/-/g, ' ')}
                                                     </span>
                                                 ))}
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* ── Panel 3: Language Switcher + Subtitle Preview ── */}
+                                    {/* â”€â”€ Panel 3: Language Switcher + Subtitle Preview â”€â”€ */}
                                     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                                         {/* Lang list */}
                                         <div style={{
@@ -1600,8 +1536,8 @@ export default function AdminProjectsPage() {
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                     }}>
                                         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                                            {reviewData.translateStatus === 'complete' ? '✅ All languages complete' : '⚠️ Translation partially complete'}
-                                            {reviewData.generatedWith && ` · AI: ${reviewData.generatedWith}`}
+                                            {reviewData.translateStatus === 'complete' ? 'âœ… All languages complete' : 'âš ï¸ Translation partially complete'}
+                                            {reviewData.generatedWith && ` Â· AI: ${reviewData.generatedWith}`}
                                         </span>
                                         <button onClick={closeReview} className="btn btn-ghost btn-sm">Close</button>
                                     </div>
