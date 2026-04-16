@@ -280,6 +280,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                     role="button"
                                     tabIndex={0}
                                     aria-label={`${t('aboutButton')} ${member.name}`}
+                                    onClick={() => setSelectedMember(member)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' || e.key === ' ') {
                                             e.preventDefault()
