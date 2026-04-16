@@ -324,6 +324,9 @@ export default function AdminProjectsPage() {
 
         // Clear any previous error so stale messages don't persist on retry
         setError('')
+        setSubtitleStatus(s => ({ ...s, [pid]: '' }))
+        setSubtitlePhase(s => ({ ...s, [pid]: null }))
+        setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
 
         const isResume = translateStatus[pid] === 'partial'
 
