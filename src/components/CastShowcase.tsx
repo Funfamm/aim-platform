@@ -158,31 +158,31 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                 .cast-card-img { transition: transform 0.5s cubic-bezier(0.22,1,0.36,1); }
                 .cast-card:hover .cast-card-img { transform: scale(1.08); }
 
-                /* On touch devices the hover overlay is always visible so the About button is tappable */
-                @media (hover: none) {
+                /* On touch/mobile devices: overlay + about button always visible, cards never hidden */
+                @media (hover: none), (max-width: 768px) {
+                    /* Force overlay visible — overrides inline opacity:0 via !important */
                     .cast-hover-overlay {
                         opacity: 1 !important;
-                        background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 55%, transparent 100%) !important;
+                        background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.25) 55%, transparent 100%) !important;
                     }
                     .cast-about-btn {
-                        background: rgba(212,168,83,0.2) !important;
+                        background: rgba(212,168,83,0.18) !important;
+                    }
+                    /* Kill entrance animation so cards start at full opacity */
+                    .cast-card {
+                        animation: none !important;
+                        opacity: 1 !important;
+                    }
+                    /* CTA card always visible */
+                    .cast-cta-inner {
+                        opacity: 1 !important;
                     }
                 }
 
-                /* Disable entrance animation on reduced-motion devices — cards just appear */
+                /* Disable entrance animation on reduced-motion devices */
                 @media (prefers-reduced-motion: reduce) {
-                    .cast-card {
-                        animation: none !important;
-                        opacity: 1 !important;
-                    }
-                }
-
-                /* ── Mobile ≤ 768px — disable entrance animation entirely ── */
-                @media (max-width: 768px) {
-                    .cast-card {
-                        animation: none !important;
-                        opacity: 1 !important;
-                    }
+                    .cast-card { animation: none !important; opacity: 1 !important; }
+                    .cast-cta-inner { opacity: 1 !important; }
                 }
 
                 /* ── Mobile ≤ 640px ── */
@@ -396,7 +396,9 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                             zIndex: 3,
                                         }} />
 
-                                        {/* Hover overlay with About button — always visible on touch devices via CSS */}
+                                        {/* Hover overlay with About button
+                                             Desktop: appears on hover (opacity toggled by isHovered)
+                                             Mobile:  CSS @media (hover:none) forces opacity:1 always */}
                                         <div
                                             className="cast-hover-overlay"
                                             style={{
@@ -406,6 +408,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                                 justifyContent: 'flex-end', padding: '14px 12px',
                                                 opacity: isHovered ? 1 : 0,
                                                 transition: 'opacity 0.25s ease',
+                                                // NOTE: on mobile, CSS @media rule overrides this inline 0 → 1
                                             }}
                                         >
                                             <button
@@ -416,12 +419,14 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                                     border: '1px solid rgba(212,168,83,0.6)',
                                                     borderRadius: '6px',
                                                     color: 'var(--accent-gold)',
-                                                    fontSize: '0.7rem', fontWeight: 700,
+                                                    fontSize: '0.75rem', fontWeight: 700,
                                                     letterSpacing: '0.08em',
-                                                    padding: '6px 10px',
+                                                    padding: '8px 10px',
                                                     cursor: 'pointer', width: '100%',
                                                     backdropFilter: 'blur(4px)',
                                                     transition: 'background 0.2s',
+                                                    // Bigger tap target on mobile
+                                                    minHeight: '36px',
                                                 }}
                                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,168,83,0.3)' }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,168,83,0.15)' }}
@@ -461,21 +466,24 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                 ref={(el) => { cardRefs.current[cast.length] = el as HTMLDivElement | null }}
                                 data-idx={cast.length}
                             >
-                                <div style={{
-                                    width: '180px', height: '288px',
-                                    borderRadius: '14px',
-                                    display: 'flex', flexDirection: 'column',
-                                    alignItems: 'center', justifyContent: 'center',
-                                    gap: '12px',
-                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.06), rgba(212,168,83,0.02))',
-                                    animation: `ctaPulse 2.8s ease-in-out infinite`,
-                                    cursor: 'pointer',
-                                    transition: 'transform 0.3s ease',
-                                    opacity: visibleCards.has(cast.length) ? 1 : 0,
-                                    animationDelay: `${cast.length * 80}ms`,
-                                    padding: '24px 16px',
-                                    textAlign: 'center',
-                                }}
+                                <div
+                                    className="cast-cta-inner"
+                                    style={{
+                                        width: '180px', height: '288px',
+                                        borderRadius: '14px',
+                                        display: 'flex', flexDirection: 'column',
+                                        alignItems: 'center', justifyContent: 'center',
+                                        gap: '12px',
+                                        background: 'linear-gradient(135deg, rgba(212,168,83,0.08), rgba(212,168,83,0.03))',
+                                        animation: `ctaPulse 2.8s ease-in-out infinite`,
+                                        cursor: 'pointer',
+                                        transition: 'transform 0.3s ease',
+                                        // Always fully visible — no IO gating
+                                        opacity: 1,
+                                        animationDelay: `${cast.length * 80}ms`,
+                                        padding: '24px 16px',
+                                        textAlign: 'center',
+                                    }}
                                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.02)' }}
                                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)' }}
                                 >
