@@ -177,6 +177,14 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     }
                 }
 
+                /* ── Mobile ≤ 768px — disable entrance animation entirely ── */
+                @media (max-width: 768px) {
+                    .cast-card {
+                        animation: none !important;
+                        opacity: 1 !important;
+                    }
+                }
+
                 /* ── Mobile ≤ 640px ── */
                 @media (max-width: 640px) {
                     .cast-section-header {
