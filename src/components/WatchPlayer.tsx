@@ -70,6 +70,7 @@ export default function WatchPlayer({
 
     /* ── UI state ── */
     const [isFullscreen, setIsFullscreen]   = useState(false)
+    const [isPseudoFS, setIsPseudoFS]       = useState(false)  // fallback fullscreen
     const [showControls, setShowControls]   = useState(true)
     const [showSettings, setShowSettings]   = useState(false)
     const [showSpeedMenu, setShowSpeedMenu] = useState(false)
@@ -181,11 +182,31 @@ export default function WatchPlayer({
         resetControlsTimer()
     }, [isPlaying, resetControlsTimer])
 
-    /* Sync fullscreen state */
+    /* ── Pseudo-fullscreen helpers ──
+     * Used as fallback when requestFullscreen() is denied (common on iOS).
+     * Adds a class to <html> that hides the navbar/tab-bar via CSS and
+     * makes the player container fill the viewport with position:fixed. */
+    const enablePseudoFS = useCallback(() => {
+        document.documentElement.classList.add('aim-player-fs')
+        document.body.classList.add('aim-player-fs')
+        setIsPseudoFS(true)
+        // Try landscape lock (best-effort)
+        try { (screen.orientation as any)?.lock?.('landscape') } catch { /* no-op */ }
+    }, [])
+
+    const disablePseudoFS = useCallback(() => {
+        document.documentElement.classList.remove('aim-player-fs')
+        document.body.classList.remove('aim-player-fs')
+        setIsPseudoFS(false)
+        try { screen.orientation?.unlock?.() } catch { /* no-op */ }
+    }, [])
+
+    /* Sync real-fullscreen state + clean up pseudo-FS when real FS exits */
     useEffect(() => {
         const onChange = () => {
             if (!document.fullscreenElement) {
                 setIsFullscreen(false)
+                disablePseudoFS()  // also clean up if pseudo-FS was active
                 try { screen.orientation?.unlock?.() } catch { /* no-op */ }
             } else {
                 setIsFullscreen(true)
@@ -193,7 +214,29 @@ export default function WatchPlayer({
         }
         document.addEventListener('fullscreenchange', onChange)
         return () => document.removeEventListener('fullscreenchange', onChange)
-    }, [])
+    }, [disablePseudoFS])
+
+    /* Orientation change → auto pseudo-fullscreen when rotating to landscape during playback */
+    useEffect(() => {
+        const isLandscape = () => window.matchMedia('(orientation: landscape)').matches
+        const handle = () => {
+            if (isLandscape() && isPlaying && !document.fullscreenElement) {
+                enablePseudoFS()
+            }
+            if (!isLandscape() && isPseudoFS && !document.fullscreenElement) {
+                disablePseudoFS()
+            }
+        }
+        window.addEventListener('resize', handle)
+        screen.orientation?.addEventListener?.('change', handle)
+        return () => {
+            window.removeEventListener('resize', handle)
+            screen.orientation?.removeEventListener?.('change', handle)
+        }
+    }, [isPlaying, isPseudoFS, enablePseudoFS, disablePseudoFS])
+
+    /* Always clean up pseudo-FS on unmount */
+    useEffect(() => () => disablePseudoFS(), [disablePseudoFS])
 
     /* Keyboard shortcuts */
     useEffect(() => {
@@ -247,18 +290,43 @@ export default function WatchPlayer({
         else { vid.pause(); setIsPlaying(false) }
     }
 
+    /* Three-level fullscreen:
+     * 1. requestFullscreen() on the player container — works on Android Chrome
+     * 2. video.webkitEnterFullscreen() — fallback for older iOS Safari
+     * 3. enablePseudoFS() — CSS-based fallback when both above are denied */
     const toggleFullscreen = async () => {
-        const el = containerRef.current
+        const el  = containerRef.current
+        const vid = videoRef.current
         if (!el) return
-        try {
-            if (document.fullscreenElement) {
+
+        // Exiting
+        const inRealFS = !!document.fullscreenElement
+        if (inRealFS || isPseudoFS) {
+            if (inRealFS) {
                 try { screen.orientation?.unlock?.() } catch { /* no-op */ }
-                await document.exitFullscreen()
-            } else {
-                await el.requestFullscreen()
-                try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* no-op */ }
+                await document.exitFullscreen().catch(() => {})
             }
-        } catch { /* denied or unsupported */ }
+            disablePseudoFS()
+            return
+        }
+
+        // Entering: try real fullscreen first
+        try {
+            await el.requestFullscreen({ navigationUI: 'hide' } as FullscreenOptions)
+            // Orientation lock after entering fullscreen
+            try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* ignore */ }
+        } catch {
+            // iOS Safari: try native video fullscreen
+            try {
+                const v = vid as any
+                if (v?.webkitEnterFullscreen) {
+                    v.webkitEnterFullscreen()
+                    return
+                }
+            } catch { /* ignore */ }
+            // Ultimate fallback: CSS pseudo-fullscreen
+            enablePseudoFS()
+        }
     }
 
     const toggleMute = () => {
@@ -452,6 +520,55 @@ export default function WatchPlayer({
                 @media (max-width: 640px) {
                     .aim-desktop-only { display: none !important; }
                 }
+
+                /* ── Pseudo-fullscreen: hide nav + tab bar, fill viewport ── */
+                html.aim-player-fs body,
+                body.aim-player-fs {
+                    overflow: hidden;
+                }
+                /* Hide navbar, mobile tab bar, any footer */
+                html.aim-player-fs .navbar,
+                html.aim-player-fs .mobile-tab-bar,
+                html.aim-player-fs footer {
+                    display: none !important;
+                }
+                /* Pseudo-FS player wrapper fills the whole screen */
+                html.aim-player-fs .aim-pseudo-fs-shell {
+                    position: fixed !important;
+                    inset: 0 !important;
+                    width: 100vw !important;
+                    height: 100dvh !important;
+                    z-index: 999999 !important;
+                    background: #000 !important;
+                    padding:
+                        env(safe-area-inset-top)
+                        env(safe-area-inset-right)
+                        env(safe-area-inset-bottom)
+                        env(safe-area-inset-left) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                }
+                html.aim-player-fs .aim-pseudo-fs-shell video {
+                    width: 100% !important;
+                    height: 100% !important;
+                    object-fit: contain !important;
+                }
+
+                /* ── Real :fullscreen styling ── */
+                .aim-video-container:fullscreen,
+                .aim-video-container:-webkit-full-screen {
+                    width: 100vw;
+                    height: 100dvh;
+                    background: #000;
+                    border-radius: 0 !important;
+                }
+                .aim-video-container:fullscreen video,
+                .aim-video-container:-webkit-full-screen video {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
             `}</style>
 
             <div className="container aim-player-container" style={{ maxWidth: '1200px', padding: '0 var(--space-lg)' }}>
@@ -537,27 +654,33 @@ export default function WatchPlayer({
                   *   → clips the video and overlays to rounded corners
                   *   → does NOT affect absolute-positioned controls/dropdowns
                   */}
+                {/* aim-pseudo-fs-shell: targeted by CSS when html.aim-player-fs is active */}
                 <div
+                    className="aim-pseudo-fs-shell"
                     ref={containerRef}
                     onMouseMove={resetControlsTimer}
                     onTouchStart={resetControlsTimer}
                     style={{
                         position: 'relative',
-                        aspectRatio: '16/9',
+                        // In pseudo-FS, aspect ratio is removed — CSS takes over completely
+                        aspectRatio: (isFullscreen || isPseudoFS) ? undefined : '16/9',
                         background: '#000',
-                        borderRadius: isFullscreen ? 0 : 'var(--radius-xl)',
-                        border: isFullscreen ? 'none' : '1px solid var(--border-subtle)',
+                        borderRadius: (isFullscreen || isPseudoFS) ? 0 : 'var(--radius-xl)',
+                        border: (isFullscreen || isPseudoFS) ? 'none' : '1px solid var(--border-subtle)',
                         userSelect: 'none',
                         // NO overflow:hidden here — dropdowns must be able to escape
                     }}
                 >
                     {/* Inner video box — overflow:hidden clips video corners only */}
-                    <div style={{
-                        position: 'absolute', inset: 0,
-                        borderRadius: isFullscreen ? 0 : 'var(--radius-xl)',
-                        overflow: 'hidden',
-                        background: '#000',
-                    }}>
+                    <div
+                        className="aim-video-container"
+                        style={{
+                            position: 'absolute', inset: 0,
+                            borderRadius: (isFullscreen || isPseudoFS) ? 0 : 'var(--radius-xl)',
+                            overflow: 'hidden',
+                            background: '#000',
+                        }}
+                    >
                     {/* ── Video element ── */}
                     {currentVideoUrl ? (
                         <video
