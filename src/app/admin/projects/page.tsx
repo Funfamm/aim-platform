@@ -140,7 +140,7 @@ export default function AdminProjectsPage() {
                                 setTranslationCount(s => ({ ...s, [p.id]: count }))
                                 setTranslateStatus(s => ({ ...s, [p.id]: sub.translateStatus ?? 'pending' }))
                                 if (count > 0) {
-                                    setSubtitleStatus(s => ({ ...s, [p.id]: count >= TOTAL_SUBTITLE_LANGS ? 'âœ“ All languages ready' : `âœ“ ${count} lang` }))
+                                    setSubtitleStatus(s => ({ ...s, [p.id]: count >= TOTAL_SUBTITLE_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
                                     setSubtitlePhase(s => ({ ...s, [p.id]: 'done' }))
                                 }
                             })
@@ -264,7 +264,7 @@ export default function AdminProjectsPage() {
                         setTranslationCount(s => ({ ...s, [saved.id]: count }))
                         setTranslateStatus(s => ({ ...s, [saved.id]: sub.translateStatus ?? 'pending' }))
                         if (count > 0) {
-                            setSubtitleStatus(s => ({ ...s, [saved.id]: count >= TOTAL_SUBTITLE_LANGS ? 'âœ“ All languages ready' : `âœ“ ${count} lang` }))
+                            setSubtitleStatus(s => ({ ...s, [saved.id]: count >= TOTAL_SUBTITLE_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
                             setSubtitlePhase(s => ({ ...s, [saved.id]: 'done' }))
                         }
                     })
@@ -651,7 +651,7 @@ export default function AdminProjectsPage() {
                                                         border: `1px solid ${isFull ? 'rgba(52,211,153,0.25)' : isPartial ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}`,
                                                         color: isFull ? '#34d399' : isPartial ? '#f59e0b' : 'var(--text-tertiary)',
                                                     }}>
-                                                        {isPending ? '…' : isFull ? 'âœ…' : isNone ? '🌍' : 'âš ï¸'}
+                                                        {isPending ? '…' : isFull ? '✅' : isNone ? '🌍' : 'âš ï¸'}
                                                         {isPending ? 'checking' : `${Math.max(0, count)}/${TOTAL_SUBTITLE_LANGS} langs`}
                                                     </span>
                                                 )
@@ -670,11 +670,11 @@ export default function AdminProjectsPage() {
                                                             if (!isResume) {
                                                                 // â”€â”€ Step 1: Browser transcription (Whisper-medium) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                                                                 setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
-                                                                setSubtitleStatus(s => ({ ...s, [pid]: 'â³ Loading audio engine...' }))
+                                                                setSubtitleStatus(s => ({ ...s, [pid]: '⏳ Loading audio engine...' }))
                                                                 setSubtitleProgress(s => ({ ...s, [pid]: 2 }))
                                                                 try {
                                                                     const result = await transcribeVideo(project.filmUrl!, (status, detail) => {
-                                                                        setSubtitleStatus(s => ({ ...s, [pid]: `â³ ${detail || status}` }))
+                                                                        setSubtitleStatus(s => ({ ...s, [pid]: `⏳ ${detail || status}` }))
                                                                         const phaseProgress: Record<string, number> = {
                                                                             'loading-ffmpeg': 5, 'extracting-audio': 15,
                                                                             'loading-model': 25, 'transcribing': 42,
@@ -701,9 +701,9 @@ export default function AdminProjectsPage() {
                                                                         }),
                                                                     })
                                                                     setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `âœ… Transcript saved — ${formatQCSummary(qcSummary)}` }))
+                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
                                                                 } catch (err) {
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
+                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `❌ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
                                                                     setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                                                                     setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
                                                                     return
@@ -758,7 +758,7 @@ export default function AdminProjectsPage() {
                                                                             } else if (data.phase === 'complete') {
                                                                                 const allDone = data.allDone ?? false
                                                                                 setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
-                                                                                setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `âœ“ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `âœ“ ${completed + 1} languages ready` }))
+                                                                                setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `✓ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `✓ ${completed + 1} languages ready` }))
                                                                                 setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
                                                                                 setTranslateStatus(s => ({ ...s, [pid]: allDone ? 'complete' : 'partial' }))
                                                                                 setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
@@ -769,7 +769,7 @@ export default function AdminProjectsPage() {
                                                                     }
                                                                 }
                                                             } catch (err) {
-                                                                setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
+                                                                setSubtitleStatus(s => ({ ...s, [pid]: `❌ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
                                                                 setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                                                                 setTranslateStatus(s => ({ ...s, [pid]: 'partial' }))
                                                             }
@@ -792,10 +792,10 @@ export default function AdminProjectsPage() {
                                                                     : undefined,
                                                         }}
                                                     >
-                                                        {subtitlePhase[project.id] === 'transcribing' ? 'â³'
+                                                        {subtitlePhase[project.id] === 'transcribing' ? '⏳'
                                                             : subtitlePhase[project.id] === 'translating' ? '🌍'
-                                                            : translateStatus[project.id] === 'partial' ? 'â†» Resume'
-                                                            : subtitlePhase[project.id] === 'done' ? 'CC âœ“'
+                                                            : translateStatus[project.id] === 'partial' ? '↻ Resume'
+                                                            : subtitlePhase[project.id] === 'done' ? 'CC ✓'
                                                             : 'CC'}
                                                     </button>
                                                 )}
@@ -829,7 +829,7 @@ export default function AdminProjectsPage() {
                                                     className="btn btn-ghost btn-sm"
                                                     style={{ color: 'var(--error)' }}
                                                 >
-                                                    {deleting === project.id ? '...' : 'âœ•'}
+                                                    {deleting === project.id ? '...' : '✕'}
                                                 </button>
                                         </div>
                                         </div>
@@ -854,7 +854,7 @@ export default function AdminProjectsPage() {
                                                     marginTop: '2px', display: 'flex',
                                                     justifyContent: 'space-between',
                                                 }}>
-                                                    <span>{subtitleStatus[project.id]?.replace(/^[â³🌍💾âœ“âŒ]\s?/, '')}</span>
+                                                    <span>{subtitleStatus[project.id]?.replace(/^[⏳🌍💾✓❌]\s?/, '')}</span>
                                                     <span>{subtitleProgress[project.id]}%</span>
                                                 </div>
                                             </div>
@@ -1145,7 +1145,7 @@ export default function AdminProjectsPage() {
                                                                 {!roll.visible && <span style={{ color: 'rgba(239,68,68,0.7)', marginLeft: '6px' }}>· hidden</span>}
                                                             </div>
                                                         </div>
-                                                        {isSelected && <span style={{ fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700 }}>âœ“ Added</span>}
+                                                        {isSelected && <span style={{ fontSize: '0.65rem', color: 'var(--accent-gold)', fontWeight: 700 }}>✓ Added</span>}
                                                     </label>
                                                 )
                                             })}
@@ -1157,7 +1157,7 @@ export default function AdminProjectsPage() {
                                     <div style={{
                                         fontSize: '0.85rem', fontWeight: 600, padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)',
                                         color: 'var(--error)', background: 'rgba(239,68,68,0.1)',
-                                    }}>âœ— {error}</div>
+                                    }}>✗ {error}</div>
                                 )}
 
                                 <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)' }}>
@@ -1206,13 +1206,13 @@ export default function AdminProjectsPage() {
                                 <h2 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '2px' }}>🎭 Cast & Crew</h2>
                                 <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{castProjectTitle} · {castMembers.length} member{castMembers.length !== 1 ? 's' : ''}</p>
                             </div>
-                            <button onClick={closeCastModal} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}>âœ•</button>
+                            <button onClick={closeCastModal} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}>✕</button>
                         </div>
 
                         <div style={{ overflowY: 'auto', flex: 1 }}>
                             {/* Existing members */}
                             {castLoading ? (
-                                <div style={{ padding: 'var(--space-xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>â³ Loading...</div>
+                                <div style={{ padding: 'var(--space-xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>⏳ Loading...</div>
                             ) : castMembers.length > 0 ? (
                                 <div style={{ padding: 'var(--space-md) var(--space-xl)' }}>
                                     <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>Current Members</div>
@@ -1239,7 +1239,7 @@ export default function AdminProjectsPage() {
                                                     <div style={{ fontSize: '0.85rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {m.name}
                                                         {m.bioTranslations && (
-                                                            <span title="Bio translated into all languages" style={{ marginLeft: '6px', fontSize: '0.6rem', color: '#4ade80', fontWeight: 800 }}>âœ“ 10 langs</span>
+                                                            <span title="Bio translated into all languages" style={{ marginLeft: '6px', fontSize: '0.6rem', color: '#4ade80', fontWeight: 800 }}>✓ 10 langs</span>
                                                         )}
                                                     </div>
                                                     <div style={{ fontSize: '0.68rem', color: 'var(--accent-gold)', fontWeight: 600 }}>{m.jobTitle}</div>
@@ -1259,13 +1259,13 @@ export default function AdminProjectsPage() {
                                                         }}
                                                         title="Translate bio & character to all 10 languages"
                                                     >
-                                                        {translatingId === m.id ? 'â³' : '🌍'}
+                                                        {translatingId === m.id ? '⏳' : '🌍'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteCastMember(m.id)}
                                                         style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', fontSize: '0.9rem', padding: '4px', flexShrink: 0 }}
                                                         title="Remove member"
-                                                    >âœ•</button>
+                                                    >✕</button>
                                                 </div>
                                             </div>
                                         ))}
@@ -1394,12 +1394,12 @@ export default function AdminProjectsPage() {
                             <button
                                 onClick={closeReview}
                                 style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}
-                            >âœ•</button>
+                            >✕</button>
                         </div>
 
                         {reviewLoading && (
                             <div style={{ padding: 'var(--space-2xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
-                                â³ Loading subtitle data...
+                                ⏳ Loading subtitle data...
                             </div>
                         )}
 
@@ -1536,7 +1536,7 @@ export default function AdminProjectsPage() {
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                     }}>
                                         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                                            {reviewData.translateStatus === 'complete' ? 'âœ… All languages complete' : 'âš ï¸ Translation partially complete'}
+                                            {reviewData.translateStatus === 'complete' ? '✅ All languages complete' : 'âš ï¸ Translation partially complete'}
                                             {reviewData.generatedWith && ` · AI: ${reviewData.generatedWith}`}
                                         </span>
                                         <button onClick={closeReview} className="btn btn-ghost btn-sm">Close</button>
