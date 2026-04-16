@@ -96,8 +96,14 @@ export async function transcribeVideo(
         report('extracting-audio', 'Extracting audio from video...')
         let fileData: Uint8Array
         if (typeof videoSource === 'string') {
-            // It's a URL — fetch it
-            fileData = await fetchFile(videoSource)
+            // Try direct fetch first; if CORS blocks it, proxy through our server
+            try {
+                fileData = await fetchFile(videoSource)
+            } catch {
+                report('extracting-audio', 'Direct fetch blocked — proxying through server...')
+                const proxyUrl = `/api/admin/subtitles/proxy-video?url=${encodeURIComponent(videoSource)}`
+                fileData = await fetchFile(proxyUrl)
+            }
         } else {
             fileData = await fetchFile(videoSource)
         }
