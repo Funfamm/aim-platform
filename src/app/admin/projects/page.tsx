@@ -76,6 +76,7 @@ type ReviewSubtitle = {
     translateStatus: string
     transcribedWith: string | null
     generatedWith: string | null
+    langStatus: Record<string, string> | null  // per-language status from new schema field
 }
 
 export default function AdminProjectsPage() {
@@ -99,6 +100,7 @@ export default function AdminProjectsPage() {
     const [reviewData, setReviewData] = useState<ReviewSubtitle | null>(null)
     const [reviewLang, setReviewLang] = useState('en')
     const [reviewLoading, setReviewLoading] = useState(false)
+    const [retryingLang, setRetryingLang] = useState<string | null>(null)  // lang currently being retried
     // Generational counter — guards openReview against async race conditions.
     // If admin clicks Review on project B before project A's fetch resolves,
     // A's response is silently discarded.
@@ -299,10 +301,10 @@ export default function AdminProjectsPage() {
         setReviewLang('en')
         setReviewData(null)
         setReviewLoading(true)
+        setRetryingLang(null)
         try {
             const res = await fetch(`/api/admin/subtitles?projectId=${projectId}`)
             const { subtitle } = await res.json()
-            // Discard if a newer review request has since been triggered
             if (requestId !== reviewRequestRef.current) return
             if (subtitle) {
                 setReviewData({
@@ -312,10 +314,75 @@ export default function AdminProjectsPage() {
                     translateStatus: subtitle.translateStatus || 'pending',
                     transcribedWith: subtitle.transcribedWith || null,
                     generatedWith: subtitle.generatedWith || null,
+                    langStatus: subtitle.langStatus ?? null,
                 })
             }
         } catch { /* subtitle not found */ }
         if (requestId === reviewRequestRef.current) setReviewLoading(false)
+    }
+
+    /** Retry a single failed/pending language via SSE */
+    const retryLang = async (lang: string) => {
+        if (!reviewProjectId || retryingLang === lang) return
+        setRetryingLang(lang)
+        try {
+            const res = await fetch('/api/admin/subtitles/retry-lang', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: reviewProjectId, lang }),
+            })
+            if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+            const reader = res.body.getReader()
+            const decoder = new TextDecoder()
+            let buffer = ''
+            // Optimistically mark as processing in the UI
+            setReviewData(prev => prev ? {
+                ...prev,
+                langStatus: { ...(prev.langStatus ?? {}), [lang]: 'processing' },
+            } : prev)
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+                buffer += decoder.decode(value, { stream: true })
+                const events = buffer.split('\n\n')
+                buffer = events.pop() || ''
+                for (const event of events) {
+                    const line = event.replace(/^data: /, '').trim()
+                    if (!line) continue
+                    try {
+                        const data = JSON.parse(line) as { phase?: string; lang?: string }
+                        if (data.phase === 'done') {
+                            // Refresh subtitle data from server
+                            const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}`)
+                            const { subtitle } = await freshRes.json()
+                            if (subtitle) {
+                                setReviewData({
+                                    segments: JSON.parse(subtitle.segments || '[]'),
+                                    translations: subtitle.translations ? JSON.parse(subtitle.translations) : {},
+                                    qcIssues: subtitle.qcIssues ? JSON.parse(subtitle.qcIssues) : [],
+                                    translateStatus: subtitle.translateStatus || 'pending',
+                                    transcribedWith: subtitle.transcribedWith || null,
+                                    generatedWith: subtitle.generatedWith || null,
+                                    langStatus: subtitle.langStatus ?? null,
+                                })
+                            }
+                        } else if (data.phase === 'error') {
+                            setReviewData(prev => prev ? {
+                                ...prev,
+                                langStatus: { ...(prev.langStatus ?? {}), [lang]: 'failed' },
+                            } : prev)
+                        }
+                    } catch { /* malformed */ }
+                }
+            }
+        } catch (err) {
+            setReviewData(prev => prev ? {
+                ...prev,
+                langStatus: { ...(prev.langStatus ?? {}), [lang]: 'failed' },
+            } : prev)
+            console.error('[retry-lang]', err)
+        }
+        setRetryingLang(null)
     }
 
     const closeReview = () => {
@@ -1350,32 +1417,74 @@ export default function AdminProjectsPage() {
 
                             return (
                                 <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                                    {/* ── Panel 1: Language Coverage ── */}
+                                    {/* ── Panel 1: Language Status Grid ── */}
                                     <div style={{ padding: 'var(--space-lg) var(--space-xl)', borderBottom: '1px solid var(--border-subtle)' }}>
-                                        <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>
-                                            Language Coverage
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)' }}>
+                                                Subtitle Language Status
+                                            </div>
+                                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>
+                                                {Object.keys(reviewData.translations).length + 1} / {Object.keys(LANGUAGE_NAMES).length} languages
+                                            </span>
                                         </div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))', gap: '6px' }}>
                                             {[
                                                 { code: 'en', label: 'English', isSource: true },
                                                 ...Object.keys(LANGUAGE_NAMES).filter(c => c !== 'en').map(code => ({
-                                                    code, label: LANGUAGE_NAMES[code] || code, isSource: false
+                                                    code, label: LANGUAGE_NAMES[code] || code, isSource: false,
                                                 }))
                                             ].map(({ code, label, isSource }) => {
-                                                const segs = isSource ? reviewData.segments : reviewData.translations[code]
-                                                const hasSubs = !!segs && segs.length > 0
+                                                const hasSubs = isSource ? reviewData.segments.length > 0 : !!reviewData.translations[code]?.length
+                                                const statusFromDb = reviewData.langStatus?.[code]
+                                                const isRetrying = retryingLang === code
+                                                const status = isRetrying ? 'processing'
+                                                    : statusFromDb ?? (hasSubs ? 'completed' : 'pending')
+
+                                                const statusColors: Record<string, { bg: string; border: string; color: string; icon: string }> = {
+                                                    completed: { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.25)', color: '#10b981', icon: '✓' },
+                                                    reviewed: { bg: 'rgba(212,168,83,0.1)', border: 'rgba(212,168,83,0.3)', color: 'var(--accent-gold)', icon: '⭐' },
+                                                    processing: { bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.25)', color: '#60a5fa', icon: '⏳' },
+                                                    failed: { bg: 'rgba(239,68,68,0.08)', border: 'rgba(239,68,68,0.25)', color: '#ef4444', icon: '✗' },
+                                                    pending: { bg: 'rgba(255,255,255,0.03)', border: 'rgba(255,255,255,0.08)', color: 'var(--text-tertiary)', icon: '○' },
+                                                }
+                                                const sc = statusColors[status] ?? statusColors.pending
+                                                const canRetry = !isSource && (status === 'failed' || status === 'pending') && !retryingLang
+
                                                 return (
                                                     <div key={code} style={{
-                                                        display: 'flex', alignItems: 'center', gap: '5px',
-                                                        padding: '4px 10px', borderRadius: '20px', fontSize: '0.72rem',
-                                                        background: hasSubs ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.04)',
-                                                        border: `1px solid ${hasSubs ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                                                        color: hasSubs ? 'var(--success, #10b981)' : 'var(--text-tertiary)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                        padding: '5px 10px', borderRadius: '8px', gap: '6px',
+                                                        background: sc.bg, border: `1px solid ${sc.border}`,
                                                     }}>
-                                                        <span>{hasSubs ? '✓' : '○'}</span>
-                                                        <span>{label}</span>
-                                                        {hasSubs && <span style={{ opacity: 0.6 }}>({segs!.length})</span>}
-                                                        {isSource && <span style={{ fontSize: '0.6rem', opacity: 0.6 }}>source</span>}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                                                            <span style={{ color: sc.color, fontSize: '0.7rem', flexShrink: 0 }}>{sc.icon}</span>
+                                                            <span style={{ fontSize: '0.75rem', color: sc.color, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                {label}
+                                                            </span>
+                                                            {isSource && <span style={{ fontSize: '0.55rem', opacity: 0.5, flexShrink: 0 }}>source</span>}
+                                                            {hasSubs && !isSource && <span style={{ fontSize: '0.6rem', opacity: 0.5, flexShrink: 0 }}>{reviewData.translations[code]?.length}</span>}
+                                                        </div>
+                                                        {canRetry && (
+                                                            <button
+                                                                onClick={() => retryLang(code)}
+                                                                style={{
+                                                                    background: 'rgba(239,68,68,0.15)',
+                                                                    border: '1px solid rgba(239,68,68,0.3)',
+                                                                    borderRadius: '5px',
+                                                                    color: '#ef4444', fontSize: '0.6rem',
+                                                                    fontWeight: 700, cursor: 'pointer',
+                                                                    padding: '2px 7px', flexShrink: 0,
+                                                                    transition: 'all 0.15s',
+                                                                }}
+                                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.25)' }}
+                                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)' }}
+                                                            >
+                                                                ↻ Retry
+                                                            </button>
+                                                        )}
+                                                        {isRetrying && (
+                                                            <span style={{ fontSize: '0.6rem', color: '#60a5fa', flexShrink: 0 }}>running...</span>
+                                                        )}
                                                     </div>
                                                 )
                                             })}

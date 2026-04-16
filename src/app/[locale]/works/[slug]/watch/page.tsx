@@ -95,9 +95,11 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
             ? `/casting`
             : undefined
 
+    const userPreferredLang = typeof session.preferredLanguage === 'string' ? session.preferredLanguage : 'en'
+
     return (
         <>
-            <WatchPlayer project={serializedProject} userPreferredLang={session.preferredLanguage ?? 'en'} />
+            <WatchPlayer project={serializedProject} userPreferredLang={userPreferredLang} />
             {serializedCast.length > 0 && (
                 <CastShowcase
                     cast={serializedCast}

@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
+import { hasAdminRole } from '@/lib/roles'
 
 // ── Auth guard helper ──────────────────────────────────────────────
 async function requireAdmin() {
     const session = await getUserSession()
     if (!session?.userId) return { error: 'Unauthorized', status: 401 }
-    if (session.role !== 'admin' && session.role !== 'superadmin') {
-        return { error: 'Forbidden', status: 403 }
-    }
+    if (!hasAdminRole(session.role)) return { error: 'Forbidden', status: 403 }
     return null
 }
 
