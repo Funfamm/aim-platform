@@ -275,8 +275,8 @@ export default function RoomShell({
                 key={tokenData.token}
                 token={tokenData.token}
                 serverUrl={tokenData.wsUrl}
-                audio={canPublish}
-                video={canPublish}
+                audio={false}
+                video={false}
                 connect={true}
                 onDisconnected={handleDisconnected}
                 onConnected={handleConnected}
