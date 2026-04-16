@@ -12,7 +12,7 @@ import PublishGateModal from '@/components/admin/PublishGateModal'
 import { uploadSubtitleFile } from '@/lib/subtitle-file-parser'
 import { readSSEStream } from '@/lib/sse-reader'
 
-/* â”€â”€ Types â”€â”€ */
+/* ── Types ── */
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
@@ -123,7 +123,7 @@ export default function AdminProjectsPage() {
     // Publish confirmation gate
     const [showPublishWarning, setShowPublishWarning] = useState(false)
 
-    // â”€â”€ Movie Roll assignment (inside project modal) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Movie Roll assignment (inside project modal) ──────────────────────
     type RollOption = { id: string; title: string; icon: string; displayOn: string; visible: boolean }
     const [allRolls, setAllRolls] = useState<RollOption[]>([])
     const [selectedRollIds, setSelectedRollIds] = useState<string[]>([])
@@ -329,16 +329,16 @@ export default function AdminProjectsPage() {
             if (blocked) {
                 setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                 setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
-                setSubtitleStatus(s => ({ ...s, [pid]: 'âŒ Streaming URL not supported' }))
-                setError('âŒ Cannot transcribe from ' + filmHost + ' â€” streaming platforms block browser access via CORS. Upload the film directly using the Full Film uploader, then try again.')
+                setSubtitleStatus(s => ({ ...s, [pid]: '❌ Streaming URL not supported' }))
+                setError('❌ Cannot transcribe from ' + filmHost + ' — streaming platforms block browser access via CORS. Upload the film directly using the Full Film uploader, then try again.')
                 return
             }
             setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
-            setSubtitleStatus(s => ({ ...s, [pid]: 'â³ Loading audio engine...' }))
+            setSubtitleStatus(s => ({ ...s, [pid]: '⏳ Loading audio engine...' }))
             setSubtitleProgress(s => ({ ...s, [pid]: 2 }))
             try {
                 const result = await transcribeVideo(filmUrl, (status, detail) => {
-                    setSubtitleStatus(s => ({ ...s, [pid]: `â³ ${detail || status}` }))
+                    setSubtitleStatus(s => ({ ...s, [pid]: `⏳ ${detail || status}` }))
                     const phaseProgress: Record<string, number> = {
                         'loading-ffmpeg': 5, 'extracting-audio': 15,
                         'loading-model': 25, 'transcribing': 42,
@@ -346,7 +346,7 @@ export default function AdminProjectsPage() {
                     setSubtitleProgress(s => ({ ...s, [pid]: phaseProgress[status] || s[pid] || 0 }))
                 })
                 const qcSummary = runQC(result.segments)
-                setSubtitleStatus(s => ({ ...s, [pid]: 'ðŸ’¾ Saving transcript...' }))
+                setSubtitleStatus(s => ({ ...s, [pid]: '💾 Saving transcript...' }))
                 setSubtitleProgress(s => ({ ...s, [pid]: 48 }))
                 await fetch('/api/admin/subtitles', {
                     method: 'POST',
@@ -357,9 +357,9 @@ export default function AdminProjectsPage() {
                     }),
                 })
                 setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
-                setSubtitleStatus(s => ({ ...s, [pid]: `âœ… Transcript saved â€” ${formatQCSummary(qcSummary)}` }))
+                setSubtitleStatus(s => ({ ...s, [pid]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
             } catch (err) {
-                setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
+                setSubtitleStatus(s => ({ ...s, [pid]: `❌ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
                 setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                 setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
                 return
@@ -369,7 +369,7 @@ export default function AdminProjectsPage() {
         }
 
         setSubtitlePhase(s => ({ ...s, [pid]: 'translating' }))
-        setSubtitleStatus(s => ({ ...s, [pid]: 'ðŸŒ Starting server translation...' }))
+        setSubtitleStatus(s => ({ ...s, [pid]: '🌍 Starting server translation...' }))
         try {
             const res = await fetch('/api/admin/subtitles/translate', {
                 method: 'POST',
@@ -404,7 +404,7 @@ export default function AdminProjectsPage() {
                 }
             })
         } catch (err) {
-            setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
+            setSubtitleStatus(s => ({ ...s, [pid]: `❌ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
             setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
             setTranslateStatus(s => ({ ...s, [pid]: 'partial' }))
         }
@@ -686,7 +686,7 @@ export default function AdminProjectsPage() {
                                     transition: 'all 0.15s',
                                 }}
                             >
-                                {opt === 'default' ? '📋 Manual order' : '👁 Most viewed'}
+                                {opt === 'default' ? '📋 Manual order' : '👁️ Most viewed'}
                             </button>
                         ))}
                         <span style={{ marginLeft: 'auto', fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
@@ -728,7 +728,7 @@ export default function AdminProjectsPage() {
                                         <div style={{ marginBottom: 'var(--space-sm)' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                                                 <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
-                                                    👁 {project.viewCount.toLocaleString()} view{project.viewCount !== 1 ? 's' : ''}
+                                                    👁️ {project.viewCount.toLocaleString()} view{project.viewCount !== 1 ? 's' : ''}
                                                 </span>
                                                 {viewPct > 0 && (
                                                     <span style={{ fontSize: '0.55rem', color: isTrending ? 'var(--accent-gold)' : 'var(--text-tertiary)', fontWeight: 700 }}>
@@ -768,7 +768,7 @@ export default function AdminProjectsPage() {
                                                         border: `1px solid ${isFull ? 'rgba(52,211,153,0.25)' : isPartial ? 'rgba(245,158,11,0.25)' : 'rgba(255,255,255,0.08)'}`,
                                                         color: isFull ? '#34d399' : isPartial ? '#f59e0b' : 'var(--text-tertiary)',
                                                     }}>
-                                                        {isPending ? '…' : isFull ? '✅' : isNone ? '🌍' : 'âš ï¸'}
+                                                        {isPending ? '…' : isFull ? '✅' : isNone ? '🌐' : '⚠️'}
                                                         {isPending ? 'checking' : `${Math.max(0, count)}/${TOTAL_SUBTITLE_LANGS} langs`}
                                                     </span>
                                                 )
@@ -780,7 +780,7 @@ export default function AdminProjectsPage() {
                                                     title="Manage cast & crew for this project"
                                                     style={{ fontSize: '0.65rem', fontWeight: 700 }}
                                                 >
-                                                    ðŸŽ­ Cast
+                                                    🎭 Cast
                                                 </button>
                                                 <button onClick={() => openEdit(project)} className="btn btn-ghost btn-sm">Edit</button>
                                                 <button
@@ -789,7 +789,7 @@ export default function AdminProjectsPage() {
                                                     className="btn btn-ghost btn-sm"
                                                     style={{ color: 'var(--error)' }}
                                                 >
-                                                    {deleting === project.id ? '...' : 'âœ•'}
+                                                    {deleting === project.id ? '...' : '✕'}
                                                 </button>
                                         </div>
                                         </div>
@@ -802,7 +802,7 @@ export default function AdminProjectsPage() {
                 )}
             </main>
 
-            {/* â”€â”€ Modal â”€â”€ */}
+            {/* ── Modal ── */}
             {showModal && (
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 1000,
@@ -997,7 +997,7 @@ export default function AdminProjectsPage() {
                                 </div>
 
 
-                                {/* â€”â€” Subtitles & Translation â€”â€” */}
+                                {/* —— Subtitles & Translation —— */}
                                 {editingId && (() => {
                                     const pid = editingId
                                     const project = projects.find(p => p.id === pid)
@@ -1013,27 +1013,27 @@ export default function AdminProjectsPage() {
                                     return (
                                         <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
                                             <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                ðŸŒ Subtitles & Translation
+                                                🌍 Subtitles & Translation
                                                 <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 8px', borderRadius: '99px', textTransform: 'none', background: isFull ? 'rgba(52,211,153,0.1)' : isPartial ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${isFull ? 'rgba(52,211,153,0.3)' : isPartial ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`, color: isFull ? '#34d399' : isPartial ? '#f59e0b' : 'var(--text-tertiary)' }}>
-                                                    {isFull ? `âœ… ${count}/${TOTAL_SUBTITLE_LANGS}` : `${count}/${TOTAL_SUBTITLE_LANGS} langs`}
+                                                    {isFull ? `✅ ${count}/${TOTAL_SUBTITLE_LANGS}` : `${count}/${TOTAL_SUBTITLE_LANGS} langs`}
                                                 </span>
                                             </div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>
                                                 {isFull ? 'All languages have been translated. You may regenerate if needed.'
-                                                    : isPartial ? `${count} of ${TOTAL_SUBTITLE_LANGS} languages translated. Click CC to translate the remaining â€” already translated languages are preserved.`
+                                                    : isPartial ? `${count} of ${TOTAL_SUBTITLE_LANGS} languages translated. Click CC to translate the remaining — already translated languages are preserved.`
                                                     : 'Generate multi-language subtitles for this film. Click CC to auto-transcribe and translate, or upload an existing SRT/VTT file.'}
                                             </div>
                                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 'var(--space-md)' }}>
                                                 <button type="button" onClick={() => handleGenerateSubtitles(pid, filmUrl)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
-                                                    {phase === 'transcribing' ? 'â³ Transcribingâ€¦' : phase === 'translating' ? 'ðŸŒ Translatingâ€¦' : translateStatus[pid] === 'partial' ? 'â†» Resume Translation' : isFull ? 'CC âœ“ Regenerate' : 'ðŸŽ¬ Generate Subtitles (CC)'}
+                                                    {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[pid] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
                                                 </button>
                                                 <label title="Upload an existing SRT or VTT transcript" className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
-                                                    ðŸ“„ Upload SRT / VTT
+                                                    📄 Upload SRT / VTT
                                                     <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file) }} />
                                                 </label>
                                                 {(translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial' || count > 0) && (
                                                     <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
-                                                        ðŸ” Review Subtitles
+                                                        🔍 Review Subtitles
                                                     </button>
                                                 )}
                                             </div>
@@ -1057,7 +1057,7 @@ export default function AdminProjectsPage() {
                                     )
                                 })()}
 
-                                {/* â”€â”€ Movie Rolls Assignment â”€â”€ */}
+                                {/* ── Movie Rolls Assignment ── */}
                                 <div
                                     id="roll-assignment-section"
                                     style={{
@@ -1073,7 +1073,7 @@ export default function AdminProjectsPage() {
                                 >
                                     <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: rollError ? '#ef4444' : 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                         🎞️ Movie Rolls
-                                        {rollError && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '1px 8px', borderRadius: '99px', border: '1px solid rgba(239,68,68,0.25)', textTransform: 'none' }}>âš  required — pick at least one</span>}
+                                        {rollError && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '1px 8px', borderRadius: '99px', border: '1px solid rgba(239,68,68,0.25)', textTransform: 'none' }}>⚠ required — pick at least one</span>}
                                     </div>
                                     <div style={{ fontSize: '0.75rem', color: rollError ? '#ef4444' : 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
                                         {rollError
@@ -1166,8 +1166,8 @@ export default function AdminProjectsPage() {
                     </div>
                 </div>
             )}
-            {/* â”€â”€ Subtitle Review Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-            {/* â”€â”€ Cast Management Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* ── Subtitle Review Modal ─────────────────────────────────── */}
+            {/* ── Cast Management Modal ──────────────────────────────────── */}
             <style>{`
                 @media (max-width: 540px) {
                     .cast-admin-form-grid { grid-template-columns: 1fr !important; }
@@ -1254,7 +1254,7 @@ export default function AdminProjectsPage() {
                                                         }}
                                                         title="Translate bio & character to all 10 languages"
                                                     >
-                                                        {translatingId === m.id ? '⏳' : '🌍'}
+                                                        {translatingId === m.id ? '⏳' : '🌐'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteCastMember(m.id)}
@@ -1413,7 +1413,7 @@ export default function AdminProjectsPage() {
 
                             return (
                                 <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
-                                    {/* â”€â”€ Panel 1: Language Status Grid â”€â”€ */}
+                                    {/* ── Panel 1: Language Status Grid ── */}
                                     <LangStatusGrid
                                         translations={reviewData.translations}
                                         langStatus={reviewData.langStatus}
@@ -1422,11 +1422,11 @@ export default function AdminProjectsPage() {
                                         onRetry={retryLang}
                                     />
 
-                                    {/* â”€â”€ Panel 2: QC Report â”€â”€ */}
+                                    {/* ── Panel 2: QC Report ── */}
                                     {reviewData.qcIssues.length > 0 && (
                                         <div style={{ padding: 'var(--space-md) var(--space-xl)', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(245,158,11,0.04)' }}>
                                             <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#f59e0b', marginBottom: 'var(--space-sm)' }}>
-                                                âš ï¸ QC Issues — {reviewData.qcIssues.length} / {reviewData.segments.length} segments flagged
+                                                ⚠️ QC Issues — {reviewData.qcIssues.length} / {reviewData.segments.length} segments flagged
                                             </div>
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                                                 {(Object.entries(
@@ -1440,14 +1440,14 @@ export default function AdminProjectsPage() {
                                                         background: 'rgba(245,158,11,0.15)', color: '#f59e0b',
                                                         border: '1px solid rgba(245,158,11,0.3)',
                                                     }}>
-                                                        {count}Ã— {type.replace(/-/g, ' ')}
+                                                        {count}× {type.replace(/-/g, ' ')}
                                                     </span>
                                                 ))}
                                             </div>
                                         </div>
                                     )}
 
-                                    {/* â”€â”€ Panel 3: Language Switcher + Subtitle Preview â”€â”€ */}
+                                    {/* ── Panel 3: Language Switcher + Subtitle Preview ── */}
                                     <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
                                         {/* Lang list */}
                                         <div style={{
@@ -1531,7 +1531,7 @@ export default function AdminProjectsPage() {
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                     }}>
                                         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                                            {reviewData.translateStatus === 'complete' ? '✅ All languages complete' : 'âš ï¸ Translation partially complete'}
+                                            {reviewData.translateStatus === 'complete' ? '✅ All languages complete' : '⚠️ Translation partially complete'}
                                             {reviewData.generatedWith && ` · AI: ${reviewData.generatedWith}`}
                                         </span>
                                         <button onClick={closeReview} className="btn btn-ghost btn-sm">Close</button>
@@ -1549,7 +1549,7 @@ export default function AdminProjectsPage() {
                 translatedCount={editingId ? (translationCount[editingId] ?? 0) : 0}
                 saving={saving}
                 onCancel={() => {
-                    // Close the warning â€” keep the modal open so admin
+                    // Close the warning — keep the modal open so admin
                     // can use the CC button inside the modal to complete translations.
                     setShowPublishWarning(false)
                     // (modal stays open)
