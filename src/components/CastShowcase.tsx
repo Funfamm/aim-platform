@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -51,8 +52,21 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
     const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
     const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
     const [parallax, setParallax] = useState<Record<number, { x: number; y: number }>>({})
+    // True on phones/tablets: hover overlay is always shown so the About button is tappable
+    const [isTouchDevice, setIsTouchDevice] = useState(false)
+    // mounted: prevents portal from rendering during SSR (document.body doesn't exist)
+    const [mounted, setMounted] = useState(false)
     const stripRef = useRef<HTMLDivElement>(null)
     const cardRefs = useRef<(HTMLDivElement | null)[]>([])
+
+    // Detect touch/non-hover device once on mount (SSR-safe)
+    useEffect(() => {
+        setIsTouchDevice(
+            window.matchMedia('(hover: none)').matches ||
+            ('ontouchstart' in window)
+        )
+        setMounted(true)
+    }, [])
 
     // Staggered entrance via IntersectionObserver.
     // Fallback: mark ALL cards visible after 400ms in case IO doesn't fire
@@ -158,30 +172,20 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                 .cast-card-img { transition: transform 0.5s cubic-bezier(0.22,1,0.36,1); }
                 .cast-card:hover .cast-card-img { transform: scale(1.08); }
 
-                /* On touch/mobile devices: overlay + about button always visible, cards never hidden */
-                @media (hover: none), (max-width: 768px) {
-                    /* Force overlay visible — overrides inline opacity:0 via !important */
-                    .cast-hover-overlay {
-                        opacity: 1 !important;
-                        background: linear-gradient(to top, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.25) 55%, transparent 100%) !important;
-                    }
-                    .cast-about-btn {
-                        background: rgba(212,168,83,0.18) !important;
-                    }
-                    /* Kill entrance animation so cards start at full opacity */
-                    .cast-card {
-                        animation: none !important;
-                        opacity: 1 !important;
-                    }
-                    /* CTA card always visible */
-                    .cast-cta-inner {
-                        opacity: 1 !important;
-                    }
-                }
+                /* On mobile: all handled by isTouchDevice JS state — no CSS override needed */
 
                 /* Disable entrance animation on reduced-motion devices */
                 @media (prefers-reduced-motion: reduce) {
                     .cast-card { animation: none !important; opacity: 1 !important; }
+                    .cast-cta-inner { opacity: 1 !important; }
+                }
+
+                /* ── Mobile ≤ 768px — disable entrance animation entirely ── */
+                @media (max-width: 768px) {
+                    .cast-card {
+                        animation: none !important;
+                        opacity: 1 !important;
+                    }
                     .cast-cta-inner { opacity: 1 !important; }
                 }
 
@@ -396,19 +400,23 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                             zIndex: 3,
                                         }} />
 
-                                        {/* Hover overlay with About button
-                                             Desktop: appears on hover (opacity toggled by isHovered)
-                                             Mobile:  CSS @media (hover:none) forces opacity:1 always */}
+                                        {/* Hover overlay with About button.
+                                             Desktop: opacity driven by isHovered (mouse enter/leave).
+                                             Mobile:  isTouchDevice=true drives opacity:1 always so
+                                                      the About button is visible and tappable.
+                                             This is pure JS — no CSS specificity fight. */}
                                         <div
                                             className="cast-hover-overlay"
                                             style={{
                                                 position: 'absolute', inset: 0, zIndex: 4,
-                                                background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                                                background: isTouchDevice
+                                                    ? 'linear-gradient(to top, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.2) 55%, transparent 100%)'
+                                                    : 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
                                                 display: 'flex', flexDirection: 'column',
                                                 justifyContent: 'flex-end', padding: '14px 12px',
-                                                opacity: isHovered ? 1 : 0,
-                                                transition: 'opacity 0.25s ease',
-                                                // NOTE: on mobile, CSS @media rule overrides this inline 0 → 1
+                                                // Always visible on touch, hover-driven on desktop
+                                                opacity: (isHovered || isTouchDevice) ? 1 : 0,
+                                                transition: isTouchDevice ? 'none' : 'opacity 0.25s ease',
                                             }}
                                         >
                                             <button
@@ -425,8 +433,8 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                                     cursor: 'pointer', width: '100%',
                                                     backdropFilter: 'blur(4px)',
                                                     transition: 'background 0.2s',
-                                                    // Bigger tap target on mobile
-                                                    minHeight: '36px',
+                                                    minHeight: '40px',
+                                                    WebkitTapHighlightColor: 'transparent',
                                                 }}
                                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,168,83,0.3)' }}
                                                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(212,168,83,0.15)' }}
@@ -523,19 +531,23 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                 </div>
             </section>
 
-            {/* ── About Modal ── */}
-            {selectedMember && (
+            {/* ── About Modal rendered via Portal into document.body ──
+             *  This ensures it is never clipped by parent overflow:hidden,
+             *  CSS transforms, or stacking contexts on mobile. */}
+            {mounted && selectedMember && createPortal(
                 <div
                     className="cast-modal-overlay"
                     style={{
                         position: 'fixed', inset: 0,
-                        background: 'rgba(0,0,0,0.85)',
+                        background: 'rgba(0,0,0,0.88)',
                         backdropFilter: 'blur(10px)',
-                        zIndex: 1200,
+                        WebkitBackdropFilter: 'blur(10px)',
+                        zIndex: 9999,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '20px',
+                        padding: '16px',
                         animation: 'overlayIn 0.25s ease',
-                        overflowY: 'auto',  // allow scroll if modal taller than viewport
+                        overflowY: 'auto',
+                        WebkitOverflowScrolling: 'touch' as React.CSSProperties['WebkitOverflowScrolling'],
                     }}
                     onClick={e => { if (e.target === e.currentTarget) setSelectedMember(null) }}
                 >
@@ -548,7 +560,9 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                         boxShadow: '0 40px 120px rgba(0,0,0,0.8), 0 0 0 1px rgba(212,168,83,0.1)',
                         animation: 'modalIn 0.35s cubic-bezier(0.22,1,0.36,1)',
                         overflow: 'hidden',
-                        margin: 'auto',  // centers correctly when overflowY auto is active
+                        margin: 'auto',
+                        // Stop touch events from falling to the backdrop (which closes modal)
+                        touchAction: 'pan-y',
                     }}>
                         <div className="cast-modal-body" style={{ display: 'flex', minHeight: '340px' }}>
                             {/* Portrait side */}
@@ -681,8 +695,9 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                 style={{
                                     background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
                                     borderRadius: '6px', color: 'var(--text-tertiary)',
-                                    fontSize: '0.72rem', padding: '5px 14px', cursor: 'pointer',
-                                    transition: 'all 0.2s',
+                                    fontSize: '0.72rem', padding: '8px 18px', cursor: 'pointer',
+                                    transition: 'all 0.2s', minHeight: '36px',
+                                    WebkitTapHighlightColor: 'transparent',
                                 }}
                                 onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)' }}
                                 onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
@@ -691,7 +706,8 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     )
