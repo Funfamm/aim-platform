@@ -72,7 +72,7 @@ export function createAccessToken(identity: string, name: string) {
     return new AccessToken(apiKey, apiSecret, {
         identity,
         name,
-        ttl: '10m',
+        ttl: '2h',   // 2 hours — covers full event without mid-stream token expiry
     })
 }
 
