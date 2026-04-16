@@ -680,7 +680,23 @@ export default function AdminProjectsPage() {
                                                             const isResume = translateStatus[pid] === 'partial'
 
                                                             if (!isResume) {
-                                                                // â”€â”€ Step 1: Browser transcription (Whisper-medium) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                                                                // ── Step 1: URL compatibility guard ─────────────────────
+                                                                // Streaming platforms block browser fetch() via CORS.
+                                                                // Transcription only works with a direct, accessible video URL.
+                                                                const BLOCKED_HOSTS = [
+                                                                    'youtube.com', 'youtu.be', 'vimeo.com', 'player.vimeo.com',
+                                                                    'drive.google.com', 'dropbox.com', 'dai.ly', 'dailymotion.com',
+                                                                    'twitch.tv', 'facebook.com', 'instagram.com', 'tiktok.com',
+                                                                ]
+                                                                const filmHost = (() => { try { return new URL(project.filmUrl!).hostname.replace('www.', '') } catch { return '' } })()
+                                                                if (BLOCKED_HOSTS.some(h => filmHost.endsWith(h))) {
+                                                                    setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
+                                                                    setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
+                                                                    setSubtitleStatus(s => ({ ...s, [pid]: '❌ Streaming URL not supported' }))
+                                                                    setError('❌ Cannot transcribe from ' + filmHost + ' — streaming platforms block browser access via CORS. Upload the film directly using the Full Film uploader, then try again.')
+                                                                    return
+                                                                }
+                                                                // ── Step 2: Browser transcription (Whisper-medium) ──────────────
                                                                 setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
                                                                 setSubtitleStatus(s => ({ ...s, [pid]: '⏳ Loading audio engine...' }))
                                                                 setSubtitleProgress(s => ({ ...s, [pid]: 2 }))
