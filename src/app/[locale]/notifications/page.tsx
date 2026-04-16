@@ -202,13 +202,8 @@ export default function NotificationsPage() {
     return (
         <>
             <style>{`
-                @keyframes fadeInUp {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to   { opacity: 1; transform: translateY(0); }
-                }
-                .notif-group { animation: fadeInUp 0.35s ease both; }
-
-                /* iOS/Safari reset — buttons must be explicitly sized */
+                /* No animation-fill-mode:both — that holds opacity:0 on mobile if animation fails */
+                .notif-group { opacity: 1; }
                 .notif-row {
                     -webkit-appearance: none;
                     appearance: none;
@@ -231,10 +226,7 @@ export default function NotificationsPage() {
                         padding: 14px 14px !important;
                         gap: 10px !important;
                     }
-                    .notif-feed-card {
-                        border-radius: 12px;
-                        overflow: visible !important;
-                    }
+                    .notif-feed-card { border-radius: 12px; }
                 }
             `}</style>
 
@@ -400,7 +392,6 @@ export default function NotificationsPage() {
                                 <div
                                     key={date}
                                     className="notif-group"
-                                    style={{ animationDelay: `${gi * 60}ms` }}
                                 >
                                     <div style={{
                                         padding: '8px 20px', fontSize: '0.75rem', fontWeight: 600,
