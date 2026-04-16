@@ -867,7 +867,7 @@ export default function AdminEventsPage() {
                                         <div className="le-actions">
                                             {!isEnded && (
                                                 <a
-                                                    href={`/en/events/${event.roomName}`}
+                                                    href={`/${typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : 'en'}/events/${event.roomName}`}
                                                     className="le-btn le-btn--view"
                                                     target="_blank" rel="noopener noreferrer"
                                                     aria-label={`View room ${event.roomName}`}
@@ -882,7 +882,8 @@ export default function AdminEventsPage() {
                                                 className="le-btn le-btn--copy"
                                                 title={`Copy participant link: ${typeof window !== 'undefined' ? window.location.origin : ''}/en/events/${event.roomName}`}
                                                 onClick={() => {
-                                                    const url = `${window.location.origin}/en/events/${event.roomName}`
+                                                    const locale = window.location.pathname.split('/')[1] || 'en'
+                                                    const url = `${window.location.origin}/${locale}/events/${event.roomName}`
                                                     navigator.clipboard.writeText(url).then(() => {
                                                         setCopied(event.id)
                                                         setTimeout(() => setCopied(null), 2000)
@@ -1199,7 +1200,7 @@ export default function AdminEventsPage() {
                                 }}>
                                     <span style={{ fontSize: '0.65rem', color: '#60a5fa', fontWeight: 700, whiteSpace: 'nowrap' }}>🔗 Room link</span>
                                     <code style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.45)', wordBreak: 'break-all' }}>
-                                        {typeof window !== 'undefined' ? window.location.origin : 'https://impactaistudio.com'}/en/events/{shareEvent.roomName}
+                                        {typeof window !== 'undefined' ? window.location.origin : 'https://impactaistudio.com'}/{typeof window !== 'undefined' ? window.location.pathname.split('/')[1] || 'en' : 'en'}/events/{shareEvent.roomName}
                                     </code>
                                 </div>
 
