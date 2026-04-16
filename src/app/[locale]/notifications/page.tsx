@@ -208,10 +208,34 @@ export default function NotificationsPage() {
                     to   { opacity: 1; transform: translateY(0); }
                 }
                 .notif-group { animation: fadeInUp 0.35s ease both; }
+
+                /* iOS/Safari reset — buttons must be explicitly sized */
+                .notif-row {
+                    -webkit-appearance: none;
+                    appearance: none;
+                    box-sizing: border-box;
+                    display: flex !important;
+                    width: 100% !important;
+                    max-width: 100%;
+                    text-align: left;
+                }
                 .notif-row:hover { background: rgba(212,168,83,0.06) !important; }
                 .tab-btn:hover { color: var(--accent-gold) !important; }
+
                 @media (max-width: 768px) {
-                    #notifications-page { padding-top: 100px !important; }
+                    #notifications-page {
+                        padding-top: 100px !important;
+                        padding-left: 12px !important;
+                        padding-right: 12px !important;
+                    }
+                    .notif-row {
+                        padding: 14px 14px !important;
+                        gap: 10px !important;
+                    }
+                    .notif-feed-card {
+                        border-radius: 12px;
+                        overflow: visible !important;
+                    }
                 }
             `}</style>
 
@@ -261,10 +285,13 @@ export default function NotificationsPage() {
                 ) : activeTab === 'feed' ? (
 
                     /* ─── FEED ─── */
-                    <div style={{
-                        background: 'var(--bg-secondary)', borderRadius: '16px',
-                        border: '1px solid var(--border-subtle)', overflow: 'hidden',
-                    }}>
+                    <div
+                        className="notif-feed-card"
+                        style={{
+                            background: 'var(--bg-secondary)', borderRadius: '16px',
+                            border: '1px solid var(--border-subtle)', overflow: 'hidden',
+                        }}
+                    >
                         {/* Feed header */}
                         {selectMode ? (
                             <div style={{
