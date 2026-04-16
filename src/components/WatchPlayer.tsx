@@ -955,6 +955,37 @@ export default function WatchPlayer({
                                     }}>
                                         {fmt(currentTime)} / {fmt(totalDuration)}
                                     </span>
+                                    {/* Watch Full / Continue button */}
+                                    {currentVideoUrl && (
+                                        <button
+                                            className="aim-ctrl-btn"
+                                            onClick={() => {
+                                                const vid = videoRef.current;
+                                                if (!vid) return;
+                                                // If we have a saved resume point, jump to it
+                                                if (resumePct && totalDuration) {
+                                                    const t = resumePct * vid.duration;
+                                                    if (isFinite(t) && t > 0) {
+                                                        vid.currentTime = t;
+                                                        setCurrentTime(t);
+                                                    }
+                                                }
+                                                vid.play().catch(() => {});
+                                                setIsPlaying(true);
+                                            }}
+                                            title={resumePct && resumePct > 0 ? 'Continue watching' : 'Watch full film'}
+                                            style={{
+                                                fontSize: '0.68rem',
+                                                fontWeight: 700,
+                                                minWidth: '80px',
+                                                background: resumePct && resumePct > 0 ? 'rgba(212,168,83,0.2)' : undefined,
+                                                color: resumePct && resumePct > 0 ? 'var(--accent-gold)' : undefined,
+                                                border: resumePct && resumePct > 0 ? '1px solid rgba(212,168,83,0.4)' : undefined,
+                                            }}
+                                        >
+                                            {resumePct && resumePct > 0 ? 'Continue' : 'Watch full'}
+                                        </button>
+                                    )}
                                 </div>
 
                                 {/* RIGHT: branding, CC, speed, fullscreen */}
