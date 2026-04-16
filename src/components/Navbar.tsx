@@ -603,18 +603,7 @@ export default function Navbar() {
                         </Link>
                     )}
 
-                    {/* 7. Subscribe — shown only to guests (logged-in users already receive notifications) */}
-                    {!user && (
-                        <Link href="/subscribe" prefetch={false} onClick={() => setMobileOpen(false)}
-                            className={`drawer-item ${pathname === '/subscribe' ? 'active-page' : ''}`}>
-                            <span className="drawer-icon-glow">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M22 17H2a3 3 0 0 0 3-3V9a7 7 0 0 1 14 0v5a3 3 0 0 0 3 3z" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                                </svg>
-                            </span>
-                            {tB('subscribe.title')}
-                        </Link>
-                    )}
+
 
                     {/* 8. Notifications — shown only to authenticated users */}
                     {user && (
