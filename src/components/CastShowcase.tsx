@@ -186,6 +186,11 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                         animation: none !important;
                         opacity: 1 !important;
                     }
+                    /* Mobile grid cards must always be visible — never opacity:0 */
+                    .cast-grid-card {
+                        animation: none !important;
+                        opacity: 1 !important;
+                    }
                     .cast-cta-inner { opacity: 1 !important; }
                 }
 
@@ -630,9 +635,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                             setSelectedMember(member)
                                         }
                                     }}
-                                    style={{
-                                        animation: `castGridCardIn 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 60}ms both`,
-                                    }}
+                                    style={{/* no animation — guaranteed visible on mobile */}}
                                 >
                                     {/* Portrait photo area */}
                                     <div className="cast-grid-photo">
