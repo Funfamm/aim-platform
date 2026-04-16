@@ -1,6 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from '@/i18n/navigation'
@@ -289,7 +288,7 @@ export default function NotificationsPage() {
                         className="notif-feed-card"
                         style={{
                             background: 'var(--bg-secondary)', borderRadius: '16px',
-                            border: '1px solid var(--border-subtle)', overflow: 'hidden',
+                            border: '1px solid var(--border-subtle)',
                         }}
                     >
                         {/* Feed header */}
@@ -412,8 +411,10 @@ export default function NotificationsPage() {
                                         {date}
                                     </div>
                                     {items.map(n => (
-                                        <button
+                                        <div
                                             key={n.id}
+                                            role="button"
+                                            tabIndex={0}
                                             className="notif-row"
                                             onClick={() => {
                                                 if (selectMode) {
@@ -425,6 +426,7 @@ export default function NotificationsPage() {
                                                     handleNotifClick(n)
                                                 }
                                             }}
+                                            onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click() } }}
                                             style={{
                                                 width: '100%', display: 'flex', alignItems: 'flex-start',
                                                 gap: '14px', padding: '16px 20px',
@@ -475,7 +477,7 @@ export default function NotificationsPage() {
                                                     flexShrink: 0, marginTop: '3px', opacity: 0.6,
                                                 }}>→</span>
                                             )}
-                                        </button>
+                                        </div>
                                     ))}
                                 </div>
                             ))
