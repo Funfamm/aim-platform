@@ -263,17 +263,35 @@ export default function WatchPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
-    const toggleFullscreen = () => {
+    const toggleFullscreen = async () => {
         const el = containerRef.current
         if (!el) return
         if (document.fullscreenElement) {
+            // Unlock orientation before exiting fullscreen
+            try { screen.orientation?.unlock?.() } catch { /* unsupported */ }
             document.exitFullscreen()
             setIsFullscreen(false)
         } else {
-            el.requestFullscreen().catch(() => { })
-            setIsFullscreen(true)
+            try {
+                await el.requestFullscreen()
+                setIsFullscreen(true)
+                // Lock to landscape on mobile for immersive viewing
+                try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* unsupported */ }
+            } catch { /* fullscreen denied */ }
         }
     }
+
+    // Sync fullscreen state when user exits via browser controls (Escape key, swipe, etc.)
+    useEffect(() => {
+        const onFsChange = () => {
+            if (!document.fullscreenElement) {
+                setIsFullscreen(false)
+                try { screen.orientation?.unlock?.() } catch { /* unsupported */ }
+            }
+        }
+        document.addEventListener('fullscreenchange', onFsChange)
+        return () => document.removeEventListener('fullscreenchange', onFsChange)
+    }, [])
 
     const handleTimeUpdate = () => {
         const vid = videoRef.current
