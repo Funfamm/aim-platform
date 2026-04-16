@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
 import HeroBackground from '@/components/HeroBackground'
 import Link from 'next/link'
 import Scene3D from '@/components/Scene3D'
@@ -113,14 +113,18 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
     }, [])
 
-    const [mounted, setMounted] = useState(false)
+    // Page-entry fade-in — useSyncExternalStore gives a stable client-only boolean
+    // without calling setState inside an effect (avoids react-hooks/set-state-in-effect).
+    const mounted = useSyncExternalStore(
+        () => () => {},           // no-op subscribe
+        () => true,               // client snapshot  → true
+        () => false,              // server snapshot  → false
+    )
+
     // HeroBackground state — drives the video dots
     const [currentIdx, setCurrentIdx] = useState(0)
     const [videoCount, setVideoCount] = useState(0)
     const jumpToVideoRef = useRef<((idx: number) => void) | null>(null)
-
-    // Page-entry fade-in
-    useEffect(() => { setMounted(true) }, [])
 
     const handleVideoChange = useCallback((idx: number, total: number) => {
         setCurrentIdx(idx)
