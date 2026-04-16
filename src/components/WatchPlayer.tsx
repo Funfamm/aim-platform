@@ -53,6 +53,11 @@ export default function WatchPlayer({
     const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
+    // ── Resume playback state ──
+    const [resumePct, setResumePct] = useState<number | null>(null)
+    const [showResumeBanner, setShowResumeBanner] = useState(false)
+    const resumeDismissedRef = useRef(false)
+
     const isSeries = project.projectType === 'series' && project.episodes.length > 0
     const currentVideoUrl = activeEpisode?.videoUrl || project.filmUrl
 
@@ -135,6 +140,38 @@ export default function WatchPlayer({
             .finally(() => setCcChecked(true))
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [project.id, activeEpisode, userPreferredLang])
+
+    // ── Lock orientation to landscape on mobile immediately on mount ──
+    useEffect(() => {
+        if (typeof window === 'undefined' || window.innerWidth > 768) return
+        const lockLandscape = async () => {
+            try { await (screen.orientation as any)?.lock?.('landscape') } catch { /* unsupported */ }
+        }
+        lockLandscape()
+        // Re-lock whenever orientation changes (e.g. user rotates back to portrait)
+        const onOrientationChange = () => { lockLandscape() }
+        screen.orientation?.addEventListener?.('change', onOrientationChange)
+        return () => screen.orientation?.removeEventListener?.('change', onOrientationChange)
+    }, [])
+
+    // ── Resume playback: fetch saved position on mount (movie only, not series) ──
+    useEffect(() => {
+        if (isSeries) return  // series resume handled per-episode
+        fetch(`/api/watch/progress?projectId=${project.id}`)
+            .then(r => r.json())
+            .then((data: { completePct: number | null }) => {
+                if (data.completePct && data.completePct > 0.01) {
+                    setResumePct(data.completePct)
+                    setShowResumeBanner(true)
+                    // Auto-dismiss after 8 seconds if user ignores
+                    setTimeout(() => {
+                        if (!resumeDismissedRef.current) setShowResumeBanner(false)
+                    }, 8000)
+                }
+            })
+            .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [project.id])
 
     // Load subtitles for a specific language
     const loadSubtitles = useCallback(async (lang: string) => {
@@ -383,8 +420,84 @@ export default function WatchPlayer({
                     Back to {project.title}
                 </Link>
 
+                {/* ── Resume Banner ── */}
+                {showResumeBanner && resumePct !== null && (
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        flexWrap: 'wrap', gap: '10px',
+                        background: 'linear-gradient(135deg, rgba(212,168,83,0.12), rgba(212,168,83,0.06))',
+                        border: '1px solid rgba(212,168,83,0.3)',
+                        borderRadius: '10px',
+                        padding: '12px 16px',
+                        marginBottom: '12px',
+                        animation: 'fadeSlideIn 0.3s ease',
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <span style={{ fontSize: '1.1rem' }}>▶</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                Continue from <strong style={{ color: 'var(--accent-gold)' }}>
+                                    {totalDuration > 0
+                                        ? (() => {
+                                            const secs = Math.floor(resumePct * totalDuration)
+                                            const m = Math.floor(secs / 60)
+                                            const s = secs % 60
+                                            return `${m}:${String(s).padStart(2, '0')}`
+                                        })()
+                                        : `${Math.round(resumePct * 100)}%`
+                                    }
+                                </strong>?
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                onClick={() => {
+                                    resumeDismissedRef.current = true
+                                    setShowResumeBanner(false)
+                                    // Seek once video metadata is loaded
+                                    const seekAfterLoad = () => {
+                                        const vid = videoRef.current
+                                        if (!vid) return
+                                        const seekTo = resumePct! * vid.duration
+                                        if (isFinite(seekTo) && seekTo > 0) {
+                                            vid.currentTime = seekTo
+                                            setCurrentTime(seekTo)
+                                        }
+                                        vid.play().catch(() => {})
+                                        setIsPlaying(true)
+                                    }
+                                    const vid = videoRef.current
+                                    if (vid && vid.readyState >= 1) {
+                                        seekAfterLoad()
+                                    } else if (vid) {
+                                        vid.addEventListener('loadedmetadata', seekAfterLoad, { once: true })
+                                    }
+                                }}
+                                style={{
+                                    padding: '5px 14px', borderRadius: '6px', fontSize: '0.78rem',
+                                    fontWeight: 700, cursor: 'pointer',
+                                    background: 'var(--accent-gold)', border: 'none', color: '#000',
+                                }}
+                            >
+                                Resume
+                            </button>
+                            <button
+                                onClick={() => { resumeDismissedRef.current = true; setShowResumeBanner(false) }}
+                                style={{
+                                    padding: '5px 12px', borderRadius: '6px', fontSize: '0.78rem',
+                                    fontWeight: 600, cursor: 'pointer',
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-tertiary)',
+                                }}
+                            >
+                                Start over
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Video Player */}
                 <div
+
                     ref={containerRef}
                     onMouseMove={resetControlsTimer}
                     onClick={togglePlay}
