@@ -228,12 +228,84 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     .cast-modal-overlay { padding: 12px !important; }
                     .cast-modal-info { padding: 16px 14px !important; }
                 }
+
+                /* ── Layout switching: desktop strip vs mobile grid ── */
+                @keyframes castGridCardIn {
+                    from { opacity: 0; transform: translateY(24px) scale(0.94); }
+                    to   { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                /* Desktop: show strip, hide grid */
+                .cast-desktop-strip { display: flex; }
+                .cast-mobile-grid   { display: none; }
+
+                /* Mobile ≤ 768px: hide strip, show grid */
+                @media (max-width: 768px) {
+                    .cast-desktop-strip { display: none !important; }
+                    .cast-mobile-grid   { display: grid !important; }
+                }
+
+                /* Mobile grid card styles */
+                .cast-grid-card {
+                    position: relative;
+                    border-radius: 14px;
+                    overflow: hidden;
+                    cursor: pointer;
+                    background: linear-gradient(135deg, rgba(26,26,46,0.9), rgba(13,13,26,0.9));
+                    border: 1px solid rgba(212,168,83,0.12);
+                    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                .cast-grid-card:active {
+                    transform: scale(0.97);
+                    border-color: rgba(212,168,83,0.55);
+                    box-shadow: 0 0 0 2px rgba(212,168,83,0.35), 0 12px 40px rgba(0,0,0,0.5);
+                }
+                .cast-grid-photo {
+                    width: 100%;
+                    aspect-ratio: 3 / 4;
+                    position: relative;
+                    overflow: hidden;
+                    background: linear-gradient(135deg, #1a1a2e, #0d0d1a);
+                }
+                .cast-grid-photo-bg {
+                    position: absolute; inset: -6%;
+                    background-size: cover;
+                    background-position: center top;
+                    transition: transform 0.4s ease;
+                }
+                .cast-grid-card:active .cast-grid-photo-bg {
+                    transform: scale(1.05);
+                }
+                .cast-grid-about-btn {
+                    position: absolute;
+                    bottom: 10px; left: 10px; right: 10px;
+                    background: rgba(0,0,0,0.65);
+                    border: 1px solid rgba(212,168,83,0.55);
+                    border-radius: 8px;
+                    color: var(--accent-gold);
+                    font-size: 0.72rem; font-weight: 700;
+                    letter-spacing: 0.08em; text-align: center;
+                    padding: 9px 8px;
+                    cursor: pointer;
+                    backdrop-filter: blur(6px);
+                    -webkit-backdrop-filter: blur(6px);
+                    transition: background 0.2s, border-color 0.2s;
+                    min-height: 38px;
+                    -webkit-tap-highlight-color: transparent;
+                }
+                .cast-grid-card:active .cast-grid-about-btn {
+                    background: rgba(212,168,83,0.22);
+                    border-color: var(--accent-gold);
+                }
             `}</style>
 
-            <section style={{
-                padding: 'clamp(var(--space-xl), 5vw, var(--space-2xl)) 0',
-                borderTop: '1px solid var(--border-subtle)',
-            }}>
+            <section
+                className="cast-section-root"
+                style={{
+                    padding: 'clamp(var(--space-xl), 5vw, var(--space-2xl)) 0',
+                    borderTop: '1px solid var(--border-subtle)',
+                }}
+            >
                 <div className="container" style={{ maxWidth: '1200px', padding: '0 clamp(16px, 4vw, var(--space-lg))' }}>
 
                     {/* ── Section header ── */}
@@ -301,12 +373,12 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                         backgroundSize: '200% auto',
                     }} />
 
-                    {/* ── Horizontal strip ── */}
+                    {/* ── Horizontal strip (desktop only) ── */}
                     <div
                         ref={stripRef}
-                        className="cast-strip"
+                        className="cast-strip cast-desktop-strip"
                         style={{
-                            display: 'flex', gap: 'clamp(12px, 2vw, 20px)', overflowX: 'auto',
+                            gap: 'clamp(12px, 2vw, 20px)', overflowX: 'auto',
                             paddingBottom: '12px', paddingTop: '8px',
                         }}
                     >
@@ -527,7 +599,182 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                 </div>
                             </Link>
                         )}
-                    </div>
+                    </div>{/* /cast-desktop-strip */}
+
+                    {/* ══════════════════════════════
+                     *  MOBILE GRID (≤ 768px only)
+                     *  Premium 2-column portrait grid.
+                     *  Same CastMember data, same modal.
+                     *  ══════════════════════════════ */}
+                    <div
+                        className="cast-mobile-grid"
+                        style={{
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: '12px',
+                            paddingTop: '4px',
+                        }}
+                    >
+                        {cast.map((member, idx) => {
+                            const resolved = resolve(member)
+                            return (
+                                <div
+                                    key={member.id}
+                                    className="cast-grid-card"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`${t('aboutButton')} ${member.name}`}
+                                    onClick={() => setSelectedMember(member)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault()
+                                            setSelectedMember(member)
+                                        }
+                                    }}
+                                    style={{
+                                        animation: `castGridCardIn 0.5s cubic-bezier(0.22,1,0.36,1) ${idx * 60}ms both`,
+                                    }}
+                                >
+                                    {/* Portrait photo area */}
+                                    <div className="cast-grid-photo">
+                                        {member.photoUrl ? (
+                                            <>
+                                                <div
+                                                    className="cast-grid-photo-bg"
+                                                    style={{ backgroundImage: `url(${member.photoUrl})` }}
+                                                />
+                                                {/* Photo protection overlay */}
+                                                <div
+                                                    style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+                                                    onContextMenu={e => e.preventDefault()}
+                                                    draggable={false}
+                                                />
+                                            </>
+                                        ) : (
+                                            <div style={{
+                                                position: 'absolute', inset: 0,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '3rem', opacity: 0.25,
+                                            }}>🎭</div>
+                                        )}
+
+                                        {/* Bottom gradient over photo */}
+                                        <div style={{
+                                            position: 'absolute', bottom: 0, left: 0, right: 0,
+                                            height: '65%',
+                                            background: 'linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.3) 55%, transparent 100%)',
+                                            zIndex: 2,
+                                        }} />
+
+                                        {/* Top gradient for premium depth */}
+                                        <div style={{
+                                            position: 'absolute', top: 0, left: 0, right: 0, height: '40px',
+                                            background: 'linear-gradient(to bottom, rgba(0,0,0,0.45), transparent)',
+                                            zIndex: 2,
+                                        }} />
+
+                                        {/* Job title badge — top-left */}
+                                        <div style={{
+                                            position: 'absolute', top: '8px', left: '8px', zIndex: 3,
+                                            fontSize: '0.52rem', fontWeight: 800,
+                                            letterSpacing: '0.14em', textTransform: 'uppercase',
+                                            color: 'var(--accent-gold)',
+                                            background: 'rgba(0,0,0,0.55)',
+                                            borderRadius: '4px', padding: '2px 6px',
+                                            backdropFilter: 'blur(4px)',
+                                        }}>
+                                            {tJobTitle(member.jobTitle)}
+                                        </div>
+
+                                        {/* About button — always visible at bottom of photo */}
+                                        <button
+                                            className="cast-grid-about-btn"
+                                            style={{ zIndex: 4 }}
+                                            onClick={e => { e.stopPropagation(); setSelectedMember(member) }}
+                                        >
+                                            {t('aboutButton')} ›
+                                        </button>
+                                    </div>
+
+                                    {/* Name plate */}
+                                    <div style={{
+                                        padding: '10px 10px 12px',
+                                        background: 'linear-gradient(135deg, rgba(14,14,24,0.97), rgba(10,10,18,0.97))',
+                                        borderTop: '1px solid rgba(212,168,83,0.12)',
+                                    }}>
+                                        <div style={{
+                                            fontSize: '0.78rem', fontWeight: 800,
+                                            color: '#fff', lineHeight: 1.25, marginBottom: '3px',
+                                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                        }}>{member.name}</div>
+                                        {resolved.character && (
+                                            <div style={{
+                                                fontSize: '0.6rem', fontWeight: 600,
+                                                color: 'rgba(212,168,83,0.75)',
+                                                letterSpacing: '0.04em',
+                                                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                            }}>as {resolved.character}</div>
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+
+                        {/* Mobile CTA band — full-width at grid bottom */}
+                        {castingHref && (
+                            <Link
+                                href={castingHref}
+                                style={{
+                                    gridColumn: '1 / -1',  // span both columns
+                                    textDecoration: 'none',
+                                    display: 'block',
+                                    marginTop: '4px',
+                                }}
+                            >
+                                <div style={{
+                                    borderRadius: '14px',
+                                    padding: '20px 20px',
+                                    display: 'flex', alignItems: 'center',
+                                    justifyContent: 'space-between', gap: '12px',
+                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.1), rgba(212,168,83,0.04))',
+                                    border: '1px solid rgba(212,168,83,0.3)',
+                                    animation: 'ctaPulse 2.8s ease-in-out infinite',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                                        <div style={{
+                                            width: '44px', height: '44px', flexShrink: 0,
+                                            borderRadius: '50%',
+                                            background: 'linear-gradient(135deg, rgba(212,168,83,0.18), rgba(212,168,83,0.06))',
+                                            border: '1px solid rgba(212,168,83,0.35)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '1.3rem',
+                                        }}>🎬</div>
+                                        <div>
+                                            <div style={{
+                                                fontSize: '0.82rem', fontWeight: 800,
+                                                color: '#fff', marginBottom: '2px',
+                                            }}>{t('ctaHeading')}</div>
+                                            <div style={{
+                                                fontSize: '0.65rem', color: 'var(--text-tertiary)',
+                                            }}>
+                                                {projectTitle
+                                                    ? t('ctaSubtext', { title: projectTitle })
+                                                    : t('ctaSubtextFallback')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        flexShrink: 0,
+                                        padding: '8px 14px', borderRadius: '20px',
+                                        background: 'linear-gradient(135deg, var(--accent-gold), #c99a2e)',
+                                        color: '#000', fontSize: '0.65rem', fontWeight: 800,
+                                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                                        whiteSpace: 'nowrap',
+                                    }}>{t('ctaButton')} →</div>
+                                </div>
+                            </Link>
+                        )}
+                    </div>{/* /cast-mobile-grid */}
+
                 </div>
             </section>
 
