@@ -219,9 +219,11 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
                     display: 'flex', gap: '6px',
                     marginTop: '10px',
                 }}>
-                    {/* Details button — same destination as the card wrapper link */}
-                    <span
+                    {/* Details button — navigates to the project page */}
+                    <Link
+                        href={`/works/${project.slug}`}
                         className="press-feedback-sm"
+                        onClick={e => e.stopPropagation()}
                         style={{
                             flex: 1,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -236,7 +238,7 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
                         }}
                     >
                         {t('details')}
-                    </span>
+                    </Link>
                     {openRoles.length > 0 && (
                         <Link
                             href="/casting"

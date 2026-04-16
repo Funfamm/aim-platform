@@ -170,14 +170,19 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
     const t = useTranslations('sponsorCta')
     const scrollRef = useRef<HTMLDivElement>(null)
     const [isPaused, setIsPaused] = useState(false)
+    const [autoScroll, setAutoScroll] = useState(false)
 
-    // Determine if auto-scroll should be active based on sponsor count & viewport
-    const shouldAutoScroll = () => {
-        if (typeof window === 'undefined') return false
-        const isMobile = window.innerWidth <= 768
-        const threshold = isMobile ? 1 : 3
-        return sponsors.length > threshold
-    }
+    // Determine auto-scroll on client (window is needed for width check)
+    useEffect(() => {
+        const check = () => {
+            const isMobile = window.innerWidth <= 768
+            const threshold = isMobile ? 1 : 3
+            setAutoScroll(sponsors.length > threshold)
+        }
+        check()
+        window.addEventListener('resize', check)
+        return () => window.removeEventListener('resize', check)
+    }, [sponsors.length])
 
     const hasSponsors = sponsors.length > 0
 
@@ -215,28 +220,26 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                             </div>
                         </div>
 
-                        {/* Continuous 360 Marquee */}
+                        {/* Continuous Marquee — pauses on hover (desktop), always runs on mobile */}
                         <div
                             ref={scrollRef}
                             onMouseEnter={() => setIsPaused(true)}
                             onMouseLeave={() => setIsPaused(false)}
-                            onTouchStart={() => setIsPaused(true)}
-                            onTouchEnd={() => setIsPaused(false)}
                             style={{
                                 display: 'flex', gap: '14px', overflow: 'hidden', paddingBottom: '4px',
-                                maskImage: shouldAutoScroll() ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
-                                WebkitMaskImage: shouldAutoScroll() ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
+                                maskImage: autoScroll ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
+                                WebkitMaskImage: autoScroll ? 'linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%)' : 'none',
                             }}
                         >
                             <div style={{
                                 display: 'flex', gap: '14px', flexShrink: 0,
-                                animation: shouldAutoScroll() ? `marqueeScroll ${sponsors.length * 6}s linear infinite` : 'none',
+                                animation: autoScroll ? `marqueeScroll ${sponsors.length * 6}s linear infinite` : 'none',
                                 animationPlayState: isPaused ? 'paused' : 'running',
                             }}>
                                 {sponsors.map(s => <div key={s.id}><SponsorCard s={s} /></div>)}
                             </div>
                             
-                            {shouldAutoScroll() && (
+                            {autoScroll && (
                                 <div style={{
                                     display: 'flex', gap: '14px', flexShrink: 0,
                                     animation: `marqueeScroll ${sponsors.length * 6}s linear infinite`,
@@ -246,7 +249,7 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                                 </div>
                             )}
 
-                            {shouldAutoScroll() && (
+                            {autoScroll && (
                                 <div style={{
                                     display: 'flex', gap: '14px', flexShrink: 0,
                                     animation: `marqueeScroll ${sponsors.length * 6}s linear infinite`,
