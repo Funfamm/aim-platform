@@ -282,24 +282,24 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     transform: scale(1.05);
                 }
                 .cast-grid-about-btn {
-                    position: absolute;
-                    bottom: 10px; left: 10px; right: 10px;
-                    background: rgba(0,0,0,0.65);
-                    border: 1px solid rgba(212,168,83,0.55);
+                    display: block;
+                    width: 100%;
+                    background: rgba(212,168,83,0.1);
+                    border: 1px solid rgba(212,168,83,0.45);
                     border-radius: 8px;
                     color: var(--accent-gold);
                     font-size: 0.72rem; font-weight: 700;
                     letter-spacing: 0.08em; text-align: center;
-                    padding: 9px 8px;
+                    padding: 10px 8px;
                     cursor: pointer;
-                    backdrop-filter: blur(6px);
-                    -webkit-backdrop-filter: blur(6px);
                     transition: background 0.2s, border-color 0.2s;
-                    min-height: 38px;
+                    min-height: 40px;
+                    margin-top: 8px;
                     -webkit-tap-highlight-color: transparent;
+                    touch-action: manipulation;
                 }
-                .cast-grid-card:active .cast-grid-about-btn {
-                    background: rgba(212,168,83,0.22);
+                .cast-grid-about-btn:active {
+                    background: rgba(212,168,83,0.28);
                     border-color: var(--accent-gold);
                 }
             `}</style>
@@ -625,19 +625,9 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                 <div
                                     key={member.id}
                                     className="cast-grid-card"
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-label={`${t('aboutButton')} ${member.name}`}
-                                    onClick={() => setSelectedMember(member)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' || e.key === ' ') {
-                                            e.preventDefault()
-                                            setSelectedMember(member)
-                                        }
-                                    }}
                                     style={{/* no animation — guaranteed visible on mobile */}}
                                 >
-                                    {/* Portrait photo area */}
+                                    {/* Portrait photo area — overflow:hidden clips only visuals, not button */}
                                     <div className="cast-grid-photo">
                                         {member.photoUrl ? (
                                             <>
@@ -687,18 +677,9 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                         }}>
                                             {tJobTitle(member.jobTitle)}
                                         </div>
-
-                                        {/* About button — always visible at bottom of photo */}
-                                        <button
-                                            className="cast-grid-about-btn"
-                                            style={{ zIndex: 4 }}
-                                            onClick={e => { e.stopPropagation(); setSelectedMember(member) }}
-                                        >
-                                            {t('aboutButton')} ›
-                                        </button>
                                     </div>
 
-                                    {/* Name plate */}
+                                    {/* Name plate + About button (outside overflow:hidden — fully tappable on iOS) */}
                                     <div style={{
                                         padding: '10px 10px 12px',
                                         background: 'linear-gradient(135deg, rgba(14,14,24,0.97), rgba(10,10,18,0.97))',
@@ -706,7 +687,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                     }}>
                                         <div style={{
                                             fontSize: '0.78rem', fontWeight: 800,
-                                            color: '#fff', lineHeight: 1.25, marginBottom: '3px',
+                                            color: '#fff', lineHeight: 1.25, marginBottom: '2px',
                                             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                         }}>{member.name}</div>
                                         {resolved.character && (
@@ -715,8 +696,17 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                                 color: 'rgba(212,168,83,0.75)',
                                                 letterSpacing: '0.04em',
                                                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                                marginBottom: '2px',
                                             }}>as {resolved.character}</div>
                                         )}
+                                        {/* About button — in normal flow, fully tappable on iOS */}
+                                        <button
+                                            className="cast-grid-about-btn"
+                                            onClick={e => { e.stopPropagation(); setSelectedMember(member) }}
+                                            onTouchEnd={e => { e.stopPropagation(); e.preventDefault(); setSelectedMember(member) }}
+                                        >
+                                            {t('aboutButton')} ›
+                                        </button>
                                     </div>
                                 </div>
                             )
