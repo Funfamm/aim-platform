@@ -144,13 +144,37 @@ export default function AdminEventsPage() {
         if (!confirm(`End "${title}"? All participants will be disconnected.`)) return
         setEnding(roomName); setError(null)
         try {
-            const res = await fetch('/api/livekit/rooms/end', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ roomName }) })
+            const res = await fetch('/api/livekit/rooms/end', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomName }),
+            })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to end room')
+
+            // 409 = already ended — treat as success (DB is correct, just refresh)
+            if (res.status === 409) {
+                showSuccess(`Room "${roomName}" was already ended — refreshing`)
+                await fetchEvents()
+                return
+            }
+
+            if (!res.ok) {
+                // Surface the real error text from the server rather than a generic message
+                throw new Error(data.error || `Server error (${res.status})`)
+            }
+
+            if (data.warning) {
+                // LiveKit couldn't delete the room but DB was updated — show as info
+                console.warn('[handleEnd]', data.warning)
+            }
+
             showSuccess(`Room "${roomName}" ended`)
             await fetchEvents()
-        } catch (err) { setError(err instanceof Error ? err.message : 'Failed to end room') }
-        finally { setEnding(null) }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to end room')
+        } finally {
+            setEnding(null)
+        }
     }
 
     const generateRoomName = () => {
