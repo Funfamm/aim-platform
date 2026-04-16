@@ -54,8 +54,12 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
     const stripRef = useRef<HTMLDivElement>(null)
     const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-    // Staggered entrance via IntersectionObserver
+    // Staggered entrance via IntersectionObserver.
+    // Fallback: mark ALL cards visible after 400ms in case IO doesn't fire
+    // (this happens inside overflow-x scroll containers on many mobile browsers).
     useEffect(() => {
+        const allIdxs = Array.from({ length: cast.length + 1 }, (_, i) => i)
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
@@ -66,10 +70,19 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     }
                 })
             },
-            { threshold: 0 }  // fire as soon as any pixel is visible (important for mobile)
+            { threshold: 0 }
         )
         cardRefs.current.forEach((el) => { if (el) observer.observe(el) })
-        return () => observer.disconnect()
+
+        // Fallback: after 400ms ensure every card is visible regardless
+        const fallback = setTimeout(() => {
+            setVisibleCards(new Set(allIdxs))
+        }, 400)
+
+        return () => {
+            observer.disconnect()
+            clearTimeout(fallback)
+        }
     }, [cast.length])
 
     // Rec 4: reset parallax map when cast list changes to avoid stale index accumulation
