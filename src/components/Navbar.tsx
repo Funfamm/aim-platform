@@ -364,29 +364,12 @@ export default function Navbar() {
                     <button
                         className="navbar-menu-btn"
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        aria-label={`Toggle menu${navUnread > 0 ? ` (${navUnread} unread notifications)` : ''}`}
+                        aria-label="Toggle menu"
                         style={{ position: 'relative' }}
                     >
                         <span></span>
                         <span></span>
                         <span></span>
-                        {navUnread > 0 && (
-                            <span
-                                aria-hidden="true"
-                                style={{
-                                    position: 'absolute',
-                                    top: '-3px',
-                                    right: '-3px',
-                                    width: '10px',
-                                    height: '10px',
-                                    borderRadius: '50%',
-                                    background: '#ef4444',
-                                    border: '2px solid var(--bg-primary)',
-                                    boxShadow: '0 0 6px rgba(239,68,68,0.8)',
-                                    animation: 'notif-pulse 1.8s ease-in-out infinite',
-                                }}
-                            />
-                        )}
                     </button>
                 </div>
             </nav>
