@@ -66,7 +66,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     }
                 })
             },
-            { threshold: 0.2 }
+            { threshold: 0 }  // fire as soon as any pixel is visible (important for mobile)
         )
         cardRefs.current.forEach((el) => { if (el) observer.observe(el) })
         return () => observer.disconnect()
@@ -144,6 +144,17 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                 }
                 .cast-card-img { transition: transform 0.5s cubic-bezier(0.22,1,0.36,1); }
                 .cast-card:hover .cast-card-img { transform: scale(1.08); }
+
+                /* On touch devices the hover overlay is always visible so the About button is tappable */
+                @media (hover: none) {
+                    .cast-hover-overlay {
+                        opacity: 1 !important;
+                        background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 55%, transparent 100%) !important;
+                    }
+                    .cast-about-btn {
+                        background: rgba(212,168,83,0.2) !important;
+                    }
+                }
 
                 /* ── Mobile ≤ 640px ── */
                 @media (max-width: 640px) {
@@ -357,17 +368,21 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                             zIndex: 3,
                                         }} />
 
-                                        {/* Hover overlay with About button */}
-                                        <div style={{
-                                            position: 'absolute', inset: 0, zIndex: 4,
-                                            background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
-                                            display: 'flex', flexDirection: 'column',
-                                            justifyContent: 'flex-end', padding: '14px 12px',
-                                            opacity: isHovered ? 1 : 0,
-                                            transition: 'opacity 0.25s ease',
-                                        }}>
+                                        {/* Hover overlay with About button — always visible on touch devices via CSS */}
+                                        <div
+                                            className="cast-hover-overlay"
+                                            style={{
+                                                position: 'absolute', inset: 0, zIndex: 4,
+                                                background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 60%, transparent 100%)',
+                                                display: 'flex', flexDirection: 'column',
+                                                justifyContent: 'flex-end', padding: '14px 12px',
+                                                opacity: isHovered ? 1 : 0,
+                                                transition: 'opacity 0.25s ease',
+                                            }}
+                                        >
                                             <button
-                                                onClick={() => setSelectedMember(member)}
+                                                className="cast-about-btn"
+                                                onClick={(e) => { e.stopPropagation(); setSelectedMember(member) }}
                                                 style={{
                                                     background: 'rgba(212,168,83,0.15)',
                                                     border: '1px solid rgba(212,168,83,0.6)',
