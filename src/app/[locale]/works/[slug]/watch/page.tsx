@@ -60,15 +60,26 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
 
     if (!project) notFound()
 
-    // Record watch history
+    // Record watch history — upsert on the most recent existing row so we
+    // never overwrite completePct (resume position) with a blank new record.
     try {
-        await prisma.watchHistory.create({
-            data: {
-                userId: session.userId,
-                projectId: project.id,
-            },
+        const existing = await prisma.watchHistory.findFirst({
+            where: { userId: session.userId, projectId: project.id },
+            orderBy: { watchedAt: 'desc' },
+            select: { id: true },
         })
-    } catch { /* ignore duplicates or errors */ }
+        if (existing) {
+            // Touch the timestamp so it surfaces in "recently watched" lists
+            await prisma.watchHistory.update({
+                where: { id: existing.id },
+                data: { watchedAt: new Date() },
+            })
+        } else {
+            await prisma.watchHistory.create({
+                data: { userId: session.userId, projectId: project.id },
+            })
+        }
+    } catch { /* ignore errors */ }
 
     // If no film URL, redirect back to project page
     if (!project.filmUrl && project.episodes.length === 0) {

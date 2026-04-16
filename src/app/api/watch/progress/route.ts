@@ -28,7 +28,11 @@ export async function GET(req: NextRequest) {
 
     try {
         const record = await prisma.watchHistory.findFirst({
-            where: { userId: session.userId, projectId },
+            where: {
+                userId: session.userId,
+                projectId,
+                completePct: { not: null },  // skip blank rows created on page load
+            },
             orderBy: { watchedAt: 'desc' },
             select: { completePct: true },
         })
