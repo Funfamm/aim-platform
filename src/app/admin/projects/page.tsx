@@ -322,16 +322,18 @@ export default function AdminProjectsPage() {
         const isRunning = subtitlePhase[pid] === 'transcribing' || subtitlePhase[pid] === 'translating'
         if (isRunning) return
 
+        // Clear any previous error so stale messages don't persist on retry
+        setError('')
+
         const isResume = translateStatus[pid] === 'partial'
 
         if (!isResume) {
-            const { blocked, hostname: filmHost } = isBlockedStreamingUrl(filmUrl)
-            if (blocked) {
-                setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
-                setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
-                setSubtitleStatus(s => ({ ...s, [pid]: '❌ Streaming URL not supported' }))
-                setError('❌ Cannot transcribe from ' + filmHost + ' — streaming platforms block browser access via CORS. Upload the film directly using the Full Film uploader, then try again.')
-                return
+            // Note: we no longer block streaming URLs here — transcribeVideo will
+            // try a direct fetch first then fall back to the server-side proxy,
+            // so CORS-restricted hosts can still be transcribed.
+            const { hostname: filmHost } = isBlockedStreamingUrl(filmUrl)
+            if (filmHost) {
+                setSubtitleStatus(s => ({ ...s, [pid]: `⏳ Routing via server proxy for ${filmHost}...` }))
             }
             setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
             setSubtitleStatus(s => ({ ...s, [pid]: '⏳ Loading audio engine...' }))
@@ -358,8 +360,11 @@ export default function AdminProjectsPage() {
                 })
                 setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
                 setSubtitleStatus(s => ({ ...s, [pid]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
+                setError('') // clear any prior error after success
             } catch (err) {
-                setSubtitleStatus(s => ({ ...s, [pid]: `❌ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
+                const msg = err instanceof Error ? err.message : 'error'
+                setSubtitleStatus(s => ({ ...s, [pid]: `❌ Transcription failed: ${msg}` }))
+                setError(`Transcription failed: ${msg}`)
                 setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
                 setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
                 return
@@ -1150,9 +1155,18 @@ export default function AdminProjectsPage() {
 
                                 {error && (
                                     <div style={{
+                                        display: 'flex', alignItems: 'flex-start', gap: '8px',
                                         fontSize: '0.85rem', fontWeight: 600, padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)',
                                         color: 'var(--error)', background: 'rgba(239,68,68,0.1)',
-                                    }}>✗ {error}</div>
+                                    }}>
+                                        <span style={{ flex: 1 }}>✗ {error}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setError('')}
+                                            aria-label="Dismiss error"
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)', fontSize: '1rem', lineHeight: 1, padding: '0 2px', flexShrink: 0 }}
+                                        >✕</button>
+                                    </div>
                                 )}
 
                                 <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)' }}>
