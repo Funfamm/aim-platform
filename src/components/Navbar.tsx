@@ -186,19 +186,16 @@ export default function Navbar() {
                         ))}
                     </ul>
 
-                    {/* Desktop Search Bar */}
-                    {settings?.searchBetaEnabled && (
-                        <div className="navbar-desktop-only mr-4">
-                            <SearchBar />
-                        </div>
-                    )}
-
-                    {/* Right actions — Bell + Language hidden on mobile via CSS */}
+                    {/* Right actions */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {/* Bell — shows in-app notifications for logged-in users */}
-                        <div className="navbar-desktop-only">
-                            <NotificationBell />
-                        </div>
+                        {/* Bell — shows in-app notifications for logged-in users (desktop + mobile) */}
+                        <NotificationBell />
+                        {/* Desktop Search Bar */}
+                        {settings?.searchBetaEnabled && (
+                            <div className="navbar-desktop-only mr-4">
+                                <SearchBar />
+                            </div>
+                        )}
                         {/* Mobile Search Button */}
                         {settings?.searchBetaEnabled && (
                             <button

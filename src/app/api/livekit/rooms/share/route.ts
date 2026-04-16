@@ -287,7 +287,7 @@ export async function POST(req: Request) {
                 select: { id: true },
             })
             targeted = selectedUsers.length
-            await Promise.allSettled(
+            const results = await Promise.allSettled(
                 selectedUsers.map(u => notifyUser({
                     userId:       u.id,
                     type:         'announcement',
@@ -299,6 +299,16 @@ export async function POST(req: Request) {
                     translations,
                 }))
             )
+            // Log any per-user delivery failures for server-side debugging
+            results.forEach((r, i) => {
+                if (r.status === 'rejected') {
+                    console.error(`[rooms/share] notifyUser failed for userId=${selectedUsers[i]?.id}:`, r.reason)
+                }
+            })
+            const failed = results.filter(r => r.status === 'rejected').length
+            if (failed > 0) {
+                console.warn(`[rooms/share] users tab: ${targeted - failed}/${targeted} delivered, ${failed} failed`)
+            }
         } else {
             // target === 'emails': external invites — plain email, English only
             const { sendEmail } = await import('@/lib/mailer')

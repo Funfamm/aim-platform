@@ -1218,6 +1218,13 @@
     "signInDesc": "You need to be signed in to join this live event.",
     "signInCta": "Sign In to Join ->",
     "endedTitle": "This event has ended",
-    "endedDesc": "Thank you for attending. Check back for future events."
+    "endedDesc": "Thank you for attending. Check back for future events.",
+    "home": "Home",
+    "liveRoom": "Live Room",
+    "room": "Room",
+    "typeGeneral": "Live Event",
+    "typeAudition": "Live Audition",
+    "typeQA": "Q&A Session",
+    "typeWatchParty": "Watch Party"
   }
 }

@@ -57,23 +57,25 @@ export default async function EventPage({ params }: EventPageProps) {
     if (isAdmin) role = 'admin'
     else if (isHost) role = 'host'
     else if (event.eventType === 'audition' && event.castingCallId && session?.userId) {
-        // Check applicant status server-side so the token route receives the correct role
-        // and permissions.ts can allow entry without the "not the applicant" error
+        // Grant 'speaker' only to the actual applicant; everyone else stays 'viewer'.
+        // permissions.ts now allows viewers into audition rooms so non-applicants
+        // can watch without being rejected at the token route.
         const application = await prisma.application.findFirst({
             where: { castingCallId: event.castingCallId, userId: session.userId },
             select: { id: true },
         })
         if (application) role = 'speaker'
+        // else: role stays 'viewer' — will be allowed by permissions.ts
     }
 
     const eventEnded = event.status === 'ended'
     const isAuthenticated = !!session?.userId
 
     const eventTypeLabels: Record<string, string> = {
-        general: 'Live Event',
-        audition: 'Live Audition',
-        q_and_a: 'Q&A Session',
-        watch_party: 'Watch Party',
+        general: t('typeGeneral'),
+        audition: t('typeAudition'),
+        q_and_a: t('typeQA'),
+        watch_party: t('typeWatchParty'),
     }
 
     return (
@@ -471,7 +473,7 @@ export default async function EventPage({ params }: EventPageProps) {
             <main className="event-page">
                 <div className="event-page-header">
                     <nav className="event-breadcrumb" aria-label="Breadcrumb">
-                        <Link href="/">Home</Link>
+                        <Link href="/">{t('home')}</Link>
                         <span>/</span>
                         {event.project && (
                             <>
@@ -479,7 +481,7 @@ export default async function EventPage({ params }: EventPageProps) {
                                 <span>/</span>
                             </>
                         )}
-                        <span style={{ color: 'rgba(255,255,255,0.6)' }}>Live Room</span>
+                        <span style={{ color: 'rgba(255,255,255,0.6)' }}>{t('liveRoom')}</span>
                     </nav>
                     <span className="event-type-badge">
                         🎬 {eventTypeLabels[event.eventType] ?? 'Live'}
@@ -490,7 +492,7 @@ export default async function EventPage({ params }: EventPageProps) {
                     <h1 className="event-title">{event.title}</h1>
                     {/* Only show internal room name to admins/hosts — not to public viewers */}
                     {(isAdmin || isHost) && (
-                        <p className="event-subtitle">Room: <code>{roomName}</code></p>
+                        <p className="event-subtitle">{t('room')}: <code>{roomName}</code></p>
                     )}
                 </div>
 

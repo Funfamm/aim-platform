@@ -38,9 +38,18 @@ export async function canJoinRoom(
     if (!event) return { allowed: false, reason: 'Room not found' }
     if (event.status === 'ended') return { allowed: false, reason: 'Event has ended' }
 
-    // ── Premium private audition rooms ──
-    // Only the applicant who applied to the linked casting call may enter.
+    // ── Audition rooms ──
+    // For rooms with a castingCallId:
+    //   - 'viewer' role → always allowed (invited guests, observers)
+    //   - 'speaker'/'host' roles → only the applicant for this casting call
+    // For rooms WITHOUT a castingCallId:
+    //   → any authenticated user may join as viewer
     if (event.eventType === 'audition' && event.castingCallId) {
+        // Viewers (non-publishing) are always welcome — they may be observers or
+        // admins who were assigned role='viewer' by the page for some other reason.
+        if (role === 'viewer') return { allowed: true }
+
+        // speaker/host must have an application for the linked casting call
         const application = await prisma.application.findFirst({
             where: {
                 castingCallId: event.castingCallId,
@@ -49,7 +58,10 @@ export async function canJoinRoom(
             select: { id: true },
         })
         if (!application) {
-            return { allowed: false, reason: 'You must have an active application for this casting call to join the audition room.' }
+            return {
+                allowed: false,
+                reason: 'You must have an active application for this casting call to participate as a speaker. You can still join as a viewer — please use the viewer link.',
+            }
         }
         return { allowed: true }
     }
