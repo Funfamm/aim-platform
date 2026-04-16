@@ -109,14 +109,14 @@ export default function RollRow({ title, titleI18n, icon, projects, locale, onCa
             >
                 <style>{`.movie-strip::-webkit-scrollbar{display:none}`}</style>
                 {projects.map(project => (
-                    <div key={project.id} style={{ scrollSnapAlign: 'start' }}>
-                        <MovieCard
-                            project={project}
-                            locale={locale}
-                            onHover={onCardHover}
-                            onHoverEnd={onCardHoverEnd}
-                        />
-                    </div>
+                    <MovieCard
+                        key={project.id}
+                        project={project}
+                        locale={locale}
+                        onHover={onCardHover}
+                        onHoverEnd={onCardHoverEnd}
+                        snapAlign
+                    />
                 ))}
             </div>
         </div>

@@ -27,12 +27,13 @@ export interface ProjectCard {
 interface MovieCardProps {
     project: ProjectCard
     locale: string
+    snapAlign?: boolean
     onHover?: (project: ProjectCard, rect: DOMRect) => void
     onHoverEnd?: () => void
 }
 
 
-export default function MovieCard({ project, locale, onHover, onHoverEnd }: MovieCardProps) {
+export default function MovieCard({ project, locale, snapAlign, onHover, onHoverEnd }: MovieCardProps) {
     const [imgLoaded, setImgLoaded] = useState(false)
     const [imgError, setImgError] = useState(false)
     const t = useTranslations('works')
@@ -66,12 +67,17 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
         : { href: `/works/${project.slug}`, label: `${t('details')} →`,          color: '#b0a998', bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.12)' }
 
     return (
+        <Link
+            href={`/works/${project.slug}`}
+            onClick={trackView}
+            style={{ textDecoration: 'none', color: 'inherit', display: 'block', flexShrink: 0, scrollSnapAlign: snapAlign ? 'start' : undefined }}
+            aria-label={`View ${loc.title}`}
+        >
         <div
             className="movie-card-premium press-feedback"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={onHoverEnd}
             style={{
-                flexShrink: 0,
                 width: '155px',
                 borderRadius: '12px',
                 overflow: 'hidden',
@@ -81,7 +87,6 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                 WebkitBackdropFilter: 'blur(12px)',
                 border: '1px solid rgba(255,255,255,0.07)',
                 boxShadow: '0 4px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04)',
-                /* transition handled by .press-feedback */
             }}
         >
             {/* ── Cover image — taller portrait aspect ── */}
@@ -171,19 +176,16 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                 borderTop: '1px solid rgba(255,255,255,0.06)',
                 background: 'linear-gradient(180deg, rgba(8,9,18,0.6) 0%, rgba(6,7,14,0.85) 100%)',
             }}>
-                {/* Title */}
-                <Link
-                    href={`/works/${project.slug}`}
-                    onClick={trackView}
+                {/* Title — no need for a separate Link, outer wrapper handles click */}
+                <div
                     style={{
                         display: 'block',
                         fontSize: '0.78rem', fontWeight: 700, color: '#fff',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                        textDecoration: 'none',
                         marginBottom: '3px',
                         lineHeight: 1.3,
                     }}
-                >{loc.title}</Link>
+                >{loc.title}</div>
 
                 {/* Genre pills */}
                 {loc.genre && (
@@ -226,5 +228,6 @@ export default function MovieCard({ project, locale, onHover, onHoverEnd }: Movi
                 >{primaryAction.label}</Link>
             </div>
         </div>
+        </Link>
     )
 }
