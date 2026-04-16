@@ -312,6 +312,118 @@ export default function AdminProjectsPage() {
         })
     }
 
+
+    /**
+     * Generate or resume multi-language subtitles for a project.
+     * Extracted from inline card handler so it can be called from the edit modal.
+     */
+    const handleGenerateSubtitles = async (pid: string, filmUrl: string) => {
+        const isRunning = subtitlePhase[pid] === 'transcribing' || subtitlePhase[pid] === 'translating'
+        if (isRunning) return
+
+        const isResume = translateStatus[pid] === 'partial'
+
+        if (!isResume) {
+            const { blocked, hostname: filmHost } = isBlockedStreamingUrl(filmUrl)
+            if (blocked) {
+                setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
+                setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
+                setSubtitleStatus(s => ({ ...s, [pid]: 'âŒ Streaming URL not supported' }))
+                setError('âŒ Cannot transcribe from ' + filmHost + ' â€” streaming platforms block browser access via CORS. Upload the film directly using the Full Film uploader, then try again.')
+                return
+            }
+            setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
+            setSubtitleStatus(s => ({ ...s, [pid]: 'â³ Loading audio engine...' }))
+            setSubtitleProgress(s => ({ ...s, [pid]: 2 }))
+            try {
+                const result = await transcribeVideo(filmUrl, (status, detail) => {
+                    setSubtitleStatus(s => ({ ...s, [pid]: `â³ ${detail || status}` }))
+                    const phaseProgress: Record<string, number> = {
+                        'loading-ffmpeg': 5, 'extracting-audio': 15,
+                        'loading-model': 25, 'transcribing': 42,
+                    }
+                    setSubtitleProgress(s => ({ ...s, [pid]: phaseProgress[status] || s[pid] || 0 }))
+                })
+                const qcSummary = runQC(result.segments)
+                setSubtitleStatus(s => ({ ...s, [pid]: 'ðŸ’¾ Saving transcript...' }))
+                setSubtitleProgress(s => ({ ...s, [pid]: 48 }))
+                await fetch('/api/admin/subtitles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: pid, language: 'en', segments: result.segments,
+                        transcribedWith: 'whisper-medium', qcIssues: qcSummary.results, status: 'pending',
+                    }),
+                })
+                setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
+                setSubtitleStatus(s => ({ ...s, [pid]: `âœ… Transcript saved â€” ${formatQCSummary(qcSummary)}` }))
+            } catch (err) {
+                setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
+                setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
+                setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
+                return
+            }
+        } else {
+            setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
+        }
+
+        setSubtitlePhase(s => ({ ...s, [pid]: 'translating' }))
+        setSubtitleStatus(s => ({ ...s, [pid]: 'ðŸŒ Starting server translation...' }))
+        try {
+            const res = await fetch('/api/admin/subtitles/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: pid }),
+            })
+            if (!res.ok || !res.body) {
+                const err = await res.json().catch(() => ({}))
+                throw new Error((err as {error?: string}).error || `HTTP ${res.status}`)
+            }
+            const reader = res.body.getReader()
+            const decoder = new TextDecoder()
+            let buffer = ''
+            let completed = 0
+            while (true) {
+                const { done, value } = await reader.read()
+                if (done) break
+                buffer += decoder.decode(value, { stream: true })
+                const events = buffer.split('\n\n')
+                buffer = events.pop() || ''
+                for (const event of events) {
+                    const line = event.replace(/^data: /, '').trim()
+                    if (!line) continue
+                    try {
+                        const data = JSON.parse(line) as {
+                            phase?: string; lang?: string; langName?: string;
+                            pct?: number; total?: number; completed?: number;
+                            allDone?: boolean; error?: string;
+                        }
+                        if (data.phase === 'translating' && data.langName) {
+                            setSubtitleStatus(s => ({ ...s, [pid]: `ðŸŒ Translating ${data.langName}...` }))
+                            setSubtitleProgress(s => ({ ...s, [pid]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
+                        } else if (data.phase === 'done') {
+                            completed++
+                            setTranslationCount(s => ({ ...s, [pid]: completed + 1 }))
+                        } else if (data.phase === 'complete') {
+                            const allDone = data.allDone ?? false
+                            setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
+                            setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `âœ“ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `âœ“ ${completed + 1} languages ready` }))
+                            setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
+                            setTranslateStatus(s => ({ ...s, [pid]: allDone ? 'complete' : 'partial' }))
+                            setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
+                        } else if (data.phase === 'error' && data.lang) {
+                            setSubtitleStatus(s => ({ ...s, [pid]: `âš ï¸ ${data.lang} failed â€” continuing...` }))
+                        }
+                    } catch { /* malformed event */ }
+                }
+            }
+        } catch (err) {
+            setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
+            setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
+            setTranslateStatus(s => ({ ...s, [pid]: 'partial' }))
+        }
+    }
+
     const handleDelete = async (id: string, title: string) => {
         if (!confirm(`Delete "${title}"? This will also delete all its casting calls and applications.`)) return
         setDeleting(id)
@@ -691,203 +803,13 @@ export default function AdminProjectsPage() {
                                                 )
                                             })()}
                                             <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                                                {/* Generate Subtitles / Resume button */}
-                                                {project.filmUrl && (
-                                                    <button
-                                                        onClick={async () => {
-                                                            const pid = project.id
-                                                            const isRunning = subtitlePhase[pid] === 'transcribing' || subtitlePhase[pid] === 'translating'
-                                                            if (isRunning) return
-
-                                                            const isResume = translateStatus[pid] === 'partial'
-
-                                                            if (!isResume) {
-                                                                // ── Step 1: URL compatibility guard (OCP: host list lives in config/subtitles.ts) ─
-                                                                const { blocked, hostname: filmHost } = isBlockedStreamingUrl(project.filmUrl!)
-                                                                if (blocked) {
-                                                                    setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
-                                                                    setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: '❌ Streaming URL not supported' }))
-                                                                    setError('❌ Cannot transcribe from ' + filmHost + ' — streaming platforms block browser access via CORS. Upload the film directly using the Full Film uploader, then try again.')
-                                                                    return
-                                                                }
-                                                                // ── Step 2: Browser transcription (Whisper-medium) ──────────────
-                                                                setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
-                                                                setSubtitleStatus(s => ({ ...s, [pid]: '⏳ Loading audio engine...' }))
-                                                                setSubtitleProgress(s => ({ ...s, [pid]: 2 }))
-                                                                try {
-                                                                    const result = await transcribeVideo(project.filmUrl!, (status, detail) => {
-                                                                        setSubtitleStatus(s => ({ ...s, [pid]: `⏳ ${detail || status}` }))
-                                                                        const phaseProgress: Record<string, number> = {
-                                                                            'loading-ffmpeg': 5, 'extracting-audio': 15,
-                                                                            'loading-model': 25, 'transcribing': 42,
-                                                                        }
-                                                                        setSubtitleProgress(s => ({ ...s, [pid]: phaseProgress[status] || s[pid] || 0 }))
-                                                                    })
-
-                                                                    // Run QC on English track
-                                                                    const qcSummary = runQC(result.segments)
-
-                                                                    // Save English segments to DB
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: '💾 Saving transcript...' }))
-                                                                    setSubtitleProgress(s => ({ ...s, [pid]: 48 }))
-                                                                    await fetch('/api/admin/subtitles', {
-                                                                        method: 'POST',
-                                                                        headers: { 'Content-Type': 'application/json' },
-                                                                        body: JSON.stringify({
-                                                                            projectId: pid,
-                                                                            language: 'en',
-                                                                            segments: result.segments,
-                                                                            transcribedWith: 'whisper-medium',
-                                                                            qcIssues: qcSummary.results,
-                                                                            status: 'pending',
-                                                                        }),
-                                                                    })
-                                                                    setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
-                                                                } catch (err) {
-                                                                    setSubtitleStatus(s => ({ ...s, [pid]: `❌ Transcription failed: ${err instanceof Error ? err.message : 'error'}` }))
-                                                                    setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
-                                                                    setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
-                                                                    return
-                                                                }
-                                                            } else {
-                                                                setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
-                                                            }
-
-                                                            // â”€â”€ Step 2: Server-side SSE translation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                                                            setSubtitlePhase(s => ({ ...s, [pid]: 'translating' }))
-                                                            setSubtitleStatus(s => ({ ...s, [pid]: '🌍 Starting server translation...' }))
-
-                                                            try {
-                                                                const res = await fetch('/api/admin/subtitles/translate', {
-                                                                    method: 'POST',
-                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ projectId: pid }),
-                                                                })
-
-                                                                if (!res.ok || !res.body) {
-                                                                    const err = await res.json().catch(() => ({}))
-                                                                    throw new Error((err as {error?: string}).error || `HTTP ${res.status}`)
-                                                                }
-
-                                                                const reader = res.body.getReader()
-                                                                const decoder = new TextDecoder()
-                                                                let buffer = ''
-                                                                let completed = 0
-
-                                                                while (true) {
-                                                                    const { done, value } = await reader.read()
-                                                                    if (done) break
-                                                                    buffer += decoder.decode(value, { stream: true })
-                                                                    const events = buffer.split('\n\n')
-                                                                    buffer = events.pop() || ''
-
-                                                                    for (const event of events) {
-                                                                        const line = event.replace(/^data: /, '').trim()
-                                                                        if (!line) continue
-                                                                        try {
-                                                                            const data = JSON.parse(line) as {
-                                                                                phase?: string; lang?: string; langName?: string;
-                                                                                pct?: number; total?: number; completed?: number;
-                                                                                allDone?: boolean; error?: string;
-                                                                            }
-                                                                            if (data.phase === 'translating' && data.langName) {
-                                                                                setSubtitleStatus(s => ({ ...s, [pid]: `🌍 Translating ${data.langName}...` }))
-                                                                                setSubtitleProgress(s => ({ ...s, [pid]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
-                                                                            } else if (data.phase === 'done') {
-                                                                                completed++
-                                                                                setTranslationCount(s => ({ ...s, [pid]: completed + 1 })) // +1 for English
-                                                                            } else if (data.phase === 'complete') {
-                                                                                const allDone = data.allDone ?? false
-                                                                                setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
-                                                                                setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `✓ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `✓ ${completed + 1} languages ready` }))
-                                                                                setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
-                                                                                setTranslateStatus(s => ({ ...s, [pid]: allDone ? 'complete' : 'partial' }))
-                                                                                setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
-                                                                            } else if (data.phase === 'error' && data.lang) {
-                                                                                setSubtitleStatus(s => ({ ...s, [pid]: `âš ï¸ ${data.lang} failed — continuing...` }))
-                                                                            }
-                                                                        } catch { /* malformed event */ }
-                                                                    }
-                                                                }
-                                                            } catch (err) {
-                                                                setSubtitleStatus(s => ({ ...s, [pid]: `❌ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
-                                                                setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
-                                                                setTranslateStatus(s => ({ ...s, [pid]: 'partial' }))
-                                                            }
-                                                        }}
-                                                        disabled={subtitlePhase[project.id] === 'transcribing' || subtitlePhase[project.id] === 'translating'}
-                                                        className="btn btn-ghost btn-sm"
-                                                        title={
-                                                            translateStatus[project.id] === 'partial'
-                                                                ? 'Resume translation (some languages already done)'
-                                                                : translationCount[project.id] >= TOTAL_SUBTITLE_LANGS
-                                                                    ? 'All subtitles generated — click to regenerate'
-                                                                    : 'Generate multi-language subtitles'
-                                                        }
-                                                        style={{
-                                                            fontSize: '0.65rem', fontWeight: 700,
-                                                            color: subtitlePhase[project.id] === 'done'
-                                                                ? 'var(--accent-gold)'
-                                                                : translateStatus[project.id] === 'partial'
-                                                                    ? 'var(--warning, #f59e0b)'
-                                                                    : undefined,
-                                                        }}
-                                                    >
-                                                        {subtitlePhase[project.id] === 'transcribing' ? '⏳'
-                                                            : subtitlePhase[project.id] === 'translating' ? '🌍'
-                                                            : translateStatus[project.id] === 'partial' ? '↻ Resume'
-                                                            : subtitlePhase[project.id] === 'done' ? 'CC ✓'
-                                                            : 'CC'}
-                                                    </button>
-                                                )}
-                                                {/* Manual SRT/VTT upload — bypasses browser transcription */}
-                                                {project.filmUrl && (
-                                                    <label
-                                                        title="Upload an existing SRT or VTT transcript instead of auto-transcribing"
-                                                        className="btn btn-ghost btn-sm"
-                                                        style={{
-                                                            fontSize: '0.65rem', fontWeight: 700,
-                                                            cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
-                                                        }}
-                                                    >
-                                                        📄 SRT
-                                                        <input
-                                                            type="file"
-                                                            accept=".srt,.vtt"
-                                                            style={{ display: 'none' }}
-                                                            onChange={async e => {
-                                                                const file = e.target.files?.[0]
-                                                                if (!file) return
-                                                                e.target.value = '' // allow re-uploading same file
-                                                                await handleSrtUpload(project.id, file)
-                                                            }}
-                                                        />
-                                                    </label>
-                                                )}
-                                                {/* Review button — appears when subtitles exist */}
-                                                {project.filmUrl && (
-                                                    translateStatus[project.id] === 'complete' ||
-                                                    translateStatus[project.id] === 'partial' ||
-                                                    (translationCount[project.id] ?? 0) > 0
-                                                ) && (
-                                                    <button
-                                                        onClick={() => openReview(project.id, project.title)}
-                                                        className="btn btn-ghost btn-sm"
-                                                        title="Review subtitles and QC report before publishing"
-                                                        style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)', opacity: 0.85 }}
-                                                    >
-                                                        🔍 Review
-                                                    </button>
-                                                )}
                                                 <button
                                                     onClick={() => openCastModal(project.id, project.title)}
                                                     className="btn btn-ghost btn-sm"
                                                     title="Manage cast & crew for this project"
                                                     style={{ fontSize: '0.65rem', fontWeight: 700 }}
                                                 >
-                                                    🎭 Cast
+                                                    ðŸŽ­ Cast
                                                 </button>
                                                 <button onClick={() => openEdit(project)} className="btn btn-ghost btn-sm">Edit</button>
                                                 <button
@@ -896,36 +818,10 @@ export default function AdminProjectsPage() {
                                                     className="btn btn-ghost btn-sm"
                                                     style={{ color: 'var(--error)' }}
                                                 >
-                                                    {deleting === project.id ? '...' : '✕'}
+                                                    {deleting === project.id ? '...' : 'âœ•'}
                                                 </button>
                                         </div>
                                         </div>
-                                        {/* Progress bar for subtitle generation */}
-                                        {subtitleProgress[project.id] > 0 && subtitleProgress[project.id] < 100 && (
-                                            <div style={{ marginTop: '6px' }}>
-                                                <div style={{
-                                                    height: '4px', borderRadius: '2px',
-                                                    background: 'rgba(255,255,255,0.08)',
-                                                    overflow: 'hidden',
-                                                }}>
-                                                    <div style={{
-                                                        height: '100%', borderRadius: '2px',
-                                                        background: 'linear-gradient(90deg, var(--accent-gold), #e8c547)',
-                                                        width: `${subtitleProgress[project.id]}%`,
-                                                        transition: 'width 0.4s ease',
-                                                        boxShadow: '0 0 8px rgba(212,168,83,0.4)',
-                                                    }} />
-                                                </div>
-                                                <div style={{
-                                                    fontSize: '0.6rem', color: 'var(--text-tertiary)',
-                                                    marginTop: '2px', display: 'flex',
-                                                    justifyContent: 'space-between',
-                                                }}>
-                                                    <span>{subtitleStatus[project.id]?.replace(/^[⏳🌍💾✓❌]\s?/, '')}</span>
-                                                    <span>{subtitleProgress[project.id]}%</span>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             )
@@ -1128,6 +1024,67 @@ export default function AdminProjectsPage() {
                                         </div>
                                     </div>
                                 </div>
+
+
+                                {/* â€”â€” Subtitles & Translation â€”â€” */}
+                                {editingId && (() => {
+                                    const pid = editingId
+                                    const project = projects.find(p => p.id === pid)
+                                    const filmUrl = project?.filmUrl || form.filmUrl
+                                    if (!filmUrl) return null
+                                    const count = translationCount[pid] ?? 0
+                                    const isFull = count >= TOTAL_SUBTITLE_LANGS
+                                    const isPartial = count > 0 && count < TOTAL_SUBTITLE_LANGS
+                                    const phase = subtitlePhase[pid]
+                                    const isRunning = phase === 'transcribing' || phase === 'translating'
+                                    const progress = subtitleProgress[pid] ?? 0
+                                    const statusMsg = subtitleStatus[pid] || ''
+                                    return (
+                                        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
+                                            <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                ðŸŒ Subtitles & Translation
+                                                <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 8px', borderRadius: '99px', textTransform: 'none', background: isFull ? 'rgba(52,211,153,0.1)' : isPartial ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${isFull ? 'rgba(52,211,153,0.3)' : isPartial ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`, color: isFull ? '#34d399' : isPartial ? '#f59e0b' : 'var(--text-tertiary)' }}>
+                                                    {isFull ? `âœ… ${count}/${TOTAL_SUBTITLE_LANGS}` : `${count}/${TOTAL_SUBTITLE_LANGS} langs`}
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>
+                                                {isFull ? 'All languages have been translated. You may regenerate if needed.'
+                                                    : isPartial ? `${count} of ${TOTAL_SUBTITLE_LANGS} languages translated. Click CC to translate the remaining â€” already translated languages are preserved.`
+                                                    : 'Generate multi-language subtitles for this film. Click CC to auto-transcribe and translate, or upload an existing SRT/VTT file.'}
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 'var(--space-md)' }}>
+                                                <button type="button" onClick={() => handleGenerateSubtitles(pid, filmUrl)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
+                                                    {phase === 'transcribing' ? 'â³ Transcribingâ€¦' : phase === 'translating' ? 'ðŸŒ Translatingâ€¦' : translateStatus[pid] === 'partial' ? 'â†» Resume Translation' : isFull ? 'CC âœ“ Regenerate' : 'ðŸŽ¬ Generate Subtitles (CC)'}
+                                                </button>
+                                                <label title="Upload an existing SRT or VTT transcript" className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
+                                                    ðŸ“„ Upload SRT / VTT
+                                                    <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file) }} />
+                                                </label>
+                                                {(translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial' || count > 0) && (
+                                                    <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
+                                                        ðŸ” Review Subtitles
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {progress > 0 && progress < 100 && (
+                                                <div style={{ marginBottom: 'var(--space-md)' }}>
+                                                    <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                                                        <div style={{ height: '100%', borderRadius: '3px', background: 'linear-gradient(90deg, var(--accent-gold), #e8c547)', width: `${progress}%`, transition: 'width 0.4s ease', boxShadow: '0 0 8px rgba(212,168,83,0.4)' }} />
+                                                    </div>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                                                        <span>{statusMsg}</span>
+                                                        <span>{progress}%</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {(progress === 0 || progress >= 100) && statusMsg && (
+                                                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', marginBottom: 'var(--space-md)' }}>
+                                                    {statusMsg}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })()}
 
                                 {/* â”€â”€ Movie Rolls Assignment â”€â”€ */}
                                 <div
@@ -1621,10 +1578,10 @@ export default function AdminProjectsPage() {
                 translatedCount={editingId ? (translationCount[editingId] ?? 0) : 0}
                 saving={saving}
                 onCancel={() => {
-                    // Close both the warning AND the edit form so admin
-                    // lands on the project card where the CC button lives.
+                    // Close the warning â€” keep the modal open so admin
+                    // can use the CC button inside the modal to complete translations.
                     setShowPublishWarning(false)
-                    setShowModal(false)
+                    // (modal stays open)
                 }}
                 onConfirm={handlePublishOverride}
             />
