@@ -56,71 +56,75 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
             .catch(() => { })
     }, [])
 
-    // Video crossfade logic (same pattern as Works page)
+    // Start the first video once loaded
     useEffect(() => {
         if (videos.length === 0) return
         const videoA = videoARef.current
         if (!videoA) return
 
         videoA.src = videos[0].url
+        videoA.load()
         videoA.play().catch(() => { })
+        setActiveSlot('A')
 
-        const scheduleNext = (duration: number) => {
-            if (timerRef.current) clearTimeout(timerRef.current)
-            const switchTime = Math.max((duration - 1.5) * 1000, 3000)
-            timerRef.current = setTimeout(() => {
-                const nextIdx = (currentIdx + 1) % videos.length
-                const nextSlot = activeSlot === 'A' ? 'B' : 'A'
-                const nextRef = nextSlot === 'A' ? videoARef : videoBRef
-                if (nextRef.current) {
-                    nextRef.current.src = videos[nextIdx].url
-                    nextRef.current.play().catch(() => { })
-                }
-                setActiveSlot(nextSlot)
-                setCurrentIdx(nextIdx)
-            }, switchTime)
+        // Schedule crossfade to next video (if multiple)
+        if (videos.length > 1) {
+            const durationMs = (videos[0].duration || 10) * 1000
+            timerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
         }
 
-        videoA.onloadedmetadata = () => scheduleNext(videoA.duration)
-        return () => { if (timerRef.current) clearTimeout(timerRef.current) }
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current)
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [videos])
 
-    useEffect(() => {
+    // Crossfade: preload next video in inactive slot, then swap
+    const crossfadeToNext = useCallback((prevIdx: number) => {
         if (videos.length <= 1) return
-        const currentRef = activeSlot === 'A' ? videoARef : videoBRef
-        const vid = currentRef.current
-        if (!vid) return
-        const scheduleNext = () => {
-            if (timerRef.current) clearTimeout(timerRef.current)
-            const switchTime = Math.max((vid.duration - 1.5) * 1000, 3000)
-            timerRef.current = setTimeout(() => {
-                const nextIdx = (currentIdx + 1) % videos.length
-                const nextSlot = activeSlot === 'A' ? 'B' : 'A'
-                const nextRef = nextSlot === 'A' ? videoARef : videoBRef
-                if (nextRef.current) {
-                    nextRef.current.src = videos[nextIdx].url
-                    nextRef.current.play().catch(() => { })
-                }
-                setActiveSlot(nextSlot)
-                setCurrentIdx(nextIdx)
-            }, switchTime)
-        }
-        vid.onloadedmetadata = () => scheduleNext()
-        return () => { if (timerRef.current) clearTimeout(timerRef.current) }
-    }, [activeSlot, currentIdx, videos])
 
+        const nextIdx = (prevIdx + 1) % videos.length
+        setCurrentIdx(nextIdx)
+
+        setActiveSlot(prev => {
+            const nextSlot = prev === 'A' ? 'B' : 'A'
+            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
+            if (nextVideo) {
+                nextVideo.src = videos[nextIdx].url
+                nextVideo.load()
+                nextVideo.play().catch(() => { })
+            }
+            return nextSlot
+        })
+
+        const durationMs = (videos[nextIdx].duration || 10) * 1000
+        if (timerRef.current) clearTimeout(timerRef.current)
+        timerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
+    }, [videos])
+
+    // Manual dot click
     const jumpToVideo = useCallback((idx: number) => {
         if (idx === currentIdx) return
-        const nextSlot = activeSlot === 'A' ? 'B' : 'A'
-        const nextRef = nextSlot === 'A' ? videoARef : videoBRef
-        if (nextRef.current) {
-            nextRef.current.src = videos[idx].url
-            nextRef.current.play().catch(() => { })
-        }
-        setActiveSlot(nextSlot)
         setCurrentIdx(idx)
-    }, [activeSlot, currentIdx, videos])
+
+        setActiveSlot(prev => {
+            const nextSlot = prev === 'A' ? 'B' : 'A'
+            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
+            if (nextVideo) {
+                nextVideo.src = videos[idx].url
+                nextVideo.load()
+                nextVideo.play().catch(() => { })
+            }
+            return nextSlot
+        })
+
+        // Reschedule auto-rotation from this video
+        if (videos.length > 1) {
+            const durationMs = (videos[idx].duration || 10) * 1000
+            if (timerRef.current) clearTimeout(timerRef.current)
+            timerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
+        }
+    }, [currentIdx, videos, crossfadeToNext])
 
     if (projects.length === 0) {
         return (
@@ -141,7 +145,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                 }}>
                     <video
                         ref={videoARef}
-                        autoPlay muted playsInline
+                        autoPlay muted playsInline loop
                         controlsList="nodownload"
                         onContextMenu={(e) => e.preventDefault()}
                         style={{
@@ -153,7 +157,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                     />
                     <video
                         ref={videoBRef}
-                        autoPlay muted playsInline
+                        autoPlay muted playsInline loop
                         controlsList="nodownload"
                         onContextMenu={(e) => e.preventDefault()}
                         style={{
@@ -265,7 +269,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
             }}>
                 <video
                     ref={videoARef}
-                    autoPlay muted playsInline
+                    autoPlay muted playsInline loop
                     controlsList="nodownload"
                     onContextMenu={(e) => e.preventDefault()}
                     style={{
@@ -277,7 +281,7 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                 />
                 <video
                     ref={videoBRef}
-                    autoPlay muted playsInline
+                    autoPlay muted playsInline loop
                     controlsList="nodownload"
                     onContextMenu={(e) => e.preventDefault()}
                     style={{
