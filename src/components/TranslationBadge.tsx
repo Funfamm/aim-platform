@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SUBTITLE_TARGET_LANGS, TOTAL_SUBTITLE_LANGS } from '@/lib/subtitle-languages'
+import { SUBTITLE_TARGET_LANGS, TOTAL_SUBTITLE_LANGS } from '@/config/subtitles'
 
 // Keep emoji labels local — these are only for display in this component
 const LOCALE_LABELS: Record<string, string> = {

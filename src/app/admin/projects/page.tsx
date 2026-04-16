@@ -10,6 +10,7 @@ import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl, requiresTr
 import LangStatusGrid from '@/components/admin/LangStatusGrid'
 import PublishGateModal from '@/components/admin/PublishGateModal'
 import { uploadSubtitleFile } from '@/lib/subtitle-file-parser'
+import { readSSEStream } from '@/lib/sse-reader'
 
 /* â”€â”€ Types â”€â”€ */
 type Project = {
@@ -379,44 +380,29 @@ export default function AdminProjectsPage() {
                 const err = await res.json().catch(() => ({}))
                 throw new Error((err as {error?: string}).error || `HTTP ${res.status}`)
             }
-            const reader = res.body.getReader()
-            const decoder = new TextDecoder()
-            let buffer = ''
             let completed = 0
-            while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
-                buffer += decoder.decode(value, { stream: true })
-                const events = buffer.split('\n\n')
-                buffer = events.pop() || ''
-                for (const event of events) {
-                    const line = event.replace(/^data: /, '').trim()
-                    if (!line) continue
-                    try {
-                        const data = JSON.parse(line) as {
-                            phase?: string; lang?: string; langName?: string;
-                            pct?: number; total?: number; completed?: number;
-                            allDone?: boolean; error?: string;
-                        }
-                        if (data.phase === 'translating' && data.langName) {
-                            setSubtitleStatus(s => ({ ...s, [pid]: `ðŸŒ Translating ${data.langName}...` }))
-                            setSubtitleProgress(s => ({ ...s, [pid]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
-                        } else if (data.phase === 'done') {
-                            completed++
-                            setTranslationCount(s => ({ ...s, [pid]: completed + 1 }))
-                        } else if (data.phase === 'complete') {
-                            const allDone = data.allDone ?? false
-                            setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
-                            setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `âœ“ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `âœ“ ${completed + 1} languages ready` }))
-                            setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
-                            setTranslateStatus(s => ({ ...s, [pid]: allDone ? 'complete' : 'partial' }))
-                            setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
-                        } else if (data.phase === 'error' && data.lang) {
-                            setSubtitleStatus(s => ({ ...s, [pid]: `âš ï¸ ${data.lang} failed â€” continuing...` }))
-                        }
-                    } catch { /* malformed event */ }
+            await readSSEStream<{
+                phase?: string; lang?: string; langName?: string;
+                pct?: number; total?: number; completed?: number;
+                allDone?: boolean; error?: string;
+            }>(res.body.getReader(), (data) => {
+                if (data.phase === 'translating' && data.langName) {
+                    setSubtitleStatus(s => ({ ...s, [pid]: `🌍 Translating ${data.langName}...` }))
+                    setSubtitleProgress(s => ({ ...s, [pid]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
+                } else if (data.phase === 'done') {
+                    completed++
+                    setTranslationCount(s => ({ ...s, [pid]: completed + 1 }))
+                } else if (data.phase === 'complete') {
+                    const allDone = data.allDone ?? false
+                    setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
+                    setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `✓ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `✓ ${completed + 1} languages ready` }))
+                    setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
+                    setTranslateStatus(s => ({ ...s, [pid]: allDone ? 'complete' : 'partial' }))
+                    setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
+                } else if (data.phase === 'error' && data.lang) {
+                    setSubtitleStatus(s => ({ ...s, [pid]: `⚠️ ${data.lang} failed — continuing...` }))
                 }
-            }
+            })
         } catch (err) {
             setSubtitleStatus(s => ({ ...s, [pid]: `âŒ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
             setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
@@ -479,49 +465,34 @@ export default function AdminProjectsPage() {
                 body: JSON.stringify({ projectId: reviewProjectId, lang }),
             })
             if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
-            const reader = res.body.getReader()
-            const decoder = new TextDecoder()
-            let buffer = ''
             // Optimistically mark as processing in the UI
             setReviewData(prev => prev ? {
                 ...prev,
                 langStatus: { ...(prev.langStatus ?? {}), [lang]: 'processing' },
             } : prev)
-            while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
-                buffer += decoder.decode(value, { stream: true })
-                const events = buffer.split('\n\n')
-                buffer = events.pop() || ''
-                for (const event of events) {
-                    const line = event.replace(/^data: /, '').trim()
-                    if (!line) continue
-                    try {
-                        const data = JSON.parse(line) as { phase?: string; lang?: string }
-                        if (data.phase === 'done') {
-                            // Refresh subtitle data from server
-                            const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}`)
-                            const { subtitle } = await freshRes.json()
-                            if (subtitle) {
-                                setReviewData({
-                                    segments: JSON.parse(subtitle.segments || '[]'),
-                                    translations: subtitle.translations ? JSON.parse(subtitle.translations) : {},
-                                    qcIssues: subtitle.qcIssues ? JSON.parse(subtitle.qcIssues) : [],
-                                    translateStatus: subtitle.translateStatus || 'pending',
-                                    transcribedWith: subtitle.transcribedWith || null,
-                                    generatedWith: subtitle.generatedWith || null,
-                                    langStatus: subtitle.langStatus ?? null,
-                                })
-                            }
-                        } else if (data.phase === 'error') {
-                            setReviewData(prev => prev ? {
-                                ...prev,
-                                langStatus: { ...(prev.langStatus ?? {}), [lang]: 'failed' },
-                            } : prev)
-                        }
-                    } catch { /* malformed */ }
+            await readSSEStream<{ phase?: string; lang?: string }>(res.body.getReader(), async (data) => {
+                if (data.phase === 'done') {
+                    // Refresh subtitle data from server
+                    const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}`)
+                    const { subtitle } = await freshRes.json()
+                    if (subtitle) {
+                        setReviewData({
+                            segments: JSON.parse(subtitle.segments || '[]'),
+                            translations: subtitle.translations ? JSON.parse(subtitle.translations) : {},
+                            qcIssues: subtitle.qcIssues ? JSON.parse(subtitle.qcIssues) : [],
+                            translateStatus: subtitle.translateStatus || 'pending',
+                            transcribedWith: subtitle.transcribedWith || null,
+                            generatedWith: subtitle.generatedWith || null,
+                            langStatus: subtitle.langStatus ?? null,
+                        })
+                    }
+                } else if (data.phase === 'error') {
+                    setReviewData(prev => prev ? {
+                        ...prev,
+                        langStatus: { ...(prev.langStatus ?? {}), [lang]: 'failed' },
+                    } : prev)
                 }
-            }
+            })
         } catch (err) {
             setReviewData(prev => prev ? {
                 ...prev,

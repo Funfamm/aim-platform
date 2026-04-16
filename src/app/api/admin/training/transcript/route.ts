@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { SUBTITLE_TARGET_LANGS } from '@/lib/subtitle-languages'
+import { SUBTITLE_TARGET_LANGS } from '@/config/subtitles'
 
 // GET — Fetch transcript for a lesson
 export async function GET(req: NextRequest) {

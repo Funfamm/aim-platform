@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
-import { SUBTITLE_TARGET_LANGS } from '@/lib/subtitle-languages'
+import { SUBTITLE_TARGET_LANGS } from '@/config/subtitles'
 
 interface GoogleTokenResponse {
     access_token: string

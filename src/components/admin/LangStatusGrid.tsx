@@ -8,7 +8,7 @@
  * The parent component owns all state + callbacks; this component is purely presentational.
  */
 
-import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS } from '@/lib/subtitle-languages'
+import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS } from '@/config/subtitles'
 
 export type LangStatusValue = 'completed' | 'reviewed' | 'processing' | 'failed' | 'pending'
 

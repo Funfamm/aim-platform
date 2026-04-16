@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Link from 'next/link'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
-import { LANGUAGE_NAMES, SUBTITLE_TARGET_LANGS } from '@/lib/subtitle-languages'
+import { LANGUAGE_NAMES, SUBTITLE_TARGET_LANGS } from '@/config/subtitles'
 import FallbackNotice from '@/components/player/FallbackNotice'
 
 interface Episode {

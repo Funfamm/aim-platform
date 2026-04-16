@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { callGemini } from '@/lib/gemini'
-import { LANGUAGE_NAMES } from '@/lib/subtitle-languages'
+import { LANGUAGE_NAMES } from '@/config/subtitles'
 
 async function requireAdmin() {
     const session = await getUserSession()
