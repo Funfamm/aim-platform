@@ -556,9 +556,6 @@ export default function WatchPlayer({
                     /* Thicker seek bar — easier to grab with a thumb */
                     .aim-progress-track-inner { height: 6px !important; }
 
-                    /* Hide redundant movie info (shown on details page already) */
-                    .aim-movie-info { display: none !important; }
-
                     /* Compact the back button on mobile */
                     .aim-back-link {
                         font-size: 0.78rem;
@@ -1194,63 +1191,51 @@ export default function WatchPlayer({
                 </div>
                 </div>{/* /aim-sticky-player-zone */}
 
-                {/* ── Project Info + Episodes — hidden on mobile (already on details page) ── */}
-                <div className="aim-movie-info" style={{
-                    display: 'flex', gap: 'var(--space-2xl)',
-                    marginTop: 'var(--space-xl)', marginBottom: 'var(--space-2xl)',
-                    flexWrap: 'wrap',
-                }}>
-                    <div style={{ flex: '1 1 400px', minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xs)' }}>
-                            {project.genre && <span style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-gold)' }}>{project.genre}</span>}
-                            {project.year && <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>• {project.year}</span>}
-                            {project.duration && <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>• {project.duration}</span>}
+                {/* ── Episodes panel (series only) ── */}
+                {isSeries && (
+                    <div style={{
+                        marginTop: 'var(--space-lg)', marginBottom: 'var(--space-xl)',
+                        background: 'var(--bg-secondary)',
+                        borderRadius: 'var(--radius-lg)',
+                        border: '1px solid var(--border-subtle)',
+                        padding: 'var(--space-lg)',
+                        maxHeight: '400px', overflowY: 'auto',
+                    }}>
+                        <h3 style={{
+                            fontSize: '0.75rem', fontWeight: 600,
+                            textTransform: 'uppercase', letterSpacing: '0.1em',
+                            color: 'var(--accent-gold)', marginBottom: 'var(--space-md)',
+                        }}>Episodes</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {project.episodes.map(ep => (
+                                <button key={ep.id} onClick={() => playEpisode(ep)} style={{
+                                    display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                                    padding: '0.6rem 0.8rem',
+                                    background: activeEpisode?.id === ep.id ? 'var(--accent-gold-glow)' : 'transparent',
+                                    border: activeEpisode?.id === ep.id ? '1px solid rgba(212,168,83,0.3)' : '1px solid transparent',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: ep.videoUrl ? 'pointer' : 'not-allowed',
+                                    opacity: ep.videoUrl ? 1 : 0.4,
+                                    textAlign: 'left', width: '100%',
+                                    transition: 'all 0.2s', color: 'var(--text-primary)',
+                                }}>
+                                    <span style={{
+                                        fontSize: '0.7rem', fontWeight: 700,
+                                        color: activeEpisode?.id === ep.id ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                        minWidth: '28px',
+                                    }}>E{ep.number}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ep.title}</div>
+                                        {ep.duration && <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{ep.duration}</div>}
+                                    </div>
+                                    {activeEpisode?.id === ep.id && (
+                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
+                                    )}
+                                </button>
+                            ))}
                         </div>
-                        <h1 style={{ fontSize: 'clamp(1.4rem, 3vw, 2rem)', fontWeight: 800, marginBottom: 'var(--space-xs)' }}>
-                            {activeEpisode
-                                ? `${project.title} — S${activeEpisode.season}E${activeEpisode.number}: ${activeEpisode.title}`
-                                : project.title}
-                        </h1>
-                        {project.tagline && (
-                            <p style={{ fontSize: '0.95rem', fontStyle: 'italic', color: 'var(--text-secondary)', marginBottom: 'var(--space-md)' }}>{project.tagline}</p>
-                        )}
-                        <p style={{ fontSize: '0.85rem', lineHeight: 1.7, color: 'var(--text-tertiary)' }}>{project.description}</p>
                     </div>
-
-                    {isSeries && (
-                        <div style={{
-                            flex: '0 0 280px', background: 'var(--bg-secondary)',
-                            borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)',
-                            padding: 'var(--space-lg)', maxHeight: '400px', overflowY: 'auto',
-                        }}>
-                            <h3 style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 'var(--space-md)' }}>Episodes</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                {project.episodes.map(ep => (
-                                    <button key={ep.id} onClick={() => playEpisode(ep)} style={{
-                                        display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                                        padding: '0.6rem 0.8rem',
-                                        background: activeEpisode?.id === ep.id ? 'var(--accent-gold-glow)' : 'transparent',
-                                        border: activeEpisode?.id === ep.id ? '1px solid rgba(212,168,83,0.3)' : '1px solid transparent',
-                                        borderRadius: 'var(--radius-md)',
-                                        cursor: ep.videoUrl ? 'pointer' : 'not-allowed',
-                                        opacity: ep.videoUrl ? 1 : 0.4,
-                                        textAlign: 'left', width: '100%',
-                                        transition: 'all 0.2s', color: 'var(--text-primary)',
-                                    }}>
-                                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: activeEpisode?.id === ep.id ? 'var(--accent-gold)' : 'var(--text-tertiary)', minWidth: '28px' }}>E{ep.number}</span>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ep.title}</div>
-                                            {ep.duration && <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{ep.duration}</div>}
-                                        </div>
-                                        {activeEpisode?.id === ep.id && (
-                                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
         </div>
     )
