@@ -120,7 +120,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}
-      <div style={{ position: 'relative', zIndex: 2, background: 'var(--bg-primary)' }} tabIndex={0} role="region" aria-label="Page content">
+      {/* background starts transparent so the hero fades in softly, then goes solid */}
+      <div style={{ position: 'relative', zIndex: 2, background: 'linear-gradient(180deg, transparent 0px, var(--bg-primary) 220px)' }} tabIndex={0} role="region" aria-label="Page content">
 
       {/* ═══ FEATURED WORKS ═══ */}
       <section className="section" style={{ position: 'relative', paddingBottom: 0 }}>
@@ -140,6 +141,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
             borderRadius: 'var(--radius-xl)',
             padding: 'var(--space-xl)',
+            background: 'linear-gradient(135deg, rgba(212,168,83,0.07) 0%, rgba(255,255,255,0.04) 100%)',
+            border: '1px solid rgba(212,168,83,0.18)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(212,168,83,0.06)',
           }}>
             <span className="text-label" style={{ display: 'block', marginBottom: '6px' }}>{t('portfolio')}</span>
             <h2 style={{
