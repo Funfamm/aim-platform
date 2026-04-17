@@ -261,7 +261,6 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     -webkit-tap-highlight-color: transparent;
                 }
                 .cast-grid-card:active {
-                    transform: scale(0.97);
                     border-color: rgba(212,168,83,0.55);
                     box-shadow: 0 0 0 2px rgba(212,168,83,0.35), 0 12px 40px rgba(0,0,0,0.5);
                 }
@@ -626,6 +625,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                     key={member.id}
                                     className="cast-grid-card"
                                     style={{/* no animation — guaranteed visible on mobile */}}
+                                    onClick={() => setSelectedMember(member)}
                                 >
                                     {/* Portrait photo area — overflow:hidden clips only visuals, not button */}
                                     <div className="cast-grid-photo">
@@ -703,7 +703,6 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                         <button
                                             className="cast-grid-about-btn"
                                             onClick={e => { e.stopPropagation(); setSelectedMember(member) }}
-                                            onTouchEnd={e => { e.stopPropagation(); e.preventDefault(); setSelectedMember(member) }}
                                         >
                                             {t('aboutButton')} ›
                                         </button>
