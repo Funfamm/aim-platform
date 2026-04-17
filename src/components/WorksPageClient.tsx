@@ -305,9 +305,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                 marginTop: '-30px',
             }}>
                 {/* Dark overlay behind cards — full-bleed, connects into footer */}
+                {/* NOTE: do NOT set both left AND right here — RTL mode overrides `left` to auto
+                    when all three (left, right, width) are set, shifting the overlay off-screen.
+                    Use only left:50% + width:100vw + translateX(-50%) to centre in both directions. */}
                 <div style={{
                     position: 'absolute',
-                    top: 0, left: '50%', right: 0, bottom: 0,
+                    top: 0, bottom: 0,
+                    left: '50%',
                     width: '100vw',
                     transform: 'translateX(-50%)',
                     background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
