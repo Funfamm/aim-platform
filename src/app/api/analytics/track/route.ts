@@ -44,18 +44,17 @@ export async function POST(req: Request) {
       device = /ipad|tablet/i.test(userAgent) ? 'tablet' : 'mobile';
     }
 
-    // Attempt to retrieve userId from session cookie (optional)
+    // Resolve userId from the NextAuth session.
+    // Always attempt — NextAuth stores the session in 'next-auth.session-token'
+    // (or '__Secure-next-auth.session-token' on HTTPS), which did NOT match the
+    // old /session=([^;]+)/ regex, causing every logged-in user to appear as anonymous.
     let userId: string | null = null;
     try {
-      const cookieHeader = req.headers.get('cookie') || '';
-      const sessionMatch = cookieHeader.match(/session=([^;]+)/);
-      if (sessionMatch) {
-        const { getSession } = await import('@/lib/auth');
-        const session = (await getSession()) as { id: string } | null;
-        userId = session?.id || null;
-      }
+      const { getSession } = await import('@/lib/auth');
+      const session = (await getSession()) as { id: string } | null;
+      userId = session?.id || null;
     } catch {
-      // ignore errors – analytics should still work
+      // non-critical — analytics still records the view without userId
     }
 
     // Handle search analytics event
