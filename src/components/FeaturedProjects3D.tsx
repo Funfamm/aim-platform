@@ -26,13 +26,21 @@ export default function FeaturedProjects3D({ projects }: { projects: ProjectData
     // ── Mobile: cinematic poster strip — large, minimal, image-forward ──
     if (isMobile) {
         return (
-            <div className="scroll-row-wrap" style={{ margin: '0 -16px' }}>
+            <div style={{ margin: '0 -16px', position: 'relative' }}>
                 <div
-                    className="scroll-row"
-                    style={{ padding: '0 16px 8px', gap: '14px' }}
+                    style={{
+                        display: 'flex',
+                        gap: '14px',
+                        overflowX: 'auto',
+                        overflowY: 'hidden',
+                        scrollSnapType: 'x proximity',
+                        touchAction: 'pan-x pan-y',
+                        scrollbarWidth: 'none' as const,
+                        padding: '0 16px 8px',
+                    }}
                 >
                     {projects.map(project => (
-                        <div key={project.id} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
+                        <div key={project.id} style={{ flexShrink: 0 }}>
                             <CinematicPosterCard
                                 project={project}
                                 locale={locale}
