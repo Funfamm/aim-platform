@@ -110,7 +110,6 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
                         <span style={{
                             width: '5px', height: '5px', borderRadius: '50%',
                             background: isInProduction ? '#d4a853' : '#60a5fa',
-                            animation: 'pulse-gold 2s infinite',
                         }} />
                         {isInProduction ? t('inProduction') : t('comingSoon')}
                     </span>
