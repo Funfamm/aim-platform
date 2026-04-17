@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
@@ -21,10 +21,9 @@ interface CastShowcaseProps {
     cast: CastMember[]
     castingHref?: string
     projectTitle?: string
-    maxInitialShow?: number
 }
 
-export default function CastShowcase({ cast, castingHref, projectTitle, maxInitialShow = 12 }: CastShowcaseProps) {
+export default function CastShowcase({ cast, castingHref, projectTitle }: CastShowcaseProps) {
     const t = useTranslations('castShowcase')
     const locale = useLocale()
 
@@ -53,15 +52,33 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
     const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
     const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
     const [parallax, setParallax] = useState<Record<number, { x: number; y: number }>>({})
-    
-    // Truncation state
-    const [isExpanded, setIsExpanded] = useState(false)
-    const displayCast = isExpanded ? cast : cast.slice(0, maxInitialShow)
-
     // True on phones/tablets: hover overlay is always shown so the About button is tappable
     const [isTouchDevice, setIsTouchDevice] = useState(false)
     // mounted: prevents portal from rendering during SSR (document.body doesn't exist)
     const [mounted, setMounted] = useState(false)
+
+    // ── Role filter + collapse ──────────────────────────────────────────────
+    const [roleFilter, setRoleFilter] = useState<string>('all')
+    const [showAll, setShowAll]       = useState(false)
+    const INITIAL_VISIBLE = 12
+
+    // Unique roles present in the cast; memoised so it doesn't recompute on every render
+    const uniqueRoles = useMemo(() => {
+        const roles = new Set<string>()
+        cast.forEach(m => roles.add(m.jobTitle))
+        return Array.from(roles)
+    }, [cast])
+
+    // Filtered by role
+    const filteredCast = useMemo(
+        () => roleFilter === 'all' ? cast : cast.filter(m => m.jobTitle === roleFilter),
+        [cast, roleFilter]
+    )
+
+    // Mobile grid — limited unless showAll
+    const gridCast = showAll ? filteredCast : filteredCast.slice(0, INITIAL_VISIBLE)
+    const hasMore  = !showAll && filteredCast.length > INITIAL_VISIBLE
+
     const stripRef = useRef<HTMLDivElement>(null)
     const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
@@ -78,7 +95,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
     // Fallback: mark ALL cards visible after 400ms in case IO doesn't fire
     // (this happens inside overflow-x scroll containers on many mobile browsers).
     useEffect(() => {
-        const allIdxs = Array.from({ length: displayCast.length + 2 }, (_, i) => i)
+        const allIdxs = Array.from({ length: cast.length + 1 }, (_, i) => i)
 
         const observer = new IntersectionObserver(
             (entries) => {
@@ -103,7 +120,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
             observer.disconnect()
             clearTimeout(fallback)
         }
-    }, [displayCast.length])
+    }, [cast.length])
 
     // Rec 4: reset parallax map when cast list changes to avoid stale index accumulation
     useEffect(() => {
@@ -136,8 +153,8 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
 
     // Rec 3: trim stale refs after render so disconnected elements don't linger
     useLayoutEffect(() => {
-        cardRefs.current = cardRefs.current.slice(0, displayCast.length + 2)
-    }, [displayCast.length])
+        cardRefs.current = cardRefs.current.slice(0, cast.length + 1)
+    }, [cast.length])
 
     if (cast.length === 0 && !castingHref) return null
 
@@ -383,6 +400,46 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
                         )}
                     </div>
 
+                    {/* ── Role filter chips (shown only when multiple roles exist) ── */}
+                    {uniqueRoles.length > 1 && (
+                        <div style={{
+                            display: 'flex', flexWrap: 'wrap', gap: '6px',
+                            marginBottom: 'var(--space-lg)',
+                        }}>
+                            {/* All chip */}
+                            <button
+                                onClick={() => { setRoleFilter('all'); setShowAll(false) }}
+                                style={{
+                                    padding: '4px 14px', borderRadius: '99px', cursor: 'pointer',
+                                    fontSize: '0.7rem', fontWeight: 700, transition: 'all 0.2s',
+                                    background: roleFilter === 'all' ? 'rgba(212,168,83,0.18)' : 'rgba(255,255,255,0.04)',
+                                    border: roleFilter === 'all' ? '1px solid rgba(212,168,83,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                                    color: roleFilter === 'all' ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                }}
+                            >
+                                {t('filterAll')} <span style={{ opacity: 0.6, fontSize: '0.62rem' }}>({cast.length})</span>
+                            </button>
+                            {uniqueRoles.map(role => (
+                                <button
+                                    key={role}
+                                    onClick={() => { setRoleFilter(role); setShowAll(false) }}
+                                    style={{
+                                        padding: '4px 14px', borderRadius: '99px', cursor: 'pointer',
+                                        fontSize: '0.7rem', fontWeight: 700, transition: 'all 0.2s',
+                                        background: roleFilter === role ? 'rgba(212,168,83,0.18)' : 'rgba(255,255,255,0.04)',
+                                        border: roleFilter === role ? '1px solid rgba(212,168,83,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                                        color: roleFilter === role ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                    }}
+                                >
+                                    {tJobTitle(role)}
+                                    <span style={{ opacity: 0.6, fontSize: '0.62rem', marginLeft: '4px' }}>
+                                        ({cast.filter(m => m.jobTitle === role).length})
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Decorative divider */}
                     <div
                         className="cast-shimmer-line"
@@ -402,7 +459,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
                             paddingBottom: '12px', paddingTop: '8px',
                         }}
                     >
-                        {displayCast.map((member, idx) => {
+                        {filteredCast.map((member, idx) => {
                             const par = parallax[idx] || { x: 0, y: 0 }
                             const isHovered = hoveredIdx === idx
                             const isVisible = visibleCards.has(idx)
@@ -558,63 +615,13 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
                             )
                         })}
 
-                        {/* ── Desktop "View All" Card ── */}
-                        {!isExpanded && cast.length > maxInitialShow && (
-                            <div
-                                role="button"
-                                tabIndex={0}
-                                className="cast-card cast-cta-inner"
-                                onClick={() => setIsExpanded(true)}
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(true) } }}
-                                style={{
-                                    flexShrink: 0, width: '180px', height: '288px', borderRadius: '14px',
-                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px',
-                                    background: 'linear-gradient(135deg, rgba(26,26,46,0.5), rgba(13,13,26,0.5))',
-                                    border: '1px solid rgba(212,168,83,0.2)',
-                                    cursor: 'pointer', transition: 'transform 0.3s ease, border-color 0.3s',
-                                    padding: '24px 16px', textAlign: 'center',
-                                    animation: `castCardIn 0.6s cubic-bezier(0.22,1,0.36,1) ${displayCast.length * 80}ms both`,
-                                    WebkitTapHighlightColor: 'transparent',
-                                    outline: 'none',
-                                }}
-                                onMouseEnter={e => {
-                                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.02)'
-                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.6)'
-                                }}
-                                onMouseLeave={e => {
-                                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)'
-                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.2)'
-                                }}
-                                onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.6)' }}
-                                onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.2)' }}
-                            >
-                                <div style={{ fontSize: '2rem', opacity: 0.8, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>👥</div>
-                                <div>
-                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fff', marginBottom: '4px', lineHeight: 1.3 }}>
-                                        View Full Cast
-                                    </div>
-                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
-                                        See all {cast.length} cast & crew members
-                                    </div>
-                                </div>
-                                <div style={{
-                                    padding: '6px 14px', borderRadius: '20px',
-                                    background: 'rgba(212,168,83,0.15)', color: 'var(--accent-gold)',
-                                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-                                    marginTop: '4px',
-                                }}>
-                                    Expand
-                                </div>
-                            </div>
-                        )}
-
                         {/* ── CTA Card — "Be in the next film" ── */}
                         {castingHref && (
                             <Link
                                 href={castingHref}
                                 style={{ flexShrink: 0, textDecoration: 'none' }}
-                                ref={(el) => { cardRefs.current[displayCast.length + 1] = el as HTMLDivElement | null }}
-                                data-idx={displayCast.length + 1}
+                                ref={(el) => { cardRefs.current[cast.length] = el as HTMLDivElement | null }}
+                                data-idx={cast.length}
                             >
                                 <div
                                     className="cast-cta-inner"
@@ -684,7 +691,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
                             paddingTop: '4px',
                         }}
                     >
-                        {displayCast.map((member, idx) => {
+                        {gridCast.map((member, idx) => {
                             const resolved = resolve(member)
                             return (
                                 <div
@@ -777,30 +784,49 @@ export default function CastShowcase({ cast, castingHref, projectTitle, maxIniti
                             )
                         })}
 
-                        {/* ── Mobile "View All" Button ── */}
-                        {!isExpanded && cast.length > maxInitialShow && (
+                        {/* Show more / Show less — only on mobile grid */}
+                        {hasMore && (
                             <button
-                                type="button"
-                                onClick={() => setIsExpanded(true)}
+                                onClick={() => setShowAll(true)}
                                 style={{
                                     gridColumn: '1 / -1',
-                                    padding: '16px', margin: '4px 0 8px',
-                                    background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.25)',
-                                    borderRadius: '12px', color: 'var(--accent-gold)',
-                                    fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.05em',
-                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                    transition: 'background 0.2s, border-color 0.2s', WebkitTapHighlightColor: 'transparent',
-                                }}
-                                onTouchStart={e => {
-                                    (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,83,0.18)'
-                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.45)'
-                                }}
-                                onTouchEnd={e => {
-                                    (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,83,0.08)'
-                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.25)'
+                                    display: 'block', width: '100%',
+                                    marginTop: '4px',
+                                    padding: '14px 20px',
+                                    borderRadius: '14px',
+                                    background: 'rgba(212,168,83,0.08)',
+                                    border: '1px solid rgba(212,168,83,0.3)',
+                                    color: 'var(--accent-gold)',
+                                    fontSize: '0.82rem', fontWeight: 700,
+                                    cursor: 'pointer',
+                                    letterSpacing: '0.05em',
+                                    WebkitTapHighlightColor: 'transparent',
+                                    transition: 'background 0.2s',
                                 }}
                             >
-                                👥 View All {cast.length} Cast & Crew ▾
+                                {t('showMore', { count: filteredCast.length - INITIAL_VISIBLE })}
+                            </button>
+                        )}
+                        {showAll && filteredCast.length > INITIAL_VISIBLE && (
+                            <button
+                                onClick={() => setShowAll(false)}
+                                style={{
+                                    gridColumn: '1 / -1',
+                                    display: 'block', width: '100%',
+                                    marginTop: '4px',
+                                    padding: '14px 20px',
+                                    borderRadius: '14px',
+                                    background: 'rgba(255,255,255,0.04)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '0.82rem', fontWeight: 700,
+                                    cursor: 'pointer',
+                                    letterSpacing: '0.05em',
+                                    WebkitTapHighlightColor: 'transparent',
+                                    transition: 'background 0.2s',
+                                }}
+                            >
+                                {t('showLess')}
                             </button>
                         )}
 

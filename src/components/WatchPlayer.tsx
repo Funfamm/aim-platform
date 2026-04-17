@@ -4,6 +4,7 @@ import {
     useState, useRef, useEffect, useCallback, useMemo, useLayoutEffect,
 } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
 import { LANGUAGE_NAMES, SUBTITLE_TARGET_LANGS } from '@/config/subtitles'
 import FallbackNotice from '@/components/player/FallbackNotice'
@@ -40,6 +41,8 @@ export default function WatchPlayer({
     project: WatchProject
     userPreferredLang?: string
 }) {
+    const tPlayer = useTranslations('watchPlayer')
+
     /* ── Refs ── */
     const videoRef    = useRef<HTMLVideoElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -526,7 +529,7 @@ export default function WatchPlayer({
                 /* ── Mobile: Full-width sticky player experience ── */
                 @media (max-width: 640px) {
                     /* Reduce outer top padding to mobile navbar height */
-                    .aim-watch-wrapper { padding-top: 56px !important; padding-bottom: 100px !important; }
+                    .aim-watch-wrapper { padding-top: 56px !important; padding-bottom: 0 !important; }
 
                     /* Full-bleed: break player out of container horizontal padding */
                     .aim-sticky-player-zone {
@@ -617,7 +620,7 @@ export default function WatchPlayer({
                 }
             `}</style>
 
-            <div className="container aim-player-container" style={{ maxWidth: '1200px', padding: '0 var(--space-lg)' }}>
+            <div className="container aim-player-container" style={{ maxWidth: '1440px', padding: '0 var(--space-lg)' }}>
 
                 {/* ── Back button ── */}
                 <Link
@@ -650,7 +653,7 @@ export default function WatchPlayer({
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <span>▶</span>
                             <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                Continue from <strong style={{ color: 'var(--accent-gold)' }}>
+                                {tPlayer('continueFrom')} <strong style={{ color: 'var(--accent-gold)' }}>
                                     {totalDuration > 0
                                         ? fmt(Math.floor(resumePct * totalDuration))
                                         : `${Math.round(resumePct * 100)}%`
@@ -677,7 +680,7 @@ export default function WatchPlayer({
                                     fontWeight: 700, cursor: 'pointer',
                                     background: 'var(--accent-gold)', border: 'none', color: '#000',
                                 }}
-                            >Resume</button>
+                            >{tPlayer('resume')}</button>
                             <button
                                 onClick={() => { resumeDismissedRef.current = true; setShowResumeBanner(false) }}
                                 style={{
@@ -686,7 +689,7 @@ export default function WatchPlayer({
                                     background: 'rgba(255,255,255,0.06)',
                                     border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-tertiary)',
                                 }}
-                            >Start over</button>
+                            >{tPlayer('startOver')}</button>
                         </div>
                     </div>
                 )}
@@ -1066,7 +1069,7 @@ export default function WatchPlayer({
                                                     animation: 'aimFadeIn 0.15s ease', backdropFilter: 'blur(10px)',
                                                 }}
                                             >
-                                                <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '5px 10px 4px' }}>Speed</div>
+                                                <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '5px 10px 4px' }}>{tPlayer('speed')}</div>
                                                 {SPEEDS.map(s => (
                                                     <button key={s} onClick={() => changeSpeed(s)} style={{
                                                         display: 'block', width: '100%', padding: '5px 10px',
@@ -1074,7 +1077,7 @@ export default function WatchPlayer({
                                                         border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
                                                         color: playbackRate === s ? 'var(--accent-gold)' : 'var(--text-secondary)',
                                                     }}>
-                                                        {s === 1 ? 'Normal' : `${s}×`} {playbackRate === s && '✓'}
+                                                        {s === 1 ? tPlayer('speedNormal') : `${s}×`} {playbackRate === s && '✓'}
                                                     </button>
                                                 ))}
                                             </div>
@@ -1121,9 +1124,9 @@ export default function WatchPlayer({
                                                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                                                     animation: 'aimFadeIn 0.15s ease',
                                                 }}>
-                                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '6px 10px 4px' }}>Subtitles</div>
+                                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '6px 10px 4px' }}>{tPlayer('subtitles')}</div>
                                                     {ccAvailable.length === 0 && (
-                                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', padding: '6px 10px' }}>No subtitles available</div>
+                                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', padding: '6px 10px' }}>{tPlayer('noSubtitles')}</div>
                                                     )}
                                                     {ccAvailable.map(lang => (
                                                         <button key={lang}
@@ -1145,7 +1148,7 @@ export default function WatchPlayer({
                                                             background: !ccEnabled ? 'rgba(255,255,255,0.06)' : 'transparent',
                                                             border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
                                                             color: 'var(--text-tertiary)',
-                                                        }}>Off</button>
+                                                        }}>{tPlayer('subtitlesOff')}</button>
                                                 </div>
                                             )}
                                         </div>

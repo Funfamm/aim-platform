@@ -142,6 +142,46 @@
     "watchNow": "شاهد الآن",
     "episodes": "حلقات",
     "viewDetails": "عرض أدوار الكاستينج",
-    "film": "فيلم"
+    "film": "فيلم",
+    "inProd": "قيد الإنتاج",
+    "all": "الكل"
+  },
+  "castShowcase": {
+    "studio": "استوديو AIM",
+    "sectionTitle": "تعرّف على الفريق",
+    "aboutButton": "تعرّف عليه",
+    "ctaHeading": "كن جزءاً من الفيلم القادم",
+    "ctaSubtext": "فرصتك للمشاركة في {title}",
+    "ctaSubtextFallback": "استكشف أدوار الكاستينج المتاحة",
+    "ctaButton": "قدّم الآن",
+    "filterAll": "الكل",
+    "showMore": "عرض {count} آخرين",
+    "showLess": "عرض أقل",
+    "jobTitles": {
+      "Actor": "ممثل",
+      "Director": "مخرج",
+      "Producer": "منتج",
+      "Writer": "كاتب",
+      "Composer": "موسيقار",
+      "Cinematographer": "مدير تصوير",
+      "Editor": "مونتير",
+      "Sound": "مهندس صوت",
+      "VFX": "مؤثرات بصرية",
+      "Extra": "كومبارس"
+    }
+  },
+  "watchPlayer": {
+    "backTo": "العودة إلى {title}",
+    "continueFrom": "متابعة من",
+    "resume": "متابعة",
+    "startOver": "بدء من جديد",
+    "speed": "السرعة",
+    "speedNormal": "عادي",
+    "subtitles": "الترجمة",
+    "subtitlesOff": "إيقاف",
+    "noSubtitles": "لا توجد ترجمة متاحة",
+    "videoUnavailable": "الفيديو غير متاح",
+    "watchFull": "مشاهدة كاملة",
+    "continue": "متابعة"
   }
 }

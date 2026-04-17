@@ -284,6 +284,46 @@
     "watchNow": "Watch Now",
     "episodes": "Episodes",
     "viewDetails": "View Casting Roles",
-    "film": "Film"
+    "film": "Film",
+    "inProd": "In Production",
+    "all": "All"
+  },
+  "castShowcase": {
+    "studio": "AIM Studio",
+    "sectionTitle": "Meet the Cast",
+    "aboutButton": "About",
+    "ctaHeading": "Be in the next film",
+    "ctaSubtext": "Your chance to be part of {title}",
+    "ctaSubtextFallback": "Explore open casting roles today",
+    "ctaButton": "Apply Now",
+    "filterAll": "All",
+    "showMore": "Show {count} more",
+    "showLess": "Show less",
+    "jobTitles": {
+      "Actor": "Actor",
+      "Director": "Director",
+      "Producer": "Producer",
+      "Writer": "Writer",
+      "Composer": "Composer",
+      "Cinematographer": "Cinematographer",
+      "Editor": "Editor",
+      "Sound": "Sound",
+      "VFX": "VFX",
+      "Extra": "Extra"
+    }
+  },
+  "watchPlayer": {
+    "backTo": "Back to {title}",
+    "continueFrom": "Continue from",
+    "resume": "Resume",
+    "startOver": "Start over",
+    "speed": "Speed",
+    "speedNormal": "Normal",
+    "subtitles": "Subtitles",
+    "subtitlesOff": "Off",
+    "noSubtitles": "No subtitles available",
+    "videoUnavailable": "Video not available",
+    "watchFull": "Watch full",
+    "continue": "Continue"
   }
 }
