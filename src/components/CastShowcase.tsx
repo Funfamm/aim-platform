@@ -21,9 +21,10 @@ interface CastShowcaseProps {
     cast: CastMember[]
     castingHref?: string
     projectTitle?: string
+    maxInitialShow?: number
 }
 
-export default function CastShowcase({ cast, castingHref, projectTitle }: CastShowcaseProps) {
+export default function CastShowcase({ cast, castingHref, projectTitle, maxInitialShow = 12 }: CastShowcaseProps) {
     const t = useTranslations('castShowcase')
     const locale = useLocale()
 
@@ -52,6 +53,11 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
     const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
     const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
     const [parallax, setParallax] = useState<Record<number, { x: number; y: number }>>({})
+    
+    // Truncation state
+    const [isExpanded, setIsExpanded] = useState(false)
+    const displayCast = isExpanded ? cast : cast.slice(0, maxInitialShow)
+
     // True on phones/tablets: hover overlay is always shown so the About button is tappable
     const [isTouchDevice, setIsTouchDevice] = useState(false)
     // mounted: prevents portal from rendering during SSR (document.body doesn't exist)
@@ -72,7 +78,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
     // Fallback: mark ALL cards visible after 400ms in case IO doesn't fire
     // (this happens inside overflow-x scroll containers on many mobile browsers).
     useEffect(() => {
-        const allIdxs = Array.from({ length: cast.length + 1 }, (_, i) => i)
+        const allIdxs = Array.from({ length: displayCast.length + 2 }, (_, i) => i)
 
         const observer = new IntersectionObserver(
             (entries) => {
@@ -97,7 +103,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
             observer.disconnect()
             clearTimeout(fallback)
         }
-    }, [cast.length])
+    }, [displayCast.length])
 
     // Rec 4: reset parallax map when cast list changes to avoid stale index accumulation
     useEffect(() => {
@@ -130,8 +136,8 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
 
     // Rec 3: trim stale refs after render so disconnected elements don't linger
     useLayoutEffect(() => {
-        cardRefs.current = cardRefs.current.slice(0, cast.length + 1)
-    }, [cast.length])
+        cardRefs.current = cardRefs.current.slice(0, displayCast.length + 2)
+    }, [displayCast.length])
 
     if (cast.length === 0 && !castingHref) return null
 
@@ -396,7 +402,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                             paddingBottom: '12px', paddingTop: '8px',
                         }}
                     >
-                        {cast.map((member, idx) => {
+                        {displayCast.map((member, idx) => {
                             const par = parallax[idx] || { x: 0, y: 0 }
                             const isHovered = hoveredIdx === idx
                             const isVisible = visibleCards.has(idx)
@@ -552,13 +558,63 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                             )
                         })}
 
+                        {/* ── Desktop "View All" Card ── */}
+                        {!isExpanded && cast.length > maxInitialShow && (
+                            <div
+                                role="button"
+                                tabIndex={0}
+                                className="cast-card cast-cta-inner"
+                                onClick={() => setIsExpanded(true)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsExpanded(true) } }}
+                                style={{
+                                    flexShrink: 0, width: '180px', height: '288px', borderRadius: '14px',
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px',
+                                    background: 'linear-gradient(135deg, rgba(26,26,46,0.5), rgba(13,13,26,0.5))',
+                                    border: '1px solid rgba(212,168,83,0.2)',
+                                    cursor: 'pointer', transition: 'transform 0.3s ease, border-color 0.3s',
+                                    padding: '24px 16px', textAlign: 'center',
+                                    animation: `castCardIn 0.6s cubic-bezier(0.22,1,0.36,1) ${displayCast.length * 80}ms both`,
+                                    WebkitTapHighlightColor: 'transparent',
+                                    outline: 'none',
+                                }}
+                                onMouseEnter={e => {
+                                    (e.currentTarget as HTMLElement).style.transform = 'translateY(-4px) scale(1.02)'
+                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.6)'
+                                }}
+                                onMouseLeave={e => {
+                                    (e.currentTarget as HTMLElement).style.transform = 'translateY(0) scale(1)'
+                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.2)'
+                                }}
+                                onFocus={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.6)' }}
+                                onBlur={e => { (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.2)' }}
+                            >
+                                <div style={{ fontSize: '2rem', opacity: 0.8, filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>👥</div>
+                                <div>
+                                    <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fff', marginBottom: '4px', lineHeight: 1.3 }}>
+                                        View Full Cast
+                                    </div>
+                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                                        See all {cast.length} cast & crew members
+                                    </div>
+                                </div>
+                                <div style={{
+                                    padding: '6px 14px', borderRadius: '20px',
+                                    background: 'rgba(212,168,83,0.15)', color: 'var(--accent-gold)',
+                                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                                    marginTop: '4px',
+                                }}>
+                                    Expand
+                                </div>
+                            </div>
+                        )}
+
                         {/* ── CTA Card — "Be in the next film" ── */}
                         {castingHref && (
                             <Link
                                 href={castingHref}
                                 style={{ flexShrink: 0, textDecoration: 'none' }}
-                                ref={(el) => { cardRefs.current[cast.length] = el as HTMLDivElement | null }}
-                                data-idx={cast.length}
+                                ref={(el) => { cardRefs.current[displayCast.length + 1] = el as HTMLDivElement | null }}
+                                data-idx={displayCast.length + 1}
                             >
                                 <div
                                     className="cast-cta-inner"
@@ -628,7 +684,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                             paddingTop: '4px',
                         }}
                     >
-                        {cast.map((member, idx) => {
+                        {displayCast.map((member, idx) => {
                             const resolved = resolve(member)
                             return (
                                 <div
@@ -720,6 +776,33 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                 </div>
                             )
                         })}
+
+                        {/* ── Mobile "View All" Button ── */}
+                        {!isExpanded && cast.length > maxInitialShow && (
+                            <button
+                                type="button"
+                                onClick={() => setIsExpanded(true)}
+                                style={{
+                                    gridColumn: '1 / -1',
+                                    padding: '16px', margin: '4px 0 8px',
+                                    background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.25)',
+                                    borderRadius: '12px', color: 'var(--accent-gold)',
+                                    fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.05em',
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    transition: 'background 0.2s, border-color 0.2s', WebkitTapHighlightColor: 'transparent',
+                                }}
+                                onTouchStart={e => {
+                                    (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,83,0.18)'
+                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.45)'
+                                }}
+                                onTouchEnd={e => {
+                                    (e.currentTarget as HTMLElement).style.background = 'rgba(212,168,83,0.08)'
+                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(212,168,83,0.25)'
+                                }}
+                            >
+                                👥 View All {cast.length} Cast & Crew ▾
+                            </button>
+                        )}
 
                         {/* Mobile CTA band — full-width at grid bottom */}
                         {castingHref && (
