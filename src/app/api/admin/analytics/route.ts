@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     // ─── CORE section (always loaded — lightweight counts) ───
     if (section === 'all' || section === 'core') {
         const [
-            onlineNow, todayViews, yesterdayViews,
+            onlineNow, loggedInNow, todayViews, yesterdayViews,
             totalUsers, newUsersMonth,
             totalApps, appsMonth,
             totalDonations, donationsMonth,
@@ -62,6 +62,12 @@ export async function GET(req: NextRequest) {
         ] = await Promise.all([
             prisma.pageView.findMany({
                 where: { createdAt: { gte: fiveMin } },
+                distinct: ['userId'],
+                select: { userId: true },
+            }),
+            // Logged-in users active in the last 5 min (non-null userId only)
+            prisma.pageView.findMany({
+                where: { createdAt: { gte: fiveMin }, userId: { not: null } },
                 distinct: ['userId'],
                 select: { userId: true },
             }),
@@ -134,8 +140,19 @@ export async function GET(req: NextRequest) {
             views: fillBuckets(buckets, viewRows)[i],
         }))
 
+        // Resolve names of currently-active logged-in users
+        const activeUserIds = loggedInNow.map(pv => pv.userId as string)
+        const activeUsers = activeUserIds.length > 0
+            ? await prisma.user.findMany({
+                where: { id: { in: activeUserIds } },
+                select: { id: true, name: true },
+            })
+            : []
+
         result.realTime = {
             onlineNow: onlineNow.length,
+            loggedInNow: loggedInNow.length,
+            activeUsers: activeUsers.map(u => ({ name: u.name })),
             todayViews,
             yesterdayViews,
         }

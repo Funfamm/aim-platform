@@ -66,7 +66,7 @@ interface DashboardData {
 }
 
 interface AnalyticsData {
-    realTime: { onlineNow: number; todayViews: number; yesterdayViews: number }
+    realTime: { onlineNow: number; loggedInNow: number; activeUsers: {name: string}[]; todayViews: number; yesterdayViews: number }
     traffic: {
         weekViews: number; monthViews: number
         dailyViews: { date: string; views: number }[]
@@ -141,6 +141,22 @@ export default function AdminAnalyticsPage() {
 
     // Voice conversation mode
     const [voiceModeOpen, setVoiceModeOpen] = useState(false)
+
+    const [livePopoverOpen, setLivePopoverOpen] = useState(false)
+    const livePopoverRef = useRef<HTMLDivElement>(null)
+
+    // Close live-users popover on outside click
+    useEffect(() => {
+        function handleClick(e: MouseEvent) {
+            if (livePopoverRef.current && !livePopoverRef.current.contains(e.target as Node)) {
+                setLivePopoverOpen(false)
+            }
+        }
+        if (livePopoverOpen) {
+            document.addEventListener('mousedown', handleClick)
+            return () => document.removeEventListener('mousedown', handleClick)
+        }
+    }, [livePopoverOpen])
 
     const [fetchError, setFetchError] = useState('')
     const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
@@ -426,21 +442,105 @@ export default function AdminAnalyticsPage() {
                                 }}>
                                     ⏱ {new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
                                 </div>
-                                <div style={{
-                                    display: 'flex', alignItems: 'center', gap: '6px',
-                                    padding: '5px 14px', borderRadius: 'var(--radius-full)',
-                                    background: data.realTime.onlineNow > 0 ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
-                                    border: `1px solid ${data.realTime.onlineNow > 0 ? 'rgba(34,197,94,0.2)' : 'var(--border-subtle)'}`,
-                                }}>
-                                    <span style={{
-                                        width: '7px', height: '7px', borderRadius: '50%',
-                                        background: data.realTime.onlineNow > 0 ? '#22c55e' : '#6b7280',
-                                        animation: data.realTime.onlineNow > 0 ? 'livePulse 2s ease-in-out infinite' : 'none',
-                                        boxShadow: data.realTime.onlineNow > 0 ? '0 0 10px rgba(34,197,94,0.5)' : 'none',
-                                    }} />
-                                    <span style={{ fontSize: '0.72rem', fontWeight: 700, color: data.realTime.onlineNow > 0 ? '#22c55e' : 'var(--text-tertiary)' }}>
-                                        {data.realTime.onlineNow} live
-                                    </span>
+                                {/* Live logged-in users indicator */}
+                                <div ref={livePopoverRef} style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={() => setLivePopoverOpen(v => !v)}
+                                        title={`${data.realTime.loggedInNow} logged-in user${data.realTime.loggedInNow !== 1 ? 's' : ''} active now`}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                            padding: '5px 14px', borderRadius: 'var(--radius-full)',
+                                            background: data.realTime.loggedInNow > 0 ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+                                            border: `1px solid ${data.realTime.loggedInNow > 0 ? 'rgba(34,197,94,0.2)' : 'var(--border-subtle)'}`,
+                                            cursor: 'pointer',
+                                        }}
+                                    >
+                                        <span style={{
+                                            width: '7px', height: '7px', borderRadius: '50%',
+                                            background: data.realTime.loggedInNow > 0 ? '#22c55e' : '#6b7280',
+                                            animation: data.realTime.loggedInNow > 0 ? 'livePulse 2s ease-in-out infinite' : 'none',
+                                            boxShadow: data.realTime.loggedInNow > 0 ? '0 0 10px rgba(34,197,94,0.5)' : 'none',
+                                            flexShrink: 0,
+                                        }} />
+                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: data.realTime.loggedInNow > 0 ? '#22c55e' : 'var(--text-tertiary)' }}>
+                                            {data.realTime.loggedInNow} logged in
+                                        </span>
+                                        {data.realTime.onlineNow > data.realTime.loggedInNow && (
+                                            <span style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', borderLeft: '1px solid rgba(255,255,255,0.1)', paddingLeft: '8px' }}>
+                                                +{data.realTime.onlineNow - data.realTime.loggedInNow} guests
+                                            </span>
+                                        )}
+                                    </button>
+
+                                    {/* Active users popover */}
+                                    {livePopoverOpen && (
+                                        <div style={{
+                                            position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                                            minWidth: '200px', maxWidth: '280px',
+                                            background: 'var(--bg-card, #1a1d23)',
+                                            border: '1px solid rgba(34,197,94,0.2)',
+                                            borderRadius: '12px',
+                                            boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+                                            zIndex: 9999,
+                                            overflow: 'hidden',
+                                            animation: 'slideDown 0.2s ease',
+                                        }}>
+                                            <div style={{
+                                                padding: '10px 14px',
+                                                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                            }}>
+                                                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e', flexShrink: 0, boxShadow: '0 0 8px rgba(34,197,94,0.6)' }} />
+                                                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Live now</span>
+                                                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>last 5 min</span>
+                                            </div>
+                                            <div style={{ padding: '8px 0', maxHeight: '220px', overflowY: 'auto' }}>
+                                                {data.realTime.activeUsers.length === 0 ? (
+                                                    <div style={{ padding: '12px 14px', fontSize: '0.72rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                                                        No logged-in users right now
+                                                    </div>
+                                                ) : (
+                                                    data.realTime.activeUsers.map((u, i) => (
+                                                        <div key={i} style={{
+                                                            display: 'flex', alignItems: 'center', gap: '10px',
+                                                            padding: '7px 14px',
+                                                        }}>
+                                                            <div style={{
+                                                                width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
+                                                                background: 'linear-gradient(135deg, var(--accent-gold), var(--accent-gold-dark, #b8922e))',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                fontSize: '0.68rem', fontWeight: 700, color: 'var(--bg-primary, #0f1115)',
+                                                            }}>
+                                                                {u.name.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {u.name}
+                                                            </span>
+                                                            <span style={{ marginLeft: 'auto', width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+                                                        </div>
+                                                    ))
+                                                )}
+                                                {data.realTime.onlineNow > data.realTime.loggedInNow && (
+                                                    <div style={{
+                                                        padding: '7px 14px',
+                                                        borderTop: '1px solid rgba(255,255,255,0.05)',
+                                                        marginTop: '4px',
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                    }}>
+                                                        <div style={{
+                                                            width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
+                                                            background: 'rgba(107,114,128,0.15)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            fontSize: '0.7rem',
+                                                        }}>👤</div>
+                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                                            +{data.realTime.onlineNow - data.realTime.loggedInNow} anonymous visitor{data.realTime.onlineNow - data.realTime.loggedInNow !== 1 ? 's' : ''}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
