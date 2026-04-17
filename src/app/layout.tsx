@@ -60,6 +60,12 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0d0f14" />
         <meta name="msapplication-TileColor" content="#0d0f14" />
+        {/* iOS PWA — makes the site behave like a native app when installed */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="AIM Studio" />
+        {/* Android Chrome — full standalone mode */}
+        <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body>
         <a href="#main-content" className="skip-to-content">

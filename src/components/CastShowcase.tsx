@@ -191,7 +191,14 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                         animation: none !important;
                         opacity: 1 !important;
                     }
-                    .cast-cta-inner { opacity: 1 !important; }
+                    /* Kill infinite animations on mobile — prevents GPU overheating */
+                    .cast-cta-inner {
+                        opacity: 1 !important;
+                        animation: none !important;
+                    }
+                    .cast-shimmer-line {
+                        animation: none !important;
+                    }
                 }
 
                 /* ── Mobile ≤ 640px ── */
@@ -261,6 +268,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     -webkit-tap-highlight-color: transparent;
                 }
                 .cast-grid-card:active {
+                    transform: scale(0.97);
                     border-color: rgba(212,168,83,0.55);
                     box-shadow: 0 0 0 2px rgba(212,168,83,0.35), 0 12px 40px rgba(0,0,0,0.5);
                 }
@@ -370,7 +378,9 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                     </div>
 
                     {/* Decorative divider */}
-                    <div style={{
+                    <div
+                        className="cast-shimmer-line"
+                        style={{
                         height: '1px', marginBottom: 'var(--space-xl)',
                         background: 'linear-gradient(90deg, transparent, var(--accent-gold), transparent)',
                         animation: 'shimmerLine 3s linear infinite',
@@ -625,7 +635,6 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                     key={member.id}
                                     className="cast-grid-card"
                                     style={{/* no animation — guaranteed visible on mobile */}}
-                                    onClick={() => setSelectedMember(member)}
                                 >
                                     {/* Portrait photo area — overflow:hidden clips only visuals, not button */}
                                     <div className="cast-grid-photo">
@@ -699,8 +708,9 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                                                 marginBottom: '2px',
                                             }}>as {resolved.character}</div>
                                         )}
-                                        {/* About button — in normal flow, fully tappable on iOS */}
+                                        {/* About button — onClick works natively for mobile too */}
                                         <button
+                                            type="button"
                                             className="cast-grid-about-btn"
                                             onClick={e => { e.stopPropagation(); setSelectedMember(member) }}
                                         >
