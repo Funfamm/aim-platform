@@ -529,7 +529,7 @@ export default function WatchPlayer({
                 /* ── Mobile: Full-width sticky player experience ── */
                 @media (max-width: 640px) {
                     /* Reduce outer top padding to mobile navbar height */
-                    .aim-watch-wrapper { padding-top: 56px !important; padding-bottom: 0 !important; }
+                    .aim-watch-wrapper { padding-top: 56px !important; padding-bottom: 0 !important; min-height: 0 !important; }
 
                     /* Full-bleed: break player out of container horizontal padding */
                     .aim-sticky-player-zone {
