@@ -4953,27 +4953,100 @@ img, video, iframe, canvas {
    50+ compositing layers to zero blur layers.
    ═══════════════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  /* ── Kill all backdrop-filter blur on mobile ── */
+  /* ── Kill ALL backdrop-filter blur — the single biggest heat source ── */
   * {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
 
-  /* ── Disable film grain pseudo-element (full-viewport SVG filter) ── */
+  /* ── Disable film grain pseudo-element (fixed SVG filter = constant GPU paint) ── */
   body::before {
     display: none !important;
   }
 
-  /* ── Hide Scene3D canvas entirely (JS also skips, but belt-and-suspenders) ── */
+  /* ── Hide Scene3D canvas (JS also skips rendering it, belt-and-suspenders) ── */
   .scene-3d-canvas {
     display: none !important;
   }
 
-  /* ── Stop all infinite animations (shimmer, float, pulse, glow, etc.) ── */
-  *[style*="animation"] {
-    animation-play-state: paused !important;
+  /* ── Kill CSS class-based infinite animations ──────────────────────────────
+     These are NOT caught by [style*="animation"] because they are defined in
+     stylesheets, not inline styles. Each one runs a continual GPU repaint loop.
+  */
+
+  /* Navbar logo dot */
+  .logo-dot {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  /* Hero label dot */
+  .hero-label .dot {
+    animation: none !important;
+  }
+
+  /* Mobile drawer ambient orb glow animations */
+  .mobile-drawer::before,
+  .mobile-drawer::after {
+    animation: none !important;
+  }
+
+  /* Footer shimmer bar */
+  .footer-shimmer,
+  [class*="shimmer"] {
+    animation: none !important;
+  }
+
+  /* ── Disable page-entrance animations on mobile ──────────────────────────
+     These add visual polish on desktop but cause layout jank on mobile as
+     elements animate in. Since the page loads fast on mobile anyway, skip them.
+  */
+  .animate-fade-in-up,
+  [class*="animate-fade"],
+  [class*="animate-slide"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* No staggered delay — everything appears instantly */
+  /* IMPORTANT: .delay-* classes have opacity:0 as base; must override so elements are visible */
+  .delay-1, .delay-2, .delay-3, .delay-4, .delay-5 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    animation-delay: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  /* ── Promote MobileTabBar to its own GPU compositing layer ───────────────
+     Without this, the browser repaints the tab bar whenever ANYTHING on the
+     page changes (e.g. scroll position). With its own layer, the tab bar
+     composites independently — zero repaint cost during scrolling.
+  */
+  .mobile-tab-bar {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* ── Remove hover transforms (touch devices don't hover) ─────────────────
+     Hover transforms with translateY/scale trigger compositing layer creation
+     on mobile, which wastes memory and GPU time.
+  */
+  .glass-card:hover,
+  .btn:hover,
+  .project-card:hover,
+  [class*="card"]:hover {
+    transform: none !important;
+    box-shadow: var(--shadow-md) !important;
+  }
+
+  /* ── Simplify navbar transition (avoids style recalc on every scroll) ── */
+  .navbar {
+    transition: background 0.15s linear !important;
   }
 }
+
 
 /* ── Respect prefers-reduced-motion globally ── */
 @media (prefers-reduced-motion: reduce) {
