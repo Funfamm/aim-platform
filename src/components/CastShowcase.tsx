@@ -52,8 +52,11 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
     const [visibleCards, setVisibleCards] = useState<Set<number>>(new Set())
     const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
     const [parallax, setParallax] = useState<Record<number, { x: number; y: number }>>({})
-    // True on phones/tablets: hover overlay is always shown so the About button is tappable
-    const [isTouchDevice, setIsTouchDevice] = useState(false)
+    // Detected once via lazy initializer — SSR-safe (returns false when window is absent)
+    const [isTouchDevice] = useState(() =>
+        typeof window !== 'undefined' &&
+        (window.matchMedia('(hover: none)').matches || ('ontouchstart' in window))
+    )
     // mounted: prevents portal from rendering during SSR (document.body doesn't exist)
     const [mounted, setMounted] = useState(false)
 
@@ -82,12 +85,11 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
     const stripRef = useRef<HTMLDivElement>(null)
     const cardRefs = useRef<(HTMLDivElement | null)[]>([])
 
-    // Detect touch/non-hover device once on mount (SSR-safe)
+    // Detect mount so the portal (createPortal) is only rendered client-side.
+    // setMounted inside an empty effect is the correct idiom here — it must be
+    // false during SSR and flip to true only after hydration.
     useEffect(() => {
-        setIsTouchDevice(
-            window.matchMedia('(hover: none)').matches ||
-            ('ontouchstart' in window)
-        )
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMounted(true)
     }, [])
 

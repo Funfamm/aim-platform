@@ -143,5 +143,19 @@
     "episodes": "集",
     "viewDetails": "查看选角角色",
     "film": "电影"
+  },
+  "watchPlayer": {
+    "backTo": "返回{title}",
+    "continueFrom": "从这里继续",
+    "resume": "继续播放",
+    "startOver": "从头开始",
+    "speed": "速度",
+    "speedNormal": "正常",
+    "subtitles": "字幕",
+    "subtitlesOff": "关闭",
+    "noSubtitles": "暂无字幕",
+    "videoUnavailable": "视频不可用",
+    "watchFull": "观看完整影片",
+    "continue": "继续"
   }
 }

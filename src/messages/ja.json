@@ -143,5 +143,19 @@
     "episodes": "エピソード",
     "viewDetails": "キャスト募集を見る",
     "film": "映画"
+  },
+  "watchPlayer": {
+    "backTo": "{title}に戻る",
+    "continueFrom": "次から再生",
+    "resume": "再開する",
+    "startOver": "最初から見る",
+    "speed": "再生速度",
+    "speedNormal": "通常",
+    "subtitles": "字幕",
+    "subtitlesOff": "オフ",
+    "noSubtitles": "字幕はありません",
+    "videoUnavailable": "動画は利用できません",
+    "watchFull": "フルを見る",
+    "continue": "続きを見る"
   }
 }

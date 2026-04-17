@@ -431,7 +431,22 @@
     "viewDetails": "상세 보기",
     "roleTypeLead": "주연",
     "roleTypeSupporting": "조연",
-    "roleTypeExtra": "엑스트라"
+    "roleTypeExtra": "엑스트라",
+    "manage": "관리",
+    "cancelManage": "취소",
+    "selectAll": "모두 선택",
+    "deselectAll": "선택 해제",
+    "removeSelected": "제거 ({count})",
+    "removingItems": "제거 중…",
+    "removeFromHistory": "기록에서 제거",
+    "titlesWatched": "작품 {count}편 시청",
+    "titleWatched": "작품 {count}편 시청",
+    "clearAll": "모두 지우기",
+    "removeAllHistory": "모든 기록을 삭제하시겠어요?",
+    "yesClear": "예, 지우기",
+    "typeSeries": "시리즈",
+    "typeFilm": "영화",
+    "failedRemove": "항목을 제거하지 못했습니다. 다시 시도해주세요."
   },
   "upcomingHero": {
     "label": "곧 공개",
@@ -1242,19 +1257,27 @@
     }
   },
   "liveRoom": {
-    "connecting": "\ub8f8\uc5d0 \uc5f0\uacb0 \uc911...",
-    "reconnecting": "\uc7ac\uc5f0\uacb0 \uc911...",
-    "failedToJoin": "\ub8f8 \ucc38\uc5ec \uc2e4\ud328",
-    "leaveRoom": "\ub8f8 \ub098\uac00\uae30",
-    "endEvent": "\uc774\ubca4\ud2b8 \uc885\ub8cc",
-    "couldNotJoin": "\ucc38\uc5ec\ud560 \uc218 \uc5c6\uc2b5\ub2c8\ub2e4"
+    "connecting": "룸에 연결 중...",
+    "reconnecting": "재연결 중...",
+    "failedToJoin": "룸 참여 실패",
+    "leaveRoom": "룸 나가기",
+    "endEvent": "이벤트 종료",
+    "couldNotJoin": "참여할 수 없습니다"
   },
   "eventRoom": {
-    "signInTitle": "\ucc38\uc5ec\ud558\ub824\uba74 \ub85c\uadf8\uc778\ud558\uc138\uc694",
-    "signInDesc": "\uc774 \ub77c\uc774\ube0c \uc774\ubca4\ud2b8\uc5d0 \ucc38\uc5ec\ud558\ub824\uba74 \ub85c\uadf8\uc778\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.",
-    "signInCta": "\ub85c\uadf8\uc778",
-    "endedTitle": "\uc774 \uc774\ubca4\ud2b8\uac00 \uc885\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4",
-    "endedDesc": "\ucc38\uc11d\ud574 \uc8fc\uc154\uc11c \uac10\uc0ac\ud569\ub2c8\ub2e4."
+    "signInTitle": "참여하려면 로그인하세요",
+    "signInDesc": "이 라이브 이벤트에 참여하려면 로그인이 필요합니다.",
+    "signInCta": "로그인",
+    "endedTitle": "이 이벤트가 종료되었습니다",
+    "endedDesc": "참석해 주셔서 감사합니다."
   },
-  "videoPlayer": {"subtitlesOff": "\ub044\uae30","subtitlesLabel": "\uc790\ub9c9","audioLabel": "\uc624\ub514\uc624","loadingSubtitles": "\ub85c\ub529 \uc911...","fallbackNotice": "\uc774 \uc5b8\uc5b4\uc758 \uc790\ub9c9\uc740 \uc544\uc9c1 \uc81c\uacf5\ub418\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4 \u2014 \uc601\uc5b4 \ud45c\uc2dc","noSubtitles": "\uc790\ub9c9 \uc5c6\uc74c","subtitleLoadError": "\uc790\ub9c9 \ub85c\ub529 \uc2e4\ud328"}
+  "videoPlayer": {
+    "subtitlesOff": "끄기",
+    "subtitlesLabel": "자막",
+    "audioLabel": "오디오",
+    "loadingSubtitles": "로딩 중...",
+    "fallbackNotice": "이 언어의 자막은 아직 제공되지 않습니다 — 영어 표시",
+    "noSubtitles": "자막 없음",
+    "subtitleLoadError": "자막 로딩 실패"
+  }
 }

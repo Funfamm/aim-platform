@@ -135,15 +135,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           pointerEvents: 'none',
           zIndex: 0,
         }} />
-        <div className="container">
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
           <div className="glass-panel" style={{
             textAlign: 'center', marginBottom: 'var(--space-xl)',
-            backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
             borderRadius: 'var(--radius-xl)',
             padding: 'var(--space-xl)',
-            background: 'linear-gradient(135deg, rgba(212,168,83,0.07) 0%, rgba(255,255,255,0.04) 100%)',
-            border: '1px solid rgba(212,168,83,0.18)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(212,168,83,0.06)',
+            background: 'linear-gradient(135deg, rgba(212,168,83,0.10) 0%, rgba(13,15,20,0.60) 100%)',
+            border: '1px solid rgba(212,168,83,0.22)',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(212,168,83,0.06)',
           }}>
             <span className="text-label" style={{ display: 'block', marginBottom: '6px' }}>{t('portfolio')}</span>
             <h2 style={{
@@ -164,7 +164,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <div className="divider divider-center" style={{ marginBottom: '8px' }} />
             <p style={{
               fontSize: '0.85rem',
-              color: 'var(--text-secondary)',
+              color: 'rgba(255,255,255,0.72)',
               maxWidth: '400px',
               margin: '0 auto',
               lineHeight: 1.5,

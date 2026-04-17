@@ -431,7 +431,22 @@
     "viewDetails": "Подробнее",
     "roleTypeLead": "Главная",
     "roleTypeSupporting": "Второстепенная",
-    "roleTypeExtra": "Массовка"
+    "roleTypeExtra": "Массовка",
+    "manage": "Управлять",
+    "cancelManage": "Отмена",
+    "selectAll": "Выбрать все",
+    "deselectAll": "Снять выбор",
+    "removeSelected": "Удалить ({count})",
+    "removingItems": "Удаление…",
+    "removeFromHistory": "Удалить из истории",
+    "titlesWatched": "Просмотрено {count} тит.",
+    "titleWatched": "Просмотрен {count} тит.",
+    "clearAll": "Очистить всё",
+    "removeAllHistory": "Удалить всю историю?",
+    "yesClear": "Да, удалить",
+    "typeSeries": "Сериал",
+    "typeFilm": "Фильм",
+    "failedRemove": "Не удалось удалить элементы. Повторите попытку."
   },
   "upcomingHero": {
     "label": "Скоро",
@@ -1242,19 +1257,27 @@
     }
   },
   "liveRoom": {
-    "connecting": "\u041f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435 \u043a \u043a\u043e\u043c\u043d\u0430\u0442\u0435...",
-    "reconnecting": "\u041f\u043e\u0432\u0442\u043e\u0440\u043d\u043e\u0435 \u043f\u043e\u0434\u043a\u043b\u044e\u0447\u0435\u043d\u0438\u0435...",
-    "failedToJoin": "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c \u043f\u0440\u0438\u0441\u043e\u0435\u0434\u0438\u043d\u0438\u0442\u044c\u0441\u044f",
-    "leaveRoom": "\u041f\u043e\u043a\u0438\u043d\u0443\u0442\u044c \u043a\u043e\u043c\u043d\u0430\u0442\u0443",
-    "endEvent": "\u0417\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u044c \u0441\u043e\u0431\u044b\u0442\u0438\u0435",
-    "couldNotJoin": "\u041d\u0435 \u0443\u0434\u0430\u043b\u043e\u0441\u044c"
+    "connecting": "Подключение к комнате...",
+    "reconnecting": "Повторное подключение...",
+    "failedToJoin": "Не удалось присоединиться",
+    "leaveRoom": "Покинуть комнату",
+    "endEvent": "Завершить событие",
+    "couldNotJoin": "Не удалось"
   },
   "eventRoom": {
-    "signInTitle": "\u0412\u043e\u0439\u0434\u0438\u0442\u0435, \u0447\u0442\u043e\u0431\u044b \u043f\u0440\u0438\u0441\u043e\u0435\u0434\u0438\u043d\u0438\u0442\u044c\u0441\u044f",
-    "signInDesc": "\u0412\u0430\u043c \u043d\u0443\u0436\u043d\u043e \u0432\u043e\u0439\u0442\u0438 \u0432 \u0441\u0438\u0441\u0442\u0435\u043c\u0443.",
-    "signInCta": "\u0412\u043e\u0439\u0442\u0438",
-    "endedTitle": "\u042d\u0442\u043e \u043c\u0435\u0440\u043e\u043f\u0440\u0438\u044f\u0442\u0438\u0435 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043e",
-    "endedDesc": "\u0421\u043f\u0430\u0441\u0438\u0431\u043e \u0437\u0430 \u0443\u0447\u0430\u0441\u0442\u0438\u0435."
+    "signInTitle": "Войдите, чтобы присоединиться",
+    "signInDesc": "Вам нужно войти в систему.",
+    "signInCta": "Войти",
+    "endedTitle": "Это мероприятие завершено",
+    "endedDesc": "Спасибо за участие."
   },
-  "videoPlayer": {"subtitlesOff": "\u0412\u044b\u043a\u043b\u044e\u0447\u0435\u043d\u043e","subtitlesLabel": "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044b","audioLabel": "\u0410\u0443\u0434\u0438\u043e","loadingSubtitles": "\u0417\u0430\u0433\u0440\u0443\u0437\u043a\u0430...","fallbackNotice": "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044b \u043d\u0430 \u044d\u0442\u043e\u043c \u044f\u0437\u044b\u043a\u0435 \u043d\u0435\u0434\u043e\u0441\u0442\u0443\u043f\u043d\u044b \u2014 \u043f\u043e\u043a\u0430\u0437 \u043d\u0430 \u0430\u043d\u0433\u043b\u0438\u0439\u0441\u043a\u043e\u043c","noSubtitles": "\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044b \u043e\u0442\u0441\u0443\u0442\u0441\u0442\u0432\u0443\u044e\u0442","subtitleLoadError": "\u041e\u0448\u0438\u0431\u043a\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0441\u0443\u0431\u0442\u0438\u0442\u0440\u043e\u0432"}
+  "videoPlayer": {
+    "subtitlesOff": "Выключено",
+    "subtitlesLabel": "Субтитры",
+    "audioLabel": "Аудио",
+    "loadingSubtitles": "Загрузка...",
+    "fallbackNotice": "Субтитры на этом языке недоступны — показ на английском",
+    "noSubtitles": "Субтитры отсутствуют",
+    "subtitleLoadError": "Ошибка загрузки субтитров"
+  }
 }

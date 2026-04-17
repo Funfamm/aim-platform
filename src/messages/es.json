@@ -143,5 +143,19 @@
     "episodes": "Episodios",
     "viewDetails": "Ver Roles de Casting",
     "film": "Película"
+  },
+  "watchPlayer": {
+    "backTo": "Volver a {title}",
+    "continueFrom": "Continuar desde",
+    "resume": "Reanudar",
+    "startOver": "Empezar desde el principio",
+    "speed": "Velocidad",
+    "speedNormal": "Normal",
+    "subtitles": "Subtítulos",
+    "subtitlesOff": "Desactivar",
+    "noSubtitles": "Sin subtítulos disponibles",
+    "videoUnavailable": "Video no disponible",
+    "watchFull": "Ver película completa",
+    "continue": "Continuar"
   }
 }

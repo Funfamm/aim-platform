@@ -143,5 +143,19 @@
     "episodes": "Эпизоды",
     "viewDetails": "Смотреть Роли",
     "film": "Фильм"
+  },
+  "watchPlayer": {
+    "backTo": "Назад к {title}",
+    "continueFrom": "Продолжить с",
+    "resume": "Продолжить",
+    "startOver": "Начать сначала",
+    "speed": "Скорость",
+    "speedNormal": "Нормальная",
+    "subtitles": "Субтитры",
+    "subtitlesOff": "Выкл.",
+    "noSubtitles": "Субтитры недоступны",
+    "videoUnavailable": "Видео недоступно",
+    "watchFull": "Смотреть полностью",
+    "continue": "Продолжить"
   }
 }

@@ -143,5 +143,19 @@
     "episodes": "एपिसोड",
     "viewDetails": "कास्टिंग भूमिकाएं देखें",
     "film": "फ़िल्म"
+  },
+  "watchPlayer": {
+    "backTo": "{title} पर वापस जाएं",
+    "continueFrom": "यहाँ से जारी रखें",
+    "resume": "फिर से शुरू करें",
+    "startOver": "शुरू से देखें",
+    "speed": "गति",
+    "speedNormal": "सामान्य",
+    "subtitles": "उपशीर्षक",
+    "subtitlesOff": "बंद",
+    "noSubtitles": "कोई उपशीर्षक उपलब्ध नहीं",
+    "videoUnavailable": "वीडियो उपलब्ध नहीं",
+    "watchFull": "पूरी फिल्म देखें",
+    "continue": "जारी रखें"
   }
 }

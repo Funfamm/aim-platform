@@ -414,7 +414,22 @@
     "viewDetails": "詳細を見る",
     "roleTypeLead": "主演",
     "roleTypeSupporting": "助演",
-    "roleTypeExtra": "エキストラ"
+    "roleTypeExtra": "エキストラ",
+    "manage": "管理",
+    "cancelManage": "キャンセル",
+    "selectAll": "すべて選択",
+    "deselectAll": "すべて解除",
+    "removeSelected": "削除 ({count})",
+    "removingItems": "削除中…",
+    "removeFromHistory": "履歴から削除",
+    "titlesWatched": "{count}作品を視聴済み",
+    "titleWatched": "{count}作品を視聴済み",
+    "clearAll": "すべて消去",
+    "removeAllHistory": "すべての履歴を削除しますか？",
+    "yesClear": "はい、削除",
+    "typeSeries": "シリーズ",
+    "typeFilm": "映画",
+    "failedRemove": "削除できませんでした。もう一度お試しください。"
   },
   "upcomingHero": {
     "label": "近日公開",
@@ -1243,19 +1258,27 @@
     }
   },
   "liveRoom": {
-    "connecting": "\u30eb\u30fc\u30e0\u306b\u63a5\u7d9a\u4e2d...",
-    "reconnecting": "\u518d\u63a5\u7d9a\u4e2d...",
-    "failedToJoin": "\u30eb\u30fc\u30e0\u3078\u306e\u53c2\u52a0\u306b\u5931\u6557\u3057\u307e\u3057\u305f",
-    "leaveRoom": "\u30eb\u30fc\u30e0\u3092\u9000\u51fa",
-    "endEvent": "\u30a4\u30d9\u30f3\u30c8\u7d42\u4e86",
-    "couldNotJoin": "\u53c2\u52a0\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f"
+    "connecting": "ルームに接続中...",
+    "reconnecting": "再接続中...",
+    "failedToJoin": "ルームへの参加に失敗しました",
+    "leaveRoom": "ルームを退出",
+    "endEvent": "イベント終了",
+    "couldNotJoin": "参加できませんでした"
   },
   "eventRoom": {
-    "signInTitle": "\u53c2\u52a0\u3059\u308b\u306b\u306f\u30b5\u30a4\u30f3\u30a4\u30f3\u3057\u3066\u304f\u3060\u3055\u3044",
-    "signInDesc": "\u3053\u306e\u30e9\u30a4\u30d6\u30a4\u30d9\u30f3\u30c8\u306b\u53c2\u52a0\u3059\u308b\u306b\u306f\u30b5\u30a4\u30f3\u30a4\u30f3\u304c\u5fc5\u8981\u3067\u3059.",
-    "signInCta": "\u30b5\u30a4\u30f3\u30a4\u30f3",
-    "endedTitle": "\u3053\u306e\u30a4\u30d9\u30f3\u30c8\u306f\u7d42\u4e86\u3057\u307e\u3057\u305f",
-    "endedDesc": "\u3054\u53c2\u52a0\u3042\u308a\u304c\u3068\u3046\u3054\u3056\u3044\u307e\u3059."
+    "signInTitle": "参加するにはサインインしてください",
+    "signInDesc": "このライブイベントに参加するにはサインインが必要です.",
+    "signInCta": "サインイン",
+    "endedTitle": "このイベントは終了しました",
+    "endedDesc": "ご参加ありがとうございます."
   },
-  "videoPlayer": {"subtitlesOff": "\u30aa\u30d5","subtitlesLabel": "\u5b57\u5e55","audioLabel": "\u97f3\u58f0","loadingSubtitles": "\u8aad\u307f\u8fbc\u307f\u4e2d...","fallbackNotice": "\u3053\u306e\u8a00\u8a9e\u306e\u5b57\u5e55\u306f\u307e\u3060\u5229\u7528\u3067\u304d\u307e\u305b\u3093 \u2014 \u82f1\u8a9e\u3092\u8868\u793a","noSubtitles": "\u5b57\u5e55\u306f\u3042\u308a\u307e\u305b\u3093","subtitleLoadError": "\u5b57\u5e55\u306e\u8aad\u307f\u8fbc\u307f\u306b\u5931\u6557\u3057\u307e\u3057\u305f"}
+  "videoPlayer": {
+    "subtitlesOff": "オフ",
+    "subtitlesLabel": "字幕",
+    "audioLabel": "音声",
+    "loadingSubtitles": "読み込み中...",
+    "fallbackNotice": "この言語の字幕はまだ利用できません — 英語を表示",
+    "noSubtitles": "字幕はありません",
+    "subtitleLoadError": "字幕の読み込みに失敗しました"
+  }
 }

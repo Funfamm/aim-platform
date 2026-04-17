@@ -431,7 +431,22 @@
     "viewDetails": "Ver detalles",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secundario",
-    "roleTypeExtra": "Extra"
+    "roleTypeExtra": "Extra",
+    "manage": "Gestionar",
+    "cancelManage": "Cancelar",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "removeSelected": "Eliminar ({count})",
+    "removingItems": "Eliminando…",
+    "removeFromHistory": "Quitar del historial",
+    "titlesWatched": "{count} títulos vistos",
+    "titleWatched": "{count} título visto",
+    "clearAll": "Limpiar todo",
+    "removeAllHistory": "¿Eliminar todo el historial?",
+    "yesClear": "Sí, limpiar",
+    "typeSeries": "Serie",
+    "typeFilm": "Película",
+    "failedRemove": "Error al eliminar. Por favor, inténtalo de nuevo."
   },
   "upcomingHero": {
     "label": "Próximamente",
@@ -1250,11 +1265,19 @@
     "couldNotJoin": "No se pudo unir"
   },
   "eventRoom": {
-    "signInTitle": "Inicia sesi\u00f3n para unirte",
-    "signInDesc": "Necesitas iniciar sesi\u00f3n para unirte a este evento en vivo.",
-    "signInCta": "Iniciar sesi\u00f3n",
+    "signInTitle": "Inicia sesión para unirte",
+    "signInDesc": "Necesitas iniciar sesión para unirte a este evento en vivo.",
+    "signInCta": "Iniciar sesión",
     "endedTitle": "Este evento ha finalizado",
     "endedDesc": "Gracias por asistir. Vuelve para futuros eventos."
   },
-  "videoPlayer": {"subtitlesOff": "Apagado","subtitlesLabel": "Subt\u00edtulos","audioLabel": "Audio","loadingSubtitles": "Cargando...","fallbackNotice": "Subt\u00edtulos no disponibles en este idioma \u2014 mostrando ingl\u00e9s","noSubtitles": "No hay subt\u00edtulos disponibles","subtitleLoadError": "Error al cargar subt\u00edtulos"}
+  "videoPlayer": {
+    "subtitlesOff": "Apagado",
+    "subtitlesLabel": "Subtítulos",
+    "audioLabel": "Audio",
+    "loadingSubtitles": "Cargando...",
+    "fallbackNotice": "Subtítulos no disponibles en este idioma — mostrando inglés",
+    "noSubtitles": "No hay subtítulos disponibles",
+    "subtitleLoadError": "Error al cargar subtítulos"
+  }
 }

@@ -143,5 +143,19 @@
     "episodes": "Episódios",
     "viewDetails": "Ver Papéis de Casting",
     "film": "Filme"
+  },
+  "watchPlayer": {
+    "backTo": "Voltar para {title}",
+    "continueFrom": "Continuar a partir de",
+    "resume": "Retomar",
+    "startOver": "Começar do início",
+    "speed": "Velocidade",
+    "speedNormal": "Normal",
+    "subtitles": "Legendas",
+    "subtitlesOff": "Desligar",
+    "noSubtitles": "Nenhuma legenda disponível",
+    "videoUnavailable": "Vídeo não disponível",
+    "watchFull": "Ver filme completo",
+    "continue": "Continuar"
   }
 }

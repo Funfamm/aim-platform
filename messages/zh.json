@@ -431,7 +431,22 @@
     "viewDetails": "查看详情",
     "roleTypeLead": "主角",
     "roleTypeSupporting": "配角",
-    "roleTypeExtra": "群演"
+    "roleTypeExtra": "群演",
+    "manage": "管理",
+    "cancelManage": "取消",
+    "selectAll": "全选",
+    "deselectAll": "取消全选",
+    "removeSelected": "删除 ({count})",
+    "removingItems": "删除中…",
+    "removeFromHistory": "从历史记录中删除",
+    "titlesWatched": "已看 {count} 部",
+    "titleWatched": "已看 {count} 部",
+    "clearAll": "清除全部",
+    "removeAllHistory": "删除所有观看记录？",
+    "yesClear": "是，清除",
+    "typeSeries": "剧集",
+    "typeFilm": "电影",
+    "failedRemove": "删除失败，请重试。"
   },
   "upcomingHero": {
     "label": "即将推出",
@@ -1242,19 +1257,27 @@
     }
   },
   "liveRoom": {
-    "connecting": "\u6b63\u5728\u8fde\u63a5\u623f\u95f4...",
-    "reconnecting": "\u6b63\u5728\u91cd\u65b0\u8fde\u63a5...",
-    "failedToJoin": "\u52a0\u5165\u623f\u95f4\u5931\u8d25",
-    "leaveRoom": "\u79bb\u5f00\u623f\u95f4",
-    "endEvent": "\u7ed3\u675f\u6d3b\u52a8",
-    "couldNotJoin": "\u65e0\u6cd5\u52a0\u5165"
+    "connecting": "正在连接房间...",
+    "reconnecting": "正在重新连接...",
+    "failedToJoin": "加入房间失败",
+    "leaveRoom": "离开房间",
+    "endEvent": "结束活动",
+    "couldNotJoin": "无法加入"
   },
   "eventRoom": {
-    "signInTitle": "\u767b\u5f55\u4ee5\u52a0\u5165",
-    "signInDesc": "\u60a8\u9700\u8981\u767b\u5f55\u624d\u80fd\u52a0\u5165\u6b64\u76f4\u64ad\u6d3b\u52a8.",
-    "signInCta": "\u767b\u5f55",
-    "endedTitle": "\u6b64\u6d3b\u52a8\u5df2\u7ed3\u675f",
-    "endedDesc": "\u611f\u8c22\u60a8\u7684\u53c2\u4e0e."
+    "signInTitle": "登录以加入",
+    "signInDesc": "您需要登录才能加入此直播活动.",
+    "signInCta": "登录",
+    "endedTitle": "此活动已结束",
+    "endedDesc": "感谢您的参与."
   },
-  "videoPlayer": {"subtitlesOff": "\u5173\u95ed","subtitlesLabel": "\u5b57\u5e55","audioLabel": "\u97f3\u9891","loadingSubtitles": "\u52a0\u8f7d\u4e2d...","fallbackNotice": "\u6b64\u8bed\u8a00\u5b57\u5e55\u6682\u4e0d\u53ef\u7528 \u2014 \u663e\u793a\u82f1\u6587","noSubtitles": "\u6ca1\u6709\u53ef\u7528\u5b57\u5e55","subtitleLoadError": "\u5b57\u5e55\u52a0\u8f7d\u5931\u8d25"}
+  "videoPlayer": {
+    "subtitlesOff": "关闭",
+    "subtitlesLabel": "字幕",
+    "audioLabel": "音频",
+    "loadingSubtitles": "加载中...",
+    "fallbackNotice": "此语言字幕暂不可用 — 显示英文",
+    "noSubtitles": "没有可用字幕",
+    "subtitleLoadError": "字幕加载失败"
+  }
 }

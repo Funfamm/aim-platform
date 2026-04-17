@@ -431,7 +431,22 @@
     "viewDetails": "Details ansehen",
     "roleTypeLead": "Hauptrolle",
     "roleTypeSupporting": "Nebenrolle",
-    "roleTypeExtra": "Statist"
+    "roleTypeExtra": "Statist",
+    "manage": "Verwalten",
+    "cancelManage": "Abbrechen",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Alle abwählen",
+    "removeSelected": "Entfernen ({count})",
+    "removingItems": "Wird entfernt…",
+    "removeFromHistory": "Aus Verlauf entfernen",
+    "titlesWatched": "{count} Titel gesehen",
+    "titleWatched": "{count} Titel gesehen",
+    "clearAll": "Alles löschen",
+    "removeAllHistory": "Gesamten Verlauf entfernen?",
+    "yesClear": "Ja, löschen",
+    "typeSeries": "Serie",
+    "typeFilm": "Film",
+    "failedRemove": "Elemente konnten nicht entfernt werden. Bitte erneut versuchen."
   },
   "upcomingHero": {
     "label": "Demnächst",
@@ -1247,14 +1262,22 @@
     "failedToJoin": "Beitritt zum Raum fehlgeschlagen",
     "leaveRoom": "Raum verlassen",
     "endEvent": "Veranstaltung beenden",
-    "couldNotJoin": "Beitritt nicht m\u00f6glich"
+    "couldNotJoin": "Beitritt nicht möglich"
   },
   "eventRoom": {
     "signInTitle": "Anmelden zum Beitreten",
-    "signInDesc": "Sie m\u00fcssen angemeldet sein, um an diesem Live-Event teilzunehmen.",
+    "signInDesc": "Sie müssen angemeldet sein, um an diesem Live-Event teilzunehmen.",
     "signInCta": "Anmelden",
     "endedTitle": "Dieses Event ist beendet",
-    "endedDesc": "Danke f\u00fcr Ihre Teilnahme."
+    "endedDesc": "Danke für Ihre Teilnahme."
   },
-  "videoPlayer": {"subtitlesOff": "Aus","subtitlesLabel": "Untertitel","audioLabel": "Audio","loadingSubtitles": "Wird geladen...","fallbackNotice": "Untertitel in dieser Sprache nicht verf\u00fcgbar \u2014 Englisch wird angezeigt","noSubtitles": "Keine Untertitel verf\u00fcgbar","subtitleLoadError": "Untertitel konnten nicht geladen werden"}
+  "videoPlayer": {
+    "subtitlesOff": "Aus",
+    "subtitlesLabel": "Untertitel",
+    "audioLabel": "Audio",
+    "loadingSubtitles": "Wird geladen...",
+    "fallbackNotice": "Untertitel in dieser Sprache nicht verfügbar — Englisch wird angezeigt",
+    "noSubtitles": "Keine Untertitel verfügbar",
+    "subtitleLoadError": "Untertitel konnten nicht geladen werden"
+  }
 }

@@ -143,5 +143,19 @@
     "episodes": "에피소드",
     "viewDetails": "캐스팅 역할 보기",
     "film": "영화"
+  },
+  "watchPlayer": {
+    "backTo": "{title}으로 돌아가기",
+    "continueFrom": "이어서 보기",
+    "resume": "계속 재생",
+    "startOver": "처음부터 보기",
+    "speed": "재생 속도",
+    "speedNormal": "보통",
+    "subtitles": "자막",
+    "subtitlesOff": "끄기",
+    "noSubtitles": "자막 없음",
+    "videoUnavailable": "동영상을 사용할 수 없습니다",
+    "watchFull": "전편 보기",
+    "continue": "계속"
   }
 }

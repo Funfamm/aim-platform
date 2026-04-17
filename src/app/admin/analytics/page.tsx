@@ -66,7 +66,7 @@ interface DashboardData {
 }
 
 interface AnalyticsData {
-    realTime: { onlineNow: number; loggedInNow: number; activeUsers: {name: string}[]; todayViews: number; yesterdayViews: number }
+    realTime: { onlineNow: number; loggedInNow: number; activeUsers: {name: string}[]; hasMoreUsers: boolean; todayViews: number; yesterdayViews: number }
     traffic: {
         weekViews: number; monthViews: number
         dailyViews: { date: string; views: number }[]
@@ -142,21 +142,21 @@ export default function AdminAnalyticsPage() {
     // Voice conversation mode
     const [voiceModeOpen, setVoiceModeOpen] = useState(false)
 
-    const [livePopoverOpen, setLivePopoverOpen] = useState(false)
+    const [livePopoverPos, setLivePopoverPos] = useState<{ top: number; right: number } | null>(null)
     const livePopoverRef = useRef<HTMLDivElement>(null)
 
     // Close live-users popover on outside click
     useEffect(() => {
         function handleClick(e: MouseEvent) {
             if (livePopoverRef.current && !livePopoverRef.current.contains(e.target as Node)) {
-                setLivePopoverOpen(false)
+                setLivePopoverPos(null)
             }
         }
-        if (livePopoverOpen) {
+        if (livePopoverPos) {
             document.addEventListener('mousedown', handleClick)
             return () => document.removeEventListener('mousedown', handleClick)
         }
-    }, [livePopoverOpen])
+    }, [livePopoverPos])
 
     const [fetchError, setFetchError] = useState('')
     const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null)
@@ -445,7 +445,12 @@ export default function AdminAnalyticsPage() {
                                 {/* Live logged-in users indicator */}
                                 <div ref={livePopoverRef} style={{ position: 'relative' }}>
                                     <button
-                                        onClick={() => setLivePopoverOpen(v => !v)}
+                                        onClick={(e) => {
+                                            if (livePopoverPos) { setLivePopoverPos(null); return }
+                                            // Use fixed positioning so the popover escapes overflow:hidden
+                                            const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect()
+                                            setLivePopoverPos({ top: rect.bottom + 8, right: window.innerWidth - rect.right })
+                                        }}
                                         title={`${data.realTime.loggedInNow} logged-in user${data.realTime.loggedInNow !== 1 ? 's' : ''} active now`}
                                         style={{
                                             display: 'flex', alignItems: 'center', gap: '6px',
@@ -472,31 +477,60 @@ export default function AdminAnalyticsPage() {
                                         )}
                                     </button>
 
-                                    {/* Active users popover */}
-                                    {livePopoverOpen && (
-                                        <div style={{
-                                            position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-                                            minWidth: '200px', maxWidth: '280px',
-                                            background: 'var(--bg-card, #1a1d23)',
-                                            border: '1px solid rgba(34,197,94,0.2)',
-                                            borderRadius: '12px',
-                                            boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
-                                            zIndex: 9999,
-                                            overflow: 'hidden',
-                                            animation: 'slideDown 0.2s ease',
-                                        }}>
+                                    {/* Active users popover — rendered at fixed position to escape overflow:hidden */}
+                                    {livePopoverPos && (
+                                        <div
+                                            style={{
+                                                position: 'fixed',
+                                                top: livePopoverPos.top,
+                                                right: livePopoverPos.right,
+                                                minWidth: '240px', maxWidth: '300px',
+                                                background: 'var(--bg-card, #1a1d23)',
+                                                border: '1px solid rgba(34,197,94,0.25)',
+                                                borderRadius: '14px',
+                                                boxShadow: '0 20px 60px rgba(0,0,0,0.65), 0 0 0 1px rgba(34,197,94,0.08)',
+                                                zIndex: 99999,
+                                                overflow: 'hidden',
+                                                animation: 'slideDown 0.18s ease',
+                                            }}
+                                        >
+                                            {/* Header */}
                                             <div style={{
                                                 padding: '10px 14px',
                                                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                                                 display: 'flex', alignItems: 'center', gap: '8px',
+                                                background: 'rgba(34,197,94,0.04)',
                                             }}>
-                                                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e', flexShrink: 0, boxShadow: '0 0 8px rgba(34,197,94,0.6)' }} />
+                                                <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e', flexShrink: 0, boxShadow: '0 0 8px rgba(34,197,94,0.6)', animation: 'livePulse 2s ease-in-out infinite' }} />
                                                 <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Live now</span>
                                                 <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>last 5 min</span>
                                             </div>
-                                            <div style={{ padding: '8px 0', maxHeight: '220px', overflowY: 'auto' }}>
+
+                                            {/* Summary row */}
+                                            <div style={{
+                                                display: 'flex', gap: '16px',
+                                                padding: '10px 14px',
+                                                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                                background: 'rgba(255,255,255,0.01)',
+                                            }}>
+                                                <div style={{ textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#22c55e', lineHeight: 1 }}>{data.realTime.loggedInNow}</div>
+                                                    <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>logged in</div>
+                                                </div>
+                                                <div style={{ textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#60a5fa', lineHeight: 1 }}>{data.realTime.onlineNow - data.realTime.loggedInNow}</div>
+                                                    <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>guests</div>
+                                                </div>
+                                                <div style={{ textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>{data.realTime.onlineNow}</div>
+                                                    <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>total</div>
+                                                </div>
+                                            </div>
+
+                                            {/* User list */}
+                                            <div style={{ maxHeight: '220px', overflowY: 'auto' }}>
                                                 {data.realTime.activeUsers.length === 0 ? (
-                                                    <div style={{ padding: '12px 14px', fontSize: '0.72rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
+                                                    <div style={{ padding: '14px', fontSize: '0.72rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
                                                         No logged-in users right now
                                                     </div>
                                                 ) : (
@@ -504,6 +538,7 @@ export default function AdminAnalyticsPage() {
                                                         <div key={i} style={{
                                                             display: 'flex', alignItems: 'center', gap: '10px',
                                                             padding: '7px 14px',
+                                                            borderBottom: '1px solid rgba(255,255,255,0.03)',
                                                         }}>
                                                             <div style={{
                                                                 width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
@@ -513,23 +548,39 @@ export default function AdminAnalyticsPage() {
                                                             }}>
                                                                 {u.name.charAt(0).toUpperCase()}
                                                             </div>
-                                                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
                                                                 {u.name}
                                                             </span>
-                                                            <span style={{ marginLeft: 'auto', width: '7px', height: '7px', borderRadius: '50%', background: '#22c55e', flexShrink: 0 }} />
+                                                            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#22c55e', flexShrink: 0, boxShadow: '0 0 6px rgba(34,197,94,0.5)' }} />
                                                         </div>
                                                     ))
                                                 )}
+
+                                                {/* "+N more" row when > 20 users are live */}
+                                                {data.realTime.hasMoreUsers && (
+                                                    <div style={{
+                                                        padding: '8px 14px',
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        background: 'rgba(34,197,94,0.04)',
+                                                        borderTop: '1px solid rgba(34,197,94,0.1)',
+                                                    }}>
+                                                        <span style={{ fontSize: '0.72rem', color: '#22c55e', fontWeight: 600 }}>
+                                                            +{data.realTime.loggedInNow - data.realTime.activeUsers.length} more logged in
+                                                        </span>
+                                                        <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>showing first 20</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Guests row */}
                                                 {data.realTime.onlineNow > data.realTime.loggedInNow && (
                                                     <div style={{
                                                         padding: '7px 14px',
                                                         borderTop: '1px solid rgba(255,255,255,0.05)',
-                                                        marginTop: '4px',
                                                         display: 'flex', alignItems: 'center', gap: '8px',
                                                     }}>
                                                         <div style={{
                                                             width: '26px', height: '26px', borderRadius: '50%', flexShrink: 0,
-                                                            background: 'rgba(107,114,128,0.15)',
+                                                            background: 'rgba(96,165,250,0.12)',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                             fontSize: '0.7rem',
                                                         }}>👤</div>

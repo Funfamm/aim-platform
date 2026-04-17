@@ -284,5 +284,19 @@
     "episodes": "Épisodes",
     "viewDetails": "Voir les Rôles",
     "film": "Film"
+  },
+  "watchPlayer": {
+    "backTo": "Retour à {title}",
+    "continueFrom": "Continuer depuis",
+    "resume": "Reprendre",
+    "startOver": "Recommencer",
+    "speed": "Vitesse",
+    "speedNormal": "Normale",
+    "subtitles": "Sous-titres",
+    "subtitlesOff": "Désactivé",
+    "noSubtitles": "Pas de sous-titres disponibles",
+    "videoUnavailable": "Vidéo non disponible",
+    "watchFull": "Voir le film entier",
+    "continue": "Continuer"
   }
 }

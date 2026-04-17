@@ -431,7 +431,22 @@
     "viewDetails": "Ver detalhes",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Coadjuvante",
-    "roleTypeExtra": "Figurante"
+    "roleTypeExtra": "Figurante",
+    "manage": "Gerenciar",
+    "cancelManage": "Cancelar",
+    "selectAll": "Selecionar tudo",
+    "deselectAll": "Desmarcar tudo",
+    "removeSelected": "Remover ({count})",
+    "removingItems": "Removendo…",
+    "removeFromHistory": "Remover do histórico",
+    "titlesWatched": "{count} títulos assistidos",
+    "titleWatched": "{count} título assistido",
+    "clearAll": "Limpar tudo",
+    "removeAllHistory": "Remover todo o histórico?",
+    "yesClear": "Sim, limpar",
+    "typeSeries": "Série",
+    "typeFilm": "Filme",
+    "failedRemove": "Falha ao remover itens. Por favor, tente novamente."
   },
   "upcomingHero": {
     "label": "Em Breve",
@@ -1242,19 +1257,27 @@
     }
   },
   "liveRoom": {
-    "connecting": "Conectando \u00e0 sala...",
+    "connecting": "Conectando à sala...",
     "reconnecting": "Reconectando...",
     "failedToJoin": "Falha ao entrar na sala",
     "leaveRoom": "Sair da sala",
     "endEvent": "Encerrar evento",
-    "couldNotJoin": "N\u00e3o foi poss\u00edvel entrar"
+    "couldNotJoin": "Não foi possível entrar"
   },
   "eventRoom": {
     "signInTitle": "Entrar para participar",
-    "signInDesc": "Voc\u00ea precisa estar conectado para participar.",
+    "signInDesc": "Você precisa estar conectado para participar.",
     "signInCta": "Entrar",
     "endedTitle": "Este evento terminou",
-    "endedDesc": "Obrigado pela presen\u00e7a."
+    "endedDesc": "Obrigado pela presença."
   },
-  "videoPlayer": {"subtitlesOff": "Desligado","subtitlesLabel": "Legendas","audioLabel": "\u00c1udio","loadingSubtitles": "A carregar...","fallbackNotice": "Legendas n\u00e3o dispon\u00edveis neste idioma \u2014 mostrando ingl\u00eas","noSubtitles": "Sem legendas dispon\u00edveis","subtitleLoadError": "Falha ao carregar legendas"}
+  "videoPlayer": {
+    "subtitlesOff": "Desligado",
+    "subtitlesLabel": "Legendas",
+    "audioLabel": "Áudio",
+    "loadingSubtitles": "A carregar...",
+    "fallbackNotice": "Legendas não disponíveis neste idioma — mostrando inglês",
+    "noSubtitles": "Sem legendas disponíveis",
+    "subtitleLoadError": "Falha ao carregar legendas"
+  }
 }

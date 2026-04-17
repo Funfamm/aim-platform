@@ -431,7 +431,22 @@
     "viewDetails": "Voir les détails",
     "roleTypeLead": "Principal",
     "roleTypeSupporting": "Secondaire",
-    "roleTypeExtra": "Figurant"
+    "roleTypeExtra": "Figurant",
+    "manage": "Gérer",
+    "cancelManage": "Annuler",
+    "selectAll": "Tout sélectionner",
+    "deselectAll": "Tout désélectionner",
+    "removeSelected": "Supprimer ({count})",
+    "removingItems": "Suppression…",
+    "removeFromHistory": "Retirer de l'historique",
+    "titlesWatched": "{count} titres regardés",
+    "titleWatched": "{count} titre regardé",
+    "clearAll": "Tout effacer",
+    "removeAllHistory": "Supprimer tout l'historique?",
+    "yesClear": "Oui, effacer",
+    "typeSeries": "Série",
+    "typeFilm": "Film",
+    "failedRemove": "Échec de la suppression. Veuillez réessayer."
   },
   "upcomingHero": {
     "label": "Prochainement",
@@ -1242,19 +1257,27 @@
     }
   },
   "liveRoom": {
-    "connecting": "Connexion \u00e0 la salle...",
+    "connecting": "Connexion à la salle...",
     "reconnecting": "Reconnexion...",
-    "failedToJoin": "\u00c9chec de la connexion",
+    "failedToJoin": "Échec de la connexion",
     "leaveRoom": "Quitter la salle",
-    "endEvent": "Terminer l'\u00e9v\u00e9nement",
+    "endEvent": "Terminer l'événement",
     "couldNotJoin": "Impossible de rejoindre"
   },
   "eventRoom": {
     "signInTitle": "Connectez-vous pour rejoindre",
-    "signInDesc": "Vous devez \u00eatre connect\u00e9 pour rejoindre cet \u00e9v\u00e9nement.",
+    "signInDesc": "Vous devez être connecté pour rejoindre cet événement.",
     "signInCta": "Se connecter",
-    "endedTitle": "Cet \u00e9v\u00e9nement est termin\u00e9",
-    "endedDesc": "Merci d'avoir particip\u00e9."
+    "endedTitle": "Cet événement est terminé",
+    "endedDesc": "Merci d'avoir participé."
   },
-  "videoPlayer": {"subtitlesOff": "D\u00e9sactiv\u00e9","subtitlesLabel": "Sous-titres","audioLabel": "Audio","loadingSubtitles": "Chargement...","fallbackNotice": "Sous-titres non disponibles dans cette langue \u2014 affichage en anglais","noSubtitles": "Aucun sous-titre disponible","subtitleLoadError": "Impossible de charger les sous-titres"}
+  "videoPlayer": {
+    "subtitlesOff": "Désactivé",
+    "subtitlesLabel": "Sous-titres",
+    "audioLabel": "Audio",
+    "loadingSubtitles": "Chargement...",
+    "fallbackNotice": "Sous-titres non disponibles dans cette langue — affichage en anglais",
+    "noSubtitles": "Aucun sous-titre disponible",
+    "subtitleLoadError": "Impossible de charger les sous-titres"
+  }
 }

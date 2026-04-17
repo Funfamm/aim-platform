@@ -449,7 +449,7 @@ export default function DashboardPage() {
                                                 color: watchBulkMode ? '#f87171' : 'var(--accent-gold)', cursor: 'pointer', transition: 'all 0.2s',
                                             }}
                                         >
-                                            {watchBulkMode ? '✕ Cancel' : '✏️ Manage'}
+                                            {watchBulkMode ? `✕ ${t('cancelManage')}` : `✏️ ${t('manage')}`}
                                         </button>
                                         {watchBulkMode && (
                                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -461,7 +461,7 @@ export default function DashboardPage() {
                                                         color: 'var(--text-secondary)', cursor: 'pointer',
                                                     }}
                                                 >
-                                                    {watchSelected.size === watchlist.length ? 'Deselect All' : 'Select All'}
+                                                    {watchSelected.size === watchlist.length ? t('deselectAll') : t('selectAll')}
                                                 </button>
                                                 {watchSelected.size > 0 && (
                                                     <button
@@ -479,7 +479,7 @@ export default function DashboardPage() {
                                                                 setWatchSelected(new Set())
                                                                 setWatchBulkMode(false)
                                                             } catch {
-                                                                setBulkError('Failed to remove items. Please try again.')
+                                                                setBulkError(t('failedRemove'))
                                                                 setTimeout(() => setBulkError(''), 4000)
                                                             }
                                                             finally { setBulkDeleting(false) }
@@ -491,7 +491,7 @@ export default function DashboardPage() {
                                                             color: '#f87171', cursor: bulkDeleting ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
                                                         }}
                                                     >
-                                                        {bulkDeleting ? '⏳ Removing...' : `🗑 Remove (${watchSelected.size})`}
+                                                        {bulkDeleting ? `⏳ ${t('removingItems')}` : `🗑 ${t('removeSelected', { count: watchSelected.size })}`}
                                                     </button>
                                                 )}
                                             </div>
@@ -606,7 +606,7 @@ export default function DashboardPage() {
                                     {/* ── History header: count + clear all ── */}
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-xs)' }}>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>
-                                            {history.length} {history.length === 1 ? 'title' : 'titles'} watched
+                                            {history.length === 1 ? t('titleWatched', { count: history.length }) : t('titlesWatched', { count: history.length })}
                                         </span>
                                         {!historyClearConfirm ? (
                                             <button
@@ -618,11 +618,11 @@ export default function DashboardPage() {
                                                     background: 'rgba(239,68,68,0.06)', color: '#f87171',
                                                 }}
                                             >
-                                                🗑 Clear All
+                                                🗑 {t('clearAll')}
                                             </button>
                                         ) : (
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Remove all history?</span>
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{t('removeAllHistory')}</span>
                                                 <button
                                                     onClick={clearAllHistory}
                                                     disabled={historyClearing}
@@ -633,7 +633,7 @@ export default function DashboardPage() {
                                                         background: 'rgba(239,68,68,0.15)', color: '#f87171', transition: 'all 0.2s',
                                                     }}
                                                 >
-                                                    {historyClearing ? '⏳' : 'Yes, clear'}
+                                                    {historyClearing ? '⏳' : t('yesClear')}
                                                 </button>
                                                 <button
                                                     onClick={() => setHistoryClearConfirm(false)}
@@ -665,8 +665,8 @@ export default function DashboardPage() {
                                                 <button
                                                     onClick={() => removeHistoryItem(item.id)}
                                                     disabled={isRemoving}
-                                                    title="Remove from history"
-                                                    aria-label="Remove from history"
+                                                    title={t('removeFromHistory')}
+                                                    aria-label={t('removeFromHistory')}
                                                     style={{
                                                         position: 'absolute', top: '10px', right: '10px', zIndex: 10,
                                                         width: '22px', height: '22px', borderRadius: '50%',
@@ -699,7 +699,7 @@ export default function DashboardPage() {
                                                                     color: item.project.projectType === 'series' ? '#60a5fa' : '#a78bfa',
                                                                     border: `1px solid ${item.project.projectType === 'series' ? 'rgba(96,165,250,0.2)' : 'rgba(139,92,246,0.2)'}`,
                                                                 }}>
-                                                                    {item.project.projectType === 'series' ? '📺 Series' : '🎬 Film'}
+                                                                    {item.project.projectType === 'series' ? `📺 ${t('typeSeries')}` : `🎬 ${t('typeFilm')}`}
                                                                 </span>
                                                                 {hGenre && <span style={{ fontSize: '0.6rem', padding: '2px 6px', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: 'var(--radius-full)', color: 'var(--accent-gold)' }}>{hGenre}</span>}
                                                                 <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{t('watched')} {new Date(item.watchedAt).toLocaleDateString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>

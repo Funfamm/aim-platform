@@ -140,12 +140,16 @@ export async function GET(req: NextRequest) {
             views: fillBuckets(buckets, viewRows)[i],
         }))
 
-        // Resolve names of currently-active logged-in users
+        // Resolve names of currently-active logged-in users.
+        // Cap at 20 to avoid O(N) DB round-trips when thousands are online —
+        // the full count is already captured in loggedInNow.length.
+        const SHOW_LIMIT = 20
         const activeUserIds = loggedInNow.map(pv => pv.userId as string)
         const activeUsers = activeUserIds.length > 0
             ? await prisma.user.findMany({
-                where: { id: { in: activeUserIds } },
+                where: { id: { in: activeUserIds.slice(0, SHOW_LIMIT) } },
                 select: { id: true, name: true },
+                take: SHOW_LIMIT,
             })
             : []
 
@@ -153,6 +157,7 @@ export async function GET(req: NextRequest) {
             onlineNow: onlineNow.length,
             loggedInNow: loggedInNow.length,
             activeUsers: activeUsers.map(u => ({ name: u.name })),
+            hasMoreUsers: loggedInNow.length > SHOW_LIMIT,
             todayViews,
             yesterdayViews,
         }
