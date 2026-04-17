@@ -4974,11 +4974,7 @@ img, video, iframe, canvas {
      stylesheets, not inline styles. Each one runs a continual GPU repaint loop.
   */
 
-  /* Navbar logo dot */
-  .logo-dot {
-    animation: none !important;
-    opacity: 1 !important;
-  }
+  /* Navbar logo dot — lightweight opacity animation, keep it on mobile */
 
   /* Hero label dot */
   .hero-label .dot {
