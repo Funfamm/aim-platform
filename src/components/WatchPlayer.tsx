@@ -478,7 +478,7 @@ export default function WatchPlayer({
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: '80px' }}>
+        <div className="aim-watch-wrapper" style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: '80px' }}>
             <style>{`
                 .aim-player-container { font-family: inherit; }
                 .aim-ctrl-btn {
@@ -491,6 +491,8 @@ export default function WatchPlayer({
                 }
                 .aim-ctrl-btn:hover { background: rgba(255,255,255,0.12); }
                 .aim-ctrl-btn:active { background: rgba(255,255,255,0.2); }
+                /* Skip buttons: hidden on desktop, shown on mobile via media query */
+                .aim-skip-btn { display: none; }
                 .aim-progress-thumb::-webkit-slider-thumb {
                     -webkit-appearance: none; appearance: none;
                     width: 14px; height: 14px; border-radius: 50%;
@@ -519,6 +521,50 @@ export default function WatchPlayer({
                 }
                 @media (max-width: 640px) {
                     .aim-desktop-only { display: none !important; }
+                }
+
+                /* ── Mobile: Full-width sticky player experience ── */
+                @media (max-width: 640px) {
+                    /* Reduce outer top padding to mobile navbar height */
+                    .aim-watch-wrapper { padding-top: 56px !important; padding-bottom: 100px !important; }
+
+                    /* Full-bleed: break player out of container horizontal padding */
+                    .aim-sticky-player-zone {
+                        position: sticky;
+                        top: 56px;
+                        z-index: 50;
+                        /* Negate the container padding so video is edge-to-edge */
+                        margin-left: calc(0px - var(--space-lg, 1.5rem));
+                        margin-right: calc(0px - var(--space-lg, 1.5rem));
+                        background: #000;
+                    }
+
+                    /* Remove rounded corners and border — full-bleed on mobile */
+                    .aim-sticky-player-zone .aim-pseudo-fs-shell {
+                        border-radius: 0 !important;
+                        border: none !important;
+                    }
+
+                    /* Hide the inner rounded box clip on mobile too */
+                    .aim-sticky-player-zone .aim-video-container {
+                        border-radius: 0 !important;
+                    }
+
+                    /* Thicker seek bar — easier to grab with a thumb */
+                    .aim-progress-track-inner { height: 6px !important; }
+
+                    /* Hide redundant movie info (shown on details page already) */
+                    .aim-movie-info { display: none !important; }
+
+                    /* Compact the back button on mobile */
+                    .aim-back-link {
+                        font-size: 0.78rem;
+                        margin-bottom: 8px !important;
+                        padding-top: 4px;
+                    }
+
+                    /* Show skip ±10s buttons on mobile */
+                    .aim-skip-btn { display: flex !important; }
                 }
 
                 /* ── Pseudo-fullscreen: hide nav + tab bar, fill viewport ── */
@@ -576,6 +622,7 @@ export default function WatchPlayer({
                 {/* ── Back button ── */}
                 <Link
                     href={`/works/${project.slug}`}
+                    className="aim-back-link"
                     style={{
                         display: 'inline-flex', alignItems: 'center', gap: '6px',
                         fontSize: '0.85rem', color: 'var(--text-tertiary)',
@@ -645,6 +692,8 @@ export default function WatchPlayer({
                 )}
 
                 {/* ══════════════ VIDEO PLAYER ══════════════ */}
+                {/* aim-sticky-player-zone: on mobile this becomes position:sticky + full-bleed */}
+                <div className="aim-sticky-player-zone">
                 {/*
                   * ARCHITECTURE: Two-layer container.
                   * Outer (containerRef): position:relative, NO overflow:hidden
@@ -904,15 +953,15 @@ export default function WatchPlayer({
                                             </svg>
                                         )}
                                     </button>
-                                    {/* Skip -10 */}
-                                    <button className="aim-ctrl-btn aim-desktop-only" onClick={() => skip(-10)} title="Rewind 10s (←)">
+                                    {/* Skip -10 — visible on mobile too (aim-skip-btn) */}
+                                    <button className="aim-ctrl-btn aim-skip-btn" onClick={() => skip(-10)} title="Rewind 10s (←)">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M1 4v6h6" /><path d="M3.51 15a9 9 0 1 0 .49-3.78" />
                                             <text x="8" y="15" fontSize="5" fill="currentColor" stroke="none">10</text>
                                         </svg>
                                     </button>
                                     {/* Skip +10 */}
-                                    <button className="aim-ctrl-btn aim-desktop-only" onClick={() => skip(10)} title="Forward 10s (→)">
+                                    <button className="aim-ctrl-btn aim-skip-btn" onClick={() => skip(10)} title="Forward 10s (→)">
                                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-.49-3.78" />
                                             <text x="8" y="15" fontSize="5" fill="currentColor" stroke="none">10</text>
@@ -1140,9 +1189,10 @@ export default function WatchPlayer({
                         </div>
                     )}
                 </div>
+                </div>{/* /aim-sticky-player-zone */}
 
-                {/* ── Project Info + Episodes ── */}
-                <div style={{
+                {/* ── Project Info + Episodes — hidden on mobile (already on details page) ── */}
+                <div className="aim-movie-info" style={{
                     display: 'flex', gap: 'var(--space-2xl)',
                     marginTop: 'var(--space-xl)', marginBottom: 'var(--space-2xl)',
                     flexWrap: 'wrap',
