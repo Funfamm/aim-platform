@@ -65,10 +65,24 @@ async function getTranscriber() {
     if (transcriberPipeline) return transcriberPipeline
 
     const { pipeline } = await import('@huggingface/transformers')
-    transcriberPipeline = await pipeline(
-        'automatic-speech-recognition',
-        'Xenova/whisper-medium', // upgraded from whisper-small for better accuracy
-    )
+    // Choose model via env var, default to medium for best accuracy
+    const modelName = process.env.NEXT_PUBLIC_WHISPER_MODEL || 'Xenova/whisper-medium'
+    try {
+        transcriberPipeline = await pipeline(
+            'automatic-speech-recognition',
+            modelName,
+        )
+        console.info(`[transcribe-client] Loaded Whisper model ${modelName}`)
+    } catch (e) {
+        console.warn(`[transcribe-client] Failed to load ${modelName}:`, e)
+        // Fallback to a smaller model that is more likely to fit in memory
+        const fallback = 'Xenova/whisper-base'
+        console.info(`[transcribe-client] Falling back to ${fallback}`)
+        transcriberPipeline = await pipeline(
+            'automatic-speech-recognition',
+            fallback,
+        )
+    }
     return transcriberPipeline
 }
 
@@ -111,7 +125,12 @@ export async function transcribeVideo(
                     const { signedUrl } = await proxyRes.json()
                     if (!signedUrl) throw new Error('Proxy returned no signed URL')
                     report('extracting-audio', 'Fetching via secure signed URL...')
-                    fileData = await fetchFile(signedUrl)
+                    try {
+                        fileData = await fetchFile(signedUrl)
+                    } catch (signedUrlErr) {
+                        console.error('[transcribeVideo] Signed URL fetch failed:', signedUrlErr)
+                        throw new Error('Failed to fetch from R2 (CORS error). Please add a CORS policy to your Cloudflare R2 bucket allowing GET requests from your domain.')
+                    }
                 } else {
                     // Streaming binary fallback (non-R2 CDN)
                     const blob = await proxyRes.blob()
@@ -173,7 +192,15 @@ export async function transcribeVideo(
         report('done', 'Transcription complete!')
         return { segments, fullText }
     } catch (err) {
-        report('error', err instanceof Error ? err.message : 'Transcription failed')
+        console.error('[transcribeVideo] Fatal error:', err)
+        let errorMsg = err instanceof Error ? err.message : 'Transcription failed'
+        
+        // Add more context if it's a generic "Failed to fetch"
+        if (errorMsg === 'Failed to fetch') {
+            errorMsg = 'Failed to fetch (Check console. Usually a CORS issue or network block)'
+        }
+
+        report('error', errorMsg)
         throw err
     }
 }
