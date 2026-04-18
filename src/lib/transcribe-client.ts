@@ -104,7 +104,12 @@ export async function transcribeVideo(
     try {
         // 1. Load FFmpeg
         report('loading-ffmpeg', 'Loading video engine...')
-        const ffmpeg = await getFFmpeg()
+        let ffmpeg: FFmpeg
+        try {
+            ffmpeg = await getFFmpeg()
+        } catch (e) {
+            throw new Error(`FFmpeg load failed (CDN blocked or offline): ${e instanceof Error ? e.message : String(e)}`)
+        }
 
         // 2. Write video to FFmpeg virtual filesystem
         report('extracting-audio', 'Extracting audio from video...')
@@ -118,7 +123,12 @@ export async function transcribeVideo(
                 const proxyUrl = `/api/admin/subtitles/proxy-video?url=${encodeURIComponent(videoSource)}`
                 // New proxy returns { signedUrl } for R2 files — fetch that URL directly.
                 // For non-R2 it streams binary, so handle both response shapes.
-                const proxyRes = await fetch(proxyUrl)
+                let proxyRes: Response
+                try {
+                    proxyRes = await fetch(proxyUrl)
+                } catch (e) {
+                    throw new Error(`Server proxy request failed (Next.js route crashed or network offline): ${e instanceof Error ? e.message : String(e)}`)
+                }
                 if (!proxyRes.ok) throw new Error(`Proxy failed: ${proxyRes.status}`)
                 const contentType = proxyRes.headers.get('content-type') || ''
                 if (contentType.includes('application/json')) {
@@ -133,8 +143,12 @@ export async function transcribeVideo(
                     }
                 } else {
                     // Streaming binary fallback (non-R2 CDN)
-                    const blob = await proxyRes.blob()
-                    fileData = new Uint8Array(await blob.arrayBuffer())
+                    try {
+                        const blob = await proxyRes.blob()
+                        fileData = new Uint8Array(await blob.arrayBuffer())
+                    } catch (e) {
+                        throw new Error(`Server binary stream interrupted (Vercel maxDuration hit?): ${e instanceof Error ? e.message : String(e)}`)
+                    }
                 }
             }
         } else {
@@ -160,16 +174,28 @@ export async function transcribeVideo(
 
         // 5. Load Whisper model
         report('loading-model', 'Loading AI speech model (~464MB first time)...')
-        const transcriber = await getTranscriber()
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let transcriber: any
+        try {
+            transcriber = await getTranscriber()
+        } catch (e) {
+            throw new Error(`AI Model load failed (HuggingFace blocked or out of memory): ${e instanceof Error ? e.message : String(e)}`)
+        }
 
         // 6. Transcribe — Whisper auto-detects language and translates to English
         report('transcribing', 'Transcribing audio (auto-detects all languages)...')
-        const result = await transcriber(audioUrl, {
-            chunk_length_s: 30,
-            stride_length_s: 5,
-            return_timestamps: true,
-            task: 'translate',  // auto-translate ANY language to English
-        })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        let result: any
+        try {
+            result = await transcriber(audioUrl, {
+                chunk_length_s: 30,
+                stride_length_s: 5,
+                return_timestamps: true,
+                task: 'translate',  // auto-translate ANY language to English
+            })
+        } catch (e) {
+            throw new Error(`AI processing failed (Device too slow or audio invalid): ${e instanceof Error ? e.message : String(e)}`)
+        }
 
         // Cleanup
         URL.revokeObjectURL(audioUrl)
