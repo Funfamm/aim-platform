@@ -100,9 +100,23 @@ export async function transcribeVideo(
             try {
                 fileData = await fetchFile(videoSource)
             } catch {
-                report('extracting-audio', 'Direct fetch blocked — proxying through server...')
+                report('extracting-audio', 'Direct fetch blocked — requesting server proxy...')
                 const proxyUrl = `/api/admin/subtitles/proxy-video?url=${encodeURIComponent(videoSource)}`
-                fileData = await fetchFile(proxyUrl)
+                // New proxy returns { signedUrl } for R2 files — fetch that URL directly.
+                // For non-R2 it streams binary, so handle both response shapes.
+                const proxyRes = await fetch(proxyUrl)
+                if (!proxyRes.ok) throw new Error(`Proxy failed: ${proxyRes.status}`)
+                const contentType = proxyRes.headers.get('content-type') || ''
+                if (contentType.includes('application/json')) {
+                    const { signedUrl } = await proxyRes.json()
+                    if (!signedUrl) throw new Error('Proxy returned no signed URL')
+                    report('extracting-audio', 'Fetching via secure signed URL...')
+                    fileData = await fetchFile(signedUrl)
+                } else {
+                    // Streaming binary fallback (non-R2 CDN)
+                    const blob = await proxyRes.blob()
+                    fileData = new Uint8Array(await blob.arrayBuffer())
+                }
             }
         } else {
             fileData = await fetchFile(videoSource)
