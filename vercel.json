@@ -3,7 +3,13 @@
   "crons": [
     {
       "path": "/api/cron/audit-applications",
-      "schedule": "0 0 * * *"
+      "schedule": "0 * * * *",
+      "comment": "Hourly: score queued apps (quota-gated) + reveal results whose 6h timer has expired"
+    },
+    {
+      "path": "/api/cron/process-notifications",
+      "schedule": "*/15 * * * *",
+      "comment": "Every 15 min: flush pending user notification queue"
     }
   ],
   "functions": {
@@ -12,6 +18,18 @@
     },
     "src/app/api/admin/subtitles/translate/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/casting/submit/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/script-calls/[id]/analyze/route.ts": {
+      "maxDuration": 120
+    },
+    "src/app/api/admin/training/[id]/translate/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/upload/copy/route.ts": {
+      "maxDuration": 60
     }
   }
 }
