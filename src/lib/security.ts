@@ -21,14 +21,15 @@ export function buildCsp(): string {
   const directives: string[] = [
     "default-src 'self'",
     // unsafe-eval required by some Next.js/React internals in prod hydration
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.paypal.com https://www.paypalobjects.com https://vercel.live",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://accounts.google.com https://www.paypal.com https://www.paypalobjects.com https://vercel.live https://unpkg.com https://cdn.jsdelivr.net",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // R2 / S3 / Cloudinary / Google avatars + Sentry CDN resources
     "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudinary.com https://*.unsplash.com https://lh3.googleusercontent.com https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.cloudflare.com",
     "font-src 'self' https://fonts.gstatic.com data:",
-    // API calls: Sentry, Google OAuth, PayPal, R2 storage, Microsoft Graph, Google Fonts (service worker fetch)
-    "connect-src 'self' https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://fonts.googleapis.com https://fonts.gstatic.com",
-    "media-src 'self' blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com",
+    // API calls: Sentry, Google OAuth, PayPal, R2 storage, Microsoft Graph, Google Fonts, LiveKit (WebSockets), Hugging Face (AI models)
+    "connect-src 'self' blob: https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://fonts.googleapis.com https://fonts.gstatic.com wss://rtc.impactaistudio.com wss://*.livekit.cloud https://*.livekit.cloud https://unpkg.com https://cdn.jsdelivr.net https://huggingface.co https://cdn-lfs.huggingface.co",
+    "media-src 'self' blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.amazonaws.com https://*.livekit.cloud",
+    "worker-src 'self' blob:",
     "frame-src 'self' https://accounts.google.com https://www.paypal.com https://www.sandbox.paypal.com",
     "frame-ancestors 'self'",
     "base-uri 'self'",
@@ -62,7 +63,7 @@ export function getSecurityHeaders(): Record<string, string> {
 
     // Restrict browser APIs
     'permissions-policy':
-      'geolocation=(), microphone=(), camera=(), payment=(self "https://www.paypal.com"), usb=()',
+      'camera=*, microphone=*, display-capture=(self), payment=(self "https://www.paypal.com")',
 
     // Content-Security-Policy
     [CSP_HEADER]: buildCsp(),
