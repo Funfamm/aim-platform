@@ -200,12 +200,18 @@ export default function AdminMediaPage() {
         e.preventDefault()
         if (!form.url) return
         setSaving(true)
-        // hero-video items are stored in prisma.pageMedia (type='hero-video').
-        // The HeroVideo model (prisma.heroVideo / /api/admin/videos) has no `target` field,
-        // so we intentionally omit target from hero-video payloads for forward-compatibility.
-        const payload = isHeroVideo
-            ? { page: form.pages.join(','), type: 'hero-video', title: form.title, url: form.url, duration: form.duration, sortOrder: form.sortOrder, active: form.active }
-            : { page: form.page, type: form.type, title: form.title, url: form.url, duration: form.duration, sortOrder: form.sortOrder, active: form.active, target: form.target }
+        // Unified payload — target and duration are always included for all types.
+        // The API and PageMedia schema support both fields for every media type.
+        const payload = {
+            page: isHeroVideo ? form.pages.join(',') : form.page,
+            type: form.type,
+            title: form.title,
+            url: form.url,
+            duration: form.duration,
+            sortOrder: form.sortOrder,
+            active: form.active,
+            target: form.target,
+        }
         try {
             if (editingId) {
                 await fetch('/api/admin/media', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editingId, ...payload }) })
@@ -345,25 +351,23 @@ export default function AdminMediaPage() {
                         </div>
 
                         <form onSubmit={handleSubmit}>
-                            {/* Row 1: Type + Device target (hidden for hero-video) + Sort */}
-                            <div style={{ display: 'grid', gridTemplateColumns: isHeroVideo ? '1fr auto' : '1fr 1fr auto', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
+                            {/* Row 1: Type + Device target + Sort — all types including hero-video */}
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
                                 <div>
                                     <label style={labelSt}>Media Type</label>
                                     <select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))} style={{ ...inputSt, cursor: 'pointer' }}>
                                         {MEDIA_TYPES.map(t => <option key={t.value} value={t.value}>{t.icon} {t.label}</option>)}
                                     </select>
                                 </div>
-                                {/* Device target — not applicable for hero-video (HeroVideo model has no target column) */}
-                                {!isHeroVideo && (
-                                    <div>
-                                        <label style={labelSt}>Show On Device</label>
-                                        <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
-                                            {[{ value: 'all', label: '🌐 All' }, { value: 'desktop', label: '🖥️ Desktop' }, { value: 'mobile', label: '📱 Mobile' }].map(o => (
-                                                <button key={o.value} type="button" onClick={() => setForm(f => ({ ...f, target: o.value }))} style={pillBtn(form.target === o.value)}>{o.label}</button>
-                                            ))}
-                                        </div>
+                                {/* Show On Device — supported by PageMedia.target for ALL types */}
+                                <div>
+                                    <label style={labelSt}>Show On Device</label>
+                                    <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
+                                        {[{ value: 'all', label: '🌐 All' }, { value: 'desktop', label: '🖥️ Desktop' }, { value: 'mobile', label: '📱 Mobile' }].map(o => (
+                                            <button key={o.value} type="button" onClick={() => setForm(f => ({ ...f, target: o.value }))} style={pillBtn(form.target === o.value)}>{o.label}</button>
+                                        ))}
                                     </div>
-                                )}
+                                </div>
                                 <div style={{ minWidth: '80px' }}>
                                     <label style={labelSt}>Sort #</label>
                                     <input type="number" value={form.sortOrder} min={1}

@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json()
-        const { page, type, url, title, sortOrder, active, duration } = body
+        const { page, type, url, title, sortOrder, active, duration, target } = body
 
         if (!page || !url) {
             return NextResponse.json({ error: 'Page and URL are required' }, { status: 400 })
@@ -68,10 +68,8 @@ export async function POST(req: NextRequest) {
             title: title || '',
             sortOrder: sortOrder || 0,
             active: active !== false,
-        }
-        // Only include duration if it's a hero-video type
-        if (type === 'hero-video') {
-            data.duration = duration || 10
+            duration: duration || 10,
+            target: target || 'all',
         }
 
         const media = await prisma.pageMedia.create({ data: data as never })
