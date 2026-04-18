@@ -136,30 +136,40 @@ async function getFFmpeg(): Promise<FFmpeg> {
 
 /**
  * Load and cache the Whisper ASR pipeline.
- * Uses whisper-medium — 33% lower WER than whisper-small, still feasible in browser.
- * Supports 99 languages, auto-detects language per chunk.
- * First download is ~464MB, cached after that.
+ *
+ * STRATEGY — Zero-Flake Local Hosting:
+ * ───────────────────────────────────
+ * Hugging Face's CDN is occasionally unstable (503 Service Unavailable).
+ * To ensure consistent operation, we self-host the "base" model in /public/models/.
+ *
+ * env.localModelPath points to /public/models/ (served as /models/ by Next.js).
+ * env.allowLocalModels = true enables searching our public folder.
+ * env.allowRemoteModels = false disables Hugging Face fallback to prevent stalls.
  */
 async function getTranscriber() {
     if (transcriberPipeline) return transcriberPipeline
 
-    const { pipeline } = await import('@huggingface/transformers')
-    // Choose model via env var, default to medium for best accuracy
-    const modelName = process.env.NEXT_PUBLIC_WHISPER_MODEL || 'Xenova/whisper-medium'
+    const { pipeline, env } = await import('@huggingface/transformers')
+
+    // ── Configure Local Hosting ──────────────────────────────────────────────
+    env.allowLocalModels = true
+    env.allowRemoteModels = false // Force zero-flake (no HF dependency)
+    env.localModelPath = '/models/'
+
+    // The name matches our /public/models/whisper-base/ directory
+    const modelName = 'whisper-base'
+
     try {
         transcriberPipeline = await pipeline(
             'automatic-speech-recognition',
             modelName,
         )
-        console.info(`[transcribe-client] Loaded Whisper model ${modelName}`)
+        console.info(`[transcribe-client] Loaded self-hosted Whisper model: ${modelName}`)
     } catch (e) {
-        console.warn(`[transcribe-client] Failed to load ${modelName}:`, e)
-        // Fallback to a smaller model that is more likely to fit in memory
-        const fallback = 'Xenova/whisper-base'
-        console.info(`[transcribe-client] Falling back to ${fallback}`)
-        transcriberPipeline = await pipeline(
-            'automatic-speech-recognition',
-            fallback,
+        console.error(`[transcribe-client] Failed to load local model ${modelName}:`, e)
+        throw new Error(
+            `AI Model load failed. Ensure /public/models/${modelName}/ exists. ` +
+            `Details: ${e instanceof Error ? e.message : String(e)}`
         )
     }
     return transcriberPipeline
