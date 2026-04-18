@@ -8,6 +8,7 @@
 
 import { useRef } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import MovieCard, { type ProjectCard } from './MovieCard'
 
 interface RollRowProps {
@@ -22,6 +23,7 @@ interface RollRowProps {
 
 export default function RollRow({ title, titleI18n, icon, projects, locale, onCardHover, onCardHoverEnd }: RollRowProps) {
     const stripRef = useRef<HTMLDivElement>(null)
+    const t = useTranslations('works')
 
     if (projects.length === 0) return null
 
@@ -61,7 +63,7 @@ export default function RollRow({ title, titleI18n, icon, projects, locale, onCa
                         border: '1px solid rgba(212,168,83,0.2)',
                         padding: '1px 6px', borderRadius: '20px',
                         letterSpacing: '0.06em', textTransform: 'uppercase',
-                    }}>Curated</span>
+                    }}>{t('curated')}</span>
                 </div>
 
                 {/* Scroll arrows */}

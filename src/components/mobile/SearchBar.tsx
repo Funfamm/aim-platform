@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 
 interface SearchResult {
@@ -19,6 +19,7 @@ interface SearchResult {
 
 export default function SearchBar() {
     const locale = useLocale()
+    const t = useTranslations('works')
     const [query, setQuery] = useState('')
     const [results, setResults] = useState<SearchResult[]>([])
     const [loading, setLoading] = useState(false)
@@ -129,8 +130,8 @@ export default function SearchBar() {
                     onChange={e => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => { if (results.length > 0) setOpen(true) }}
-                    placeholder="Search films, genres…"
-                    aria-label="Search films"
+                    placeholder={t('searchPlaceholder')}
+                    aria-label={t('searchPlaceholder')}
                     aria-expanded={open}
                     aria-autocomplete="list"
                     style={{
@@ -268,7 +269,7 @@ export default function SearchBar() {
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(212,168,83,0.06)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
                     >
-                        See all results for &ldquo;{query}&rdquo; →
+                        {t('seeAllResults', { query })} →
                     </a>
                 </div>
             )}

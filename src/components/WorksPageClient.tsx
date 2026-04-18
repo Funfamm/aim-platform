@@ -126,6 +126,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
     const [videoCount, setVideoCount] = useState(0)
     const jumpToVideoRef = useRef<((idx: number) => void) | null>(null)
 
+    // Per-roll strip refs for desktop scroll buttons (keyed by roll.id)
+    const rollStripRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+    const scrollRoll = useCallback((rollId: string, dir: 'left' | 'right') => {
+        const el = rollStripRefs.current.get(rollId)
+        if (el) el.scrollBy({ left: dir === 'right' ? 296 : -296, behavior: 'smooth' })
+    }, [])
+
     const handleVideoChange = useCallback((idx: number, total: number) => {
         setCurrentIdx(idx)
         setVideoCount(total)
@@ -418,7 +425,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                         }
                                         return (
                                             <section key={roll.id} style={{ marginBottom: '52px' }}>
-                                                {/* Roll name header */}
+                                                {/* Roll name header with scroll arrows */}
                                                 <div style={{
                                                     display: 'flex', alignItems: 'center', gap: '12px',
                                                     marginBottom: '20px',
@@ -436,23 +443,69 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                                         border: '1px solid rgba(212,168,83,0.18)',
                                                         padding: '2px 8px', borderRadius: '99px',
                                                     }}>
-                                                        {roll.projects.length} title{roll.projects.length !== 1 ? 's' : ''}
+                                                        {t('titlesCount', { count: roll.projects.length })}
                                                     </span>
+
+                                                    {/* Scroll arrows — pushed to the right */}
+                                                    {roll.projects.length > 3 && (
+                                                        <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px' }}>
+                                                            {(['left', 'right'] as const).map(dir => (
+                                                                <button
+                                                                    key={dir}
+                                                                    onClick={() => scrollRoll(roll.id, dir)}
+                                                                    aria-label={dir === 'left' ? 'Scroll left' : 'Scroll right'}
+                                                                    style={{
+                                                                        width: '32px', height: '32px',
+                                                                        borderRadius: '50%',
+                                                                        background: 'rgba(212,168,83,0.08)',
+                                                                        border: '1px solid rgba(212,168,83,0.2)',
+                                                                        color: 'var(--accent-gold)',
+                                                                        cursor: 'pointer',
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                        fontSize: '1rem', lineHeight: 1,
+                                                                        transition: 'background 0.2s, transform 0.15s',
+                                                                        flexShrink: 0,
+                                                                    }}
+                                                                    onMouseEnter={e => {
+                                                                        e.currentTarget.style.background = 'rgba(212,168,83,0.22)'
+                                                                        e.currentTarget.style.transform = 'scale(1.1)'
+                                                                    }}
+                                                                    onMouseLeave={e => {
+                                                                        e.currentTarget.style.background = 'rgba(212,168,83,0.08)'
+                                                                        e.currentTarget.style.transform = 'scale(1)'
+                                                                    }}
+                                                                    onMouseDown={e => { e.currentTarget.style.transform = 'scale(0.92)' }}
+                                                                    onMouseUp={e => { e.currentTarget.style.transform = 'scale(1.1)' }}
+                                                                >
+                                                                    {dir === 'left'
+                                                                        ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+                                                                        : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+                                                                    }
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Horizontal scroll strip — same card design, 280px fixed width */}
-                                                <div style={{
-                                                    display: 'flex',
-                                                    gap: '16px',
-                                                    overflowX: 'auto',
-                                                    overflowY: 'hidden',
-                                                    scrollSnapType: 'x mandatory',
-                                                    overscrollBehaviorX: 'contain',
-                                                    touchAction: 'pan-x pan-y',
-                                                    paddingBottom: '12px',
-                                                    scrollbarWidth: 'none',
-                                                    msOverflowStyle: 'none',
-                                                }}>
+                                                <div
+                                                    ref={el => {
+                                                        if (el) rollStripRefs.current.set(roll.id, el)
+                                                        else rollStripRefs.current.delete(roll.id)
+                                                    }}
+                                                    style={{
+                                                        display: 'flex',
+                                                        gap: '16px',
+                                                        overflowX: 'auto',
+                                                        overflowY: 'hidden',
+                                                        scrollSnapType: 'x mandatory',
+                                                        overscrollBehaviorX: 'contain',
+                                                        touchAction: 'pan-x pan-y',
+                                                        paddingBottom: '12px',
+                                                        scrollbarWidth: 'none',
+                                                        msOverflowStyle: 'none',
+                                                    }}
+                                                >
                                                     {roll.projects.map((project) => {
                                                         const loc = getLocalizedProject(project, locale)
                                                         return (
