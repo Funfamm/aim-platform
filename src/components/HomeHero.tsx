@@ -128,8 +128,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
             {/* ═══ FIXED VIDEO BACKGROUND — always rendered ═══ */}
             <div style={{
                 position: 'fixed',
-                top: 0, left: 0,
-                width: '100%', height: '100dvh',
+                inset: 0,  /* immune to dvh reflow — fixes iOS Safari address-bar shake */
                 zIndex: 0,
                 background: '#0d0f14',
             }}>
@@ -170,8 +169,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
             {/* ═══ FIXED GRADIENT OVERLAY — covers the viewport over the video ═══ */}
             <div style={{
                 position: 'fixed',
-                top: 0, left: 0,
-                width: '100%', height: '100dvh',
+                inset: 0,  /* immune to dvh reflow — fixes iOS Safari address-bar shake */
                 zIndex: 0,
                 background: 'linear-gradient(180deg, rgba(13,15,20,0.05) 0%, rgba(13,15,20,0.1) 40%, rgba(13,15,20,0.35) 70%, rgba(13,15,20,0.85) 100%)',
                 pointerEvents: 'none',

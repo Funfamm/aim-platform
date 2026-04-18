@@ -12,8 +12,8 @@ const DURATION_ENTER = 280  // ms — new page enters (iOS-feel spring)
 const EASING_ENTER   = 'cubic-bezier(0.22, 1, 0.36, 1)' // iOS standard spring
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
-    const pathname   = usePathname()
-    const isMobile   = useIsMobile()
+    const pathname = usePathname()
+    const isMobile = useIsMobile()
 
     const [displayChildren, setDisplayChildren] = useState(children)
     const [stage,     setStage]     = useState<Stage>('idle')
@@ -24,6 +24,15 @@ export default function PageTransition({ children }: { children: React.ReactNode
         typeof window !== 'undefined' ? (window.history.state?.idx ?? 0) : 0
     )
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // Track whether the mobile check has ever resolved to true.
+    // This ref prevents the animation from firing before useIsMobile's
+    // useEffect has run — avoiding the hydration race that caused the
+    // client-side crash on mobilev login navigation.
+    const isMobileResolvedRef = useRef(false)
+    useEffect(() => {
+        if (isMobile) isMobileResolvedRef.current = true
+    }, [isMobile])
 
     const clearTimer = useCallback(() => {
         if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null }
@@ -40,14 +49,15 @@ export default function PageTransition({ children }: { children: React.ReactNode
         const dir: Direction = currentIdx >= prevIdx.current ? 'forward' : 'back'
         prevIdx.current = currentIdx
 
-        if (!isMobile) {
-            // Desktop: instant swap, no animation
+        // If we haven't confirmed we're on mobile yet (e.g. first render,
+        // or desktop), do an instant swap — no animation, no timers.
+        if (!isMobileResolvedRef.current) {
             prevPathname.current = pathname
             setDisplayChildren(children)
             return
         }
 
-        // Mobile: slide exit then enter
+        // Mobile confirmed: slide exit → enter
         setDirection(dir)
         setStage('exit')
         clearTimer()
@@ -64,12 +74,16 @@ export default function PageTransition({ children }: { children: React.ReactNode
 
         return clearTimer
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [pathname, children, isMobile])
-
-    // Desktop — no wrapper overhead
-    if (!isMobile) return <>{displayChildren}</>
+    }, [pathname, children])
 
     const getStyle = (): React.CSSProperties => {
+        // Desktop / pre-hydration: passthrough wrapper — no transforms, no cost.
+        // IMPORTANT: we still render the same <div> here (never a fragment) to
+        // keep the DOM structure identical across all states and avoid React
+        // reconciliation errors when isMobile flips simultaneously with a
+        // pathname change (the root cause of the mobile login crash).
+        if (!isMobile) return {}
+
         if (stage === 'idle') return {
             transform: 'translateX(0)',
             opacity: 1,
@@ -81,7 +95,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
             transition: `transform ${DURATION_EXIT}ms ease-in, opacity ${DURATION_EXIT}ms ease-in`,
             willChange: 'transform, opacity',
         }
-        // enter — animation handles the slide-in start position
+        // enter — @keyframes slideInRight/slideInLeft defined in globals.css
         return {
             transform: 'translateX(0)',
             opacity: 1,
@@ -91,6 +105,9 @@ export default function PageTransition({ children }: { children: React.ReactNode
         }
     }
 
+    // ALWAYS render the same <div> element — never swap to a fragment.
+    // Changing the root element type during a concurrent state update causes
+    // React to throw a client-side exception on mobile devices.
     return (
         <div style={{ minHeight: '100dvh', overflow: 'hidden', ...getStyle() }}>
             {displayChildren}

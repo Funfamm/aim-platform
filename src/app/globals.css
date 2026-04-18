@@ -5206,6 +5206,32 @@ img, video, iframe, canvas {
 }
 
 
+/* ── Page transition keyframes (used by PageTransition.tsx on mobile) ──
+   GPU-safe: transform + opacity only — no layout properties touched.
+   The 20px starting offset matches the 8px exit translate for a coherent
+   slide feel without being jarring on small screens.                    */
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 /* ── Respect prefers-reduced-motion globally ── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
