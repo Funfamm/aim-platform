@@ -201,7 +201,7 @@ export async function transcribeVideo(
         }
 
         report('error', errorMsg)
-        throw err
+        throw new Error(errorMsg) // Throw the enhanced error so the UI displays it
     }
 }
 
