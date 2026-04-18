@@ -3,10 +3,32 @@
 /**
  * Client-side video transcription using FFmpeg WASM + Transformers.js Whisper.
  * Runs entirely in the browser — zero API cost.
+ *
+ * LOADING STRATEGY — why no toBlobURL:
+ * ─────────────────────────────────────
+ * @ffmpeg/ffmpeg v0.12 ships two core builds:
+ *   • @ffmpeg/core    — single-threaded, no SharedArrayBuffer required
+ *   • @ffmpeg/core-mt — multi-threaded, requires SharedArrayBuffer + COEP/COOP headers
+ *
+ * We use @ffmpeg/core (single-threaded).  The files in /public/ffmpeg/ confirm
+ * this — they contain zero SharedArrayBuffer or Worker references.
+ *
+ * toBlobURL() is designed for cross-origin WASM that needs CORP wrapping, so it
+ * fetch()es the asset and re-serves it as a blob URL.  For same-origin assets
+ * that come from /public/ffmpeg/, this is unnecessary AND broken:
+ *   • Without COEP: require-corp, the page is not cross-origin isolated, so
+ *     SharedArrayBuffer is unavailable.  toBlobURL silently stalls or returns
+ *     a blob: URL that the WASM module can't instantiate.
+ *   • With a single-threaded WASM build, SharedArrayBuffer is not needed — but
+ *     toBlobURL still triggers the browser's cross-origin isolation check on the
+ *     resulting blob: URL, which fails without COEP.
+ *
+ * Fix: pass the raw same-origin URLs directly to ffmpeg.load().
+ * The browser serves them like any other static file — no isolation needed.
  */
 
 import { FFmpeg } from '@ffmpeg/ffmpeg'
-import { fetchFile, toBlobURL } from '@ffmpeg/util'
+import { fetchFile } from '@ffmpeg/util'
 
 // ── Types ──
 export interface TranscriptSegment {
@@ -35,78 +57,64 @@ let ffmpegInstance: FFmpeg | null = null
 let transcriberPipeline: any = null
 
 /**
- * Load and cache FFmpeg WASM instance.
+ * Load and cache the FFmpeg WASM instance.
+ *
+ * Uses the self-hosted single-threaded build at /public/ffmpeg/.
+ * Direct URL loading (no toBlobURL) — works without COEP/COOP headers.
+ * A 30-second timeout guards against silent network stalls.
  */
 async function getFFmpeg(): Promise<FFmpeg> {
     if (ffmpegInstance) return ffmpegInstance
 
     const ffmpeg = new FFmpeg()
-
-    // ── Strategy ────────────────────────────────────────────────────────────
-    // 1. Self-hosted (/ffmpeg/) — same-origin, load with direct URL (no toBlobURL
-    //    re-fetch needed; avoids silently stalling the 32 MB WASM under COEP).
-    // 2. CDN fallbacks — cross-origin, must use toBlobURL to satisfy CORP.
-    //
-    // A 60-second per-attempt timeout catches silent WASM stalls on slow networks.
-
-    const TIMEOUT_MS = 60_000
+    const TIMEOUT_MS = 30_000
 
     function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
         return Promise.race([
             p,
             new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error(`Timed out after ${ms / 1000}s`)), ms)
+                setTimeout(() => reject(new Error(`FFmpeg load timed out after ${ms / 1000}s`)), ms)
             ),
         ])
     }
 
-    // ── 1. Try self-hosted with toBlobURL ───────────────────
+    // ── Self-hosted single-threaded WASM — direct same-origin URLs ────────────
+    // Do NOT use toBlobURL here.  It fetches + re-wraps the asset as a blob:
+    // URL which triggers the browser's cross-origin isolation check even for
+    // same-origin files.  Direct URLs work without any special security headers.
+    const origin = window.location.origin
+    const coreURL = `${origin}/ffmpeg/ffmpeg-core.js`
+    const wasmURL = `${origin}/ffmpeg/ffmpeg-core.wasm`
+
+    // Quick reachability check before spending 30s on a hung WASM load
+    try {
+        const probe = await fetch(coreURL, { method: 'HEAD', cache: 'no-store' })
+        if (!probe.ok) {
+            throw new Error(`/ffmpeg/ffmpeg-core.js returned HTTP ${probe.status}`)
+        }
+    } catch (e) {
+        throw new Error(
+            `FFmpeg WASM assets not reachable at /ffmpeg/. ` +
+            `Make sure the postinstall script has run (npm install) and ` +
+            `the /public/ffmpeg/ directory is committed. ` +
+            `Details: ${e instanceof Error ? e.message : String(e)}`
+        )
+    }
+
     try {
         await withTimeout(
-            ffmpeg.load({
-                coreURL: await toBlobURL(`${window.location.origin}/ffmpeg/ffmpeg-core.js`, 'text/javascript'),
-                wasmURL: await toBlobURL(`${window.location.origin}/ffmpeg/ffmpeg-core.wasm`, 'application/wasm'),
-            }),
+            ffmpeg.load({ coreURL, wasmURL }),
             TIMEOUT_MS,
         )
         ffmpegInstance = ffmpeg
-        console.info('[getFFmpeg] Loaded FFmpeg from self-hosted /ffmpeg/')
+        console.info('[getFFmpeg] Loaded FFmpeg WASM from self-hosted /ffmpeg/')
         return ffmpeg
     } catch (e) {
-        console.warn('[getFFmpeg] Self-hosted load failed, trying CDN fallbacks:', e)
+        throw new Error(
+            `FFmpeg WASM failed to initialise. ` +
+            `Details: ${e instanceof Error ? e.message : String(e)}`
+        )
     }
-
-    // ── 2. CDN fallbacks (toBlobURL required for cross-origin CORP) ──────────
-    const cdnBases = [
-        ...(process.env.NEXT_PUBLIC_CDN_URL ? [`${process.env.NEXT_PUBLIC_CDN_URL}/ffmpeg/0.12.6`] : []),
-        'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd',
-        'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd',
-    ]
-
-    let lastError: unknown
-    for (const base of cdnBases) {
-        try {
-            await withTimeout(
-                ffmpeg.load({
-                    coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
-                    wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
-                }),
-                TIMEOUT_MS,
-            )
-            ffmpegInstance = ffmpeg
-            console.info(`[getFFmpeg] Loaded FFmpeg from CDN: ${base}`)
-            return ffmpeg
-        } catch (e) {
-            console.warn(`[getFFmpeg] CDN ${base} failed:`, e)
-            lastError = e
-        }
-    }
-    void lastError
-
-    throw new Error(
-        'FFmpeg WASM failed to load from all sources. ' +
-        'Check that /public/ffmpeg/ffmpeg-core.wasm is deployed and accessible.'
-    )
 }
 
 /**
@@ -162,7 +170,7 @@ export async function transcribeVideo(
         try {
             ffmpeg = await getFFmpeg()
         } catch (e) {
-            throw new Error(`FFmpeg load failed (CDN blocked or offline): ${e instanceof Error ? e.message : String(e)}`)
+            throw new Error(`FFmpeg load failed: ${e instanceof Error ? e.message : String(e)}`)
         }
 
         // 2. Write video to FFmpeg virtual filesystem
@@ -274,7 +282,7 @@ export async function transcribeVideo(
     } catch (err) {
         console.error('[transcribeVideo] Fatal error:', err)
         let errorMsg = err instanceof Error ? err.message : 'Transcription failed'
-        
+
         // Add more context if it's a generic "Failed to fetch"
         if (errorMsg === 'Failed to fetch') {
             errorMsg = 'Failed to fetch (Check console. Usually a CORS issue or network block)'
