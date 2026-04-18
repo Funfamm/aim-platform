@@ -136,20 +136,32 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           zIndex: 0,
         }} />
         <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-          <div className="glass-panel" style={{
-            textAlign: 'center', marginBottom: 'var(--space-xl)',
-            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-            borderRadius: 'var(--radius-xl)',
-            padding: 'var(--space-xl)',
-            background: 'linear-gradient(135deg, rgba(212,168,83,0.10) 0%, rgba(13,15,20,0.60) 100%)',
-            border: '1px solid rgba(212,168,83,0.22)',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(212,168,83,0.06)',
-          }}>
-            <span className="text-label" style={{ display: 'block', marginBottom: '6px' }}>{t('portfolio')}</span>
+          {/* ── Cinematic section header — no card, text breathes freely ── */}
+          <div style={{ textAlign: 'center', marginBottom: 'var(--space-xl)', position: 'relative' }}>
+
+            {/* Decorative side lines flanking the label */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginBottom: '18px' }}>
+              <div style={{
+                flex: 1, maxWidth: '80px', height: '1px',
+                background: 'linear-gradient(to right, transparent, rgba(212,168,83,0.55))',
+              }} />
+              <span style={{
+                fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.22em',
+                textTransform: 'uppercase', color: 'var(--accent-gold)',
+                opacity: 0.9,
+              }}>{t('portfolio')}</span>
+              <div style={{
+                flex: 1, maxWidth: '80px', height: '1px',
+                background: 'linear-gradient(to left, transparent, rgba(212,168,83,0.55))',
+              }} />
+            </div>
+
             <h2 style={{
-              fontSize: 'clamp(1.6rem, 4vw, 2.2rem)',
+              fontSize: 'clamp(2rem, 5vw, 3rem)',
               fontWeight: 800,
-              marginBottom: '6px',
+              marginBottom: '14px',
+              lineHeight: 1.1,
+              letterSpacing: '-0.01em',
             }}>
               {t('featured')}{' '}
               <span style={{
@@ -161,13 +173,14 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 backgroundClip: 'text',
               }}>{t('featuredAccent')}</span>
             </h2>
-            <div className="divider divider-center" style={{ marginBottom: '8px' }} />
+
             <p style={{
-              fontSize: '0.85rem',
-              color: 'rgba(255,255,255,0.72)',
-              maxWidth: '400px',
+              fontSize: '0.88rem',
+              color: 'rgba(255,255,255,0.52)',
+              maxWidth: '360px',
               margin: '0 auto',
-              lineHeight: 1.5,
+              lineHeight: 1.6,
+              letterSpacing: '0.01em',
             }}>
               {t('featuredDesc')}
             </p>
