@@ -88,9 +88,26 @@ async function getFFmpeg(): Promise<FFmpeg> {
 
     // Quick reachability check before spending 30s on a hung WASM load
     try {
-        const probe = await fetch(coreURL, { method: 'HEAD', cache: 'no-store' })
-        if (!probe.ok) {
-            throw new Error(`/ffmpeg/ffmpeg-core.js returned HTTP ${probe.status}`)
+        const [coreProbe, wasmProbe] = await Promise.all([
+            fetch(coreURL, { method: 'HEAD', cache: 'no-store' }),
+            fetch(wasmURL, { method: 'HEAD', cache: 'no-store' }),
+        ])
+
+        if (!coreProbe.ok) {
+            throw new Error(`FFmpeg Core JS unreachable: HTTP ${coreProbe.status}`)
+        }
+        if (!wasmProbe.ok) {
+            throw new Error(`FFmpeg WASM binary unreachable: HTTP ${wasmProbe.status}`)
+        }
+
+        // Check if we got redirected to an HTML page (happens if middleware/locale routing intercepts the request)
+        const wasmType = wasmProbe.headers.get('content-type') || ''
+        if (wasmType.includes('text/html')) {
+            throw new Error(
+                `FFmpeg WASM binary request returned HTML instead of binary. ` +
+                `This usually means a middleware or locale router intercepted the request for ${wasmURL}. ` +
+                `Ensure that .wasm files are excluded from the Next.js middleware matcher.`
+            )
         }
     } catch (e) {
         throw new Error(

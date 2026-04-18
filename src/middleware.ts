@@ -44,7 +44,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   // Apply middleware to all routes except Next.js internals and static files
   matcher: [
-    '/((?!_next/static|_next/image|favicon|icons|images|manifest|sw\\.js|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|woff2?|ttf|eot)).*)',
+    '/((?!_next/static|_next/image|favicon|icons|images|manifest|sw\\.js|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|wasm|json|mp4|webm|pdf|html|woff2?|ttf|eot)).*)',
   ],
 };
 
