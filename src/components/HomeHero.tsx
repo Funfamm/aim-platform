@@ -131,6 +131,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                 inset: 0,  /* immune to dvh reflow — fixes iOS Safari address-bar shake */
                 zIndex: 0,
                 background: '#0d0f14',
+                height: '100dvh',
             }}>
                 <video
                     ref={videoARef}
@@ -171,6 +172,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                 position: 'fixed',
                 inset: 0,  /* immune to dvh reflow — fixes iOS Safari address-bar shake */
                 zIndex: 0,
+                height: '100dvh',
                 background: 'linear-gradient(180deg, rgba(13,15,20,0.05) 0%, rgba(13,15,20,0.1) 40%, rgba(13,15,20,0.35) 70%, rgba(13,15,20,0.85) 100%)',
                 pointerEvents: 'none',
             }} />
