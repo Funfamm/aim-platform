@@ -25,12 +25,10 @@ function requireEnv(name: string): string {
 //   https://my-app.livekit.cloud        ← some console copy-paste flows
 //   my-app.livekit.cloud                ← bare hostname (less common)
 //
-// RoomServiceClient / EgressClient need an  https://  base URL.
-// LiveKitRoom (client-side)             needs a   wss://  WebSocket URL.
+// RoomServiceClient / EgressClient / LiveKitRoom all officially prefer an https:// base URL
+// for LiveKit Cloud edge routing to work correctly, even though WebSockets are mapped to wss://.
 //
-// These two helpers convert any of the above forms to the correct scheme,
-// preventing the double-scheme bug (https://https://…) and the reverse
-// (wss://wss://…) that caused silent connection failures.
+// These two helpers convert any of the above forms to the correct scheme.
 
 function toHttpsUrl(raw: string): string {
     // Strip any existing scheme first, then add https://
@@ -58,12 +56,11 @@ export function getLiveKitConfig() {
 }
 
 /**
- * Returns the wss:// WebSocket URL for use in the LiveKitRoom component.
- * Always derived from LIVEKIT_URL so server and client always point at the
- * same LiveKit instance.
+ * Returns the HTTPS URL for use in the LiveKitRoom component.
+ * LiveKit Cloud recommends HTTPS for edge router negotiation.
  */
 export function getLiveKitWsUrl(): string {
-    return toWssUrl(requireEnv('LIVEKIT_URL'))
+    return toHttpsUrl(requireEnv('LIVEKIT_URL'))
 }
 
 /** Create a short-lived access token for a participant. */
