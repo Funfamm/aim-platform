@@ -5,19 +5,19 @@ import { withSentryConfig } from '@sentry/nextjs';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  // NOTE: 'standalone' output removed — it is for Docker/Render only.
+  // NOTE: 'standalone' output removed â€” it is for Docker/Render only.
   // Vercel handles bundling natively; standalone mode causes >250MB function sizes.
   productionBrowserSourceMaps: false,
 
   serverExternalPackages: [
-    // Prisma — needs native binaries, must stay external
+    // Prisma â€” needs native binaries, must stay external
     '@prisma/client',
     '.prisma/client',
-    // Heavy ML/WASM libraries — client-only, must NOT be bundled into server functions
+    // Heavy ML/WASM libraries â€” client-only, must NOT be bundled into server functions
     '@huggingface/transformers',
     '@ffmpeg/ffmpeg',
     '@ffmpeg/util',
-    // Redis / queue — server-only but very large
+    // Redis / queue â€” server-only but very large
     'bullmq',
     'ioredis',
     // Misc server packages
@@ -31,14 +31,14 @@ const nextConfig: NextConfig = {
 
   // outputFileTracingExcludes: Tells Vercel's file tracer to PHYSICALLY exclude
   // these packages from the deployment bundle. serverExternalPackages alone is
-  // not enough — Vercel still traces and includes the files. This is the real fix
+  // not enough â€” Vercel still traces and includes the files. This is the real fix
   // for the 250MB serverless function size limit.
   outputFileTracingExcludes: {
     '*': [
       // #1 OFFENDER: ONNX Runtime native binaries (404 MB in build log!)
       'node_modules/onnxruntime-node/**',
       'node_modules/onnxruntime-web/**',
-      // ML framework — references onnxruntime, must be excluded too (~3MB JS)
+      // ML framework â€” references onnxruntime, must be excluded too (~3MB JS)
       'node_modules/@huggingface/transformers/**',
       // Sharp native image processing binaries (32 MB in build log)
       'node_modules/@img/**',
@@ -107,10 +107,10 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=*, microphone=*, display-capture=(self)' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          // New — transport security
+          // New â€” transport security
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          // New — Content Security Policy
+          // New â€” Content Security Policy
           {
             key: 'Content-Security-Policy',
             value: [
@@ -138,6 +138,15 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: '/ffmpeg/:path*',
+        headers: [
+          { key: 'Cross-Origin-Embedder-Policy', value: 'require-corp' },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
         source: '/uploads/:path*',
         headers: [
           { key: 'Cache-Control', value: 'no-store, private' },
@@ -153,7 +162,7 @@ export default withSentryConfig(withNextIntl(nextConfig), {
   silent: true,
   disableLogger: true,
   telemetry: false,
-  // Disable source map uploads — no SENTRY_AUTH_TOKEN in CI
+  // Disable source map uploads â€” no SENTRY_AUTH_TOKEN in CI
   sourcemaps: {
     disable: true,
   },

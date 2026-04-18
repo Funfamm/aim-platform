@@ -42,12 +42,18 @@ async function getFFmpeg(): Promise<FFmpeg> {
 
     const ffmpeg = new FFmpeg()
 
-    const userCdn = process.env.NEXT_PUBLIC_CDN_URL
-    const defaults = [
+    // Self-hosted first (served from /public/ffmpeg/ — no CDN, no adblocker issues)
+    const selfHosted = '/ffmpeg'
+    const cdnFallbacks = [
         'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd',
-        'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd'
+        'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd',
     ]
-    const cdnsToTry = userCdn ? [`${userCdn}/ffmpeg/0.12.6`, ...defaults] : defaults
+    const userCdn = process.env.NEXT_PUBLIC_CDN_URL
+    const cdnsToTry = [
+        selfHosted,
+        ...(userCdn ? [`${userCdn}/ffmpeg/0.12.6`] : []),
+        ...cdnFallbacks,
+    ]
 
     let lastError: unknown
     for (const cdnBase of cdnsToTry) {
@@ -57,17 +63,18 @@ async function getFFmpeg(): Promise<FFmpeg> {
                 wasmURL: await toBlobURL(`${cdnBase}/ffmpeg-core.wasm`, 'application/wasm'),
             })
             ffmpegInstance = ffmpeg
+            console.info(`[getFFmpeg] Loaded FFmpeg from: ${cdnBase}`)
             return ffmpeg
         } catch (e) {
             console.warn(`[getFFmpeg] Failed to load from ${cdnBase}:`, e)
             lastError = e
         }
     }
+    void lastError
 
     throw new Error(
-        userCdn 
-            ? `Custom CDN (${userCdn}) failed. If this is an R2 bucket, ensure you have added a CORS policy allowing GET requests from your domain.`
-            : `All CDNs (unpkg, jsdelivr) failed to load FFmpeg. Your network, adblocker, or firewall is blocking the download.`
+        `FFmpeg WASM failed to load from all sources (self-hosted + CDN fallbacks). ` +
+        `Check that /public/ffmpeg/ffmpeg-core.wasm exists and is accessible.`
     )
 }
 
