@@ -42,39 +42,70 @@ async function getFFmpeg(): Promise<FFmpeg> {
 
     const ffmpeg = new FFmpeg()
 
-    // Self-hosted first (served from /public/ffmpeg/ — no CDN, no adblocker issues)
-    const selfHosted = '/ffmpeg'
-    const cdnFallbacks = [
+    // ── Strategy ────────────────────────────────────────────────────────────
+    // 1. Self-hosted (/ffmpeg/) — same-origin, load with direct URL (no toBlobURL
+    //    re-fetch needed; avoids silently stalling the 32 MB WASM under COEP).
+    // 2. CDN fallbacks — cross-origin, must use toBlobURL to satisfy CORP.
+    //
+    // A 30-second per-attempt timeout catches silent WASM stalls on slow networks.
+
+    const TIMEOUT_MS = 30_000
+
+    function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+        return Promise.race([
+            p,
+            new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error(`Timed out after ${ms / 1000}s`)), ms)
+            ),
+        ])
+    }
+
+    // ── 1. Try self-hosted with direct URLs (no toBlobURL) ───────────────────
+    try {
+        await withTimeout(
+            ffmpeg.load({
+                coreURL: '/ffmpeg/ffmpeg-core.js',
+                wasmURL: '/ffmpeg/ffmpeg-core.wasm',
+            }),
+            TIMEOUT_MS,
+        )
+        ffmpegInstance = ffmpeg
+        console.info('[getFFmpeg] Loaded FFmpeg from self-hosted /ffmpeg/')
+        return ffmpeg
+    } catch (e) {
+        console.warn('[getFFmpeg] Self-hosted load failed, trying CDN fallbacks:', e)
+    }
+
+    // ── 2. CDN fallbacks (toBlobURL required for cross-origin CORP) ──────────
+    const cdnBases = [
+        ...(process.env.NEXT_PUBLIC_CDN_URL ? [`${process.env.NEXT_PUBLIC_CDN_URL}/ffmpeg/0.12.6`] : []),
         'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd',
         'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd',
     ]
-    const userCdn = process.env.NEXT_PUBLIC_CDN_URL
-    const cdnsToTry = [
-        selfHosted,
-        ...(userCdn ? [`${userCdn}/ffmpeg/0.12.6`] : []),
-        ...cdnFallbacks,
-    ]
 
     let lastError: unknown
-    for (const cdnBase of cdnsToTry) {
+    for (const base of cdnBases) {
         try {
-            await ffmpeg.load({
-                coreURL: await toBlobURL(`${cdnBase}/ffmpeg-core.js`, 'text/javascript'),
-                wasmURL: await toBlobURL(`${cdnBase}/ffmpeg-core.wasm`, 'application/wasm'),
-            })
+            await withTimeout(
+                ffmpeg.load({
+                    coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+                }),
+                TIMEOUT_MS,
+            )
             ffmpegInstance = ffmpeg
-            console.info(`[getFFmpeg] Loaded FFmpeg from: ${cdnBase}`)
+            console.info(`[getFFmpeg] Loaded FFmpeg from CDN: ${base}`)
             return ffmpeg
         } catch (e) {
-            console.warn(`[getFFmpeg] Failed to load from ${cdnBase}:`, e)
+            console.warn(`[getFFmpeg] CDN ${base} failed:`, e)
             lastError = e
         }
     }
     void lastError
 
     throw new Error(
-        `FFmpeg WASM failed to load from all sources (self-hosted + CDN fallbacks). ` +
-        `Check that /public/ffmpeg/ffmpeg-core.wasm exists and is accessible.`
+        'FFmpeg WASM failed to load from all sources. ' +
+        'Check that /public/ffmpeg/ffmpeg-core.wasm is deployed and accessible.'
     )
 }
 
