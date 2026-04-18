@@ -27,8 +27,8 @@ export const LANGUAGE_NAMES: Record<string, string> = {
     hi: 'हिन्दी',
 }
 
-/** Total language count including English source */
-export const TOTAL_SUBTITLE_LANGS = SUBTITLE_TARGET_LANGS.length + 1 // +1 for English
+/** Total translation language count (excludes English — English is the source, not a target) */
+export const TOTAL_SUBTITLE_LANGS = SUBTITLE_TARGET_LANGS.length // 10: es fr de pt ru zh ar ja ko hi
 
 /**
  * Returns a display string for a lang code.
