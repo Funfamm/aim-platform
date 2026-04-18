@@ -1273,7 +1273,14 @@
                       "signInDesc":  "Necesitas iniciar sesión para unirte a este evento en vivo.",
                       "signInCta":  "Iniciar sesión",
                       "endedTitle":  "Este evento ha finalizado",
-                      "endedDesc":  "Gracias por asistir. Vuelve para futuros eventos."
+                      "endedDesc":  "Gracias por asistir. Vuelve para futuros eventos.",
+                      "typeQA":  "Sesión de preguntas y respuestas",
+                      "room":  "Sala",
+                      "typeGeneral":  "Evento en vivo",
+                      "typeAudition":  "Audición en vivo",
+                      "typeWatchParty":  "Ver en grupo",
+                      "home":  "Inicio",
+                      "liveRoom":  "Sala en vivo"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "Apagado",

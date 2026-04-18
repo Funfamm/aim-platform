@@ -1273,7 +1273,14 @@
                       "signInDesc":  "您需要登录才能加入此直播活动.",
                       "signInCta":  "登录",
                       "endedTitle":  "此活动已结束",
-                      "endedDesc":  "感谢您的参与."
+                      "endedDesc":  "感谢您的参与.",
+                      "typeQA":  "问答环节",
+                      "room":  "房间",
+                      "typeGeneral":  "现场活动",
+                      "typeAudition":  "现场试镜",
+                      "typeWatchParty":  "观影派对",
+                      "home":  "首页",
+                      "liveRoom":  "直播间"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "关闭",

@@ -1273,7 +1273,14 @@
                       "signInDesc":  "Você precisa estar conectado para participar.",
                       "signInCta":  "Entrar",
                       "endedTitle":  "Este evento terminou",
-                      "endedDesc":  "Obrigado pela presença."
+                      "endedDesc":  "Obrigado pela presença.",
+                      "typeQA":  "Sessão de Perguntas e Respostas",
+                      "room":  "Sala",
+                      "typeGeneral":  "Evento ao Vivo",
+                      "typeAudition":  "Audição ao Vivo",
+                      "typeWatchParty":  "Sessão em Grupo",
+                      "home":  "Início",
+                      "liveRoom":  "Sala ao Vivo"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "Desligado",

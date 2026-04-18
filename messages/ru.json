@@ -1273,7 +1273,14 @@
                       "signInDesc":  "Вам нужно войти в систему.",
                       "signInCta":  "Войти",
                       "endedTitle":  "Это мероприятие завершено",
-                      "endedDesc":  "Спасибо за участие."
+                      "endedDesc":  "Спасибо за участие.",
+                      "typeQA":  "Сессия вопросов и ответов",
+                      "room":  "Комната",
+                      "typeGeneral":  "Прямое событие",
+                      "typeAudition":  "Прямое прослушивание",
+                      "typeWatchParty":  "Совместный просмотр",
+                      "home":  "Главная",
+                      "liveRoom":  "Прямой эфир"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "Выключено",

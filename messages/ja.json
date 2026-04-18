@@ -1274,7 +1274,14 @@
                       "signInDesc":  "このライブイベントに参加するにはサインインが必要です.",
                       "signInCta":  "サインイン",
                       "endedTitle":  "このイベントは終了しました",
-                      "endedDesc":  "ご参加ありがとうございます."
+                      "endedDesc":  "ご参加ありがとうございます.",
+                      "typeQA":  "Q\u0026Aセッション",
+                      "room":  "ルーム",
+                      "typeGeneral":  "ライブイベント",
+                      "typeAudition":  "ライブオーディション",
+                      "typeWatchParty":  "ウォッチパーティー",
+                      "home":  "ホーム",
+                      "liveRoom":  "ライブルーム"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "オフ",

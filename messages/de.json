@@ -1273,7 +1273,14 @@
                       "signInDesc":  "Sie müssen angemeldet sein, um an diesem Live-Event teilzunehmen.",
                       "signInCta":  "Anmelden",
                       "endedTitle":  "Dieses Event ist beendet",
-                      "endedDesc":  "Danke für Ihre Teilnahme."
+                      "endedDesc":  "Danke für Ihre Teilnahme.",
+                      "typeQA":  "Frage-und-Antwort-Runde",
+                      "room":  "Raum",
+                      "typeGeneral":  "Live-Event",
+                      "typeAudition":  "Live-Vorsprechen",
+                      "typeWatchParty":  "Watch-Party",
+                      "home":  "Startseite",
+                      "liveRoom":  "Live-Raum"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "Aus",

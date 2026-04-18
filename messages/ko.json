@@ -1273,7 +1273,14 @@
                       "signInDesc":  "이 라이브 이벤트에 참여하려면 로그인이 필요합니다.",
                       "signInCta":  "로그인",
                       "endedTitle":  "이 이벤트가 종료되었습니다",
-                      "endedDesc":  "참석해 주셔서 감사합니다."
+                      "endedDesc":  "참석해 주셔서 감사합니다.",
+                      "typeQA":  "Q\u0026A 세션",
+                      "room":  "방",
+                      "typeGeneral":  "라이브 이벤트",
+                      "typeAudition":  "라이브 오디션",
+                      "typeWatchParty":  "워치 파티",
+                      "home":  "홈",
+                      "liveRoom":  "라이브 룸"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "끄기",

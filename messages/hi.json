@@ -1273,7 +1273,14 @@
                       "signInDesc":  "इस इवेंट में शामिल होने के लिए साइन इन होना होगा.",
                       "signInCta":  "साइन इन करें",
                       "endedTitle":  "यह इवेंट समाप्त हो गया",
-                      "endedDesc":  "उपस्थित होने के लिए धन्यवाद."
+                      "endedDesc":  "उपस्थित होने के लिए धन्यवाद.",
+                      "typeQA":  "सवाल-जवाब सत्र",
+                      "room":  "रूम",
+                      "typeGeneral":  "लाइव इवेंट",
+                      "typeAudition":  "लाइव ऑडिशन",
+                      "typeWatchParty":  "वॉच पार्टी",
+                      "home":  "होम",
+                      "liveRoom":  "लाइव रूम"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "बंद",

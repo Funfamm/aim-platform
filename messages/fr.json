@@ -1273,7 +1273,14 @@
                       "signInDesc":  "Vous devez être connecté pour rejoindre cet événement.",
                       "signInCta":  "Se connecter",
                       "endedTitle":  "Cet événement est terminé",
-                      "endedDesc":  "Merci d\u0027avoir participé."
+                      "endedDesc":  "Merci d\u0027avoir participé.",
+                      "typeQA":  "Session Q\u0026R",
+                      "room":  "Salle",
+                      "typeGeneral":  "Événement en direct",
+                      "typeAudition":  "Audition en direct",
+                      "typeWatchParty":  "Visionnage collectif",
+                      "home":  "Accueil",
+                      "liveRoom":  "Salle en direct"
                   },
     "videoPlayer":  {
                         "subtitlesOff":  "Désactivé",
