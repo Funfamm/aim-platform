@@ -47,9 +47,9 @@ async function getFFmpeg(): Promise<FFmpeg> {
     //    re-fetch needed; avoids silently stalling the 32 MB WASM under COEP).
     // 2. CDN fallbacks — cross-origin, must use toBlobURL to satisfy CORP.
     //
-    // A 30-second per-attempt timeout catches silent WASM stalls on slow networks.
+    // A 60-second per-attempt timeout catches silent WASM stalls on slow networks.
 
-    const TIMEOUT_MS = 30_000
+    const TIMEOUT_MS = 60_000
 
     function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
         return Promise.race([
@@ -60,12 +60,12 @@ async function getFFmpeg(): Promise<FFmpeg> {
         ])
     }
 
-    // ── 1. Try self-hosted with direct URLs (no toBlobURL) ───────────────────
+    // ── 1. Try self-hosted with toBlobURL ───────────────────
     try {
         await withTimeout(
             ffmpeg.load({
-                coreURL: '/ffmpeg/ffmpeg-core.js',
-                wasmURL: '/ffmpeg/ffmpeg-core.wasm',
+                coreURL: await toBlobURL(`${window.location.origin}/ffmpeg/ffmpeg-core.js`, 'text/javascript'),
+                wasmURL: await toBlobURL(`${window.location.origin}/ffmpeg/ffmpeg-core.wasm`, 'application/wasm'),
             }),
             TIMEOUT_MS,
         )
