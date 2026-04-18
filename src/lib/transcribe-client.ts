@@ -153,7 +153,7 @@ async function getTranscriber() {
 
     // ── Configure Local Hosting ──────────────────────────────────────────────
     env.allowLocalModels = true
-    env.allowRemoteModels = false // Force zero-flake (no HF dependency)
+    env.allowRemoteModels = true // Fallback to HuggingFace if Vercel blocks >50MB files
     env.localModelPath = '/models/'
 
     // The name matches our /public/models/whisper-base/ directory
