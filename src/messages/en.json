@@ -1,4 +1,28 @@
 {
+  "eventRoom": {
+    "typeGeneral": "Live Event",
+    "typeAudition": "Live Audition",
+    "typeQA": "Q&A",
+    "typeWatchParty": "Watch Party",
+    "home": "Home",
+    "liveRoom": "Live Room",
+    "room": "Room",
+    "endedTitle": "Event Ended",
+    "endedDesc": "This live event has ended. Thanks for joining!",
+    "signInTitle": "Sign In Required",
+    "signInDesc": "You must be signed in to join this live event.",
+    "signInCta": "Sign In to Join"
+  },
+  "liveRoom": {
+    "connecting": "Connecting to room...",
+    "endEvent": "End Event",
+    "leaveRoom": "Leave Room",
+    "reconnecting": "Reconnecting...",
+    "participant": "Participant",
+    "host": "Host",
+    "you": "You",
+    "waitingTitle": "Waiting for others to join..."
+  },
   "mfa": {
     "title": "Two-Step Verification",
     "subtitle": "Enter the code we sent to your email address.",
