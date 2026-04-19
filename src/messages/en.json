@@ -511,6 +511,14 @@
     "joined": "{name} joined",
     "left": "{name} left",
     "messageHidden": "Message hidden",
-    "noMessagesYet": "No messages yet. Say hi! 👋"
+    "noMessagesYet": "No messages yet. Say hi! 👋",
+    "resume": "Resume",
+    "pause": "Pause",
+    "showChat": "Show Chat",
+    "scheduledFor": "Scheduled for {date}",
+    "hostBadge": "HOST",
+    "mediaUnavailable": "Media not available",
+    "liveLabel": "LIVE",
+    "replayLabel": "REPLAY"
   }
 }

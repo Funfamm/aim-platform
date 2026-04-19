@@ -17,6 +17,7 @@
 import {
     useState, useRef, useEffect, useCallback,
 } from 'react'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import WatchPartyChat from '@/components/live/WatchPartyChat'
 import ReactionOverlay from '@/components/live/ReactionOverlay'
@@ -63,6 +64,23 @@ const LANG_NAMES: Record<string, string> = {
     ko: '한국어', ar: 'العربية', ru: 'Русский', hi: 'हिन्दी',
 }
 
+// ── Module-level analytics helper ─────────────────────────────────────────
+// Plain async function (not a hook) so it can be called in event listeners,
+// useEffect cleanup, and pagehide / sendBeacon paths without needing a ref.
+async function logWatchPartyAnalytic(
+    roomName: string,
+    name: string,
+    metadata?: Record<string, unknown>,
+): Promise<void> {
+    try {
+        await fetch('/api/watch-party/analytic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomName, name, metadata }),
+        })
+    } catch { /* fire-and-forget — never block UX */ }
+}
+
 /* ══════════════════════════════ COMPONENT ══════════════════════════════════ */
 export default function WatchPartyShell({
     roomName, locale, eventId, title, mediaTitle, mediaUrl,
@@ -70,6 +88,8 @@ export default function WatchPartyShell({
     lastCheckpointSec, canControl, userPreferredLang,
     subtitleProjectId, scheduledAt, projectSlug,
 }: WatchPartyShellProps) {
+
+    const t = useTranslations('watchParty')
 
     /* ── State machine ───────────────────────────────────────────────────── */
     const [roomStatus, setRoomStatus] = useState<RoomStatus>(() => {
@@ -110,6 +130,14 @@ export default function WatchPartyShell({
     const pingTimer      = useRef<ReturnType<typeof setInterval> | null>(null)
     const isMounted      = useRef(true)
 
+    /* ── Analytics tracking refs ─────────────────────────────────────────── */
+    // milestonesFired   — Set of analytic names already sent (no double-fires)
+    // hasEnteredPlayback — true after first entered_playback is sent
+    // hasJoinedOnce     — true after first SSE sync received (used for rejoin)
+    const milestonesFired    = useRef<Set<string>>(new Set())
+    const hasEnteredPlayback = useRef(false)
+    const hasJoinedOnce      = useRef(false)
+
     /* ── SSE connection ──────────────────────────────────────────────────── */
     const connectSSE = useCallback(() => {
         if (isReplay) return // Replay: no SSE needed, play freely
@@ -121,6 +149,11 @@ export default function WatchPartyShell({
         const es = new EventSource(`/api/watch-party/subscribe/${roomName}`)
         sseRef.current = es
 
+        // isFirstSync: true for the very first message after each SSE connect.
+        // The server always sends the current Redis state immediately on connect,
+        // so we can detect reconnects by checking if we've joined before.
+        let isFirstSync = true
+
         const handleSync = (e: MessageEvent) => {
             if (!isMounted.current) return
             try {
@@ -131,6 +164,17 @@ export default function WatchPartyShell({
                 }
                 const vid = videoRef.current
                 if (!isMounted.current) return
+
+                // ── Rejoin detection ───────────────────────────────────────────
+                // First sync per connection = state catch-up from Redis.
+                // If hasJoinedOnce is already true, this is a reconnect.
+                if (isFirstSync) {
+                    isFirstSync = false
+                    if (hasJoinedOnce.current) {
+                        void logWatchPartyAnalytic(roomName, 'rejoined')
+                    }
+                    hasJoinedOnce.current = true
+                }
 
                 setRoomStatus(data.status)
 
@@ -218,6 +262,67 @@ export default function WatchPartyShell({
             if (controlsTimer.current) clearTimeout(controlsTimer.current)
         }
     }, [connectSSE, sendHeartbeat])
+
+    /* ── Analytics: viewer-side event tracking ─────────────────────────── */
+    // 1. Fire joined_lobby or entered_playback (whichever is initial state on mount)
+    //    Also register the pagehide handler for left_early via sendBeacon.
+    useEffect(() => {
+        if (isReplay) {
+            void logWatchPartyAnalytic(roomName, 'replay_started')
+        } else if (roomStatus === 'lobby') {
+            void logWatchPartyAnalytic(roomName, 'joined_lobby')
+        } else if (roomStatus === 'playing' || roomStatus === 'paused') {
+            // User joined while event was already live
+            hasEnteredPlayback.current = true
+            void logWatchPartyAnalytic(roomName, 'entered_playback')
+        }
+
+        // left_early via sendBeacon so it fires even during hard navigations / tab close.
+        // Blob wrapping sets Content-Type to application/json for the server.
+        const handlePageHide = () => {
+            const blob = new Blob(
+                [JSON.stringify({ roomName, name: 'left_early' })],
+                { type: 'application/json' },
+            )
+            navigator.sendBeacon('/api/watch-party/analytic', blob)
+        }
+        window.addEventListener('pagehide', handlePageHide)
+        return () => window.removeEventListener('pagehide', handlePageHide)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // 2. Fire entered_playback when event transitions from lobby → playing.
+    //    Guard with hasEnteredPlayback to avoid double-firing if already sent above.
+    useEffect(() => {
+        if (roomStatus === 'playing' && !hasEnteredPlayback.current) {
+            hasEnteredPlayback.current = true
+            void logWatchPartyAnalytic(roomName, 'entered_playback')
+        }
+    // roomName is stable — only roomStatus triggers this
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [roomStatus])
+
+    // 3. Playback milestone tracking: 25 │ 50 │ 90 │ completed.
+    //    Runs on every currentTime update; Set-guard prevents duplicate fires.
+    //    Skipped in replay mode (user controls their own playback).
+    useEffect(() => {
+        if (!duration || duration === 0 || isReplay || roomStatus !== 'playing') return
+        const pct = (currentTime / duration) * 100
+        const checkpoints: Array<[number, string]> = [
+            [25, 'playback_25'],
+            [50, 'playback_50'],
+            [90, 'playback_90'],
+            [99, 'completed'],
+        ]
+        for (const [threshold, name] of checkpoints) {
+            if (pct >= threshold && !milestonesFired.current.has(name)) {
+                milestonesFired.current.add(name)
+                void logWatchPartyAnalytic(roomName, name, { pct: Math.floor(pct) })
+            }
+        }
+    // currentTime changes frequently — this effect is intentionally lightweight
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentTime, duration])
 
     /* ── Replay: seek to saved position ──────────────────────────────────── */
     useEffect(() => {
@@ -413,7 +518,7 @@ export default function WatchPartyShell({
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {viewerCount > 0 && (
                             <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
-                                👥 {viewerCount} watching
+                                👥 {t('viewerCount', { count: viewerCount })}
                             </span>
                         )}
                         {isReplay && (
@@ -422,7 +527,7 @@ export default function WatchPartyShell({
                                 background: 'rgba(255,255,255,0.06)',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 padding: '3px 10px', borderRadius: '4px',
-                            }}>REPLAY</span>
+                            }}>{t('replayLabel')}</span>
                         )}
                     </div>
                 </div>
@@ -456,7 +561,7 @@ export default function WatchPartyShell({
                                         {title}
                                     </h2>
                                     <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>
-                                        The host will start the screening soon…
+                                        {t('lobbyDesc')}
                                     </p>
                                     <div style={{
                                         display: 'flex', alignItems: 'center', gap: '8px',
@@ -468,7 +573,7 @@ export default function WatchPartyShell({
                                             background: 'rgba(212,168,83,0.7)',
                                             animation: 'wp-spin 1.2s linear infinite',
                                         }}/>
-                                        Waiting for host
+                                        {t('waitingForHost')}
                                     </div>
                                 </div>
                             </div>
@@ -496,10 +601,10 @@ export default function WatchPartyShell({
                                 <div style={{ position: 'relative', textAlign: 'center', padding: '0 24px' }}>
                                     <div style={{ fontSize: '2.5rem', marginBottom: '16px' }}>🎞️</div>
                                     <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '8px' }}>
-                                        Screening Ended
+                                        {t('screeningEnded')}
                                     </h2>
                                     <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '24px' }}>
-                                        Thanks for watching <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{title}</strong>
+                                        {t('thankYou')} — <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{title}</strong>
                                     </p>
                                     {replayEnabled && mediaUrl && (
                                         <Link
@@ -512,7 +617,7 @@ export default function WatchPartyShell({
                                                 fontSize: '0.9rem',
                                             }}
                                         >
-                                            🎬 Watch Replay
+                                            🎬 {t('watchReplay')}
                                         </Link>
                                     )}
                                 </div>
@@ -584,7 +689,7 @@ export default function WatchPartyShell({
                                         flexDirection: 'column', gap: '12px',
                                     }}>
                                         <div style={{ fontSize: '3rem', opacity: 0.3 }}>🎬</div>
-                                        <p style={{ fontSize: '0.9rem' }}>Media not available</p>
+                                        <p style={{ fontSize: '0.9rem' }}>{t('errorStream')}</p>
                                     </div>
                                 )}
 
@@ -622,14 +727,14 @@ export default function WatchPartyShell({
                                                 value={currentTime} step={0.5}
                                                 className="wp-progress-thumb"
                                                 onChange={e => {
-                                                    const t = Number(e.target.value)
-                                                    const v = videoRef.current
-                                                    if (v) v.currentTime = t
-                                                    setCurrentTime(t)
-                                                    if (canControl && !isReplay) {
-                                                        sendControl('seek', t)
-                                                    }
-                                                }}
+                                                     const seekTime = Number(e.target.value)
+                                                     const v = videoRef.current
+                                                     if (v) v.currentTime = seekTime
+                                                     setCurrentTime(seekTime)
+                                                     if (canControl && !isReplay) {
+                                                         sendControl('seek', seekTime)
+                                                     }
+                                                 }}
                                                 style={{
                                                     width: '100%', height: '4px', appearance: 'none',
                                                     background: `linear-gradient(to right, var(--accent-gold) ${progress}%, rgba(255,255,255,0.2) ${progress}%)`,
@@ -739,7 +844,7 @@ export default function WatchPartyShell({
                                     fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em',
                                     color: 'var(--accent-gold)', opacity: 0.8,
                                     marginRight: '4px',
-                                }}>HOST</span>
+                                }}>{t('hostBadge')}</span>
 
                                 {roomStatus === 'lobby' && (
                                     <button
@@ -751,7 +856,7 @@ export default function WatchPartyShell({
                                             color: '#000',
                                         }}
                                     >
-                                        ▶ Start Screening
+                                        ▶ {t('startScreening')}
                                     </button>
                                 )}
                                 {(roomStatus === 'paused' || roomStatus === 'playing') && (
@@ -763,7 +868,7 @@ export default function WatchPartyShell({
                                                 onClick={() => sendControl('play', videoRef.current?.currentTime ?? 0)}
                                                 style={{ background: 'rgba(212,168,83,0.15)', color: 'var(--accent-gold)', border: '1px solid rgba(212,168,83,0.3)' }}
                                             >
-                                                ▶ Resume
+                                                ▶ {t('resume')}
                                             </button>
                                         ) : (
                                             <button
@@ -772,20 +877,20 @@ export default function WatchPartyShell({
                                                 onClick={() => sendControl('pause', videoRef.current?.currentTime ?? 0)}
                                                 style={{ background: 'rgba(255,255,255,0.07)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}
                                             >
-                                                ⏸ Pause
+                                                ⏸ {t('pause')}
                                             </button>
                                         )}
                                         <button
                                             className="wp-host-btn"
                                             disabled={controlLoading}
                                             onClick={() => {
-                                                if (confirm('End the screening for all viewers?')) {
+                                                if (confirm(t('confirmEnd'))) {
                                                     sendControl('end', videoRef.current?.currentTime ?? 0)
                                                 }
                                             }}
                                             style={{ background: 'rgba(220,38,38,0.1)', color: '#f87171', border: '1px solid rgba(220,38,38,0.25)' }}
                                         >
-                                            ⏹ End Event
+                                            ⏹ {t('endParty')}
                                         </button>
                                     </>
                                 )}
@@ -808,7 +913,7 @@ export default function WatchPartyShell({
                             }}>{mediaTitle}</h1>
                             {roomStatus === 'lobby' && scheduledAt && (
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>
-                                    Scheduled for {new Date(scheduledAt).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' })}
+                                    {t('scheduledFor', { date: new Date(scheduledAt).toLocaleString(locale, { dateStyle: 'medium', timeStyle: 'short' }) })}
                                 </p>
                             )}
                         </div>
@@ -844,7 +949,7 @@ export default function WatchPartyShell({
                                 fontSize: '0.85rem', fontFamily: 'inherit',
                             }}
                         >
-                            💬 Show Chat
+                            💬 {t('showChat')}
                         </button>
                     )}
                 </div>
