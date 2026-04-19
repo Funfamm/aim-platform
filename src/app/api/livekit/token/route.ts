@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { TrackSource } from 'livekit-server-sdk'
 import { getSessionAndRefresh } from '@/lib/auth'
 import { createAccessToken, getRoomServiceClient, getLiveKitWsUrl } from '@/lib/livekit/server'
 import { grantsForRole, type LiveKitRole } from '@/lib/livekit/grants'
@@ -94,15 +95,15 @@ export async function POST(req: Request) {
                     mic?: boolean
                     screenShare?: boolean
                 }
-                const sources: string[] = [
-                    ...(perms.camera      !== false ? ['camera']       : []),
-                    ...(perms.mic         !== false ? ['microphone']   : []),
-                    ...(perms.screenShare !== false ? ['screen_share'] : []),
+                const sources: TrackSource[] = [
+                    ...(perms.camera      !== false ? [TrackSource.CAMERA]       : []),
+                    ...(perms.mic         !== false ? [TrackSource.MICROPHONE]   : []),
+                    ...(perms.screenShare !== false ? [TrackSource.SCREEN_SHARE] : []),
                 ]
                 permGrant = {
                     // CORRECTED: canPublish must include screenShare
                     canPublish:         sources.length > 0,
-                    canPublishSources:  sources,
+                    canPublishSources:  sources as unknown as string[], // temporary cast for the interface
                     canSubscribe:       true,
                 }
             }
@@ -138,7 +139,7 @@ export async function POST(req: Request) {
         const baseGrants = grantsForRole(isAdmin ? 'admin' : role, roomName)
         // Apply per-event permission overrides (non-admin/host users only)
         if (permGrant.canPublish !== undefined) baseGrants.canPublish = permGrant.canPublish
-        if (permGrant.canPublishSources !== undefined) baseGrants.canPublishSources = permGrant.canPublishSources as unknown as import('livekit-server-sdk').TrackSource[]
+        if (permGrant.canPublishSources !== undefined) baseGrants.canPublishSources = permGrant.canPublishSources as unknown as TrackSource[]
         if (permGrant.canSubscribe !== undefined) baseGrants.canSubscribe = permGrant.canSubscribe
         at.addGrant(baseGrants)
 
