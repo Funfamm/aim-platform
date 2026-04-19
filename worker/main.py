@@ -60,7 +60,7 @@ except ImportError:
     pass  # python-dotenv not installed — rely on OS environment
 
 # ── Config ────────────────────────────────────────────────────────────────────
-WORKER_SECRET = os.environ.get("WORKER_SECRET", "")
+WORKER_SECRET = os.environ.get("WORKER_SECRET", "").strip().strip('"').strip("'")
 VERCEL_CALLBACK_URL = os.environ.get("VERCEL_CALLBACK_URL", "")
 R2_ACCOUNT_ID = os.environ.get("R2_ACCOUNT_ID", "")
 R2_ACCESS_KEY_ID = os.environ.get("R2_ACCESS_KEY_ID", "")

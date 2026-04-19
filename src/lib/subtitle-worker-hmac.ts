@@ -18,7 +18,7 @@
 
 import { createHmac, timingSafeEqual } from 'crypto'
 
-const WORKER_SECRET = process.env.WORKER_SECRET ?? ''
+const WORKER_SECRET = (process.env.WORKER_SECRET ?? '').trim().replace(/^["']|["']$/g, '')
 
 /**
  * Sign an arbitrary payload object.
