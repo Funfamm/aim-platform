@@ -1,19 +1,26 @@
 /**
- * Watch Party — Redis Pub/Sub & State Layer
+ * Watch Party — Upstash Redis State Layer
  * --------------------------------------------------------------------------
- * Uses the existing `redis` package (Upstash via REDIS_URL) to provide:
- *   - Authoritative playback state (Redis hash)
- *   - Live event fan-out (Redis Pub/Sub channel)
- *   - Viewer presence tracking (Redis key with TTL heartbeat)
+ * Uses @upstash/redis (HTTP-based REST client) which is compatible with
+ * Vercel serverless functions. Unlike the `redis` npm package, Upstash
+ * Redis does NOT require persistent TCP connections — every operation is
+ * a single HTTPS fetch, making it safe for use in serverless environments.
  *
- * Redis Pub/Sub is at-most-once delivery. Missed messages during disconnect
- * are NOT replayed. On reconnect, clients read the state hash for current
- * authoritative position instead.
+ * Architecture:
+ *   - Playback state:  Redis hash (HSET/HGETALL)
+ *   - SSE fan-out:     DB polling (see subscribe route) — NOT Redis Pub/Sub.
+ *                      Redis pub/sub requires a persistent connection which
+ *                      Vercel cannot hold open.
+ *   - Viewer presence: Redis key with TTL (SET EX)
  *
- * Environment: REDIS_URL must be set (Upstash rediss:// URL).
+ * Required environment variables:
+ *   UPSTASH_REDIS_REST_URL  — e.g. https://your-db.upstash.io
+ *   UPSTASH_REDIS_REST_TOKEN — your Upstash REST token
+ *
+ * Legacy REDIS_URL is no longer used.
  */
 
-import { createClient } from 'redis'
+import { Redis } from '@upstash/redis'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -39,74 +46,46 @@ export interface WatchPartyEvent {
     payload: Record<string, unknown>
 }
 
+// ── Client singleton ────────────────────────────────────────────────────────
+
+function getRedis(): Redis | null {
+    const url   = process.env.UPSTASH_REDIS_REST_URL
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN
+    if (!url || !token) {
+        // Not configured — watch party falls back to DB-only mode
+        console.warn('[watchParty/pubsub] UPSTASH_REDIS_REST_URL / TOKEN not set. Watch party state will not persist across function invocations.')
+        return null
+    }
+    return new Redis({ url, token })
+}
+
 // ── Key helpers ────────────────────────────────────────────────────────────
 
 const stateKey    = (roomName: string) => `watch-party:state:${roomName}`
-const channelKey  = (roomName: string) => `watch-party:${roomName}`
 const presenceKey = (roomName: string, userId: string) =>
     `watch-party:presence:${roomName}:${userId}`
-const presencePrefix = (roomName: string) => `watch-party:presence:${roomName}:*`
-
-// ── Client singletons ──────────────────────────────────────────────────────
-// We use two clients: one for publishing/state operations, one per subscriber
-// (Redis SUBSCRIBE mode requires a dedicated connection per channel).
-
-type RedisClient = ReturnType<typeof createClient>
-
-let _pub: RedisClient | null = null
-
-async function getPublisher(): Promise<RedisClient | null> {
-    if (!process.env.REDIS_URL) return null
-    if (_pub) return _pub
-    _pub = createClient({ url: process.env.REDIS_URL })
-    _pub.on('error', (err) => console.error('[watchParty/pubsub] pub error:', err))
-    
-    // Add 5s timeout to prevent hanging on unreachable hosts
-    await Promise.race([
-        _pub.connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 5000))
-    ]).catch(err => {
-        console.error('[watchParty/pubsub] connect failed:', err.message)
-        _pub = null // Reset so it can retry on next call
-        throw err
-    })
-    
-    return _pub
-}
-
-/** Create a fresh subscriber client (must not share with publisher). */
-async function createSubscriber(): Promise<RedisClient | null> {
-    if (!process.env.REDIS_URL) return null
-    const sub = createClient({ url: process.env.REDIS_URL })
-    sub.on('error', (err) => console.error('[watchParty/pubsub] sub error:', err))
-    
-    await Promise.race([
-        sub.connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 5000))
-    ]).catch(err => {
-        console.error('[watchParty/pubsub] sub connect failed:', err.message)
-        throw err
-    })
-    
-    return sub
-}
+const presenceSet = (roomName: string) => `watch-party:presenceset:${roomName}`
 
 // ── Playback state (Redis hash) ────────────────────────────────────────────
 
-/** Read the current authoritative playback state. Returns null if not yet set
- *  (e.g. after server restart or first launch of a new event). */
+/** Read the current authoritative playback state. Returns null if not yet set. */
 export async function getPlaybackState(
     roomName: string,
 ): Promise<PlaybackState | null> {
-    const pub = await getPublisher()
-    if (!pub) return null
-    const raw = await pub.hGetAll(stateKey(roomName))
-    if (!raw || Object.keys(raw).length === 0) return null
-    return {
-        playing:        raw.playing === 'true',
-        currentTimeSec: parseFloat(raw.currentTimeSec ?? '0'),
-        status:         (raw.status as WatchPartyStatus) ?? 'lobby',
-        lastUpdatedAt:  raw.lastUpdatedAt ?? new Date().toISOString(),
+    const redis = getRedis()
+    if (!redis) return null
+    try {
+        const raw = await redis.hgetall(stateKey(roomName))
+        if (!raw || Object.keys(raw).length === 0) return null
+        return {
+            playing:        raw.playing === 'true',
+            currentTimeSec: parseFloat((raw.currentTimeSec as string) ?? '0'),
+            status:         (raw.status as WatchPartyStatus) ?? 'lobby',
+            lastUpdatedAt:  (raw.lastUpdatedAt as string) ?? new Date().toISOString(),
+        }
+    } catch (err) {
+        console.error('[watchParty/pubsub] getPlaybackState error:', err)
+        return null
     }
 }
 
@@ -115,91 +94,74 @@ export async function setPlaybackState(
     roomName: string,
     state: PlaybackState,
 ): Promise<void> {
-    const pub = await getPublisher()
-    if (!pub) return
-    await pub.hSet(stateKey(roomName), {
-        playing:        String(state.playing),
-        currentTimeSec: String(state.currentTimeSec),
-        status:         state.status,
-        lastUpdatedAt:  state.lastUpdatedAt,
-    })
-    // Keep state alive for 24 hours (auto-cleanup for ended events)
-    await pub.expire(stateKey(roomName), 60 * 60 * 24)
-}
-
-// ── Pub/Sub fan-out ────────────────────────────────────────────────────────
-
-/** Publish a playback event to all connected viewers. */
-export async function publishPlaybackEvent(
-    roomName: string,
-    event: WatchPartyEvent,
-): Promise<void> {
-    const pub = await getPublisher()
-    if (!pub) return
-    await pub.publish(channelKey(roomName), JSON.stringify(event))
-}
-
-/**
- * Subscribe to a room's event channel.
- * Returns a cleanup function — call it on disconnect/unmount.
- *
- * NOTE: Creates a dedicated subscriber client (cannot reuse the publisher).
- */
-export async function subscribeToRoom(
-    roomName: string,
-    onMessage: (event: WatchPartyEvent) => void,
-): Promise<(() => Promise<void>) | null> {
-    const sub = await createSubscriber()
-    if (!sub) return null
-
-    await sub.subscribe(channelKey(roomName), (raw) => {
-        try {
-            const parsed = JSON.parse(raw) as WatchPartyEvent
-            onMessage(parsed)
-        } catch {
-            console.warn('[watchParty/pubsub] bad message:', raw)
-        }
-    })
-
-    return async () => {
-        try {
-            await sub.unsubscribe(channelKey(roomName))
-            await sub.disconnect()
-        } catch {
-            // Ignore cleanup errors
-        }
+    const redis = getRedis()
+    if (!redis) return
+    try {
+        await redis.hset(stateKey(roomName), {
+            playing:        String(state.playing),
+            currentTimeSec: String(state.currentTimeSec),
+            status:         state.status,
+            lastUpdatedAt:  state.lastUpdatedAt,
+        })
+        // Keep state alive for 24 hours
+        await redis.expire(stateKey(roomName), 60 * 60 * 24)
+    } catch (err) {
+        console.error('[watchParty/pubsub] setPlaybackState error:', err)
     }
 }
 
+// ── Pub/Sub stub ─────────────────────────────────────────────────────────────
+// NOTE: Upstash REST does not support pub/sub. The SSE route uses DB polling
+// instead of subscribing to a Redis channel. publishPlaybackEvent is kept for
+// API compatibility but is a no-op — the SSE polling picks up changes from
+// the state hash written by setPlaybackState.
+
+/** No-op on Vercel — SSE route polls state hash directly. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function publishPlaybackEvent(
+    _roomName: string,
+    _event: WatchPartyEvent,
+): Promise<void> {
+    // SSE delivery is accomplished via state-hash polling in the subscribe route.
+    // This function is intentionally empty.
+}
+
 // ── Presence tracking ──────────────────────────────────────────────────────
-// Pattern: watch-party:presence:{roomName}:{userId} = "1" with 35s TTL
-// Client heartbeats every 20s to refresh the TTL.
-// Stale clients expire automatically — no explicit "leave" event needed.
+// Strategy: use a Redis sorted set (ZADD with score = unix timestamp) so we
+// can count members scored within the last 35 seconds without SCAN.
+// This is O(log N) instead of O(keys) and works great on Upstash.
 
 const PRESENCE_TTL_SECONDS = 35
 
-/** Refresh a viewer's presence TTL. Call every 20 seconds from the client. */
+/** Refresh a viewer's presence. Call every 20 seconds from the client. */
 export async function heartbeatPresence(
     roomName: string,
     userId: string,
 ): Promise<void> {
-    const pub = await getPublisher()
-    if (!pub) return
-    await pub.set(presenceKey(roomName, userId), '1', { EX: PRESENCE_TTL_SECONDS })
+    const redis = getRedis()
+    if (!redis) return
+    try {
+        const now = Math.floor(Date.now() / 1000)
+        const setKey = presenceSet(roomName)
+        await redis.zadd(setKey, { score: now, member: userId })
+        // Expire the entire sorted set after 24h (auto-cleanup)
+        await redis.expire(setKey, 60 * 60 * 24)
+    } catch (err) {
+        console.error('[watchParty/pubsub] heartbeatPresence error:', err)
+    }
 }
 
-/** Count currently active viewers by scanning presence keys. */
+/** Count currently active viewers. */
 export async function getPresenceCount(roomName: string): Promise<number> {
-    const pub = await getPublisher()
-    if (!pub) return 0
-    // Use raw SCAN command for redis v5 compatibility
-    let cursor = '0'
-    let count  = 0
-    const pattern = presencePrefix(roomName)
-    do {
-        const reply = await pub.scan(cursor, { MATCH: pattern, COUNT: 100 })
-        cursor = String(reply.cursor)
-        count += reply.keys.length
-    } while (cursor !== '0')
-    return count
+    const redis = getRedis()
+    if (!redis) return 0
+    try {
+        const now = Math.floor(Date.now() / 1000)
+        const cutoff = now - PRESENCE_TTL_SECONDS
+        // Count members with score >= cutoff (active in last 35s)
+        return await redis.zcount(presenceSet(roomName), cutoff, '+inf')
+    } catch (err) {
+        console.error('[watchParty/pubsub] getPresenceCount error:', err)
+        return 0
+    }
 }

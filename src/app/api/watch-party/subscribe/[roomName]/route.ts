@@ -1,26 +1,29 @@
 /**
  * GET /api/watch-party/subscribe/[roomName]
  * --------------------------------------------------------------------------
- * Server-Sent Events endpoint. Streams real-time playback events to viewers.
+ * Server-Sent Events endpoint. Streams real-time playback state to viewers.
  *
- * On connect:
- *  1. Reads current playback state from Redis hash (one GET).
- *  2. Falls back to DB checkpoint if Redis key is cold (after restart).
- *  3. Sends initial `sync` event so client knows where to seek.
- *  4. Subscribes to Redis Pub/Sub channel — forwards all messages to SSE.
- *  5. On client disconnect: unsubscribes cleanly.
+ * Architecture (Vercel-compatible):
+ *   Uses DB polling instead of Redis Pub/Sub. Redis Pub/Sub requires a
+ *   persistent TCP connection which Vercel serverless functions cannot hold.
+ *   Instead, this route:
+ *     1. Reads the current state (Redis hash → DB fallback).
+ *     2. Sends an initial `sync` event.
+ *     3. Polls for state changes every 2 seconds.
+ *     4. Emits a new SSE event when status or playback position changes.
+ *     5. When the client disconnects the stream closes cleanly.
  *
- * Reconnect behavior:
- *  - When the SSE stream is interrupted (Vercel function timeout or network
- *    hiccup), EventSource reconnects automatically.
- *  - The initial `sync` on step 3 immediately brings client to current host
- *    position. No missed-message replay needed.
+ *   Vercel's max serverless duration is 300 seconds. The client (EventSource)
+ *   will auto-reconnect, and the initial sync on each reconnect brings the
+ *   viewer to the current host position.
  *
  * Auth: requires authenticated session.
  */
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
+// Allow up to 270s (buffer before Vercel's 300s kill)
+export const maxDuration = 270
 
 import { NextRequest } from 'next/server'
 import { getUserSession } from '@/lib/auth'
@@ -28,9 +31,11 @@ import { prisma } from '@/lib/db'
 import {
     getPlaybackState,
     heartbeatPresence,
-    subscribeToRoom,
-    type WatchPartyEvent,
+    type PlaybackState,
 } from '@/lib/watchParty/pubsub'
+
+const POLL_INTERVAL_MS = 2000  // How often to check for state changes
+const PING_INTERVAL_MS = 25000 // Keep-alive ping to prevent proxy timeouts
 
 export async function GET(
     req: NextRequest,
@@ -65,7 +70,7 @@ export async function GET(
                 initialState = {
                     playing:        false,
                     currentTimeSec: event.lastCheckpointSec ?? 0,
-                    status:         wpStatus as 'lobby' | 'playing' | 'paused' | 'ended',
+                    status:         wpStatus as PlaybackState['status'],
                     lastUpdatedAt:  new Date().toISOString(),
                 }
             }
@@ -79,41 +84,89 @@ export async function GET(
 
     const stream = new ReadableStream({
         async start(controller) {
-            const send = (event: WatchPartyEvent) => {
+            let closed = false
+
+            const send = (event: string, payload: Record<string, unknown>) => {
+                if (closed) return
                 try {
-                    const line = `event: ${event.event}\ndata: ${JSON.stringify(event.payload)}\n\n`
-                    controller.enqueue(encoder.encode(line))
+                    controller.enqueue(
+                        encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`)
+                    )
                 } catch {
-                    // Stream closed — ignore
+                    closed = true
                 }
             }
 
-            // 1. Send initial sync
-            send({
-                event: initialState?.status === 'lobby' ? 'lobby' : 'sync',
-                payload: {
-                    playing:        initialState?.playing        ?? false,
-                    currentTimeSec: initialState?.currentTimeSec ?? 0,
-                    status:         initialState?.status          ?? 'lobby',
-                },
-            })
-
-            // 2. Subscribe to Redis channel — forward all messages
-            const cleanup = await subscribeToRoom(roomName, send)
-
-            // 3. Keep alive ping every 25s (prevents proxy timeouts)
-            const pingInterval = setInterval(() => {
+            const sendPing = () => {
+                if (closed) return
                 try {
                     controller.enqueue(encoder.encode(': ping\n\n'))
                 } catch {
-                    clearInterval(pingInterval)
+                    closed = true
                 }
-            }, 25_000)
+            }
 
-            // 4. Cleanup when client disconnects
-            req.signal.addEventListener('abort', async () => {
+            // 1. Send initial sync so client knows current position immediately
+            const effectiveStatus = initialState?.status ?? 'lobby'
+            send(
+                effectiveStatus === 'lobby' ? 'lobby' : 'sync',
+                {
+                    playing:        initialState?.playing        ?? false,
+                    currentTimeSec: initialState?.currentTimeSec ?? 0,
+                    status:         effectiveStatus,
+                }
+            )
+
+            // 2. Track last-sent state so we only emit on actual changes
+            let lastStatus    = effectiveStatus
+            let lastTimeSec   = initialState?.currentTimeSec ?? 0
+            let lastPlaying   = initialState?.playing ?? false
+            let lastUpdatedAt = initialState?.lastUpdatedAt ?? ''
+
+            // 3. Poll for state changes
+            const pollInterval = setInterval(async () => {
+                if (closed) { clearInterval(pollInterval); return }
+                try {
+                    const state = await getPlaybackState(roomName)
+                    if (!state) return
+
+                    // Emit on any meaningful change
+                    const statusChanged  = state.status !== lastStatus
+                    const playingChanged = state.playing !== lastPlaying
+                    const updatedAt      = state.lastUpdatedAt !== lastUpdatedAt
+
+                    if (statusChanged || playingChanged || updatedAt) {
+                        lastStatus    = state.status
+                        lastTimeSec   = state.currentTimeSec
+                        lastPlaying   = state.playing
+                        lastUpdatedAt = state.lastUpdatedAt
+
+                        if (state.status === 'ended') {
+                            send('ended', { status: 'ended', playing: false, currentTimeSec: state.currentTimeSec })
+                        } else if (state.status === 'paused') {
+                            send('paused', { status: 'paused', playing: false, currentTimeSec: state.currentTimeSec })
+                        } else {
+                            // 'playing' or 'lobby' — send sync
+                            send(state.status === 'lobby' ? 'lobby' : 'sync', {
+                                playing:        state.playing,
+                                currentTimeSec: state.currentTimeSec,
+                                status:         state.status,
+                            })
+                        }
+                    }
+                } catch (err) {
+                    console.error('[watch-party/subscribe] poll error:', err)
+                }
+            }, POLL_INTERVAL_MS)
+
+            // 4. Keep-alive pings
+            const pingInterval = setInterval(sendPing, PING_INTERVAL_MS)
+
+            // 5. Cleanup on disconnect
+            req.signal.addEventListener('abort', () => {
+                closed = true
+                clearInterval(pollInterval)
                 clearInterval(pingInterval)
-                if (cleanup) await cleanup()
                 try { controller.close() } catch { /* already closed */ }
             })
         },
@@ -121,10 +174,10 @@ export async function GET(
 
     return new Response(stream, {
         headers: {
-            'Content-Type':  'text/event-stream',
-            'Cache-Control': 'no-cache, no-transform',
-            'Connection':    'keep-alive',
-            'X-Accel-Buffering': 'no', // disable nginx/Vercel edge buffering
+            'Content-Type':     'text/event-stream',
+            'Cache-Control':    'no-cache, no-transform',
+            'Connection':       'keep-alive',
+            'X-Accel-Buffering': 'no',
         },
     })
 }
