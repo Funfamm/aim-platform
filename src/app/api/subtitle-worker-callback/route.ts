@@ -45,8 +45,15 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text()
     const signature = req.headers.get('x-signature')
 
+    // ── Diagnostic fingerprints ──────────────────────────────────────────────
+    const rawSecret = (process.env.WORKER_SECRET ?? '').trim().replace(/^["']|["']$/g, '')
+    const secretFp = rawSecret.length > 8
+        ? `${rawSecret.slice(0, 4)}…${rawSecret.slice(-4)} (${rawSecret.length} chars)`
+        : rawSecret.length === 0 ? '(empty!)' : '(too short)'
+    console.info(`[subtitles/callback] WORKER_SECRET fingerprint: ${secretFp} | body length: ${rawBody.length} | provided sig: ${signature?.slice(0, 8) ?? 'none'}…`)
+
     if (!verifySignature(rawBody, signature)) {
-        console.warn('[subtitles/callback] Invalid HMAC signature — request rejected.')
+        console.warn(`[subtitles/callback] HMAC MISMATCH — secret: ${secretFp} | body[0..80]: ${rawBody.slice(0, 80)}`)
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
