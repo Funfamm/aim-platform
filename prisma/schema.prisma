@@ -931,29 +931,58 @@ model AdminAuditLog {
   @@index([createdAt])
 }
 
-// ─── LiveKit Live Events ───────────────────────────────────────────────────────
-// Backs every realtime room: live auditions, premieres, Q&A, watch parties.
+// ─── LiveKit Live Events & Watch Parties ──────────────────────────────────────
+// Backs every realtime room: live auditions, Q&A, premieres, and watch parties.
+// Watch Party events use Redis Pub/Sub + SSE for sync — LiveKit is NOT used for WP.
 model LiveEvent {
   id             String    @id @default(cuid())
   title          String
   roomName       String    @unique
   status         String    @default("scheduled") // scheduled | live | ended
   eventType      String    @default("general")   // general | audition | q_and_a | watch_party
+
+  // ── Scheduling ──────────────────────────────────────────────────────────────
+  scheduledAt    DateTime? // when the event is planned to start (drives invite expiry)
   startedAt      DateTime?
   endedAt        DateTime?
+
+  // ── LiveKit event settings ───────────────────────────────────────────────────
+  // permissions JSON: { camera, mic, screenShare, chat, reactions } — all booleans
+  // Enforced at token-mint time and via UpdateParticipant for live changes.
+  permissions    Json?     // LiveKit events only
+  captionsActive Boolean   @default(false) // true while caption worker is connected
+  recordingUrl   String?   // set by egress worker after recording completes
+  egressId       String?   // LiveKit egress ID while a recording is in progress
+
+  // ── Watch Party settings ─────────────────────────────────────────────────────
+  // projectId holds the linked film; episodeId optionally pins to a specific episode.
+  // The actual media URL is resolved server-side from Project.filmUrl / Episode.videoUrl
+  // and delivered as a short-lived presigned R2 URL — never stored on this model.
+  episodeId      String?   // optional — pins to a specific Episode within the project
+  lobbyEnabled   Boolean   @default(true)  // show waiting room before host starts
+  replayEnabled  Boolean   @default(false) // allow re-watching after event ends
+
+  // Durable playback milestones — NOT the live sync loop (Redis owns live state)
+  playbackStartedAt DateTime?
+  lastCheckpointSec Float?    // written at: play, end, and seeks > 10 min
+
+  // ── Relations ────────────────────────────────────────────────────────────────
   hostUserId     String
   projectId      String?
   castingCallId  String?   // for audition rooms — ties room to a specific CastingCall
-  recordingUrl   String?   // set by egress worker after recording completes
-  egressId       String?   // LiveKit egress ID while a recording is in progress
-  captionsActive Boolean   @default(false) // true while caption worker is connected
   project        Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  invites        EventInvite[]
+  messages       WatchPartyMessage[]
+  reactions      WatchPartyReaction[]
+  analytics      LiveEventAnalyticEvent[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
   @@index([status])
   @@index([hostUserId])
   @@index([projectId])
+  @@index([scheduledAt])
+  @@index([eventType, status])
 }
 
 // ── Admin-curated movie collections for homepage/works page rows ──
@@ -1015,4 +1044,81 @@ model SubtitleJob {
   @@index([projectId, episodeId, status])             // fast "is a job running?" lookup
   @@index([status, createdAt])                        // cron: find stuck jobs
   @@index([projectId])
+}
+
+// --- Watch Party & Event Invite Infrastructure ---
+
+// First-class invite/access model.
+// Token: 256-bit crypto.randomBytes(32) hex. DB stores SHA-256 hash only.
+// Raw token is emailed to recipient in the invite URL -- never persisted server-side.
+model EventInvite {
+  id              String    @id @default(cuid())
+  eventId         String
+  tokenHash       String    @unique
+  recipientUserId String?
+  recipientEmail  String?
+  role            String    @default("viewer")
+  status          String    @default("pending")
+  locale          String    @default("en")
+  sentAt          DateTime  @default(now())
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  revokedByUserId String?
+  event           LiveEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
+  @@index([eventId])
+  @@index([recipientUserId])
+  @@index([recipientEmail])
+}
+
+// Watch-party chat messages. Dedicated table -- NOT a JSON blob on LiveEvent.
+model WatchPartyMessage {
+  id               String    @id @default(cuid())
+  eventId          String
+  userId           String?
+  senderName       String
+  content          String
+  hidden           Boolean   @default(false)
+  hiddenAt         DateTime?
+  hiddenByUserId   String?
+  moderationReason String?
+  createdAt        DateTime  @default(now())
+  event            LiveEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, createdAt])
+  @@index([eventId, hidden])
+}
+
+// Watch-party emoji reactions.
+model WatchPartyReaction {
+  id               String    @id @default(cuid())
+  eventId          String
+  userId           String?
+  emoji            String
+  hidden           Boolean   @default(false)
+  hiddenAt         DateTime?
+  hiddenByUserId   String?
+  moderationReason String?
+  createdAt        DateTime  @default(now())
+  event            LiveEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, createdAt])
+}
+
+// Structured analytics log for all live event and watch-party milestones.
+// joined_room fires on actual LiveKit connection -- NOT token issuance.
+model LiveEventAnalyticEvent {
+  id        String    @id @default(cuid())
+  eventId   String
+  userId    String?
+  name      String
+  metadata  Json?
+  createdAt DateTime  @default(now())
+  event     LiveEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, name])
+  @@index([eventId, createdAt])
+  @@index([userId])
 }

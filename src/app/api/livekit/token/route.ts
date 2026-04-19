@@ -58,15 +58,54 @@ export async function POST(req: Request) {
         let event = null
         try {
             event = await prisma.liveEvent.findUnique({
-                where: { roomName },
+                where:  { roomName },
                 select: { title: true, eventType: true, status: true, hostUserId: true },
             })
         } catch (e) {
             console.error('[livekit/token] DB error fetching event:', e)
         }
-
         if (!event) {
             return NextResponse.json({ error: 'Event not found or database unavailable' }, { status: 404 })
+        }
+
+        // ── Per-event participant permissions ───────────────────────────────
+        // Read from event.permissions JSON (null = all enabled by default).
+        // canPublish is true if ANY source is enabled — important: screenShare
+        // must be included so a screen-share-only event is not blocked.
+        // Admins and hosts bypass all permission restrictions.
+        let permGrant: {
+            canPublish?: boolean
+            canPublishSources?: string[]
+            canSubscribe?: boolean
+        } = { canPublish: true, canSubscribe: true }
+
+        if (!isAdmin && role !== 'host') {
+            let event2: { permissions: unknown } | null = null
+            try {
+                event2 = await prisma.liveEvent.findUnique({
+                    where:  { roomName },
+                    select: { permissions: true },
+                })
+            } catch { /* non-critical */ }
+
+            if (event2?.permissions) {
+                const perms = event2.permissions as {
+                    camera?: boolean
+                    mic?: boolean
+                    screenShare?: boolean
+                }
+                const sources: string[] = [
+                    ...(perms.camera      !== false ? ['camera']       : []),
+                    ...(perms.mic         !== false ? ['microphone']   : []),
+                    ...(perms.screenShare !== false ? ['screen_share'] : []),
+                ]
+                permGrant = {
+                    // CORRECTED: canPublish must include screenShare
+                    canPublish:         sources.length > 0,
+                    canPublishSources:  sources,
+                    canSubscribe:       true,
+                }
+            }
         }
 
         await roomSvc.createRoom({
@@ -96,7 +135,12 @@ export async function POST(req: Request) {
         // Mint short-lived token (10 min)
         const participantName = (typeof session.name === 'string' && session.name) ? session.name : session.userId
         const at = createAccessToken(session.userId, participantName)
-        at.addGrant(grantsForRole(isAdmin ? 'admin' : role, roomName))
+        const baseGrants = grantsForRole(isAdmin ? 'admin' : role, roomName)
+        // Apply per-event permission overrides (non-admin/host users only)
+        if (permGrant.canPublish !== undefined) baseGrants.canPublish = permGrant.canPublish
+        if (permGrant.canPublishSources !== undefined) baseGrants.canPublishSources = permGrant.canPublishSources as unknown as import('livekit-server-sdk').TrackSource[]
+        if (permGrant.canSubscribe !== undefined) baseGrants.canSubscribe = permGrant.canSubscribe
+        at.addGrant(baseGrants)
 
         // Attach metadata the client + workers can use
         at.metadata = JSON.stringify({
