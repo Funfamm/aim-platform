@@ -1,30 +1,28 @@
 import LRU from 'lru-cache';
 import { NextResponse } from 'next/server';
+import { Redis as UpstashRedis } from '@upstash/redis'
 
-// ── In-memory fallback (used when REDIS_URL is not set) ──────────────────────
+// ── In-memory fallback (used when Upstash is not configured) ──────────────────────
 const options = {
   max: 5000,
   ttl: 1000 * 60 * 60, // 1 hour
 };
 const submissionCache = new LRU<string, number[]>(options);
 
-// ── Redis client (lazily initialised, reused across invocations) ──────────────
-let _redis: import('redis').RedisClientType | null = null
+// ── Upstash REST client (no persistent TCP connection — serverless safe) ─────
+let _redis: UpstashRedis | null = null
+
+function getRedisSync(): UpstashRedis | null {
+  const url   = process.env.UPSTASH_REDIS_REST_URL
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  if (!url || !token) return null
+  if (_redis) return _redis
+  _redis = new UpstashRedis({ url, token })
+  return _redis
+}
 
 async function getRedis() {
-  if (!process.env.REDIS_URL) return null
-  if (_redis) return _redis
-  try {
-    const { createClient } = await import('redis')
-    const client = createClient({ url: process.env.REDIS_URL })
-    await client.connect()
-    client.on('error', (err) => console.error('[rateLimitCasting] Redis error:', err))
-    _redis = client as import('redis').RedisClientType
-    return _redis
-  } catch (err) {
-    console.warn('[rateLimitCasting] Redis connection failed — falling back to in-memory:', err)
-    return null
-  }
+  return getRedisSync()
 }
 
 /**
@@ -51,9 +49,9 @@ export async function rateLimitCasting(request: Request): Promise<NextResponse |
   const redis = await getRedis()
   if (redis) {
     try {
+      // Upstash REST: INCR key; EXPIRE if new
       const count = await redis.incr(key)
       if (count === 1) {
-        // First request in window — set TTL of 1 hour
         await redis.expire(key, 3600)
       }
       if (count > limit) {
@@ -65,8 +63,7 @@ export async function rateLimitCasting(request: Request): Promise<NextResponse |
       }
       return null
     } catch (err) {
-      // Redis is available but threw — fall through to in-memory
-      console.warn('[rateLimitCasting] Redis operation failed, falling back:', err)
+      console.warn('[rateLimitCasting] Upstash operation failed, falling back:', err)
     }
   }
 

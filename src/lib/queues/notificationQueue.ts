@@ -17,6 +17,7 @@ import { Queue, Worker, Job } from 'bullmq'
 import { sendEmail } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
 import { recordNotificationJob } from '@/lib/metrics'
+import { Redis as UpstashRedis } from '@upstash/redis'
 
 // ─── Job payload types ─────────────────────────────────────────────────────
 
@@ -104,23 +105,15 @@ export const notificationQueue = {
 
 // ─── Worker ────────────────────────────────────────────────────────────────
 
+// ─── Upstash REST pub signal (replaces the old TCP redis pub/sub client) ────────────
 let workerStarted = false
-// Shared Redis pub/sub publisher — created once per worker lifetime
-let _publisher: import('redis').RedisClientType | null = null
-
-async function getPubSubClient(): Promise<import('redis').RedisClientType | null> {
-    if (!process.env.REDIS_URL) return null
-    if (_publisher) return _publisher
-    try {
-        const { createClient } = await import('redis')
-        const client = createClient({ url: process.env.REDIS_URL }) as import('redis').RedisClientType
-        await client.connect()
-        _publisher = client
-        return _publisher
-    } catch (err) {
-        logger.warn('notificationQueue', `Pub/Sub client init failed: ${(err as Error).message}`)
-        return null
-    }
+let _upstash: UpstashRedis | null = null
+function getUpstash(): UpstashRedis | null {
+    const url   = process.env.UPSTASH_REDIS_REST_URL
+    const token = process.env.UPSTASH_REDIS_REST_TOKEN
+    if (!url || !token) return null
+    if (!_upstash) _upstash = new UpstashRedis({ url, token })
+    return _upstash
 }
 
 export function startNotificationWorker() {
@@ -145,19 +138,19 @@ export function startNotificationWorker() {
             }
 
             // ── Redis Pub/Sub (real-time feed signal) ─────────────────────
-            // Reuses a single shared client instead of creating one per job
-            if (userId && process.env.REDIS_URL) {
+            // ── Upstash REST signal (real-time feed hint for polling clients) ──────
+            if (userId) {
                 try {
-                    const pub = await getPubSubClient()
-                    if (pub) {
-                        await pub.publish(`notifications:${userId}`, JSON.stringify({
-                            notificationId,
-                            type,
-                            ts: new Date().toISOString(),
-                        }))
+                    const upstash = getUpstash()
+                    if (upstash) {
+                        await upstash.set(
+                            `notifications:signal:${userId}`,
+                            new Date().toISOString(),
+                            { ex: 30 },
+                        )
                     }
                 } catch (pubErr) {
-                    logger.warn('notificationQueue', `Pub/Sub publish failed: ${(pubErr as Error).message}`)
+                    logger.warn('notificationQueue', `Upstash signal failed: ${(pubErr as Error).message}`)
                 }
             }
 
@@ -187,14 +180,6 @@ export function startNotificationWorker() {
         }
     })
 
-    // Gracefully close the shared pub/sub client when worker shuts down
-    worker.on('closing', async () => {
-        if (_publisher) {
-            await _publisher.disconnect().catch(() => {})
-            _publisher = null
-        }
-    })
-
-    logger.info('notificationQueue', 'Worker started (5 retries, DLQ enabled, shared pub/sub client)')
+    logger.info('notificationQueue', 'Worker started (5 retries, DLQ enabled)')
     return worker
 }
