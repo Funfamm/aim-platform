@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
@@ -100,6 +100,11 @@ export default function AdminProjectsPage() {
     const [subtitlePhase, setSubtitlePhase] = useState<Record<string, 'transcribing' | 'translating' | 'done' | 'error' | null>>({})
     const [translationCount, setTranslationCount] = useState<Record<string, number>>({})
     const [translateStatus, setTranslateStatus] = useState<Record<string, string>>({})
+    // Server-side subtitle job state (faster-whisper worker)
+    type ServerJobStatus = 'idle' | 'queued' | 'processing' | 'ready' | 'failed'
+    const [serverJobId, setServerJobId] = useState<Record<string, string | null>>({})
+    const [serverJobStatus, setServerJobStatus] = useState<Record<string, ServerJobStatus>>({})
+    const [serverJobMsg, setServerJobMsg] = useState<Record<string, string>>({})
     // Review modal
     const [reviewProjectId, setReviewProjectId] = useState<string | null>(null)
     const [reviewProjectTitle, setReviewProjectTitle] = useState('')
@@ -275,6 +280,37 @@ export default function AdminProjectsPage() {
                     .catch(() => {})
             }
             setShowModal(false)
+            // Auto-trigger server-side subtitle worker when filmUrl is added/changed
+            if (saved.filmUrl) {
+                const prevUrl = editingId ? (projects.find(p => p.id === editingId)?.filmUrl ?? null) : null
+                if (saved.filmUrl !== prevUrl) {
+                    const pid = saved.id
+                    setServerJobStatus(s => ({ ...s, [pid]: 'queued' }))
+                    setServerJobMsg(s => ({ ...s, [pid]: '⚡ Auto-submitting to subtitle worker…' }))
+                    fetch('/api/subtitles/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ projectId: pid, videoUrl: saved.filmUrl }),
+                    }).then(async r => {
+                        const d = await r.json().catch(() => ({}))
+                        if (r.ok && d.jobId) {
+                            setServerJobId(s => ({ ...s, [pid]: d.jobId }))
+                            setServerJobMsg(s => ({ ...s, [pid]: '🤖 Subtitle job queued — worker is transcribing in the background.' }))
+                            pollServerJob(pid, d.jobId)
+                        } else if (r.status === 409) {
+                            setServerJobStatus(s => ({ ...s, [pid]: d.status ?? 'processing' }))
+                            setServerJobMsg(s => ({ ...s, [pid]: '♻️ A subtitle job is already active for this project.' }))
+                            if (d.jobId) pollServerJob(pid, d.jobId)
+                        } else {
+                            setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
+                            setServerJobMsg(s => ({ ...s, [pid]: '⚠️ Worker not reachable. Set WORKER_URL in Vercel env, or use the manual button.' }))
+                        }
+                    }).catch(() => {
+                        setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
+                        setServerJobMsg(s => ({ ...s, [pid]: '⚠️ Could not reach worker. Use the manual button to retry.' }))
+                    })
+                }
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save')
         } finally {
@@ -292,6 +328,70 @@ export default function AdminProjectsPage() {
     const handlePublishOverride = async () => {
         setShowPublishWarning(false)
         await doSave(true)
+    }
+
+    /** Poll the server job status every 5s until terminal state */
+    const pollServerJob = (pid: string, jobId: string) => {
+        let attempts = 0
+        const iv = setInterval(async () => {
+            attempts++
+            if (attempts > 120) {
+                clearInterval(iv)
+                setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
+                setServerJobMsg(s => ({ ...s, [pid]: '⏱ Polling timed out (10 min). Check worker logs.' }))
+                return
+            }
+            try {
+                const r = await fetch(/api/subtitles/status/)
+                if (!r.ok) return
+                const d = await r.json()
+                setServerJobStatus(s => ({ ...s, [pid]: d.status }))
+                if (d.status === 'ready') {
+                    clearInterval(iv)
+                    setServerJobMsg(s => ({ ...s, [pid]: '✅ Subtitles ready! You can now run translation.' }))
+                    fetch(/api/subtitles/28920?lang=en).then(r2 => r2.json()).then(sub => {
+                        setTranslationCount(s => ({ ...s, [pid]: sub.available?.length ?? 0 }))
+                        setTranslateStatus(s => ({ ...s, [pid]: sub.translateStatus ?? 'pending' }))
+                    }).catch(() => {})
+                } else if (d.status === 'failed') {
+                    clearInterval(iv)
+                    setServerJobMsg(s => ({ ...s, [pid]: ❌ Worker failed:  }))
+                } else if (d.status === 'processing') {
+                    setServerJobMsg(s => ({ ...s, [pid]: '🔄 Worker is transcribing… (may take several minutes)' }))
+                }
+            } catch { /* ignore transient errors */ }
+        }, 5000)
+    }
+
+    /** Manually trigger server-side subtitle generation */
+    const handleServerGenerate = async (pid: string, filmUrl: string) => {
+        const cur = serverJobStatus[pid]
+        if (cur === 'queued' || cur === 'processing') return
+        setServerJobStatus(s => ({ ...s, [pid]: 'queued' }))
+        setServerJobMsg(s => ({ ...s, [pid]: '⚡ Sending to worker…' }))
+        try {
+            const r = await fetch('/api/subtitles/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: pid, videoUrl: filmUrl }),
+            })
+            const d = await r.json().catch(() => ({}))
+            if (r.ok && d.jobId) {
+                setServerJobId(s => ({ ...s, [pid]: d.jobId }))
+                setServerJobMsg(s => ({ ...s, [pid]: '🤖 Job queued — worker is processing in background.' }))
+                pollServerJob(pid, d.jobId)
+            } else if (r.status === 409) {
+                setServerJobStatus(s => ({ ...s, [pid]: d.status ?? 'processing' }))
+                setServerJobMsg(s => ({ ...s, [pid]: '♻️ A subtitle job is already active.' }))
+                if (d.jobId) pollServerJob(pid, d.jobId)
+            } else {
+                setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
+                setServerJobMsg(s => ({ ...s, [pid]: ⚠️  }))
+            }
+        } catch {
+            setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
+            setServerJobMsg(s => ({ ...s, [pid]: '⚠️ Network error reaching worker.' }))
+        }
     }
 
     /**
@@ -1032,6 +1132,33 @@ export default function AdminProjectsPage() {
                                                     : 'Generate multi-language subtitles for this film. Click CC to auto-transcribe and translate, or upload an existing SRT/VTT file.'}
                                             </div>
                                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 'var(--space-md)' }}>
+                                                {/* ── Server Worker Button (recommended) ── */}
+                                                {(() => {
+                                                    const sS = serverJobStatus[pid] as string | undefined
+                                                    const sMsg = serverJobMsg[pid] || ''
+                                                    const isActive = sS === 'queued' || sS === 'processing'
+                                                    const btnLabel = isActive ? (sS === 'processing' ? '🔄 Transcribing…' : '⏳ Queued…') : sS === 'ready' ? '🤖 Re-generate (Server)' : sS === 'failed' ? '🔁 Retry (Server)' : '🤖 Generate (Server Worker)'
+                                                    const c = sS === 'ready' ? '#34d399' : sS === 'failed' ? '#f87171' : '#818cf8'
+                                                    return (<>
+                                                        {sMsg && (
+                                                            <div style={{ width: '100%', fontSize: '0.7rem', padding: '7px 10px', borderRadius: '8px',
+                                                                background: sS === 'ready' ? 'rgba(52,211,153,0.06)' : sS === 'failed' ? 'rgba(248,113,113,0.06)' : 'rgba(129,140,248,0.06)',
+                                                                border: `1px solid ${sS === 'ready' ? 'rgba(52,211,153,0.2)' : sS === 'failed' ? 'rgba(248,113,113,0.2)' : 'rgba(129,140,248,0.2)'}`,
+                                                                color: sS === 'ready' ? '#34d399' : sS === 'failed' ? '#f87171' : '#a5b4fc',
+                                                                marginBottom: '4px', lineHeight: 1.5 }}>
+                                                                {sMsg}
+                                                            </div>
+                                                        )}
+                                                        <button type="button" onClick={() => handleServerGenerate(pid, filmUrl)} disabled={isActive} className="btn btn-sm"
+                                                            title="Runs faster-whisper on your local worker. Fires automatically when video is saved."
+                                                            style={{ fontSize: '0.72rem', fontWeight: 700, background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.12)', border: `1px solid ${isActive ? 'rgba(255,255,255,0.08)' : 'rgba(129,140,248,0.3)'}`, color: isActive ? 'var(--text-tertiary)' : c, cursor: isActive ? 'not-allowed' : 'pointer' }}>
+                                                            {btnLabel}
+                                                        </button>
+                                                    </>)
+                                                })()}
+                                                <div style={{ width: '100%', fontSize: '0.6rem', color: 'var(--text-tertiary)', opacity: 0.55, marginBottom: '-2px' }}>
+                                                    ⬆ Server worker — fires automatically on video save &nbsp;·&nbsp; ⬇ Browser fallback — manual only
+                                                </div>
                                                 <button type="button" onClick={() => handleGenerateSubtitles(pid, filmUrl)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
                                                     {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[pid] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
                                                 </button>
