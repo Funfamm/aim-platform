@@ -14,10 +14,16 @@ interface EventPageProps {
 
 export async function generateMetadata({ params }: EventPageProps) {
     const { roomName } = await params
-    const event = await prisma.liveEvent.findUnique({
-        where: { roomName },
-        select: { title: true, status: true, eventType: true },
-    })
+    let event = null
+    try {
+        event = await prisma.liveEvent.findUnique({
+            where: { roomName },
+            select: { title: true, status: true, eventType: true },
+        })
+    } catch (e) {
+        console.error('[EventPage] DB error in generateMetadata:', e)
+    }
+
     const typeLabel = (
         { general: 'Live Event', audition: 'Live Audition', q_and_a: 'Q&A', watch_party: 'Watch Party' } as Record<string, string>
     )[event?.eventType ?? ''] ?? 'Live'
@@ -35,18 +41,23 @@ export default async function EventPage({ params }: EventPageProps) {
     const session = await getSession()
     const t = await getTranslations({ locale, namespace: 'eventRoom' })
 
-    const event = await prisma.liveEvent.findUnique({
-        where: { roomName },
-        select: {
-            id: true,
-            title: true,
-            status: true,
-            eventType: true,
-            hostUserId: true,
-            castingCallId: true,
-            project: { select: { title: true, slug: true } },
-        },
-    })
+    let event = null
+    try {
+        event = await prisma.liveEvent.findUnique({
+            where: { roomName },
+            select: {
+                id: true,
+                title: true,
+                status: true,
+                eventType: true,
+                hostUserId: true,
+                castingCallId: true,
+                project: { select: { title: true, slug: true } },
+            },
+        })
+    } catch (e) {
+        console.error('[EventPage] DB error loading event:', e)
+    }
 
     if (!event) notFound()
 

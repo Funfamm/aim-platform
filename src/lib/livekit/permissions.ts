@@ -25,15 +25,21 @@ export async function canJoinRoom(
     // isAdmin MUST be validated by the caller — never derive it from userId alone.
     if (isAdmin) return { allowed: true }
 
-    const event = await prisma.liveEvent.findUnique({
-        where: { roomName },
-        select: {
-            status: true,
-            eventType: true,
-            hostUserId: true,
-            castingCallId: true,
-        },
-    })
+    let event = null
+    try {
+        event = await prisma.liveEvent.findUnique({
+            where: { roomName },
+            select: {
+                status: true,
+                eventType: true,
+                hostUserId: true,
+                castingCallId: true,
+            },
+        })
+    } catch (e) {
+        console.error('[livekit/permissions] DB error fetching event:', e)
+        return { allowed: false, reason: 'Database unavailable' }
+    }
 
     if (!event) return { allowed: false, reason: 'Room not found' }
     if (event.status === 'ended') return { allowed: false, reason: 'Event has ended' }

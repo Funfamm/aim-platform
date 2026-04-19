@@ -55,10 +55,19 @@ export async function POST(req: Request) {
         // created it provisions a fresh one. This ensures the WebSocket
         // connect will always succeed after the token is issued.
         const roomSvc = getRoomServiceClient()
-        const event = await prisma.liveEvent.findUnique({
-            where: { roomName },
-            select: { title: true, eventType: true, status: true },
-        })
+        let event = null
+        try {
+            event = await prisma.liveEvent.findUnique({
+                where: { roomName },
+                select: { title: true, eventType: true, status: true, hostUserId: true },
+            })
+        } catch (e) {
+            console.error('[livekit/token] DB error fetching event:', e)
+        }
+
+        if (!event) {
+            return NextResponse.json({ error: 'Event not found or database unavailable' }, { status: 404 })
+        }
 
         await roomSvc.createRoom({
             name: roomName,
@@ -66,17 +75,22 @@ export async function POST(req: Request) {
             departureTimeout: 120,   // 2 min grace after all participants depart before teardown
             maxParticipants: 100,
             metadata: JSON.stringify({
-                title: event?.title ?? roomName,
-                eventType: event?.eventType ?? 'general',
+                title: event.title ?? roomName,
+                eventType: event.eventType ?? 'general',
             }),
         })
 
-        // Transition scheduled → live on first join
-        if (event?.status === 'scheduled') {
-            await prisma.liveEvent.update({
-                where: { roomName },
-                data: { status: 'live', startedAt: new Date() },
-            })
+        // Transition scheduled → live on first join (only if host/admin joins, or if anyone joins to avoid viewers being stuck?)
+        // Let's keep existing logic but with `event`.
+        if (event.status === 'scheduled') {
+            try {
+                await prisma.liveEvent.update({
+                    where: { roomName },
+                    data: { status: 'live', startedAt: new Date() },
+                })
+            } catch (e) {
+                console.error('[livekit/token] Failed to transition event to live:', e)
+            }
         }
 
         // Mint short-lived token (10 min)
