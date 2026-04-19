@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
@@ -429,8 +429,12 @@ export default function AdminProjectsPage() {
         setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
 
         const isResume = translateStatus[pid] === 'partial'
+        // Skip browser transcription if the server worker already produced an English
+        // transcript, or if any translation already exists (meaning transcript is in DB).
+        const hasWorkerTranscript = serverJobStatus[pid] === 'ready'
+        const hasExistingTranscript = (translationCount[pid] ?? 0) > 0
 
-        if (!isResume) {
+        if (!isResume && !hasWorkerTranscript && !hasExistingTranscript) {
             // Note: we no longer block streaming URLs here — transcribeVideo will
             // try a direct fetch first then fall back to the server-side proxy,
             // so CORS-restricted hosts can still be transcribed.
