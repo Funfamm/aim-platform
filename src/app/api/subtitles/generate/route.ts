@@ -95,6 +95,9 @@ export async function POST(req: NextRequest) {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Signature': signature,
+                // Required to bypass the ngrok browser interstitial page on free-tier tunnels.
+                // Safe to include on any host — ignored when the worker is on a real VPS.
+                'ngrok-skip-browser-warning': 'true',
             },
             body: JSON.stringify(payload),
             // 10-second connection timeout (not transcription timeout)
