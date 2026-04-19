@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  subtitle-worker:
+    build:
+      context: .
+      args:
+        WHISPER_MODEL: ${WHISPER_MODEL:-base}   # override: WHISPER_MODEL=small docker compose up
+    image: aim-subtitle-worker:latest
+    container_name: aim-subtitle-worker
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # --- Required ---
+      WORKER_SECRET: ${WORKER_SECRET}
+      VERCEL_CALLBACK_URL: ${VERCEL_CALLBACK_URL}
+      # --- R2 storage ---
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-aim-platform-subtitles}
+      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
+      # --- Model config ---
+      WHISPER_MODEL: ${WHISPER_MODEL:-base}
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-2000}
+    volumes:
+      - /tmp/aim-worker:/tmp          # temp video/audio files land here
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

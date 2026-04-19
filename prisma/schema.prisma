@@ -986,3 +986,33 @@ model MovieRollProject {
   @@unique([rollId, projectId])
   @@index([rollId, sortOrder])
 }
+
+// ── Server-side subtitle generation job tracking ──────────────────────────────
+// Created when an admin clicks "Generate Subtitles (Server)".
+// Tracks the full lifecycle: queued → processing → ready | failed
+//
+// State machine:
+//   queued      – job row created, not yet picked up by the worker
+//   processing  – worker acknowledged the job and is transcribing
+//   ready       – worker returned VTT/SRT URLs, subtitle saved
+//   failed      – worker reported an error or timed out (>2 h, caught by cron)
+//
+// One active job per (projectId, episodeId) is enforced in the generate route.
+model SubtitleJob {
+  id             String    @id @default(cuid())
+  projectId      String
+  episodeId      String?                              // null = whole film, non-null = episode
+  status         String    @default("queued")         // queued | processing | ready | failed
+  sourceVideoUrl String                               // URL passed to the worker
+  workerRunId    String?                              // opaque ID returned by the worker
+  vttUrl         String?                              // public R2 URL of the .vtt file
+  srtUrl         String?                              // public R2 URL of the .srt file
+  errorMessage   String?
+  retriedJobId   String?                              // previous job this retried
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([projectId, episodeId, status])             // fast "is a job running?" lookup
+  @@index([status, createdAt])                        // cron: find stuck jobs
+  @@index([projectId])
+}
