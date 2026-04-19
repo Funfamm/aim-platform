@@ -27,8 +27,7 @@
  * The browser serves them like any other static file — no isolation needed.
  */
 
-import { FFmpeg } from '@ffmpeg/ffmpeg'
-import { fetchFile } from '@ffmpeg/util'
+// --- Dynamic imports handled inside getFFmpeg() ---
 
 // ── Types ──
 export interface TranscriptSegment {
@@ -52,7 +51,8 @@ export interface TranscriptionResult {
 }
 
 // ── Singleton caches ──
-let ffmpegInstance: FFmpeg | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let ffmpegInstance: any = null
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let transcriberPipeline: any = null
 
@@ -63,8 +63,12 @@ let transcriberPipeline: any = null
  * Direct URL loading (no toBlobURL) — works without COEP/COOP headers.
  * A 30-second timeout guards against silent network stalls.
  */
-async function getFFmpeg(): Promise<FFmpeg> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getFFmpeg(): Promise<any> {
     if (ffmpegInstance) return ffmpegInstance
+
+    // Dynamic import to prevent Vercel server-side bundling errors
+    const { FFmpeg } = await import('@ffmpeg/ffmpeg')
 
     const ffmpeg = new FFmpeg()
     const TIMEOUT_MS = 30_000
@@ -193,7 +197,8 @@ export async function transcribeVideo(
     try {
         // 1. Load FFmpeg
         report('loading-ffmpeg', 'Loading video engine...')
-        let ffmpeg: FFmpeg
+        let ffmpeg: any
+        const { fetchFile } = await import('@ffmpeg/util')
         try {
             ffmpeg = await getFFmpeg()
         } catch (e) {
