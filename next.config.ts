@@ -70,6 +70,14 @@ const nextConfig: NextConfig = {
       'sharp$': false,
       'onnxruntime-node$': false,
     };
+    
+    if (isServer) {
+      // Prevent Vercel SSR from crashing when trying to resolve browser-only ffmpeg packages
+      // that we've explicitly excluded using outputFileTracingExcludes to save space.
+      config.resolve.alias['@ffmpeg/ffmpeg'] = false;
+      config.resolve.alias['@ffmpeg/util'] = false;
+    }
+
     // Keep these heavy server-only modules out of the client bundle
     if (!isServer) {
       config.resolve.alias['@prisma/client'] = false;
