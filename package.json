@@ -42,7 +42,7 @@
     "@livekit/components-core": "^0.12.13",
     "@livekit/components-react": "^2.9.20",
     "@prisma/client": "^6.19.2",
-    "@sentry/nextjs": "^9.9.0",
+    "@sentry/nextjs": "^10.49.0",
     "@swc/helpers": "^0.5.19",
     "@tiptap/extension-image": "^3.22.3",
     "@tiptap/extension-link": "^3.22.3",
