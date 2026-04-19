@@ -11,6 +11,7 @@ export async function POST(req: Request) {
             title, roomName, eventType = 'general',
             projectId, castingCallId,
             scheduledAt, lobbyEnabled, replayEnabled,
+            permissions,
         } = body
 
         if (!title || !roomName) {
@@ -42,6 +43,8 @@ export async function POST(req: Request) {
                 scheduledAt:  scheduledAt ? new Date(scheduledAt) : null,
                 lobbyEnabled: eventType === 'watch_party' ? (lobbyEnabled !== false) : false,
                 replayEnabled: eventType === 'watch_party' ? (replayEnabled === true) : false,
+                // Store participant capability permissions for LiveKit events
+                permissions: (eventType !== 'watch_party' && permissions) ? permissions : undefined,
             },
         })
 

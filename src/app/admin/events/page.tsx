@@ -73,6 +73,12 @@ export default function AdminEventsPage() {
         title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '',
         scheduledAt: '', lobbyEnabled: true, replayEnabled: false,
     })
+    // Participant permissions for LiveKit events (ignored for watch_party)
+    const [permissions, setPermissions] = useState({
+        camera: true, mic: true, screenShare: false, chat: true, reactions: true,
+    })
+    // Custom invite message for the share modal (Phase 11)
+    const [customMessage, setCustomMessage] = useState('')
 
     const fetchEvents = useCallback(async () => {
         try {
@@ -158,12 +164,15 @@ export default function AdminEventsPage() {
                     scheduledAt: form.scheduledAt || undefined,
                     lobbyEnabled: form.eventType === 'watch_party' ? form.lobbyEnabled : undefined,
                     replayEnabled: form.eventType === 'watch_party' ? form.replayEnabled : undefined,
+                    // Only send permissions for LiveKit events
+                    permissions: form.eventType !== 'watch_party' ? permissions : undefined,
                 }),
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Failed to create room')
             showSuccess(`Room "${form.roomName}" created`)
             setForm({ title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '', scheduledAt: '', lobbyEnabled: true, replayEnabled: false })
+            setPermissions({ camera: true, mic: true, screenShare: false, chat: true, reactions: true })
             setShowForm(false)
             await fetchEvents()
         } catch (err) { setError(err instanceof Error ? err.message : 'Failed to create room') }
@@ -245,7 +254,7 @@ export default function AdminEventsPage() {
                 : []
             const res = await fetch('/api/livekit/rooms/share', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ eventId: shareEventId, target: shareTarget, emails, userIds }),
+                body: JSON.stringify({ eventId: shareEventId, target: shareTarget, emails, userIds, customMessage: customMessage.trim() || undefined }),
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Failed to send invites')
@@ -847,6 +856,52 @@ export default function AdminEventsPage() {
                                             </div>
                                         )}
                                     </div>{/* end le-form-grid */}
+
+                                    {/* ── Participant Permissions (LiveKit events only) ── */}
+                                    {form.eventType !== 'watch_party' && (
+                                        <div style={{ marginTop: '1.25rem' }}>
+                                            <div className="le-label" style={{ marginBottom: '0.6rem' }}>Participant Capabilities</div>
+                                            <div style={{
+                                                background: 'rgba(255,255,255,0.02)',
+                                                border: '1px solid rgba(255,255,255,0.07)',
+                                                borderRadius: '12px', padding: '1rem 1.25rem',
+                                                display: 'flex', gap: '1rem', flexWrap: 'wrap',
+                                            }}>
+                                                {([
+                                                    { key: 'camera',      icon: '📷', label: 'Camera' },
+                                                    { key: 'mic',         icon: '🎙️', label: 'Mic' },
+                                                    { key: 'screenShare', icon: '🖥️', label: 'Screen Share' },
+                                                    { key: 'chat',        icon: '💬', label: 'Chat' },
+                                                    { key: 'reactions',   icon: '⚡', label: 'Reactions' },
+                                                ] as const).map(({ key, icon, label }) => (
+                                                    <label
+                                                        key={key}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', gap: '7px',
+                                                            cursor: 'pointer', padding: '0.4rem 0.75rem',
+                                                            borderRadius: '8px', transition: 'background 0.15s',
+                                                            background: permissions[key] ? 'rgba(212,168,83,0.08)' : 'transparent',
+                                                            border: `1px solid ${permissions[key] ? 'rgba(212,168,83,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                                                        }}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={permissions[key]}
+                                                            onChange={e => setPermissions(p => ({ ...p, [key]: e.target.checked }))}
+                                                            style={{ accentColor: '#d4a853', width: '14px', height: '14px' }}
+                                                        />
+                                                        <span style={{ fontSize: '0.78rem', color: permissions[key] ? '#d4a853' : 'rgba(255,255,255,0.45)', fontWeight: 600 }}>
+                                                            {icon} {label}
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <p style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.25)', marginTop: '6px' }}>
+                                                Checked = participants can use this feature. Host always has full control.
+                                            </p>
+                                        </div>
+                                    )}
+
                                     <div className="le-form-actions">
                                         <button id="admin-events-submit-btn" type="submit" className="le-submit-btn" disabled={creating}>
                                             {creating ? '⏳ Launching…' : '🚀 Launch Room'}
@@ -1299,6 +1354,25 @@ export default function AdminEventsPage() {
                                         <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', marginTop: '4px' }}>One email per line. Email will be sent in English.</div>
                                     </div>
                                 )}
+
+                                {/* Custom invite message (Phase 11) */}
+                                <div style={{ marginBottom: '1.25rem' }}>
+                                    <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(255,255,255,0.4)', fontWeight: 700, marginBottom: '0.5rem' }}>Personal message <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'rgba(255,255,255,0.22)' }}>(optional)</span></div>
+                                    <textarea
+                                        value={customMessage}
+                                        onChange={e => setCustomMessage(e.target.value)}
+                                        placeholder="Add a personal note that will appear in the invite email..."
+                                        rows={2}
+                                        maxLength={300}
+                                        style={{
+                                            width: '100%', background: 'rgba(255,255,255,0.04)',
+                                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px',
+                                            color: '#f0f0f5', padding: '0.65rem 0.85rem', fontSize: '0.82rem',
+                                            resize: 'vertical', lineHeight: 1.6, outline: 'none', fontFamily: 'inherit',
+                                        }}
+                                    />
+                                    <div style={{ fontSize: '0.62rem', color: 'rgba(255,255,255,0.2)', marginTop: '3px', textAlign: 'right' }}>{customMessage.length}/300</div>
+                                </div>
 
                                 {/* Room link preview */}
                                 <div style={{

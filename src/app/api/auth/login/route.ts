@@ -8,6 +8,7 @@ import { logger } from '@/lib/logger'
 import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
 import { generateCsrfToken } from '@/lib/csrf'
 import { recordAuthSuccess, recordAuthFailure } from '@/lib/metrics'
+import { readInviteCookie } from '@/app/api/events/invite/[token]/route'
 
 export async function POST(request: Request) {
     const blocked = authLimiter.check(request)
@@ -117,13 +118,20 @@ export async function POST(request: Request) {
         // Return the active locale: browsing locale takes priority (user actively chose it)
         const activeLocale = browsingLocale || storedLocale
 
+        // ── Invite context redirect ────────────────────────────────────────────
+        // If the user arrived via an invite link and was sent to /login to
+        // authenticate, read the invite_ctx cookie and redirect them to the
+        // event path instead of the default dashboard.
+        const inviteCtx = await readInviteCookie().catch(() => null)
+        const inviteRedirectTo = inviteCtx?.eventPath ?? null
+
         return NextResponse.json({
             user: {
                 id: user.id, name: user.name, email: user.email,
                 avatar: user.avatar, bannerUrl: user.bannerUrl, role: user.role,
                 accentColor: user.accentColor, themeMode: user.themeMode,
             },
-            redirectTo,
+            redirectTo: inviteRedirectTo ?? redirectTo,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             preferredLanguage: activeLocale,
         })

@@ -174,11 +174,12 @@ export async function POST(req: Request) {
         const adminId = session.userId
 
         const body = await req.json()
-        const { eventId, target, emails, userIds } = body as {
+        const { eventId, target, emails, userIds, customMessage } = body as {
             eventId: string
             target: string          // validated below — don't trust the cast
             emails?: string[]
             userIds?: string[]      // for target === 'users'
+            customMessage?: string  // optional personal note injected into email body
         }
 
         // ── Input validation ────────────────────────────────────────────────
@@ -227,9 +228,14 @@ export async function POST(req: Request) {
         // ── English email HTML (fallback; notifyUser rebuilds for other locales) ──
         const enS    = INVITE_STRINGS['en']
         const enType = EVENT_TYPE_LABELS[event.eventType]?.['en'] ?? 'Live Event'
+        // If a custom message was provided, append it after the standard body copy
+        const enBodyText = enS.emailBody(event.title, enType)
+        const enBodyWithNote = customMessage?.trim()
+            ? `${enBodyText}<br/><br/><em style="color:#888;font-size:0.9em;">${customMessage.trim().replace(/</g, '&lt;').replace(/>/g, '&gt;')}</em>`
+            : enBodyText
         const emailHtml = announcementEmail(
             enS.notifTitle(event.title),
-            enS.emailBody(event.title, enType),  // paragraph() renders HTML tags correctly
+            enBodyWithNote,
             roomUrl,
             siteUrl,
             {
