@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import AdminSidebar from '@/components/AdminSidebar'
 
 interface LiveEvent {
@@ -64,9 +65,13 @@ export default function AdminEventsPage() {
     const [searchingUsers, setSearchingUsers] = useState(false)
     // Caption worker availability — checked once on mount via GET /api/livekit/captions/start
     const [captionWorkerOk, setCaptionWorkerOk] = useState<boolean | null>(null)
+    // "You left" banner — populated from ?left=roomName query param after exit
+    const [leftBanner, setLeftBanner]   = useState<string | null>(null)
+    const searchParams = useSearchParams()
 
     const [form, setForm] = useState({
         title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '',
+        scheduledAt: '', lobbyEnabled: true, replayEnabled: false,
     })
 
     const fetchEvents = useCallback(async () => {
@@ -101,6 +106,22 @@ export default function AdminEventsPage() {
         return () => clearInterval(interval)
     }, [events, fetchEvents])
 
+    // Read the ?left= param set by RoomShell.handleLeave — show a dismissible banner
+    useEffect(() => {
+        const leftRoom = searchParams.get('left')
+        if (!leftRoom) return
+        setLeftBanner(leftRoom)
+        // Clean the URL without reloading
+        const url = new URL(window.location.href)
+        url.searchParams.delete('left')
+        url.searchParams.delete('status')
+        window.history.replaceState({}, '', url.toString())
+        // Auto-dismiss after 8 s
+        const t = setTimeout(() => setLeftBanner(null), 8_000)
+        return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     const showSuccess = (msg: string) => { setSuccess(msg); setTimeout(() => setSuccess(null), 5000) }
 
     // Debounced user search — only fires when shareTarget === 'users'
@@ -128,12 +149,21 @@ export default function AdminEventsPage() {
         try {
             const res = await fetch('/api/livekit/rooms/create', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: form.title, roomName: form.roomName, eventType: form.eventType, projectId: form.projectId || undefined, castingCallId: form.castingCallId || undefined }),
+                body: JSON.stringify({
+                    title:    form.title,
+                    roomName: form.roomName,
+                    eventType: form.eventType,
+                    projectId: form.projectId || undefined,
+                    castingCallId: form.castingCallId || undefined,
+                    scheduledAt: form.scheduledAt || undefined,
+                    lobbyEnabled: form.eventType === 'watch_party' ? form.lobbyEnabled : undefined,
+                    replayEnabled: form.eventType === 'watch_party' ? form.replayEnabled : undefined,
+                }),
             })
             const data = await res.json()
             if (!res.ok) throw new Error(data.error || 'Failed to create room')
             showSuccess(`Room "${form.roomName}" created`)
-            setForm({ title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '' })
+            setForm({ title: '', roomName: '', eventType: 'general', projectId: '', castingCallId: '', scheduledAt: '', lobbyEnabled: true, replayEnabled: false })
             setShowForm(false)
             await fetchEvents()
         } catch (err) { setError(err instanceof Error ? err.message : 'Failed to create room') }
@@ -678,6 +708,37 @@ export default function AdminEventsPage() {
                             {success}
                         </div>
                     )}
+                    {leftBanner && (
+                        <div
+                            className="le-alert"
+                            role="status"
+                            style={{
+                                background: 'rgba(212,168,83,0.07)',
+                                border: '1px solid rgba(212,168,83,0.2)',
+                                color: '#e8b95a',
+                                justifyContent: 'space-between',
+                                animation: 'slide-down 0.3s ease',
+                            }}
+                        >
+                            <span>👋 You left <strong style={{ fontFamily: 'monospace', fontSize: '0.88em' }}>{leftBanner}</strong></span>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <a
+                                    href={`/en/events/${leftBanner}`}
+                                    style={{
+                                        padding: '4px 12px', borderRadius: '7px', fontSize: '0.75rem',
+                                        background: 'rgba(212,168,83,0.15)', border: '1px solid rgba(212,168,83,0.3)',
+                                        color: '#e8b95a', textDecoration: 'none', fontWeight: 700,
+                                    }}
+                                >
+                                    Rejoin
+                                </a>
+                                <button
+                                    onClick={() => setLeftBanner(null)}
+                                    style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', opacity: 0.5, fontSize: '0.85rem' }}
+                                >✕</button>
+                            </div>
+                        </div>
+                    )}
 
                     {/* ── Create Form ── */}
                     {showForm && (
@@ -742,7 +803,50 @@ export default function AdminEventsPage() {
                                                 </select>
                                             </div>
                                         )}
-                                    </div>
+                                        {/* Scheduled date/time */}
+                                        <div className="le-field">
+                                            <label className="le-label" htmlFor="le-scheduled-at">Scheduled For <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.3)', fontWeight: 400 }}>(optional)</span></label>
+                                            <input
+                                                id="le-scheduled-at" className="le-input"
+                                                type="datetime-local"
+                                                value={form.scheduledAt}
+                                                onChange={e => setForm(f => ({ ...f, scheduledAt: e.target.value }))}
+                                                style={{ colorScheme: 'dark' }}
+                                            />
+                                        </div>
+
+                                        {/* Watch Party specific options */}
+                                        {form.eventType === 'watch_party' && (
+                                            <div className="le-field" style={{ gridColumn: 'span 2' }}>
+                                                <div className="le-label" style={{ marginBottom: '0.6rem' }}>Watch Party Options</div>
+                                                <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={form.lobbyEnabled}
+                                                            onChange={e => setForm(f => ({ ...f, lobbyEnabled: e.target.checked }))}
+                                                            style={{ accentColor: '#d4a853', width: '16px', height: '16px' }}
+                                                        />
+                                                        Enable lobby (viewers wait for host)
+                                                    </label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={form.replayEnabled}
+                                                            onChange={e => setForm(f => ({ ...f, replayEnabled: e.target.checked }))}
+                                                            style={{ accentColor: '#d4a853', width: '16px', height: '16px' }}
+                                                        />
+                                                        Allow replay after event ends
+                                                    </label>
+                                                </div>
+                                                {!form.projectId && (
+                                                    <p style={{ fontSize: '0.75rem', color: '#f87171', marginTop: '8px' }}>
+                                                        ⚠ Link a Project above so viewers have media to watch.
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>{/* end le-form-grid */}
                                     <div className="le-form-actions">
                                         <button id="admin-events-submit-btn" type="submit" className="le-submit-btn" disabled={creating}>
                                             {creating ? '⏳ Launching…' : '🚀 Launch Room'}
@@ -867,22 +971,27 @@ export default function AdminEventsPage() {
                                         <div className="le-actions">
                                             {!isEnded && (
                                                 <a
-                                                    href={`/en/events/${event.roomName}`}
+                                                    href={event.eventType === 'watch_party'
+                                                        ? `/en/events/watch/${event.roomName}`
+                                                        : `/en/events/${event.roomName}`}
                                                     className="le-btn le-btn--view"
                                                     target="_blank" rel="noopener noreferrer"
                                                     aria-label={`View room ${event.roomName}`}
                                                 >
                                                     <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 9L9 1M9 1H4M9 1V6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                                    View Room
+                                                    {event.eventType === 'watch_party' ? '🎬 Watch Party' : 'View Room'}
                                                 </a>
                                             )}
                                             {/* Copy participant link */}
                                             <button
                                                 id={`ae-copy-link-${event.id}`}
                                                 className="le-btn le-btn--copy"
-                                                title={`Copy participant link: ${typeof window !== 'undefined' ? window.location.origin : ''}/en/events/${event.roomName}`}
+                                                title={`Copy participant link`}
                                                 onClick={() => {
-                                                    const url = `${window.location.origin}/en/events/${event.roomName}`
+                                                    const path = event.eventType === 'watch_party'
+                                                        ? `/en/events/watch/${event.roomName}`
+                                                        : `/en/events/${event.roomName}`
+                                                    const url = `${window.location.origin}${path}`
                                                     navigator.clipboard.writeText(url).then(() => {
                                                         setCopied(event.id)
                                                         setTimeout(() => setCopied(null), 2000)
@@ -895,7 +1004,7 @@ export default function AdminEventsPage() {
                                                     <><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="3" width="6" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5"/><path d="M3 3V2a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg> Copy Link</>
                                                 )}
                                             </button>
-                                            {isLive && (
+                                            {isLive && event.eventType !== 'watch_party' && (
                                                 captionWorkerOk === false ? (
                                                     <button
                                                         id={`ae-captions-btn-${event.id}`}
@@ -926,7 +1035,7 @@ export default function AdminEventsPage() {
                                                     </button>
                                                 )
                                             )}
-                                            {isLive && (
+                                            {isLive && event.eventType !== 'watch_party' && (
                                                 <button
                                                     id={`ae-record-btn-${event.id}`}
                                                     className={`le-btn ${event.egressId ? 'le-btn--record-stop' : 'le-btn--record'}`}

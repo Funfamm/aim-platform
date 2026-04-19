@@ -9,6 +9,10 @@
     "room": "Room",
     "endedTitle": "Event Ended",
     "endedDesc": "This live event has ended. Thanks for joining!",
+    "eventEnded": "Screening Ended",
+    "hasEnded": "has ended. Thank you for joining the Watch Party.",
+    "watchReplay": "Watch Replay",
+    "backToDashboard": "Back to Dashboard",
     "signInTitle": "Sign In Required",
     "signInDesc": "You must be signed in to join this live event.",
     "signInCta": "Sign In to Join"

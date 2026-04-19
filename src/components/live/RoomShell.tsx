@@ -162,11 +162,17 @@ export default function RoomShell({
         leftRoomRef.current = true
         if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
         if (exitPath) {
-            router.push(exitPath)
+            // Append ?left=roomName&status=lastKnownStatus so the destination
+            // page can show a "You left [event]" banner with a rejoin CTA.
+            const params = new URLSearchParams({
+                left:   roomName,
+                status: tokenData?.role === 'admin' || tokenData?.role === 'host' ? 'host' : 'ended',
+            })
+            router.push(`${exitPath}?${params.toString()}`)
         } else {
             router.back()
         }
-    }, [exitPath, router])
+    }, [exitPath, roomName, tokenData, router])
 
     // ── End event (admin/host only) ───────────────────────────────────────────
     const handleEndEvent = useCallback(async () => {

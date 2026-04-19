@@ -7,7 +7,11 @@ export async function POST(req: Request) {
         const session = await requireAdmin()
 
         const body = await req.json()
-        const { title, roomName, eventType = 'general', projectId, castingCallId } = body
+        const {
+            title, roomName, eventType = 'general',
+            projectId, castingCallId,
+            scheduledAt, lobbyEnabled, replayEnabled,
+        } = body
 
         if (!title || !roomName) {
             return NextResponse.json({ error: 'title and roomName are required' }, { status: 400 })
@@ -31,10 +35,13 @@ export async function POST(req: Request) {
                 title,
                 roomName,
                 eventType,
-                status: 'scheduled',
-                hostUserId: session.userId,
-                projectId: projectId || null,
+                status:       'scheduled',
+                hostUserId:   session.userId,
+                projectId:    projectId || null,
                 castingCallId: castingCallId || null,
+                scheduledAt:  scheduledAt ? new Date(scheduledAt) : null,
+                lobbyEnabled: eventType === 'watch_party' ? (lobbyEnabled !== false) : false,
+                replayEnabled: eventType === 'watch_party' ? (replayEnabled === true) : false,
             },
         })
 
