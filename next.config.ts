@@ -72,10 +72,10 @@ const nextConfig: NextConfig = {
     };
     
     if (isServer) {
-      // Prevent Vercel SSR from crashing when trying to resolve browser-only ffmpeg packages
-      // that we've explicitly excluded using outputFileTracingExcludes to save space.
-      config.resolve.alias['@ffmpeg/ffmpeg'] = false;
-      config.resolve.alias['@ffmpeg/util'] = false;
+      // NOTE: @ffmpeg/ffmpeg and @ffmpeg/util are listed in serverExternalPackages above,
+      // which is enough to keep them out of the SSR bundle.  Do NOT also alias them to
+      // `false` here — that prevents Node from resolving them at runtime when the client
+      // component is pre-rendered, which causes ERR_MODULE_NOT_FOUND on Vercel.
     }
 
     // Keep these heavy server-only modules out of the client bundle

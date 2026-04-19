@@ -86,8 +86,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Worker not configured — set WORKER_URL.' }, { status: 503 })
     }
 
+    // ── Diagnostic: fingerprint the secret so we can verify it in Vercel logs ──
+    // Shows first+last 4 chars only — enough to detect mismatches, not enough to leak.
+    const rawSecret = (process.env.WORKER_SECRET ?? '').trim().replace(/^["']|["']$/g, '')
+    const secretFingerprint = rawSecret.length > 8
+        ? `${rawSecret.slice(0, 4)}…${rawSecret.slice(-4)} (${rawSecret.length} chars)`
+        : rawSecret.length === 0 ? '(empty!)' : '(too short)'
+    console.info(`[subtitles/generate] WORKER_URL=${workerUrl} | WORKER_SECRET fingerprint: ${secretFingerprint}`)
+
     const payload = { jobId: job.id, projectId, episodeId, videoUrl, language }
+    // Serialize once so the signed string is byte-identical to the body we send.
+    const bodyStr = JSON.stringify(payload)
     const signature = signPayload(payload)
+    console.info(`[subtitles/generate] Payload signature: ${signature.slice(0, 8)}… | body length: ${bodyStr.length}`)
 
     try {
         const workerRes = await fetch(`${workerUrl}/generate`, {
@@ -99,7 +110,7 @@ export async function POST(req: NextRequest) {
                 // Safe to include on any host — ignored when the worker is on a real VPS.
                 'ngrok-skip-browser-warning': 'true',
             },
-            body: JSON.stringify(payload),
+            body: bodyStr,
             // 10-second connection timeout (not transcription timeout)
             signal: AbortSignal.timeout(10_000),
         })
