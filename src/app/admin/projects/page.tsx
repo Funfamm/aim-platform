@@ -342,20 +342,20 @@ export default function AdminProjectsPage() {
                 return
             }
             try {
-                const r = await fetch(/api/subtitles/status/)
+                const r = await fetch(`/api/subtitles/status/${jobId}`)
                 if (!r.ok) return
                 const d = await r.json()
                 setServerJobStatus(s => ({ ...s, [pid]: d.status }))
                 if (d.status === 'ready') {
                     clearInterval(iv)
                     setServerJobMsg(s => ({ ...s, [pid]: '✅ Subtitles ready! You can now run translation.' }))
-                    fetch(/api/subtitles/28920?lang=en).then(r2 => r2.json()).then(sub => {
+                    fetch(`/api/subtitles/${pid}?lang=en`).then(r2 => r2.json()).then(sub => {
                         setTranslationCount(s => ({ ...s, [pid]: sub.available?.length ?? 0 }))
                         setTranslateStatus(s => ({ ...s, [pid]: sub.translateStatus ?? 'pending' }))
                     }).catch(() => {})
                 } else if (d.status === 'failed') {
                     clearInterval(iv)
-                    setServerJobMsg(s => ({ ...s, [pid]: ❌ Worker failed:  }))
+                    setServerJobMsg(s => ({ ...s, [pid]: `❌ Worker failed: ${d.errorMessage || 'unknown'}` }))
                 } else if (d.status === 'processing') {
                     setServerJobMsg(s => ({ ...s, [pid]: '🔄 Worker is transcribing… (may take several minutes)' }))
                 }
@@ -386,7 +386,7 @@ export default function AdminProjectsPage() {
                 if (d.jobId) pollServerJob(pid, d.jobId)
             } else {
                 setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
-                setServerJobMsg(s => ({ ...s, [pid]: ⚠️  }))
+                setServerJobMsg(s => ({ ...s, [pid]: `⚠️ ${d.error || "Worker not reachable. Is it running?"}` }))
             }
         } catch {
             setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
