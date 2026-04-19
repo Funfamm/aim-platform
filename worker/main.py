@@ -69,6 +69,7 @@ R2_BUCKET_NAME = os.environ.get("R2_BUCKET_NAME", "aim-platform-subtitles")
 R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
 WHISPER_MODEL_SIZE = os.environ.get("WHISPER_MODEL", "base")
 MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "2000"))
+VERCEL_BYPASS_SECRET = os.environ.get("VERCEL_BYPASS_SECRET", "").strip()
 
 # ── Model: load once at startup ───────────────────────────────────────────────
 _whisper_model: WhisperModel | None = None
@@ -163,13 +164,17 @@ async def send_callback(payload: dict, max_retries: int = 3) -> None:
     body = json.dumps(payload, separators=(",", ":"))
     sig = hmac.new(WORKER_SECRET.encode(), body.encode(), hashlib.sha256).hexdigest()
 
+    headers: dict = {"Content-Type": "application/json", "X-Signature": sig}
+    if VERCEL_BYPASS_SECRET:
+        headers["x-vercel-protection-bypass"] = VERCEL_BYPASS_SECRET
+
     for attempt in range(1, max_retries + 1):
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 res = await client.post(
                     VERCEL_CALLBACK_URL,
                     content=body,
-                    headers={"Content-Type": "application/json", "X-Signature": sig},
+                    headers=headers,
                 )
                 job_id_cb = payload.get("jobId", "unknown")
                 if res.status_code < 300:
