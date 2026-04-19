@@ -527,13 +527,7 @@ export default async function EventPage({ params }: EventPageProps) {
                             roomName={roomName}
                             role={role}
                             exitPath={isAdmin ? '/admin/events' : '/events'}
-                            onEndEvent={isAdmin || isHost ? async () => {
-                                await fetch('/api/livekit/rooms/end', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ roomName }),
-                                })
-                            } : undefined}
+                            canEndEvent={isAdmin || isHost}
                         />
                     )}
                 </div>

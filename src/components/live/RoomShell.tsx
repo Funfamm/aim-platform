@@ -14,8 +14,8 @@ import type { LiveKitRole } from '@/lib/livekit/grants'
 interface RoomShellProps {
     roomName: string
     role?: LiveKitRole
-    /** Called when admin clicks "End Event" — optional, only shown to hosts/admins */
-    onEndEvent?: () => Promise<void>
+    /** Whether to show the "End Event" button — only shown to hosts/admins if true */
+    canEndEvent?: boolean
     /** Where to navigate after leaving (default: router.back()) */
     exitPath?: string
 }
@@ -37,7 +37,7 @@ const REMOUNT_SUPPRESS_MS = 500
 export default function RoomShell({
     roomName,
     role = 'viewer',
-    onEndEvent,
+    canEndEvent,
     exitPath,
 }: RoomShellProps) {
     const router = useRouter()
@@ -170,20 +170,24 @@ export default function RoomShell({
 
     // ── End event (admin/host only) ───────────────────────────────────────────
     const handleEndEvent = useCallback(async () => {
-        if (!onEndEvent) return
+        if (!canEndEvent) return
         const confirmed = typeof window !== 'undefined'
             ? window.confirm('End the event for all participants? This cannot be undone.')
             : false
         if (!confirmed) return
         setEndingEvent(true)
         try {
-            await onEndEvent()
+            await fetch('/api/livekit/rooms/end', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomName }),
+            })
             handleLeave()
         } catch (err) {
             console.error('[RoomShell] End event failed:', err)
             setEndingEvent(false)
         }
-    }, [onEndEvent, handleLeave])
+    }, [canEndEvent, roomName, handleLeave])
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -236,7 +240,7 @@ export default function RoomShell({
                 <LanguageSelector value={captionLang} onChange={setCaptionLang} />
 
                 <div className="room-shell-actions">
-                    {isHost && onEndEvent && (
+                    {isHost && canEndEvent && (
                         <button
                             id="room-shell-end-event-btn"
                             className="room-shell-end-btn"
