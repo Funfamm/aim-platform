@@ -8,7 +8,7 @@ import { logger } from '@/lib/logger'
 import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
 import { generateCsrfToken } from '@/lib/csrf'
 import { recordAuthSuccess, recordAuthFailure } from '@/lib/metrics'
-import { readInviteCookie } from '@/app/api/events/invite/[token]/route'
+import { readInviteCookie } from '@/lib/invite-cookie'
 
 export async function POST(request: Request) {
     const blocked = authLimiter.check(request)

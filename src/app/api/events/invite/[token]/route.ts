@@ -20,42 +20,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import crypto from 'crypto'
-import { SignJWT, jwtVerify } from 'jose'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { logLiveEventAnalytic } from '@/lib/liveEvent/analytics'
+import {
+    INVITE_COOKIE_NAME,
+    INVITE_COOKIE_MAX_AGE,
+    signInviteCookie,
+} from '@/lib/invite-cookie'
 
-// ── Cookie helpers ─────────────────────────────────────────────────────────
 
-const COOKIE_NAME = 'invite_ctx'
-const COOKIE_MAX_AGE = 60 * 60 // 1 hour
-
-function getJwtSecret(): Uint8Array {
-    const secret = process.env.JWT_SECRET
-    if (!secret) throw new Error('JWT_SECRET not set')
-    return new TextEncoder().encode(secret)
-}
-
-async function signInviteCookie(payload: { tokenHash: string; eventPath: string }) {
-    return new SignJWT(payload)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setExpirationTime('1h')
-        .sign(getJwtSecret())
-}
-
-export async function readInviteCookie(): Promise<{ tokenHash: string; eventPath: string } | null> {
-    try {
-        const jar = await cookies()
-        const cookie = jar.get(COOKIE_NAME)
-        if (!cookie?.value) return null
-        const { payload } = await jwtVerify(cookie.value, getJwtSecret())
-        return payload as { tokenHash: string; eventPath: string }
-    } catch {
-        return null
-    }
-}
 
 function hashToken(rawToken: string): string {
     return crypto.createHash('sha256').update(rawToken).digest('hex')
@@ -117,11 +92,11 @@ export async function GET(
         role:      invite.role,
         status:    invite.event.status,
     })
-    response.cookies.set(COOKIE_NAME, signed, {
+    response.cookies.set(INVITE_COOKIE_NAME, signed, {
         httpOnly: true,
         secure:   process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge:   COOKIE_MAX_AGE,
+        maxAge:   INVITE_COOKIE_MAX_AGE,
         path:     '/',
     })
     return response
@@ -173,6 +148,6 @@ export async function POST(
 
     // Clear the invite cookie
     const response = NextResponse.json({ ok: true })
-    response.cookies.delete(COOKIE_NAME)
+    response.cookies.delete(INVITE_COOKIE_NAME)
     return response
 }
