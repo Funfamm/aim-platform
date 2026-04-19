@@ -60,7 +60,17 @@ async function getPublisher(): Promise<RedisClient | null> {
     if (_pub) return _pub
     _pub = createClient({ url: process.env.REDIS_URL })
     _pub.on('error', (err) => console.error('[watchParty/pubsub] pub error:', err))
-    await _pub.connect()
+    
+    // Add 5s timeout to prevent hanging on unreachable hosts
+    await Promise.race([
+        _pub.connect(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 5000))
+    ]).catch(err => {
+        console.error('[watchParty/pubsub] connect failed:', err.message)
+        _pub = null // Reset so it can retry on next call
+        throw err
+    })
+    
     return _pub
 }
 
@@ -69,7 +79,15 @@ async function createSubscriber(): Promise<RedisClient | null> {
     if (!process.env.REDIS_URL) return null
     const sub = createClient({ url: process.env.REDIS_URL })
     sub.on('error', (err) => console.error('[watchParty/pubsub] sub error:', err))
-    await sub.connect()
+    
+    await Promise.race([
+        sub.connect(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Redis connection timeout')), 5000))
+    ]).catch(err => {
+        console.error('[watchParty/pubsub] sub connect failed:', err.message)
+        throw err
+    })
+    
     return sub
 }
 

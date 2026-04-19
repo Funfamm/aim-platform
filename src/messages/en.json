@@ -519,6 +519,14 @@
     "hostBadge": "HOST",
     "mediaUnavailable": "Media not available",
     "liveLabel": "LIVE",
-    "replayLabel": "REPLAY"
+    "replayLabel": "REPLAY",
+    "joinScreening": "Join Screening",
+    "tapToJoin": "Tap to Join Screening",
+    "startError": "Failed to start screening. Please check your connection.",
+    "syncing": "Syncing...",
+    "startScreening": "Start Screening",
+    "pauseScreening": "Pause Screening",
+    "resumeScreening": "Resume Screening",
+    "theaterInstructions": "Click below to unlock audio and join the audience."
   }
 }

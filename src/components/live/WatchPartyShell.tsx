@@ -45,7 +45,7 @@ interface WatchPartyShellProps {
     projectSlug:       string | null
 }
 
-const DRIFT_THRESHOLD_SEC = 2
+const DRIFT_THRESHOLD_SEC = 1.5
 const HEARTBEAT_INTERVAL  = 20_000
 const PING_INTERVAL       = 25_000
 
@@ -103,8 +103,12 @@ export default function WatchPartyShell({
     const [currentTime, setCurrentTime] = useState(0)
     const [duration, setDuration]       = useState(0)
     const [isLoading, setIsLoading]     = useState(true)
-    const [showControls, setShowControls] = useState(true)
+    const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([])
     const [viewerCount, setViewerCount] = useState(0)
+    const [hasInteracted, setHasInteracted] = useState(false)
+    const [autoplayFailed, setAutoplayFailed] = useState(false)
+    const [controlError, setControlError] = useState<string | null>(null)
+    const [showControls, setShowControls] = useState(true)
     const [isFullscreen, setIsFullscreen] = useState(false)
 
     /* ── Subtitle state ──────────────────────────────────────────────────── */
@@ -119,7 +123,6 @@ export default function WatchPartyShell({
 
     /* ── Chat & reactions ────────────────────────────────────────────────── */
     const [showChat, setShowChat] = useState(true)
-    const [reactions, setReactions] = useState<{ id: string; emoji: string; x: number }[]>([])
 
     /* ── Refs ────────────────────────────────────────────────────────────── */
     const videoRef       = useRef<HTMLVideoElement>(null)
@@ -166,8 +169,6 @@ export default function WatchPartyShell({
                 if (!isMounted.current) return
 
                 // ── Rejoin detection ───────────────────────────────────────────
-                // First sync per connection = state catch-up from Redis.
-                // If hasJoinedOnce is already true, this is a reconnect.
                 if (isFirstSync) {
                     isFirstSync = false
                     if (hasJoinedOnce.current) {
@@ -179,14 +180,16 @@ export default function WatchPartyShell({
                 setRoomStatus(data.status)
 
                 if (data.status === 'playing' || data.status === 'paused') {
-                    // Drift correction: seek if off by more than threshold
                     if (vid) {
                         const diff = Math.abs(vid.currentTime - data.currentTimeSec)
                         if (diff > DRIFT_THRESHOLD_SEC) {
                             vid.currentTime = data.currentTimeSec
                         }
-                        if (data.playing && vid.paused) {
-                            vid.play().catch(() => {})
+                        if (data.playing && (vid.paused || vid.ended)) {
+                            vid.play().catch((err) => {
+                                console.warn('[WatchPartyShell] Playback blocked by browser:', err)
+                                setAutoplayFailed(true)
+                            })
                             setIsPlaying(true)
                         } else if (!data.playing && !vid.paused) {
                             vid.pause()
@@ -366,23 +369,44 @@ export default function WatchPartyShell({
         currentTimeSec?: number,
     ) => {
         setControlLoading(true)
+        setControlError(null)
+        
+        const prevStatus  = roomStatus
+        const prevPlaying = isPlaying
+        
         try {
             const vid = videoRef.current
-            await fetch('/api/watch-party/control', {
+            const targetTime = currentTimeSec ?? vid?.currentTime ?? 0
+            
+            // Optimistic update
+            if (action === 'play') { setRoomStatus('playing'); setIsPlaying(true) }
+            else if (action === 'pause') { setIsPlaying(false) }
+            else if (action === 'end') { setRoomStatus('ended'); setIsPlaying(false) }
+
+            const res = await fetch('/api/watch-party/control', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     roomName,
                     action,
-                    currentTimeSec: currentTimeSec ?? vid?.currentTime ?? 0,
+                    currentTimeSec: targetTime,
                 }),
             })
-        } catch (err) {
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}))
+                throw new Error(data.error || 'Failed to send control command')
+            }
+        } catch (err: any) {
             console.error('[WatchPartyShell] control error:', err)
+            setControlError(t('startError'))
+            // Rollback
+            setRoomStatus(prevStatus)
+            setIsPlaying(prevPlaying)
         } finally {
             setControlLoading(false)
         }
-    }, [roomName])
+    }, [roomName, roomStatus, isPlaying, t])
 
     /* ── Subtitle fetch ─────────────────────────────────────────────────── */
     useEffect(() => {
@@ -555,26 +579,57 @@ export default function WatchPartyShell({
                                         filter: 'blur(20px) brightness(0.3)',
                                     }} />
                                 )}
-                                <div style={{ position: 'relative', textAlign: 'center' }}>
-                                    <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🎬</div>
-                                    <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '8px' }}>
-                                        {title}
-                                    </h2>
-                                    <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>
-                                        {t('lobbyDesc')}
-                                    </p>
-                                    <div style={{
-                                        display: 'flex', alignItems: 'center', gap: '8px',
-                                        justifyContent: 'center', marginTop: '20px',
-                                        color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem',
-                                    }}>
-                                        <div style={{
-                                            width: '8px', height: '8px', borderRadius: '50%',
-                                            background: 'rgba(212,168,83,0.7)',
-                                            animation: 'wp-spin 1.2s linear infinite',
-                                        }}/>
-                                        {t('waitingForHost')}
-                                    </div>
+                                <div style={{ position: 'relative', textAlign: 'center', padding: '0 20px' }}>
+                                    {!hasInteracted ? (
+                                        <>
+                                            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🍿</div>
+                                            <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '8px' }}>
+                                                {t('joinScreening')}
+                                            </h2>
+                                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '24px', maxWidth: '300px', marginInline: 'auto' }}>
+                                                {t('theaterInstructions')}
+                                            </p>
+                                            <button
+                                                onClick={() => {
+                                                    const v = videoRef.current
+                                                    if (v) {
+                                                        v.play().then(() => v.pause()).catch(() => {})
+                                                    }
+                                                    setHasInteracted(true)
+                                                }}
+                                                style={{
+                                                    background: 'linear-gradient(135deg, var(--accent-gold), #c9951b)',
+                                                    color: '#000', border: 'none', padding: '12px 32px',
+                                                    borderRadius: '12px', fontWeight: 700, cursor: 'pointer',
+                                                    fontSize: '1rem',
+                                                }}
+                                            >
+                                                {t('joinScreening')}
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🎬</div>
+                                            <h2 style={{ color: 'white', fontSize: '1.4rem', fontWeight: 700, marginBottom: '8px' }}>
+                                                {title}
+                                            </h2>
+                                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>
+                                                {t('lobbyDesc')}
+                                            </p>
+                                            <div style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px',
+                                                justifyContent: 'center', marginTop: '20px',
+                                                color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem',
+                                            }}>
+                                                <div style={{
+                                                    width: '8px', height: '8px', borderRadius: '50%',
+                                                    background: 'rgba(212,168,83,0.7)',
+                                                    animation: 'wp-spin 1.2s linear infinite',
+                                                }}/>
+                                                {t('waitingForHost')}
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -711,6 +766,34 @@ export default function WatchPartyShell({
                                 {/* Reaction overlay */}
                                 <ReactionOverlay reactions={reactions} />
 
+                                {/* Autoplay Failure Fallback Overlay */}
+                                {autoplayFailed && (
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        background: 'rgba(0,0,0,0.85)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexDirection: 'column', gap: '16px', zIndex: 100,
+                                        animation: 'wp-fadein 0.3s ease',
+                                    }}>
+                                        <div style={{ fontSize: '2.5rem' }}>🔈</div>
+                                        <p style={{ color: 'white', fontWeight: 600 }}>{t('tapToJoin')}</p>
+                                        <button
+                                            onClick={() => {
+                                                const v = videoRef.current
+                                                if (v) v.play().catch(() => {})
+                                                setAutoplayFailed(false)
+                                            }}
+                                            style={{
+                                                background: 'var(--accent-gold)', color: '#000',
+                                                border: 'none', padding: '10px 24px', borderRadius: '10px',
+                                                fontWeight: 700, cursor: 'pointer',
+                                            }}
+                                        >
+                                            ▶ {t('joinScreening')}
+                                        </button>
+                                    </div>
+                                )}
+
                                 {/* Controls overlay */}
                                 <div style={{
                                     position: 'absolute', inset: 0,
@@ -791,7 +874,7 @@ export default function WatchPartyShell({
                                                                 border: 'none', color: 'white', cursor: 'pointer',
                                                                 borderRadius: '6px', fontSize: '0.85rem',
                                                             }}
-                                                        >Off</button>
+                                                        >{t('subtitlesOff')}</button>
                                                         {availableLangs.map(lang => (
                                                             <button
                                                                 key={lang}
@@ -832,77 +915,92 @@ export default function WatchPartyShell({
 
                         {/* ── Host Control Panel ───────────────────────────── */}
                         {canControl && (
-                            <div style={{
-                                marginTop: '16px',
-                                padding: '16px 20px',
-                                background: 'linear-gradient(135deg, rgba(212,168,83,0.07), rgba(212,168,83,0.03))',
-                                border: '1px solid rgba(212,168,83,0.2)',
-                                borderRadius: '14px',
-                                display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
-                            }}>
-                                <span style={{
-                                    fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em',
-                                    color: 'var(--accent-gold)', opacity: 0.8,
-                                    marginRight: '4px',
-                                }}>{t('hostBadge')}</span>
-
-                                {roomStatus === 'lobby' && (
-                                    <button
-                                        className="wp-host-btn"
-                                        disabled={controlLoading}
-                                        onClick={() => sendControl('play', 0)}
-                                        style={{
-                                            background: 'linear-gradient(135deg, var(--accent-gold), #c9951b)',
-                                            color: '#000',
-                                        }}
-                                    >
-                                        ▶ {t('startScreening')}
-                                    </button>
+                            <>
+                                {controlError && (
+                                    <div style={{
+                                        marginTop: '16px', padding: '10px 16px',
+                                        background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.2)',
+                                        borderRadius: '10px', color: '#f87171', fontSize: '0.85rem',
+                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                    }}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                        </svg>
+                                        {controlError}
+                                    </div>
                                 )}
-                                {(roomStatus === 'paused' || roomStatus === 'playing') && (
-                                    <>
-                                        {!isPlaying ? (
-                                            <button
-                                                className="wp-host-btn"
-                                                disabled={controlLoading}
-                                                onClick={() => sendControl('play', videoRef.current?.currentTime ?? 0)}
-                                                style={{ background: 'rgba(212,168,83,0.15)', color: 'var(--accent-gold)', border: '1px solid rgba(212,168,83,0.3)' }}
-                                            >
-                                                ▶ {t('resume')}
-                                            </button>
-                                        ) : (
-                                            <button
-                                                className="wp-host-btn"
-                                                disabled={controlLoading}
-                                                onClick={() => sendControl('pause', videoRef.current?.currentTime ?? 0)}
-                                                style={{ background: 'rgba(255,255,255,0.07)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}
-                                            >
-                                                ⏸ {t('pause')}
-                                            </button>
-                                        )}
+                                <div style={{
+                                    marginTop: '16px',
+                                    padding: '16px 20px',
+                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.07), rgba(212,168,83,0.03))',
+                                    border: '1px solid rgba(212,168,83,0.2)',
+                                    borderRadius: '14px',
+                                    display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap',
+                                }}>
+                                    <span style={{
+                                        fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.06em',
+                                        color: 'var(--accent-gold)', opacity: 0.8,
+                                        marginRight: '4px',
+                                    }}>{t('hostBadge')}</span>
+
+                                    {roomStatus === 'lobby' && (
                                         <button
                                             className="wp-host-btn"
                                             disabled={controlLoading}
-                                            onClick={() => {
-                                                if (confirm(t('confirmEnd'))) {
-                                                    sendControl('end', videoRef.current?.currentTime ?? 0)
-                                                }
+                                            onClick={() => sendControl('play', 0)}
+                                            style={{
+                                                background: 'linear-gradient(135deg, var(--accent-gold), #c9951b)',
+                                                color: '#000',
                                             }}
-                                            style={{ background: 'rgba(220,38,38,0.1)', color: '#f87171', border: '1px solid rgba(220,38,38,0.25)' }}
                                         >
-                                            ⏹ {t('endParty')}
+                                            ▶ {controlLoading ? t('syncing') : t('startScreening')}
                                         </button>
-                                    </>
-                                )}
-                                {controlLoading && (
-                                    <div style={{
-                                        width: '16px', height: '16px', borderRadius: '50%',
-                                        border: '2px solid rgba(212,168,83,0.3)',
-                                        borderTopColor: 'var(--accent-gold)',
-                                        animation: 'wp-spin 0.7s linear infinite',
-                                    }}/>
-                                )}
-                            </div>
+                                    )}
+                                    {(roomStatus === 'paused' || roomStatus === 'playing') && (
+                                        <>
+                                            {!isPlaying ? (
+                                                <button
+                                                    className="wp-host-btn"
+                                                    disabled={controlLoading}
+                                                    onClick={() => sendControl('play', videoRef.current?.currentTime ?? 0)}
+                                                    style={{ background: 'rgba(212,168,83,0.15)', color: 'var(--accent-gold)', border: '1px solid rgba(212,168,83,0.3)' }}
+                                                >
+                                                    ▶ {t('resumeScreening')}
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="wp-host-btn"
+                                                    disabled={controlLoading}
+                                                    onClick={() => sendControl('pause', videoRef.current?.currentTime ?? 0)}
+                                                    style={{ background: 'rgba(255,255,255,0.07)', color: 'white', border: '1px solid rgba(255,255,255,0.15)' }}
+                                                >
+                                                    ⏸ {t('pauseScreening')}
+                                                </button>
+                                            )}
+                                            <button
+                                                className="wp-host-btn"
+                                                disabled={controlLoading}
+                                                onClick={() => {
+                                                    if (confirm(t('confirmEnd'))) {
+                                                        sendControl('end', videoRef.current?.currentTime ?? 0)
+                                                    }
+                                                }}
+                                                style={{ background: 'rgba(220,38,38,0.1)', color: '#f87171', border: '1px solid rgba(220,38,38,0.25)' }}
+                                            >
+                                                ⏹ {t('endParty')}
+                                            </button>
+                                        </>
+                                    )}
+                                    {controlLoading && (
+                                        <div style={{
+                                            width: '16px', height: '16px', borderRadius: '50%',
+                                            border: '2px solid rgba(212,168,83,0.3)',
+                                            borderTopColor: 'var(--accent-gold)',
+                                            animation: 'wp-spin 0.7s linear infinite',
+                                        }}/>
+                                    )}
+                                </div>
+                            </>
                         )}
 
                         {/* ── Title + scheduled info ───────────────────────── */}
