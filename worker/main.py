@@ -52,6 +52,13 @@ logging.basicConfig(
 )
 log = logging.getLogger("worker")
 
+# ── Load .env (local dev — no-op in production/Docker where env vars are injected) ──
+try:
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"), override=False)
+except ImportError:
+    pass  # python-dotenv not installed — rely on OS environment
+
 # ── Config ────────────────────────────────────────────────────────────────────
 WORKER_SECRET = os.environ.get("WORKER_SECRET", "")
 VERCEL_CALLBACK_URL = os.environ.get("VERCEL_CALLBACK_URL", "")
@@ -164,8 +171,9 @@ async def send_callback(payload: dict, max_retries: int = 3) -> None:
                     content=body,
                     headers={"Content-Type": "application/json", "X-Signature": sig},
                 )
+                job_id_cb = payload.get("jobId", "unknown")
                 if res.status_code < 300:
-                    log.info(f'"Callback sent for job {payload.get(\"jobId\")}, attempt {attempt}"')
+                    log.info(f'"Callback sent for job {job_id_cb}, attempt {attempt}"')
                     return
                 log.warning(f'"Callback HTTP {res.status_code} on attempt {attempt}"')
         except Exception as exc:
@@ -174,7 +182,8 @@ async def send_callback(payload: dict, max_retries: int = 3) -> None:
         if attempt < max_retries:
             await asyncio.sleep(2 ** attempt)  # exponential back-off: 2s, 4s
 
-    log.error(f'"All callback attempts failed for job {payload.get(\"jobId\")}"')
+    job_id_cb = payload.get("jobId", "unknown")
+    log.error(f'"All callback attempts failed for job {job_id_cb}"')
 
 
 # ── Core transcription task ───────────────────────────────────────────────────
