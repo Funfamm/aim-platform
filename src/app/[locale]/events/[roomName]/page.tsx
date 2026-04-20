@@ -59,7 +59,43 @@ export default async function EventPage({ params }: EventPageProps) {
         console.error('[EventPage] DB error loading event:', e)
     }
 
-    if (!event) notFound()
+    if (!event) {
+        return (
+            <main style={{
+                minHeight: '100vh', background: '#080810',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-primary, \'Inter\', sans-serif)',
+                padding: '40px 24px',
+            }}>
+                <div style={{
+                    textAlign: 'center', maxWidth: '460px', width: '100%',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '20px', padding: '48px 36px',
+                }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🔗</div>
+                    <h1 style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 700, marginBottom: '12px' }}>
+                        This event link is no longer active
+                    </h1>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '32px', fontSize: '0.95rem' }}>
+                        The event you&apos;re looking for may have ended, been removed, or this link may have expired.
+                    </p>
+                    <Link
+                        href="/"
+                        style={{
+                            display: 'inline-block', padding: '12px 28px',
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #d4a853, #c9951b)',
+                            color: '#000', fontWeight: 700, textDecoration: 'none',
+                            fontSize: '0.9rem',
+                        }}
+                    >
+                        ← Back to Homepage
+                    </Link>
+                </div>
+            </main>
+        )
+    }
 
     // ── Guard: Redirect Watch Parties ─────────────────────────────────────────
     if (event.eventType === 'watch_party') {
@@ -514,9 +550,46 @@ export default async function EventPage({ params }: EventPageProps) {
 
                 <div className="event-room-wrap">
                     {eventEnded ? (
-                        <div className="event-ended">
-                            <h2>{t('endedTitle')}</h2>
-                            <p>{t('endedDesc')}</p>
+                        <div style={{
+                            textAlign: 'center', padding: '3rem 1.5rem', maxWidth: '480px',
+                            margin: '0 auto',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: '20px',
+                        }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎬</div>
+                            <h2 style={{ color: '#fff', fontSize: '1.3rem', fontWeight: 700, marginBottom: '10px' }}>
+                                {t('endedTitle')}
+                            </h2>
+                            <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '28px', fontSize: '0.9rem' }}>
+                                {t('endedDesc')}
+                            </p>
+                            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                <Link
+                                    href="/"
+                                    style={{
+                                        display: 'inline-block', padding: '10px 24px',
+                                        borderRadius: '10px',
+                                        background: 'linear-gradient(135deg, #d4a853, #c9951b)',
+                                        color: '#000', fontWeight: 700, textDecoration: 'none',
+                                        fontSize: '0.85rem',
+                                    }}
+                                >
+                                    ← Back to Home
+                                </Link>
+                                <Link
+                                    href={`/${locale}/dashboard`}
+                                    style={{
+                                        display: 'inline-block', padding: '10px 24px',
+                                        borderRadius: '10px',
+                                        border: '1px solid rgba(255,255,255,0.15)',
+                                        color: 'rgba(255,255,255,0.7)', textDecoration: 'none',
+                                        fontSize: '0.85rem',
+                                    }}
+                                >
+                                    Dashboard
+                                </Link>
+                            </div>
                         </div>
                     ) : !isAuthenticated ? (
                         <div className="event-teaser">

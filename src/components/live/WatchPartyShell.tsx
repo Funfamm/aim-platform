@@ -593,9 +593,29 @@ export default function WatchPartyShell({
                     marginBottom: '16px', flexWrap: 'wrap', gap: '8px',
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {projectSlug && (
+                        {/* Back link — admins return to the admin events dashboard;
+                            regular viewers return to the film's public page. */}
+                        {canControl ? (
+                            <Link
+                                href="/admin/events"
+                                className="wp-back-link"
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    color: 'var(--text-tertiary)', textDecoration: 'none',
+                                    fontSize: '0.85rem', transition: 'color 0.2s',
+                                }}
+                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = 'var(--accent-gold)' }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = 'var(--text-tertiary)' }}
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M19 12H5M12 19l-7-7 7-7" />
+                                </svg>
+                                Admin Events
+                            </Link>
+                        ) : projectSlug ? (
                             <Link
                                 href={`/${locale}/works/${projectSlug}`}
+                                className="wp-back-link"
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '6px',
                                     color: 'var(--text-tertiary)', textDecoration: 'none',
@@ -609,7 +629,7 @@ export default function WatchPartyShell({
                                 </svg>
                                 Back
                             </Link>
-                        )}
+                        ) : null}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span style={{
                                 background: 'rgba(212,168,83,0.15)', color: 'var(--accent-gold)',

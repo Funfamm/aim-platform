@@ -87,7 +87,43 @@ export default async function WatchPartyPage({ params, searchParams }: WatchPart
         console.error('[WatchPartyPage] DB error:', e)
     }
 
-    if (!event) notFound()
+    if (!event) {
+        return (
+            <main style={{
+                minHeight: '100vh', background: '#080810',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-primary, \'Inter\', sans-serif)',
+                padding: '40px 24px',
+            }}>
+                <div style={{
+                    textAlign: 'center', maxWidth: '460px', width: '100%',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '20px', padding: '48px 36px',
+                }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🔗</div>
+                    <h1 style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 700, marginBottom: '12px' }}>
+                        This event link is no longer active
+                    </h1>
+                    <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '32px', fontSize: '0.95rem' }}>
+                        The screening you&apos;re looking for may have ended, been removed, or this link may have expired.
+                    </p>
+                    <Link
+                        href="/"
+                        style={{
+                            display: 'inline-block', padding: '12px 28px',
+                            borderRadius: '10px',
+                            background: 'linear-gradient(135deg, #d4a853, #c9951b)',
+                            color: '#000', fontWeight: 700, textDecoration: 'none',
+                            fontSize: '0.9rem',
+                        }}
+                    >
+                        ← Back to Homepage
+                    </Link>
+                </div>
+            </main>
+        )
+    }
 
     // ── Guard: only watch_party events ────────────────────────────────────────
     if (event.eventType !== 'watch_party') {
@@ -168,39 +204,57 @@ export default async function WatchPartyPage({ params, searchParams }: WatchPart
                     <p style={{ color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '32px' }}>
                         <strong>{event.title}</strong> {t('hasEnded')}
                     </p>
-                    {event.replayEnabled && mediaUrl && (
-                        <Link
-                            href={`/${locale}/events/watch/${roomName}?replay=1`}
-                            style={{
-                                display: 'inline-block',
-                                padding: '12px 28px',
-                                borderRadius: '10px',
-                                background: 'linear-gradient(135deg, var(--accent-gold), #c9951b)',
-                                color: '#000',
-                                fontWeight: 700,
-                                textDecoration: 'none',
-                                marginBottom: '12px',
-                                width: '100%',
-                                boxSizing: 'border-box',
-                            }}
-                        >
-                            🎞️ {t('watchReplay')}
-                        </Link>
-                    )}
-                    <Link
-                        href={`/${locale}/dashboard`}
-                        style={{
-                            display: 'inline-block',
-                            padding: '10px 24px',
-                            borderRadius: '10px',
-                            border: '1px solid rgba(255,255,255,0.15)',
-                            color: 'var(--text-secondary)',
-                            textDecoration: 'none',
-                            fontSize: '0.9rem',
-                        }}
-                    >
-                        {t('backToDashboard')}
-                    </Link>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+                        {event.replayEnabled && mediaUrl && (
+                            <Link
+                                href={`/${locale}/events/watch/${roomName}?replay=1`}
+                                style={{
+                                    display: 'inline-block',
+                                    padding: '12px 28px',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, var(--accent-gold), #c9951b)',
+                                    color: '#000',
+                                    fontWeight: 700,
+                                    textDecoration: 'none',
+                                    width: '100%',
+                                    boxSizing: 'border-box',
+                                }}
+                            >
+                                🎞️ {t('watchReplay')}
+                            </Link>
+                        )}
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                            <Link
+                                href="/"
+                                style={{
+                                    display: 'inline-block',
+                                    padding: '10px 22px',
+                                    borderRadius: '10px',
+                                    background: 'linear-gradient(135deg, #d4a853, #c9951b)',
+                                    color: '#000',
+                                    fontWeight: 700,
+                                    textDecoration: 'none',
+                                    fontSize: '0.9rem',
+                                }}
+                            >
+                                ← Home
+                            </Link>
+                            <Link
+                                href={`/${locale}/dashboard`}
+                                style={{
+                                    display: 'inline-block',
+                                    padding: '10px 22px',
+                                    borderRadius: '10px',
+                                    border: '1px solid rgba(255,255,255,0.15)',
+                                    color: 'var(--text-secondary)',
+                                    textDecoration: 'none',
+                                    fontSize: '0.9rem',
+                                }}
+                            >
+                                {t('backToDashboard')}
+                            </Link>
+                        </div>
+                    </div>
                 </div>
             </div>
         )
