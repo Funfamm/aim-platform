@@ -53,6 +53,9 @@ export default function WatchPlayer({
     const volumeBeforeMute = useRef(1)
     // Ref for live playback position — avoids stale closure in unmount beacon
     const liveProgressRef = useRef({ currentTime: 0, totalDuration: 0 })
+    // Tracks the timestamp when playback actually started (for watchDurationSec)
+    const watchStartRef = useRef<number | null>(null)
+    const watchedSecsRef = useRef(0) // accumulated watch seconds
 
     /* ── Derived ── */
     const isSeries = project.projectType === 'series' && project.episodes.length > 0
@@ -326,10 +329,16 @@ export default function WatchPlayer({
 
     /* Session-end beacon
      * Uses liveProgressRef so the unmount cleanup always has the latest time,
-     * avoiding the stale-closure bug where useEffect(()=>,[]) captures time=0. */
-    const sendSessionEnd = useCallback(() => {
+     * avoiding the stale-closure bug where useEffect(()=>[]) captures time=0. */
+    const sendSessionEnd = useCallback((periodic = false) => {
         if (!currentVideoUrl) return
         const { currentTime: ct, totalDuration: td } = liveProgressRef.current
+        // Accumulate watch time from the running watchStart timer
+        if (watchStartRef.current !== null) {
+            watchedSecsRef.current += (Date.now() - watchStartRef.current) / 1000
+            if (!periodic) watchStartRef.current = null // stop counting after final end
+            else watchStartRef.current = Date.now()     // reset for next interval
+        }
         const payload = JSON.stringify({
             projectId: project.id,
             episodeId: activeEpisode?.id ?? null,
@@ -337,12 +346,37 @@ export default function WatchPlayer({
             audioLang: 'en',
             captionsOn: ccEnabled,
             completePct: td > 0 ? Math.min(1, ct / td) : 0,
+            watchDurationSec: Math.round(watchedSecsRef.current),
         })
         navigator.sendBeacon('/api/watch/session-end', new Blob([payload], { type: 'application/json' }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [project.id, activeEpisode, ccEnabled, ccLang, currentVideoUrl])
 
+    // Unmount beacon — final save on navigate away
     useEffect(() => { return () => { sendSessionEnd() } }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+    /* Periodic progress save every 30 s — ensures FilmView is recorded even if
+     * sendBeacon fails on hard tab-close (common on iOS PWA, network outage).
+     * Only active while the video is actually playing. */
+    useEffect(() => {
+        if (!isPlaying) return
+        const interval = setInterval(() => { sendSessionEnd(true) }, 30_000)
+        return () => clearInterval(interval)
+    }, [isPlaying, sendSessionEnd])
+
+    /* Track actual play time — start/stop the watch-seconds timer with isPlaying */
+    useEffect(() => {
+        if (isPlaying) {
+            // Start timing when playback begins
+            watchStartRef.current = Date.now()
+        } else {
+            // Pause: accumulate elapsed time without sending a beacon
+            if (watchStartRef.current !== null) {
+                watchedSecsRef.current += (Date.now() - watchStartRef.current) / 1000
+                watchStartRef.current = null
+            }
+        }
+    }, [isPlaying])
 
     /* ══════════ Actions ══════════ */
 
