@@ -378,11 +378,19 @@ export default function WatchPartyShell({
             const vid = videoRef.current
             const targetTime = currentTimeSec ?? vid?.currentTime ?? 0
             
-            // Optimistic update
-            if (action === 'play') { setRoomStatus('playing'); setIsPlaying(true) }
-            else if (action === 'pause') { setIsPlaying(false) }
-            else if (action === 'end') { setRoomStatus('ended'); setIsPlaying(false) }
-            else if (action === 'lobby') { setRoomStatus('lobby'); setIsPlaying(false) }
+            // Optimistic update + Immediate local playback control
+            // We call play/pause synchronously here to satisfy browser autoplay requirements
+            if (action === 'play') {
+                setRoomStatus('playing')
+                setIsPlaying(true)
+                vid?.play().catch(err => console.warn('[WatchPartyShell] Local play failed:', err))
+            }
+            else if (action === 'pause') {
+                setIsPlaying(false)
+                vid?.pause()
+            }
+            else if (action === 'end') { setRoomStatus('ended'); setIsPlaying(false); vid?.pause() }
+            else if (action === 'lobby') { setRoomStatus('lobby'); setIsPlaying(false); vid?.pause() }
 
             const res = await fetch('/api/watch-party/control', {
                 method: 'POST',
