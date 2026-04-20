@@ -46,12 +46,17 @@ interface WatchPartyShellProps {
     projectSlug:       string | null
 }
 
-const DRIFT_THRESHOLD_SEC  = 1.5
+// Drift thresholds per brief
+// < SOFT_LOWER  → no correction
+// SOFT_LOWER..HARD_SEEK → rate-based soft correction (±3-5%)
+// > HARD_SEEK   → one hard seek, then re-enter soft mode
+const DRIFT_SOFT_LOWER_SEC = 0.35
+const DRIFT_SOFT_UPPER_SEC = 1.5
 const HEARTBEAT_INTERVAL   = 20_000
 const PING_INTERVAL        = 25_000
-// How often the host silently reports their current seek position to Redis.
-// Keeps viewers from drifting against a stale timestamp.
-const HOST_SYNC_INTERVAL   = 5_000
+// Host periodically checkpoints position — raised to 10s to reduce SSE noise.
+// Viewers receive this as a 'seek' event but use soft correction, not a hard seek.
+const HOST_SYNC_INTERVAL   = 10_000
 
 const fmt = (s: number) => {
     const h = Math.floor(s / 3600)
@@ -111,9 +116,16 @@ export default function WatchPartyShell({
     const [viewerCount, setViewerCount] = useState(0)
     const [hasInteracted, setHasInteracted] = useState(false)
     const [autoplayFailed, setAutoplayFailed] = useState(false)
+    const [isStalled, setIsStalled]     = useState(false)
+    const [isReconnecting, setIsReconnecting] = useState(false)
     const [controlError, setControlError] = useState<string | null>(null)
     const [showControls, setShowControls] = useState(true)
     const [isFullscreen, setIsFullscreen] = useState(false)
+    // Invitee join gate: true once the viewer taps to unlock audio and sync playback
+    const [joinGestureCompleted, setJoinGestureCompleted] = useState(
+        // Admin, replay, or non-lobby entries don't need the join gate
+        canControl || isReplay
+    )
 
     /* ── Subtitle state ──────────────────────────────────────────────────── */
     const [ccEnabled, setCcEnabled]     = useState(false)
@@ -138,8 +150,13 @@ export default function WatchPartyShell({
     const sseRef         = useRef<EventSource | null>(null)
     const heartbeatTimer = useRef<ReturnType<typeof setInterval> | null>(null)
     const pingTimer      = useRef<ReturnType<typeof setInterval> | null>(null)
-    const hostSyncTimer  = useRef<ReturnType<typeof setInterval> | null>(null)
-    const isMounted      = useRef(true)
+    const hostSyncTimer    = useRef<ReturnType<typeof setInterval> | null>(null)
+    const stallTimer       = useRef<ReturnType<typeof setInterval> | null>(null)
+    const lastKnownTimeSec = useRef(0)   // last observed currentTime — stall detection
+    const lastStateVersion = useRef(-1)  // highest stateVersion seen — dedup guard
+    const hardSeekCount    = useRef(0)   // P8 diagnostic counter
+    const stallCount       = useRef(0)   // P8 diagnostic counter
+    const isMounted        = useRef(true)
 
     /* ── Detect mobile breakpoint ────────────────────────────────────────── */
     useEffect(() => {
@@ -191,15 +208,27 @@ export default function WatchPartyShell({
                     currentTimeSec: number
                     status: RoomStatus
                     lastUpdatedAt?: string
+                    stateVersion?: number
+                    anchorTime?: number
+                    serverSentAt?: string
                 }
                 const vid = videoRef.current
                 if (!isMounted.current) return
 
-                // ── Rejoin detection ───────────────────────────────────────────
+                // ── P7: Stale/out-of-order event guard ──────────────────────────
+                const incomingVersion = data.stateVersion ?? 0
+                if (incomingVersion > 0 && incomingVersion <= lastStateVersion.current) {
+                    // Silently discard — older than what we already applied
+                    return
+                }
+                if (incomingVersion > 0) lastStateVersion.current = incomingVersion
+
+                // ── Rejoin detection ─────────────────────────────────────────────
                 if (isFirstSync) {
                     isFirstSync = false
                     if (hasJoinedOnce.current) {
                         void logWatchPartyAnalytic(roomName, 'rejoined')
+                        setIsReconnecting(false)
                     }
                     hasJoinedOnce.current = true
                 }
@@ -208,13 +237,11 @@ export default function WatchPartyShell({
 
                 if (data.status === 'playing' || data.status === 'paused') {
                     if (vid) {
-                        // ── Drift correction ─────────────────────────────────────────────
-                        // The stored `currentTimeSec` is a snapshot from when the host last
-                        // sent a control command. Compute where the video *should* be now by
-                        // adding elapsed wall-clock time (only when the event says playing).
-                        // This prevents constant backward-seeks when Redis has a stale time.
-                        //
-                        // The HOST is the source of truth — skip drift correction for them.
+                        // ── P3: Soft drift correction (invitees only) ────────────────────
+                        // Brief spec:
+                        //   drift < 0.35s          → no correction
+                        //   drift 0.35s – 1.5s   → soft: adjust playbackRate
+                        //   drift > 1.5s           → hard seek (once)
                         if (!canControl) {
                             const lastUpdated = data.lastUpdatedAt
                                 ? new Date(data.lastUpdatedAt as string).getTime()
@@ -223,27 +250,53 @@ export default function WatchPartyShell({
                                 ? Math.max(0, (Date.now() - lastUpdated) / 1000)
                                 : 0
                             const expectedTimeSec = (data.currentTimeSec as number) + elapsedSec
-                            const diff = Math.abs(vid.currentTime - expectedTimeSec)
-                            if (diff > DRIFT_THRESHOLD_SEC) {
+                            const rawDiff = vid.currentTime - expectedTimeSec // positive = ahead, negative = behind
+                            const absDiff = Math.abs(rawDiff)
+
+                            // P8 diagnostic
+                            console.debug(
+                                `[WatchParty] sync drift=${rawDiff.toFixed(2)}s ct=${vid.currentTime.toFixed(2)}` +
+                                ` expected=${expectedTimeSec.toFixed(2)} readyState=${vid.readyState}` +
+                                ` muted=${vid.muted} vol=${vid.volume} hardSeeks=${hardSeekCount.current}`
+                            )
+
+                            if (absDiff > DRIFT_SOFT_UPPER_SEC) {
+                                // Hard seek — only when truly out of sync
                                 vid.currentTime = expectedTimeSec
+                                vid.playbackRate = 1.0
+                                hardSeekCount.current++
+                            } else if (absDiff > DRIFT_SOFT_LOWER_SEC && data.playing) {
+                                // Soft correction — gentle speed nudge
+                                vid.playbackRate = rawDiff > 0
+                                    ? 0.97   // ahead → slow down
+                                    : 1.03   // behind → speed up
+                            } else {
+                                // In sync — normalize rate
+                                vid.playbackRate = 1.0
                             }
                         }
 
+                        // P2: Only start playback if the invitee has performed a user gesture.
+                        // If not, show the join-gate overlay instead of silently failing.
                         if (data.playing && (vid.paused || vid.ended)) {
-                            // For the HOST: only play if they caused this sync (e.g. on SSE
-                            // reconnect after page reload while event is live). Never pause them.
                             if (!canControl) {
-                                vid.play().catch((err) => {
-                                    console.warn('[WatchPartyShell] Playback blocked by browser:', err)
+                                if (joinGestureCompleted) {
+                                    vid.play().catch((err) => {
+                                        console.warn('[WatchPartyShell] Playback blocked by browser:', err)
+                                        // P8 log autoplay block
+                                        console.debug(`[WatchParty] autoplay blocked muted=${vid.muted} vol=${vid.volume}`)
+                                        setAutoplayFailed(true)
+                                    })
+                                    setIsPlaying(true)
+                                } else {
+                                    // Not yet interacted — show join-gate overlay
                                     setAutoplayFailed(true)
-                                })
-                                setIsPlaying(true)
+                                }
                             }
                         } else if (!data.playing && !vid.paused) {
-                            // HOST is the source of truth — never let SSE pause their video.
-                            // Viewers get their pause state dictated by the host via SSE.
                             if (!canControl) {
                                 vid.pause()
+                                vid.playbackRate = 1.0
                                 setIsPlaying(false)
                             }
                         }
@@ -314,26 +367,60 @@ export default function WatchPartyShell({
         // video time to Redis so viewers drift-correct to a live position.
         // Only started when canControl===true and not in replay mode.
         if (canControl && !isReplay) {
+            // Host position checkpoint — uses heartbeat API not 'seek' action,
+            // so server updates Redis timestamp without publishing a new SSE seek event to all viewers.
+            // This prevents each host 10s checkpoint from triggering hard seeks on viewers.
             hostSyncTimer.current = setInterval(() => {
                 const vid = videoRef.current
                 if (!vid || vid.paused || vid.ended) return
-                // Fire-and-forget — silent background position checkpoint
-                fetch('/api/watch-party/control', {
+                fetch('/api/watch-party/heartbeat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ roomName, action: 'seek', currentTimeSec: vid.currentTime }),
+                    body: JSON.stringify({ roomName, currentTimeSec: vid.currentTime }),
                 }).catch(() => { /* non-critical */ })
             }, HOST_SYNC_INTERVAL)
         }
+
+        // ── P5: Stall detection ─────────────────────────────────────────────
+        // If playing but currentTime has not advanced for 3s → attempt recovery.
+        stallTimer.current = setInterval(() => {
+            const vid = videoRef.current
+            if (!vid || vid.paused || vid.ended) return
+            const now = vid.currentTime
+            if (Math.abs(now - lastKnownTimeSec.current) < 0.1) {
+                // Stalled
+                stallCount.current++
+                console.warn(`[WatchParty] stall detected (count=${stallCount.current}) ct=${now.toFixed(2)}`)
+                setIsStalled(true)
+                if (stallCount.current <= 3) {
+                    // Soft recovery: reload source at current time
+                    const src = vid.src
+                    const ct  = now
+                    vid.src = src
+                    vid.load()
+                    vid.addEventListener('canplay', () => {
+                        vid.currentTime = ct
+                        vid.play().catch(() => {})
+                    }, { once: true })
+                }
+                // Beyond 3 stalls: let user see the overlay, don't loop crash
+            } else {
+                lastKnownTimeSec.current = now
+                if (isStalled) setIsStalled(false)
+                if (stallCount.current > 0) stallCount.current = 0
+            }
+        }, 3_000)
 
         return () => {
             isMounted.current = false
             sseRef.current?.close()
             if (heartbeatTimer.current) clearInterval(heartbeatTimer.current)
-            if (pingTimer.current) clearInterval(pingTimer.current)
+            if (pingTimer.current)      clearInterval(pingTimer.current)
             if (hostSyncTimer.current) clearInterval(hostSyncTimer.current)
+            if (stallTimer.current)    clearInterval(stallTimer.current)
             if (controlsTimer.current) clearTimeout(controlsTimer.current)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [connectSSE, sendHeartbeat, canControl, isReplay, roomName])
 
     /* ── Analytics: viewer-side event tracking ─────────────────────────── */
@@ -716,9 +803,12 @@ export default function WatchPartyShell({
                                                 onClick={() => {
                                                     const v = videoRef.current
                                                     if (v) {
+                                                        v.muted = false
+                                                        if (v.volume === 0) v.volume = 1.0
                                                         v.play().then(() => v.pause()).catch(() => {})
                                                     }
                                                     setHasInteracted(true)
+                                                    setJoinGestureCompleted(true)
                                                 }}
                                                 style={{
                                                     background: 'linear-gradient(135deg, var(--accent-gold), #c9951b)',
@@ -902,31 +992,101 @@ export default function WatchPartyShell({
                                 {/* Reaction overlay */}
                                 <ReactionOverlay reactions={reactions} />
 
-                                {/* Autoplay Failure Fallback Overlay */}
+                                {/* ── P2 + P9: Invitee Join-Gesture Gate ── */}
+                                {/* Shown when: autoplay was blocked OR viewer landed on a live
+                                    session without yet performing a user gesture (audio unlock). */}
                                 {autoplayFailed && (
                                     <div style={{
                                         position: 'absolute', inset: 0,
-                                        background: 'rgba(0,0,0,0.85)',
+                                        background: 'rgba(0,0,0,0.9)',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                         flexDirection: 'column', gap: '16px', zIndex: 100,
                                         animation: 'wp-fadein 0.3s ease',
                                     }}>
                                         <div style={{ fontSize: '2.5rem' }}>🔈</div>
-                                        <p style={{ color: 'white', fontWeight: 600 }}>{t('tapToJoin')}</p>
+                                        <p style={{ color: 'white', fontWeight: 700, fontSize: '1.05rem', textAlign: 'center', marginBottom: '4px' }}>
+                                            {t('tapToJoin')}
+                                        </p>
+                                        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem', textAlign: 'center', maxWidth: '220px' }}>
+                                            Tap to start audio and sync playback
+                                        </p>
                                         <button
                                             onClick={() => {
                                                 const v = videoRef.current
-                                                if (v) v.play().catch(() => {})
-                                                setAutoplayFailed(false)
+                                                if (!v) return
+                                                // P2: Ensure audio is unlocked before play
+                                                v.muted = false
+                                                if (v.volume === 0) v.volume = 1.0
+                                                v.play().then(() => {
+                                                    setJoinGestureCompleted(true)
+                                                    setAutoplayFailed(false)
+                                                    setHasInteracted(true)
+                                                }).catch(() => {
+                                                    // Some browsers require muted first then unmute
+                                                    v.muted = true
+                                                    v.play().then(() => {
+                                                        v.muted = false
+                                                        setJoinGestureCompleted(true)
+                                                        setAutoplayFailed(false)
+                                                        setHasInteracted(true)
+                                                    }).catch(() => {})
+                                                })
                                             }}
                                             style={{
                                                 background: 'var(--accent-gold)', color: '#000',
-                                                border: 'none', padding: '10px 24px', borderRadius: '10px',
-                                                fontWeight: 700, cursor: 'pointer',
+                                                border: 'none', padding: '12px 28px', borderRadius: '10px',
+                                                fontWeight: 700, cursor: 'pointer', fontSize: '1rem',
                                             }}
                                         >
                                             ▶ {t('joinScreening')}
                                         </button>
+                                    </div>
+                                )}
+
+                                {/* ── P5 + P9: Stall recovery overlay ── */}
+                                {isStalled && !autoplayFailed && (
+                                    <div style={{
+                                        position: 'absolute', bottom: '70px', left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        background: 'rgba(0,0,0,0.8)', borderRadius: '8px',
+                                        padding: '8px 18px', zIndex: 90,
+                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                        animation: 'wp-fadein 0.25s ease',
+                                        pointerEvents: 'none',
+                                    }}>
+                                        <div style={{
+                                            width: '16px', height: '16px', borderRadius: '50%',
+                                            border: '2px solid rgba(255,255,255,0.2)',
+                                            borderTopColor: 'var(--accent-gold)',
+                                            animation: 'wp-spin 0.8s linear infinite',
+                                            flexShrink: 0,
+                                        }}/>
+                                        <span style={{ color: 'white', fontSize: '0.82rem', fontWeight: 600 }}>
+                                            Buffering…
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* ── P9: Reconnecting overlay ── */}
+                                {isReconnecting && (
+                                    <div style={{
+                                        position: 'absolute', bottom: '70px', left: '50%',
+                                        transform: 'translateX(-50%)',
+                                        background: 'rgba(0,0,0,0.8)', borderRadius: '8px',
+                                        padding: '8px 18px', zIndex: 90,
+                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                        animation: 'wp-fadein 0.25s ease',
+                                    }}>
+                                        <div style={{
+                                            width: '16px', height: '16px', borderRadius: '50%',
+                                            border: '2px solid rgba(255,255,255,0.2)',
+                                            borderTopColor: '#60a5fa',
+                                            animation: 'wp-spin 0.8s linear infinite',
+                                            flexShrink: 0,
+                                        }}/>
+                                        <span style={{ color: 'white', fontSize: '0.82rem', fontWeight: 600 }}>
+                                            Reconnecting to screening…
+                                        </span>
                                     </div>
                                 )}
 
