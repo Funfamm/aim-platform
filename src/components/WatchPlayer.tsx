@@ -1,8 +1,9 @@
 'use client'
 
 import {
-    useState, useRef, useEffect, useCallback, useMemo, useLayoutEffect,
+    useState, useRef, useEffect, useCallback, useMemo,
 } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
@@ -96,11 +97,31 @@ export default function WatchPlayer({
     const [ccChecked, setCcChecked]         = useState(false)
     const [showFallbackNotice, setShowFallbackNotice] = useState(false)
     const [activeTrackUrl, setActiveTrackUrl] = useState<string | null>(null)
+    /* Detect mobile once — used for bottom-sheet vs dropdown */
+    const [isMobile, setIsMobile]           = useState(false)
 
     /* ── Progress ── */
     const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0
 
     /* ══════════ Effects ══════════ */
+
+    /* Detect mobile breakpoint */
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 640px)')
+        setIsMobile(mq.matches)
+        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+        mq.addEventListener('change', handler)
+        return () => mq.removeEventListener('change', handler)
+    }, [])
+
+    /* Lock body scroll when mobile lang sheet is open */
+    useEffect(() => {
+        if (isMobile && showLangMenu) {
+            const prev = document.body.style.overflow
+            document.body.style.overflow = 'hidden'
+            return () => { document.body.style.overflow = prev }
+        }
+    }, [isMobile, showLangMenu])
 
     /* Cleanup blob URLs */
     useEffect(() => {
@@ -483,7 +504,7 @@ export default function WatchPlayer({
     return (
         <div className="aim-watch-wrapper" style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: '80px' }}>
             <style>{`
-                .aim-player-container { font-family: inherit; }
+                .aim-player-container { font-family: inherit; padding: 0 var(--space-lg); }
                 .aim-ctrl-btn {
                     background: none; border: none; color: white;
                     cursor: pointer; padding: 6px; border-radius: 6px;
@@ -522,6 +543,10 @@ export default function WatchPlayer({
                 @keyframes aimSpinner {
                     to { transform: rotate(360deg); }
                 }
+                @keyframes aimSheetIn {
+                    from { transform: translateY(100%); }
+                    to   { transform: translateY(0); }
+                }
                 @media (max-width: 640px) {
                     .aim-desktop-only { display: none !important; }
                 }
@@ -531,14 +556,23 @@ export default function WatchPlayer({
                     /* Reduce outer top padding to mobile navbar height */
                     .aim-watch-wrapper { padding-top: 56px !important; padding-bottom: 0 !important; min-height: 0 !important; }
 
-                    /* Full-bleed: break player out of container horizontal padding */
+                    /* Full-bleed: the container contributes no horizontal padding on mobile */
+                    .aim-player-container { padding-left: 0 !important; padding-right: 0 !important; }
+
+                    /* Back link: give it breathing room inside the (now unpadded) container */
+                    .aim-back-link {
+                        font-size: 0.78rem;
+                        margin-bottom: 8px !important;
+                        padding: 4px 16px 0;
+                        display: inline-flex;
+                    }
+
+                    /* Sticky full-bleed player zone */
                     .aim-sticky-player-zone {
                         position: sticky;
                         top: 56px;
                         z-index: 50;
-                        /* Negate the container padding so video is edge-to-edge */
-                        margin-left: calc(0px - var(--space-lg, 1.5rem));
-                        margin-right: calc(0px - var(--space-lg, 1.5rem));
+                        width: 100%;
                         background: #000;
                     }
 
@@ -556,15 +590,14 @@ export default function WatchPlayer({
                     /* Thicker seek bar — easier to grab with a thumb */
                     .aim-progress-track-inner { height: 6px !important; }
 
-                    /* Compact the back button on mobile */
-                    .aim-back-link {
-                        font-size: 0.78rem;
-                        margin-bottom: 8px !important;
-                        padding-top: 4px;
-                    }
-
                     /* Show skip ±10s buttons on mobile */
                     .aim-skip-btn { display: flex !important; }
+
+                    /* Resume banner: restore its padding */
+                    .aim-resume-banner {
+                        margin: 0 16px 8px !important;
+                        border-radius: 10px !important;
+                    }
                 }
 
                 /* ── Pseudo-fullscreen: hide nav + tab bar, fill viewport ── */
@@ -617,7 +650,7 @@ export default function WatchPlayer({
                 }
             `}</style>
 
-            <div className="container aim-player-container" style={{ maxWidth: '1440px', padding: '0 var(--space-lg)' }}>
+            <div className="container aim-player-container" style={{ maxWidth: '1440px' }}>
 
                 {/* ── Back button ── */}
                 <Link
@@ -639,7 +672,7 @@ export default function WatchPlayer({
 
                 {/* ── Resume Banner ── */}
                 {showResumeBanner && resumePct !== null && (
-                    <div style={{
+                    <div className="aim-resume-banner" style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         flexWrap: 'wrap', gap: '10px',
                         background: 'linear-gradient(135deg, rgba(212,168,83,0.12), rgba(212,168,83,0.06))',
@@ -1110,8 +1143,9 @@ export default function WatchPlayer({
                                                     animation: 'aimFadeIn 0.2s ease',
                                                 }}>{ccStatusText}</div>
                                             )}
-                                            {/* Lang menu */}
-                                            {showLangMenu && (
+                                            {/* ── Language picker: bottom-sheet on mobile, dropdown on desktop ── */}
+                                            {showLangMenu && !isMobile && (
+                                                /* Desktop dropdown */
                                                 <div style={{
                                                     position: 'absolute', bottom: '110%', right: 0,
                                                     marginBottom: '6px', background: 'rgba(13,15,20,0.97)',
@@ -1147,6 +1181,84 @@ export default function WatchPlayer({
                                                             color: 'var(--text-tertiary)',
                                                         }}>{tPlayer('subtitlesOff')}</button>
                                                 </div>
+                                            )}
+                                            {/* Mobile bottom sheet — rendered via portal so it's never clipped */}
+                                            {showLangMenu && isMobile && typeof document !== 'undefined' && createPortal(
+                                                <>
+                                                    {/* Backdrop */}
+                                                    <div
+                                                        onClick={() => setShowLangMenu(false)}
+                                                        style={{
+                                                            position: 'fixed', inset: 0,
+                                                            background: 'rgba(0,0,0,0.6)',
+                                                            backdropFilter: 'blur(4px)',
+                                                            zIndex: 99998,
+                                                        }}
+                                                    />
+                                                    {/* Sheet */}
+                                                    <div style={{
+                                                        position: 'fixed', bottom: 0, left: 0, right: 0,
+                                                        background: 'rgba(13,15,20,0.98)',
+                                                        borderTop: '1px solid rgba(212,168,83,0.25)',
+                                                        borderRadius: '20px 20px 0 0',
+                                                        zIndex: 99999,
+                                                        maxHeight: '65dvh',
+                                                        overflowY: 'auto',
+                                                        paddingBottom: 'env(safe-area-inset-bottom)',
+                                                        animation: 'aimSheetIn 0.25s cubic-bezier(0.32,0.72,0,1)',
+                                                    }}>
+                                                        {/* Handle */}
+                                                        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '12px', paddingBottom: '4px' }}>
+                                                            <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
+                                                        </div>
+                                                        {/* Title */}
+                                                        <div style={{
+                                                            fontSize: '0.78rem', fontWeight: 700,
+                                                            textTransform: 'uppercase', letterSpacing: '0.08em',
+                                                            color: 'var(--accent-gold)', padding: '8px 20px 12px',
+                                                            borderBottom: '1px solid rgba(255,255,255,0.07)',
+                                                        }}>{tPlayer('subtitles')}</div>
+                                                        {/* Rows — 44px min-height for touch targets */}
+                                                        <div style={{ padding: '8px 12px' }}>
+                                                            {ccAvailable.map(lang => (
+                                                                <button key={lang}
+                                                                    onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
+                                                                    style={{
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                        width: '100%', minHeight: '44px', padding: '8px 12px',
+                                                                        background: ccLang === lang && ccEnabled ? 'rgba(212,168,83,0.1)' : 'transparent',
+                                                                        border: 'none', borderRadius: '10px',
+                                                                        fontSize: '1rem', cursor: 'pointer',
+                                                                        color: ccLang === lang && ccEnabled ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                                                        fontFamily: 'inherit',
+                                                                        WebkitTapHighlightColor: 'transparent',
+                                                                    }}>
+                                                                    <span>{LANGUAGE_NAMES[lang] || lang}</span>
+                                                                    {ccLang === lang && ccEnabled && (
+                                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                                            <polyline points="20 6 9 17 4 12" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                            ))}
+                                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '8px 4px' }} />
+                                                            <button
+                                                                onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center',
+                                                                    width: '100%', minHeight: '44px', padding: '8px 12px',
+                                                                    background: !ccEnabled ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                                                    border: 'none', borderRadius: '10px',
+                                                                    fontSize: '1rem', cursor: 'pointer',
+                                                                    color: 'var(--text-tertiary)', fontFamily: 'inherit',
+                                                                    WebkitTapHighlightColor: 'transparent',
+                                                                }}>
+                                                                {tPlayer('subtitlesOff')}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </>,
+                                                document.body
                                             )}
                                         </div>
                                     )}

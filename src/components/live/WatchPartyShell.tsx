@@ -17,6 +17,7 @@
 import {
     useState, useRef, useEffect, useCallback,
 } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import WatchPartyChat from '@/components/live/WatchPartyChat'
@@ -45,9 +46,12 @@ interface WatchPartyShellProps {
     projectSlug:       string | null
 }
 
-const DRIFT_THRESHOLD_SEC = 1.5
-const HEARTBEAT_INTERVAL  = 20_000
-const PING_INTERVAL       = 25_000
+const DRIFT_THRESHOLD_SEC  = 1.5
+const HEARTBEAT_INTERVAL   = 20_000
+const PING_INTERVAL        = 25_000
+// How often the host silently reports their current seek position to Redis.
+// Keeps viewers from drifting against a stale timestamp.
+const HOST_SYNC_INTERVAL   = 5_000
 
 const fmt = (s: number) => {
     const h = Math.floor(s / 3600)
@@ -124,6 +128,9 @@ export default function WatchPartyShell({
     /* ── Chat & reactions ────────────────────────────────────────────────── */
     const [showChat, setShowChat] = useState(true)
 
+    /* ── Mobile breakpoint (for CC bottom-sheet vs dropdown) ─────────────── */
+    const [isMobile, setIsMobile] = useState(false)
+
     /* ── Refs ────────────────────────────────────────────────────────────── */
     const videoRef       = useRef<HTMLVideoElement>(null)
     const containerRef   = useRef<HTMLDivElement>(null)
@@ -131,7 +138,26 @@ export default function WatchPartyShell({
     const sseRef         = useRef<EventSource | null>(null)
     const heartbeatTimer = useRef<ReturnType<typeof setInterval> | null>(null)
     const pingTimer      = useRef<ReturnType<typeof setInterval> | null>(null)
+    const hostSyncTimer  = useRef<ReturnType<typeof setInterval> | null>(null)
     const isMounted      = useRef(true)
+
+    /* ── Detect mobile breakpoint ────────────────────────────────────────── */
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 640px)')
+        setIsMobile(mq.matches)
+        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+        mq.addEventListener('change', handler)
+        return () => mq.removeEventListener('change', handler)
+    }, [])
+
+    /* ── Body scroll lock when mobile CC sheet is open ───────────────────── */
+    useEffect(() => {
+        if (isMobile && showLangMenu) {
+            const prev = document.body.style.overflow
+            document.body.style.overflow = 'hidden'
+            return () => { document.body.style.overflow = prev }
+        }
+    }, [isMobile, showLangMenu])
 
     /* ── Analytics tracking refs ─────────────────────────────────────────── */
     // milestonesFired   — Set of analytic names already sent (no double-fires)
@@ -164,6 +190,7 @@ export default function WatchPartyShell({
                     playing: boolean
                     currentTimeSec: number
                     status: RoomStatus
+                    lastUpdatedAt?: string
                 }
                 const vid = videoRef.current
                 if (!isMounted.current) return
@@ -181,10 +208,27 @@ export default function WatchPartyShell({
 
                 if (data.status === 'playing' || data.status === 'paused') {
                     if (vid) {
-                        const diff = Math.abs(vid.currentTime - data.currentTimeSec)
-                        if (diff > DRIFT_THRESHOLD_SEC) {
-                            vid.currentTime = data.currentTimeSec
+                        // ── Drift correction ─────────────────────────────────────────────
+                        // The stored `currentTimeSec` is a snapshot from when the host last
+                        // sent a control command. Compute where the video *should* be now by
+                        // adding elapsed wall-clock time (only when the event says playing).
+                        // This prevents constant backward-seeks when Redis has a stale time.
+                        //
+                        // The HOST is the source of truth — skip drift correction for them.
+                        if (!canControl) {
+                            const lastUpdated = data.lastUpdatedAt
+                                ? new Date(data.lastUpdatedAt as string).getTime()
+                                : Date.now()
+                            const elapsedSec = data.playing
+                                ? Math.max(0, (Date.now() - lastUpdated) / 1000)
+                                : 0
+                            const expectedTimeSec = (data.currentTimeSec as number) + elapsedSec
+                            const diff = Math.abs(vid.currentTime - expectedTimeSec)
+                            if (diff > DRIFT_THRESHOLD_SEC) {
+                                vid.currentTime = expectedTimeSec
+                            }
                         }
+
                         if (data.playing && (vid.paused || vid.ended)) {
                             vid.play().catch((err) => {
                                 console.warn('[WatchPartyShell] Playback blocked by browser:', err)
@@ -235,7 +279,7 @@ export default function WatchPartyShell({
                 setTimeout(connectSSE, 2000)
             }
         }
-    }, [roomName, isReplay])
+    }, [roomName, isReplay, canControl])
 
     /* ── Heartbeat ───────────────────────────────────────────────────────── */
     const sendHeartbeat = useCallback(async () => {
@@ -257,14 +301,32 @@ export default function WatchPartyShell({
         sendHeartbeat()
         heartbeatTimer.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL)
 
+        // ── Host position reporter ─────────────────────────────────────────
+        // Every HOST_SYNC_INTERVAL ms, the host silently writes their current
+        // video time to Redis so viewers drift-correct to a live position.
+        // Only started when canControl===true and not in replay mode.
+        if (canControl && !isReplay) {
+            hostSyncTimer.current = setInterval(() => {
+                const vid = videoRef.current
+                if (!vid || vid.paused || vid.ended) return
+                // Fire-and-forget — silent background position checkpoint
+                fetch('/api/watch-party/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ roomName, action: 'seek', currentTimeSec: vid.currentTime }),
+                }).catch(() => { /* non-critical */ })
+            }, HOST_SYNC_INTERVAL)
+        }
+
         return () => {
             isMounted.current = false
             sseRef.current?.close()
             if (heartbeatTimer.current) clearInterval(heartbeatTimer.current)
             if (pingTimer.current) clearInterval(pingTimer.current)
+            if (hostSyncTimer.current) clearInterval(hostSyncTimer.current)
             if (controlsTimer.current) clearTimeout(controlsTimer.current)
         }
-    }, [connectSSE, sendHeartbeat])
+    }, [connectSSE, sendHeartbeat, canControl, isReplay, roomName])
 
     /* ── Analytics: viewer-side event tracking ─────────────────────────── */
     // 1. Fire joined_lobby or entered_playback (whichever is initial state on mount)
@@ -488,6 +550,7 @@ export default function WatchPartyShell({
                 }
                 @keyframes wp-fadein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
                 @keyframes wp-spin { to { transform: rotate(360deg); } }
+                @keyframes wp-sheet-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
                 .wp-anim { animation: wp-fadein 0.4s ease both; }
                 .wp-video-container:fullscreen,
                 .wp-video-container:-webkit-full-screen {
@@ -497,12 +560,35 @@ export default function WatchPartyShell({
                 .wp-video-container:-webkit-full-screen video {
                     width: 100%; height: 100%; object-fit: contain;
                 }
+                /* ── Mobile layout ── */
+                @media (max-width: 640px) {
+                    .wp-container { padding: 0 !important; }
+                    .wp-header { padding: 0 16px; margin-bottom: 8px !important; }
+                    .wp-video-sticky {
+                        position: sticky;
+                        top: 56px;
+                        z-index: 40;
+                        background: #000;
+                        width: 100vw;
+                        margin-left: calc(-50vw + 50%);
+                    }
+                    .wp-video-container {
+                        border-radius: 0 !important;
+                        border: none !important;
+                        width: 100vw !important;
+                        max-width: 100vw !important;
+                    }
+                    .wp-progress-thumb::-webkit-slider-thumb { width: 18px !important; height: 18px !important; }
+                    .wp-back-link { padding-left: 16px; }
+                    .wp-layout { gap: 12px !important; }
+                    .wp-lobby-screen { border-radius: 0 !important; border: none !important; width: 100vw !important; max-width: 100vw !important; }
+                }
             `}</style>
 
             <div className="wp-container">
 
                 {/* ── Header ───────────────────────────────────────────────── */}
-                <div style={{
+                <div className="wp-header" style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     marginBottom: '16px', flexWrap: 'wrap', gap: '8px',
                 }}>
@@ -571,7 +657,7 @@ export default function WatchPartyShell({
                     <div>
                         {/* ── Lobby Screen ───────────────────────────────── */}
                         {roomStatus === 'lobby' && !canControl && (
-                            <div className="wp-anim" style={{
+                            <div className="wp-anim wp-lobby-screen wp-video-sticky" style={{
                                 position: 'relative',
                                 aspectRatio: '16/9',
                                 borderRadius: '16px',
@@ -645,7 +731,7 @@ export default function WatchPartyShell({
 
                         {/* ── Ended Screen ───────────────────────────────── */}
                         {roomStatus === 'ended' && (
-                            <div className="wp-anim" style={{
+                            <div className="wp-anim wp-lobby-screen" style={{
                                 position: 'relative',
                                 aspectRatio: '16/9',
                                 borderRadius: '16px',
@@ -704,7 +790,7 @@ export default function WatchPartyShell({
                         {/* ── Video Player ────────────────────────────────── */}
                         {(roomStatus === 'playing' || roomStatus === 'paused' || (roomStatus === 'lobby' && canControl) || isReplay) && (
                             <div
-                                className="wp-video-container"
+                                className={`wp-video-container wp-video-sticky`}
                                 ref={containerRef}
                                 onMouseMove={resetControlsTimer}
                                 onTouchStart={resetControlsTimer}
@@ -864,7 +950,7 @@ export default function WatchPartyShell({
 
                                         <div style={{ flex: 1 }} />
 
-                                        {/* Subtitles */}
+                                        {/* ── CC language selector ────────────────────────────────────── */}
                                         {availableLangs.length > 0 && (
                                             <div style={{ position: 'relative' }}>
                                                 <button
@@ -878,7 +964,9 @@ export default function WatchPartyShell({
                                                         <path d="M7 15h4M15 15h2M7 11h2M13 11h4"/>
                                                     </svg>
                                                 </button>
-                                                {showLangMenu && (
+
+                                                {/* Desktop dropdown */}
+                                                {showLangMenu && !isMobile && (
                                                     <div style={{
                                                         position: 'absolute', bottom: '44px', right: 0,
                                                         background: 'rgba(20,20,25,0.97)',
@@ -900,10 +988,7 @@ export default function WatchPartyShell({
                                                         {availableLangs.map(lang => (
                                                             <button
                                                                 key={lang}
-                                                                onClick={() => {
-                                                                    loadSubtitles(lang)
-                                                                    setShowLangMenu(false)
-                                                                }}
+                                                                onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
                                                                 style={{
                                                                     display: 'block', width: '100%',
                                                                     padding: '7px 12px', textAlign: 'left',
@@ -917,6 +1002,77 @@ export default function WatchPartyShell({
                                                             </button>
                                                         ))}
                                                     </div>
+                                                )}
+
+                                                {/* Mobile bottom-sheet portal */}
+                                                {showLangMenu && isMobile && typeof document !== 'undefined' && createPortal(
+                                                    <>
+                                                        {/* Backdrop */}
+                                                        <div
+                                                            onClick={() => setShowLangMenu(false)}
+                                                            style={{
+                                                                position: 'fixed', inset: 0,
+                                                                background: 'rgba(0,0,0,0.55)',
+                                                                zIndex: 99998,
+                                                            }}
+                                                        />
+                                                        {/* Sheet */}
+                                                        <div style={{
+                                                            position: 'fixed', bottom: 0, left: 0, right: 0,
+                                                            background: 'rgba(14,14,18,0.98)',
+                                                            borderTop: '1px solid rgba(255,255,255,0.1)',
+                                                            borderRadius: '20px 20px 0 0',
+                                                            zIndex: 99999,
+                                                            paddingBottom: 'env(safe-area-inset-bottom, 16px)',
+                                                            animation: 'wp-sheet-in 0.28s cubic-bezier(0.32,0.72,0,1)',
+                                                        }}>
+                                                            {/* Pill handle */}
+                                                            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+                                                                <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.18)' }} />
+                                                            </div>
+                                                            {/* Title */}
+                                                            <div style={{
+                                                                textAlign: 'center', fontSize: '0.78rem',
+                                                                fontWeight: 700, letterSpacing: '0.04em',
+                                                                color: 'var(--accent-gold)', padding: '4px 0 12px',
+                                                                textTransform: 'uppercase',
+                                                            }}>Subtitles</div>
+                                                            {/* Options */}
+                                                            <button
+                                                                onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                    width: '100%', padding: '14px 24px',
+                                                                    background: !ccEnabled ? 'rgba(212,168,83,0.08)' : 'none',
+                                                                    border: 'none', color: 'white', cursor: 'pointer',
+                                                                    fontSize: '1rem', fontFamily: 'inherit',
+                                                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                                                }}
+                                                            >
+                                                                <span>Off</span>
+                                                                {!ccEnabled && <span style={{ color: 'var(--accent-gold)', fontWeight: 700 }}>✓</span>}
+                                                            </button>
+                                                            {availableLangs.map(lang => (
+                                                                <button
+                                                                    key={lang}
+                                                                    onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
+                                                                    style={{
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                        width: '100%', padding: '14px 24px',
+                                                                        background: ccEnabled && ccLang === lang ? 'rgba(212,168,83,0.08)' : 'none',
+                                                                        border: 'none', color: 'white', cursor: 'pointer',
+                                                                        fontSize: '1rem', fontFamily: 'inherit',
+                                                                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                                                    }}
+                                                                >
+                                                                    <span>{LANG_NAMES[lang] ?? lang}</span>
+                                                                    {ccEnabled && ccLang === lang && <span style={{ color: 'var(--accent-gold)', fontWeight: 700 }}>✓</span>}
+                                                                </button>
+                                                            ))}
+                                                            <div style={{ height: '8px' }} />
+                                                        </div>
+                                                    </>,
+                                                    document.body
                                                 )}
                                             </div>
                                         )}

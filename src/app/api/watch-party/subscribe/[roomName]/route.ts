@@ -125,6 +125,7 @@ export async function GET(
                     playing:        initialState?.playing        ?? false,
                     currentTimeSec: initialState?.currentTimeSec ?? 0,
                     status:         effectiveStatus,
+                    lastUpdatedAt:  initialState?.lastUpdatedAt  ?? new Date().toISOString(),
                 }
             )
 
@@ -152,14 +153,15 @@ export async function GET(
                         lastUpdatedAt = state.lastUpdatedAt
 
                         if (state.status === 'ended') {
-                            send('ended', { status: 'ended', playing: false, currentTimeSec: state.currentTimeSec })
+                            send('ended', { status: 'ended', playing: false, currentTimeSec: state.currentTimeSec, lastUpdatedAt: state.lastUpdatedAt })
                         } else if (state.status === 'paused') {
-                            send('paused', { status: 'paused', playing: false, currentTimeSec: state.currentTimeSec })
+                            send('paused', { status: 'paused', playing: false, currentTimeSec: state.currentTimeSec, lastUpdatedAt: state.lastUpdatedAt })
                         } else {
                             send(state.status === 'lobby' ? 'lobby' : 'sync', {
                                 playing:        state.playing,
                                 currentTimeSec: state.currentTimeSec,
                                 status:         state.status,
+                                lastUpdatedAt:  state.lastUpdatedAt,
                             })
                         }
                     }

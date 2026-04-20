@@ -9,6 +9,7 @@ import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
 import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl, requiresTranslationGate } from '@/config/subtitles'
 import LangStatusGrid from '@/components/admin/LangStatusGrid'
 import PublishGateModal from '@/components/admin/PublishGateModal'
+import SubtitleEditor, { type SubtitleCue } from '@/components/admin/SubtitleEditor'
 import { uploadSubtitleFile } from '@/lib/subtitle-file-parser'
 import { readSSEStream } from '@/lib/sse-reader'
 
@@ -128,6 +129,14 @@ export default function AdminProjectsPage() {
     // Publish confirmation gate
     const [showPublishWarning, setShowPublishWarning] = useState(false)
 
+    // ── Subtitle Editor modal ──────────────────────────────────────────────────
+    const [editorProjectId, setEditorProjectId]       = useState<string | null>(null)
+    const [editorSegments, setEditorSegments]         = useState<SubtitleCue[]>([])
+    const [editorFilmUrl, setEditorFilmUrl]           = useState<string | null>(null)
+    const [editorStatus, setEditorStatus]             = useState('pending')
+    // Track per-project approval state (refreshed after editor closes)
+    const [subtitleApproval, setSubtitleApproval]     = useState<Record<string, string>>({})
+
     // ── Movie Roll assignment (inside project modal) ──────────────────────
     type RollOption = { id: string; title: string; icon: string; displayOn: string; visible: boolean }
     const [allRolls, setAllRolls] = useState<RollOption[]>([])
@@ -199,16 +208,26 @@ export default function AdminProjectsPage() {
         setSelectedRollIds([])
         setShowModal(true)
         setError('')
-        // Fetch rolls + current assignments in parallel
+        // Fetch rolls + current assignments + subtitle approval status in parallel
         setRollsLoading(true)
         Promise.all([
             fetch('/api/admin/movie-rolls').then(r => r.ok ? r.json() : []),
             fetch(`/api/admin/projects/${p.id}/rolls`).then(r => r.ok ? r.json() : []),
+            // Load the subtitle approval gate status so Translate button renders correctly
+            fetch(`/api/admin/subtitles?projectId=${p.id}`)
+                .then(r => r.ok ? r.json() : {})
+                .then((res: { subtitle?: { status?: string } }) => {
+                    if (res.subtitle?.status) {
+                        setSubtitleApproval(prev => ({ ...prev, [p.id]: res.subtitle!.status! }))
+                    }
+                })
+                .catch(() => {}),
         ]).then(([rolls, assignedIds]) => {
             setAllRolls(rolls)
             setSelectedRollIds(assignedIds)
         }).catch(() => {}).finally(() => setRollsLoading(false))
     }
+
 
     // Core save logic — called directly by handleSave (override=false)
     // or by handlePublishOverride (override=true) to bypass the translation gate.
@@ -564,6 +583,22 @@ export default function AdminProjectsPage() {
             }
         } catch { /* subtitle not found */ }
         if (requestId === reviewRequestRef.current) setReviewLoading(false)
+    }
+
+    /** Open the subtitle editor for a project */
+    const openSubtitleEditor = async (projectId: string, filmUrl: string | null) => {
+        try {
+            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}`)
+            const { subtitle } = await res.json()
+            if (!subtitle) { alert('No subtitles found for this project. Generate them first.'); return }
+            const segs: SubtitleCue[] = JSON.parse(subtitle.segments || '[]')
+            setEditorSegments(segs)
+            setEditorFilmUrl(filmUrl)
+            setEditorStatus(subtitle.status || 'pending')
+            setEditorProjectId(projectId)
+        } catch {
+            alert('Could not load subtitles. Try again.')
+        }
     }
 
     /** Retry a single failed/pending language via SSE */
@@ -1170,6 +1205,42 @@ export default function AdminProjectsPage() {
                                                     📄 Upload SRT / VTT
                                                     <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file) }} />
                                                 </label>
+                                                {/* Edit Subtitles — appears as soon as subtitles exist (server ready OR any lang translated) */}
+                                                {(serverJobStatus[pid] === 'ready' || count > 0 || translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial') && (
+                                                    <button type="button"
+                                                        onClick={() => openSubtitleEditor(pid, filmUrl)}
+                                                        className="btn btn-sm"
+                                                        style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}
+                                                    >
+                                                        ✏️ Edit Subtitles
+                                                    </button>
+                                                )}
+                                                {/* Translate — gated on approval */}
+                                                {(() => {
+                                                    const approval = subtitleApproval[pid] || translateStatus[pid]
+                                                    const isApproved = approval === 'approved_source'
+                                                    const hasSubtitles = (serverJobStatus[pid] === 'ready') || (count > 0)
+                                                    if (!hasSubtitles) return null
+                                                    return (
+                                                        <button
+                                                            type="button"
+                                                            disabled={!isApproved || isRunning}
+                                                            title={!isApproved ? 'Edit subtitles and click "Approve Source" before translating' : 'Translate to all languages'}
+                                                            onClick={() => isApproved && handleGenerateSubtitles(pid, filmUrl)}
+                                                            className="btn btn-sm"
+                                                            style={{
+                                                                fontSize: '0.72rem', fontWeight: 700,
+                                                                background: isApproved ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.04)',
+                                                                border: `1px solid ${isApproved ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                                                                color: isApproved ? '#34d399' : 'var(--text-tertiary)',
+                                                                cursor: (!isApproved || isRunning) ? 'not-allowed' : 'pointer',
+                                                                opacity: (!isApproved || isRunning) ? 0.6 : 1,
+                                                            }}
+                                                        >
+                                                            {isRunning ? '🌍 Translating…' : isApproved ? '🌍 Translate All' : '🔒 Approve first'}
+                                                        </button>
+                                                    )
+                                                })()}
                                                 {(translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial' || count > 0) && (
                                                     <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
                                                         🔍 Review Subtitles
@@ -1704,6 +1775,23 @@ export default function AdminProjectsPage() {
                 }}
                 onConfirm={handlePublishOverride}
             />
+
+            {/* ── Subtitle Editor modal ── */}
+            {editorProjectId && (
+                <SubtitleEditor
+                    projectId={editorProjectId}
+                    episodeId={null}
+                    initialSegments={editorSegments}
+                    currentStatus={editorStatus}
+                    filmUrl={editorFilmUrl}
+                    onClose={() => setEditorProjectId(null)}
+                    onSaved={(newStatus) => {
+                        // Update the approval lookup so the translate gate re-renders
+                        setSubtitleApproval(prev => ({ ...prev, [editorProjectId]: newStatus }))
+                    }}
+                />
+            )}
         </div>
     )
 }
+
