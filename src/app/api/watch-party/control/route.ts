@@ -4,7 +4,7 @@
  * Host/admin playback control endpoint.
  *
  * Accepts: { roomName, action, currentTimeSec? }
- * Actions: play | pause | seek | end
+ * Actions: play | pause | seek | end | lobby
  *
  * For each action:
  *  1. Validates caller is host or admin.
@@ -13,7 +13,7 @@
  *  4. Writes durable DB milestone when warranted:
  *     - play → playbackStartedAt, status live
  *     - end  → endedAt, status ended, lastCheckpointSec
- *     - seek → lastCheckpointSec only if jump > 10 min (not every seek)
+ *     - lobby → status scheduled, reset timestamps
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -27,7 +27,7 @@ import {
     type WatchPartyStatus,
 } from '@/lib/watchParty/pubsub'
 
-type Action = 'play' | 'pause' | 'seek' | 'end'
+type Action = 'play' | 'pause' | 'seek' | 'end' | 'lobby'
 
 export async function POST(req: NextRequest) {
     try {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         if (!roomName || !action) {
             return NextResponse.json({ error: 'roomName and action are required' }, { status: 400 })
         }
-        if (!['play', 'pause', 'seek', 'end'].includes(action)) {
+        if (!['play', 'pause', 'seek', 'end', 'lobby'].includes(action)) {
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
         }
 
@@ -92,11 +92,15 @@ export async function POST(req: NextRequest) {
                 playing   = false
                 newStatus = 'ended'
                 break
+            case 'lobby':
+                playing   = false
+                newStatus = 'lobby'
+                break
         }
 
         const newState: PlaybackState = {
             playing,
-            currentTimeSec,
+            currentTimeSec: action === 'lobby' ? 0 : currentTimeSec,
             status:        newStatus,
             lastUpdatedAt: now,
         }
@@ -106,10 +110,10 @@ export async function POST(req: NextRequest) {
 
         // ── 2. Publish to Pub/Sub channel ─────────────────────────────────────
         await publishPlaybackEvent(roomName, {
-            event:   action === 'end' ? 'ended' : action === 'pause' ? 'paused' : 'sync',
+            event:   action === 'end' ? 'ended' : action === 'lobby' ? 'lobby' : action === 'pause' ? 'paused' : 'sync',
             payload: {
                 playing,
-                currentTimeSec,
+                currentTimeSec: newState.currentTimeSec,
                 status: newStatus,
             },
         })
@@ -121,7 +125,7 @@ export async function POST(req: NextRequest) {
                     where: { roomName },
                     data: {
                         status:           'live',
-                        startedAt:        { set: new Date() },  // only sets if null in most ORMs
+                        startedAt:        { set: new Date() },  // only sets if null
                         playbackStartedAt: new Date(),
                         lastCheckpointSec: currentTimeSec,
                     },
@@ -135,6 +139,16 @@ export async function POST(req: NextRequest) {
                         lastCheckpointSec: currentTimeSec,
                     },
                 })
+            } else if (action === 'lobby') {
+                await prisma.liveEvent.update({
+                    where: { roomName },
+                    data: {
+                        status:           'scheduled',
+                        startedAt:        null,
+                        playbackStartedAt: null,
+                        lastCheckpointSec: 0,
+                    },
+                })
             } else if (action === 'seek') {
                 // Only checkpoint large jumps (> 10 min) to avoid noisy DB writes
                 const prevTime = prev?.currentTimeSec ?? 0
@@ -146,7 +160,6 @@ export async function POST(req: NextRequest) {
                 }
             }
         } catch (dbErr) {
-            // DB write failure is non-critical — Redis state is already updated
             console.error('[watch-party/control] DB milestone write failed:', dbErr)
         }
 

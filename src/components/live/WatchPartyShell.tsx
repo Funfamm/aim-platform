@@ -365,7 +365,7 @@ export default function WatchPartyShell({
 
     /* ── Host controls ───────────────────────────────────────────────────── */
     const sendControl = useCallback(async (
-        action: 'play' | 'pause' | 'seek' | 'end',
+        action: 'play' | 'pause' | 'seek' | 'end' | 'lobby',
         currentTimeSec?: number,
     ) => {
         setControlLoading(true)
@@ -382,6 +382,7 @@ export default function WatchPartyShell({
             if (action === 'play') { setRoomStatus('playing'); setIsPlaying(true) }
             else if (action === 'pause') { setIsPlaying(false) }
             else if (action === 'end') { setRoomStatus('ended'); setIsPlaying(false) }
+            else if (action === 'lobby') { setRoomStatus('lobby'); setIsPlaying(false) }
 
             const res = await fetch('/api/watch-party/control', {
                 method: 'POST',
@@ -1016,21 +1017,6 @@ export default function WatchPartyShell({
                                             borderTopColor: 'var(--accent-gold)',
                                             animation: 'wp-spin 0.7s linear infinite',
                                         }}/>
-                                    )}
-                                    {(roomStatus === 'playing' || roomStatus === 'paused') && (
-                                        <button
-                                            className="wp-host-btn"
-                                            disabled={controlLoading}
-                                            onClick={() => sendControl('ended', lastSeenTime)}
-                                            style={{ background: 'rgba(220,38,38,0.1)', color: '#f87171', borderColor: 'rgba(220,38,38,0.2)' }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                    <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
-                                                </svg>
-                                                {t('endSession')}
-                                            </div>
-                                        </button>
                                     )}
                                 </div>
                             </>
