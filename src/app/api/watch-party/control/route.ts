@@ -74,6 +74,13 @@ export async function POST(req: NextRequest) {
         const prev = await getPlaybackState(roomName)
 
         let newStatus: WatchPartyStatus = prev?.status ?? 'lobby'
+        // When Redis has no state (cold start / TTL expired), assume not playing.
+        // For 'seek', we trust the prev state; if there's no prev at all we return
+        // early — there's nothing to checkpoint against and writing playing=false
+        // would incorrectly pause all viewers.
+        if (action === 'seek' && !prev) {
+            return NextResponse.json({ ok: true, skipped: true })
+        }
         let playing = prev?.playing ?? false
 
         switch (action) {
@@ -109,14 +116,22 @@ export async function POST(req: NextRequest) {
         await setPlaybackState(roomName, newState)
 
         // ── 2. Publish to Pub/Sub channel ─────────────────────────────────────
-        await publishPlaybackEvent(roomName, {
-            event:   action === 'end' ? 'ended' : action === 'lobby' ? 'lobby' : action === 'pause' ? 'paused' : 'sync',
-            payload: {
-                playing,
-                currentTimeSec: newState.currentTimeSec,
-                status: newStatus,
-            },
-        })
+        // Background seek checkpoints (from hostSyncTimer) ONLY update the Redis
+        // time snapshot — they do NOT broadcast a sync event to clients.
+        // Broadcasting on every seek was triggering handleSync on all viewers AND
+        // the host ~every 5 s, creating a race where a stale/null prev could
+        // flip playing=false and pause everyone.
+        // Interactive actions (play, pause, end, lobby) still broadcast immediately.
+        if (action !== 'seek') {
+            await publishPlaybackEvent(roomName, {
+                event:   action === 'end' ? 'ended' : action === 'lobby' ? 'lobby' : action === 'pause' ? 'paused' : 'sync',
+                payload: {
+                    playing,
+                    currentTimeSec: newState.currentTimeSec,
+                    status: newStatus,
+                },
+            })
+        }
 
         // ── 3. Write durable DB milestones ────────────────────────────────────
         try {
