@@ -51,11 +51,12 @@ export async function POST(req: Request) {
     let userId: string | null = null;
     try {
       const { getSession } = await import('@/lib/auth');
-      const session = (await getSession()) as { id: string } | null;
-      userId = session?.id || null;
+      const session = await getSession();
+      userId = (session as { userId?: string } | null)?.userId ?? null;
     } catch {
       // non-critical — analytics still records the view without userId
     }
+
 
     // Handle search analytics event
     if (event === 'search' && typeof query === 'string') {
