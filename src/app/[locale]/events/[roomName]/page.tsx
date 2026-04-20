@@ -531,7 +531,7 @@ export default async function EventPage({ params }: EventPageProps) {
                         <RoomShell
                             roomName={roomName}
                             role={role}
-                            exitPath={isAdmin ? `/${locale}/admin/events` : `/${locale}/events`}
+                            exitPath={isAdmin ? '/admin/events' : `/${locale}/events`}
                             canEndEvent={isAdmin || isHost}
                         />
                     )}
