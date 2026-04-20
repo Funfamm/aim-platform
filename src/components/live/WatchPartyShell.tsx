@@ -230,14 +230,22 @@ export default function WatchPartyShell({
                         }
 
                         if (data.playing && (vid.paused || vid.ended)) {
-                            vid.play().catch((err) => {
-                                console.warn('[WatchPartyShell] Playback blocked by browser:', err)
-                                setAutoplayFailed(true)
-                            })
-                            setIsPlaying(true)
+                            // For the HOST: only play if they caused this sync (e.g. on SSE
+                            // reconnect after page reload while event is live). Never pause them.
+                            if (!canControl) {
+                                vid.play().catch((err) => {
+                                    console.warn('[WatchPartyShell] Playback blocked by browser:', err)
+                                    setAutoplayFailed(true)
+                                })
+                                setIsPlaying(true)
+                            }
                         } else if (!data.playing && !vid.paused) {
-                            vid.pause()
-                            setIsPlaying(false)
+                            // HOST is the source of truth — never let SSE pause their video.
+                            // Viewers get their pause state dictated by the host via SSE.
+                            if (!canControl) {
+                                vid.pause()
+                                setIsPlaying(false)
+                            }
                         }
                     }
                 }

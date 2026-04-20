@@ -746,7 +746,7 @@
     "catVFX": "مؤثرات",
     "catGeneral": "عام",
     "scroll": "تمرير",
-    "enrollCta": "تسجيل →",
+    "enrollCta": "التسجيل →",
     "ctaTrackProgress": "تتبع التقدم",
     "earnBadges": "اكسب شارات",
     "getCertified": "احصل على شهادة",
@@ -1009,7 +1009,7 @@
   "NotificationsPage": {
     "title": "الإشعارات",
     "subtitle": "إدارة خلاصة الإشعارات وتفضيلات التسليم.",
-    "feedTab": "📨 الخلاصة",
+    "feedTab": "🔔 التغذية",
     "preferencesTab": "⚙️ التفضيلات",
     "loading": "جارٍ التحميل...",
     "recentNotifications": "الإشعارات الأخيرة",

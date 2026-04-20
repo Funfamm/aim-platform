@@ -1007,7 +1007,7 @@
   "NotificationsPage": {
     "title": "Notificaciones",
     "subtitle": "Gestiona tu feed de notificaciones y preferencias de entrega.",
-    "feedTab": "📨 Feed",
+    "feedTab": "🔔 Feed",
     "preferencesTab": "⚙️ Preferencias",
     "loading": "Cargando…",
     "recentNotifications": "Notificaciones Recientes",

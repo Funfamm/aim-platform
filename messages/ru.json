@@ -1007,7 +1007,7 @@
   "NotificationsPage": {
     "title": "Уведомления",
     "subtitle": "Управляйте лентой уведомлений и настройками доставки.",
-    "feedTab": "📨 Лента",
+    "feedTab": "🔔 Лента",
     "preferencesTab": "⚙️ Настройки",
     "loading": "Загрузка...",
     "recentNotifications": "Последние уведомления",

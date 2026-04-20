@@ -727,7 +727,7 @@
     "catVFX": "VFX",
     "catGeneral": "一般",
     "scroll": "スクロール",
-    "enrollCta": "登録 →",
+    "enrollCta": "登録する →",
     "ctaTrackProgress": "進捗トラッキング",
     "earnBadges": "バッジ獲得",
     "getCertified": "証明書取得",
@@ -1008,7 +1008,7 @@
   "NotificationsPage": {
     "title": "通知",
     "subtitle": "通知フィードと配信設定を管理してください。",
-    "feedTab": "📨 フィード",
+    "feedTab": "🔔 フィード",
     "preferencesTab": "⚙️ 設定",
     "loading": "読み込み中...",
     "recentNotifications": "最近の通知",

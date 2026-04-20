@@ -744,7 +744,7 @@
     "catVFX": "VFX",
     "catGeneral": "सामान्य",
     "scroll": "स्क्रॉल",
-    "enrollCta": "नामांकन →",
+    "enrollCta": "नामांकन करें →",
     "ctaTrackProgress": "प्रगति ट्रैक करें",
     "earnBadges": "बैज कमाएं",
     "getCertified": "प्रमाणपत्र पाएं",
@@ -1007,7 +1007,7 @@
   "NotificationsPage": {
     "title": "सूचनाएं",
     "subtitle": "अपना सूचना फ़ीड और वितरण प्राथमिकताएं प्रबंधित करें।",
-    "feedTab": "📨 फ़ीड",
+    "feedTab": "🔔 फ़ीड",
     "preferencesTab": "⚙️ प्राथमिकताएं",
     "loading": "लोड हो रहा है...",
     "recentNotifications": "हालिया सूचनाएं",
@@ -1261,7 +1261,7 @@
     }
   },
   "liveRoom": {
-    "connecting": "कमरे से जुड़eजा रहा है...",
+    "connecting": "कमरे से जुड़ा जा रहा है...",
     "reconnecting": "पुनः कनेक्ट हो रहा है...",
     "failedToJoin": "शामिल होने में विफल",
     "leaveRoom": "कमरा छोड़ें",

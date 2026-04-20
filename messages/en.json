@@ -421,7 +421,7 @@
     "statusApproved": "Approved",
     "statusSelected": "Selected",
     "statusNotSelected": "Not Selected",
-    "praiseWords": "You're amazing! ðŸŒŸ|True supporter! ðŸ’«|Film hero! 🎬|Thank you! â¤️|Legend! 🏆",
+    "praiseWords": "You're amazing! 🌟|True supporter! 💫|Film hero! 🎬|Thank you! ❤️|Legend! 🏆",
     "receiptTitle": "Donation Receipt",
     "receiptThankYou": "Thank you for your support",
     "receiptDate": "Date",
@@ -971,7 +971,7 @@
   "NotificationsPage": {
     "title": "Notifications",
     "subtitle": "Manage your notification feed and delivery preferences.",
-    "feedTab": "📨 Feed",
+    "feedTab": "🔔 Feed",
     "preferencesTab": "⚙️ Preferences",
     "loading": "Loading…",
     "recentNotifications": "Recent Notifications",

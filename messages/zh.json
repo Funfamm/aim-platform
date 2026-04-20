@@ -1007,7 +1007,7 @@
   "NotificationsPage": {
     "title": "通知",
     "subtitle": "管理您的通知动态和投递偏好设置。",
-    "feedTab": "📨 动态",
+    "feedTab": "🔔 动态",
     "preferencesTab": "⚙️ 偏好设置",
     "loading": "加载中...",
     "recentNotifications": "最近通知",

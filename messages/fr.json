@@ -1007,7 +1007,7 @@
   "NotificationsPage": {
     "title": "Notifications",
     "subtitle": "Gérez votre fil de notifications et vos préférences.",
-    "feedTab": "📨 Fil",
+    "feedTab": "🔔 Fil",
     "preferencesTab": "⚙️ Préférences",
     "loading": "Chargement…",
     "recentNotifications": "Notifications récentes",

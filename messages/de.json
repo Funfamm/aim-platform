@@ -744,7 +744,7 @@
     "catVFX": "VFX",
     "catGeneral": "Allgemein",
     "scroll": "Scrollen",
-    "enrollCta": "Einschreiben →",
+    "enrollCta": "Anmelden →",
     "ctaTrackProgress": "Fortschritt Verfolgen",
     "earnBadges": "Abzeichen Verdienen",
     "getCertified": "Zertifikat Erhalten",
@@ -1007,7 +1007,7 @@
   "NotificationsPage": {
     "title": "Benachrichtigungen",
     "subtitle": "Verwalte deinen Benachrichtigungs-Feed und Lieferpräferenzen.",
-    "feedTab": "📨 Feed",
+    "feedTab": "🔔 Feed",
     "preferencesTab": "⚙️ Einstellungen",
     "loading": "Wird geladen...",
     "recentNotifications": "Aktuelle Benachrichtigungen",
