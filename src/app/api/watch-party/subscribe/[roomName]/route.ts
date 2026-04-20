@@ -4,26 +4,27 @@
  * Server-Sent Events endpoint. Streams real-time playback state to viewers.
  *
  * Architecture (Vercel-compatible):
- *   Uses DB polling instead of Redis Pub/Sub. Redis Pub/Sub requires a
- *   persistent TCP connection which Vercel serverless functions cannot hold.
- *   Instead, this route:
- *     1. Reads the current state (Redis hash → DB fallback).
- *     2. Sends an initial `sync` event.
- *     3. Polls for state changes every 2 seconds.
- *     4. Emits a new SSE event when status or playback position changes.
- *     5. When the client disconnects the stream closes cleanly.
+ *   Vercel serverless functions have a hard execution limit. To avoid the
+ *   function being force-killed (which logs a Runtime Timeout Error), this
+ *   route limits each SSE session to MAX_SESSION_MS (50s) and then gracefully
+ *   closes the stream. The browser's EventSource auto-reconnects immediately,
+ *   and the initial `sync` event on each reconnect brings the viewer back to the
+ *   current host position — no state is lost.
  *
- *   Vercel's max serverless duration is 300 seconds. The client (EventSource)
- *   will auto-reconnect, and the initial sync on each reconnect brings the
- *   viewer to the current host position.
+ *   Flow per connection:
+ *     1. Read current Redis state (DB fallback if Redis cold).
+ *     2. Send initial `sync` event.
+ *     3. Poll every 2s for state changes and emit deltas.
+ *     4. Send `: ping` every 25s to keep proxies alive.
+ *     5. After 50s, send `retry: 1000` + close cleanly.
+ *     6. Client reconnects within 1s → repeat from step 1.
  *
  * Auth: requires authenticated session.
  */
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-// Allow up to 270s (buffer before Vercel's 300s kill)
-export const maxDuration = 270
+export const maxDuration = 60  // 60s hard cap — our session timer closes at 50s
 
 import { NextRequest } from 'next/server'
 import { getUserSession } from '@/lib/auth'
@@ -34,8 +35,9 @@ import {
     type PlaybackState,
 } from '@/lib/watchParty/pubsub'
 
-const POLL_INTERVAL_MS = 2000  // How often to check for state changes
-const PING_INTERVAL_MS = 25000 // Keep-alive ping to prevent proxy timeouts
+const POLL_INTERVAL_MS  = 2000   // How often to check for state changes
+const PING_INTERVAL_MS  = 25000  // Keep-alive ping to prevent proxy timeouts
+const MAX_SESSION_MS    = 50000  // Close gracefully before Vercel's 60s limit
 
 export async function GET(
     req: NextRequest,
@@ -43,16 +45,16 @@ export async function GET(
 ) {
     const { roomName } = await params
 
-    // ── Auth ─────────────────────────────────────────────────────────────────
+    // ── Auth ──────────────────────────────────────────────────────────────────
     const session = await getUserSession()
     if (!session?.userId) {
         return new Response('Unauthorized', { status: 401 })
     }
 
-    // ── Register initial presence ─────────────────────────────────────────────
+    // ── Register initial presence ──────────────────────────────────────────────
     await heartbeatPresence(roomName, session.userId).catch(() => {})
 
-    // ── Resolve initial playback state ────────────────────────────────────────
+    // ── Resolve initial playback state ─────────────────────────────────────────
     let initialState = await getPlaybackState(roomName)
 
     if (!initialState) {
@@ -64,7 +66,7 @@ export async function GET(
             })
             if (event) {
                 const wpStatus =
-                    event.status === 'ended'  ? 'ended'  :
+                    event.status === 'ended'  ? 'ended'   :
                     event.status === 'live'   ? 'playing' :
                     event.lobbyEnabled        ? 'lobby'   : 'playing'
                 initialState = {
@@ -79,7 +81,7 @@ export async function GET(
         }
     }
 
-    // ── Build SSE stream ──────────────────────────────────────────────────────
+    // ── Build SSE stream ───────────────────────────────────────────────────────
     const encoder = new TextEncoder()
 
     const stream = new ReadableStream({
@@ -97,13 +99,22 @@ export async function GET(
                 }
             }
 
-            const sendPing = () => {
+            const sendRaw = (line: string) => {
                 if (closed) return
                 try {
-                    controller.enqueue(encoder.encode(': ping\n\n'))
+                    controller.enqueue(encoder.encode(line))
                 } catch {
                     closed = true
                 }
+            }
+
+            const cleanup = () => {
+                if (closed) return
+                closed = true
+                clearInterval(pollInterval)
+                clearInterval(pingInterval)
+                clearTimeout(sessionTimer)
+                try { controller.close() } catch { /* already closed */ }
             }
 
             // 1. Send initial sync so client knows current position immediately
@@ -119,7 +130,7 @@ export async function GET(
 
             // 2. Track last-sent state so we only emit on actual changes
             let lastStatus    = effectiveStatus
-            let lastTimeSec   = initialState?.currentTimeSec ?? 0
+            let lastTimeSec   = initialState?.currentTimeSec ?? 0  // eslint-disable-line @typescript-eslint/no-unused-vars
             let lastPlaying   = initialState?.playing ?? false
             let lastUpdatedAt = initialState?.lastUpdatedAt ?? ''
 
@@ -130,7 +141,6 @@ export async function GET(
                     const state = await getPlaybackState(roomName)
                     if (!state) return
 
-                    // Emit on any meaningful change
                     const statusChanged  = state.status !== lastStatus
                     const playingChanged = state.playing !== lastPlaying
                     const updatedAt      = state.lastUpdatedAt !== lastUpdatedAt
@@ -146,7 +156,6 @@ export async function GET(
                         } else if (state.status === 'paused') {
                             send('paused', { status: 'paused', playing: false, currentTimeSec: state.currentTimeSec })
                         } else {
-                            // 'playing' or 'lobby' — send sync
                             send(state.status === 'lobby' ? 'lobby' : 'sync', {
                                 playing:        state.playing,
                                 currentTimeSec: state.currentTimeSec,
@@ -160,23 +169,29 @@ export async function GET(
             }, POLL_INTERVAL_MS)
 
             // 4. Keep-alive pings
-            const pingInterval = setInterval(sendPing, PING_INTERVAL_MS)
+            const pingInterval = setInterval(() => sendRaw(': ping\n\n'), PING_INTERVAL_MS)
 
-            // 5. Cleanup on disconnect
-            req.signal.addEventListener('abort', () => {
-                closed = true
-                clearInterval(pollInterval)
-                clearInterval(pingInterval)
-                try { controller.close() } catch { /* already closed */ }
-            })
+            // 5. Graceful session expiry — close BEFORE Vercel's hard timeout.
+            //    EventSource will reconnect automatically within `retry` ms.
+            //    On reconnect, the server sends a fresh sync with current state.
+            const sessionTimer = setTimeout(() => {
+                if (!closed) {
+                    // Tell the browser to reconnect in 1 second
+                    sendRaw('retry: 1000\n\n')
+                    cleanup()
+                }
+            }, MAX_SESSION_MS)
+
+            // 6. Cleanup on client disconnect
+            req.signal.addEventListener('abort', cleanup)
         },
     })
 
     return new Response(stream, {
         headers: {
-            'Content-Type':     'text/event-stream',
-            'Cache-Control':    'no-cache, no-transform',
-            'Connection':       'keep-alive',
+            'Content-Type':      'text/event-stream',
+            'Cache-Control':     'no-cache, no-transform',
+            'Connection':        'keep-alive',
             'X-Accel-Buffering': 'no',
         },
     })
