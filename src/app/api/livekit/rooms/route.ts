@@ -78,6 +78,8 @@ export async function GET(req: Request) {
                         const isNotFound =
                             msg.includes('room not found') ||
                             msg.includes('room_not_found') ||
+                            msg.includes('requested room does not exist') || // LiveKit Cloud exact message
+                            msg.includes('Not Found:') ||                    // LiveKit gRPC prefix
                             // LiveKit Cloud gRPC: status code 5 = NOT_FOUND
                             msg.includes('status code 5') ||
                             msg.includes('NOT_FOUND')
@@ -86,7 +88,7 @@ export async function GET(req: Request) {
                             msg.includes('ECONNREFUSED') ||
                             msg.includes('ETIMEDOUT') ||
                             msg.includes('fetch failed') ||
-                            msg.includes('5')&&msg.includes('00') // 500-599 HTTP codes
+                            (msg.includes('5') && /5\d\d/.test(msg)) // 500-599 HTTP codes
                         if (isNotFound && !isNetworkError) {
                             orphanedRooms.push(roomName)
                             console.warn(`[rooms/GET] room '${roomName}' confirmed not found on LiveKit — self-healing to 'ended'`)
