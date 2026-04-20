@@ -61,6 +61,11 @@ export default async function EventPage({ params }: EventPageProps) {
 
     if (!event) notFound()
 
+    // ── Guard: Redirect Watch Parties ─────────────────────────────────────────
+    if (event.eventType === 'watch_party') {
+        redirect(`/${locale}/events/watch/${roomName}`)
+    }
+
     // Determine effective role for this user
     const isAdmin = session?.role === 'admin' || session?.role === 'superadmin'
     const isHost = session?.userId === event.hostUserId
