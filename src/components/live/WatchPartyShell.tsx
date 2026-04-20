@@ -610,7 +610,7 @@ export default function WatchPartyShell({
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M19 12H5M12 19l-7-7 7-7" />
                                 </svg>
-                                Admin Events
+                                {t('adminEvents')}
                             </Link>
                         ) : projectSlug ? (
                             <Link
@@ -627,7 +627,7 @@ export default function WatchPartyShell({
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M19 12H5M12 19l-7-7 7-7" />
                                 </svg>
-                                Back
+                                {t('back')}
                             </Link>
                         ) : null}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -636,7 +636,7 @@ export default function WatchPartyShell({
                                 border: '1px solid rgba(212,168,83,0.3)',
                                 fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.06em',
                                 padding: '3px 8px', borderRadius: '4px',
-                            }}>🍿 WATCH PARTY</span>
+                            }}>🍿 {t('watchPartyBadge')}</span>
                             {roomStatus === 'playing' && (
                                 <span style={{
                                     background: 'rgba(220,38,38,0.15)', color: '#f87171',
@@ -649,7 +649,7 @@ export default function WatchPartyShell({
                                         background: '#f87171', animation: 'wp-spin 1.5s linear infinite',
                                         display: 'inline-block',
                                     }} />
-                                    LIVE
+                                    {t('live')}
                                 </span>
                             )}
                         </div>
@@ -800,7 +800,7 @@ export default function WatchPartyShell({
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                 <path d="M12 5v14M5 12l7 7 7-7"/>
                                             </svg>
-                                            Host controls below
+                                            {t('hostControlsBelow')}
                                         </p>
                                     )}
                                 </div>
@@ -1056,7 +1056,7 @@ export default function WatchPartyShell({
                                                                 fontWeight: 700, letterSpacing: '0.04em',
                                                                 color: 'var(--accent-gold)', padding: '4px 0 12px',
                                                                 textTransform: 'uppercase',
-                                                            }}>Subtitles</div>
+                                                            }}>{t('subtitlesLabel')}</div>
                                                             {/* Options */}
                                                             <button
                                                                 onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
@@ -1069,7 +1069,7 @@ export default function WatchPartyShell({
                                                                     borderBottom: '1px solid rgba(255,255,255,0.05)',
                                                                 }}
                                                             >
-                                                                <span>Off</span>
+                                                                <span>{t('subtitlesOff')}</span>
                                                                 {!ccEnabled && <span style={{ color: 'var(--accent-gold)', fontWeight: 700 }}>✓</span>}
                                                             </button>
                                                             {availableLangs.map(lang => (

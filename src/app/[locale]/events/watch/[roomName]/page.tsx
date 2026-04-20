@@ -103,10 +103,10 @@ export default async function WatchPartyPage({ params, searchParams }: WatchPart
                 }}>
                     <div style={{ fontSize: '3rem', marginBottom: '20px' }}>🔗</div>
                     <h1 style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 700, marginBottom: '12px' }}>
-                        This event link is no longer active
+                        {t('linkInactive')}
                     </h1>
                     <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.6, marginBottom: '32px', fontSize: '0.95rem' }}>
-                        The screening you&apos;re looking for may have ended, been removed, or this link may have expired.
+                        {t('linkInactiveDesc')}
                     </p>
                     <Link
                         href="/"
@@ -118,7 +118,7 @@ export default async function WatchPartyPage({ params, searchParams }: WatchPart
                             fontSize: '0.9rem',
                         }}
                     >
-                        ← Back to Homepage
+                        {t('backToHomepage')}
                     </Link>
                 </div>
             </main>
@@ -237,7 +237,7 @@ export default async function WatchPartyPage({ params, searchParams }: WatchPart
                                     fontSize: '0.9rem',
                                 }}
                             >
-                                ← Home
+                                {t('backToHome')}
                             </Link>
                             <Link
                                 href={`/${locale}/dashboard`}
