@@ -453,7 +453,19 @@ export default function AdminProjectsPage() {
         const hasWorkerTranscript = serverJobStatus[pid] === 'ready'
         const hasExistingTranscript = (translationCount[pid] ?? 0) > 0
 
-        if (!isResume && !hasWorkerTranscript && !hasExistingTranscript) {
+        // Fast DB check: if a transcript row exists (even with 0 translations yet),
+        // skip the browser Whisper path entirely. This prevents the HuggingFace
+        // model-load error when the server worker has already transcribed the video.
+        let hasDbTranscript = hasExistingTranscript || hasWorkerTranscript
+        if (!hasDbTranscript && !isResume) {
+            try {
+                const chk = await fetch(`/api/admin/subtitles?projectId=${pid}`)
+                const { subtitle } = await chk.json()
+                if (subtitle?.segments) hasDbTranscript = true
+            } catch { /* ignore — fall through to browser path */ }
+        }
+
+        if (!isResume && !hasDbTranscript) {
             // Note: we no longer block streaming URLs here — transcribeVideo will
             // try a direct fetch first then fall back to the server-side proxy,
             // so CORS-restricted hosts can still be transcribed.
