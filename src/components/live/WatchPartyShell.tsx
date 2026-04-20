@@ -684,6 +684,19 @@ export default function WatchPartyShell({
                                             🎬 {t('watchReplay')}
                                         </Link>
                                     )}
+                                    {canControl && (
+                                        <p style={{
+                                            marginTop: '20px',
+                                            fontSize: '0.78rem',
+                                            color: 'rgba(212,168,83,0.6)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                <path d="M12 5v14M5 12l7 7 7-7"/>
+                                            </svg>
+                                            Host controls below
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -957,7 +970,12 @@ export default function WatchPartyShell({
                                             className="wp-host-btn"
                                             disabled={controlLoading}
                                             onClick={() => sendControl('lobby', 0)}
-                                            style={{ background: 'rgba(212,168,83,0.1)', color: 'var(--accent-gold)' }}
+                                            style={{
+                                                background: 'rgba(212,168,83,0.12)',
+                                                color: 'var(--accent-gold)',
+                                                border: '1px solid rgba(212,168,83,0.4)',
+                                                boxShadow: '0 0 12px rgba(212,168,83,0.1)',
+                                            }}
                                         >
                                             {controlLoading ? '...' : (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
