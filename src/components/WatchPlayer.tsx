@@ -598,6 +598,12 @@ export default function WatchPlayer({
                         margin: 0 16px 8px !important;
                         border-radius: 10px !important;
                     }
+
+                    /* Subtitle overlay: pull it closer to the bottom on mobile
+                     * so it clears the controls bar and sits near the video bottom */
+                    .aim-subtitle-overlay {
+                        bottom: 52px !important;
+                    }
                 }
 
                 /* ── Pseudo-fullscreen: hide nav + tab bar, fill viewport ── */
@@ -841,11 +847,14 @@ export default function WatchPlayer({
 
                     {/* ── Subtitle overlay ── */}
                     {ccEnabled && (
-                        <div style={{
-                            position: 'absolute', bottom: '80px', left: '5%', right: '5%',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center',
-                            pointerEvents: 'none', zIndex: 5, gap: '6px',
-                        }}>
+                        <div
+                            className="aim-subtitle-overlay"
+                            style={{
+                                position: 'absolute', bottom: '72px', left: '5%', right: '5%',
+                                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                                pointerEvents: 'none', zIndex: 5, gap: '6px',
+                            }}
+                        >
                             {ccLoading && ccStatusText && (
                                 <div style={{
                                     background: 'rgba(0,0,0,0.75)', borderRadius: '8px',

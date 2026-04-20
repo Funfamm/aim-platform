@@ -22,7 +22,7 @@ export default function LoginPage() {
     const { refreshUser } = useAuth()
     const router = useRouter()
     const searchParams = useSearchParams()
-    const redirectTo = searchParams.get('redirect') || '/dashboard'
+    const redirectTo = searchParams.get('redirect') || searchParams.get('next') || '/dashboard'
 
     useEffect(() => {
         fetch('/api/auth/providers')
@@ -210,7 +210,7 @@ export default function LoginPage() {
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                     {providers.google && (
-                                        <a href="/api/auth/google" style={{
+                                        <a href={`/api/auth/google${redirectTo && redirectTo !== '/dashboard' ? `?returnTo=${encodeURIComponent(redirectTo)}` : ''}`} style={{
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                                             width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)',
                                             border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
@@ -227,7 +227,7 @@ export default function LoginPage() {
                                         </a>
                                     )}
                                     {providers.apple && (
-                                        <a href="/api/auth/apple" style={{
+                                        <a href={`/api/auth/apple${redirectTo && redirectTo !== '/dashboard' ? `?returnTo=${encodeURIComponent(redirectTo)}` : ''}`} style={{
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                                             width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)',
                                             border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',

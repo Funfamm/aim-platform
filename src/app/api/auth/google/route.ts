@@ -23,8 +23,10 @@ export async function GET(req: Request) {
         path: '/',
     })
 
-    // Save the return-to URL if the user was redirected here from a protected page
-    const returnTo = new URL(req.url).searchParams.get('returnTo') || '/dashboard'
+    // Save the return-to URL so we can redirect there after OAuth completes.
+    // Only allow same-origin paths (must start with /) to prevent open redirects.
+    const rawReturnTo = new URL(req.url).searchParams.get('returnTo') || ''
+    const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '/dashboard'
     cookieStore.set('oauth_return_to', returnTo, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',

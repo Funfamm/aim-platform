@@ -134,7 +134,7 @@ export default async function WatchPartyPage({ params, searchParams }: WatchPart
     // ── Auth ──────────────────────────────────────────────────────────────────
     if (!session?.userId) {
         // Not signed in → sign-in page, which will redirect back
-        redirect(`/${locale}/auth/sign-in?next=${encodeURIComponent(`/${locale}/events/watch/${roomName}`)}`)
+        redirect(`/${locale}/login?redirect=${encodeURIComponent(`/${locale}/events/watch/${roomName}`)}`)
     }
 
     const isAdmin = session.role === 'admin' || session.role === 'superadmin'
