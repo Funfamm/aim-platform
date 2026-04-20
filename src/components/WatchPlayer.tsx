@@ -97,6 +97,24 @@ export default function WatchPlayer({
     const [ccChecked, setCcChecked]         = useState(false)
     const [showFallbackNotice, setShowFallbackNotice] = useState(false)
     const [activeTrackUrl, setActiveTrackUrl] = useState<string | null>(null)
+    /* T4-E: Track-level subtitle placement from the backend */
+    const [subtitlePlacement, setSubtitlePlacement] = useState<{
+        verticalAnchor: string
+        horizontalAlign: string
+        offsetYPercent: number
+        safeAreaMarginPx: number
+        backgroundStyle: string
+        fontScale: number
+        cueOverrides: Record<string, { verticalAnchor?: string; horizontalAlign?: string; offsetYPercent?: number }>
+    }>({
+        verticalAnchor: 'bottom',
+        horizontalAlign: 'center',
+        offsetYPercent: 0,
+        safeAreaMarginPx: 12,
+        backgroundStyle: 'shadow',
+        fontScale: 1.0,
+        cueOverrides: {},
+    })
     /* Detect mobile once — used for bottom-sheet vs dropdown */
     const [isMobile, setIsMobile]           = useState(false)
 
@@ -144,11 +162,20 @@ export default function WatchPlayer({
         return () => clearTimeout(t)
     }, [activeTrackUrl, ccEnabled])
 
-    /* Active subtitle */
-    const activeSubtitle = useMemo(() => {
-        if (!ccEnabled || ccSegments.length === 0) return ''
-        return ccSegments.find(s => currentTime >= s.start && currentTime <= s.end)?.text || ''
+    /* Active subtitle + cue index (T4-E: needed for per-cue placement override lookup) */
+    const { activeSubtitle, activeCueIdx } = useMemo(() => {
+        if (!ccEnabled || ccSegments.length === 0) return { activeSubtitle: '', activeCueIdx: -1 }
+        const idx = ccSegments.findIndex(s => currentTime >= s.start && currentTime <= s.end)
+        return { activeSubtitle: idx >= 0 ? ccSegments[idx].text : '', activeCueIdx: idx }
     }, [currentTime, ccEnabled, ccSegments])
+
+    /* T4-E: Compute effective placement for the currently active cue */
+    const activePlacement = useMemo(() => {
+        if (activeCueIdx < 0) return subtitlePlacement
+        const override = subtitlePlacement.cueOverrides[String(activeCueIdx)]
+        if (!override) return subtitlePlacement
+        return { ...subtitlePlacement, ...override }
+    }, [activeCueIdx, subtitlePlacement])
 
     /* Fetch CC availability */
     useEffect(() => {
@@ -165,6 +192,18 @@ export default function WatchPlayer({
                 if (data.available?.length > 0) {
                     setCcAvailable(data.available)
                     if (data.segments?.length > 0) { setCcSegments(data.segments); setCcLang('en') }
+                    // T4-E: Load placement metadata from API response
+                    if (data.placement) {
+                        setSubtitlePlacement(prev => ({
+                            ...prev,
+                            ...data.placement,
+                            cueOverrides: data.placement.cueOverrides
+                                ? (typeof data.placement.cueOverrides === 'string'
+                                    ? JSON.parse(data.placement.cueOverrides)
+                                    : data.placement.cueOverrides)
+                                : {},
+                        }))
+                    }
                     const safe = (SUBTITLE_TARGET_LANGS as readonly string[]).includes(userPreferredLang) || userPreferredLang === 'en'
                         ? userPreferredLang : 'en'
                     if (safe !== 'en' && data.available.includes(safe)) {
@@ -567,13 +606,18 @@ export default function WatchPlayer({
                         display: inline-flex;
                     }
 
-                    /* Sticky full-bleed player zone */
+                    /* Sticky full-bleed player zone — portrait mode only (T5-A/B/C) */
+                    /* Uses aspect-ratio to reserve stable height and prevent jitter   */
                     .aim-sticky-player-zone {
                         position: sticky;
                         top: 56px;
                         z-index: 50;
                         width: 100%;
                         background: #000;
+                        /* Reserve space based on 16:9 so content below never pops up/down */
+                        aspect-ratio: 16 / 9;
+                        /* Clip subtitles to player bounds (T5-C) */
+                        overflow: hidden;
                     }
 
                     /* Remove rounded corners and border — full-bleed on mobile */
@@ -598,11 +642,16 @@ export default function WatchPlayer({
                         margin: 0 16px 8px !important;
                         border-radius: 10px !important;
                     }
+                    /* Note: subtitle overlay bottom is now managed dynamically via placement metadata */
+                }
 
-                    /* Subtitle overlay: pull it closer to the bottom on mobile
-                     * so it clears the controls bar and sits near the video bottom */
-                    .aim-subtitle-overlay {
-                        bottom: 52px !important;
+                /* T5-A: In landscape, release sticky so fullscreen / immersive mode takes over cleanly */
+                @media (max-width: 900px) and (orientation: landscape) {
+                    .aim-sticky-player-zone {
+                        position: relative !important;
+                        top: auto !important;
+                        aspect-ratio: unset !important;
+                        overflow: visible !important;
                     }
                 }
 
@@ -845,36 +894,54 @@ export default function WatchPlayer({
                         </div>
                     )}
 
-                    {/* ── Subtitle overlay ── */}
-                    {ccEnabled && (
-                        <div
-                            className="aim-subtitle-overlay"
-                            style={{
-                                position: 'absolute', bottom: '72px', left: '5%', right: '5%',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                                pointerEvents: 'none', zIndex: 5, gap: '6px',
-                            }}
-                        >
-                            {ccLoading && ccStatusText && (
-                                <div style={{
-                                    background: 'rgba(0,0,0,0.75)', borderRadius: '8px',
-                                    padding: '8px 16px', fontSize: '0.8rem',
-                                    color: 'var(--accent-gold)', textAlign: 'center',
-                                }}>⏳ {ccStatusText}</div>
-                            )}
-                            {activeSubtitle && (
-                                <div style={{
-                                    background: 'rgba(0,0,0,0.82)', borderRadius: '6px',
-                                    padding: '6px 18px',
-                                    fontSize: 'clamp(0.9rem, 2.5vw, 1.15rem)',
-                                    color: '#fff', textAlign: 'center', lineHeight: 1.5,
-                                    maxWidth: '90%', textShadow: '0 1px 4px rgba(0,0,0,0.6)',
-                                }}>
-                                    {activeSubtitle.length > 120 ? activeSubtitle.slice(0, 120) + '…' : activeSubtitle}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    {/* ── Subtitle overlay (T4-E: placement-aware) ── */}
+                    {ccEnabled && (() => {
+                        const p = activePlacement
+                        // Compute bottom from vertical anchor + offset + safe margin
+                        const anchorBase: Record<string, number> = {
+                            bottom: 5, lower_third: 20, middle: 45, upper_third: 65, top: 82,
+                        }
+                        const base = anchorBase[p.verticalAnchor] ?? 5
+                        const bottomVal = `calc(${base}% + ${p.offsetYPercent}% + ${p.safeAreaMarginPx}px + 58px)`
+                        return (
+                            <div
+                                className="aim-subtitle-overlay"
+                                style={{
+                                    position: 'absolute',
+                                    bottom: bottomVal,
+                                    left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
+                                    right: p.horizontalAlign === 'right' ? '5%' : 'auto',
+                                    transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                    maxWidth: '90%',
+                                    pointerEvents: 'none', zIndex: 5,
+                                    display: 'flex', flexDirection: 'column',
+                                    alignItems: p.horizontalAlign === 'left' ? 'flex-start' : p.horizontalAlign === 'right' ? 'flex-end' : 'center',
+                                    gap: '6px',
+                                }}
+                            >
+                                {ccLoading && ccStatusText && (
+                                    <div style={{ background: 'rgba(0,0,0,0.75)', borderRadius: '8px', padding: '8px 16px', fontSize: '0.8rem', color: 'var(--accent-gold)', textAlign: 'center' }}>
+                                        ⏳ {ccStatusText}
+                                    </div>
+                                )}
+                                {activeSubtitle && (
+                                    <div style={{
+                                        padding: '6px 18px',
+                                        fontSize: `clamp(${0.9 * p.fontScale}rem, ${2.5 * p.fontScale}vw, ${1.15 * p.fontScale}rem)`,
+                                        color: '#fff',
+                                        textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
+                                        lineHeight: 1.5,
+                                        maxWidth: '100%',
+                                        borderRadius: '6px',
+                                        background: p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
+                                        textShadow: p.backgroundStyle === 'shadow' ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
+                                    }}>
+                                        {activeSubtitle.length > 120 ? activeSubtitle.slice(0, 120) + '…' : activeSubtitle}
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    })()}
 
                     {/* ── Fallback notice ── */}
                     {showFallbackNotice && (

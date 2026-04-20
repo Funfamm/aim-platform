@@ -3,6 +3,19 @@ import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
 import { findSubtitle, updateSubtitleById, upsertSubtitle } from '@/lib/subtitle-repo'
 import { upsertSubtitleRecord } from '@/lib/subtitle-status-service'
+import { prisma } from '@/lib/db'
+
+// ── Placement fields shape ─────────────────────────────────────────────────
+type PlacementPatch = {
+    verticalAnchor?: string
+    horizontalAlign?: string
+    offsetYPercent?: number
+    offsetXPercent?: number
+    safeAreaMarginPx?: number
+    backgroundStyle?: string
+    fontScale?: number
+    cueOverrides?: Record<string, unknown>
+}
 
 // ── Auth guard helper ──────────────────────────────────────────────
 async function requireAdmin() {
@@ -74,12 +87,19 @@ export async function POST(req: NextRequest) {
  * the approval status resets to 'pending' (edits invalidate the approval).
  */
 export async function PATCH(req: NextRequest) {
-    const denied = await requireAdmin()
-    if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status })
+    const session = await getUserSession()
+    if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!hasAdminRole(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const body = await req.json()
-        const { projectId, episodeId, segments } = body
+        const { projectId, episodeId, segments, changeSource, placement } = body as {
+            projectId: string
+            episodeId?: string | null
+            segments: Array<{ start: number; end: number; text: string }> | string
+            changeSource?: string
+            placement?: PlacementPatch
+        }
 
         if (!projectId || !segments) {
             return NextResponse.json({ error: 'projectId and segments required' }, { status: 400 })
@@ -90,23 +110,46 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: 'No subtitle record found' }, { status: 404 })
         }
 
-        const segmentsStr = typeof segments === 'string' ? segments : JSON.stringify(segments)
+        const segmentsArr = typeof segments === 'string' ? JSON.parse(segments) : segments
+        const segmentsStr = JSON.stringify(segmentsArr)
 
-        // If previously approved, edits reset the approval (must re-approve before translate)
+        // If previously approved, edits reset the approval
         const newStatus = existing.status === 'approved_source' ? 'pending' : (existing.status ?? 'pending')
 
-        // Call upsertSubtitle directly (not the service) so we can explicitly set
-        // translateStatus:'pending' — the service would re-derive 'complete' from
-        // the still-present translations blob, which defeats the approval gate.
-        await upsertSubtitle({
-            projectId,
-            episodeId: episodeId || null,
-            language: existing.language ?? 'en',
-            segments: segmentsStr,
-            translations: existing.translations as string | null,
-            status: newStatus,
-            translateStatus: 'pending',  // explicit — blocks translate until re-approval
-            transcribedWith: existing.transcribedWith ?? undefined,
+        // Build placement update (only include defined fields)
+        const placementData: Record<string, unknown> = {}
+        if (placement) {
+            if (placement.verticalAnchor  !== undefined) placementData.verticalAnchor  = placement.verticalAnchor
+            if (placement.horizontalAlign !== undefined) placementData.horizontalAlign = placement.horizontalAlign
+            if (placement.offsetYPercent  !== undefined) placementData.offsetYPercent  = placement.offsetYPercent
+            if (placement.offsetXPercent  !== undefined) placementData.offsetXPercent  = placement.offsetXPercent
+            if (placement.safeAreaMarginPx !== undefined) placementData.safeAreaMarginPx = placement.safeAreaMarginPx
+            if (placement.backgroundStyle  !== undefined) placementData.backgroundStyle  = placement.backgroundStyle
+            if (placement.fontScale        !== undefined) placementData.fontScale        = placement.fontScale
+            if (placement.cueOverrides     !== undefined) placementData.cueOverrides     = JSON.stringify(placement.cueOverrides)
+        }
+
+        await prisma.filmSubtitle.update({
+            where: { id: existing.id },
+            data: {
+                segments: segmentsStr,
+                status: newStatus,
+                translateStatus: 'pending',
+                ...placementData,
+            },
+        })
+
+        // Save revision snapshot
+        const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true } })
+        await prisma.subtitleRevision.create({
+            data: {
+                subtitleId: existing.id,
+                savedBy: session.userId,
+                savedByEmail: user?.email ?? '',
+                changeSource: changeSource ?? 'manual_edit',
+                segmentsSnap: segmentsStr,
+                placementSnap: JSON.stringify(placement ?? {}),
+            },
         })
 
         return NextResponse.json({ ok: true, status: newStatus })
@@ -121,8 +164,9 @@ export async function PATCH(req: NextRequest) {
  * Sets status = 'approved_source', gate required before translation can run.
  */
 export async function PUT(req: NextRequest) {
-    const denied = await requireAdmin()
-    if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status })
+    const session = await getUserSession()
+    if (!session?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!hasAdminRole(session.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
     try {
         const body = await req.json()
@@ -138,6 +182,19 @@ export async function PUT(req: NextRequest) {
         }
 
         await updateSubtitleById(existing.id, { status: 'approved_source' })
+
+        // Save approve revision snapshot
+        const user = await prisma.user.findUnique({ where: { id: session.userId }, select: { email: true } })
+        await prisma.subtitleRevision.create({
+            data: {
+                subtitleId: existing.id,
+                savedBy: session.userId,
+                savedByEmail: user?.email ?? '',
+                changeSource: 'approve',
+                segmentsSnap: existing.segments,
+                placementSnap: JSON.stringify({}),
+            },
+        })
 
         return NextResponse.json({ ok: true, status: 'approved_source' })
     } catch (error) {

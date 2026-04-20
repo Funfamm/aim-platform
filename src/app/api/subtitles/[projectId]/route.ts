@@ -75,6 +75,23 @@ export async function GET(
         available: [...new Set(available)],
         status: subtitle.status,
         translateStatus: subtitle.translateStatus,
+        // T4-E: Placement metadata for the public player
+        placement: {
+            verticalAnchor:   (subtitle as Record<string, unknown>).verticalAnchor   ?? 'bottom',
+            horizontalAlign:  (subtitle as Record<string, unknown>).horizontalAlign  ?? 'center',
+            offsetYPercent:   (subtitle as Record<string, unknown>).offsetYPercent   ?? 0,
+            offsetXPercent:   (subtitle as Record<string, unknown>).offsetXPercent   ?? 0,
+            safeAreaMarginPx: (subtitle as Record<string, unknown>).safeAreaMarginPx ?? 12,
+            backgroundStyle:  (subtitle as Record<string, unknown>).backgroundStyle  ?? 'shadow',
+            fontScale:        (subtitle as Record<string, unknown>).fontScale        ?? 1.0,
+            cueOverrides: (() => {
+                try {
+                    const raw = (subtitle as Record<string, unknown>).cueOverrides
+                    if (!raw || raw === '{}') return {}
+                    return typeof raw === 'string' ? JSON.parse(raw) : raw
+                } catch { return {} }
+            })(),
+        },
     }, {
         headers: {
             'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
