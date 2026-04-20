@@ -943,6 +943,24 @@ export default function WatchPartyShell({
                                         marginRight: '4px',
                                     }}>{t('hostBadge')}</span>
 
+                                    {roomStatus === 'ended' && (
+                                        <button
+                                            className="wp-host-btn"
+                                            disabled={controlLoading}
+                                            onClick={() => sendControl('lobby', 0)}
+                                            style={{ background: 'rgba(212,168,83,0.1)', color: 'var(--accent-gold)' }}
+                                        >
+                                            {controlLoading ? '...' : (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                                                    </svg>
+                                                    {t('resetToLobby')}
+                                                </div>
+                                            )}
+                                        </button>
+                                    )}
+
                                     {roomStatus === 'lobby' && (
                                         <button
                                             className="wp-host-btn"
@@ -998,6 +1016,21 @@ export default function WatchPartyShell({
                                             borderTopColor: 'var(--accent-gold)',
                                             animation: 'wp-spin 0.7s linear infinite',
                                         }}/>
+                                    )}
+                                    {(roomStatus === 'playing' || roomStatus === 'paused') && (
+                                        <button
+                                            className="wp-host-btn"
+                                            disabled={controlLoading}
+                                            onClick={() => sendControl('ended', lastSeenTime)}
+                                            style={{ background: 'rgba(220,38,38,0.1)', color: '#f87171', borderColor: 'rgba(220,38,38,0.2)' }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+                                                </svg>
+                                                {t('endSession')}
+                                            </div>
+                                        </button>
                                     )}
                                 </div>
                             </>
