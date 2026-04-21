@@ -609,33 +609,36 @@ export default function AdminProjectsPage() {
             if (!subtitle) { alert('No subtitles found for this project. Generate them first.'); return }
             const segs: SubtitleCue[] = JSON.parse(subtitle.segments || '[]')
             
-            // Extract placement data — all stored as individual columns, NOT JSON
+            // Fix #5: null-coalesce every field — old records predate mobile columns and
+            // would produce undefined values that override DEFAULT_PLACEMENT defaults in useState.
             setEditorInitialPlacement({
-                verticalAnchor: subtitle.verticalAnchor,
-                horizontalAlign: subtitle.horizontalAlign,
-                offsetYPercent: subtitle.offsetYPercent,
-                offsetXPercent: subtitle.offsetXPercent,
-                safeAreaMarginPx: subtitle.safeAreaMarginPx,
-                backgroundStyle: subtitle.backgroundStyle,
-                fontScale: subtitle.fontScale,
-                cueOverrides: subtitle.cueOverrides ? (typeof subtitle.cueOverrides === 'string' ? JSON.parse(subtitle.cueOverrides) : subtitle.cueOverrides) : {},
+                verticalAnchor:   subtitle.verticalAnchor   ?? 'bottom',
+                horizontalAlign:  subtitle.horizontalAlign  ?? 'center',
+                offsetYPercent:   subtitle.offsetYPercent   ?? 0,
+                offsetXPercent:   subtitle.offsetXPercent   ?? 0,
+                safeAreaMarginPx: subtitle.safeAreaMarginPx ?? 12,
+                backgroundStyle:  subtitle.backgroundStyle  ?? 'shadow',
+                fontScale:        subtitle.fontScale        ?? 1.0,
+                cueOverrides: subtitle.cueOverrides
+                    ? (typeof subtitle.cueOverrides === 'string' ? JSON.parse(subtitle.cueOverrides) : subtitle.cueOverrides)
+                    : {},
             })
             // Mobile portrait placement — stored as individual columns, NOT a JSON field
             setEditorInitialMobilePlacement({
-                verticalAnchor: subtitle.mobileVerticalAnchor,
-                horizontalAlign: subtitle.mobileHorizontalAlign,
-                offsetYPercent: subtitle.mobileOffsetYPercent,
-                offsetXPercent: subtitle.mobileOffsetXPercent,
-                safeAreaMarginPx: subtitle.mobileSafeAreaMarginPx,
-                fontScale: subtitle.mobileFontScale,
+                verticalAnchor:   subtitle.mobileVerticalAnchor   ?? 'bottom',
+                horizontalAlign:  subtitle.mobileHorizontalAlign  ?? 'center',
+                offsetYPercent:   subtitle.mobileOffsetYPercent   ?? 0,
+                offsetXPercent:   subtitle.mobileOffsetXPercent   ?? 0,
+                safeAreaMarginPx: subtitle.mobileSafeAreaMarginPx ?? 20,
+                fontScale:        subtitle.mobileFontScale        ?? 0.9,
             })
             setEditorInitialLandscapePlacement({
-                verticalAnchor: subtitle.landscapeVerticalAnchor,
-                horizontalAlign: subtitle.landscapeHorizontalAlign,
-                offsetYPercent: subtitle.landscapeOffsetYPercent,
-                offsetXPercent: subtitle.landscapeOffsetXPercent,
-                safeAreaMarginPx: subtitle.landscapeSafeAreaMarginPx,
-                fontScale: subtitle.landscapeFontScale,
+                verticalAnchor:   subtitle.landscapeVerticalAnchor   ?? 'bottom',
+                horizontalAlign:  subtitle.landscapeHorizontalAlign  ?? 'center',
+                offsetYPercent:   subtitle.landscapeOffsetYPercent   ?? 0,
+                offsetXPercent:   subtitle.landscapeOffsetXPercent   ?? 0,
+                safeAreaMarginPx: subtitle.landscapeSafeAreaMarginPx ?? 20,
+                fontScale:        subtitle.landscapeFontScale        ?? 0.9,
             })
             setEditorUseSeparateMobile(subtitle.useSeparateMobilePlacement ?? false)
             

@@ -182,7 +182,7 @@ export default function SubtitleEditor({
         ...initialPlacement,
         cueOverrides: (initialPlacement as PlacementState | undefined)?.cueOverrides ?? {},
     })
-    const [showPlacement, setShowPlacement] = useState(false)
+    // showPlacement removed — placement controls are always visible in the NLE left panel
 
     // ── Mobile placement state ───────────────────────────────────────────────────
     const [useSeparateMobile, setUseSeparateMobile] = useState(initUseMobile)
@@ -594,9 +594,14 @@ export default function SubtitleEditor({
     saveDraftRef.current = () => saveDraft('manual_edit')
 
     const approve = async () => {
-        // Phase 3: require the admin to have previewed on mobile before approving
+        // Fix #7: require previewing portrait always, and landscape when independently configured
         if (!previewedDevices.has('portrait')) {
             setMsg('⚠️ Please preview on mobile (portrait) before approving.')
+            setTimeout(() => setMsg(''), 4000)
+            return
+        }
+        if (useSeparateMobile && !previewedDevices.has('landscape')) {
+            setMsg('⚠️ You have independent landscape placement — please preview landscape before approving.')
             setTimeout(() => setMsg(''), 4000)
             return
         }
@@ -626,6 +631,9 @@ export default function SubtitleEditor({
     const previewRef = useRef<HTMLDivElement>(null)
     const dragState = useRef<{ startY: number; startOffset: number } | null>(null)
     const rafRef = useRef<number | null>(null)
+
+    // Fix #14: refs for auto-scrolling to active cue in the timeline
+    const cueRowRefs = useRef<Array<HTMLDivElement | null>>([])
 
     const handlePreviewDragStart = (e: React.MouseEvent | React.TouchEvent) => {
         const y = 'touches' in e ? e.touches[0].clientY : e.clientY
@@ -694,17 +702,22 @@ export default function SubtitleEditor({
         const base = baseMap[p.verticalAnchor] ?? 5
         const offsetY = 'offsetYPercent' in p ? p.offsetYPercent : 0
         const vH = videoRect.h || 270
-        // Match WatchPlayer formula exactly:
-        // bottomPx = ((base + offset) / 100 * videoRect.h) + safeMargin + controlsBarPx
-        // The controls bar in the real player is ~58px at full size; scale it
-        // proportionally for the preview's smaller video height.
-        const controlsBarPx = showControlsBar ? Math.round(58 * (vH / 360)) : Math.round(12 * (vH / 360))
+        // Fix #6: use exact same formula as WatchPlayer — fixed 58px controls bar, not scaled.
+        // WatchPlayer: bottomPx = ((base + offset) / 100 * videoRect.h) + safeMargin + (showControls ? 58 : 12)
+        const controlsBarPx = showControlsBar ? 58 : 12
         // For mobile portrait, enforce minimum safe margin (same as WatchPlayer)
         const isPortrait = previewDevice === 'portrait'
         const safeMargin = isPortrait ? Math.max(20, p.safeAreaMarginPx) : p.safeAreaMarginPx
         const bottomPx = ((base + offsetY) / 100 * vH) + safeMargin + controlsBarPx
         return `${Math.round(bottomPx)}px`
     }
+
+    // Fix #14: auto-scroll timeline to active cue when it changes during playback
+    useEffect(() => {
+        if (activeCue >= 0 && cueRowRefs.current[activeCue]) {
+            cueRowRefs.current[activeCue]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
+    }, [activeCue])
 
     // For the preview panel, choose placement based on active device
     const activePlacement: PlacementState | MobilePlacementState =
@@ -724,13 +737,13 @@ export default function SubtitleEditor({
         : previewDevice === 'portrait' ? 'portrait (independent)'
         : 'landscape (independent)'
 
-    // Preview container dimensions per device
-    // Portrait: iPhone SE-ish (320×568) — large enough for reliable subtitle placement judging.
+    // Preview container dimensions per device.
+    // Portrait: iPhone 8 / SE2 (375×667) — standard modern baseline, better than 320×568 SE.
     // Desktop: 480×270 (16:9 at comfortable editing width).
     const previewDims: Record<PreviewDevice, { w: number; h: number }> = {
-        desktop:  { w: 480, h: 270 },
-        portrait: { w: 320, h: 568 },
-        landscape: { w: 480, h: 270 },
+        desktop:   { w: 480, h: 270 },
+        portrait:  { w: 375, h: 667 },  // Fix #4: iPhone 8/SE2 size (375×667) — more representative than 320×568
+        landscape: { w: 568, h: 320 },  // Fix #4: matching portrait dimensions rotated
     }
     const dim = previewDims[previewDevice]
 
@@ -840,12 +853,8 @@ export default function SubtitleEditor({
                     {/* Export */}
                     <button onClick={exportSrt} style={btnStyle()}>⬇ SRT</button>
 
-                    {/* Placement toggle */}
-                    <button
-                        onClick={() => setShowPlacement(v => !v)}
-                        title="Subtitle placement controls"
-                        style={{ ...btnStyle(showPlacement ? 'primary' : 'default'), minWidth: '28px' }}
-                    >📐</button>
+                    {/* Restore original */}
+                    <button onClick={restoreOriginal} title="Restore original generated subtitles" style={btnStyle('danger')}>↺ Orig</button>
 
                     {/* Revisions */}
                     <button
@@ -853,9 +862,6 @@ export default function SubtitleEditor({
                         title="Revision history"
                         style={btnStyle()}
                     >🕓</button>
-
-                    {/* Restore original */}
-                    <button onClick={restoreOriginal} title="Restore original generated subtitles" style={btnStyle('danger')}>↺ Orig</button>
 
                     {/* Save Draft */}
                     <button onClick={() => saveDraft('manual_edit')} disabled={saving}
@@ -874,7 +880,15 @@ export default function SubtitleEditor({
                         }}
                     >{approving ? 'Approving…' : isApproved ? '✓ Approved' : hardErrors > 0 ? `✗ ${hardErrors} error${hardErrors > 1 ? 's' : ''}` : needsMobilePreview ? '📱 Preview mobile first' : '✓ Approve Source'}</button>
 
-                    <button onClick={onClose} style={{ padding: '5px 10px', fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>✕</button>
+                    {/* Fix #13: unsaved-changes guard on close */}
+                    <button
+                        onClick={() => {
+                            const hasDirty = isDirtyDesktop || isDirtyMobile || isDirtyLandscape || isDirtyUseMobile
+                            if (hasDirty && !confirm('You have unsaved placement changes. Close without saving?')) return
+                            onClose()
+                        }}
+                        style={{ padding: '5px 10px', fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}
+                    >✕</button>
                 </div>
             </div>
 
@@ -899,454 +913,500 @@ export default function SubtitleEditor({
                 }}>{msg}</div>
             )}
 
-            {/* ── Body ── */}
+            {/* ── NLE Body: Left Controls | Center Preview | Right Info ── */}
             <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
 
-                {/* LEFT: video preview + placement panel */}
-                {filmUrl && (
-                    <div className="aim-editor-video-panel" style={{ width: dim.w + 24, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#000', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+                {/* ══════════ LEFT PANEL — Position Controls ══════════ */}
+                <div style={{
+                    width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column',
+                    borderRight: '1px solid rgba(255,255,255,0.07)', background: 'rgba(10,12,17,0.98)',
+                    overflowY: 'auto',
+                }}>
+                    {/* Panel header */}
+                    <div style={{ padding: '10px 12px 6px', borderBottom: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(212,168,83,0.7)', textTransform: 'uppercase' }}>Position Controls</div>
+                    </div>
 
-                        {/* Device preview toggle (Phase 3) */}
-                        <div style={{ display: 'flex', gap: '2px', padding: '6px 8px', background: 'rgba(0,0,0,0.8)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-                            {(['desktop', 'portrait', 'landscape'] as PreviewDevice[]).map(d => (
-                                <button key={d}
-                                    onClick={() => { setPreviewDevice(d); markDevicePreviewed(d) }}
+                    {/* Device tab switcher */}
+                    <div style={{ padding: '8px 10px 0', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', gap: '2px', padding: '2px', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.07)' }}>
+                            {([
+                                { id: 'desktop',   label: '🖥 Desktop',   dirty: isDirtyDesktop,   device: 'desktop' as PreviewDevice },
+                                { id: 'portrait',  label: '📱 Port.',      dirty: isDirtyMobile,    device: 'portrait' as PreviewDevice },
+                                { id: 'landscape', label: '📱 Land.',      dirty: isDirtyLandscape, device: 'landscape' as PreviewDevice },
+                            ]).map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => { setPreviewDevice(tab.device); markDevicePreviewed(tab.device) }}
                                     style={{
-                                        flex: 1, padding: '3px 6px', fontSize: '0.58rem', cursor: 'pointer', borderRadius: '5px',
-                                        background: previewDevice === d ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
-                                        border: `1px solid ${previewDevice === d ? 'rgba(212,168,83,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                                        color: previewDevice === d ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                                        fontWeight: previewDevice === d ? 700 : 400,
+                                        flex: 1, padding: '5px 2px', fontSize: '0.56rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer',
+                                        background: previewDevice === tab.device ? 'rgba(212,168,83,0.15)' : 'transparent',
+                                        border: 'none',
+                                        color: previewDevice === tab.device ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                        position: 'relative', transition: 'all 0.2s',
                                     }}
                                 >
-                                    {d === 'desktop' ? '🖥 Desktop' : d === 'portrait' ? '📱 Portrait' : '📱 Land.'}
-                                    {previewedDevices.has(d) && <span style={{ marginLeft: '3px', color: '#4ade80' }}>✓</span>}
+                                    {tab.label}
+                                    {previewedDevices.has(tab.device) && <span style={{ position: 'absolute', top: '2px', right: '2px', fontSize: '0.45rem', color: '#4ade80' }}>✓</span>}
+                                    {tab.dirty && <span style={{ position: 'absolute', top: '2px', left: '2px', width: '4px', height: '4px', background: '#f59e0b', borderRadius: '50%', boxShadow: '0 0 4px #f59e0b' }} />}
                                 </button>
                             ))}
                         </div>
+                    </div>
 
-                        {/* Video preview with subtitle overlay */}
-                        <div ref={previewRef} style={{
-                            position: 'relative', width: `${dim.w}px`, height: `${dim.h}px`,
-                            background: '#111', flexShrink: 0, margin: '0 auto',
-                            border: previewDevice !== 'desktop' ? '2px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.07)',
-                            borderRadius: previewDevice === 'portrait' ? '16px' : previewDevice === 'landscape' ? '8px' : '4px',
-                            overflow: 'hidden',
-                        }}>
-                            <video ref={videoRef} src={filmUrl} controls controlsList="nodownload" style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: previewDevice === 'portrait' ? 'top center' : 'center center' }} />
+                    {/* Enable independent mobile toggle */}
+                    <div style={{ padding: '8px 12px 0', flexShrink: 0 }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.58rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={useSeparateMobile} onChange={e => setUseSeparateMobile(e.target.checked)}
+                                style={{ accentColor: 'var(--accent-gold)' }} />
+                            <span>Independent mobile positioning {isDirtyUseMobile && <span style={{ color: '#f59e0b' }}>●</span>}</span>
+                        </label>
+                    </div>
 
-                            {/* Video-rect overlay — matches the actual rendered video frame.
-                                All subtitle/safe-zone positioning inside this div is relative
-                                to the visible video, not the letterboxed container. */}
-                            <div style={{
-                                position: 'absolute',
-                                left: `${videoRect.x}px`, top: `${videoRect.y}px`,
-                                width: `${videoRect.w}px`, height: `${videoRect.h}px`,
-                                pointerEvents: 'none',
-                            }}>
+                    {/* Fallback notice when mobile positioning is off */}
+                    {!useSeparateMobile && previewDevice !== 'desktop' && (
+                        <div style={{ margin: '8px 10px 0', padding: '8px', background: 'rgba(212,168,83,0.04)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: '7px', fontSize: '0.57rem', color: 'rgba(212,168,83,0.7)', textAlign: 'center', lineHeight: 1.4 }}>
+                            Independent mobile placement <strong>disabled</strong>.<br/>Reflecting Desktop settings.
+                        </div>
+                    )}
 
-                                {/* Safe-zone guide bands — relative to video rect */}
-                                {showSafeZones && (() => {
-                                    const ctrlH = showControlsBar ? 12 : 8
-                                    const homeH = previewDevice === 'portrait' ? 5 : 0
-                                    const safeTop = 100 - ctrlH - homeH - 20
-                                    const safeBot = 100 - ctrlH - homeH
-                                    return (
-                                        <>
-                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${ctrlH}%`, background: 'rgba(239,68,68,0.18)', borderTop: '1px dashed rgba(239,68,68,0.6)', pointerEvents: 'none', zIndex: 4 }}>
-                                                <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.42rem', color: 'rgba(239,68,68,0.9)', fontWeight: 700 }}>Controls</span>
-                                            </div>
-                                            {homeH > 0 && (
-                                                <div style={{ position: 'absolute', bottom: `${ctrlH}%`, left: 0, right: 0, height: `${homeH}%`, background: 'rgba(245,158,11,0.18)', borderTop: '1px dashed rgba(245,158,11,0.6)', pointerEvents: 'none', zIndex: 4 }}>
-                                                    <span style={{ position: 'absolute', top: '1px', left: '4px', fontSize: '0.38rem', color: 'rgba(245,158,11,0.9)', fontWeight: 700 }}>Home indicator</span>
-                                                </div>
-                                            )}
-                                            <div style={{ position: 'absolute', bottom: `${safeBot}%`, left: 0, right: 0, height: `${safeTop - safeBot + 20}%`, background: 'rgba(34,197,94,0.07)', borderTop: '1px dashed rgba(34,197,94,0.4)', borderBottom: '1px dashed rgba(34,197,94,0.4)', pointerEvents: 'none', zIndex: 3 }}>
-                                                <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.40rem', color: 'rgba(34,197,94,0.8)', fontWeight: 700 }}>Safe zone</span>
-                                            </div>
-                                        </>
-                                    )
-                                })()}
+                    {/* Placement controls */}
+                    {(useSeparateMobile || previewDevice === 'desktop') && (() => {
+                        const isDesktop = previewDevice === 'desktop'
+                        const p = isDesktop ? placement : previewDevice === 'portrait' ? mobilePlacement : landscapePlacement
+                        const setter = isDesktop ? setPlacement : (previewDevice === 'portrait' ? setMobilePlacement : setLandscapePlacement) as any
 
-                                {/* Mock controls bar */}
-                                {showControlsBar && (
-                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '12%', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '4px', pointerEvents: 'none', zIndex: 5 }}>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-                                        <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 4px' }}>
-                                            <div style={{ width: '35%', height: '100%', background: 'var(--accent-gold)', borderRadius: '2px' }} />
+                        return (
+                            <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+
+                                {/* Vertical Anchor */}
+                                <div>
+                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '5px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Vertical Anchor</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                                        {ANCHOR_PRESETS.filter(ap => isDesktop || ap.id === 'bottom' || ap.id === 'lower_third').map(ap => (
+                                            <button key={ap.id} onClick={() => setter((prev: any) => ({ ...prev, verticalAnchor: ap.id }))}
+                                                className={`aim-placement-btn${p.verticalAnchor === ap.id ? ' active' : ''}`}
+                                                style={{
+                                                    flex: '1 0 calc(50% - 3px)', padding: '5px 6px', fontSize: '0.6rem', cursor: 'pointer',
+                                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                                                    borderRadius: '5px', color: 'var(--text-secondary)', textAlign: 'left',
+                                                }}
+                                            >{ap.label}</button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Y / X Offsets */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.53rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Y-Offset: {p.offsetYPercent > 0 ? '+' : ''}{p.offsetYPercent}%</div>
+                                        <input type="range" min={isDesktop ? -20 : -5} max={isDesktop ? 20 : 25} step="0.5" value={p.offsetYPercent}
+                                            onChange={e => setter((prev: any) => ({ ...prev, offsetYPercent: parseFloat(e.target.value) }))}
+                                            style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.53rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>X-Offset: {p.offsetXPercent > 0 ? '+' : ''}{p.offsetXPercent}%</div>
+                                        <input type="range" min="-15" max="15" step="0.5" value={p.offsetXPercent}
+                                            onChange={e => setter((prev: any) => ({ ...prev, offsetXPercent: parseFloat(e.target.value) }))}
+                                            style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Font Scale */}
+                                <div>
+                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '5px' }}>Font Scale</div>
+                                    <div style={{ display: 'flex', gap: '2px' }}>
+                                        {[0.8, 0.9, 1.0, 1.1, 1.25].map(s => (
+                                            <button key={s} onClick={() => setter((prev: any) => ({ ...prev, fontScale: s }))}
+                                                style={{
+                                                    flex: 1, padding: '4px 2px', fontSize: '0.56rem', fontWeight: 600, cursor: 'pointer',
+                                                    background: p.fontScale === s ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)',
+                                                    border: `1px solid ${p.fontScale === s ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                                    borderRadius: '5px', color: p.fontScale === s ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                }}
+                                            >{s}×</button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Safe Margin */}
+                                <div>
+                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Safe Margin: {p.safeAreaMarginPx}px</div>
+                                    <input type="range" min="0" max="60" step="1" value={p.safeAreaMarginPx}
+                                        onChange={e => setter((prev: any) => ({ ...prev, safeAreaMarginPx: parseInt(e.target.value) }))}
+                                        style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
+                                    />
+                                </div>
+
+                                {/* Desktop Background style */}
+                                {isDesktop && (
+                                    <div>
+                                        <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '5px' }}>Background Style</div>
+                                        <div style={{ display: 'flex', gap: '3px' }}>
+                                            {(['none', 'shadow', 'box'] as const).map(b => (
+                                                <button key={b} onClick={() => setPlacement(prev => ({ ...prev, backgroundStyle: b }))}
+                                                    style={{
+                                                        flex: 1, padding: '4px', fontSize: '0.58rem', fontWeight: 600, cursor: 'pointer',
+                                                        background: placement.backgroundStyle === b ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)',
+                                                        border: `1px solid ${placement.backgroundStyle === b ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                                                        borderRadius: '5px', color: placement.backgroundStyle === b ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                    }}
+                                                >{b[0].toUpperCase() + b.slice(1)}</button>
+                                            ))}
                                         </div>
-                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)', marginRight: '6px' }} />
                                     </div>
                                 )}
 
-                                {/* Subtitle overlay — positioned relative to the video rect */}
-                                {activeCueText && (() => {
-                                    const p = activePlacement
-                                    const fontPx = computePreviewFontPx(p.fontScale, videoRect.w)
-                                    return (
-                                        <div
-                                            onMouseDown={handlePreviewDragStart}
-                                            onTouchStart={handlePreviewDragStart}
-                                            style={{
-                                                position: 'absolute',
-                                                left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
-                                                right: p.horizontalAlign === 'right' ? '5%' : 'auto',
-                                                transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                                bottom: getSubtitleBottom(p),
-                                                cursor: 'ns-resize',
-                                                maxWidth: '90%',
-                                                padding: '3px 10px',
-                                                borderRadius: '5px',
-                                                fontSize: fontPx,
-                                                fontWeight: 600,
-                                                lineHeight: 1.5,
-                                                color: '#fff',
-                                                textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
-                                                background: 'backgroundStyle' in p && p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
-                                                textShadow: 'backgroundStyle' in p && p.backgroundStyle === 'shadow'
-                                                    ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
-                                                pointerEvents: 'all',
-                                                userSelect: 'none',
-                                                zIndex: 6,
-                                            }}
-                                        >
-                                            {activeCueText}
-                                        </div>
-                                    )
-                                })()}
-                            </div>{/* /video-rect overlay */}
+                                {/* Quick Actions */}
+                                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px' }}>
+                                    <div style={{ fontSize: '0.52rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>Quick Actions</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                                        <button onClick={() => {
+                                            if (!confirm(`Reset ${previewDevice} placement to defaults?`)) return
+                                            if (isDesktop) setPlacement({ ...DEFAULT_PLACEMENT })
+                                            else if (previewDevice === 'portrait') setMobilePlacement({ ...DEFAULT_MOBILE_PLACEMENT })
+                                            else setLandscapePlacement({ ...DEFAULT_MOBILE_PLACEMENT })
+                                            setMsg(`✓ ${previewDevice} placement reset`); setTimeout(() => setMsg(''), 2500)
+                                        }} style={{ padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '5px', color: '#f87171' }}>🔄 Reset Default</button>
 
-                            {/* Device label badge */}
-                            <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.45rem', color: 'rgba(212,168,83,0.7)', padding: '2px 6px', background: 'rgba(0,0,0,0.6)', borderBottomLeftRadius: '6px', zIndex: 7 }}>
-                                {previewDevice === 'desktop' ? `${dim.w}×${dim.h} • drag to reposition` : `📱 ${previewDevice} • ${dim.w}×${dim.h}`}  |  video: {videoRect.w}×{videoRect.h}
-                            </div>
+                                        <button onClick={() => {
+                                            const safePatch = { verticalAnchor: 'lower_third', safeAreaMarginPx: isDesktop ? 12 : previewDevice === 'portrait' ? 20 : 12, offsetYPercent: 0 }
+                                            if (isDesktop) setPlacement(prev => ({ ...prev, ...safePatch }))
+                                            else if (previewDevice === 'portrait') setMobilePlacement(prev => ({ ...prev, ...safePatch }))
+                                            else setLandscapePlacement(prev => ({ ...prev, ...safePatch }))
+                                            setMsg('✓ Snapped to safe zone'); setTimeout(() => setMsg(''), 2500)
+                                        }} style={{ padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '5px', color: '#4ade80' }}>🎯 Snap Safe</button>
 
-                            {/* Debug geometry overlay */}
-                            {showDebug && (
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '4px 6px', background: 'rgba(0,20,0,0.85)', fontSize: '0.42rem', color: '#00ff88', fontFamily: 'monospace', lineHeight: 1.5, zIndex: 8, pointerEvents: 'none', whiteSpace: 'pre-wrap' }}>
-                                    {`source: ${placementSource}\nvideo: ${videoRect.w}×${videoRect.h} @(${videoRect.x},${videoRect.y})\nanchor: ${activePlacement.verticalAnchor} | align: ${activePlacement.horizontalAlign}\noffsetY: ${activePlacement.offsetYPercent}% | margin: ${activePlacement.safeAreaMarginPx}px\nfont: ${activePlacement.fontScale}× → ${computePreviewFontPx(activePlacement.fontScale, videoRect.w)}\nbottom: ${getSubtitleBottom(activePlacement)}`}
+                                        {!isDesktop && (
+                                            <button onClick={() => {
+                                                const patch = { verticalAnchor: placement.verticalAnchor, horizontalAlign: placement.horizontalAlign, offsetYPercent: placement.offsetYPercent, offsetXPercent: placement.offsetXPercent, safeAreaMarginPx: placement.safeAreaMarginPx, fontScale: placement.fontScale }
+                                                if (previewDevice === 'portrait') setMobilePlacement(prev => ({ ...prev, ...patch }))
+                                                else setLandscapePlacement(prev => ({ ...prev, ...patch }))
+                                                setMsg(`✓ Copied Desktop → ${previewDevice}`); setTimeout(() => setMsg(''), 2500)
+                                            }} style={{ padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: '5px', color: '#818cf8' }}>📋 Copy Desktop</button>
+                                        )}
+
+                                        {!isDesktop && (
+                                            <button onClick={() => {
+                                                if (previewDevice === 'portrait') { setMobilePlacement(prev => ({ ...prev, ...landscapePlacement })); setMsg('✓ Copied Landscape → Portrait') }
+                                                else { setLandscapePlacement(prev => ({ ...prev, ...mobilePlacement })); setMsg('✓ Copied Portrait → Landscape') }
+                                                setTimeout(() => setMsg(''), 2500)
+                                            }} style={{ padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.12)', borderRadius: '5px', color: '#c084fc' }}>📋 Copy {previewDevice === 'portrait' ? 'Land.' : 'Port.'}</button>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
 
-                        </div>
+                                {/* Per-device Save button */}
+                                <button
+                                    onClick={() => saveDraft(`${previewDevice}_layout`)}
+                                    disabled={saving}
+                                    style={{
+                                        width: '100%', padding: '8px', fontSize: '0.68rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
+                                        background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.07))',
+                                        border: '1px solid rgba(212,168,83,0.35)', borderRadius: '8px',
+                                        color: 'var(--accent-gold)', opacity: saving ? 0.6 : 1, transition: 'all 0.15s',
+                                        marginTop: '2px',
+                                    }}
+                                >
+                                    {saving ? 'Saving…' : `💾 Save ${previewDevice === 'desktop' ? 'Desktop' : previewDevice === 'portrait' ? 'Portrait' : 'Landscape'} Layout`}
+                                </button>
+                            </div>
+                        )
+                    })()}
 
-
-                        {/* Preview aid toggles */}
-                        <div style={{ display: 'flex', gap: '6px', padding: '6px 8px', borderTop: '1px solid rgba(255,255,255,0.07)', flexWrap: 'wrap' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.58rem', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                    {/* Preview aids + keyboard shortcuts at bottom of left panel */}
+                    <div style={{ padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.56rem', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={showSafeZones} onChange={e => setShowSafeZones(e.target.checked)} style={{ accentColor: 'var(--accent-gold)' }} />
                                 Safe zones
                             </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.58rem', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.56rem', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={showControlsBar} onChange={e => setShowControlsBar(e.target.checked)} style={{ accentColor: 'var(--accent-gold)' }} />
                                 Controls bar
                             </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.58rem', color: 'rgba(0,255,136,0.5)', cursor: 'pointer' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.56rem', color: 'rgba(0,255,136,0.5)', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={showDebug} onChange={e => setShowDebug(e.target.checked)} style={{ accentColor: '#00ff88' }} />
                                 Debug
                             </label>
                         </div>
+                        <div style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1.7 }}>
+                            <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+S</kbd> Save </span>
+                            <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Z</kbd> Undo </span>
+                            <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Y</kbd> Redo</span>
+                        </div>
+                    </div>
+                </div>
 
-                        {/* ── Subtitle Placement Settings (T4-R) ── */}
-                        {showPlacement && (
-                            <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                
-                                {/* ── Device Tab Switcher (Placement Context) ── */}
-                                <div style={{ display: 'flex', gap: '4px', padding: '2px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                                    {[
-                                        { id: 'desktop',   label: '🖥 Desktop',   dirty: isDirtyDesktop,   device: 'desktop' as PreviewDevice },
-                                        { id: 'portrait',  label: '📱 Portrait',  dirty: isDirtyMobile,    device: 'portrait' as PreviewDevice },
-                                        { id: 'landscape', label: '📱 Land.',     dirty: isDirtyLandscape, device: 'landscape' as PreviewDevice },
-                                    ].map(tab => (
-                                        <button
-                                            key={tab.id}
-                                            onClick={() => { setPreviewDevice(tab.device); markDevicePreviewed(tab.device) }}
-                                            style={{
-                                                flex: 1, padding: '6px 4px', fontSize: '0.62rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer',
-                                                background: previewDevice === tab.device ? 'rgba(212,168,83,0.12)' : 'transparent',
-                                                border: 'none',
-                                                color: previewDevice === tab.device ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                                                position: 'relative', transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            {tab.label}
-                                            {tab.dirty && <span style={{ position: 'absolute', top: '2px', right: '2px', width: '5px', height: '5px', background: '#f59e0b', borderRadius: '50%', boxShadow: '0 0 4px #f59e0b' }} />}
-                                        </button>
-                                    ))}
-                                </div>
+                {/* ══════════ CENTER PANEL — Video Preview ══════════ */}
+                {filmUrl && (
+                    <div className="aim-editor-video-panel" style={{
+                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        background: '#080a0e', borderRight: '1px solid rgba(255,255,255,0.07)',
+                        overflow: 'hidden', minWidth: 0,
+                    }}>
+                        {/* Device selector (top of center panel) */}
+                        <div style={{ display: 'flex', gap: '2px', padding: '6px 10px', width: '100%', background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(255,255,255,0.06)', boxSizing: 'border-box', flexShrink: 0 }}>
+                            {(['desktop', 'portrait', 'landscape'] as PreviewDevice[]).map(d => (
+                                <button key={d}
+                                    onClick={() => { setPreviewDevice(d); markDevicePreviewed(d) }}
+                                    style={{
+                                        flex: 1, padding: '4px 6px', fontSize: '0.58rem', cursor: 'pointer', borderRadius: '5px',
+                                        background: previewDevice === d ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.03)',
+                                        border: `1px solid ${previewDevice === d ? 'rgba(212,168,83,0.5)' : 'rgba(255,255,255,0.06)'}`,
+                                        color: previewDevice === d ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                        fontWeight: previewDevice === d ? 700 : 400,
+                                    }}
+                                >
+                                    {d === 'desktop' ? '🖥 Desktop' : d === 'portrait' ? '📱 Portrait' : '📱 Landscape'}
+                                    {previewedDevices.has(d) && <span style={{ marginLeft: '4px', color: '#4ade80' }}>✓</span>}
+                                </button>
+                            ))}
+                        </div>
 
-                                {/* Enable/Disable Independent Mobile Placement */}
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.62rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                                    <input type="checkbox" checked={useSeparateMobile} onChange={e => setUseSeparateMobile(e.target.checked)}
-                                        style={{ accentColor: 'var(--accent-gold)' }} />
-                                    <span>Enable independent mobile positioning {isDirtyUseMobile && <span style={{ color: '#f59e0b' }}>●</span>}</span>
-                                </label>
+                        {/* Preview area — video centered, scales to available space */}
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
+                            <div ref={previewRef} style={{
+                                position: 'relative',
+                                width: `${dim.w}px`, height: `${dim.h}px`,
+                                maxWidth: '100%',
+                                background: '#111', flexShrink: 0,
+                                border: previewDevice !== 'desktop' ? '2px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.07)',
+                                borderRadius: previewDevice === 'portrait' ? '20px' : previewDevice === 'landscape' ? '8px' : '4px',
+                                overflow: 'hidden',
+                                boxShadow: previewDevice !== 'desktop' ? '0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)' : 'none',
+                            }}>
+                                <video ref={videoRef} src={filmUrl} controls controlsList="nodownload"
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: previewDevice === 'portrait' ? 'top center' : 'center center' }}
+                                />
 
-                                {/* Fallback warning for mobile preview when disabled */}
-                                {!useSeparateMobile && previewDevice !== 'desktop' && (
-                                    <div style={{ padding: '10px', background: 'rgba(212,168,83,0.04)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: '8px', fontSize: '0.6rem', color: 'rgba(212,168,83,0.7)', textAlign: 'center', lineHeight: 1.4 }}>
-                                        Independent mobile placement is <strong>disabled</strong>.<br/>This view reflects Desktop settings.
-                                    </div>
-                                )}
-
-                                {/* Setting Controls (Switchable based on tab) */}
-                                {(useSeparateMobile || previewDevice === 'desktop') && (() => {
-                                    const isDesktop = previewDevice === 'desktop'
-                                    const p = isDesktop ? placement : previewDevice === 'portrait' ? mobilePlacement : landscapePlacement
-                                    const setter = isDesktop ? setPlacement : (previewDevice === 'portrait' ? setMobilePlacement : setLandscapePlacement) as any
-
-                                    return (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                            {/* Vertical anchor selection */}
-                                            <div>
-                                                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Vertical Anchor</div>
-                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                                                    {ANCHOR_PRESETS.filter(ap => isDesktop || ap.id === 'bottom' || ap.id === 'lower_third').map(ap => (
-                                                        <button key={ap.id} onClick={() => setter((prev: any) => ({ ...prev, verticalAnchor: ap.id }))}
-                                                            className={`aim-placement-btn${p.verticalAnchor === ap.id ? ' active' : ''}`}
-                                                            style={{ 
-                                                                flex: '1 0 calc(50% - 4px)', padding: '5px 8px', fontSize: '0.62rem', cursor: 'pointer', 
-                                                                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', 
-                                                                borderRadius: '5px', color: 'var(--text-secondary)', textAlign: 'left' 
-                                                            }}
-                                                        >{ap.label}</button>
-                                                    ))}
+                                {/* Video-rect overlay */}
+                                <div style={{
+                                    position: 'absolute',
+                                    left: `${videoRect.x}px`, top: `${videoRect.y}px`,
+                                    width: `${videoRect.w}px`, height: `${videoRect.h}px`,
+                                    pointerEvents: 'none',
+                                }}>
+                                    {/* Safe-zone guide bands */}
+                                    {showSafeZones && (() => {
+                                        const ctrlH = showControlsBar ? 12 : 8
+                                        const homeH = previewDevice === 'portrait' ? 5 : 0
+                                        const safeTop = 100 - ctrlH - homeH - 20
+                                        const safeBot = 100 - ctrlH - homeH
+                                        return (
+                                            <>
+                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${ctrlH}%`, background: 'rgba(239,68,68,0.18)', borderTop: '1px dashed rgba(239,68,68,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                                    <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.42rem', color: 'rgba(239,68,68,0.9)', fontWeight: 700 }}>Controls</span>
                                                 </div>
-                                            </div>
-
-                                            {/* X/Y Offset Sliders (Grid) */}
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                                <div>
-                                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Y-Offset: {p.offsetYPercent > 0 ? '+' : ''}{p.offsetYPercent}%</div>
-                                                    <input type="range" min={isDesktop ? -20 : -5} max={isDesktop ? 20 : 25} step="0.5" value={p.offsetYPercent}
-                                                        onChange={e => setter((prev: any) => ({ ...prev, offsetYPercent: parseFloat(e.target.value) }))}
-                                                        style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>X-Offset: {p.offsetXPercent > 0 ? '+' : ''}{p.offsetXPercent}%</div>
-                                                    <input type="range" min="-15" max="15" step="0.5" value={p.offsetXPercent}
-                                                        onChange={e => setter((prev: any) => ({ ...prev, offsetXPercent: parseFloat(e.target.value) }))}
-                                                        style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* Font Scale Presets */}
-                                            <div>
-                                                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Font Scale</div>
-                                                <div style={{ display: 'flex', gap: '3px' }}>
-                                                    {[0.8, 0.9, 1.0, 1.1, 1.25].map(s => (
-                                                        <button key={s} onClick={() => setter((prev: any) => ({ ...prev, fontScale: s }))}
-                                                            style={{ 
-                                                                flex: 1, padding: '4px', fontSize: '0.58rem', fontWeight: 600, cursor: 'pointer', 
-                                                                background: p.fontScale === s ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)', 
-                                                                border: `1px solid ${p.fontScale === s ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`, 
-                                                                borderRadius: '5px', color: p.fontScale === s ? 'var(--accent-gold)' : 'var(--text-tertiary)' 
-                                                            }}
-                                                        >{s}×</button>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* Safe margin Slider */}
-                                            <div>
-                                                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Safe Margin: {p.safeAreaMarginPx}px</div>
-                                                <input type="range" min="0" max="60" step="1" value={p.safeAreaMarginPx}
-                                                    onChange={e => setter((prev: any) => ({ ...prev, safeAreaMarginPx: parseInt(e.target.value) }))}
-                                                    style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
-                                                />
-                                            </div>
-
-                                            {/* Desktop-only Background styles */}
-                                            {isDesktop && (
-                                                <div>
-                                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Background Style</div>
-                                                    <div style={{ display: 'flex', gap: '3px' }}>
-                                                        {(['none', 'shadow', 'box'] as const).map(b => (
-                                                            <button key={b} onClick={() => setPlacement(prev => ({ ...prev, backgroundStyle: b }))}
-                                                                style={{ 
-                                                                    flex: 1, padding: '4px', fontSize: '0.58rem', fontWeight: 600, cursor: 'pointer', 
-                                                                    background: placement.backgroundStyle === b ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)', 
-                                                                    border: `1px solid ${placement.backgroundStyle === b ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`, 
-                                                                    borderRadius: '5px', color: placement.backgroundStyle === b ? 'var(--accent-gold)' : 'var(--text-tertiary)' 
-                                                                }}
-                                                            >{b[0].toUpperCase() + b.slice(1)}</button>
-                                                        ))}
+                                                {homeH > 0 && (
+                                                    <div style={{ position: 'absolute', bottom: `${ctrlH}%`, left: 0, right: 0, height: `${homeH}%`, background: 'rgba(245,158,11,0.18)', borderTop: '1px dashed rgba(245,158,11,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                                        <span style={{ position: 'absolute', top: '1px', left: '4px', fontSize: '0.38rem', color: 'rgba(245,158,11,0.9)', fontWeight: 700 }}>Home indicator</span>
                                                     </div>
+                                                )}
+                                                <div style={{ position: 'absolute', bottom: `${safeBot}%`, left: 0, right: 0, height: `${safeTop - safeBot + 20}%`, background: 'rgba(34,197,94,0.07)', borderTop: '1px dashed rgba(34,197,94,0.4)', borderBottom: '1px dashed rgba(34,197,94,0.4)', pointerEvents: 'none', zIndex: 3 }}>
+                                                    <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.40rem', color: 'rgba(34,197,94,0.8)', fontWeight: 700 }}>Safe zone</span>
                                                 </div>
-                                            )}
+                                            </>
+                                        )
+                                    })()}
 
-                                            {/* ── Per-device convenience actions ── */}
-                                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Quick Actions</div>
-                                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                                    {/* Reset to Default */}
-                                                    <button
-                                                        onClick={() => {
-                                                            if (!confirm(`Reset ${previewDevice} placement to defaults?`)) return
-                                                            if (isDesktop) setPlacement({ ...DEFAULT_PLACEMENT })
-                                                            else if (previewDevice === 'portrait') setMobilePlacement({ ...DEFAULT_MOBILE_PLACEMENT })
-                                                            else setLandscapePlacement({ ...DEFAULT_MOBILE_PLACEMENT })
-                                                            setMsg(`✓ ${previewDevice} placement reset`)
-                                                            setTimeout(() => setMsg(''), 2500)
-                                                        }}
-                                                        title={`Reset ${previewDevice} to default placement`}
-                                                        style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '5px', color: '#f87171' }}
-                                                    >🔄 Reset Default</button>
-
-                                                    {/* Snap to Safe Zone */}
-                                                    <button
-                                                        onClick={() => {
-                                                            const safePatch = {
-                                                                verticalAnchor: 'lower_third',
-                                                                safeAreaMarginPx: isDesktop ? 12 : previewDevice === 'portrait' ? 20 : 12,
-                                                                offsetYPercent: 0,
-                                                            }
-                                                            if (isDesktop) setPlacement(prev => ({ ...prev, ...safePatch }))
-                                                            else if (previewDevice === 'portrait') setMobilePlacement(prev => ({ ...prev, ...safePatch }))
-                                                            else setLandscapePlacement(prev => ({ ...prev, ...safePatch }))
-                                                            setMsg('✓ Snapped to safe zone')
-                                                            setTimeout(() => setMsg(''), 2500)
-                                                        }}
-                                                        title="Auto-position to safe lower-third zone"
-                                                        style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '5px', color: '#4ade80' }}
-                                                    >🎯 Snap Safe</button>
-
-                                                    {/* Copy from Desktop (only for mobile/landscape tabs) */}
-                                                    {!isDesktop && (
-                                                        <button
-                                                            onClick={() => {
-                                                                const patch = {
-                                                                    verticalAnchor: placement.verticalAnchor,
-                                                                    horizontalAlign: placement.horizontalAlign,
-                                                                    offsetYPercent: placement.offsetYPercent,
-                                                                    offsetXPercent: placement.offsetXPercent,
-                                                                    safeAreaMarginPx: placement.safeAreaMarginPx,
-                                                                    fontScale: placement.fontScale,
-                                                                }
-                                                                if (previewDevice === 'portrait') setMobilePlacement(prev => ({ ...prev, ...patch }))
-                                                                else setLandscapePlacement(prev => ({ ...prev, ...patch }))
-                                                                setMsg(`✓ Copied Desktop → ${previewDevice}`)
-                                                                setTimeout(() => setMsg(''), 2500)
-                                                            }}
-                                                            title="Copy placement settings from Desktop"
-                                                            style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: '5px', color: '#818cf8' }}
-                                                        >📋 Copy Desktop</button>
-                                                    )}
-
-                                                    {/* Copy between Portrait ↔ Landscape */}
-                                                    {!isDesktop && (
-                                                        <button
-                                                            onClick={() => {
-                                                                if (previewDevice === 'portrait') {
-                                                                    setMobilePlacement(prev => ({ ...prev, ...landscapePlacement }))
-                                                                    setMsg('✓ Copied Landscape → Portrait')
-                                                                } else {
-                                                                    setLandscapePlacement(prev => ({ ...prev, ...mobilePlacement }))
-                                                                    setMsg('✓ Copied Portrait → Landscape')
-                                                                }
-                                                                setTimeout(() => setMsg(''), 2500)
-                                                            }}
-                                                            title={previewDevice === 'portrait' ? 'Copy from Landscape' : 'Copy from Portrait'}
-                                                            style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.12)', borderRadius: '5px', color: '#c084fc' }}
-                                                        >📋 Copy {previewDevice === 'portrait' ? 'Land.' : 'Port.'}</button>
-                                                    )}
-                                                </div>
+                                    {/* Mock controls bar */}
+                                    {showControlsBar && (
+                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '12%', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '4px', pointerEvents: 'none', zIndex: 5 }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
+                                            <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 4px' }}>
+                                                <div style={{ width: '35%', height: '100%', background: 'var(--accent-gold)', borderRadius: '2px' }} />
                                             </div>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)', marginRight: '6px' }} />
+                                        </div>
+                                    )}
 
-                                            {/* ── Per-device Save Layout button ── */}
-                                            <button
-                                                onClick={() => saveDraft(`${previewDevice}_layout`)}
-                                                disabled={saving}
+                                    {/* Subtitle overlay */}
+                                    {activeCueText && (() => {
+                                        const p = activePlacement
+                                        const fontPx = computePreviewFontPx(p.fontScale, videoRect.w)
+                                        return (
+                                            <div
+                                                onMouseDown={handlePreviewDragStart}
+                                                onTouchStart={handlePreviewDragStart}
                                                 style={{
-                                                    width: '100%', padding: '7px', fontSize: '0.68rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
-                                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))',
-                                                    border: '1px solid rgba(212,168,83,0.3)', borderRadius: '7px',
-                                                    color: 'var(--accent-gold)', opacity: saving ? 0.6 : 1, transition: 'all 0.15s',
+                                                    position: 'absolute',
+                                                    left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
+                                                    right: p.horizontalAlign === 'right' ? '5%' : 'auto',
+                                                    transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                                    bottom: getSubtitleBottom(p),
+                                                    cursor: 'ns-resize',
+                                                    maxWidth: '90%',
+                                                    padding: '3px 10px',
+                                                    borderRadius: '5px',
+                                                    fontSize: fontPx,
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.5,
+                                                    color: '#fff',
+                                                    textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
+                                                    background: 'backgroundStyle' in p && p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
+                                                    textShadow: 'backgroundStyle' in p && p.backgroundStyle === 'shadow'
+                                                        ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
+                                                    pointerEvents: 'all',
+                                                    userSelect: 'none',
+                                                    zIndex: 6,
                                                 }}
                                             >
-                                                {saving ? 'Saving…' : `💾 Save ${previewDevice === 'desktop' ? 'Desktop' : previewDevice === 'portrait' ? 'Portrait' : 'Landscape'} Layout`}
-                                            </button>
-                                        </div>
-                                    )
-                                 })()}
+                                                {activeCueText}
+                                            </div>
+                                        )
+                                    })()}
+                                </div>
 
-                                {/* ── Preview All Devices button ── */}
-                                <button
-                                    onClick={async () => {
-                                        const devices: PreviewDevice[] = ['desktop', 'portrait', 'landscape']
-                                        for (const d of devices) {
-                                            setPreviewDevice(d)
-                                            markDevicePreviewed(d)
-                                            await new Promise(r => setTimeout(r, 1500))
-                                        }
-                                        setMsg('✓ All device previews completed')
-                                        setTimeout(() => setMsg(''), 2500)
-                                    }}
-                                    style={{
-                                        width: '100%', padding: '6px', fontSize: '0.6rem', cursor: 'pointer',
-                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-                                        borderRadius: '6px', color: 'var(--text-tertiary)', transition: 'all 0.15s',
-                                    }}
-                                    title="Cycle through all device previews (1.5s each)"
-                                >📱 Preview All Devices</button>
+                                {/* Device badge */}
+                                <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.42rem', color: 'rgba(212,168,83,0.6)', padding: '2px 6px', background: 'rgba(0,0,0,0.65)', borderBottomLeftRadius: '6px', zIndex: 7 }}>
+                                    {previewDevice} · {dim.w}×{dim.h} · video: {videoRect.w}×{videoRect.h}
+                                </div>
+
+                                {/* Debug overlay */}
+                                {showDebug && (
+                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '4px 6px', background: 'rgba(0,20,0,0.85)', fontSize: '0.4rem', color: '#00ff88', fontFamily: 'monospace', lineHeight: 1.5, zIndex: 8, pointerEvents: 'none', whiteSpace: 'pre-wrap' }}>
+                                        {`source: ${placementSource}\nvideo: ${videoRect.w}×${videoRect.h} @(${videoRect.x},${videoRect.y})\nanchor: ${activePlacement.verticalAnchor} | align: ${activePlacement.horizontalAlign}\noffsetY: ${activePlacement.offsetYPercent}% | margin: ${activePlacement.safeAreaMarginPx}px\nfont: ${activePlacement.fontScale}× → ${computePreviewFontPx(activePlacement.fontScale, videoRect.w)}\nbottom: ${getSubtitleBottom(activePlacement)}`}
+                                    </div>
+                                )}
                             </div>
-                        )}
+                        </div>
 
-
-                        {/* Shortcuts */}
-                        <div style={{ padding: '8px 10px', fontSize: '0.58rem', color: 'rgba(255,255,255,0.18)', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div>Click a cue row to seek · Active cue highlighted</div>
-                            <div><kbd style={{ fontFamily: 'monospace', fontSize: '0.55rem', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+S</kbd> Save Draft</div>
-                            <div><kbd style={{ fontFamily: 'monospace', fontSize: '0.55rem', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Z</kbd> Undo</div>
-                            <div><kbd style={{ fontFamily: 'monospace', fontSize: '0.55rem', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Y</kbd> Redo</div>
+                        {/* Preview All Devices button */}
+                        <div style={{ padding: '8px 12px', width: '100%', boxSizing: 'border-box', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+                            <button
+                                onClick={async () => {
+                                    const devices: PreviewDevice[] = ['desktop', 'portrait', 'landscape']
+                                    for (const d of devices) {
+                                        setPreviewDevice(d); markDevicePreviewed(d)
+                                        await new Promise(r => setTimeout(r, 1500))
+                                    }
+                                    setMsg('✓ All device previews completed'); setTimeout(() => setMsg(''), 2500)
+                                }}
+                                style={{
+                                    width: '100%', padding: '6px', fontSize: '0.6rem', cursor: 'pointer',
+                                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+                                    borderRadius: '6px', color: 'var(--text-tertiary)', transition: 'all 0.15s',
+                                }}
+                                title="Cycle through all device previews (1.5s each)"
+                            >📱 Preview All Devices</button>
                         </div>
                     </div>
                 )}
 
-                {/* CENTER: source cues (side-by-side mode) */}
-                {sourceSegments && (
-                    <div style={{ width: '200px', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.06)', overflowY: 'auto', padding: '8px' }}>
-                        <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--accent-gold)', padding: '4px 6px', marginBottom: '6px', position: 'sticky', top: 0, background: 'rgba(13,15,20,0.95)', borderRadius: '4px' }}>
-                            SOURCE (read-only)
-                        </div>
-                        {sourceSegments.map((s, i) => (
-                            <div key={i} style={{ marginBottom: '4px', padding: '6px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.75rem', lineHeight: 1.4 }}>
-                                <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '2px', fontFamily: 'monospace' }}>
-                                    {fmtMs(s.start)} → {fmtMs(s.end)}
+                {/* ══════════ RIGHT PANEL — Cue Info & Device Summary ══════════ */}
+                <div style={{
+                    width: '230px', flexShrink: 0, display: 'flex', flexDirection: 'column',
+                    background: 'rgba(10,12,17,0.98)', overflowY: 'auto',
+                }}>
+                    {/* Active Cue */}
+                    <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(212,168,83,0.7)', textTransform: 'uppercase', marginBottom: '6px' }}>Active Cue</div>
+                        {activeCue >= 0 && cues[activeCue] ? (
+                            <div>
+                                <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>#{activeCue + 1}</span>
+                                    <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{fmtMs(cues[activeCue].start)} → {fmtMs(cues[activeCue].end)}</span>
                                 </div>
-                                <div style={{ color: 'var(--text-secondary)' }}>{s.text}</div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-primary)', lineHeight: 1.5, padding: '6px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '5px', border: '1px solid rgba(255,255,255,0.07)' }}>
+                                    {cues[activeCue].text || <em style={{ color: 'var(--text-tertiary)' }}>Empty cue</em>}
+                                </div>
+                                {/* Cue warnings */}
+                                {(cueWarnings[activeCue]?.length ?? 0) > 0 && (
+                                    <div style={{ marginTop: '6px', display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                                        {(cueWarnings[activeCue] || []).map(w => (
+                                            <span key={w} style={{ fontSize: '0.56rem', padding: '1px 6px', borderRadius: '999px', background: w === 'invalid' || w === 'empty' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${w === 'invalid' || w === 'empty' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`, color: w === 'invalid' || w === 'empty' ? '#f87171' : '#fbbf24' }}>{WARN_LABELS[w]}</span>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>Click a cue to preview</div>
+                        )}
+                    </div>
+
+                    {/* Device Summary */}
+                    <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                        <div style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(212,168,83,0.7)', textTransform: 'uppercase', marginBottom: '7px' }}>Device Summary</div>
+                        {[
+                            { label: '🖥 Desktop',   p: placement,         dirty: isDirtyDesktop },
+                            { label: '📱 Portrait',  p: mobilePlacement,   dirty: isDirtyMobile, disabled: !useSeparateMobile },
+                            { label: '📱 Landscape', p: landscapePlacement, dirty: isDirtyLandscape, disabled: !useSeparateMobile },
+                        ].map(row => (
+                            <div key={row.label} style={{ marginBottom: '5px', padding: '6px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', opacity: row.disabled ? 0.4 : 1 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.58rem', fontWeight: 700, color: row.dirty ? '#f59e0b' : 'var(--text-secondary)' }}>
+                                        {row.label} {row.dirty && '●'}
+                                    </span>
+                                    {row.disabled && <span style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)' }}>Uses Desktop</span>}
+                                </div>
+                                <div style={{ fontSize: '0.54rem', color: 'var(--text-tertiary)', marginTop: '2px', fontFamily: 'monospace' }}>
+                                    {row.p.verticalAnchor} · {row.p.horizontalAlign} · Y:{row.p.offsetYPercent > 0 ? '+' : ''}{row.p.offsetYPercent}% · {row.p.fontScale}×
+                                </div>
                             </div>
                         ))}
                     </div>
-                )}
 
-                {/* RIGHT: cue editor */}
-                <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
-
-                    {/* Revision history drawer */}
+                    {/* Revision history */}
                     {showRevisions && (
-                        <div style={{ marginBottom: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 12px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-gold)', flex: 1 }}>🕓 Revision History</div>
-                                {/* Phase 4: history management actions */}
-                                <button onClick={() => setShowClearModal(true)} style={{ padding: '3px 8px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '5px', color: '#f87171' }}>🗑 Manage History</button>
+                        <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '7px' }}>
+                                <div style={{ fontSize: '0.58rem', fontWeight: 700, color: 'var(--accent-gold)', flex: 1 }}>🕓 Revisions</div>
+                                <button onClick={() => setShowClearModal(true)} style={{ padding: '2px 7px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '5px', color: '#f87171' }}>🗑 Manage</button>
                             </div>
-                            {loadingRevisions && <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Loading…</div>}
-                            {!loadingRevisions && revisions.length === 0 && <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>No revisions saved yet.</div>}
+                            {loadingRevisions && <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>Loading…</div>}
+                            {!loadingRevisions && revisions.length === 0 && <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>No revisions yet.</div>}
                             {revisions.map(rev => (
-                                <div key={rev.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div key={rev.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '0.68rem', color: 'var(--text-primary)' }}>{new Date(rev.savedAt).toLocaleString()}</div>
-                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>{rev.savedByEmail} · {rev.changeSource.replace(/_/g, ' ')}</div>
+                                        <div style={{ fontSize: '0.6rem', color: 'var(--text-primary)' }}>{new Date(rev.savedAt).toLocaleString()}</div>
+                                        <div style={{ fontSize: '0.54rem', color: 'var(--text-tertiary)' }}>{rev.savedByEmail} · {rev.changeSource.replace(/_/g, ' ')}</div>
                                     </div>
-                                    <button onClick={() => restoreRevision(rev.id)} style={btnStyle()}>Restore</button>
+                                    <button onClick={() => restoreRevision(rev.id)} style={btnStyle()}>↩</button>
                                 </div>
                             ))}
                         </div>
                     )}
 
+                    {/* Source segments (side-by-side mode) */}
+                    {sourceSegments && (
+                        <div style={{ padding: '10px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px' }}>SOURCE (read-only)</div>
+                            {sourceSegments.map((s, i) => (
+                                <div key={i} style={{ marginBottom: '4px', padding: '5px 7px', borderRadius: '5px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.7rem', lineHeight: 1.4 }}>
+                                    <div style={{ fontSize: '0.52rem', color: 'var(--text-tertiary)', marginBottom: '2px', fontFamily: 'monospace' }}>{fmtMs(s.start)} → {fmtMs(s.end)}</div>
+                                    <div style={{ color: 'var(--text-secondary)' }}>{s.text}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Spacer */}
+                    <div style={{ flex: 1 }} />
+                </div>
+            </div>
+
+            {/* ══════════ BOTTOM PANEL — Cue Timeline ══════════ */}
+            <div style={{
+                height: '42vh', flexShrink: 0, borderTop: '2px solid rgba(255,255,255,0.08)',
+                background: 'rgba(8,10,15,0.99)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            }}>
+                {/* Timeline header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,12,18,0.95)', flexShrink: 0 }}>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.07em', color: 'rgba(212,168,83,0.7)', textTransform: 'uppercase' }}>
+                        Cue Timeline
+                    </div>
+                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>{cues.length} cues</div>
+                    {warningCount > 0 && <span style={{ fontSize: '0.58rem', color: '#f59e0b' }}>⚠ {warningCount} warning{warningCount !== 1 ? 's' : ''}</span>}
+                    {hardErrors > 0 && <span style={{ fontSize: '0.58rem', color: '#ef4444' }}>✕ {hardErrors} error{hardErrors !== 1 ? 's' : ''}</span>}
+                    <div style={{ flex: 1 }} />
+                    <button onClick={() => insertAfter(cues.length - 1)} style={{ padding: '3px 10px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)', borderRadius: '5px', color: 'var(--accent-gold)' }}>+ Add Cue</button>
+                </div>
+
+                {/* Scrollable cue rows */}
+                <div style={{ flex: 1, overflowY: 'auto', padding: '6px 10px' }}>
                     {cues.length === 0 && (
                         <div style={{ padding: 'var(--space-2xl)', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
                             No subtitle cues. Generate subtitles first or import an SRT/VTT file.
@@ -1360,87 +1420,89 @@ export default function SubtitleEditor({
                         const hasOverride = !!cuePlacement
 
                         return (
-                            <div key={idx} style={{
-                                marginBottom: '4px', borderRadius: '8px', transition: 'all 0.12s',
+                            <div key={idx}
+                                ref={el => { cueRowRefs.current[idx] = el }}
+                                style={{
+                                marginBottom: '3px', borderRadius: '7px', transition: 'all 0.12s',
                                 border: isActive ? '1px solid rgba(212,168,83,0.5)'
-                                    : warns.length > 0 ? '1px solid rgba(245,158,11,0.25)'
-                                    : '1px solid rgba(255,255,255,0.06)',
-                                background: isActive ? 'rgba(212,168,83,0.05)' : 'rgba(255,255,255,0.02)',
+                                    : warns.length > 0 ? '1px solid rgba(245,158,11,0.2)'
+                                    : '1px solid rgba(255,255,255,0.05)',
+                                background: isActive ? 'rgba(212,168,83,0.04)' : 'rgba(255,255,255,0.015)',
+                                borderLeft: isActive ? '3px solid var(--accent-gold)' : warns.length > 0 ? '3px solid #f59e0b' : '3px solid transparent',
                             }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '28px auto 1fr auto', alignItems: 'center', gap: '6px', padding: '7px 10px' }}>
-                                    {/* Seq / seek */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '28px 150px 1fr auto', alignItems: 'center', gap: '8px', padding: '6px 10px' }}>
+                                    {/* Index / seek */}
                                     <button onClick={() => { const vid = videoRef.current; if (vid) { vid.currentTime = cue.start; vid.play().catch(() => {}) } }}
                                         title="Jump to this cue"
-                                        style={{ minWidth: '24px', textAlign: 'center', fontSize: '0.6rem', color: isActive ? 'var(--accent-gold)' : 'var(--text-tertiary)', fontWeight: 700, background: 'none', border: 'none', cursor: filmUrl ? 'pointer' : 'default', padding: '2px' }}
+                                        style={{ minWidth: '22px', textAlign: 'center', fontSize: '0.6rem', color: isActive ? 'var(--accent-gold)' : 'var(--text-tertiary)', fontWeight: 700, background: 'none', border: 'none', cursor: filmUrl ? 'pointer' : 'default', padding: '2px' }}
                                     >{idx + 1}</button>
 
-                                    {/* Times */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    {/* Timecodes */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', width: '22px' }}>IN</span>
+                                            <span style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)', width: '18px' }}>IN</span>
                                             <TimeInput value={cue.start} onChange={v => updateCue(idx, { start: v })} />
                                         </div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                            <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', width: '22px' }}>OUT</span>
+                                            <span style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)', width: '18px' }}>OUT</span>
                                             <TimeInput value={cue.end} onChange={v => updateCue(idx, { end: v })} />
                                         </div>
                                     </div>
 
                                     {/* Text */}
                                     <textarea value={cue.text} onChange={e => updateCue(idx, { text: e.target.value })} rows={2}
-                                        style={{ width: '100%', resize: 'vertical', padding: '5px 8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'var(--text-primary)', fontSize: '0.82rem', lineHeight: 1.5, fontFamily: 'inherit', outline: 'none' }}
+                                        style={{ width: '100%', resize: 'vertical', padding: '4px 7px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-primary)', fontSize: '0.8rem', lineHeight: 1.5, fontFamily: 'inherit', outline: 'none' }}
                                     />
 
                                     {/* Actions */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                        <button onClick={() => splitCue(idx)} title="Split cue at midpoint" style={{ padding: '3px 6px', fontSize: '0.65rem', cursor: 'pointer', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', color: 'var(--text-tertiary)' }}>⎯</button>
-                                        <button onClick={() => mergeCue(idx)} title="Merge with next" disabled={idx >= cues.length - 1} style={{ padding: '3px 6px', fontSize: '0.65rem', cursor: idx < cues.length - 1 ? 'pointer' : 'not-allowed', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', color: 'var(--text-tertiary)', opacity: idx >= cues.length - 1 ? 0.35 : 1 }}>⊔</button>
-                                        <button onClick={() => deleteCue(idx)} title="Delete cue" style={{ padding: '3px 6px', fontSize: '0.65rem', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '4px', color: '#f87171' }}>✕</button>
-                                        {/* T4-B: cue override toggle */}
+                                    <div style={{ display: 'flex', gap: '2px' }}>
+                                        <button onClick={() => splitCue(idx)} title="Split at midpoint" style={{ padding: '3px 5px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '4px', color: 'var(--text-tertiary)' }}>⎯</button>
+                                        <button onClick={() => mergeCue(idx)} title="Merge with next" disabled={idx >= cues.length - 1} style={{ padding: '3px 5px', fontSize: '0.6rem', cursor: idx < cues.length - 1 ? 'pointer' : 'not-allowed', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '4px', color: 'var(--text-tertiary)', opacity: idx >= cues.length - 1 ? 0.35 : 1 }}>⊔</button>
+                                        <button onClick={() => deleteCue(idx)} title="Delete cue" style={{ padding: '3px 5px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '4px', color: '#f87171' }}>✕</button>
                                         <button
                                             onClick={() => setCueOverride(idx, hasOverride ? null : { verticalAnchor: placement.verticalAnchor })}
-                                            title={hasOverride ? 'Remove cue placement override (use track default)' : 'Add cue placement override'}
-                                            style={{ padding: '3px 6px', fontSize: '0.6rem', cursor: 'pointer', background: hasOverride ? 'rgba(212,168,83,0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${hasOverride ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.06)'}`, borderRadius: '4px', color: hasOverride ? 'var(--accent-gold)' : 'var(--text-tertiary)' }}
+                                            title={hasOverride ? 'Remove cue placement override' : 'Add cue placement override'}
+                                            style={{ padding: '3px 5px', fontSize: '0.58rem', cursor: 'pointer', background: hasOverride ? 'rgba(212,168,83,0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${hasOverride ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.05)'}`, borderRadius: '4px', color: hasOverride ? 'var(--accent-gold)' : 'var(--text-tertiary)' }}
                                         >📐</button>
                                     </div>
                                 </div>
 
-                                {/* Per-cue placement override controls (T4-B) */}
+                                {/* Per-cue override controls */}
                                 {hasOverride && (
-                                    <div style={{ padding: '4px 10px 8px', borderTop: '1px solid rgba(212,168,83,0.1)', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.58rem', color: 'var(--accent-gold)', minWidth: 'max-content' }}>Cue override:</span>
+                                    <div style={{ padding: '3px 10px 7px', borderTop: '1px solid rgba(212,168,83,0.1)', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.56rem', color: 'var(--accent-gold)', minWidth: 'max-content' }}>Cue override:</span>
                                         {ANCHOR_PRESETS.map(p => (
                                             <button key={p.id}
                                                 onClick={() => setCueOverride(idx, { verticalAnchor: p.id })}
                                                 className={`aim-placement-btn${(cuePlacement as PlacementState)?.verticalAnchor === p.id ? ' active' : ''}`}
-                                                style={{ padding: '2px 7px', fontSize: '0.58rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', color: 'var(--text-tertiary)' }}
+                                                style={{ padding: '2px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '4px', color: 'var(--text-tertiary)' }}
                                             >{p.label}</button>
                                         ))}
                                         {(['left', 'center', 'right'] as const).map(a => (
                                             <button key={a}
                                                 onClick={() => setCueOverride(idx, { horizontalAlign: a })}
                                                 className={`aim-placement-btn${(cuePlacement as PlacementState)?.horizontalAlign === a ? ' active' : ''}`}
-                                                style={{ padding: '2px 7px', fontSize: '0.58rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '4px', color: 'var(--text-tertiary)' }}
+                                                style={{ padding: '2px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '4px', color: 'var(--text-tertiary)' }}
                                             >{a[0].toUpperCase() + a.slice(1)}</button>
                                         ))}
-                                        <button onClick={() => setCueOverride(idx, null)} style={{ padding: '2px 7px', fontSize: '0.58rem', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '4px', color: '#f87171' }}>Reset to track</button>
+                                        <button onClick={() => setCueOverride(idx, null)} style={{ padding: '2px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(239,68,68,0.07)', border: '1px solid rgba(239,68,68,0.14)', borderRadius: '4px', color: '#f87171' }}>Reset to track</button>
                                     </div>
                                 )}
 
                                 {/* Warnings */}
                                 {warns.length > 0 && (
-                                    <div style={{ padding: '2px 10px 6px', display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                    <div style={{ padding: '2px 10px 5px', display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
                                         {warns.map(w => (
-                                            <span key={w} style={{ fontSize: '0.58rem', padding: '1px 6px', borderRadius: '999px', background: w === 'invalid' || w === 'empty' ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.12)', border: `1px solid ${w === 'invalid' || w === 'empty' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`, color: w === 'invalid' || w === 'empty' ? '#f87171' : '#fbbf24' }}>{WARN_LABELS[w]}</span>
+                                            <span key={w} style={{ fontSize: '0.56rem', padding: '1px 5px', borderRadius: '999px', background: w === 'invalid' || w === 'empty' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', border: `1px solid ${w === 'invalid' || w === 'empty' ? 'rgba(239,68,68,0.18)' : 'rgba(245,158,11,0.18)'}`, color: w === 'invalid' || w === 'empty' ? '#f87171' : '#fbbf24' }}>{WARN_LABELS[w]}</span>
                                         ))}
                                     </div>
                                 )}
 
                                 {/* Insert below */}
                                 <button onClick={() => insertAfter(idx)} title="Insert new cue after this one"
-                                    style={{ display: 'block', width: '100%', padding: '2px 0', fontSize: '0.58rem', background: 'none', border: 'none', borderTop: '1px dashed rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.15)', cursor: 'pointer', borderRadius: '0 0 8px 8px', transition: 'color 0.15s, background 0.15s' }}
+                                    style={{ display: 'block', width: '100%', padding: '1px 0', fontSize: '0.55rem', background: 'none', border: 'none', borderTop: '1px dashed rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.12)', cursor: 'pointer', borderRadius: '0 0 7px 7px', transition: 'color 0.15s, background 0.15s' }}
                                     onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent-gold)'; e.currentTarget.style.background = 'rgba(212,168,83,0.04)' }}
-                                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.15)'; e.currentTarget.style.background = 'none' }}
+                                    onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.12)'; e.currentTarget.style.background = 'none' }}
                                 >+ insert cue below</button>
                             </div>
                         )
@@ -1451,8 +1513,6 @@ export default function SubtitleEditor({
                             + Add first cue
                         </button>
                     )}
-
-                    <div style={{ height: '80px' }} />
                 </div>
             </div>
         </div>

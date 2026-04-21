@@ -111,6 +111,7 @@ export async function GET(
             verticalAnchor:   (subtitle as Record<string, unknown>).mobileVerticalAnchor   ?? 'bottom',
             horizontalAlign:  (subtitle as Record<string, unknown>).mobileHorizontalAlign  ?? 'center',
             offsetYPercent:   (subtitle as Record<string, unknown>).mobileOffsetYPercent   ?? 0,
+            offsetXPercent:   (subtitle as Record<string, unknown>).mobileOffsetXPercent   ?? 0,  // Fix #1: was missing
             safeAreaMarginPx: (subtitle as Record<string, unknown>).mobileSafeAreaMarginPx ?? 20,
             fontScale:        (subtitle as Record<string, unknown>).mobileFontScale        ?? 0.9,
         },

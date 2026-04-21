@@ -132,11 +132,16 @@ export async function PATCH(req: NextRequest) {
         // If previously approved, edits reset the approval
         const newStatus = existing.status === 'approved_source' ? 'pending' : (existing.status ?? 'pending')
 
+        // Only reset translateStatus if actual segment content changed.
+        // Placement-only saves must NOT re-queue translation (translations are already done).
+        const segmentsChanged = segmentsStr !== existing.segments
+
         // Build placement update
         const data: any = {
             segments: segmentsStr,
             status: newStatus,
-            translateStatus: 'pending',
+            // Fix #2: preserve translateStatus when only placement changed
+            ...(segmentsChanged ? { translateStatus: 'pending' } : {}),
         }
 
         if (useSeparateMobilePlacement !== undefined) {
@@ -189,7 +194,13 @@ export async function PATCH(req: NextRequest) {
                 savedByEmail: user?.email ?? '',
                 changeSource: changeSource ?? 'manual_edit',
                 segmentsSnap: segmentsStr,
-                placementSnap: JSON.stringify(placement ?? {}),
+                // Fix #8: include all three placement blocks in the snapshot
+                placementSnap: JSON.stringify({
+                    placement: placement ?? {},
+                    mobilePlacement: mobilePlacement ?? {},
+                    landscapePlacement: landscapePlacement ?? {},
+                    useSeparateMobilePlacement: useSeparateMobilePlacement ?? false,
+                }),
             },
         })
 
