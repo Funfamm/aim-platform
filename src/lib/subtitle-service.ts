@@ -29,10 +29,11 @@ export type Segment = { start: number; end: number; text: string }
 export async function translateTextsForLang(
     texts: string[],
     langCode: string,
+    sourceLang?: string,
     translator: ITranslator = getTranslator(),
 ): Promise<TranslationResult> {
     if (texts.length <= MAX_SEGMENTS_PER_CALL) {
-        return translator.translateChunk(texts, langCode)
+        return translator.translateChunk(texts, langCode, sourceLang)
     }
 
     const allTranslations: string[] = []
@@ -40,7 +41,7 @@ export async function translateTextsForLang(
 
     for (let i = 0; i < texts.length; i += MAX_SEGMENTS_PER_CALL) {
         const chunk = texts.slice(i, i + MAX_SEGMENTS_PER_CALL)
-        const result = await translator.translateChunk(chunk, langCode)
+        const result = await translator.translateChunk(chunk, langCode, sourceLang)
         allTranslations.push(...result.translations)
         if (result.keyLabel) lastKeyLabel = result.keyLabel
     }
@@ -59,6 +60,8 @@ export function buildTranslatedSegments(
     return original.map((seg, i) => ({
         start: seg.start,
         end: seg.end,
-        text: translatedTexts[i] || seg.text,
+        // Use empty string for missing slots — never fall back to source-language text,
+        // which would silently insert foreign words into a labelled translated track.
+        text: translatedTexts[i] ?? '',
     }))
 }

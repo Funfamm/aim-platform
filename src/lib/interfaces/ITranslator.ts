@@ -22,9 +22,10 @@ export interface ITranslator {
     /**
      * Translate a batch of plain-text lines into the target language.
      *
-     * @param texts    - Source text lines (English subtitle segments)
-     * @param langCode - ISO 639-1 target language code
-     * @returns        - Translated lines in the same order + optional key label
+     * @param texts      - Source text lines (in whatever language the video was spoken)
+     * @param langCode   - ISO 639-1 target language code
+     * @param sourceLang - ISO 639-1 source language code (optional; improves AI quality)
+     * @returns          - Translated lines in the same order + optional key label
      */
-    translateChunk(texts: string[], langCode: string): Promise<TranslationResult>
+    translateChunk(texts: string[], langCode: string, sourceLang?: string): Promise<TranslationResult>
 }

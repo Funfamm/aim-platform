@@ -17,12 +17,16 @@ export class GeminiTranslator implements ITranslator {
      * Translate a batch of text lines via Gemini.
      * Pads output with empty strings if the model returns fewer items than expected.
      */
-    async translateChunk(texts: string[], langCode: string): Promise<TranslationResult> {
+    async translateChunk(texts: string[], langCode: string, sourceLang?: string): Promise<TranslationResult> {
         const langName = getLangName(langCode)
+        const sourceLangName = sourceLang ? getLangName(sourceLang) : 'English'
+        const sourceDesc = sourceLang && sourceLang !== 'en'
+            ? `${sourceLangName} (language code: ${sourceLang})`
+            : 'English'
 
         const prompt = [
             `You are a professional subtitle translator for a film platform.`,
-            `Translate the following ${texts.length} English subtitle lines to ${langName} (language code: ${langCode}).`,
+            `Translate the following ${texts.length} subtitle lines from ${sourceDesc} to ${langName} (language code: ${langCode}).`,
             `Rules:`,
             `- Return ONLY a JSON array of strings with exactly ${texts.length} elements`,
             `- One translated string per input line, in the exact same order`,

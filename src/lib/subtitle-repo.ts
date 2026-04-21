@@ -23,6 +23,8 @@ export type UpsertSubtitleData = {
     projectId: string
     episodeId?: string | null
     language?: string
+    /** ISO 639-1 code of the source video language detected by Whisper. */
+    originalLanguage?: string
     segments: string
     translations?: string | null
     status?: string
@@ -75,6 +77,7 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
             where: { id: existing.id },
             data: {
                 language: fields.language ?? 'en',
+                ...(fields.originalLanguage ? { originalLanguage: fields.originalLanguage } : {}),
                 segments: fields.segments,
                 translations: fields.translations ?? null,
                 status: fields.status ?? 'completed',
@@ -90,6 +93,7 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
             projectId,
             episodeId: episodeId ?? null,
             language: fields.language ?? 'en',
+            originalLanguage: fields.originalLanguage ?? fields.language ?? 'en',
             segments: fields.segments,
             translations: fields.translations ?? null,
             status: fields.status ?? 'completed',

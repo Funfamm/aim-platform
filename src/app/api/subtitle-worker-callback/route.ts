@@ -116,6 +116,7 @@ export async function POST(req: NextRequest) {
                 projectId: job.projectId,
                 episodeId: job.episodeId,
                 language: language ?? 'en',
+                originalLanguage: language ?? 'en', // write detected source language
                 segments: JSON.stringify(segments),
                 status: 'completed',
                 transcribedWith: 'faster-whisper',

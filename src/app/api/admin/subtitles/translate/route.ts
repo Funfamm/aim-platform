@@ -51,9 +51,9 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Parse source segments ──────────────────────────────────────────────
-    let englishSegments: { start: number; end: number; text: string }[] = []
+    let sourceSegments: { start: number; end: number; text: string }[] = []
     try {
-        englishSegments = JSON.parse(subtitle.segments)
+        sourceSegments = JSON.parse(subtitle.segments)
     } catch {
         return NextResponse.json({ error: 'Failed to parse subtitle segments' }, { status: SSE_ERR.PARSE_FAILED })
     }
@@ -77,7 +77,18 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Determine which languages still need translating ───────────────────
-    const pending = SUBTITLE_TARGET_LANGS.filter(l => !existingTranslations[l])
+    // Read the source language Whisper detected. Falls back to 'en' for older
+    // records that were saved before originalLanguage was written.
+    const sourceLang = (subtitle.originalLanguage as string | null) ?? 'en'
+
+    // Build the full ordered target list:
+    // 1. If source is non-English, insert 'en' first so English viewers always get subtitles
+    // 2. Include all standard targets EXCEPT the source language (no self-translation)
+    const allTargets: string[] = [
+        ...(sourceLang !== 'en' && !existingTranslations['en'] ? ['en'] : []),
+        ...SUBTITLE_TARGET_LANGS.filter(l => l !== sourceLang),
+    ]
+    const pending = allTargets.filter(l => !existingTranslations[l])
     if (pending.length === 0) {
         return NextResponse.json({ message: 'All languages already translated', status: 'complete' })
     }
@@ -110,13 +121,13 @@ export async function POST(req: NextRequest) {
                 emit({ lang, langName, phase: 'translating', pct: Math.round((completedCount / pending.length) * 100) })
 
                 try {
-                    const texts = englishSegments.map(s => s.text)
+                    const texts = sourceSegments.map(s => s.text)
 
                     // ISP Fix: destructure result instead of mutating keyLabelOut
-                    const { translations: translatedTexts, keyLabel } = await translateTextsForLang(texts, lang)
+                    const { translations: translatedTexts, keyLabel } = await translateTextsForLang(texts, lang, sourceLang)
                     if (keyLabel) lastKeyLabel = keyLabel
 
-                    const translatedSegments = buildTranslatedSegments(englishSegments, translatedTexts)
+                    const translatedSegments = buildTranslatedSegments(sourceSegments, translatedTexts)
                     existingTranslations[lang] = translatedSegments
                     completedCount++
 
