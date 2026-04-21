@@ -193,7 +193,9 @@ export default function SubtitleEditor({
     const [previewedDevices, setPreviewedDevices] = useState<Set<PreviewDevice>>(new Set(['desktop']))
     const markDevicePreviewed = (d: PreviewDevice) =>
         setPreviewedDevices(prev => { const n = new Set(prev); n.add(d); return n })
-
+    // Preview aids
+    const [showSafeZones, setShowSafeZones] = useState(false)
+    const [showControlsBar, setShowControlsBar] = useState(false)
 
     const historyRef = useRef<SubtitleCue[][]>([initialSegments])
     const historyIdxRef = useRef(0)
@@ -561,7 +563,11 @@ export default function SubtitleEditor({
         }
         const base = baseMap[p.verticalAnchor] ?? 5
         const offsetY = 'offsetYPercent' in p ? p.offsetYPercent : 0
-        return `calc(${base}% + ${offsetY}% + ${p.safeAreaMarginPx}px)`
+        // The live player adds +58px for the controls bar height.
+        // Scale proportionally: 58 / playerH ≈ 10.2% of a typical mobile player (~568px).
+        // We add this as a percentage of the preview canvas so positioning is WYSIWYG.
+        const ctrlBarPct = 10
+        return `calc(${base + ctrlBarPct}% + ${offsetY}% + ${p.safeAreaMarginPx}px)`
     }
 
     // For the preview panel, choose placement based on active device
@@ -569,12 +575,29 @@ export default function SubtitleEditor({
         previewDevice !== 'desktop' && useSeparateMobile ? mobilePlacement : placement
 
     // Preview container dimensions per device
+    // Portrait: iPhone SE-ish (320×568) — large enough for reliable subtitle placement judging.
+    // Desktop: 480×270 (16:9 at comfortable editing width).
     const previewDims: Record<PreviewDevice, { w: number; h: number }> = {
-        desktop:  { w: 300, h: Math.round(300 / (16/9)) },
-        portrait: { w: 180, h: 320 },
-        landscape: { w: 300, h: 169 },
+        desktop:  { w: 480, h: 270 },
+        portrait: { w: 320, h: 568 },
+        landscape: { w: 480, h: 270 },
     }
     const dim = previewDims[previewDevice]
+
+    /**
+     * Compute subtitle font size in px from previewWidth — matching the live player's
+     * clamp(0.9rem, 2.5vw, 1.15rem) formula translated to preview-canvas space.
+     *
+     * We intentionally avoid `vw` here because vw measures the browser viewport,
+     * not the preview canvas, which would produce wildly wrong sizes.
+     */
+    const computePreviewFontPx = (fontScale: number, previewWidth: number): string => {
+        const BASE_REM = 16 // browser default rem in px
+        const minPx   = 0.9  * fontScale * BASE_REM           // 0.9rem in px
+        const idealPx = 0.025 * fontScale * previewWidth      // 2.5% of canvas width
+        const maxPx   = 1.15 * fontScale * BASE_REM           // 1.15rem in px
+        return `${Math.min(maxPx, Math.max(minPx, idealPx)).toFixed(1)}px`
+    }
 
 
     // ── Styles ────────────────────────────────────────────────────────────────
@@ -730,39 +753,105 @@ export default function SubtitleEditor({
                         </div>
 
                         {/* Video preview with subtitle overlay */}
-                        <div ref={previewRef} style={{ position: 'relative', width: `${dim.w}px`, height: `${dim.h}px`, background: '#000', flexShrink: 0, margin: '0 auto', border: previewDevice !== 'desktop' ? '2px solid rgba(255,255,255,0.1)' : 'none', borderRadius: previewDevice !== 'desktop' ? '8px' : 0, overflow: 'hidden' }}>
+                        <div ref={previewRef} style={{
+                            position: 'relative', width: `${dim.w}px`, height: `${dim.h}px`,
+                            background: '#111', flexShrink: 0, margin: '0 auto',
+                            border: previewDevice !== 'desktop' ? '2px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.07)',
+                            borderRadius: previewDevice === 'portrait' ? '16px' : previewDevice === 'landscape' ? '8px' : '4px',
+                            overflow: 'hidden',
+                        }}>
                             <video ref={videoRef} src={filmUrl} controls controlsList="nodownload" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                            {activeCueText && (
-                                <div
-                                    onMouseDown={handlePreviewDragStart}
-                                    onTouchStart={handlePreviewDragStart}
-                                    style={{
-                                        position: 'absolute',
-                                        left: activePlacement.horizontalAlign === 'left' ? '5%' : activePlacement.horizontalAlign === 'right' ? 'auto' : '50%',
-                                        right: activePlacement.horizontalAlign === 'right' ? '5%' : 'auto',
-                                        transform: activePlacement.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                        bottom: getSubtitleBottom(activePlacement),
-                                        cursor: 'ns-resize',
-                                        maxWidth: '85%',
-                                        padding: '3px 8px',
-                                        borderRadius: '4px',
-                                        fontSize: `${0.65 * activePlacement.fontScale}rem`,
-                                        fontWeight: 600,
-                                        color: '#fff',
-                                        textAlign: activePlacement.horizontalAlign as 'left' | 'center' | 'right',
-                                        background: 'backgroundStyle' in activePlacement && activePlacement.backgroundStyle === 'box' ? 'rgba(0,0,0,0.7)'
-                                            : 'backgroundStyle' in activePlacement && activePlacement.backgroundStyle === 'shadow' ? 'transparent' : 'transparent',
-                                        textShadow: 'backgroundStyle' in activePlacement && activePlacement.backgroundStyle === 'shadow' ? '0 0 4px #000, 0 0 8px #000' : 'none',
-                                        pointerEvents: 'all',
-                                        userSelect: 'none',
-                                    }}
-                                >
-                                    {activeCueText}
+
+                            {/* Safe-zone guide bands — only shown when toggle is on */}
+                            {showSafeZones && (() => {
+                                // Heights expressed as % of preview canvas
+                                const ctrlH = showControlsBar ? 12 : 8     // controls zone at bottom
+                                const homeH = previewDevice === 'portrait' ? 5 : 0  // home indicator above controls
+                                const safeTop = 100 - ctrlH - homeH - 20  // lower-third safe upper boundary
+                                const safeBot = 100 - ctrlH - homeH        // lower-third safe lower boundary
+                                return (
+                                    <>
+                                        {/* Controls blocked zone — red */}
+                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${ctrlH}%`, background: 'rgba(239,68,68,0.18)', borderTop: '1px dashed rgba(239,68,68,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                            <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.42rem', color: 'rgba(239,68,68,0.9)', fontWeight: 700 }}>Controls</span>
+                                        </div>
+                                        {/* Home indicator zone — amber (portrait only) */}
+                                        {homeH > 0 && (
+                                            <div style={{ position: 'absolute', bottom: `${ctrlH}%`, left: 0, right: 0, height: `${homeH}%`, background: 'rgba(245,158,11,0.18)', borderTop: '1px dashed rgba(245,158,11,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                                <span style={{ position: 'absolute', top: '1px', left: '4px', fontSize: '0.38rem', color: 'rgba(245,158,11,0.9)', fontWeight: 700 }}>Home indicator</span>
+                                            </div>
+                                        )}
+                                        {/* Lower-third safe zone — green */}
+                                        <div style={{ position: 'absolute', bottom: `${safeBot}%`, left: 0, right: 0, height: `${safeTop - safeBot + 20}%`, background: 'rgba(34,197,94,0.07)', borderTop: '1px dashed rgba(34,197,94,0.4)', borderBottom: '1px dashed rgba(34,197,94,0.4)', pointerEvents: 'none', zIndex: 3 }}>
+                                            <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.40rem', color: 'rgba(34,197,94,0.8)', fontWeight: 700 }}>Safe zone</span>
+                                        </div>
+                                    </>
+                                )
+                            })()}
+
+                            {/* Mock controls bar — shown when showControlsBar is on */}
+                            {showControlsBar && (
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '12%', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '4px', pointerEvents: 'none', zIndex: 5 }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
+                                    <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 4px' }}>
+                                        <div style={{ width: '35%', height: '100%', background: 'var(--accent-gold)', borderRadius: '2px' }} />
+                                    </div>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)', marginRight: '6px' }} />
                                 </div>
                             )}
-                            <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.5rem', color: 'rgba(212,168,83,0.6)', padding: '2px 5px', background: 'rgba(0,0,0,0.5)' }}>
-                                {previewDevice === 'desktop' ? 'drag to reposition' : `${previewDevice} preview`}
+
+                            {/* Subtitle overlay — uses JS-computed px font (NOT vw) */}
+                            {activeCueText && (() => {
+                                const p = activePlacement
+                                const fontPx = computePreviewFontPx(p.fontScale, dim.w)
+                                return (
+                                    <div
+                                        onMouseDown={handlePreviewDragStart}
+                                        onTouchStart={handlePreviewDragStart}
+                                        style={{
+                                            position: 'absolute',
+                                            left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
+                                            right: p.horizontalAlign === 'right' ? '5%' : 'auto',
+                                            transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                            bottom: getSubtitleBottom(p),
+                                            cursor: 'ns-resize',
+                                            maxWidth: '90%',
+                                            padding: '3px 10px',
+                                            borderRadius: '5px',
+                                            fontSize: fontPx,
+                                            fontWeight: 600,
+                                            lineHeight: 1.5,
+                                            color: '#fff',
+                                            textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
+                                            background: 'backgroundStyle' in p && p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
+                                            textShadow: 'backgroundStyle' in p && p.backgroundStyle === 'shadow'
+                                                ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
+                                            pointerEvents: 'all',
+                                            userSelect: 'none',
+                                            zIndex: 6,
+                                        }}
+                                    >
+                                        {activeCueText}
+                                    </div>
+                                )
+                            })()}
+
+                            {/* Device label badge */}
+                            <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.45rem', color: 'rgba(212,168,83,0.7)', padding: '2px 6px', background: 'rgba(0,0,0,0.6)', borderBottomLeftRadius: '6px', zIndex: 7 }}>
+                                {previewDevice === 'desktop' ? `${dim.w}×${dim.h} • drag to reposition` : `📱 ${previewDevice} • ${dim.w}×${dim.h}`}
                             </div>
+                        </div>
+
+                        {/* Preview aid toggles */}
+                        <div style={{ display: 'flex', gap: '6px', padding: '6px 8px', borderTop: '1px solid rgba(255,255,255,0.07)', flexWrap: 'wrap' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.58rem', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={showSafeZones} onChange={e => setShowSafeZones(e.target.checked)} style={{ accentColor: 'var(--accent-gold)' }} />
+                                Safe zones
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.58rem', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={showControlsBar} onChange={e => setShowControlsBar(e.target.checked)} style={{ accentColor: 'var(--accent-gold)' }} />
+                                Controls bar
+                            </label>
                         </div>
 
                         {/* Placement panel (T4-A) — desktop tab */}
@@ -857,6 +946,29 @@ export default function SubtitleEditor({
                                 </label>
 
                                 {useSeparateMobile && (<>
+                                    {/* Quick preset shortcuts — apply a full preset in one click */}
+                                    <div>
+                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Quick presets</div>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            <button
+                                                onClick={() => setMobilePlacement({ verticalAnchor: 'bottom', horizontalAlign: 'center', offsetYPercent: 0, safeAreaMarginPx: 20, fontScale: 0.9 })}
+                                                className="aim-placement-btn"
+                                                style={{ flex: 1, padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '5px', color: '#4ade80', fontWeight: 600 }}
+                                            >⊥ Bottom Safe</button>
+                                            <button
+                                                onClick={() => setMobilePlacement({ verticalAnchor: 'lower_third', horizontalAlign: 'center', offsetYPercent: 0, safeAreaMarginPx: 20, fontScale: 0.9 })}
+                                                className="aim-placement-btn"
+                                                style={{ flex: 1, padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', borderRadius: '5px', color: 'var(--accent-gold)', fontWeight: 600 }}
+                                            >◎ Lower Third</button>
+                                            <button
+                                                onClick={() => { if (confirm('Center placement may overlap video controls on some devices. Apply anyway?')) setMobilePlacement({ verticalAnchor: 'middle' as string, horizontalAlign: 'center', offsetYPercent: 0, safeAreaMarginPx: 12, fontScale: 0.9 }) }}
+                                                className="aim-placement-btn"
+                                                title="Advanced — may overlap controls on some devices"
+                                                style={{ flex: 1, padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '5px', color: 'rgba(245,158,11,0.7)', fontWeight: 600 }}
+                                            >≡ Center ⚠</button>
+                                        </div>
+                                    </div>
+
                                     {/* Mobile vertical preset — restricted to bottom/lower_third for safety */}
                                     <div>
                                         <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Mobile vertical (safe zone only)</div>
