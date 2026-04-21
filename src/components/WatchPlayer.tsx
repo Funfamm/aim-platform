@@ -1308,12 +1308,15 @@ export default function WatchPlayer({
                                             />
                                         </div>
                                     </div>
-                                    {/* Time */}
-                                    <span style={{
-                                        fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)',
-                                        fontFamily: 'var(--font-mono, monospace)', whiteSpace: 'nowrap',
-                                        paddingLeft: '4px',
-                                    }}>
+                                    {/* Time — always LTR: RTL layout would flip "current / total" to "total / current" */}
+                                    <span
+                                        dir="ltr"
+                                        style={{
+                                            fontSize: '0.72rem', color: 'rgba(255,255,255,0.75)',
+                                            fontFamily: 'var(--font-mono, monospace)', whiteSpace: 'nowrap',
+                                            paddingLeft: '4px',
+                                        }}
+                                    >
                                         {fmt(currentTime)} / {fmt(totalDuration)}
                                     </span>
                                     {/* T4-M: Yellow button removed from standard playback bar — resume available in top banner only */}

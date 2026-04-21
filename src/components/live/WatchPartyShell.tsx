@@ -1128,11 +1128,14 @@ export default function WatchPartyShell({
                                         display: 'flex', alignItems: 'center', gap: '4px',
                                         padding: '8px 12px 12px',
                                     }}>
-                                        {/* Time */}
-                                        <span style={{
-                                            fontSize: '0.78rem', color: 'rgba(255,255,255,0.8)',
-                                            fontVariantNumeric: 'tabular-nums', minWidth: '80px',
-                                        }}>
+                                        {/* Time — always LTR: RTL layout would flip "current / total" to "total / current" */}
+                                        <span
+                                            dir="ltr"
+                                            style={{
+                                                fontSize: '0.78rem', color: 'rgba(255,255,255,0.8)',
+                                                fontVariantNumeric: 'tabular-nums', minWidth: '80px',
+                                            }}
+                                        >
                                             {fmt(currentTime)} / {fmt(duration)}
                                         </span>
 
