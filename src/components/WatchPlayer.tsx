@@ -194,27 +194,37 @@ export default function WatchPlayer({
 
     /* ══════════ Effects ══════════ */
 
-    /* Detect mobile breakpoint and orientation */
+    /* Detect mobile (touch device) and orientation.
+     * IMPORTANT: do NOT use max-width for isMobile — a phone in landscape is
+     * ~844px wide and would incorrectly be treated as a desktop, ignoring
+     * landscapePlacement entirely. `pointer: coarse` is true on all touch
+     * devices in both portrait AND landscape. */
     useEffect(() => {
-        const mqM = window.matchMedia('(max-width: 640px)')
+        const mqM = window.matchMedia('(pointer: coarse)')   // true = touch device
         const mqL = window.matchMedia('(orientation: landscape)')
-        
+
         const update = () => {
             setIsMobile(mqM.matches)
             setIsLandscapeState(mqL.matches)
+            // Recalculate videoRect after orientation change (iOS has a brief delay)
+            setTimeout(updateVideoRect, 100)
         }
         update()
 
         const hM = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-        const hL = (e: MediaQueryListEvent) => setIsLandscapeState(e.matches)
-        
+        const hL = (e: MediaQueryListEvent) => {
+            setIsLandscapeState(e.matches)
+            // Recompute rect after rotation settles
+            setTimeout(updateVideoRect, 150)
+        }
+
         mqM.addEventListener('change', hM)
         mqL.addEventListener('change', hL)
         return () => {
             mqM.removeEventListener('change', hM)
             mqL.removeEventListener('change', hL)
         }
-    }, [])
+    }, [updateVideoRect])
 
     /* Lock body scroll when mobile lang sheet is open */
     useEffect(() => {
