@@ -31,7 +31,8 @@ async function getAccessToken(): Promise<string> {
 
 export async function POST(request: Request) {
     try {
-        const { orderID } = await request.json()
+        const body = await request.json()
+        const { orderID, message: clientMessage } = body
 
         if (!orderID) {
             return NextResponse.json({ error: 'Missing orderID' }, { status: 400 })
@@ -55,10 +56,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Payment capture failed' }, { status: 500 })
         }
 
-        // Extract donor metadata from PayPal's custom_id (set during create-order)
+        // Extract donor metadata from PayPal's custom_id
+        // Format (pipe-delimited, <127 chars): name|email|amount|anonymous|userId|projectId
         const customId = captureData.purchase_units?.[0]?.custom_id
         if (!customId) {
-            console.error('[capture-order] Missing custom_id in capture response')
+            console.error('[capture-order] Missing custom_id in capture response. PayPal likely truncated it (>127 chars).')
             return NextResponse.json({ error: 'Could not retrieve donation details from payment' }, { status: 500 })
         }
 
@@ -67,9 +69,20 @@ export async function POST(request: Request) {
             anonymous: boolean; userId: string | null; projectId: string | null;
         }
         try {
-            donorMeta = JSON.parse(customId)
-        } catch {
-            console.error('[capture-order] Failed to parse custom_id JSON:', customId)
+            const parts = customId.split('|')
+            if (parts.length < 4) throw new Error('Too few fields')
+            donorMeta = {
+                name:      parts[0] || 'Anonymous Donor',
+                email:     parts[1] || '',
+                amount:    parseFloat(parts[2]),
+                anonymous: parts[3] === '1',
+                userId:    parts[4] || null,
+                projectId: parts[5] || null,
+                message:   clientMessage || null,   // sent by client in the capture request body
+            }
+            if (!donorMeta.email || isNaN(donorMeta.amount)) throw new Error('Invalid fields')
+        } catch (parseErr) {
+            console.error('[capture-order] Failed to parse custom_id:', customId, parseErr)
             return NextResponse.json({ error: 'Could not parse donation details' }, { status: 500 })
         }
 

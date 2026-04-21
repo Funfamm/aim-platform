@@ -172,7 +172,7 @@ export default function DonatePage() {
                     const res = await fetch('/api/donate/capture-order', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ orderID: data.orderID }),
+                        body: JSON.stringify({ orderID: data.orderID, message: currentForm.message || null }),
                     })
                     if (res.ok) {
                         setStatus('sent')

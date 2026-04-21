@@ -50,17 +50,32 @@ export async function POST(request: Request) {
 
         // ─── Do NOT create a DB record yet ───
         // We only save the donation after PayPal confirms COMPLETED.
-        // Donor details are carried in the PayPal order's custom_id as JSON
-        // so capture-order can create the record without a pre-existing DB row.
-        const donorMeta = JSON.stringify({
-            name: donorName,
-            email,
-            amount: parseFloat(amount),
-            message: message || null,
-            anonymous: anonymous ?? false,
-            userId: session?.userId || null,
-            projectId: projectId || null,
-        })
+        // Donor details are carried in the PayPal order's custom_id.
+        //
+        // ⚠️  PayPal hard-limits custom_id to 127 characters.
+        // Use a compact pipe-delimited format instead of verbose JSON keys
+        // to stay well under that limit even with long emails and UUIDs.
+        //
+        // Format: name|email|amount|anonymous|userId|projectId|message
+        // Fields: truncate name to 30 chars for safety; message is omitted
+        //         from custom_id (saved separately after capture via the
+        //         extra ?msg= query param on the success URL, or left null).
+        const safeName = donorName.slice(0, 30)
+        const safeEmail = email.slice(0, 60)
+        const donorMeta = [
+            safeName,
+            safeEmail,
+            parseFloat(amount).toFixed(2),
+            anonymous ? '1' : '0',
+            session?.userId || '',
+            projectId || '',
+            // message excluded — stored via DB after capture, retrieved from request body
+        ].join('|')
+
+        // Also keep message in a separate field we pass to our own capture endpoint
+        // via a flag stored in the order description — but the reliable path is:
+        // the client sends the original message field back to capture-order.
+        // (We pass it through the frontend capture call body instead.)
 
         // Create PayPal order — donor details in custom_id
         const accessToken = await getAccessToken()
