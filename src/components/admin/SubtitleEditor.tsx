@@ -31,6 +31,25 @@ export type PlacementState = {
     cueOverrides: Record<string, Partial<PlacementState>>
 }
 
+export type MobilePlacementState = {
+    verticalAnchor: string    // bottom|lower_third only (no middle/top for mobile)
+    horizontalAlign: string
+    offsetYPercent: number
+    safeAreaMarginPx: number  // default 20px to account for home indicator
+    fontScale: number
+}
+
+/** Device preview modes shown in the editor video panel */
+type PreviewDevice = 'desktop' | 'portrait' | 'landscape'
+
+const DEFAULT_MOBILE_PLACEMENT: MobilePlacementState = {
+    verticalAnchor: 'bottom',
+    horizontalAlign: 'center',
+    offsetYPercent: 0,
+    safeAreaMarginPx: 20,
+    fontScale: 0.9,
+}
+
 const DEFAULT_PLACEMENT: PlacementState = {
     verticalAnchor: 'bottom',
     horizontalAlign: 'center',
@@ -61,6 +80,8 @@ interface Props {
     // Side-by-side: source cues shown when editing a translation track
     sourceSegments?: SubtitleCue[]
     initialPlacement?: Partial<PlacementState>
+    initialMobilePlacement?: Partial<MobilePlacementState>
+    useSeparateMobilePlacement?: boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -144,6 +165,7 @@ const MAX_HISTORY = 50
 export default function SubtitleEditor({
     projectId, episodeId, initialSegments, currentStatus, filmUrl,
     onClose, onSaved, sourceSegments, initialPlacement,
+    initialMobilePlacement, useSeparateMobilePlacement: initUseMobile = false,
 }: Props) {
     const [cues, setCues] = useState<SubtitleCue[]>(() =>
         initialSegments.map(s => ({ start: s.start, end: s.end, text: s.text }))
@@ -157,7 +179,21 @@ export default function SubtitleEditor({
     })
     const [showPlacement, setShowPlacement] = useState(false)
 
-    // ── Undo/redo stack ─────────────────────────────────────────────────────────
+    // ── Mobile placement state ───────────────────────────────────────────────────
+    const [useSeparateMobile, setUseSeparateMobile] = useState(initUseMobile)
+    const [mobilePlacement, setMobilePlacement] = useState<MobilePlacementState>({
+        ...DEFAULT_MOBILE_PLACEMENT,
+        ...initialMobilePlacement,
+    })
+
+    // ── Device preview ───────────────────────────────────────────────────────────
+    const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop')
+    // Track which devices the admin has previewed on (for approval guard)
+    const [previewedDevices, setPreviewedDevices] = useState<Set<PreviewDevice>>(new Set(['desktop']))
+    const markDevicePreviewed = (d: PreviewDevice) =>
+        setPreviewedDevices(prev => { const n = new Set(prev); n.add(d); return n })
+
+
     const historyRef = useRef<SubtitleCue[][]>([initialSegments])
     const historyIdxRef = useRef(0)
 
@@ -229,6 +265,45 @@ export default function SubtitleEditor({
     const [revisions, setRevisions] = useState<Revision[]>([])
     const [showRevisions, setShowRevisions] = useState(false)
     const [loadingRevisions, setLoadingRevisions] = useState(false)
+
+    // ── Phase 4: History clear state ────────────────────────────────────────────
+    type ClearAction = 'clear_only' | 'archive_and_clear' | 'reset_and_clear' | 'delete_drafts'
+    const [showClearModal, setShowClearModal] = useState(false)
+    const [clearAction, setClearAction] = useState<ClearAction>('clear_only')
+    const [clearReason, setClearReason] = useState('')
+    const [clearing, setClearing] = useState(false)
+
+    const handleClearHistory = async () => {
+        setClearing(true)
+        try {
+            const res = await fetch('/api/admin/subtitles/revisions/clear', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId, episodeId, action: clearAction, reason: clearReason || undefined }),
+            })
+            const d = await res.json() as { ok: boolean; rowsDeleted: number; error?: string; archive?: Revision[] }
+            if (!res.ok) throw new Error(d.error || 'Clear failed')
+            if (clearAction === 'archive_and_clear' && d.archive) {
+                const blob = new Blob([JSON.stringify(d.archive, null, 2)], { type: 'application/json' })
+                const a = document.createElement('a')
+                a.href = URL.createObjectURL(blob)
+                a.download = `subtitle-revision-archive-${projectId}.json`
+                a.click()
+            }
+            if (clearAction === 'reset_and_clear') {
+                window.location.reload()
+                return
+            }
+            setRevisions([])
+            setShowClearModal(false)
+            setClearReason('')
+            setMsg(`✓ History cleared — ${d.rowsDeleted} revision${d.rowsDeleted !== 1 ? 's' : ''} removed`)
+            setTimeout(() => setMsg(''), 3500)
+        } catch (e: unknown) {
+            setMsg(`❌ ${e instanceof Error ? e.message : 'Clear failed'}`)
+        }
+        setClearing(false)
+    }
 
     const loadRevisions = useCallback(async () => {
         setLoadingRevisions(true)
@@ -416,6 +491,12 @@ export default function SubtitleEditor({
     }
 
     const approve = async () => {
+        // Phase 3: require the admin to have previewed on mobile before approving
+        if (!previewedDevices.has('portrait')) {
+            setMsg('⚠️ Please preview on mobile (portrait) before approving.')
+            setTimeout(() => setMsg(''), 4000)
+            return
+        }
         setApproving(true); setMsg('')
         await saveDraft('approve').catch(() => {})
         try {
@@ -471,15 +552,29 @@ export default function SubtitleEditor({
         }
     }, [])
 
-    // ── Subtitle preview position ─────────────────────────────────────────────
+    // ── Subtitle preview position (device-aware) ──────────────────────────────
 
-    const getSubtitleBottom = (p: PlacementState): string => {
+    const getSubtitleBottom = (p: PlacementState | MobilePlacementState): string => {
         const baseMap: Record<string, number> = {
             bottom: 5, lower_third: 20, middle: 45, upper_third: 65, top: 82,
         }
         const base = baseMap[p.verticalAnchor] ?? 5
-        return `calc(${base}% + ${p.offsetYPercent}% + ${p.safeAreaMarginPx}px)`
+        const offsetY = 'offsetYPercent' in p ? p.offsetYPercent : 0
+        return `calc(${base}% + ${offsetY}% + ${p.safeAreaMarginPx}px)`
     }
+
+    // For the preview panel, choose placement based on active device
+    const activePlacement: PlacementState | MobilePlacementState =
+        previewDevice !== 'desktop' && useSeparateMobile ? mobilePlacement : placement
+
+    // Preview container dimensions per device
+    const previewDims: Record<PreviewDevice, { w: number; h: number }> = {
+        desktop:  { w: 300, h: Math.round(300 / (16/9)) },
+        portrait: { w: 180, h: 320 },
+        landscape: { w: 300, h: 169 },
+    }
+    const dim = previewDims[previewDevice]
+
 
     // ── Styles ────────────────────────────────────────────────────────────────
 
@@ -503,8 +598,10 @@ export default function SubtitleEditor({
     })
 
     const activeCueText = activeCue >= 0 ? cues[activeCue]?.text : ''
+    const needsMobilePreview = !previewedDevices.has('portrait')
 
     return (
+        <>
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
             <style>{`
                 @media (max-width: 640px) {
@@ -570,15 +667,15 @@ export default function SubtitleEditor({
 
                     {/* Approve */}
                     <button onClick={approve} disabled={approving || isApproved || hardErrors > 0}
-                        title={hardErrors > 0 ? 'Fix hard errors before approving' : isApproved ? 'Already approved — edit to re-approve' : 'Approve source and unlock translation'}
+                        title={hardErrors > 0 ? 'Fix hard errors before approving' : isApproved ? 'Already approved' : needsMobilePreview ? 'Preview on mobile portrait first' : 'Approve source and unlock translation'}
                         style={{
                             padding: '5px 14px', fontSize: '0.78rem', fontWeight: 800, borderRadius: '7px',
-                            background: isApproved ? 'rgba(34,197,94,0.12)' : hardErrors > 0 ? 'rgba(239,68,68,0.12)' : 'linear-gradient(135deg,#d4a853,#b8862e)',
-                            border: isApproved ? '1px solid rgba(34,197,94,0.3)' : hardErrors > 0 ? '1px solid rgba(239,68,68,0.2)' : 'none',
+                            background: isApproved ? 'rgba(34,197,94,0.12)' : hardErrors > 0 ? 'rgba(239,68,68,0.12)' : needsMobilePreview ? 'rgba(245,158,11,0.12)' : 'linear-gradient(135deg,#d4a853,#b8862e)',
+                            border: isApproved ? '1px solid rgba(34,197,94,0.3)' : hardErrors > 0 ? '1px solid rgba(239,68,68,0.2)' : needsMobilePreview ? '1px solid rgba(245,158,11,0.3)' : 'none',
                             cursor: (approving || isApproved || hardErrors > 0) ? 'default' : 'pointer',
-                            color: isApproved ? '#4ade80' : hardErrors > 0 ? '#f87171' : '#000', opacity: approving ? 0.7 : 1,
+                            color: isApproved ? '#4ade80' : hardErrors > 0 ? '#f87171' : needsMobilePreview ? '#fbbf24' : '#000', opacity: approving ? 0.7 : 1,
                         }}
-                    >{approving ? 'Approving…' : isApproved ? '✓ Approved' : hardErrors > 0 ? `✗ ${hardErrors} error${hardErrors > 1 ? 's' : ''}` : '✓ Approve Source'}</button>
+                    >{approving ? 'Approving…' : isApproved ? '✓ Approved' : hardErrors > 0 ? `✗ ${hardErrors} error${hardErrors > 1 ? 's' : ''}` : needsMobilePreview ? '📱 Preview mobile first' : '✓ Approve Source'}</button>
 
                     <button onClick={onClose} style={{ padding: '5px 10px', fontSize: '0.9rem', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}>✕</button>
                 </div>
@@ -610,10 +707,29 @@ export default function SubtitleEditor({
 
                 {/* LEFT: video preview + placement panel */}
                 {filmUrl && (
-                    <div className="aim-editor-video-panel" style={{ width: '300px', flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#000', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+                    <div className="aim-editor-video-panel" style={{ width: dim.w + 24, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)', background: '#000', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+
+                        {/* Device preview toggle (Phase 3) */}
+                        <div style={{ display: 'flex', gap: '2px', padding: '6px 8px', background: 'rgba(0,0,0,0.8)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                            {(['desktop', 'portrait', 'landscape'] as PreviewDevice[]).map(d => (
+                                <button key={d}
+                                    onClick={() => { setPreviewDevice(d); markDevicePreviewed(d) }}
+                                    style={{
+                                        flex: 1, padding: '3px 6px', fontSize: '0.58rem', cursor: 'pointer', borderRadius: '5px',
+                                        background: previewDevice === d ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
+                                        border: `1px solid ${previewDevice === d ? 'rgba(212,168,83,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                                        color: previewDevice === d ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                        fontWeight: previewDevice === d ? 700 : 400,
+                                    }}
+                                >
+                                    {d === 'desktop' ? '🖥 Desktop' : d === 'portrait' ? '📱 Portrait' : '📱 Land.'}
+                                    {d === 'portrait' && previewedDevices.has('portrait') && <span style={{ marginLeft: '3px', color: '#4ade80' }}>✓</span>}
+                                </button>
+                            ))}
+                        </div>
 
                         {/* Video preview with subtitle overlay */}
-                        <div ref={previewRef} style={{ position: 'relative', width: '100%', aspectRatio: '16/9', background: '#000', flexShrink: 0 }}>
+                        <div ref={previewRef} style={{ position: 'relative', width: `${dim.w}px`, height: `${dim.h}px`, background: '#000', flexShrink: 0, margin: '0 auto', border: previewDevice !== 'desktop' ? '2px solid rgba(255,255,255,0.1)' : 'none', borderRadius: previewDevice !== 'desktop' ? '8px' : 0, overflow: 'hidden' }}>
                             <video ref={videoRef} src={filmUrl} controls controlsList="nodownload" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                             {activeCueText && (
                                 <div
@@ -621,21 +737,21 @@ export default function SubtitleEditor({
                                     onTouchStart={handlePreviewDragStart}
                                     style={{
                                         position: 'absolute',
-                                        left: placement.horizontalAlign === 'left' ? '5%' : placement.horizontalAlign === 'right' ? 'auto' : '50%',
-                                        right: placement.horizontalAlign === 'right' ? '5%' : 'auto',
-                                        transform: placement.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                        bottom: getSubtitleBottom(placement),
+                                        left: activePlacement.horizontalAlign === 'left' ? '5%' : activePlacement.horizontalAlign === 'right' ? 'auto' : '50%',
+                                        right: activePlacement.horizontalAlign === 'right' ? '5%' : 'auto',
+                                        transform: activePlacement.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                        bottom: getSubtitleBottom(activePlacement),
                                         cursor: 'ns-resize',
                                         maxWidth: '85%',
                                         padding: '3px 8px',
                                         borderRadius: '4px',
-                                        fontSize: `${0.65 * placement.fontScale}rem`,
+                                        fontSize: `${0.65 * activePlacement.fontScale}rem`,
                                         fontWeight: 600,
                                         color: '#fff',
-                                        textAlign: placement.horizontalAlign as 'left' | 'center' | 'right',
-                                        background: placement.backgroundStyle === 'box' ? 'rgba(0,0,0,0.7)'
-                                            : placement.backgroundStyle === 'shadow' ? 'transparent' : 'transparent',
-                                        textShadow: placement.backgroundStyle === 'shadow' ? '0 0 4px #000, 0 0 8px #000' : 'none',
+                                        textAlign: activePlacement.horizontalAlign as 'left' | 'center' | 'right',
+                                        background: 'backgroundStyle' in activePlacement && activePlacement.backgroundStyle === 'box' ? 'rgba(0,0,0,0.7)'
+                                            : 'backgroundStyle' in activePlacement && activePlacement.backgroundStyle === 'shadow' ? 'transparent' : 'transparent',
+                                        textShadow: 'backgroundStyle' in activePlacement && activePlacement.backgroundStyle === 'shadow' ? '0 0 4px #000, 0 0 8px #000' : 'none',
                                         pointerEvents: 'all',
                                         userSelect: 'none',
                                     }}
@@ -644,14 +760,14 @@ export default function SubtitleEditor({
                                 </div>
                             )}
                             <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.5rem', color: 'rgba(212,168,83,0.6)', padding: '2px 5px', background: 'rgba(0,0,0,0.5)' }}>
-                                drag subtitle to reposition
+                                {previewDevice === 'desktop' ? 'drag to reposition' : `${previewDevice} preview`}
                             </div>
                         </div>
 
-                        {/* Placement panel (T4-A) */}
-                        {showPlacement && (
+                        {/* Placement panel (T4-A) — desktop tab */}
+                        {showPlacement && previewDevice === 'desktop' && (
                             <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)' }}>📐 Subtitle Placement</div>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)' }}>📐 Desktop Placement</div>
 
                                 {/* Vertical preset */}
                                 <div>
@@ -725,6 +841,68 @@ export default function SubtitleEditor({
                             </div>
                         )}
 
+                        {/* Placement panel — mobile tab (Phase 2) */}
+                        {showPlacement && previewDevice !== 'desktop' && (
+                            <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)' }}>📱 Mobile Placement
+                                    <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: '6px', fontSize: '0.58rem' }}>(independent from desktop)</span>
+                                </div>
+
+                                {/* Enable independent mobile */}
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.62rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={useSeparateMobile} onChange={e => setUseSeparateMobile(e.target.checked)}
+                                        style={{ accentColor: 'var(--accent-gold)' }} />
+                                    Use separate mobile positioning
+                                </label>
+
+                                {useSeparateMobile && (<>
+                                    {/* Mobile vertical preset — restricted to bottom/lower_third for safety */}
+                                    <div>
+                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Mobile vertical (safe zone only)</div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                            {ANCHOR_PRESETS.filter(p => p.id === 'bottom' || p.id === 'lower_third').map(p => (
+                                                <button key={p.id} onClick={() => setMobilePlacement(prev => ({ ...prev, verticalAnchor: p.id }))}
+                                                    className={`aim-placement-btn${mobilePlacement.verticalAnchor === p.id ? ' active' : ''}`}
+                                                    style={{ padding: '4px 8px', fontSize: '0.62rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)', textAlign: 'left' }}
+                                                >{p.label}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Mobile Y offset */}
+                                    <div>
+                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Mobile Y offset: {mobilePlacement.offsetYPercent > 0 ? '+' : ''}{mobilePlacement.offsetYPercent.toFixed(1)}%</div>
+                                        <input type="range" min="0" max="12" step="0.5" value={mobilePlacement.offsetYPercent}
+                                            onChange={e => setMobilePlacement(prev => ({ ...prev, offsetYPercent: parseFloat(e.target.value) }))}
+                                            style={{ width: '100%', accentColor: 'var(--accent-gold)' }} />
+                                        <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', marginTop: '2px' }}>Clamped 0–12% to stay above controls</div>
+                                    </div>
+
+                                    {/* Mobile safe area margin */}
+                                    <div>
+                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Safe margin: {mobilePlacement.safeAreaMarginPx}px</div>
+                                        <input type="range" min="12" max="60" step="2" value={mobilePlacement.safeAreaMarginPx}
+                                            onChange={e => setMobilePlacement(prev => ({ ...prev, safeAreaMarginPx: parseInt(e.target.value) }))}
+                                            style={{ width: '100%', accentColor: 'var(--accent-gold)' }} />
+                                        <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', marginTop: '2px' }}>Increase for devices with large home indicators</div>
+                                    </div>
+
+                                    {/* Mobile font scale */}
+                                    <div>
+                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Mobile font size</div>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            {[0.7, 0.8, 0.9, 1.0].map(s => (
+                                                <button key={s} onClick={() => setMobilePlacement(prev => ({ ...prev, fontScale: s }))}
+                                                    className={`aim-placement-btn${mobilePlacement.fontScale === s ? ' active' : ''}`}
+                                                    style={{ flex: 1, padding: '4px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)' }}
+                                                >{s}×</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>)}
+                            </div>
+                        )}
+
                         {/* Shortcuts */}
                         <div style={{ padding: '8px 10px', fontSize: '0.58rem', color: 'rgba(255,255,255,0.18)', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                             <div>Click a cue row to seek · Active cue highlighted</div>
@@ -757,7 +935,11 @@ export default function SubtitleEditor({
                     {/* Revision history drawer */}
                     {showRevisions && (
                         <div style={{ marginBottom: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '10px 12px' }}>
-                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px' }}>🕓 Revision History</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-gold)', flex: 1 }}>🕓 Revision History</div>
+                                {/* Phase 4: history management actions */}
+                                <button onClick={() => setShowClearModal(true)} style={{ padding: '3px 8px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '5px', color: '#f87171' }}>🗑 Manage History</button>
+                            </div>
                             {loadingRevisions && <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Loading…</div>}
                             {!loadingRevisions && revisions.length === 0 && <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>No revisions saved yet.</div>}
                             {revisions.map(rev => (
@@ -881,5 +1063,54 @@ export default function SubtitleEditor({
                 </div>
             </div>
         </div>
+
+        {/* ── Phase 4: History Clear Confirmation Modal ── */}
+        {showClearModal && typeof window !== 'undefined' && createPortal(
+            <div style={{ position: 'fixed', inset: 0, zIndex: 10001, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                <div style={{ background: '#111318', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '14px', padding: '24px', maxWidth: '480px', width: '100%', boxShadow: '0 8px 40px rgba(0,0,0,0.8)' }}>
+                    <div style={{ fontSize: '1rem', fontWeight: 700, color: '#f87171', marginBottom: '8px' }}>🗑 Manage Revision History</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.6 }}>
+                        Choose an action below. <strong style={{ color: '#f87171' }}>This cannot be undone.</strong> The active subtitle content is preserved unless you choose &ldquo;Reset to approved&rdquo;.
+                    </div>
+
+                    {/* Action selector */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+                        {([
+                            { id: 'clear_only',       label: 'Clear revision history only',           desc: 'Delete all revision snapshots. Active subtitles unchanged.' },
+                            { id: 'archive_and_clear', label: 'Archive and clear',                    desc: 'Download a JSON archive of all revisions, then delete them.' },
+                            { id: 'reset_and_clear',  label: 'Reset to last approved + clear',        desc: 'Restore the last approved snapshot as current subtitles, then clear history.' },
+                            { id: 'delete_drafts',    label: 'Delete draft revisions only',            desc: 'Only removes manual_edit revisions. Approved snapshots kept.' },
+                        ] as { id: ClearAction; label: string; desc: string }[]).map(opt => (
+                            <label key={opt.id} style={{ display: 'flex', gap: '10px', padding: '8px 10px', borderRadius: '8px', cursor: 'pointer', background: clearAction === opt.id ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.02)', border: `1px solid ${clearAction === opt.id ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.07)'}` }}>
+                                <input type="radio" name="clearAction" value={opt.id} checked={clearAction === opt.id} onChange={() => setClearAction(opt.id)} style={{ accentColor: '#f87171', marginTop: '2px', flexShrink: 0 }} />
+                                <div>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-primary)' }}>{opt.label}</div>
+                                    <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '1px' }}>{opt.desc}</div>
+                                </div>
+                            </label>
+                        ))}
+                    </div>
+
+                    {/* Reason */}
+                    <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Reason (optional)</div>
+                        <input type="text" value={clearReason} onChange={e => setClearReason(e.target.value)}
+                            placeholder="Why is history being cleared?"
+                            style={{ width: '100%', padding: '7px 10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '7px', color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none', boxSizing: 'border-box' }} />
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button onClick={() => { setShowClearModal(false); setClearReason('') }} style={btnStyle()}>Cancel</button>
+                        <button onClick={handleClearHistory} disabled={clearing}
+                            style={{ ...btnStyle('danger'), padding: '6px 16px', fontSize: '0.75rem', opacity: clearing ? 0.6 : 1 }}>
+                            {clearing ? 'Clearing…' : '🗑 Confirm Clear'}
+                        </button>
+                    </div>
+                </div>
+            </div>,
+            document.body
+        )}
+        </>
     )
 }

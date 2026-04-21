@@ -213,7 +213,7 @@ model FilmSubtitle {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  // ┬ T4: Track-level subtitle placement (defaults for all cues) ┬
+  // ┬ T4: Track-level subtitle placement — desktop (defaults for all cues) ┬
   verticalAnchor   String   @default("bottom")  // bottom|lower_third|middle|upper_third|top
   horizontalAlign  String   @default("center")  // left|center|right
   offsetYPercent   Float    @default(0)
@@ -224,8 +224,19 @@ model FilmSubtitle {
   // JSON: per-cue overrides keyed by cue index string
   cueOverrides     String   @default("{}")
 
+  // ┬ T4-M: Independent mobile placement fields ┬
+  // When useSeparateMobilePlacement=false the player falls back to desktop values.
+  useSeparateMobilePlacement Boolean @default(false)
+  mobileVerticalAnchor       String  @default("bottom")  // bottom|lower_third
+  mobileHorizontalAlign      String  @default("center")
+  mobileOffsetYPercent       Float   @default(0)
+  mobileOffsetXPercent       Float   @default(0)
+  mobileSafeAreaMarginPx     Int     @default(20)        // larger default for home indicator
+  mobileFontScale            Float   @default(0.9)       // slightly smaller for narrow screens
+
   project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   revisions        SubtitleRevision[]
+  historyClearLogs SubtitleHistoryClear[]
 
   @@unique([projectId, episodeId])
   @@index([projectId])
@@ -244,6 +255,22 @@ model SubtitleRevision {
   subtitle       FilmSubtitle @relation(fields: [subtitleId], references: [id], onDelete: Cascade)
 
   @@index([subtitleId, savedAt])
+}
+
+// ┬ Phase 4: Audit log for admin revision-history clear actions ┬
+// Lightweight record preserved even after the SubtitleRevision rows are deleted.
+model SubtitleHistoryClear {
+  id              String       @id @default(cuid())
+  subtitleId      String
+  clearedBy       String       // userId of the admin who performed the action
+  clearedByEmail  String       @default("")
+  clearedAt       DateTime     @default(now())
+  clearActionType String       // clear_only|archive_and_clear|reset_and_clear|delete_drafts
+  reason          String?      // optional admin-supplied reason
+  rowsDeleted     Int          @default(0)
+  subtitle        FilmSubtitle @relation(fields: [subtitleId], references: [id], onDelete: Cascade)
+
+  @@index([subtitleId, clearedAt])
 }
 
 model CastingCall {
