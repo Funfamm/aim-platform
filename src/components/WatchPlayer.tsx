@@ -723,7 +723,7 @@ export default function WatchPlayer({
                     .aim-desktop-only { display: none !important; }
                 }
 
-                /* ── Mobile: Full-width sticky player experience ── */
+                /* ── Mobile: Full-width player experience ── */
                 @media (max-width: 640px) {
                     /* Reduce outer top padding to mobile navbar height */
                     .aim-watch-wrapper { padding-top: 56px !important; padding-bottom: 0 !important; min-height: 0 !important; }
@@ -751,22 +751,15 @@ export default function WatchPlayer({
                         border-radius: 10px !important;
                     }
 
-                    /* ── Sticky full-bleed player: ONLY while playing ─────────────
-                     * When paused the player scrolls normally with the page,
-                     * giving the user full access to cast, description etc.
-                     * When playing: pin at navbar bottom, full-bleed, reserve
-                     * stable 16:9 height so content below never jumps.           */
+                    /* Cosmetic styles when player is pinned/playing
+                     * Positioning is handled via inline JS styles (position:fixed)
+                     * because position:sticky is blocked by overflow-x:hidden on body */
                     .aim-sticky-player-zone.is-playing {
-                        position: sticky;
-                        top: 56px;
-                        z-index: 50;
                         width: 100%;
                         background: #000;
                         aspect-ratio: 16 / 9;
                         overflow: hidden;
                     }
-
-                    /* Remove rounded corners only when sticky (is-playing) */
                     .aim-sticky-player-zone.is-playing .aim-pseudo-fs-shell {
                         border-radius: 0 !important;
                         border: none !important;
@@ -776,11 +769,13 @@ export default function WatchPlayer({
                     }
                 }
 
-                /* T5-A: In landscape, release sticky so fullscreen / immersive mode takes over cleanly */
+                /* In landscape: always release any fixed/sticky so pseudo-FS takes over */
                 @media (max-width: 900px) and (orientation: landscape) {
                     .aim-sticky-player-zone {
                         position: relative !important;
                         top: auto !important;
+                        left: auto !important;
+                        right: auto !important;
                         aspect-ratio: unset !important;
                         overflow: visible !important;
                     }
@@ -833,6 +828,19 @@ export default function WatchPlayer({
                     width: 100%;
                     height: 100%;
                     object-fit: contain;
+                }
+
+                /* ── Desktop: constrain player to comfortable reading width ──
+                 * On large screens the player was stretching edge-to-edge (only 24px
+                 * side padding at 1440px max-width). Cap at 960px centered.         */
+                @media (min-width: 641px) {
+                    .aim-player-container {
+                        max-width: 960px !important;
+                    }
+                    .aim-sticky-player-zone {
+                        border-radius: var(--radius-xl);
+                        overflow: hidden;
+                    }
                 }
             `}</style>
 
@@ -911,8 +919,32 @@ export default function WatchPlayer({
                 )}
 
                 {/* ══════════════ VIDEO PLAYER ══════════════ */}
-                {/* .is-playing added while video is playing → triggers sticky full-bleed CSS */}
-                <div className={`aim-sticky-player-zone${isPlaying ? ' is-playing' : ''}`}>
+                {/*
+                  * PINNED-WHILE-PLAYING: When playing on mobile portrait we use
+                  * position:fixed (not sticky) because position:sticky is broken
+                  * by overflow-x:hidden on html/body.
+                  *
+                  * A 16:9 spacer div is injected to hold the layout slot while
+                  * the player is fixed, so content below never jumps upward.
+                  * In landscape the CSS above forces position:relative so the
+                  * pseudo-FS shell can take over cleanly.
+                  */}
+
+                {/* Spacer: reserves the 16:9 slot while player is position:fixed */}
+                {isPlaying && isMobile && !isLandscape && (
+                    <div aria-hidden="true" style={{ width: '100%', aspectRatio: '16/9' }} />
+                )}
+
+                <div
+                    className={`aim-sticky-player-zone${isPlaying && isMobile && !isLandscape ? ' is-playing' : ''}`}
+                    style={isPlaying && isMobile && !isLandscape ? {
+                        position: 'fixed',
+                        top: '56px',
+                        left: 0,
+                        right: 0,
+                        zIndex: 50,
+                    } : {}}
+                >
                 {/*
                   * ARCHITECTURE: Two-layer container.
                   * Outer (containerRef): position:relative, NO overflow:hidden
