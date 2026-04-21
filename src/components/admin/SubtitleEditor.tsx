@@ -196,6 +196,15 @@ export default function SubtitleEditor({
     // Preview aids
     const [showSafeZones, setShowSafeZones] = useState(false)
     const [showControlsBar, setShowControlsBar] = useState(false)
+    const [showDebug, setShowDebug] = useState(false)
+
+    // Video natural aspect ratio — detected from loaded metadata, default 16:9
+    const [videoNaturalAR, setVideoNaturalAR] = useState(16 / 9)
+
+    // Refs for device-aware drag handler (useEffect closure can't see latest state)
+    const previewDeviceRef = useRef<PreviewDevice>('desktop')
+    const useSeparateMobileRef = useRef(initUseMobile)
+    const videoRectRef = useRef({ x: 0, y: 0, w: 480, h: 270 })
 
     const historyRef = useRef<SubtitleCue[][]>([initialSegments])
     const historyIdxRef = useRef(0)
@@ -249,6 +258,22 @@ export default function SubtitleEditor({
         vid.addEventListener('timeupdate', handler)
         return () => vid.removeEventListener('timeupdate', handler)
     }, [cues])
+
+    // Detect video natural dimensions for letterbox-aware positioning
+    useEffect(() => {
+        const vid = videoRef.current
+        if (!vid) return
+        const onMeta = () => {
+            if (vid.videoWidth && vid.videoHeight) {
+                setVideoNaturalAR(vid.videoWidth / vid.videoHeight)
+            }
+        }
+        if (vid.videoWidth && vid.videoHeight) {
+            setVideoNaturalAR(vid.videoWidth / vid.videoHeight)
+        }
+        vid.addEventListener('loadedmetadata', onMeta)
+        return () => vid.removeEventListener('loadedmetadata', onMeta)
+    }, [filmUrl])
 
     // ── Status / save ───────────────────────────────────────────────────────────
     const [liveStatus, setLiveStatus] = useState(currentStatus)
@@ -478,6 +503,14 @@ export default function SubtitleEditor({
                         fontScale: placement.fontScale,
                         cueOverrides: placement.cueOverrides,
                     },
+                    useSeparateMobilePlacement: useSeparateMobile,
+                    mobilePlacement: useSeparateMobile ? {
+                        verticalAnchor: mobilePlacement.verticalAnchor,
+                        horizontalAlign: mobilePlacement.horizontalAlign,
+                        offsetYPercent: mobilePlacement.offsetYPercent,
+                        safeAreaMarginPx: mobilePlacement.safeAreaMarginPx,
+                        fontScale: mobilePlacement.fontScale,
+                    } : undefined,
                 }),
             })
             const d = await res.json() as { status: string; error?: string }
@@ -528,19 +561,32 @@ export default function SubtitleEditor({
 
     const handlePreviewDragStart = (e: React.MouseEvent | React.TouchEvent) => {
         const y = 'touches' in e ? e.touches[0].clientY : e.clientY
-        dragState.current = { startY: y, startOffset: placement.offsetYPercent }
+        // Read offset from the correct placement state based on current preview device
+        const isDesktop = previewDeviceRef.current === 'desktop'
+        const currentOffset = (isDesktop || !useSeparateMobileRef.current)
+            ? placement.offsetYPercent
+            : mobilePlacement.offsetYPercent
+        dragState.current = { startY: y, startOffset: currentOffset }
         e.preventDefault()
     }
 
     useEffect(() => {
         const onMove = (e: MouseEvent | TouchEvent) => {
-            if (!dragState.current || !previewRef.current) return
+            if (!dragState.current) return
             const y = 'touches' in e ? e.touches[0].clientY : e.clientY
-            const containerH = previewRef.current.offsetHeight
+            // Use video rect height for delta so drag feels natural relative to visible video
+            const deltaH = videoRectRef.current.h || 270
             const deltaY = dragState.current.startY - y
-            const deltaPct = (deltaY / containerH) * 100
-            const newOffset = Math.max(-20, Math.min(20, dragState.current.startOffset + deltaPct))
-            setPlacement(prev => ({ ...prev, offsetYPercent: Math.round(newOffset * 10) / 10 }))
+            const deltaPct = (deltaY / deltaH) * 100
+            const newOffset = Math.round(Math.max(-20, Math.min(20, dragState.current.startOffset + deltaPct)) * 10) / 10
+            // Write to the correct placement state
+            const isDesktop = previewDeviceRef.current === 'desktop'
+            if (isDesktop || !useSeparateMobileRef.current) {
+                setPlacement(prev => ({ ...prev, offsetYPercent: newOffset }))
+            } else {
+                // Mobile offset is clamped 0–12%
+                setMobilePlacement(prev => ({ ...prev, offsetYPercent: Math.max(0, Math.min(12, newOffset)) }))
+            }
         }
         const onEnd = () => { dragState.current = null }
         window.addEventListener('mousemove', onMove)
@@ -563,16 +609,26 @@ export default function SubtitleEditor({
         }
         const base = baseMap[p.verticalAnchor] ?? 5
         const offsetY = 'offsetYPercent' in p ? p.offsetYPercent : 0
-        // The live player adds +58px for the controls bar height.
-        // Scale proportionally: 58 / playerH ≈ 10.2% of a typical mobile player (~568px).
-        // We add this as a percentage of the preview canvas so positioning is WYSIWYG.
-        const ctrlBarPct = 10
-        return `calc(${base + ctrlBarPct}% + ${offsetY}% + ${p.safeAreaMarginPx}px)`
+        // No controls-bar offset here — the subtitle is now positioned inside
+        // the video-rect div (matching the live player's video container).
+        // The live player's +58px offset is accounted for by the mock controls
+        // bar visual guide that the admin positions above.
+        return `calc(${base}% + ${offsetY}% + ${p.safeAreaMarginPx}px)`
     }
 
     // For the preview panel, choose placement based on active device
     const activePlacement: PlacementState | MobilePlacementState =
         previewDevice !== 'desktop' && useSeparateMobile ? mobilePlacement : placement
+
+    // Sync refs so the drag handler's closure sees latest values
+    previewDeviceRef.current = previewDevice
+    useSeparateMobileRef.current = useSeparateMobile
+
+    // Which placement source is active (for debug panel)
+    const placementSource: string =
+        previewDevice === 'desktop' ? 'desktop'
+        : useSeparateMobile ? 'mobile (independent)'
+        : 'desktop (fallback — mobile not enabled)'
 
     // Preview container dimensions per device
     // Portrait: iPhone SE-ish (320×568) — large enough for reliable subtitle placement judging.
@@ -584,17 +640,37 @@ export default function SubtitleEditor({
     }
     const dim = previewDims[previewDevice]
 
+    // Compute the visible video rect inside the preview container.
+    // A 16:9 video in a tall 320×568 portrait container letterboxes heavily;
+    // we must position subtitles relative to the actual video frame.
+    const videoRect = useMemo(() => {
+        const cw = dim.w, ch = dim.h
+        const ar = videoNaturalAR
+        const car = cw / ch
+        if (ar >= car) {
+            // Video fills width, letterbox top/bottom
+            const vw = cw, vh = cw / ar
+            return { x: 0, y: Math.round((ch - vh) / 2), w: vw, h: Math.round(vh) }
+        } else {
+            // Video fills height, pillarbox left/right
+            const vh = ch, vw = ch * ar
+            return { x: Math.round((cw - vw) / 2), y: 0, w: Math.round(vw), h: vh }
+        }
+    }, [dim, videoNaturalAR])
+    // Sync videoRect ref for drag handler
+    videoRectRef.current = videoRect
+
     /**
-     * Compute subtitle font size in px from previewWidth — matching the live player's
+     * Compute subtitle font size in px from video width — matching the live player's
      * clamp(0.9rem, 2.5vw, 1.15rem) formula translated to preview-canvas space.
      *
      * We intentionally avoid `vw` here because vw measures the browser viewport,
      * not the preview canvas, which would produce wildly wrong sizes.
      */
-    const computePreviewFontPx = (fontScale: number, previewWidth: number): string => {
+    const computePreviewFontPx = (fontScale: number, videoWidth: number): string => {
         const BASE_REM = 16 // browser default rem in px
         const minPx   = 0.9  * fontScale * BASE_REM           // 0.9rem in px
-        const idealPx = 0.025 * fontScale * previewWidth      // 2.5% of canvas width
+        const idealPx = 0.025 * fontScale * videoWidth        // 2.5% of video width
         const maxPx   = 1.15 * fontScale * BASE_REM           // 1.15rem in px
         return `${Math.min(maxPx, Math.max(minPx, idealPx)).toFixed(1)}px`
     }
@@ -762,84 +838,114 @@ export default function SubtitleEditor({
                         }}>
                             <video ref={videoRef} src={filmUrl} controls controlsList="nodownload" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
 
-                            {/* Safe-zone guide bands — only shown when toggle is on */}
-                            {showSafeZones && (() => {
-                                // Heights expressed as % of preview canvas
-                                const ctrlH = showControlsBar ? 12 : 8     // controls zone at bottom
-                                const homeH = previewDevice === 'portrait' ? 5 : 0  // home indicator above controls
-                                const safeTop = 100 - ctrlH - homeH - 20  // lower-third safe upper boundary
-                                const safeBot = 100 - ctrlH - homeH        // lower-third safe lower boundary
-                                return (
-                                    <>
-                                        {/* Controls blocked zone — red */}
-                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${ctrlH}%`, background: 'rgba(239,68,68,0.18)', borderTop: '1px dashed rgba(239,68,68,0.6)', pointerEvents: 'none', zIndex: 4 }}>
-                                            <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.42rem', color: 'rgba(239,68,68,0.9)', fontWeight: 700 }}>Controls</span>
-                                        </div>
-                                        {/* Home indicator zone — amber (portrait only) */}
-                                        {homeH > 0 && (
-                                            <div style={{ position: 'absolute', bottom: `${ctrlH}%`, left: 0, right: 0, height: `${homeH}%`, background: 'rgba(245,158,11,0.18)', borderTop: '1px dashed rgba(245,158,11,0.6)', pointerEvents: 'none', zIndex: 4 }}>
-                                                <span style={{ position: 'absolute', top: '1px', left: '4px', fontSize: '0.38rem', color: 'rgba(245,158,11,0.9)', fontWeight: 700 }}>Home indicator</span>
+                            {/* Video-rect overlay — matches the actual rendered video frame.
+                                All subtitle/safe-zone positioning inside this div is relative
+                                to the visible video, not the letterboxed container. */}
+                            <div style={{
+                                position: 'absolute',
+                                left: `${videoRect.x}px`, top: `${videoRect.y}px`,
+                                width: `${videoRect.w}px`, height: `${videoRect.h}px`,
+                                pointerEvents: 'none',
+                            }}>
+
+                                {/* Safe-zone guide bands — relative to video rect */}
+                                {showSafeZones && (() => {
+                                    const ctrlH = showControlsBar ? 12 : 8
+                                    const homeH = previewDevice === 'portrait' ? 5 : 0
+                                    const safeTop = 100 - ctrlH - homeH - 20
+                                    const safeBot = 100 - ctrlH - homeH
+                                    return (
+                                        <>
+                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${ctrlH}%`, background: 'rgba(239,68,68,0.18)', borderTop: '1px dashed rgba(239,68,68,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                                <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.42rem', color: 'rgba(239,68,68,0.9)', fontWeight: 700 }}>Controls</span>
                                             </div>
-                                        )}
-                                        {/* Lower-third safe zone — green */}
-                                        <div style={{ position: 'absolute', bottom: `${safeBot}%`, left: 0, right: 0, height: `${safeTop - safeBot + 20}%`, background: 'rgba(34,197,94,0.07)', borderTop: '1px dashed rgba(34,197,94,0.4)', borderBottom: '1px dashed rgba(34,197,94,0.4)', pointerEvents: 'none', zIndex: 3 }}>
-                                            <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.40rem', color: 'rgba(34,197,94,0.8)', fontWeight: 700 }}>Safe zone</span>
+                                            {homeH > 0 && (
+                                                <div style={{ position: 'absolute', bottom: `${ctrlH}%`, left: 0, right: 0, height: `${homeH}%`, background: 'rgba(245,158,11,0.18)', borderTop: '1px dashed rgba(245,158,11,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                                    <span style={{ position: 'absolute', top: '1px', left: '4px', fontSize: '0.38rem', color: 'rgba(245,158,11,0.9)', fontWeight: 700 }}>Home indicator</span>
+                                                </div>
+                                            )}
+                                            <div style={{ position: 'absolute', bottom: `${safeBot}%`, left: 0, right: 0, height: `${safeTop - safeBot + 20}%`, background: 'rgba(34,197,94,0.07)', borderTop: '1px dashed rgba(34,197,94,0.4)', borderBottom: '1px dashed rgba(34,197,94,0.4)', pointerEvents: 'none', zIndex: 3 }}>
+                                                <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.40rem', color: 'rgba(34,197,94,0.8)', fontWeight: 700 }}>Safe zone</span>
+                                            </div>
+                                        </>
+                                    )
+                                })()}
+
+                                {/* Mock controls bar */}
+                                {showControlsBar && (
+                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '12%', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '4px', pointerEvents: 'none', zIndex: 5 }}>
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
+                                        <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 4px' }}>
+                                            <div style={{ width: '35%', height: '100%', background: 'var(--accent-gold)', borderRadius: '2px' }} />
                                         </div>
-                                    </>
-                                )
-                            })()}
-
-                            {/* Mock controls bar — shown when showControlsBar is on */}
-                            {showControlsBar && (
-                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '12%', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '4px', pointerEvents: 'none', zIndex: 5 }}>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-                                    <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 4px' }}>
-                                        <div style={{ width: '35%', height: '100%', background: 'var(--accent-gold)', borderRadius: '2px' }} />
+                                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)', marginRight: '6px' }} />
                                     </div>
-                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)', marginRight: '6px' }} />
-                                </div>
-                            )}
+                                )}
 
-                            {/* Subtitle overlay — uses JS-computed px font (NOT vw) */}
-                            {activeCueText && (() => {
-                                const p = activePlacement
-                                const fontPx = computePreviewFontPx(p.fontScale, dim.w)
-                                return (
-                                    <div
-                                        onMouseDown={handlePreviewDragStart}
-                                        onTouchStart={handlePreviewDragStart}
-                                        style={{
-                                            position: 'absolute',
-                                            left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
-                                            right: p.horizontalAlign === 'right' ? '5%' : 'auto',
-                                            transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                            bottom: getSubtitleBottom(p),
-                                            cursor: 'ns-resize',
-                                            maxWidth: '90%',
-                                            padding: '3px 10px',
-                                            borderRadius: '5px',
-                                            fontSize: fontPx,
-                                            fontWeight: 600,
-                                            lineHeight: 1.5,
-                                            color: '#fff',
-                                            textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
-                                            background: 'backgroundStyle' in p && p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
-                                            textShadow: 'backgroundStyle' in p && p.backgroundStyle === 'shadow'
-                                                ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
-                                            pointerEvents: 'all',
-                                            userSelect: 'none',
-                                            zIndex: 6,
-                                        }}
-                                    >
-                                        {activeCueText}
-                                    </div>
-                                )
-                            })()}
+                                {/* Subtitle overlay — positioned relative to the video rect */}
+                                {activeCueText && (() => {
+                                    const p = activePlacement
+                                    const fontPx = computePreviewFontPx(p.fontScale, videoRect.w)
+                                    return (
+                                        <div
+                                            onMouseDown={handlePreviewDragStart}
+                                            onTouchStart={handlePreviewDragStart}
+                                            style={{
+                                                position: 'absolute',
+                                                left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
+                                                right: p.horizontalAlign === 'right' ? '5%' : 'auto',
+                                                transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                                bottom: getSubtitleBottom(p),
+                                                cursor: 'ns-resize',
+                                                maxWidth: '90%',
+                                                padding: '3px 10px',
+                                                borderRadius: '5px',
+                                                fontSize: fontPx,
+                                                fontWeight: 600,
+                                                lineHeight: 1.5,
+                                                color: '#fff',
+                                                textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
+                                                background: 'backgroundStyle' in p && p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
+                                                textShadow: 'backgroundStyle' in p && p.backgroundStyle === 'shadow'
+                                                    ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
+                                                pointerEvents: 'all',
+                                                userSelect: 'none',
+                                                zIndex: 6,
+                                            }}
+                                        >
+                                            {activeCueText}
+                                        </div>
+                                    )
+                                })()}
+                            </div>{/* /video-rect overlay */}
 
                             {/* Device label badge */}
                             <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.45rem', color: 'rgba(212,168,83,0.7)', padding: '2px 6px', background: 'rgba(0,0,0,0.6)', borderBottomLeftRadius: '6px', zIndex: 7 }}>
-                                {previewDevice === 'desktop' ? `${dim.w}×${dim.h} • drag to reposition` : `📱 ${previewDevice} • ${dim.w}×${dim.h}`}
+                                {previewDevice === 'desktop' ? `${dim.w}×${dim.h} • drag to reposition` : `📱 ${previewDevice} • ${dim.w}×${dim.h}`}  |  video: {videoRect.w}×{videoRect.h}
                             </div>
+
+                            {/* Debug panel — toggled via checkbox */}
+                            {showDebug && (() => {
+                                const p = activePlacement
+                                const baseMap: Record<string, number> = { bottom: 5, lower_third: 20, middle: 45, upper_third: 65, top: 82 }
+                                const basePct = baseMap[p.verticalAnchor] ?? 5
+                                const offsetY = 'offsetYPercent' in p ? p.offsetYPercent : 0
+                                const approxBottomPx = Math.round((basePct + offsetY) / 100 * videoRect.h + p.safeAreaMarginPx)
+                                const idealFontPx = 0.025 * p.fontScale * videoRect.w
+                                const minFontPx = 0.9 * p.fontScale * 16
+                                const maxFontPx = 1.15 * p.fontScale * 16
+                                const fontClamped = idealFontPx < minFontPx ? 'min' : idealFontPx > maxFontPx ? 'max' : 'none'
+                                return (
+                                    <div style={{ position: 'absolute', bottom: 0, left: 0, fontSize: '0.4rem', color: 'rgba(0,255,136,0.8)', background: 'rgba(0,0,0,0.85)', padding: '4px 6px', borderTopRightRadius: '6px', zIndex: 8, lineHeight: 1.6, fontFamily: 'monospace', whiteSpace: 'pre' }}>
+{`source: ${placementSource}
+video:  ${videoRect.w}×${videoRect.h} @${videoRect.y}px
+anchor: ${p.verticalAnchor} (${basePct}%)
+offset: ${offsetY}%  safe: ${p.safeAreaMarginPx}px
+bottom: ~${approxBottomPx}px
+font:   ${computePreviewFontPx(p.fontScale, videoRect.w)} (clamp=${fontClamped})`}
+                                    </div>
+                                )
+                            })()}
                         </div>
 
                         {/* Preview aid toggles */}
@@ -851,6 +957,10 @@ export default function SubtitleEditor({
                             <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.58rem', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
                                 <input type="checkbox" checked={showControlsBar} onChange={e => setShowControlsBar(e.target.checked)} style={{ accentColor: 'var(--accent-gold)' }} />
                                 Controls bar
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.58rem', color: 'rgba(0,255,136,0.5)', cursor: 'pointer' }}>
+                                <input type="checkbox" checked={showDebug} onChange={e => setShowDebug(e.target.checked)} style={{ accentColor: '#00ff88' }} />
+                                Debug
                             </label>
                         </div>
 
