@@ -1008,9 +1008,14 @@ export function announcementEmail(
 }
 
 /** Sent to opted-in users when admin publishes new content */
-export function contentPublishEmail(contentTitle: string, contentType: string, link: string): string {
+export function contentPublishEmail(contentTitle: string, contentType: string, link: string, locale: string = 'en'): string {
     const typeEmoji: Record<string, string> = { project: '🎬', video: '▶️', blog: '📝', training: '🎓', default: '✨' }
     const emoji = typeEmoji[contentType.toLowerCase()] ?? typeEmoji.default
+    // Use i18n strings — fall back to English literals if key is missing
+    const headingText = (emailT('castingContentPublish', locale, 'heading') || 'Just Published: {title}').replace('{title}', contentTitle)
+    const bodyText    = (emailT('castingContentPublish', locale, 'body')    || 'We just released new {type} content. Check it out on the platform.').replace(/{type}/g, contentType.toLowerCase())
+    const btnText     = (emailT('castingContentPublish', locale, 'buttonText') || 'View {type} →').replace('{type}', contentType)
+    const footerText  = emailT('castingContentPublish', locale, 'footer') || "You're receiving this because you opted in to content updates."
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
             <div style="font-size:52px;margin-bottom:12px;">${emoji}</div>
@@ -1018,11 +1023,11 @@ export function contentPublishEmail(contentTitle: string, contentType: string, l
                 <span style="font-size:12px;font-weight:700;color:${ACCENT_BLUE};letter-spacing:1.5px;text-transform:uppercase;">New ${contentType}</span>
             </div>
         </div>
-        ${heading(`Just Published: ${contentTitle}`)}
-        ${paragraph(`We just released new ${contentType.toLowerCase()} content. Check it out on the platform.`)}
-        ${button(`View ${contentType} →`, link)}
+        ${heading(headingText)}
+        ${paragraph(bodyText)}
+        ${button(btnText, link)}
         ${divider()}
-        ${paragraph(`<span style="font-size:12px;color:#6b7280;">You’re receiving this because you opted in to content updates.</span>`)}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerText}</span>`)}
     `, `New ${contentType}: ${contentTitle}`)
 }
 
@@ -1225,9 +1230,9 @@ export function scriptStatusUpdateEmail(
         ${divider()}
         ${mainMessage}
         ${infoCard(`
-            <p style="margin: 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Script</p>
+            <p style="margin: 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">${emailT('scriptInfoCard', locale, 'scriptLabel') || 'Script'}</p>
             <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${scriptTitle}</p>
-            <p style="margin: 10px 0 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Call</p>
+            <p style="margin: 10px 0 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">${emailT('scriptInfoCard', locale, 'callLabel') || 'Call'}</p>
             <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${callTitle}</p>
         `, color)}
         ${note ? divider() + paragraph(`<em style="color: ${TEXT_SECONDARY};">${note}</em>`) : ''}
@@ -1261,9 +1266,9 @@ export function scriptWithdrawalEmail(
         ${divider()}
         ${localizedBody ? paragraph(localizedBody) : paragraph(`Your script <strong>"${scriptTitle}"</strong> submitted to <strong>${callTitle}</strong> has been withdrawn.`)}
         ${infoCard(`
-            <p style="margin: 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Script</p>
+            <p style="margin: 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">${emailT('scriptInfoCard', locale, 'scriptLabel') || 'Script'}</p>
             <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${scriptTitle}</p>
-            <p style="margin: 10px 0 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">Call</p>
+            <p style="margin: 10px 0 0; font-size: 13px; color: ${TEXT_SECONDARY}; margin-bottom: 4px;">${emailT('scriptInfoCard', locale, 'callLabel') || 'Call'}</p>
             <p style="margin: 0; font-size: 15px; color: ${TEXT_PRIMARY}; font-weight: 600;">${callTitle}</p>
         `, '#6b7280')}
         ${paragraph(`<em style="color: ${TEXT_SECONDARY};">${localizedFooter}</em>`)}

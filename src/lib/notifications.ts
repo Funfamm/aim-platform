@@ -199,15 +199,15 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                         locale
                     )
                 } else if (opts.type === 'content_publish') {
-                    html = contentPublishEmail(displayTitle, displayMessage, localizedLink ?? opts.link ?? '')
+                    html = contentPublishEmail(displayTitle, displayMessage, localizedLink ?? opts.link ?? '', locale)
                 } else {
                     // Generic fallback: rebuild plain HTML with localized text
-                    html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link)
+                    html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link, locale)
                 }
             }
 
             // Final safety net — ensure html is always a string
-            if (!html) html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link)
+            if (!html) html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link, locale)
 
             await sendEmail({ to: user.email, subject, html })
         }
@@ -769,12 +769,13 @@ function buildStatusBody(opts: {
     return `Hi ${opts.recipientName},\n\n${opts.heading}\n\n${opts.body}\n\nRole: ${opts.roleName}\nProject: ${opts.projectTitle}${opts.aiScore ? `\nAI Compatibility Score: ${opts.aiScore}/100` : ''}${opts.statusNote ? `\n\nNote from our team:\n${opts.statusNote}` : ''}\n\nBest regards,\n${opts.siteName} Casting Team`.trim()
 }
 
-function buildPlainHtml(title: string, message: string, link?: string): string {
+function buildPlainHtml(title: string, message: string, link?: string, locale: string = 'en'): string {
+    const viewNow = t('genericNotif', locale, 'viewNow') || 'View Now'
     return `
         <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:40px 24px;">
             <h2 style="color:#d4a853;margin-bottom:8px;">${title}</h2>
             <p style="color:#ccc;font-size:15px;line-height:1.6;">${message}</p>
-            ${link ? `<a href="${link}" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#d4a853;color:#000;border-radius:6px;text-decoration:none;font-weight:600;">View Now</a>` : ''}
+            ${link ? `<a href="${link}" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#d4a853;color:#000;border-radius:6px;text-decoration:none;font-weight:600;">${viewNow}</a>` : ''}
         </div>
     `.trim()
 }

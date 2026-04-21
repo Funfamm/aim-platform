@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { translateAndSave } from '@/lib/translate'
 
 // PUT — update a sponsor
 export async function PUT(
@@ -38,6 +39,20 @@ export async function PUT(
         if (data.sortOrder !== undefined) update.sortOrder = data.sortOrder
 
         const sponsor = await prisma.sponsor.update({ where: { id }, data: update })
+
+        // Fire-and-forget: re-translate description if it was updated
+        if (data.description !== undefined && sponsor.description) {
+            translateAndSave(
+                { description: sponsor.description },
+                async (translationsJson) => {
+                    await prisma.sponsor.update({
+                        where: { id: sponsor.id },
+                        data: { descriptionI18n: translationsJson },
+                    })
+                }
+            )
+        }
+
         return NextResponse.json(sponsor)
     } catch (err) {
         console.error('PUT /api/admin/sponsors error:', err)

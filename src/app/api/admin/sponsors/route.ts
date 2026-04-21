@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { translateAndSave } from '@/lib/translate'
 
 // GET — list all sponsors
 export async function GET() {
@@ -76,6 +77,20 @@ export async function POST(request: NextRequest) {
                 bannerDurationHours: typeof data.bannerDurationHours === 'number' ? data.bannerDurationHours : 24,
             },
         })
+
+        // Fire-and-forget: auto-translate description into all supported locales
+        if (sponsor.description) {
+            translateAndSave(
+                { description: sponsor.description },
+                async (translationsJson) => {
+                    await prisma.sponsor.update({
+                        where: { id: sponsor.id },
+                        data: { descriptionI18n: translationsJson },
+                    })
+                }
+            )
+        }
+
         return NextResponse.json(sponsor)
     } catch (err) {
         console.error('POST /api/admin/sponsors error:', err)
