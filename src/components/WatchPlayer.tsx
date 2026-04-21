@@ -226,14 +226,14 @@ export default function WatchPlayer({
         }
     }, [updateVideoRect])
 
-    /* Lock body scroll when mobile lang sheet is open */
+    /* Lock body scroll when mobile portrait lang sheet is open */
     useEffect(() => {
-        if (isMobile && showLangMenu) {
+        if (isMobile && !isLandscape && showLangMenu) {
             const prev = document.body.style.overflow
             document.body.style.overflow = 'hidden'
             return () => { document.body.style.overflow = prev }
         }
-    }, [isMobile, showLangMenu])
+    }, [isMobile, isLandscape, showLangMenu])
 
     /* Cleanup blob URLs */
     useEffect(() => {
@@ -739,43 +739,41 @@ export default function WatchPlayer({
                         display: inline-flex;
                     }
 
-                    /* Sticky full-bleed player zone — portrait mode only (T5-A/B/C) */
-                    /* Uses aspect-ratio to reserve stable height and prevent jitter   */
-                    .aim-sticky-player-zone {
-                        position: sticky;
-                        top: 56px;
-                        z-index: 50;
-                        width: 100%;
-                        background: #000;
-                        /* Reserve space based on 16:9 so content below never pops up/down */
-                        aspect-ratio: 16 / 9;
-                        /* Clip subtitles to player bounds (T5-C) */
-                        overflow: hidden;
-                    }
-
-                    /* Remove rounded corners and border — full-bleed on mobile */
-                    .aim-sticky-player-zone .aim-pseudo-fs-shell {
-                        border-radius: 0 !important;
-                        border: none !important;
-                    }
-
-                    /* Hide the inner rounded box clip on mobile too */
-                    .aim-sticky-player-zone .aim-video-container {
-                        border-radius: 0 !important;
-                    }
-
                     /* Thicker seek bar — easier to grab with a thumb */
                     .aim-progress-track-inner { height: 6px !important; }
 
                     /* Show skip ±10s buttons on mobile */
                     .aim-skip-btn { display: flex !important; }
 
-                    /* Resume banner: restore its padding */
+                    /* Resume banner: restore padding */
                     .aim-resume-banner {
                         margin: 0 16px 8px !important;
                         border-radius: 10px !important;
                     }
-                    /* Note: subtitle overlay bottom is now managed dynamically via placement metadata */
+
+                    /* ── Sticky full-bleed player: ONLY while playing ─────────────
+                     * When paused the player scrolls normally with the page,
+                     * giving the user full access to cast, description etc.
+                     * When playing: pin at navbar bottom, full-bleed, reserve
+                     * stable 16:9 height so content below never jumps.           */
+                    .aim-sticky-player-zone.is-playing {
+                        position: sticky;
+                        top: 56px;
+                        z-index: 50;
+                        width: 100%;
+                        background: #000;
+                        aspect-ratio: 16 / 9;
+                        overflow: hidden;
+                    }
+
+                    /* Remove rounded corners only when sticky (is-playing) */
+                    .aim-sticky-player-zone.is-playing .aim-pseudo-fs-shell {
+                        border-radius: 0 !important;
+                        border: none !important;
+                    }
+                    .aim-sticky-player-zone.is-playing .aim-video-container {
+                        border-radius: 0 !important;
+                    }
                 }
 
                 /* T5-A: In landscape, release sticky so fullscreen / immersive mode takes over cleanly */
@@ -913,8 +911,8 @@ export default function WatchPlayer({
                 )}
 
                 {/* ══════════════ VIDEO PLAYER ══════════════ */}
-                {/* aim-sticky-player-zone: on mobile this becomes position:sticky + full-bleed */}
-                <div className="aim-sticky-player-zone">
+                {/* .is-playing added while video is playing → triggers sticky full-bleed CSS */}
+                <div className={`aim-sticky-player-zone${isPlaying ? ' is-playing' : ''}`}>
                 {/*
                   * ARCHITECTURE: Two-layer container.
                   * Outer (containerRef): position:relative, NO overflow:hidden
@@ -1363,8 +1361,8 @@ export default function WatchPlayer({
                                                     animation: 'aimFadeIn 0.2s ease',
                                                 }}>{ccStatusText}</div>
                                             )}
-                                            {/* ── Language picker: bottom-sheet on mobile, dropdown on desktop ── */}
-                                            {showLangMenu && !isMobile && (
+                                            {/* ── Language picker: dropdown in landscape/desktop, bottom-sheet in mobile portrait ── */}
+                                            {showLangMenu && (!isMobile || isLandscape) && (
                                                 /* Desktop dropdown */
                                                 <div style={{
                                                     position: 'absolute', bottom: '110%', right: 0,
@@ -1402,8 +1400,8 @@ export default function WatchPlayer({
                                                         }}>{tPlayer('subtitlesOff')}</button>
                                                 </div>
                                             )}
-                                            {/* Mobile bottom sheet — rendered via portal so it's never clipped */}
-                                            {showLangMenu && isMobile && typeof document !== 'undefined' && createPortal(
+                                            {/* Mobile portrait bottom sheet — rendered via portal so it's never clipped */}
+                                            {showLangMenu && isMobile && !isLandscape && typeof document !== 'undefined' && createPortal(
                                                 <>
                                                     {/* Backdrop */}
                                                     <div
