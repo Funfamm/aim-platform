@@ -635,6 +635,56 @@ export default function SubtitleEditor({
     // Fix #14: refs for auto-scrolling to active cue in the timeline
     const cueRowRefs = useRef<Array<HTMLDivElement | null>>([])
 
+    // ── Canvas Zoom / Pan (display-only — never affects placement math) ─────────
+    type ZoomMode = 'fit' | 'fit-height' | 'fit-width' | '100' | '75' | '50' | 'custom'
+    const [zoomMode, setZoomMode]     = useState<ZoomMode>('fit')
+    const [customZoom, setCustomZoom] = useState(1)
+    const [stageSize, setStageSize]   = useState({ w: 800, h: 500 })
+    const [panOffset, setPanOffset]   = useState({ x: 0, y: 0 })
+    const stageRef   = useRef<HTMLDivElement>(null)
+    const panDragRef = useRef<{ startX: number; startY: number; startPanX: number; startPanY: number } | null>(null)
+
+    // Measure available stage space with ResizeObserver
+    useEffect(() => {
+        const el = stageRef.current
+        if (!el) return
+        const obs = new ResizeObserver(entries => {
+            const r = entries[0].contentRect
+            setStageSize({ w: r.width, h: r.height })
+        })
+        obs.observe(el)
+        return () => obs.disconnect()
+    }, [])
+
+    // Auto-zoom per device: portrait → fit-height (shows full phone), others → fit
+    useEffect(() => {
+        setZoomMode(previewDevice === 'portrait' ? 'fit-height' : 'fit')
+        setPanOffset({ x: 0, y: 0 })
+    }, [previewDevice])
+
+    // Reset pan when switching to a contained zoom mode
+    useEffect(() => {
+        if (zoomMode !== 'custom' && zoomMode !== '100') setPanOffset({ x: 0, y: 0 })
+    }, [zoomMode])
+
+    // Pan drag — window-level listeners so drag works outside the stage bounds
+    useEffect(() => {
+        const onMove = (e: MouseEvent) => {
+            if (!panDragRef.current) return
+            setPanOffset({
+                x: panDragRef.current.startPanX + e.clientX - panDragRef.current.startX,
+                y: panDragRef.current.startPanY + e.clientY - panDragRef.current.startY,
+            })
+        }
+        const onEnd = () => { panDragRef.current = null }
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onEnd)
+        return () => {
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onEnd)
+        }
+    }, [])
+
     const handlePreviewDragStart = (e: React.MouseEvent | React.TouchEvent) => {
         const y = 'touches' in e ? e.touches[0].clientY : e.clientY
         // Read offset from the correct placement state based on current preview device
@@ -746,6 +796,32 @@ export default function SubtitleEditor({
         landscape: { w: 568, h: 320 },  // Fix #4: matching portrait dimensions rotated
     }
     const dim = previewDims[previewDevice]
+
+    // ── Derived zoom scale (display-only — placement math always uses native dim) ─
+    const STAGE_PAD = 20
+    const effectiveScale = useMemo(() => {
+        const fw = Math.max(0.01, (stageSize.w - STAGE_PAD * 2) / dim.w)
+        const fh = Math.max(0.01, (stageSize.h - STAGE_PAD * 2) / dim.h)
+        switch (zoomMode) {
+            case 'fit-width':  return Math.min(fw, 1)
+            case 'fit-height': return Math.min(fh, 1)
+            case '100': return 1
+            case '75':  return 0.75
+            case '50':  return 0.5
+            case 'custom': return Math.max(0.1, Math.min(customZoom, 3))
+            default:    return Math.min(fw, fh, 1)  // 'fit'
+        }
+    }, [zoomMode, stageSize, dim, customZoom])
+
+    // Frame overflows stage → pan enabled
+    const canPan = dim.w * effectiveScale > stageSize.w - 4 || dim.h * effectiveScale > stageSize.h - 4
+
+    // Reset to per-device default zoom + clear pan
+    const resetView = useCallback(() => {
+        setZoomMode(previewDevice === 'portrait' ? 'fit-height' : 'fit')
+        setCustomZoom(1)
+        setPanOffset({ x: 0, y: 0 })
+    }, [previewDevice])
 
     // Compute the visible video rect inside the preview container.
     // A 16:9 video in a tall 320×568 portrait container letterboxes heavily;
@@ -1143,11 +1219,11 @@ export default function SubtitleEditor({
                 {/* ══════════ CENTER PANEL — Video Preview ══════════ */}
                 {filmUrl && (
                     <div className="aim-editor-video-panel" style={{
-                        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        background: '#080a0e', borderRight: '1px solid rgba(255,255,255,0.07)',
+                        flex: 1, display: 'flex', flexDirection: 'column',
+                        background: '#060810', borderRight: '1px solid rgba(255,255,255,0.07)',
                         overflow: 'hidden', minWidth: 0,
                     }}>
-                        {/* Device selector (top of center panel) */}
+                        {/* ── Row 1: Device selector tabs ── */}
                         <div style={{ display: 'flex', gap: '2px', padding: '6px 10px', width: '100%', background: 'rgba(0,0,0,0.5)', borderBottom: '1px solid rgba(255,255,255,0.06)', boxSizing: 'border-box', flexShrink: 0 }}>
                             {(['desktop', 'portrait', 'landscape'] as PreviewDevice[]).map(d => (
                                 <button key={d}
@@ -1166,116 +1242,248 @@ export default function SubtitleEditor({
                             ))}
                         </div>
 
-                        {/* Preview area — video centered, scales to available space */}
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px', overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
-                            <div ref={previewRef} style={{
-                                position: 'relative',
-                                width: `${dim.w}px`, height: `${dim.h}px`,
-                                maxWidth: '100%',
-                                background: '#111', flexShrink: 0,
-                                border: previewDevice !== 'desktop' ? '2px solid rgba(255,255,255,0.15)' : '1px solid rgba(255,255,255,0.07)',
-                                borderRadius: previewDevice === 'portrait' ? '20px' : previewDevice === 'landscape' ? '8px' : '4px',
-                                overflow: 'hidden',
-                                boxShadow: previewDevice !== 'desktop' ? '0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04)' : 'none',
+                        {/* ── Row 2: Zoom toolbar ── */}
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '3px',
+                            padding: '4px 10px', background: 'rgba(0,0,0,0.38)',
+                            borderBottom: '1px solid rgba(255,255,255,0.05)',
+                            flexShrink: 0, overflowX: 'auto',
+                        }}>
+                            {/* Fit group */}
+                            {([
+                                { id: 'fit'        as ZoomMode, label: 'Fit'   },
+                                { id: 'fit-height' as ZoomMode, label: 'Fit H' },
+                                { id: 'fit-width'  as ZoomMode, label: 'Fit W' },
+                            ]).map(m => (
+                                <button key={m.id}
+                                    onClick={() => { setZoomMode(m.id); setPanOffset({ x: 0, y: 0 }) }}
+                                    title={m.id === 'fit' ? 'Best fit' : m.id === 'fit-height' ? 'Fit height (best for portrait)' : 'Fit width'}
+                                    style={{
+                                        padding: '2px 8px', fontSize: '0.55rem', cursor: 'pointer', borderRadius: '4px', whiteSpace: 'nowrap', flexShrink: 0,
+                                        background: zoomMode === m.id ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
+                                        border: `1px solid ${zoomMode === m.id ? 'rgba(212,168,83,0.45)' : 'rgba(255,255,255,0.07)'}`,
+                                        color: zoomMode === m.id ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                        fontWeight: zoomMode === m.id ? 700 : 400,
+                                    }}
+                                >{m.label}</button>
+                            ))}
+
+                            <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)', flexShrink: 0, margin: '0 2px' }} />
+
+                            {/* Fixed zoom levels */}
+                            {([
+                                { id: '100' as ZoomMode, label: '100%' },
+                                { id: '75'  as ZoomMode, label: '75%'  },
+                                { id: '50'  as ZoomMode, label: '50%'  },
+                            ]).map(m => (
+                                <button key={m.id}
+                                    onClick={() => { setZoomMode(m.id); setPanOffset({ x: 0, y: 0 }) }}
+                                    style={{
+                                        padding: '2px 8px', fontSize: '0.55rem', cursor: 'pointer', borderRadius: '4px', whiteSpace: 'nowrap', flexShrink: 0,
+                                        background: zoomMode === m.id ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
+                                        border: `1px solid ${zoomMode === m.id ? 'rgba(212,168,83,0.45)' : 'rgba(255,255,255,0.07)'}`,
+                                        color: zoomMode === m.id ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                        fontWeight: zoomMode === m.id ? 700 : 400,
+                                    }}
+                                >{m.label}</button>
+                            ))}
+
+                            <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)', flexShrink: 0, margin: '0 2px' }} />
+
+                            {/* Step − / zoom display / + */}
+                            <button
+                                onClick={() => {
+                                    const cur = zoomMode === 'custom' ? customZoom : effectiveScale
+                                    setCustomZoom(parseFloat(Math.max(0.1, cur - 0.1).toFixed(2)))
+                                    setZoomMode('custom')
+                                }}
+                                title="Zoom out 10%"
+                                style={{ padding: '1px 7px', fontSize: '0.8rem', lineHeight: 1, cursor: 'pointer', borderRadius: '4px', flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)' }}
+                            >−</button>
+
+                            <div style={{
+                                minWidth: '40px', textAlign: 'center', fontSize: '0.58rem', fontWeight: 700,
+                                color: zoomMode === 'custom' ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                fontFamily: 'monospace', flexShrink: 0, padding: '0 2px',
                             }}>
-                                <video ref={videoRef} src={filmUrl} controls controlsList="nodownload"
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: previewDevice === 'portrait' ? 'top center' : 'center center' }}
-                                />
+                                {Math.round(effectiveScale * 100)}%
+                            </div>
 
-                                {/* Video-rect overlay */}
-                                <div style={{
-                                    position: 'absolute',
-                                    left: `${videoRect.x}px`, top: `${videoRect.y}px`,
-                                    width: `${videoRect.w}px`, height: `${videoRect.h}px`,
-                                    pointerEvents: 'none',
+                            <button
+                                onClick={() => {
+                                    const cur = zoomMode === 'custom' ? customZoom : effectiveScale
+                                    setCustomZoom(parseFloat(Math.min(3, cur + 0.1).toFixed(2)))
+                                    setZoomMode('custom')
+                                }}
+                                title="Zoom in 10%"
+                                style={{ padding: '1px 7px', fontSize: '0.8rem', lineHeight: 1, cursor: 'pointer', borderRadius: '4px', flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)' }}
+                            >+</button>
+
+                            {/* Spacer */}
+                            <div style={{ flex: 1, minWidth: '6px' }} />
+
+                            {/* Pan-available hint */}
+                            {canPan && (
+                                <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.22)', fontStyle: 'italic', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                    ✋ drag to pan
+                                </span>
+                            )}
+
+                            {/* Reset View */}
+                            <button
+                                onClick={resetView}
+                                title={`Reset to ${previewDevice === 'portrait' ? 'Fit Height' : 'Fit'} (device default)`}
+                                style={{
+                                    padding: '2px 8px', fontSize: '0.55rem', cursor: 'pointer', borderRadius: '4px',
+                                    background: 'rgba(99,102,241,0.09)', border: '1px solid rgba(99,102,241,0.22)',
+                                    color: '#818cf8', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
+                                }}
+                            >↺ Reset</button>
+                        </div>
+
+                        {/* ── Row 3: Stage (canvas) ── */}
+                        <div
+                            ref={stageRef}
+                            onMouseDown={e => {
+                                if (!canPan) return
+                                // Subtitle drag handles its own interaction — do not intercept
+                                if ((e.target as HTMLElement).closest('[data-subtitle-drag]')) return
+                                panDragRef.current = { startX: e.clientX, startY: e.clientY, startPanX: panOffset.x, startPanY: panOffset.y }
+                                e.preventDefault()
+                            }}
+                            style={{
+                                flex: 1, position: 'relative', overflow: 'hidden',
+                                cursor: canPan ? 'grab' : 'default',
+                                // Subtle dot-grid background gives "infinite canvas" feel
+                                background: '#060810',
+                                backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px)',
+                                backgroundSize: '24px 24px',
+                            }}
+                        >
+                            {/* Pan anchor — centered in stage, shifted by panOffset.
+                                Zero layout size so scale radiates from stage center. */}
+                            <div style={{
+                                position: 'absolute',
+                                left: '50%', top: '50%',
+                                transform: `translate(calc(-50% + ${panOffset.x}px), calc(-50% + ${panOffset.y}px))`,
+                                pointerEvents: 'none',
+                            }}>
+                                {/* Device frame — native dimensions, visually scaled */}
+                                <div ref={previewRef} style={{
+                                    position: 'relative',
+                                    width: `${dim.w}px`,
+                                    height: `${dim.h}px`,
+                                    transform: `scale(${effectiveScale})`,
+                                    transformOrigin: 'center center',
+                                    background: '#111',
+                                    border: previewDevice !== 'desktop' ? '2px solid rgba(255,255,255,0.18)' : '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: previewDevice === 'portrait' ? '24px' : previewDevice === 'landscape' ? '10px' : '6px',
+                                    overflow: 'hidden',
+                                    boxShadow: previewDevice !== 'desktop'
+                                        ? '0 16px 72px rgba(0,0,0,0.95), 0 0 0 1px rgba(255,255,255,0.06)'
+                                        : '0 6px 36px rgba(0,0,0,0.6)',
+                                    pointerEvents: 'all',
                                 }}>
-                                    {/* Safe-zone guide bands */}
-                                    {showSafeZones && (() => {
-                                        const ctrlH = showControlsBar ? 12 : 8
-                                        const homeH = previewDevice === 'portrait' ? 5 : 0
-                                        const safeTop = 100 - ctrlH - homeH - 20
-                                        const safeBot = 100 - ctrlH - homeH
-                                        return (
-                                            <>
-                                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${ctrlH}%`, background: 'rgba(239,68,68,0.18)', borderTop: '1px dashed rgba(239,68,68,0.6)', pointerEvents: 'none', zIndex: 4 }}>
-                                                    <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.42rem', color: 'rgba(239,68,68,0.9)', fontWeight: 700 }}>Controls</span>
-                                                </div>
-                                                {homeH > 0 && (
-                                                    <div style={{ position: 'absolute', bottom: `${ctrlH}%`, left: 0, right: 0, height: `${homeH}%`, background: 'rgba(245,158,11,0.18)', borderTop: '1px dashed rgba(245,158,11,0.6)', pointerEvents: 'none', zIndex: 4 }}>
-                                                        <span style={{ position: 'absolute', top: '1px', left: '4px', fontSize: '0.38rem', color: 'rgba(245,158,11,0.9)', fontWeight: 700 }}>Home indicator</span>
-                                                    </div>
-                                                )}
-                                                <div style={{ position: 'absolute', bottom: `${safeBot}%`, left: 0, right: 0, height: `${safeTop - safeBot + 20}%`, background: 'rgba(34,197,94,0.07)', borderTop: '1px dashed rgba(34,197,94,0.4)', borderBottom: '1px dashed rgba(34,197,94,0.4)', pointerEvents: 'none', zIndex: 3 }}>
-                                                    <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.40rem', color: 'rgba(34,197,94,0.8)', fontWeight: 700 }}>Safe zone</span>
-                                                </div>
-                                            </>
-                                        )
-                                    })()}
+                                    <video ref={videoRef} src={filmUrl} controls controlsList="nodownload"
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: previewDevice === 'portrait' ? 'top center' : 'center center' }}
+                                    />
 
-                                    {/* Mock controls bar */}
-                                    {showControlsBar && (
-                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '12%', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '4px', pointerEvents: 'none', zIndex: 5 }}>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
-                                            <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 4px' }}>
-                                                <div style={{ width: '35%', height: '100%', background: 'var(--accent-gold)', borderRadius: '2px' }} />
+                                    {/* Video-rect overlay — always in native px, never scaled */}
+                                    <div style={{
+                                        position: 'absolute',
+                                        left: `${videoRect.x}px`, top: `${videoRect.y}px`,
+                                        width: `${videoRect.w}px`, height: `${videoRect.h}px`,
+                                        pointerEvents: 'none',
+                                    }}>
+                                        {/* Safe-zone guide bands */}
+                                        {showSafeZones && (() => {
+                                            const ctrlH = showControlsBar ? 12 : 8
+                                            const homeH = previewDevice === 'portrait' ? 5 : 0
+                                            const safeTop = 100 - ctrlH - homeH - 20
+                                            const safeBot = 100 - ctrlH - homeH
+                                            return (
+                                                <>
+                                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: `${ctrlH}%`, background: 'rgba(239,68,68,0.18)', borderTop: '1px dashed rgba(239,68,68,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                                        <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.42rem', color: 'rgba(239,68,68,0.9)', fontWeight: 700 }}>Controls</span>
+                                                    </div>
+                                                    {homeH > 0 && (
+                                                        <div style={{ position: 'absolute', bottom: `${ctrlH}%`, left: 0, right: 0, height: `${homeH}%`, background: 'rgba(245,158,11,0.18)', borderTop: '1px dashed rgba(245,158,11,0.6)', pointerEvents: 'none', zIndex: 4 }}>
+                                                            <span style={{ position: 'absolute', top: '1px', left: '4px', fontSize: '0.38rem', color: 'rgba(245,158,11,0.9)', fontWeight: 700 }}>Home indicator</span>
+                                                        </div>
+                                                    )}
+                                                    <div style={{ position: 'absolute', bottom: `${safeBot}%`, left: 0, right: 0, height: `${safeTop - safeBot + 20}%`, background: 'rgba(34,197,94,0.07)', borderTop: '1px dashed rgba(34,197,94,0.4)', borderBottom: '1px dashed rgba(34,197,94,0.4)', pointerEvents: 'none', zIndex: 3 }}>
+                                                        <span style={{ position: 'absolute', top: '2px', left: '4px', fontSize: '0.40rem', color: 'rgba(34,197,94,0.8)', fontWeight: 700 }}>Safe zone</span>
+                                                    </div>
+                                                </>
+                                            )
+                                        })()}
+
+                                        {/* Mock controls bar */}
+                                        {showControlsBar && (
+                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '12%', background: 'rgba(0,0,0,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', paddingLeft: '6px', gap: '4px', pointerEvents: 'none', zIndex: 5 }}>
+                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.5)' }} />
+                                                <div style={{ flex: 1, height: '2px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', margin: '0 4px' }}>
+                                                    <div style={{ width: '35%', height: '100%', background: 'var(--accent-gold)', borderRadius: '2px' }} />
+                                                </div>
+                                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)', marginRight: '6px' }} />
                                             </div>
-                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'rgba(255,255,255,0.4)', marginRight: '6px' }} />
+                                        )}
+
+                                        {/* Subtitle overlay — data-subtitle-drag guards stage pan */}
+                                        {activeCueText && (() => {
+                                            const p = activePlacement
+                                            const fontPx = computePreviewFontPx(p.fontScale, videoRect.w)
+                                            return (
+                                                <div
+                                                    data-subtitle-drag="1"
+                                                    onMouseDown={handlePreviewDragStart}
+                                                    onTouchStart={handlePreviewDragStart}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
+                                                        right: p.horizontalAlign === 'right' ? '5%' : 'auto',
+                                                        transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
+                                                        bottom: getSubtitleBottom(p),
+                                                        cursor: 'ns-resize',
+                                                        maxWidth: '90%',
+                                                        padding: '3px 10px',
+                                                        borderRadius: '5px',
+                                                        fontSize: fontPx,
+                                                        fontWeight: 600,
+                                                        lineHeight: 1.5,
+                                                        color: '#fff',
+                                                        textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
+                                                        background: 'backgroundStyle' in p && p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
+                                                        textShadow: 'backgroundStyle' in p && p.backgroundStyle === 'shadow'
+                                                            ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
+                                                        pointerEvents: 'all',
+                                                        userSelect: 'none',
+                                                        zIndex: 6,
+                                                    }}
+                                                >
+                                                    {activeCueText}
+                                                </div>
+                                            )
+                                        })()}
+                                    </div>
+
+                                    {/* Device badge */}
+                                    <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.42rem', color: 'rgba(212,168,83,0.6)', padding: '2px 6px', background: 'rgba(0,0,0,0.65)', borderBottomLeftRadius: '6px', zIndex: 7 }}>
+                                        {previewDevice} · {dim.w}×{dim.h} · video: {videoRect.w}×{videoRect.h}
+                                    </div>
+
+                                    {/* Debug overlay */}
+                                    {showDebug && (
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '4px 6px', background: 'rgba(0,20,0,0.85)', fontSize: '0.4rem', color: '#00ff88', fontFamily: 'monospace', lineHeight: 1.5, zIndex: 8, pointerEvents: 'none', whiteSpace: 'pre-wrap' }}>
+                                            {`source: ${placementSource}\nvideo: ${videoRect.w}×${videoRect.h} @(${videoRect.x},${videoRect.y})\nanchor: ${activePlacement.verticalAnchor} | align: ${activePlacement.horizontalAlign}\noffsetY: ${activePlacement.offsetYPercent}% | margin: ${activePlacement.safeAreaMarginPx}px\nfont: ${activePlacement.fontScale}× → ${computePreviewFontPx(activePlacement.fontScale, videoRect.w)}\nbottom: ${getSubtitleBottom(activePlacement)}\nzoom: ${Math.round(effectiveScale * 100)}% (${zoomMode}) | pan: ${Math.round(panOffset.x)},${Math.round(panOffset.y)}`}
                                         </div>
                                     )}
-
-                                    {/* Subtitle overlay */}
-                                    {activeCueText && (() => {
-                                        const p = activePlacement
-                                        const fontPx = computePreviewFontPx(p.fontScale, videoRect.w)
-                                        return (
-                                            <div
-                                                onMouseDown={handlePreviewDragStart}
-                                                onTouchStart={handlePreviewDragStart}
-                                                style={{
-                                                    position: 'absolute',
-                                                    left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
-                                                    right: p.horizontalAlign === 'right' ? '5%' : 'auto',
-                                                    transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
-                                                    bottom: getSubtitleBottom(p),
-                                                    cursor: 'ns-resize',
-                                                    maxWidth: '90%',
-                                                    padding: '3px 10px',
-                                                    borderRadius: '5px',
-                                                    fontSize: fontPx,
-                                                    fontWeight: 600,
-                                                    lineHeight: 1.5,
-                                                    color: '#fff',
-                                                    textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
-                                                    background: 'backgroundStyle' in p && p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
-                                                    textShadow: 'backgroundStyle' in p && p.backgroundStyle === 'shadow'
-                                                        ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
-                                                    pointerEvents: 'all',
-                                                    userSelect: 'none',
-                                                    zIndex: 6,
-                                                }}
-                                            >
-                                                {activeCueText}
-                                            </div>
-                                        )
-                                    })()}
                                 </div>
-
-                                {/* Device badge */}
-                                <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.42rem', color: 'rgba(212,168,83,0.6)', padding: '2px 6px', background: 'rgba(0,0,0,0.65)', borderBottomLeftRadius: '6px', zIndex: 7 }}>
-                                    {previewDevice} · {dim.w}×{dim.h} · video: {videoRect.w}×{videoRect.h}
-                                </div>
-
-                                {/* Debug overlay */}
-                                {showDebug && (
-                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '4px 6px', background: 'rgba(0,20,0,0.85)', fontSize: '0.4rem', color: '#00ff88', fontFamily: 'monospace', lineHeight: 1.5, zIndex: 8, pointerEvents: 'none', whiteSpace: 'pre-wrap' }}>
-                                        {`source: ${placementSource}\nvideo: ${videoRect.w}×${videoRect.h} @(${videoRect.x},${videoRect.y})\nanchor: ${activePlacement.verticalAnchor} | align: ${activePlacement.horizontalAlign}\noffsetY: ${activePlacement.offsetYPercent}% | margin: ${activePlacement.safeAreaMarginPx}px\nfont: ${activePlacement.fontScale}× → ${computePreviewFontPx(activePlacement.fontScale, videoRect.w)}\nbottom: ${getSubtitleBottom(activePlacement)}`}
-                                    </div>
-                                )}
                             </div>
                         </div>
 
-                        {/* Preview All Devices button */}
-                        <div style={{ padding: '8px 12px', width: '100%', boxSizing: 'border-box', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+                        {/* ── Row 4: Preview All Devices ── */}
+                        <div style={{ padding: '5px 10px', width: '100%', boxSizing: 'border-box', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
                             <button
                                 onClick={async () => {
                                     const devices: PreviewDevice[] = ['desktop', 'portrait', 'landscape']
@@ -1286,7 +1494,7 @@ export default function SubtitleEditor({
                                     setMsg('✓ All device previews completed'); setTimeout(() => setMsg(''), 2500)
                                 }}
                                 style={{
-                                    width: '100%', padding: '6px', fontSize: '0.6rem', cursor: 'pointer',
+                                    width: '100%', padding: '5px', fontSize: '0.58rem', cursor: 'pointer',
                                     background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
                                     borderRadius: '6px', color: 'var(--text-tertiary)', transition: 'all 0.15s',
                                 }}
