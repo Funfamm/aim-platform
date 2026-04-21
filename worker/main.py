@@ -237,6 +237,7 @@ async def run_transcription(job_id: str, project_id: str, video_url: str, langua
             raise RuntimeError("Whisper model not loaded")
 
         lang_arg = None if language in ("auto", "") else language
+        log.info(f'"[debug] transcriptionStarted jobId={job_id} lang_arg={lang_arg}"')
         whisper_segs, info = _whisper_model.transcribe(
             str(audio_path), language=lang_arg, vad_filter=True
         )
@@ -246,7 +247,17 @@ async def run_transcription(job_id: str, project_id: str, video_url: str, langua
         for seg in whisper_segs:
             segments.append({"start": round(seg.start, 3), "end": round(seg.end, 3), "text": seg.text})
 
+        # Critical instrumentation — matches Step 1 log format
+        log.info(
+            f'"[debug] transcriptionSucceeded=true"'
+            f'" detectedLanguage={detected_lang}"'
+            f'" segmentCount={len(segments)}"'
+            f'" firstSegment={repr(segments[0]["text"][:60]) if segments else "(empty)"}"'
+        )
         log.info(f'"Transcribed {len(segments)} segments in language={detected_lang}"')
+
+        if not segments:
+            log.warning(f'"[debug] WARNING: segmentCount=0 — Whisper returned no segments for job {job_id}"')
 
         # 5. Build VTT and SRT
         vtt_content = build_vtt(segments)
