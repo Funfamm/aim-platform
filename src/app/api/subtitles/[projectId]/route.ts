@@ -114,6 +114,15 @@ export async function GET(
             safeAreaMarginPx: (subtitle as Record<string, unknown>).mobileSafeAreaMarginPx ?? 20,
             fontScale:        (subtitle as Record<string, unknown>).mobileFontScale        ?? 0.9,
         },
+        // T4-L: Landscape-specific placement
+        landscapePlacement: {
+            verticalAnchor:   (subtitle as Record<string, unknown>).landscapeVerticalAnchor   ?? 'bottom',
+            horizontalAlign:  (subtitle as Record<string, unknown>).landscapeHorizontalAlign  ?? 'center',
+            offsetYPercent:   (subtitle as Record<string, unknown>).landscapeOffsetYPercent   ?? 0,
+            offsetXPercent:   (subtitle as Record<string, unknown>).landscapeOffsetXPercent   ?? 0,
+            safeAreaMarginPx: (subtitle as Record<string, unknown>).landscapeSafeAreaMarginPx ?? 20,
+            fontScale:        (subtitle as Record<string, unknown>).landscapeFontScale         ?? 0.9,
+        },
     }, {
         headers: {
             'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',

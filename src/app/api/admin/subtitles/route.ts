@@ -17,6 +17,15 @@ type PlacementPatch = {
     cueOverrides?: Record<string, unknown>
 }
 
+type MobilePlacementPatch = {
+    verticalAnchor?: string
+    horizontalAlign?: string
+    offsetYPercent?: number
+    offsetXPercent?: number
+    safeAreaMarginPx?: number
+    fontScale?: number
+}
+
 // ── Auth guard helper ──────────────────────────────────────────────
 async function requireAdmin() {
     const session = await getUserSession()
@@ -93,12 +102,19 @@ export async function PATCH(req: NextRequest) {
 
     try {
         const body = await req.json()
-        const { projectId, episodeId, segments, changeSource, placement } = body as {
+        const { 
+            projectId, episodeId, segments, changeSource, 
+            placement, useSeparateMobilePlacement, 
+            mobilePlacement, landscapePlacement 
+        } = body as {
             projectId: string
             episodeId?: string | null
             segments: Array<{ start: number; end: number; text: string }> | string
             changeSource?: string
             placement?: PlacementPatch
+            useSeparateMobilePlacement?: boolean
+            mobilePlacement?: MobilePlacementPatch
+            landscapePlacement?: MobilePlacementPatch
         }
 
         if (!projectId || !segments) {
@@ -116,27 +132,52 @@ export async function PATCH(req: NextRequest) {
         // If previously approved, edits reset the approval
         const newStatus = existing.status === 'approved_source' ? 'pending' : (existing.status ?? 'pending')
 
-        // Build placement update (only include defined fields)
-        const placementData: Record<string, unknown> = {}
+        // Build placement update
+        const data: any = {
+            segments: segmentsStr,
+            status: newStatus,
+            translateStatus: 'pending',
+        }
+
+        if (useSeparateMobilePlacement !== undefined) {
+            data.useSeparateMobilePlacement = useSeparateMobilePlacement
+        }
+
+        // Standard / Desktop placement
         if (placement) {
-            if (placement.verticalAnchor  !== undefined) placementData.verticalAnchor  = placement.verticalAnchor
-            if (placement.horizontalAlign !== undefined) placementData.horizontalAlign = placement.horizontalAlign
-            if (placement.offsetYPercent  !== undefined) placementData.offsetYPercent  = placement.offsetYPercent
-            if (placement.offsetXPercent  !== undefined) placementData.offsetXPercent  = placement.offsetXPercent
-            if (placement.safeAreaMarginPx !== undefined) placementData.safeAreaMarginPx = placement.safeAreaMarginPx
-            if (placement.backgroundStyle  !== undefined) placementData.backgroundStyle  = placement.backgroundStyle
-            if (placement.fontScale        !== undefined) placementData.fontScale        = placement.fontScale
-            if (placement.cueOverrides     !== undefined) placementData.cueOverrides     = JSON.stringify(placement.cueOverrides)
+            if (placement.verticalAnchor !== undefined) data.verticalAnchor = placement.verticalAnchor
+            if (placement.horizontalAlign !== undefined) data.horizontalAlign = placement.horizontalAlign
+            if (placement.offsetYPercent !== undefined) data.offsetYPercent = placement.offsetYPercent
+            if (placement.offsetXPercent !== undefined) data.offsetXPercent = placement.offsetXPercent
+            if (placement.safeAreaMarginPx !== undefined) data.safeAreaMarginPx = placement.safeAreaMarginPx
+            if (placement.backgroundStyle !== undefined) data.backgroundStyle = placement.backgroundStyle
+            if (placement.fontScale !== undefined) data.fontScale = placement.fontScale
+            if (placement.cueOverrides !== undefined) data.cueOverrides = JSON.stringify(placement.cueOverrides)
+        }
+
+        // Mobile (Portrait) placement
+        if (mobilePlacement) {
+            if (mobilePlacement.verticalAnchor !== undefined) data.mobileVerticalAnchor = mobilePlacement.verticalAnchor
+            if (mobilePlacement.horizontalAlign !== undefined) data.mobileHorizontalAlign = mobilePlacement.horizontalAlign
+            if (mobilePlacement.offsetYPercent !== undefined) data.mobileOffsetYPercent = mobilePlacement.offsetYPercent
+            if (mobilePlacement.offsetXPercent !== undefined) data.mobileOffsetXPercent = mobilePlacement.offsetXPercent
+            if (mobilePlacement.safeAreaMarginPx !== undefined) data.mobileSafeAreaMarginPx = mobilePlacement.safeAreaMarginPx
+            if (mobilePlacement.fontScale !== undefined) data.mobileFontScale = mobilePlacement.fontScale
+        }
+
+        // Landscape placement
+        if (landscapePlacement) {
+            if (landscapePlacement.verticalAnchor !== undefined) data.landscapeVerticalAnchor = landscapePlacement.verticalAnchor
+            if (landscapePlacement.horizontalAlign !== undefined) data.landscapeHorizontalAlign = landscapePlacement.horizontalAlign
+            if (landscapePlacement.offsetYPercent !== undefined) data.landscapeOffsetYPercent = landscapePlacement.offsetYPercent
+            if (landscapePlacement.offsetXPercent !== undefined) data.landscapeOffsetXPercent = landscapePlacement.offsetXPercent
+            if (landscapePlacement.safeAreaMarginPx !== undefined) data.landscapeSafeAreaMarginPx = landscapePlacement.safeAreaMarginPx
+            if (landscapePlacement.fontScale !== undefined) data.landscapeFontScale = landscapePlacement.fontScale
         }
 
         await prisma.filmSubtitle.update({
             where: { id: existing.id },
-            data: {
-                segments: segmentsStr,
-                status: newStatus,
-                translateStatus: 'pending',
-                ...placementData,
-            },
+            data,
         })
 
         // Save revision snapshot

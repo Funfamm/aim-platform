@@ -134,6 +134,10 @@ export default function AdminProjectsPage() {
     const [editorSegments, setEditorSegments]         = useState<SubtitleCue[]>([])
     const [editorFilmUrl, setEditorFilmUrl]           = useState<string | null>(null)
     const [editorStatus, setEditorStatus]             = useState('pending')
+    const [editorInitialPlacement, setEditorInitialPlacement] = useState<any>(null)
+    const [editorInitialMobilePlacement, setEditorInitialMobilePlacement] = useState<any>(null)
+    const [editorInitialLandscapePlacement, setEditorInitialLandscapePlacement] = useState<any>(null)
+    const [editorUseSeparateMobile, setEditorUseSeparateMobile] = useState(false)
     // Track per-project approval state (refreshed after editor closes)
     const [subtitleApproval, setSubtitleApproval]     = useState<Record<string, string>>({})
 
@@ -604,6 +608,20 @@ export default function AdminProjectsPage() {
             const { subtitle } = await res.json()
             if (!subtitle) { alert('No subtitles found for this project. Generate them first.'); return }
             const segs: SubtitleCue[] = JSON.parse(subtitle.segments || '[]')
+            
+            // Extract placement data
+            setEditorInitialPlacement(subtitle.placement ? JSON.parse(subtitle.placement) : null)
+            setEditorInitialMobilePlacement(subtitle.mobilePlacement ? JSON.parse(subtitle.mobilePlacement) : null)
+            setEditorInitialLandscapePlacement({
+                verticalAnchor: subtitle.landscapeVerticalAnchor,
+                horizontalAlign: subtitle.landscapeHorizontalAlign,
+                offsetYPercent: subtitle.landscapeOffsetYPercent,
+                offsetXPercent: subtitle.landscapeOffsetXPercent,
+                safeAreaMarginPx: subtitle.landscapeSafeAreaMarginPx,
+                fontScale: subtitle.landscapeFontScale,
+            })
+            setEditorUseSeparateMobile(subtitle.useSeparateMobilePlacement ?? false)
+            
             setEditorSegments(segs)
             setEditorFilmUrl(filmUrl)
             setEditorStatus(subtitle.status || 'pending')
@@ -1796,6 +1814,10 @@ export default function AdminProjectsPage() {
                     initialSegments={editorSegments}
                     currentStatus={editorStatus}
                     filmUrl={editorFilmUrl}
+                    initialPlacement={editorInitialPlacement}
+                    initialMobilePlacement={editorInitialMobilePlacement}
+                    initialLandscapePlacement={editorInitialLandscapePlacement}
+                    useSeparateMobilePlacement={editorUseSeparateMobile}
                     onClose={() => setEditorProjectId(null)}
                     onSaved={(newStatus) => {
                         // Update the approval lookup so the translate gate re-renders

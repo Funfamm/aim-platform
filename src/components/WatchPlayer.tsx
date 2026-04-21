@@ -118,12 +118,13 @@ export default function WatchPlayer({
         fontScale: 1.0,
         cueOverrides: {},
     })
-    /* T4-M: Mobile-specific placement (independent from desktop) */
+    /* T4-M: Portrait-specific placement */
     const [mobilePlacement, setMobilePlacement] = useState<{
         useSeparateMobilePlacement: boolean
         verticalAnchor: string
         horizontalAlign: string
         offsetYPercent: number
+        offsetXPercent: number
         safeAreaMarginPx: number
         fontScale: number
     }>({
@@ -131,24 +132,86 @@ export default function WatchPlayer({
         verticalAnchor: 'bottom',
         horizontalAlign: 'center',
         offsetYPercent: 0,
+        offsetXPercent: 0,
         safeAreaMarginPx: 20,
         fontScale: 0.9,
     })
-    /* Detect mobile once — used for bottom-sheet vs dropdown */
+    /* T4-L: Landscape-specific placement (Fully independent) */
+    const [landscapePlacement, setLandscapePlacement] = useState<{
+        verticalAnchor: string
+        horizontalAlign: string
+        offsetYPercent: number
+        offsetXPercent: number
+        safeAreaMarginPx: number
+        fontScale: number
+    }>({
+        verticalAnchor: 'bottom',
+        horizontalAlign: 'center',
+        offsetYPercent: 0,
+        offsetXPercent: 0,
+        safeAreaMarginPx: 12,
+        fontScale: 0.9,
+    })
+    /* Detect mobile and orientation — used for responsive subtitle rendering */
     const [isMobile, setIsMobile]           = useState(false)
+    const [isLandscape, setIsLandscapeState] = useState(false)
 
-    /* ── Progress ── */
+    /* ── Responsive Video Rect (Letterbox awareness) ── */
+    const [videoRect, setVideoRect] = useState({ w: 0, h: 0, x: 0, y: 0 })
+    const updateVideoRect = useCallback(() => {
+        const vid = videoRef.current
+        if (!vid || !vid.videoWidth || !containerRef.current) return
+        const cw = containerRef.current.clientWidth
+        const ch = containerRef.current.clientHeight
+        const vr = vid.videoWidth / vid.videoHeight
+        const cr = cw / ch
+        let vw, vh
+        if (vr > cr) {
+            vw = cw; vh = cw / vr
+        } else {
+            vh = ch; vw = ch * vr
+        }
+        setVideoRect({ w: vw, h: vh, x: (cw - vw) / 2, y: (ch - vh) / 2 })
+    }, [])
+
+    useEffect(() => {
+        const vid = videoRef.current
+        if (!vid) return
+        vid.addEventListener('loadedmetadata', updateVideoRect)
+        window.addEventListener('resize', updateVideoRect)
+        const obs = new ResizeObserver(updateVideoRect)
+        obs.observe(containerRef.current!)
+        return () => {
+            vid.removeEventListener('loadedmetadata', updateVideoRect)
+            window.removeEventListener('resize', updateVideoRect)
+            obs.disconnect()
+        }
+    }, [updateVideoRect])
+
     const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0
 
     /* ══════════ Effects ══════════ */
 
-    /* Detect mobile breakpoint */
+    /* Detect mobile breakpoint and orientation */
     useEffect(() => {
-        const mq = window.matchMedia('(max-width: 640px)')
-        setIsMobile(mq.matches)
-        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
-        mq.addEventListener('change', handler)
-        return () => mq.removeEventListener('change', handler)
+        const mqM = window.matchMedia('(max-width: 640px)')
+        const mqL = window.matchMedia('(orientation: landscape)')
+        
+        const update = () => {
+            setIsMobile(mqM.matches)
+            setIsLandscapeState(mqL.matches)
+        }
+        update()
+
+        const hM = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+        const hL = (e: MediaQueryListEvent) => setIsLandscapeState(e.matches)
+        
+        mqM.addEventListener('change', hM)
+        mqL.addEventListener('change', hL)
+        return () => {
+            mqM.removeEventListener('change', hM)
+            mqL.removeEventListener('change', hL)
+        }
     }, [])
 
     /* Lock body scroll when mobile lang sheet is open */
@@ -226,6 +289,10 @@ export default function WatchPlayer({
                     // T4-M: Load mobile placement from API response
                     if (data.mobilePlacement) {
                         setMobilePlacement(prev => ({ ...prev, ...data.mobilePlacement }))
+                    }
+                    // T4-L: Load landscape placement from API response
+                    if (data.landscapePlacement) {
+                        setLandscapePlacement(prev => ({ ...prev, ...data.landscapePlacement }))
                     }
                     const safe = (SUBTITLE_TARGET_LANGS as readonly string[]).includes(userPreferredLang) || userPreferredLang === 'en'
                         ? userPreferredLang : 'en'
@@ -948,57 +1015,91 @@ export default function WatchPlayer({
                         </div>
                     )}
 
-                    {/* ── Subtitle overlay (T4-E/T4-M: placement-aware, device-aware) ── */}
                     {ccEnabled && (() => {
-                        // On mobile, use independent placement if admin configured one
-                        const usesMobile = isMobile && mobilePlacement.useSeparateMobilePlacement
-                        const p = usesMobile
-                            ? { ...mobilePlacement, backgroundStyle: subtitlePlacement.backgroundStyle }
-                            : activePlacement
+                        // T4-M/L: Unified device-aware placement resolution
+                        const usesMobile = isMobile && mobilePlacement.useSeparateMobilePlacement;
+                        
+                        // Pick the correct placement source based on current device state
+                        let p = activePlacement; // fallback to desktop or cue-override
+                        let isCurrentlyMobile = false;
+
+                        if (usesMobile) {
+                            isCurrentlyMobile = true;
+                            if (isLandscape) {
+                                // T4-L: Dedicated landscape placement
+                                p = { 
+                                    ...landscapePlacement, 
+                                    backgroundStyle: subtitlePlacement.backgroundStyle,
+                                    cueOverrides: {} // Mobile landscape currently doesn't support per-cue overrides in simplified state
+                                };
+                            } else {
+                                // T4-M: Dedicated portrait placement
+                                p = { 
+                                    ...mobilePlacement, 
+                                    backgroundStyle: subtitlePlacement.backgroundStyle,
+                                    cueOverrides: {}
+                                };
+                            }
+                        }
+
                         // Compute bottom from vertical anchor + offset + safe margin
                         const anchorBase: Record<string, number> = {
                             bottom: 5, lower_third: 20, middle: 45, upper_third: 65, top: 82,
-                        }
-                        const base = anchorBase[p.verticalAnchor] ?? 5
-                        // On mobile, ensure safe area margin is at least 20px to respect home indicator
-                        const safeMargin = usesMobile ? Math.max(20, p.safeAreaMarginPx) : p.safeAreaMarginPx
-                        const bottomVal = `calc(${base}% + ${p.offsetYPercent}% + ${safeMargin}px + 58px)`
+                        };
+                        const base = anchorBase[p.verticalAnchor] ?? 5;
+                        
+                        // Safe area margin: higher default for mobile portrait (home indicator)
+                        const safeMargin = isCurrentlyMobile ? Math.max(isLandscape ? 12 : 20, p.safeAreaMarginPx) : p.safeAreaMarginPx;
+                        
+                        // Vertical shift to account for safe margin + player controls bar (approx 58px)
+                        // Note: safeMargin is added to the percentage-based anchor
+                        const bottomPx = ((base + p.offsetYPercent) / 100 * videoRect.h) + safeMargin + (showControls ? 58 : 12)
+                        
                         return (
                             <div
                                 className="aim-subtitle-overlay"
                                 style={{
                                     position: 'absolute',
-                                    bottom: bottomVal,
-                                    left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : '50%',
+                                    left: videoRect.x,
+                                    top: videoRect.y,
+                                    width: videoRect.w,
+                                    height: videoRect.h,
+                                    pointerEvents: 'none',
+                                    zIndex: 5,
+                                }}
+                            >
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: `${bottomPx}px`,
+                                    left: p.horizontalAlign === 'left' ? '5%' : p.horizontalAlign === 'right' ? 'auto' : `${50 + (p.offsetXPercent || 0)}%`,
                                     right: p.horizontalAlign === 'right' ? '5%' : 'auto',
                                     transform: p.horizontalAlign === 'center' ? 'translateX(-50%)' : 'none',
                                     maxWidth: '90%',
-                                    pointerEvents: 'none', zIndex: 5,
                                     display: 'flex', flexDirection: 'column',
                                     alignItems: p.horizontalAlign === 'left' ? 'flex-start' : p.horizontalAlign === 'right' ? 'flex-end' : 'center',
                                     gap: '6px',
-                                }}
-                            >
-                                {ccLoading && ccStatusText && (
-                                    <div style={{ background: 'rgba(0,0,0,0.75)', borderRadius: '8px', padding: '8px 16px', fontSize: '0.8rem', color: 'var(--accent-gold)', textAlign: 'center' }}>
-                                        ⏳ {ccStatusText}
-                                    </div>
-                                )}
-                                {activeSubtitle && (
-                                    <div style={{
-                                        padding: '6px 18px',
-                                        fontSize: `clamp(${0.9 * p.fontScale}rem, ${2.5 * p.fontScale}vw, ${1.15 * p.fontScale}rem)`,
-                                        color: '#fff',
-                                        textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
-                                        lineHeight: 1.5,
-                                        maxWidth: '100%',
-                                        borderRadius: '6px',
-                                        background: p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
-                                        textShadow: p.backgroundStyle === 'shadow' ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
-                                    }}>
-                                        {activeSubtitle.length > 120 ? activeSubtitle.slice(0, 120) + '…' : activeSubtitle}
-                                    </div>
-                                )}
+                                }}>
+                                    {ccLoading && ccStatusText && (
+                                        <div style={{ background: 'rgba(0,0,0,0.75)', borderRadius: '8px', padding: '8px 16px', fontSize: '0.8rem', color: 'var(--accent-gold)', textAlign: 'center' }}>
+                                            ⏳ {ccStatusText}
+                                        </div>
+                                    )}
+                                    {activeSubtitle && (
+                                        <div style={{
+                                            padding: '6px 18px',
+                                            fontSize: `clamp(${0.9 * p.fontScale}rem, ${2.5 * p.fontScale}vw, ${1.15 * p.fontScale}rem)`,
+                                            color: '#fff',
+                                            textAlign: p.horizontalAlign as 'left' | 'center' | 'right',
+                                            lineHeight: 1.5,
+                                            maxWidth: '100%',
+                                            borderRadius: '6px',
+                                            background: p.backgroundStyle === 'box' ? 'rgba(0,0,0,0.82)' : 'transparent',
+                                            textShadow: p.backgroundStyle === 'shadow' ? '0 0 4px #000, 0 1px 4px rgba(0,0,0,0.8)' : 'none',
+                                        }}>
+                                            {activeSubtitle.length > 120 ? activeSubtitle.slice(0, 120) + '…' : activeSubtitle}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )
                     })()}
@@ -1173,38 +1274,9 @@ export default function WatchPlayer({
                                     }}>
                                         {fmt(currentTime)} / {fmt(totalDuration)}
                                     </span>
-                                    {/* Watch Full / Continue button */}
-                                    {currentVideoUrl && (
-                                        <button
-                                            className="aim-ctrl-btn"
-                                            onClick={() => {
-                                                const vid = videoRef.current;
-                                                if (!vid) return;
-                                                // If we have a saved resume point, jump to it
-                                                if (resumePct && totalDuration) {
-                                                    const t = resumePct * vid.duration;
-                                                    if (isFinite(t) && t > 0) {
-                                                        vid.currentTime = t;
-                                                        setCurrentTime(t);
-                                                    }
-                                                }
-                                                vid.play().catch(() => {});
-                                                setIsPlaying(true);
-                                            }}
-                                            title={resumePct && resumePct > 0 ? 'Continue watching' : 'Watch full film'}
-                                            style={{
-                                                fontSize: '0.68rem',
-                                                fontWeight: 700,
-                                                minWidth: '80px',
-                                                background: resumePct && resumePct > 0 ? 'rgba(212,168,83,0.2)' : undefined,
-                                                color: resumePct && resumePct > 0 ? 'var(--accent-gold)' : undefined,
-                                                border: resumePct && resumePct > 0 ? '1px solid rgba(212,168,83,0.4)' : undefined,
-                                            }}
-                                        >
-                                            {resumePct && resumePct > 0 ? 'Continue' : 'Watch full'}
-                                        </button>
-                                    )}
+                                    {/* T4-M: Yellow button removed from standard playback bar — resume available in top banner only */}
                                 </div>
+
 
                                 {/* RIGHT: branding, CC, speed, fullscreen */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>

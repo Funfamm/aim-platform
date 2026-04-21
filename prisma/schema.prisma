@@ -233,6 +233,15 @@ model FilmSubtitle {
   mobileOffsetXPercent       Float   @default(0)
   mobileSafeAreaMarginPx     Int     @default(20)        // larger default for home indicator
   mobileFontScale            Float   @default(0.9)       // slightly smaller for narrow screens
+  
+  // ┬ T4-L: Independent mobile landscape placement fields ┬
+  landscapeVerticalAnchor    String  @default("bottom")
+  landscapeHorizontalAlign   String  @default("center")
+  landscapeOffsetYPercent    Float   @default(0)
+  landscapeOffsetXPercent    Float   @default(0)
+  landscapeSafeAreaMarginPx  Int     @default(20)
+  landscapeFontScale         Float   @default(0.9)
+
 
   project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
   revisions        SubtitleRevision[]

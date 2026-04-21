@@ -35,6 +35,7 @@ export type MobilePlacementState = {
     verticalAnchor: string    // bottom|lower_third only (no middle/top for mobile)
     horizontalAlign: string
     offsetYPercent: number
+    offsetXPercent: number
     safeAreaMarginPx: number  // default 20px to account for home indicator
     fontScale: number
 }
@@ -46,6 +47,7 @@ const DEFAULT_MOBILE_PLACEMENT: MobilePlacementState = {
     verticalAnchor: 'bottom',
     horizontalAlign: 'center',
     offsetYPercent: 0,
+    offsetXPercent: 0,
     safeAreaMarginPx: 20,
     fontScale: 0.9,
 }
@@ -81,6 +83,7 @@ interface Props {
     sourceSegments?: SubtitleCue[]
     initialPlacement?: Partial<PlacementState>
     initialMobilePlacement?: Partial<MobilePlacementState>
+    initialLandscapePlacement?: Partial<MobilePlacementState>
     useSeparateMobilePlacement?: boolean
 }
 
@@ -166,7 +169,8 @@ const MAX_HISTORY = 50
 export default function SubtitleEditor({
     projectId, episodeId, initialSegments, currentStatus, filmUrl,
     onClose, onSaved, sourceSegments, initialPlacement,
-    initialMobilePlacement, useSeparateMobilePlacement: initUseMobile = false,
+    initialMobilePlacement, initialLandscapePlacement, 
+    useSeparateMobilePlacement: initUseMobile = false,
 }: Props) {
     const [cues, setCues] = useState<SubtitleCue[]>(() =>
         initialSegments.map(s => ({ start: s.start, end: s.end, text: s.text }))
@@ -186,6 +190,16 @@ export default function SubtitleEditor({
         ...DEFAULT_MOBILE_PLACEMENT,
         ...initialMobilePlacement,
     })
+    const [landscapePlacement, setLandscapePlacement] = useState<MobilePlacementState>({
+        ...DEFAULT_MOBILE_PLACEMENT,
+        ...initialLandscapePlacement,
+    })
+
+    // ── Dirty tracking ──────────────────────────────────────────────────────────
+    const [isDirtyDesktop, setIsDirtyDesktop] = useState(false)
+    const [isDirtyMobile, setIsDirtyMobile] = useState(false)
+    const [isDirtyLandscape, setIsDirtyLandscape] = useState(false)
+    const [isDirtyUseMobile, setIsDirtyUseMobile] = useState(false)
 
     // ── Device preview ───────────────────────────────────────────────────────────
     const [previewDevice, setPreviewDevice] = useState<PreviewDevice>('desktop')
@@ -201,10 +215,36 @@ export default function SubtitleEditor({
     // Video natural aspect ratio — detected from loaded metadata, default 16:9
     const [videoNaturalAR, setVideoNaturalAR] = useState(16 / 9)
 
-    // Refs for device-aware drag handler (useEffect closure can't see latest state)
-    const previewDeviceRef = useRef<PreviewDevice>('desktop')
-    const useSeparateMobileRef = useRef(initUseMobile)
     const videoRectRef = useRef({ x: 0, y: 0, w: 480, h: 270 })
+    const previewDeviceRef = useRef<PreviewDevice>(previewDevice)
+    const useSeparateMobileRef = useRef(useSeparateMobile)
+
+    // ── Dirty detection effects ────────────────────────────────────────────────
+    useEffect(() => {
+        setIsDirtyDesktop(JSON.stringify(placement) !== JSON.stringify({
+            ...DEFAULT_PLACEMENT,
+            ...initialPlacement,
+            cueOverrides: (initialPlacement as PlacementState | undefined)?.cueOverrides ?? {},
+        }))
+    }, [placement, initialPlacement])
+
+    useEffect(() => {
+        setIsDirtyMobile(JSON.stringify(mobilePlacement) !== JSON.stringify({
+            ...DEFAULT_MOBILE_PLACEMENT,
+            ...initialMobilePlacement,
+        }))
+    }, [mobilePlacement, initialMobilePlacement])
+
+    useEffect(() => {
+        setIsDirtyLandscape(JSON.stringify(landscapePlacement) !== JSON.stringify({
+            ...DEFAULT_MOBILE_PLACEMENT,
+            ...initialLandscapePlacement,
+        }))
+    }, [landscapePlacement, initialLandscapePlacement])
+
+    useEffect(() => {
+        setIsDirtyUseMobile(useSeparateMobile !== initUseMobile)
+    }, [useSeparateMobile, initUseMobile])
 
     const historyRef = useRef<SubtitleCue[][]>([initialSegments])
     const historyIdxRef = useRef(0)
@@ -508,8 +548,17 @@ export default function SubtitleEditor({
                         verticalAnchor: mobilePlacement.verticalAnchor,
                         horizontalAlign: mobilePlacement.horizontalAlign,
                         offsetYPercent: mobilePlacement.offsetYPercent,
+                        offsetXPercent: mobilePlacement.offsetXPercent,
                         safeAreaMarginPx: mobilePlacement.safeAreaMarginPx,
                         fontScale: mobilePlacement.fontScale,
+                    } : undefined,
+                    landscapePlacement: useSeparateMobile ? {
+                        verticalAnchor: landscapePlacement.verticalAnchor,
+                        horizontalAlign: landscapePlacement.horizontalAlign,
+                        offsetYPercent: landscapePlacement.offsetYPercent,
+                        offsetXPercent: landscapePlacement.offsetXPercent,
+                        safeAreaMarginPx: landscapePlacement.safeAreaMarginPx,
+                        fontScale: landscapePlacement.fontScale,
                     } : undefined,
                 }),
             })
@@ -924,29 +973,8 @@ export default function SubtitleEditor({
                                 {previewDevice === 'desktop' ? `${dim.w}×${dim.h} • drag to reposition` : `📱 ${previewDevice} • ${dim.w}×${dim.h}`}  |  video: {videoRect.w}×{videoRect.h}
                             </div>
 
-                            {/* Debug panel — toggled via checkbox */}
-                            {showDebug && (() => {
-                                const p = activePlacement
-                                const baseMap: Record<string, number> = { bottom: 5, lower_third: 20, middle: 45, upper_third: 65, top: 82 }
-                                const basePct = baseMap[p.verticalAnchor] ?? 5
-                                const offsetY = 'offsetYPercent' in p ? p.offsetYPercent : 0
-                                const approxBottomPx = Math.round((basePct + offsetY) / 100 * videoRect.h + p.safeAreaMarginPx)
-                                const idealFontPx = 0.025 * p.fontScale * videoRect.w
-                                const minFontPx = 0.9 * p.fontScale * 16
-                                const maxFontPx = 1.15 * p.fontScale * 16
-                                const fontClamped = idealFontPx < minFontPx ? 'min' : idealFontPx > maxFontPx ? 'max' : 'none'
-                                return (
-                                    <div style={{ position: 'absolute', bottom: 0, left: 0, fontSize: '0.4rem', color: 'rgba(0,255,136,0.8)', background: 'rgba(0,0,0,0.85)', padding: '4px 6px', borderTopRightRadius: '6px', zIndex: 8, lineHeight: 1.6, fontFamily: 'monospace', whiteSpace: 'pre' }}>
-{`source: ${placementSource}
-video:  ${videoRect.w}×${videoRect.h} @${videoRect.y}px
-anchor: ${p.verticalAnchor} (${basePct}%)
-offset: ${offsetY}%  safe: ${p.safeAreaMarginPx}px
-bottom: ~${approxBottomPx}px
-font:   ${computePreviewFontPx(p.fontScale, videoRect.w)} (clamp=${fontClamped})`}
-                                    </div>
-                                )
-                            })()}
                         </div>
+
 
                         {/* Preview aid toggles */}
                         <div style={{ display: 'flex', gap: '6px', padding: '6px 8px', borderTop: '1px solid rgba(255,255,255,0.07)', flexWrap: 'wrap' }}>
@@ -964,167 +992,142 @@ font:   ${computePreviewFontPx(p.fontScale, videoRect.w)} (clamp=${fontClamped})
                             </label>
                         </div>
 
-                        {/* Placement panel (T4-A) — desktop tab */}
-                        {showPlacement && previewDevice === 'desktop' && (
-                            <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)' }}>📐 Desktop Placement</div>
-
-                                {/* Vertical preset */}
-                                <div>
-                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Vertical position</div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                        {ANCHOR_PRESETS.map(p => (
-                                            <button key={p.id} onClick={() => setPlacement(prev => ({ ...prev, verticalAnchor: p.id }))}
-                                                className={`aim-placement-btn${placement.verticalAnchor === p.id ? ' active' : ''}`}
-                                                style={{ padding: '4px 8px', fontSize: '0.62rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)', textAlign: 'left' }}
-                                            >{p.label}</button>
-                                        ))}
-                                    </div>
+                        {/* ── Subtitle Placement Settings (T4-R) ── */}
+                        {showPlacement && (
+                            <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                
+                                {/* ── Device Tab Switcher (Placement Context) ── */}
+                                <div style={{ display: 'flex', gap: '4px', padding: '2px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    {[
+                                        { id: 'desktop',   label: '🖥 Desktop',   dirty: isDirtyDesktop,   device: 'desktop' as PreviewDevice },
+                                        { id: 'portrait',  label: '📱 Portrait',  dirty: isDirtyMobile,    device: 'portrait' as PreviewDevice },
+                                        { id: 'landscape', label: '📱 Land.',     dirty: isDirtyLandscape, device: 'landscape' as PreviewDevice },
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => { setPreviewDevice(tab.device); markDevicePreviewed(tab.device) }}
+                                            style={{
+                                                flex: 1, padding: '6px 4px', fontSize: '0.62rem', fontWeight: 700, borderRadius: '6px', cursor: 'pointer',
+                                                background: previewDevice === tab.device ? 'rgba(212,168,83,0.12)' : 'transparent',
+                                                border: 'none',
+                                                color: previewDevice === tab.device ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                position: 'relative', transition: 'all 0.2s'
+                                            }}
+                                        >
+                                            {tab.label}
+                                            {tab.dirty && <span style={{ position: 'absolute', top: '2px', right: '2px', width: '5px', height: '5px', background: '#f59e0b', borderRadius: '50%', boxShadow: '0 0 4px #f59e0b' }} />}
+                                        </button>
+                                    ))}
                                 </div>
 
-                                {/* Y offset */}
-                                <div>
-                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Y offset: {placement.offsetYPercent > 0 ? '+' : ''}{placement.offsetYPercent.toFixed(1)}%</div>
-                                    <input type="range" min="-20" max="20" step="0.5" value={placement.offsetYPercent}
-                                        onChange={e => setPlacement(prev => ({ ...prev, offsetYPercent: parseFloat(e.target.value) }))}
-                                        style={{ width: '100%', accentColor: 'var(--accent-gold)' }}
-                                    />
-                                </div>
-
-                                {/* Horizontal */}
-                                <div>
-                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Horizontal</div>
-                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                        {(['left', 'center', 'right'] as const).map(a => (
-                                            <button key={a} onClick={() => setPlacement(prev => ({ ...prev, horizontalAlign: a }))}
-                                                className={`aim-placement-btn${placement.horizontalAlign === a ? ' active' : ''}`}
-                                                style={{ flex: 1, padding: '4px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)' }}
-                                            >{a[0].toUpperCase() + a.slice(1)}</button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Background style */}
-                                <div>
-                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Background</div>
-                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                        {(['none', 'shadow', 'box'] as const).map(b => (
-                                            <button key={b} onClick={() => setPlacement(prev => ({ ...prev, backgroundStyle: b }))}
-                                                className={`aim-placement-btn${placement.backgroundStyle === b ? ' active' : ''}`}
-                                                style={{ flex: 1, padding: '4px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)' }}
-                                            >{b[0].toUpperCase() + b.slice(1)}</button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Font scale */}
-                                <div>
-                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Font size</div>
-                                    <div style={{ display: 'flex', gap: '4px' }}>
-                                        {[0.8, 1.0, 1.2, 1.5].map(s => (
-                                            <button key={s} onClick={() => setPlacement(prev => ({ ...prev, fontScale: s }))}
-                                                className={`aim-placement-btn${placement.fontScale === s ? ' active' : ''}`}
-                                                style={{ flex: 1, padding: '4px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)' }}
-                                            >{s}×</button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Safe area margin */}
-                                <div>
-                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Safe margin: {placement.safeAreaMarginPx}px</div>
-                                    <input type="range" min="0" max="40" step="1" value={placement.safeAreaMarginPx}
-                                        onChange={e => setPlacement(prev => ({ ...prev, safeAreaMarginPx: parseInt(e.target.value) }))}
-                                        style={{ width: '100%', accentColor: 'var(--accent-gold)' }}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Placement panel — mobile tab (Phase 2) */}
-                        {showPlacement && previewDevice !== 'desktop' && (
-                            <div style={{ padding: '10px', borderTop: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)' }}>📱 Mobile Placement
-                                    <span style={{ fontWeight: 400, color: 'var(--text-tertiary)', marginLeft: '6px', fontSize: '0.58rem' }}>(independent from desktop)</span>
-                                </div>
-
-                                {/* Enable independent mobile */}
+                                {/* Enable/Disable Independent Mobile Placement */}
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.62rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                                     <input type="checkbox" checked={useSeparateMobile} onChange={e => setUseSeparateMobile(e.target.checked)}
                                         style={{ accentColor: 'var(--accent-gold)' }} />
-                                    Use separate mobile positioning
+                                    <span>Enable independent mobile positioning {isDirtyUseMobile && <span style={{ color: '#f59e0b' }}>●</span>}</span>
                                 </label>
 
-                                {useSeparateMobile && (<>
-                                    {/* Quick preset shortcuts — apply a full preset in one click */}
-                                    <div>
-                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Quick presets</div>
-                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                            <button
-                                                onClick={() => setMobilePlacement({ verticalAnchor: 'bottom', horizontalAlign: 'center', offsetYPercent: 0, safeAreaMarginPx: 20, fontScale: 0.9 })}
-                                                className="aim-placement-btn"
-                                                style={{ flex: 1, padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '5px', color: '#4ade80', fontWeight: 600 }}
-                                            >⊥ Bottom Safe</button>
-                                            <button
-                                                onClick={() => setMobilePlacement({ verticalAnchor: 'lower_third', horizontalAlign: 'center', offsetYPercent: 0, safeAreaMarginPx: 20, fontScale: 0.9 })}
-                                                className="aim-placement-btn"
-                                                style={{ flex: 1, padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', borderRadius: '5px', color: 'var(--accent-gold)', fontWeight: 600 }}
-                                            >◎ Lower Third</button>
-                                            <button
-                                                onClick={() => { if (confirm('Center placement may overlap video controls on some devices. Apply anyway?')) setMobilePlacement({ verticalAnchor: 'middle' as string, horizontalAlign: 'center', offsetYPercent: 0, safeAreaMarginPx: 12, fontScale: 0.9 }) }}
-                                                className="aim-placement-btn"
-                                                title="Advanced — may overlap controls on some devices"
-                                                style={{ flex: 1, padding: '5px 4px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '5px', color: 'rgba(245,158,11,0.7)', fontWeight: 600 }}
-                                            >≡ Center ⚠</button>
+                                {/* Fallback warning for mobile preview when disabled */}
+                                {!useSeparateMobile && previewDevice !== 'desktop' && (
+                                    <div style={{ padding: '10px', background: 'rgba(212,168,83,0.04)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: '8px', fontSize: '0.6rem', color: 'rgba(212,168,83,0.7)', textAlign: 'center', lineHeight: 1.4 }}>
+                                        Independent mobile placement is <strong>disabled</strong>.<br/>This view reflects Desktop settings.
+                                    </div>
+                                )}
+
+                                {/* Setting Controls (Switchable based on tab) */}
+                                {(useSeparateMobile || previewDevice === 'desktop') && (() => {
+                                    const isDesktop = previewDevice === 'desktop'
+                                    const p = isDesktop ? placement : previewDevice === 'portrait' ? mobilePlacement : landscapePlacement
+                                    const setter = isDesktop ? setPlacement : (previewDevice === 'portrait' ? setMobilePlacement : setLandscapePlacement) as any
+
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {/* Vertical anchor selection */}
+                                            <div>
+                                                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Vertical Anchor</div>
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
+                                                    {ANCHOR_PRESETS.filter(ap => isDesktop || ap.id === 'bottom' || ap.id === 'lower_third').map(ap => (
+                                                        <button key={ap.id} onClick={() => setter((prev: any) => ({ ...prev, verticalAnchor: ap.id }))}
+                                                            className={`aim-placement-btn${p.verticalAnchor === ap.id ? ' active' : ''}`}
+                                                            style={{ 
+                                                                flex: '1 0 calc(50% - 4px)', padding: '5px 8px', fontSize: '0.62rem', cursor: 'pointer', 
+                                                                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', 
+                                                                borderRadius: '5px', color: 'var(--text-secondary)', textAlign: 'left' 
+                                                            }}
+                                                        >{ap.label}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* X/Y Offset Sliders (Grid) */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                <div>
+                                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>Y-Offset: {p.offsetYPercent > 0 ? '+' : ''}{p.offsetYPercent}%</div>
+                                                    <input type="range" min={isDesktop ? -20 : -5} max={isDesktop ? 20 : 25} step="0.5" value={p.offsetYPercent}
+                                                        onChange={e => setter((prev: any) => ({ ...prev, offsetYPercent: parseFloat(e.target.value) }))}
+                                                        style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginBottom: '2px' }}>X-Offset: {p.offsetXPercent > 0 ? '+' : ''}{p.offsetXPercent}%</div>
+                                                    <input type="range" min="-15" max="15" step="0.5" value={p.offsetXPercent}
+                                                        onChange={e => setter((prev: any) => ({ ...prev, offsetXPercent: parseFloat(e.target.value) }))}
+                                                        style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Font Scale Presets */}
+                                            <div>
+                                                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Font Scale</div>
+                                                <div style={{ display: 'flex', gap: '3px' }}>
+                                                    {[0.8, 0.9, 1.0, 1.1, 1.25].map(s => (
+                                                        <button key={s} onClick={() => setter((prev: any) => ({ ...prev, fontScale: s }))}
+                                                            style={{ 
+                                                                flex: 1, padding: '4px', fontSize: '0.58rem', fontWeight: 600, cursor: 'pointer', 
+                                                                background: p.fontScale === s ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)', 
+                                                                border: `1px solid ${p.fontScale === s ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`, 
+                                                                borderRadius: '5px', color: p.fontScale === s ? 'var(--accent-gold)' : 'var(--text-tertiary)' 
+                                                            }}
+                                                        >{s}×</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Safe margin Slider */}
+                                            <div>
+                                                <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Safe Margin: {p.safeAreaMarginPx}px</div>
+                                                <input type="range" min="0" max="60" step="1" value={p.safeAreaMarginPx}
+                                                    onChange={e => setter((prev: any) => ({ ...prev, safeAreaMarginPx: parseInt(e.target.value) }))}
+                                                    style={{ width: '100%', height: '4px', accentColor: 'var(--accent-gold)' }}
+                                                />
+                                            </div>
+
+                                            {/* Desktop-only Background styles */}
+                                            {isDesktop && (
+                                                <div>
+                                                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Background Style</div>
+                                                    <div style={{ display: 'flex', gap: '3px' }}>
+                                                        {(['none', 'shadow', 'box'] as const).map(b => (
+                                                            <button key={b} onClick={() => setPlacement(prev => ({ ...prev, backgroundStyle: b }))}
+                                                                style={{ 
+                                                                    flex: 1, padding: '4px', fontSize: '0.58rem', fontWeight: 600, cursor: 'pointer', 
+                                                                    background: placement.backgroundStyle === b ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.03)', 
+                                                                    border: `1px solid ${placement.backgroundStyle === b ? 'rgba(212,168,83,0.4)' : 'rgba(255,255,255,0.08)'}`, 
+                                                                    borderRadius: '5px', color: placement.backgroundStyle === b ? 'var(--accent-gold)' : 'var(--text-tertiary)' 
+                                                                }}
+                                                            >{b[0].toUpperCase() + b.slice(1)}</button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-
-                                    {/* Mobile vertical preset — restricted to bottom/lower_third for safety */}
-                                    <div>
-                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Mobile vertical (safe zone only)</div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                            {ANCHOR_PRESETS.filter(p => p.id === 'bottom' || p.id === 'lower_third').map(p => (
-                                                <button key={p.id} onClick={() => setMobilePlacement(prev => ({ ...prev, verticalAnchor: p.id }))}
-                                                    className={`aim-placement-btn${mobilePlacement.verticalAnchor === p.id ? ' active' : ''}`}
-                                                    style={{ padding: '4px 8px', fontSize: '0.62rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)', textAlign: 'left' }}
-                                                >{p.label}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Mobile Y offset */}
-                                    <div>
-                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Mobile Y offset: {mobilePlacement.offsetYPercent > 0 ? '+' : ''}{mobilePlacement.offsetYPercent.toFixed(1)}%</div>
-                                        <input type="range" min="0" max="12" step="0.5" value={mobilePlacement.offsetYPercent}
-                                            onChange={e => setMobilePlacement(prev => ({ ...prev, offsetYPercent: parseFloat(e.target.value) }))}
-                                            style={{ width: '100%', accentColor: 'var(--accent-gold)' }} />
-                                        <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', marginTop: '2px' }}>Clamped 0–12% to stay above controls</div>
-                                    </div>
-
-                                    {/* Mobile safe area margin */}
-                                    <div>
-                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '3px' }}>Safe margin: {mobilePlacement.safeAreaMarginPx}px</div>
-                                        <input type="range" min="12" max="60" step="2" value={mobilePlacement.safeAreaMarginPx}
-                                            onChange={e => setMobilePlacement(prev => ({ ...prev, safeAreaMarginPx: parseInt(e.target.value) }))}
-                                            style={{ width: '100%', accentColor: 'var(--accent-gold)' }} />
-                                        <div style={{ fontSize: '0.55rem', color: 'rgba(255,255,255,0.2)', marginTop: '2px' }}>Increase for devices with large home indicators</div>
-                                    </div>
-
-                                    {/* Mobile font scale */}
-                                    <div>
-                                        <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', marginBottom: '4px' }}>Mobile font size</div>
-                                        <div style={{ display: 'flex', gap: '4px' }}>
-                                            {[0.7, 0.8, 0.9, 1.0].map(s => (
-                                                <button key={s} onClick={() => setMobilePlacement(prev => ({ ...prev, fontScale: s }))}
-                                                    className={`aim-placement-btn${mobilePlacement.fontScale === s ? ' active' : ''}`}
-                                                    style={{ flex: 1, padding: '4px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '5px', color: 'var(--text-secondary)' }}
-                                                >{s}×</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>)}
+                                    )
+                                 })()}
                             </div>
                         )}
+
+
 
                         {/* Shortcuts */}
                         <div style={{ padding: '8px 10px', fontSize: '0.58rem', color: 'rgba(255,255,255,0.18)', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
