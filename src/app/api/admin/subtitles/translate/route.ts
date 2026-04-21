@@ -167,7 +167,10 @@ export async function POST(req: NextRequest) {
             clearInterval(heartbeat)
 
             // ── Final status update ────────────────────────────────────────
-            const allDone = SUBTITLE_TARGET_LANGS.every(l => existingTranslations[l])
+            // Use allTargets (which includes 'en' for non-English sources) so
+            // a Korean film's completion status is only 'complete' once every
+            // required language — including English — is translated.
+            const allDone = allTargets.every(l => existingTranslations[l])
             await finalizeTranslation(
                 subtitle.id,
                 allDone ? 'complete' : 'partial',

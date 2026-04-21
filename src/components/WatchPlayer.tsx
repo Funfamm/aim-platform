@@ -100,7 +100,7 @@ export default function WatchPlayer({
     const [ccChecked, setCcChecked]         = useState(false)
     const [showFallbackNotice, setShowFallbackNotice] = useState(false)
     const [activeTrackUrl, setActiveTrackUrl] = useState<string | null>(null)
-    /* T4-E: Track-level subtitle placement from the backend */
+    /* T4-E: Track-level subtitle placement from the backend (desktop) */
     const [subtitlePlacement, setSubtitlePlacement] = useState<{
         verticalAnchor: string
         horizontalAlign: string
@@ -117,6 +117,22 @@ export default function WatchPlayer({
         backgroundStyle: 'shadow',
         fontScale: 1.0,
         cueOverrides: {},
+    })
+    /* T4-M: Mobile-specific placement (independent from desktop) */
+    const [mobilePlacement, setMobilePlacement] = useState<{
+        useSeparateMobilePlacement: boolean
+        verticalAnchor: string
+        horizontalAlign: string
+        offsetYPercent: number
+        safeAreaMarginPx: number
+        fontScale: number
+    }>({
+        useSeparateMobilePlacement: false,
+        verticalAnchor: 'bottom',
+        horizontalAlign: 'center',
+        offsetYPercent: 0,
+        safeAreaMarginPx: 20,
+        fontScale: 0.9,
     })
     /* Detect mobile once — used for bottom-sheet vs dropdown */
     const [isMobile, setIsMobile]           = useState(false)
@@ -195,7 +211,7 @@ export default function WatchPlayer({
                 if (data.available?.length > 0) {
                     setCcAvailable(data.available)
                     if (data.segments?.length > 0) { setCcSegments(data.segments); setCcLang('en') }
-                    // T4-E: Load placement metadata from API response
+                    // T4-E: Load desktop placement metadata from API response
                     if (data.placement) {
                         setSubtitlePlacement(prev => ({
                             ...prev,
@@ -206,6 +222,10 @@ export default function WatchPlayer({
                                     : data.placement.cueOverrides)
                                 : {},
                         }))
+                    }
+                    // T4-M: Load mobile placement from API response
+                    if (data.mobilePlacement) {
+                        setMobilePlacement(prev => ({ ...prev, ...data.mobilePlacement }))
                     }
                     const safe = (SUBTITLE_TARGET_LANGS as readonly string[]).includes(userPreferredLang) || userPreferredLang === 'en'
                         ? userPreferredLang : 'en'
@@ -928,15 +948,21 @@ export default function WatchPlayer({
                         </div>
                     )}
 
-                    {/* ── Subtitle overlay (T4-E: placement-aware) ── */}
+                    {/* ── Subtitle overlay (T4-E/T4-M: placement-aware, device-aware) ── */}
                     {ccEnabled && (() => {
-                        const p = activePlacement
+                        // On mobile, use independent placement if admin configured one
+                        const usesMobile = isMobile && mobilePlacement.useSeparateMobilePlacement
+                        const p = usesMobile
+                            ? { ...mobilePlacement, backgroundStyle: subtitlePlacement.backgroundStyle }
+                            : activePlacement
                         // Compute bottom from vertical anchor + offset + safe margin
                         const anchorBase: Record<string, number> = {
                             bottom: 5, lower_third: 20, middle: 45, upper_third: 65, top: 82,
                         }
                         const base = anchorBase[p.verticalAnchor] ?? 5
-                        const bottomVal = `calc(${base}% + ${p.offsetYPercent}% + ${p.safeAreaMarginPx}px + 58px)`
+                        // On mobile, ensure safe area margin is at least 20px to respect home indicator
+                        const safeMargin = usesMobile ? Math.max(20, p.safeAreaMarginPx) : p.safeAreaMarginPx
+                        const bottomVal = `calc(${base}% + ${p.offsetYPercent}% + ${safeMargin}px + 58px)`
                         return (
                             <div
                                 className="aim-subtitle-overlay"

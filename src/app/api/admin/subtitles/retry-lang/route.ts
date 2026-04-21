@@ -47,9 +47,10 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Parse source data ──────────────────────────────────────────────────
-    let englishSegments: Segment[] = []
+    const sourceLang = (subtitle.originalLanguage as string | null) ?? 'en'
+    let sourceSegments: Segment[] = []
     try {
-        englishSegments = JSON.parse(subtitle.segments)
+        sourceSegments = JSON.parse(subtitle.segments)
     } catch {
         return NextResponse.json(
             { error: 'Failed to parse subtitle segments', code: SSE_ERR.PARSE_FAILED },
@@ -81,13 +82,13 @@ export async function POST(req: NextRequest) {
             emit({ lang, langName, phase: 'translating', pct: 0 })
 
             try {
-                const texts = englishSegments.map(s => s.text)
+                const texts = sourceSegments.map(s => s.text)
 
                 // ISP Fix: destructure result instead of mutating keyLabelOut
-                const { translations: translatedTexts } = await translateTextsForLang(texts, lang)
+                const { translations: translatedTexts } = await translateTextsForLang(texts, lang, sourceLang)
                 emit({ lang, langName, phase: 'translating', pct: 85 })
 
-                const translatedSegments = buildTranslatedSegments(englishSegments, translatedTexts)
+                const translatedSegments = buildTranslatedSegments(sourceSegments, translatedTexts)
                 existingTranslations[lang] = translatedSegments
 
                 // Cache VTT to R2 — non-fatal
@@ -98,8 +99,13 @@ export async function POST(req: NextRequest) {
                     console.error('[retry-lang] VTT cache failed:', e)
                 }
 
+                // Compute allTargets same way as translate/route.ts
+                const allTargets = [
+                    ...(sourceLang !== 'en' && !existingTranslations['en'] ? ['en'] : []),
+                    ...SUBTITLE_TARGET_LANGS.filter(l => l !== sourceLang),
+                ]
                 // Persist result via status service
-                const allDone = SUBTITLE_TARGET_LANGS.every(l => !!existingTranslations[l])
+                const allDone = allTargets.every(l => !!existingTranslations[l])
                 await finalizeSingleLang(
                     subtitle.id,
                     lang,

@@ -75,7 +75,7 @@ export async function GET(
         available: [...new Set(available)],
         status: subtitle.status,
         translateStatus: subtitle.translateStatus,
-        // T4-E: Placement metadata for the public player
+        // T4-E: Desktop placement metadata for the public player
         placement: {
             verticalAnchor:   (subtitle as Record<string, unknown>).verticalAnchor   ?? 'bottom',
             horizontalAlign:  (subtitle as Record<string, unknown>).horizontalAlign  ?? 'center',
@@ -91,6 +91,16 @@ export async function GET(
                     return typeof raw === 'string' ? JSON.parse(raw) : raw
                 } catch { return {} }
             })(),
+        },
+        // T4-M: Mobile placement — used by the player when useSeparateMobilePlacement is true.
+        // Defaults are safe for old records that predate this field.
+        mobilePlacement: {
+            useSeparateMobilePlacement: (subtitle as Record<string, unknown>).useSeparateMobilePlacement ?? false,
+            verticalAnchor:   (subtitle as Record<string, unknown>).mobileVerticalAnchor   ?? 'bottom',
+            horizontalAlign:  (subtitle as Record<string, unknown>).mobileHorizontalAlign  ?? 'center',
+            offsetYPercent:   (subtitle as Record<string, unknown>).mobileOffsetYPercent   ?? 0,
+            safeAreaMarginPx: (subtitle as Record<string, unknown>).mobileSafeAreaMarginPx ?? 20,
+            fontScale:        (subtitle as Record<string, unknown>).mobileFontScale        ?? 0.9,
         },
     }, {
         headers: {
