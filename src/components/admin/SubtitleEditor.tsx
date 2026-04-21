@@ -693,11 +693,17 @@ export default function SubtitleEditor({
         }
         const base = baseMap[p.verticalAnchor] ?? 5
         const offsetY = 'offsetYPercent' in p ? p.offsetYPercent : 0
-        // No controls-bar offset here — the subtitle is now positioned inside
-        // the video-rect div (matching the live player's video container).
-        // The live player's +58px offset is accounted for by the mock controls
-        // bar visual guide that the admin positions above.
-        return `calc(${base}% + ${offsetY}% + ${p.safeAreaMarginPx}px)`
+        const vH = videoRect.h || 270
+        // Match WatchPlayer formula exactly:
+        // bottomPx = ((base + offset) / 100 * videoRect.h) + safeMargin + controlsBarPx
+        // The controls bar in the real player is ~58px at full size; scale it
+        // proportionally for the preview's smaller video height.
+        const controlsBarPx = showControlsBar ? Math.round(58 * (vH / 360)) : Math.round(12 * (vH / 360))
+        // For mobile portrait, enforce minimum safe margin (same as WatchPlayer)
+        const isPortrait = previewDevice === 'portrait'
+        const safeMargin = isPortrait ? Math.max(20, p.safeAreaMarginPx) : p.safeAreaMarginPx
+        const bottomPx = ((base + offsetY) / 100 * vH) + safeMargin + controlsBarPx
+        return `${Math.round(bottomPx)}px`
     }
 
     // For the preview panel, choose placement based on active device

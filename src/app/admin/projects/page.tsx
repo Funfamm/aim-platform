@@ -609,9 +609,26 @@ export default function AdminProjectsPage() {
             if (!subtitle) { alert('No subtitles found for this project. Generate them first.'); return }
             const segs: SubtitleCue[] = JSON.parse(subtitle.segments || '[]')
             
-            // Extract placement data
-            setEditorInitialPlacement(subtitle.placement ? JSON.parse(subtitle.placement) : null)
-            setEditorInitialMobilePlacement(subtitle.mobilePlacement ? JSON.parse(subtitle.mobilePlacement) : null)
+            // Extract placement data — all stored as individual columns, NOT JSON
+            setEditorInitialPlacement({
+                verticalAnchor: subtitle.verticalAnchor,
+                horizontalAlign: subtitle.horizontalAlign,
+                offsetYPercent: subtitle.offsetYPercent,
+                offsetXPercent: subtitle.offsetXPercent,
+                safeAreaMarginPx: subtitle.safeAreaMarginPx,
+                backgroundStyle: subtitle.backgroundStyle,
+                fontScale: subtitle.fontScale,
+                cueOverrides: subtitle.cueOverrides ? (typeof subtitle.cueOverrides === 'string' ? JSON.parse(subtitle.cueOverrides) : subtitle.cueOverrides) : {},
+            })
+            // Mobile portrait placement — stored as individual columns, NOT a JSON field
+            setEditorInitialMobilePlacement({
+                verticalAnchor: subtitle.mobileVerticalAnchor,
+                horizontalAlign: subtitle.mobileHorizontalAlign,
+                offsetYPercent: subtitle.mobileOffsetYPercent,
+                offsetXPercent: subtitle.mobileOffsetXPercent,
+                safeAreaMarginPx: subtitle.mobileSafeAreaMarginPx,
+                fontScale: subtitle.mobileFontScale,
+            })
             setEditorInitialLandscapePlacement({
                 verticalAnchor: subtitle.landscapeVerticalAnchor,
                 horizontalAlign: subtitle.landscapeHorizontalAlign,
