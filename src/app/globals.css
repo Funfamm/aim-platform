@@ -360,6 +360,8 @@ html {
   /* Let pull-to-refresh work; contain horizontal overscroll only */
   overscroll-behavior-x: none;
   scroll-behavior: smooth;
+  /* Prevent white flash in browser chrome / safe-area on mobile */
+  background: var(--bg-primary);
 }
 
 body {

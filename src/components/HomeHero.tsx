@@ -304,6 +304,7 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                             justifyContent: 'center',
                             gap: '6px',
                             marginTop: 'var(--space-md)',
+                            width: '100%',
                         }}>
                             {videos.map((_, i) => (
                                 <button
