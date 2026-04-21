@@ -82,13 +82,13 @@ export default function PageTransition({ children }: { children: React.ReactNode
         // keep the DOM structure identical across all states and avoid React
         // reconciliation errors when isMobile flips simultaneously with a
         // pathname change (the root cause of the mobile login crash).
-        if (!isMobile) return {}
+        if (!isMobile) return {};
 
+        // When idle we avoid any transform so that position:sticky works.
         if (stage === 'idle') return {
-            transform: 'translateX(0)',
             opacity: 1,
             willChange: 'auto',
-        }
+        };
         if (stage === 'exit') return {
             transform: direction === 'forward' ? 'translateX(-8px)' : 'translateX(8px)',
             opacity: 0,
@@ -108,9 +108,11 @@ export default function PageTransition({ children }: { children: React.ReactNode
     // ALWAYS render the same <div> element — never swap to a fragment.
     // Changing the root element type during a concurrent state update causes
     // React to throw a client-side exception on mobile devices.
+    // Apply overflow:hidden only while animating; idle state must be neutral for sticky.
+    const isAnimating = stage !== 'idle';
     return (
-        <div style={{ minHeight: '100dvh', overflow: 'hidden', ...getStyle() }}>
+        <div style={{ minHeight: '100dvh', overflow: isAnimating ? 'hidden' : undefined, ...getStyle() }}>
             {displayChildren}
         </div>
-    )
+    );
 }
