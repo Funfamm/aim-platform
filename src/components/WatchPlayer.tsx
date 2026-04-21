@@ -1398,15 +1398,16 @@ export default function WatchPlayer({
                                             )}
                                             {/* ── Language picker: dropdown in landscape/desktop, bottom-sheet in mobile portrait ── */}
                                             {showLangMenu && (!isMobile || isLandscape) && (
-                                                /* Desktop dropdown */
+                                                /* Desktop dropdown — insetInlineEnd so it never clips off-screen in RTL */
                                                 <div style={{
-                                                    position: 'absolute', bottom: '110%', right: 0,
+                                                    position: 'absolute', bottom: '110%', insetInlineEnd: 0,
                                                     marginBottom: '6px', background: 'rgba(13,15,20,0.97)',
                                                     border: '1px solid rgba(212,168,83,0.3)',
                                                     borderRadius: '8px', padding: '4px',
-                                                    minWidth: '150px', backdropFilter: 'blur(10px)',
+                                                    minWidth: '160px', backdropFilter: 'blur(10px)',
                                                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                                                     animation: 'aimFadeIn 0.15s ease',
+                                                    direction: 'ltr',  /* keep language names LTR regardless of page direction */
                                                 }}>
                                                     <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '6px 10px 4px' }}>{tPlayer('subtitles')}</div>
                                                     {ccAvailable.length === 0 && (
@@ -1416,7 +1417,7 @@ export default function WatchPlayer({
                                                         <button key={lang}
                                                             onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
                                                             style={{
-                                                                display: 'block', width: '100%', padding: '6px 10px', textAlign: 'left',
+                                                                display: 'block', width: '100%', padding: '6px 10px', textAlign: 'start',
                                                                 background: ccLang === lang && ccEnabled ? 'rgba(212,168,83,0.15)' : 'transparent',
                                                                 border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
                                                                 color: ccLang === lang && ccEnabled ? 'var(--accent-gold)' : 'var(--text-secondary)',
@@ -1428,7 +1429,7 @@ export default function WatchPlayer({
                                                     <button
                                                         onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
                                                         style={{
-                                                            display: 'block', width: '100%', padding: '6px 10px', textAlign: 'left',
+                                                            display: 'block', width: '100%', padding: '6px 10px', textAlign: 'start',
                                                             background: !ccEnabled ? 'rgba(255,255,255,0.06)' : 'transparent',
                                                             border: 'none', borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer',
                                                             color: 'var(--text-tertiary)',
