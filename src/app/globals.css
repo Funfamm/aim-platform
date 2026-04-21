@@ -3111,7 +3111,7 @@ textarea:focus:not(:focus-visible) {
   /* Base container — prevent overflow */
   .container {
     padding: 0 var(--space-md);
-    max-width: 100vw;
+    max-width: 100%;
     overflow-x: hidden;
   }
 
