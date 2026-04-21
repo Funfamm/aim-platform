@@ -714,15 +714,15 @@ export default function SubtitleEditor({
                 const deltaH = videoRectRef.current.h || 270
                 const deltaY = dragState.current.startY - y
                 const deltaPct = (deltaY / deltaH) * 100
-                const newOffset = Math.round(Math.max(-20, Math.min(20, dragState.current.startOffset + deltaPct)) * 10) / 10
+                const newOffset = Math.round(Math.max(-40, Math.min(40, dragState.current.startOffset + deltaPct)) * 10) / 10
                 const dev = previewDeviceRef.current
                 const useMobile = useSeparateMobileRef.current
                 if (dev === 'desktop' || !useMobile) {
-                    setPlacement(prev => ({ ...prev, offsetYPercent: newOffset }))
+                    setPlacement(prev => ({ ...prev, offsetYPercent: Math.max(-40, Math.min(40, newOffset)) }))
                 } else if (dev === 'portrait') {
-                    setMobilePlacement(prev => ({ ...prev, offsetYPercent: Math.max(-5, Math.min(25, newOffset)) }))
+                    setMobilePlacement(prev => ({ ...prev, offsetYPercent: Math.max(-40, Math.min(40, newOffset)) }))
                 } else {
-                    setLandscapePlacement(prev => ({ ...prev, offsetYPercent: Math.max(-5, Math.min(25, newOffset)) }))
+                    setLandscapePlacement(prev => ({ ...prev, offsetYPercent: Math.max(-40, Math.min(40, newOffset)) }))
                 }
             })
         }
