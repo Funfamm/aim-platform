@@ -105,6 +105,7 @@ export default function WatchPlayer({
         verticalAnchor: string
         horizontalAlign: string
         offsetYPercent: number
+        offsetXPercent: number
         safeAreaMarginPx: number
         backgroundStyle: string
         fontScale: number
@@ -113,6 +114,7 @@ export default function WatchPlayer({
         verticalAnchor: 'bottom',
         horizontalAlign: 'center',
         offsetYPercent: 0,
+        offsetXPercent: 0,
         safeAreaMarginPx: 12,
         backgroundStyle: 'shadow',
         fontScale: 1.0,
