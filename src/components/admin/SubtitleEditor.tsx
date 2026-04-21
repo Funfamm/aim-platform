@@ -219,32 +219,37 @@ export default function SubtitleEditor({
     const previewDeviceRef = useRef<PreviewDevice>(previewDevice)
     const useSeparateMobileRef = useRef(useSeparateMobile)
 
-    // ── Dirty detection effects ────────────────────────────────────────────────
-    useEffect(() => {
-        setIsDirtyDesktop(JSON.stringify(placement) !== JSON.stringify({
-            ...DEFAULT_PLACEMENT,
-            ...initialPlacement,
-            cueOverrides: (initialPlacement as PlacementState | undefined)?.cueOverrides ?? {},
-        }))
-    }, [placement, initialPlacement])
+    // ── Dirty detection (compares against last saved state, not initial props) ──
+    // savedPlacementRef etc. are initialised near saveDraft with the initial state
+    // and updated after each successful save, so "dirty" means “changed since last save”.
+    const savedDesktopJSON = useRef(JSON.stringify({
+        ...DEFAULT_PLACEMENT, ...initialPlacement,
+        cueOverrides: (initialPlacement as PlacementState | undefined)?.cueOverrides ?? {},
+    }))
+    const savedMobileJSON = useRef(JSON.stringify({ ...DEFAULT_MOBILE_PLACEMENT, ...initialMobilePlacement }))
+    const savedLandscapeJSON = useRef(JSON.stringify({ ...DEFAULT_MOBILE_PLACEMENT, ...initialLandscapePlacement }))
+    const savedUseMobileVal = useRef(initUseMobile)
 
     useEffect(() => {
-        setIsDirtyMobile(JSON.stringify(mobilePlacement) !== JSON.stringify({
-            ...DEFAULT_MOBILE_PLACEMENT,
-            ...initialMobilePlacement,
-        }))
-    }, [mobilePlacement, initialMobilePlacement])
+        setIsDirtyDesktop(JSON.stringify(placement) !== savedDesktopJSON.current)
+    }, [placement])
 
     useEffect(() => {
-        setIsDirtyLandscape(JSON.stringify(landscapePlacement) !== JSON.stringify({
-            ...DEFAULT_MOBILE_PLACEMENT,
-            ...initialLandscapePlacement,
-        }))
-    }, [landscapePlacement, initialLandscapePlacement])
+        setIsDirtyMobile(JSON.stringify(mobilePlacement) !== savedMobileJSON.current)
+    }, [mobilePlacement])
 
     useEffect(() => {
-        setIsDirtyUseMobile(useSeparateMobile !== initUseMobile)
-    }, [useSeparateMobile, initUseMobile])
+        setIsDirtyLandscape(JSON.stringify(landscapePlacement) !== savedLandscapeJSON.current)
+    }, [landscapePlacement])
+
+    useEffect(() => {
+        setIsDirtyUseMobile(useSeparateMobile !== savedUseMobileVal.current)
+    }, [useSeparateMobile])
+
+    // ── Memoized warnings (avoid recomputing per-cue on every render) ────────
+    const cueWarnings = useMemo(() => cues.map((_, i) => getWarnings(cues, i)), [cues])
+    const warningCount = useMemo(() => cueWarnings.reduce((acc, w) => acc + w.length, 0), [cueWarnings])
+    const hardErrors = useMemo(() => cueWarnings.reduce((acc, w) => acc + w.filter(x => x === 'invalid' || x === 'empty').length, 0), [cueWarnings])
 
     const historyRef = useRef<SubtitleCue[][]>([initialSegments])
     const historyIdxRef = useRef(0)
@@ -278,6 +283,7 @@ export default function SubtitleEditor({
         const handler = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
             if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveDraftRef.current?.() }
         }
         window.addEventListener('keydown', handler)
         return () => window.removeEventListener('keydown', handler)
@@ -323,11 +329,8 @@ export default function SubtitleEditor({
     const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
 
     const isApproved = liveStatus === 'approved_source'
-    const warningCount = useMemo(() => cues.reduce((acc, _, i) => acc + getWarnings(cues, i).length, 0), [cues])
-    const hardErrors = useMemo(() => cues.reduce((acc, _, i) => {
-        const w = getWarnings(cues, i)
-        return acc + w.filter(x => x === 'invalid' || x === 'empty').length
-    }, 0), [cues])
+    // warningCount and hardErrors are now computed from cueWarnings (memoized above)
+    // original duplicate definitions removed
 
     // ── Revision history ────────────────────────────────────────────────────────
     const [revisions, setRevisions] = useState<Revision[]>([])
@@ -524,6 +527,9 @@ export default function SubtitleEditor({
 
     // ── Save draft ────────────────────────────────────────────────────────────
 
+    // Ref so keyboard handler closure always sees latest saveDraft
+    const saveDraftRef = useRef<(() => void) | null>(null)
+
     const saveDraft = async (changeSource = 'manual_edit') => {
         setSaving(true); setMsg('')
         try {
@@ -566,7 +572,16 @@ export default function SubtitleEditor({
             if (!res.ok) throw new Error(d.error || 'Save failed')
             setLiveStatus(d.status)
             setLastSavedAt(new Date().toISOString())
-            setMsg('✓ Draft saved')
+            // Reset dirty state — snapshot what was just saved into the comparison refs
+            savedDesktopJSON.current = JSON.stringify(placement)
+            savedMobileJSON.current = JSON.stringify(mobilePlacement)
+            savedLandscapeJSON.current = JSON.stringify(landscapePlacement)
+            savedUseMobileVal.current = useSeparateMobile
+            setIsDirtyDesktop(false)
+            setIsDirtyMobile(false)
+            setIsDirtyLandscape(false)
+            setIsDirtyUseMobile(false)
+            setMsg(`✓ ${changeSource === 'manual_edit' ? 'Draft saved' : changeSource.replace(/_/g, ' ') + ' saved'}`)
             onSaved(d.status)
             setTimeout(() => setMsg(''), 2500)
         } catch (e: unknown) {
@@ -574,6 +589,9 @@ export default function SubtitleEditor({
         }
         setSaving(false)
     }
+
+    // Keep ref in sync so Ctrl+S always calls the latest saveDraft
+    saveDraftRef.current = () => saveDraft('manual_edit')
 
     const approve = async () => {
         // Phase 3: require the admin to have previewed on mobile before approving
@@ -607,14 +625,21 @@ export default function SubtitleEditor({
 
     const previewRef = useRef<HTMLDivElement>(null)
     const dragState = useRef<{ startY: number; startOffset: number } | null>(null)
+    const rafRef = useRef<number | null>(null)
 
     const handlePreviewDragStart = (e: React.MouseEvent | React.TouchEvent) => {
         const y = 'touches' in e ? e.touches[0].clientY : e.clientY
         // Read offset from the correct placement state based on current preview device
-        const isDesktop = previewDeviceRef.current === 'desktop'
-        const currentOffset = (isDesktop || !useSeparateMobileRef.current)
-            ? placement.offsetYPercent
-            : mobilePlacement.offsetYPercent
+        const dev = previewDeviceRef.current
+        const useMobile = useSeparateMobileRef.current
+        let currentOffset: number
+        if (dev === 'desktop' || !useMobile) {
+            currentOffset = placement.offsetYPercent
+        } else if (dev === 'portrait') {
+            currentOffset = mobilePlacement.offsetYPercent
+        } else {
+            currentOffset = landscapePlacement.offsetYPercent
+        }
         dragState.current = { startY: y, startOffset: currentOffset }
         e.preventDefault()
     }
@@ -622,22 +647,31 @@ export default function SubtitleEditor({
     useEffect(() => {
         const onMove = (e: MouseEvent | TouchEvent) => {
             if (!dragState.current) return
-            const y = 'touches' in e ? e.touches[0].clientY : e.clientY
-            // Use video rect height for delta so drag feels natural relative to visible video
-            const deltaH = videoRectRef.current.h || 270
-            const deltaY = dragState.current.startY - y
-            const deltaPct = (deltaY / deltaH) * 100
-            const newOffset = Math.round(Math.max(-20, Math.min(20, dragState.current.startOffset + deltaPct)) * 10) / 10
-            // Write to the correct placement state
-            const isDesktop = previewDeviceRef.current === 'desktop'
-            if (isDesktop || !useSeparateMobileRef.current) {
-                setPlacement(prev => ({ ...prev, offsetYPercent: newOffset }))
-            } else {
-                // Mobile offset is clamped 0–12%
-                setMobilePlacement(prev => ({ ...prev, offsetYPercent: Math.max(0, Math.min(12, newOffset)) }))
-            }
+            // RAF-throttle: skip if a frame is already queued
+            if (rafRef.current) return
+            rafRef.current = requestAnimationFrame(() => {
+                rafRef.current = null
+                if (!dragState.current) return
+                const y = 'touches' in e ? e.touches[0].clientY : e.clientY
+                const deltaH = videoRectRef.current.h || 270
+                const deltaY = dragState.current.startY - y
+                const deltaPct = (deltaY / deltaH) * 100
+                const newOffset = Math.round(Math.max(-20, Math.min(20, dragState.current.startOffset + deltaPct)) * 10) / 10
+                const dev = previewDeviceRef.current
+                const useMobile = useSeparateMobileRef.current
+                if (dev === 'desktop' || !useMobile) {
+                    setPlacement(prev => ({ ...prev, offsetYPercent: newOffset }))
+                } else if (dev === 'portrait') {
+                    setMobilePlacement(prev => ({ ...prev, offsetYPercent: Math.max(-5, Math.min(25, newOffset)) }))
+                } else {
+                    setLandscapePlacement(prev => ({ ...prev, offsetYPercent: Math.max(-5, Math.min(25, newOffset)) }))
+                }
+            })
         }
-        const onEnd = () => { dragState.current = null }
+        const onEnd = () => {
+            dragState.current = null
+            if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+        }
         window.addEventListener('mousemove', onMove)
         window.addEventListener('touchmove', onMove, { passive: false })
         window.addEventListener('mouseup', onEnd)
@@ -647,6 +681,7 @@ export default function SubtitleEditor({
             window.removeEventListener('touchmove', onMove)
             window.removeEventListener('mouseup', onEnd)
             window.removeEventListener('touchend', onEnd)
+            if (rafRef.current) cancelAnimationFrame(rafRef.current)
         }
     }, [])
 
@@ -667,7 +702,10 @@ export default function SubtitleEditor({
 
     // For the preview panel, choose placement based on active device
     const activePlacement: PlacementState | MobilePlacementState =
-        previewDevice !== 'desktop' && useSeparateMobile ? mobilePlacement : placement
+        previewDevice === 'desktop' ? placement
+        : !useSeparateMobile ? placement
+        : previewDevice === 'portrait' ? mobilePlacement
+        : landscapePlacement
 
     // Sync refs so the drag handler's closure sees latest values
     previewDeviceRef.current = previewDevice
@@ -676,8 +714,9 @@ export default function SubtitleEditor({
     // Which placement source is active (for debug panel)
     const placementSource: string =
         previewDevice === 'desktop' ? 'desktop'
-        : useSeparateMobile ? 'mobile (independent)'
-        : 'desktop (fallback — mobile not enabled)'
+        : !useSeparateMobile ? 'desktop (fallback — mobile not enabled)'
+        : previewDevice === 'portrait' ? 'portrait (independent)'
+        : 'landscape (independent)'
 
     // Preview container dimensions per device
     // Portrait: iPhone SE-ish (320×568) — large enough for reliable subtitle placement judging.
@@ -699,13 +738,16 @@ export default function SubtitleEditor({
         if (ar >= car) {
             // Video fills width, letterbox top/bottom
             const vw = cw, vh = cw / ar
-            return { x: 0, y: Math.round((ch - vh) / 2), w: vw, h: Math.round(vh) }
+            // Portrait: pin video to TOP (matches real phone player behavior)
+            // Desktop/Landscape: center vertically
+            const yPos = previewDevice === 'portrait' ? 0 : Math.round((ch - vh) / 2)
+            return { x: 0, y: yPos, w: vw, h: Math.round(vh) }
         } else {
             // Video fills height, pillarbox left/right
             const vh = ch, vw = ch * ar
             return { x: Math.round((cw - vw) / 2), y: 0, w: Math.round(vw), h: vh }
         }
-    }, [dim, videoNaturalAR])
+    }, [dim, videoNaturalAR, previewDevice])
     // Sync videoRect ref for drag handler
     videoRectRef.current = videoRect
 
@@ -872,7 +914,7 @@ export default function SubtitleEditor({
                                     }}
                                 >
                                     {d === 'desktop' ? '🖥 Desktop' : d === 'portrait' ? '📱 Portrait' : '📱 Land.'}
-                                    {d === 'portrait' && previewedDevices.has('portrait') && <span style={{ marginLeft: '3px', color: '#4ade80' }}>✓</span>}
+                                    {previewedDevices.has(d) && <span style={{ marginLeft: '3px', color: '#4ade80' }}>✓</span>}
                                 </button>
                             ))}
                         </div>
@@ -885,7 +927,7 @@ export default function SubtitleEditor({
                             borderRadius: previewDevice === 'portrait' ? '16px' : previewDevice === 'landscape' ? '8px' : '4px',
                             overflow: 'hidden',
                         }}>
-                            <video ref={videoRef} src={filmUrl} controls controlsList="nodownload" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                            <video ref={videoRef} src={filmUrl} controls controlsList="nodownload" style={{ width: '100%', height: '100%', objectFit: 'contain', objectPosition: previewDevice === 'portrait' ? 'top center' : 'center center' }} />
 
                             {/* Video-rect overlay — matches the actual rendered video frame.
                                 All subtitle/safe-zone positioning inside this div is relative
@@ -972,6 +1014,13 @@ export default function SubtitleEditor({
                             <div style={{ position: 'absolute', top: 0, right: 0, fontSize: '0.45rem', color: 'rgba(212,168,83,0.7)', padding: '2px 6px', background: 'rgba(0,0,0,0.6)', borderBottomLeftRadius: '6px', zIndex: 7 }}>
                                 {previewDevice === 'desktop' ? `${dim.w}×${dim.h} • drag to reposition` : `📱 ${previewDevice} • ${dim.w}×${dim.h}`}  |  video: {videoRect.w}×{videoRect.h}
                             </div>
+
+                            {/* Debug geometry overlay */}
+                            {showDebug && (
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '4px 6px', background: 'rgba(0,20,0,0.85)', fontSize: '0.42rem', color: '#00ff88', fontFamily: 'monospace', lineHeight: 1.5, zIndex: 8, pointerEvents: 'none', whiteSpace: 'pre-wrap' }}>
+                                    {`source: ${placementSource}\nvideo: ${videoRect.w}×${videoRect.h} @(${videoRect.x},${videoRect.y})\nanchor: ${activePlacement.verticalAnchor} | align: ${activePlacement.horizontalAlign}\noffsetY: ${activePlacement.offsetYPercent}% | margin: ${activePlacement.safeAreaMarginPx}px\nfont: ${activePlacement.fontScale}× → ${computePreviewFontPx(activePlacement.fontScale, videoRect.w)}\nbottom: ${getSubtitleBottom(activePlacement)}`}
+                                </div>
+                            )}
 
                         </div>
 
@@ -1121,17 +1170,129 @@ export default function SubtitleEditor({
                                                     </div>
                                                 </div>
                                             )}
+
+                                            {/* ── Per-device convenience actions ── */}
+                                            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Quick Actions</div>
+                                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                    {/* Reset to Default */}
+                                                    <button
+                                                        onClick={() => {
+                                                            if (!confirm(`Reset ${previewDevice} placement to defaults?`)) return
+                                                            if (isDesktop) setPlacement({ ...DEFAULT_PLACEMENT })
+                                                            else if (previewDevice === 'portrait') setMobilePlacement({ ...DEFAULT_MOBILE_PLACEMENT })
+                                                            else setLandscapePlacement({ ...DEFAULT_MOBILE_PLACEMENT })
+                                                            setMsg(`✓ ${previewDevice} placement reset`)
+                                                            setTimeout(() => setMsg(''), 2500)
+                                                        }}
+                                                        title={`Reset ${previewDevice} to default placement`}
+                                                        style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.12)', borderRadius: '5px', color: '#f87171' }}
+                                                    >🔄 Reset Default</button>
+
+                                                    {/* Snap to Safe Zone */}
+                                                    <button
+                                                        onClick={() => {
+                                                            const safePatch = {
+                                                                verticalAnchor: 'lower_third',
+                                                                safeAreaMarginPx: isDesktop ? 12 : previewDevice === 'portrait' ? 20 : 12,
+                                                                offsetYPercent: 0,
+                                                            }
+                                                            if (isDesktop) setPlacement(prev => ({ ...prev, ...safePatch }))
+                                                            else if (previewDevice === 'portrait') setMobilePlacement(prev => ({ ...prev, ...safePatch }))
+                                                            else setLandscapePlacement(prev => ({ ...prev, ...safePatch }))
+                                                            setMsg('✓ Snapped to safe zone')
+                                                            setTimeout(() => setMsg(''), 2500)
+                                                        }}
+                                                        title="Auto-position to safe lower-third zone"
+                                                        style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.12)', borderRadius: '5px', color: '#4ade80' }}
+                                                    >🎯 Snap Safe</button>
+
+                                                    {/* Copy from Desktop (only for mobile/landscape tabs) */}
+                                                    {!isDesktop && (
+                                                        <button
+                                                            onClick={() => {
+                                                                const patch = {
+                                                                    verticalAnchor: placement.verticalAnchor,
+                                                                    horizontalAlign: placement.horizontalAlign,
+                                                                    offsetYPercent: placement.offsetYPercent,
+                                                                    offsetXPercent: placement.offsetXPercent,
+                                                                    safeAreaMarginPx: placement.safeAreaMarginPx,
+                                                                    fontScale: placement.fontScale,
+                                                                }
+                                                                if (previewDevice === 'portrait') setMobilePlacement(prev => ({ ...prev, ...patch }))
+                                                                else setLandscapePlacement(prev => ({ ...prev, ...patch }))
+                                                                setMsg(`✓ Copied Desktop → ${previewDevice}`)
+                                                                setTimeout(() => setMsg(''), 2500)
+                                                            }}
+                                                            title="Copy placement settings from Desktop"
+                                                            style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)', borderRadius: '5px', color: '#818cf8' }}
+                                                        >📋 Copy Desktop</button>
+                                                    )}
+
+                                                    {/* Copy between Portrait ↔ Landscape */}
+                                                    {!isDesktop && (
+                                                        <button
+                                                            onClick={() => {
+                                                                if (previewDevice === 'portrait') {
+                                                                    setMobilePlacement(prev => ({ ...prev, ...landscapePlacement }))
+                                                                    setMsg('✓ Copied Landscape → Portrait')
+                                                                } else {
+                                                                    setLandscapePlacement(prev => ({ ...prev, ...mobilePlacement }))
+                                                                    setMsg('✓ Copied Portrait → Landscape')
+                                                                }
+                                                                setTimeout(() => setMsg(''), 2500)
+                                                            }}
+                                                            title={previewDevice === 'portrait' ? 'Copy from Landscape' : 'Copy from Portrait'}
+                                                            style={{ flex: '1 0 calc(50% - 4px)', padding: '5px 6px', fontSize: '0.56rem', cursor: 'pointer', background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.12)', borderRadius: '5px', color: '#c084fc' }}
+                                                        >📋 Copy {previewDevice === 'portrait' ? 'Land.' : 'Port.'}</button>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* ── Per-device Save Layout button ── */}
+                                            <button
+                                                onClick={() => saveDraft(`${previewDevice}_layout`)}
+                                                disabled={saving}
+                                                style={{
+                                                    width: '100%', padding: '7px', fontSize: '0.68rem', fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer',
+                                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))',
+                                                    border: '1px solid rgba(212,168,83,0.3)', borderRadius: '7px',
+                                                    color: 'var(--accent-gold)', opacity: saving ? 0.6 : 1, transition: 'all 0.15s',
+                                                }}
+                                            >
+                                                {saving ? 'Saving…' : `💾 Save ${previewDevice === 'desktop' ? 'Desktop' : previewDevice === 'portrait' ? 'Portrait' : 'Landscape'} Layout`}
+                                            </button>
                                         </div>
                                     )
                                  })()}
+
+                                {/* ── Preview All Devices button ── */}
+                                <button
+                                    onClick={async () => {
+                                        const devices: PreviewDevice[] = ['desktop', 'portrait', 'landscape']
+                                        for (const d of devices) {
+                                            setPreviewDevice(d)
+                                            markDevicePreviewed(d)
+                                            await new Promise(r => setTimeout(r, 1500))
+                                        }
+                                        setMsg('✓ All device previews completed')
+                                        setTimeout(() => setMsg(''), 2500)
+                                    }}
+                                    style={{
+                                        width: '100%', padding: '6px', fontSize: '0.6rem', cursor: 'pointer',
+                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                                        borderRadius: '6px', color: 'var(--text-tertiary)', transition: 'all 0.15s',
+                                    }}
+                                    title="Cycle through all device previews (1.5s each)"
+                                >📱 Preview All Devices</button>
                             </div>
                         )}
-
 
 
                         {/* Shortcuts */}
                         <div style={{ padding: '8px 10px', fontSize: '0.58rem', color: 'rgba(255,255,255,0.18)', lineHeight: 1.6, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                             <div>Click a cue row to seek · Active cue highlighted</div>
+                            <div><kbd style={{ fontFamily: 'monospace', fontSize: '0.55rem', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+S</kbd> Save Draft</div>
                             <div><kbd style={{ fontFamily: 'monospace', fontSize: '0.55rem', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Z</kbd> Undo</div>
                             <div><kbd style={{ fontFamily: 'monospace', fontSize: '0.55rem', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Y</kbd> Redo</div>
                         </div>
@@ -1187,7 +1348,7 @@ export default function SubtitleEditor({
                     )}
 
                     {cues.map((cue, idx) => {
-                        const warns = getWarnings(cues, idx)
+                        const warns = cueWarnings[idx] || []
                         const isActive = idx === activeCue
                         const cuePlacement = placement.cueOverrides[String(idx)]
                         const hasOverride = !!cuePlacement
