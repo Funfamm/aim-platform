@@ -130,7 +130,8 @@ function TimeInput({ value, onChange }: { value: number; onChange: (v: number) =
     const [editing, setEditing] = useState(false)
     const [raw, setRaw] = useState(fmtMs(value))
 
-    useEffect(() => { if (!editing) setRaw(fmtMs(value)) }, [value, editing])
+
+
 
     return (
         <input
