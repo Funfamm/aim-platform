@@ -40,6 +40,18 @@ export async function GET(
         } catch { /* ignore */ }
     }
 
+    // Step 5 instrumentation
+    const originalLang = (subtitle as Record<string, unknown>).originalLanguage as string | null
+    console.info(
+        `[subtitles/GET] projectId=${projectId} requestedLang=${lang}` +
+        ` subtitleLanguage=${subtitle.language}` +
+        ` originalLanguage=${originalLang ?? 'null'}` +
+        ` available=[${[...new Set(available)].join(',')}]` +
+        ` englishTrackVisibleInUI=${available.includes('en')}` +
+        ` englishTrackSelectable=${available.includes('en')}`
+    )
+
+
     // If requested language is a translation, return those segments
     if (lang !== subtitle.language && translations[lang]) {
         segments = translations[lang]

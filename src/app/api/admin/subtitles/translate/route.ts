@@ -89,6 +89,16 @@ export async function POST(req: NextRequest) {
         ...SUBTITLE_TARGET_LANGS.filter(l => l !== sourceLang),
     ]
     const pending = allTargets.filter(l => !existingTranslations[l])
+
+    // Step 2 instrumentation
+    console.info(
+        `[translate] sourceLanguage=${sourceLang}` +
+        ` selectedTargets=[${allTargets.join(',')}]` +
+        ` finalTargets=[${pending.join(',')}]` +
+        ` sourceLanguageExcluded=${!allTargets.includes(sourceLang)}` +
+        ` englishInTargets=${allTargets.includes('en')}`
+    )
+
     if (pending.length === 0) {
         return NextResponse.json({ message: 'All languages already translated', status: 'complete' })
     }
@@ -123,6 +133,13 @@ export async function POST(req: NextRequest) {
                 try {
                     const texts = sourceSegments.map(s => s.text)
 
+                    // Step 3 instrumentation
+                    console.info(
+                        `[translate] translationStarted source=${sourceLang} target=${lang}` +
+                        ` inputSegmentCount=${texts.length}` +
+                        ` firstSourceSegment=${JSON.stringify((texts[0] ?? '').slice(0, 60))}`
+                    )
+
                     // ISP Fix: destructure result instead of mutating keyLabelOut
                     const { translations: translatedTexts, keyLabel } = await translateTextsForLang(texts, lang, sourceLang)
                     if (keyLabel) lastKeyLabel = keyLabel
@@ -130,6 +147,16 @@ export async function POST(req: NextRequest) {
                     const translatedSegments = buildTranslatedSegments(sourceSegments, translatedTexts)
                     existingTranslations[lang] = translatedSegments
                     completedCount++
+
+                    // Step 4 instrumentation
+                    const nonEmptyCount = translatedSegments.filter(s => s.text.trim().length > 0).length
+                    console.info(
+                        `[translate] translationFinished target=${lang}` +
+                        ` translatedSegmentCount=${translatedSegments.length}` +
+                        ` nonEmptySegments=${nonEmptyCount}` +
+                        ` englishTrackCreated=${lang === 'en'}` +
+                        (lang === 'en' ? ` englishTrackHasNonEmptySegments=${nonEmptyCount > 0}` : '')
+                    )
 
                     // Cache VTT to R2 — errors are non-fatal
                     try {
@@ -157,6 +184,7 @@ export async function POST(req: NextRequest) {
 
                 } catch (err) {
                     const errMsg = err instanceof Error ? err.message : 'Unknown error'
+                    console.error(`[translate] translationFailed source=${sourceLang} target=${lang} error=${errMsg}`)
                     langStatus[lang] = 'failed'
                     emit({ lang, langName, phase: 'error', error: errMsg, code: SSE_ERR.TRANSLATE_FAILED })
                     await failLang(subtitle.id, lang, langStatus)

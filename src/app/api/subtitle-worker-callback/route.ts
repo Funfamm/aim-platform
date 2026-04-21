@@ -111,6 +111,13 @@ export async function POST(req: NextRequest) {
     // Persist the transcript segments to FilmSubtitle so the existing
     // translation pipeline can pick them up immediately.
     if (segments && segments.length > 0) {
+        // Step 1 instrumentation
+        console.info(
+            `[subtitles/callback] transcriptionSucceeded=true` +
+            ` detectedLanguage=${language ?? 'en'}` +
+            ` segmentCount=${segments.length}` +
+            ` originalLanguageSaved=${language ?? 'en'}`
+        )
         try {
             await upsertSubtitleRecord({
                 projectId: job.projectId,
@@ -125,6 +132,12 @@ export async function POST(req: NextRequest) {
             // Non-fatal — the VTT URL is already saved. Log and continue.
             console.error('[subtitles/callback] Failed to persist segments to FilmSubtitle:', err)
         }
+    } else {
+        console.warn(
+            `[subtitles/callback] transcriptionSucceeded=false` +
+            ` detectedLanguage=${language ?? 'unknown'}` +
+            ` segmentCount=0 — no segments in callback payload`
+        )
     }
 
     console.info(`[subtitles/callback] Job ${jobId} completed → ${vttUrl}`)
