@@ -74,6 +74,7 @@ model Project {
   gallery      String?
   translations String?
   credits      String?
+  sponsorData  String?        // JSON: { name, logoUrl?, description? } — per-project sponsor for publish emails
   featured     Boolean        @default(false)
   published    Boolean        @default(false)  // visibility gate — only published projects appear on public pages
   sortOrder    Int            @default(0)

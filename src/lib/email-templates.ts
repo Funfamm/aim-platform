@@ -1008,24 +1008,71 @@ export function announcementEmail(
 }
 
 /** Sent to opted-in users when admin publishes new content */
-export function contentPublishEmail(contentTitle: string, contentType: string, link: string, locale: string = 'en'): string {
+export function contentPublishEmail(
+    contentTitle: string,
+    contentType: string,
+    link: string,
+    locale: string = 'en',
+    status: string = 'completed',
+    sponsorData?: { name: string; logoUrl?: string; description?: string } | null,
+): string {
     const typeEmoji: Record<string, string> = { project: '🎬', video: '▶️', blog: '📝', training: '🎓', default: '✨' }
     const emoji = typeEmoji[contentType.toLowerCase()] ?? typeEmoji.default
+
+    // Status-aware badge and CTA text
+    const statusBadgeMap: Record<string, Record<string, string>> = {
+        upcoming:        { en: 'Coming Soon',     ar: 'قريبًا',       de: 'Demnächst',       es: 'Próximamente',    fr: 'Bientôt',       hi: 'जल्द आ रहा है', ja: '近日公開', ko: '곧 공개', pt: 'Em breve',        ru: 'Скоро',       zh: '即将上映' },
+        'in-production': { en: 'In Production',   ar: 'قيد الإنتاج',   de: 'In Produktion',   es: 'En producción',   fr: 'En production', hi: 'निर्माणाधीन',   ja: '制作中',   ko: '제작 중', pt: 'Em produção',    ru: 'В производстве', zh: '制作中' },
+        completed:       { en: 'Now Streaming',   ar: 'متاح الآن',     de: 'Jetzt streamen',  es: 'Ya disponible',   fr: 'Disponible',    hi: 'अभी देखें',     ja: '配信中',   ko: '공개 중', pt: 'Já disponível',  ru: 'Смотрите сейчас', zh: '正在播出' },
+    }
+    const statusCtaMap: Record<string, Record<string, string>> = {
+        upcoming:        { en: 'Watch Trailer →',       ar: 'شاهد العرض الدعائي →',  de: 'Trailer ansehen →',     es: 'Ver tráiler →',         fr: 'Voir la bande-annonce →', hi: 'ट्रेलर देखें →',     ja: '予告編を見る →', ko: '예고편 보기 →', pt: 'Ver trailer →',       ru: 'Смотреть трейлер →',  zh: '观看预告片 →' },
+        'in-production': { en: 'View Movie Details →',  ar: 'عرض تفاصيل الفيلم →',   de: 'Filmdetails ansehen →', es: 'Ver detalles →',        fr: 'Voir les détails →',      hi: 'विवरण देखें →',       ja: '詳細を見る →',   ko: '상세 보기 →',   pt: 'Ver detalhes →',      ru: 'Подробнее →',         zh: '查看详情 →' },
+        completed:       { en: 'Watch Full Movie →',    ar: 'شاهد الفيلم كاملاً →',   de: 'Film ansehen →',        es: 'Ver película completa →', fr: 'Regarder le film →',      hi: 'पूरी फ़िल्म देखें →', ja: '本編を見る →',   ko: '본편 보기 →',   pt: 'Assistir filme →',    ru: 'Смотреть фильм →',   zh: '观看完整影片 →' },
+    }
+    const badgeText = statusBadgeMap[status]?.[locale] ?? statusBadgeMap[status]?.['en'] ?? statusBadgeMap['completed']['en']
+    const ctaText   = statusCtaMap[status]?.[locale]   ?? statusCtaMap[status]?.['en']   ?? statusCtaMap['completed']['en']
+
+    // Badge colour per status
+    const badgeColorMap: Record<string, string> = { upcoming: '#f59e0b', 'in-production': ACCENT_BLUE, completed: ACCENT_GREEN }
+    const badgeColor = badgeColorMap[status] ?? ACCENT_BLUE
+
     // Use i18n strings — fall back to English literals if key is missing
     const headingText = (emailT('castingContentPublish', locale, 'heading') || 'Just Published: {title}').replace('{title}', contentTitle)
     const bodyText    = (emailT('castingContentPublish', locale, 'body')    || 'We just released new {type} content. Check it out on the platform.').replace(/{type}/g, contentType.toLowerCase())
-    const btnText     = (emailT('castingContentPublish', locale, 'buttonText') || 'View {type} →').replace('{type}', contentType)
     const footerText  = emailT('castingContentPublish', locale, 'footer') || "You're receiving this because you opted in to content updates."
+
+    // Sponsor section (rendered before CTA when present)
+    let sponsorHtml = ''
+    if (sponsorData?.name) {
+        const sponsoredByMap: Record<string, string> = {
+            en: 'Sponsored by', ar: 'برعاية', de: 'Gesponsert von', es: 'Patrocinado por',
+            fr: 'Sponsorisé par', hi: 'प्रायोजक', ja: '提供', ko: '후원',
+            pt: 'Patrocinado por', ru: 'При поддержке', zh: '赞助商',
+        }
+        const sponsoredBy = sponsoredByMap[locale] ?? sponsoredByMap['en']
+        sponsorHtml = `
+            ${divider()}
+            <div style="text-align:center;padding:16px 0;">
+                <p style="margin:0 0 8px;font-size:11px;color:${TEXT_SECONDARY};text-transform:uppercase;letter-spacing:1.5px;">${sponsoredBy}</p>
+                ${sponsorData.logoUrl ? `<img src="${sponsorData.logoUrl}" alt="${sponsorData.name}" style="max-width:160px;max-height:60px;margin-bottom:8px;" />` : ''}
+                <p style="margin:0;font-size:14px;font-weight:700;color:${TEXT_PRIMARY};">${sponsorData.name}</p>
+                ${sponsorData.description ? `<p style="margin:4px 0 0;font-size:12px;color:${TEXT_SECONDARY};line-height:1.5;">${sponsorData.description}</p>` : ''}
+            </div>
+        `
+    }
+
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
             <div style="font-size:52px;margin-bottom:12px;">${emoji}</div>
-            <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid ${ACCENT_BLUE};">
-                <span style="font-size:12px;font-weight:700;color:${ACCENT_BLUE};letter-spacing:1.5px;text-transform:uppercase;">New ${contentType}</span>
+            <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid ${badgeColor};">
+                <span style="font-size:12px;font-weight:700;color:${badgeColor};letter-spacing:1.5px;text-transform:uppercase;">${badgeText}</span>
             </div>
         </div>
         ${heading(headingText)}
         ${paragraph(bodyText)}
-        ${button(btnText, link)}
+        ${sponsorHtml}
+        ${button(ctaText, link)}
         ${divider()}
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerText}</span>`)}
     `, `New ${contentType}: ${contentTitle}`)

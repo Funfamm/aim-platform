@@ -15,7 +15,7 @@ export async function GET() {
             status: true, genre: true, year: true, duration: true,
             featured: true, published: true, sortOrder: true, coverImage: true,
             trailerUrl: true, filmUrl: true, projectType: true,
-            gallery: true, credits: true,
+            gallery: true, credits: true, sponsorData: true,
             viewCount: true,
             _count: { select: { castingCalls: true } },
         },
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
             projectType: body.projectType || 'movie',
             gallery: body.gallery || null,
             credits: body.credits || null,
+            sponsorData: body.sponsorData || null,
         },
         include: {
             _count: { select: { castingCalls: true } },
@@ -83,8 +84,15 @@ export async function POST(req: Request) {
 
     // Fire-and-forget: notify users if project is published immediately
     if (project.published) {
-        const link = `/works/${project.slug}`
-        notifyContentPublish(project.title, project.projectType || 'project', link).catch(() => {})
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+        const projectStatus = project.status || 'completed'
+        const pagePath = projectStatus === 'completed' ? `/en/works/${project.slug}/watch` : `/en/works/${project.slug}`
+        const link = `${siteUrl}${pagePath}`
+        let sponsorParsed: { name: string; logoUrl?: string; description?: string } | null = null
+        try {
+            if (body.sponsorData) sponsorParsed = typeof body.sponsorData === 'string' ? JSON.parse(body.sponsorData) : body.sponsorData
+        } catch { /* ignore */ }
+        notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed).catch(() => {})
     }
 
     return NextResponse.json(project, { status: 201 })

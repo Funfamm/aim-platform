@@ -33,6 +33,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.projectType !== undefined && { projectType: body.projectType }),
             ...(body.gallery !== undefined && { gallery: body.gallery || null }),
             ...(body.credits !== undefined && { credits: body.credits || null }),
+            ...(body.sponsorData !== undefined && { sponsorData: body.sponsorData || null }),
         },
         include: {
             _count: { select: { castingCalls: true } },
@@ -52,8 +53,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     // Fire-and-forget: notify users when project is newly published
     if (body.published === true && !prior?.published) {
-        const link = `/works/${project.slug}`
-        notifyContentPublish(project.title, project.projectType || 'project', link).catch(() => {})
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+        const projectStatus = body.status ?? project.status ?? 'completed'
+        // Status-aware link destination:
+        // - completed → watch page (full movie)
+        // - upcoming / in-production → details page (trailer / info)
+        const pagePath = projectStatus === 'completed' ? `/en/works/${project.slug}/watch` : `/en/works/${project.slug}`
+        const link = `${siteUrl}${pagePath}`
+        // Parse sponsor data from the saved project (body.sponsorData is a JSON string)
+        let sponsorParsed: { name: string; logoUrl?: string; description?: string } | null = null
+        try {
+            const sd = body.sponsorData || (project as Record<string, unknown>).sponsorData
+            if (sd) sponsorParsed = typeof sd === 'string' ? JSON.parse(sd) : sd
+        } catch { /* ignore malformed */ }
+        notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed).catch(() => {})
     }
 
     return NextResponse.json(project)

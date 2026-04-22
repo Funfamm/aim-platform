@@ -55,6 +55,10 @@ interface NotifyUserOptions {
      * Avoids brittle title-stripping (e.g. "New Audition: " prefix differs per locale).
      */
     roleName?: string
+    /** Project status — threaded to contentPublishEmail for status-aware CTA */
+    contentStatus?: string
+    /** Project sponsor data — threaded to contentPublishEmail */
+    sponsorData?: { name: string; logoUrl?: string; description?: string } | null
 }
 
 interface NotifyAllOptions {
@@ -74,6 +78,10 @@ interface NotifyAllOptions {
     bodyHtml?: string
     /** Raw role name — threaded through to notifyUser for new_role email rebuilds */
     roleName?: string
+    /** Project status — threaded to contentPublishEmail for status-aware CTA */
+    contentStatus?: string
+    /** Project sponsor data — threaded to contentPublishEmail */
+    sponsorData?: { name: string; logoUrl?: string; description?: string } | null
 }
 
 // ─── Core: notify a single user ───────────────────────────────────────────────
@@ -199,7 +207,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                         locale
                     )
                 } else if (opts.type === 'content_publish') {
-                    html = contentPublishEmail(displayTitle, displayMessage, localizedLink ?? opts.link ?? '', locale)
+                    html = contentPublishEmail(displayTitle, displayMessage, localizedLink ?? opts.link ?? '', locale, opts.contentStatus ?? 'completed', opts.sponsorData)
                 } else {
                     // Generic fallback: rebuild plain HTML with localized text
                     html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link, locale)
@@ -660,11 +668,18 @@ export async function notifyAnnouncement(
 
 
 /** Call this when admin publishes new content (project, blog, video) */
-export async function notifyContentPublish(contentTitle: string, contentType: string, link: string): Promise<void> {
+export async function notifyContentPublish(
+    contentTitle: string,
+    contentType: string,
+    link: string,
+    status: string = 'completed',
+    sponsorData?: { name: string; logoUrl?: string; description?: string } | null,
+): Promise<void> {
     const titleEn = `New ${contentType}: ${contentTitle}`
     const messageEn = `We just published "${contentTitle}". Check it out!`
 
     // Pre-translate so non-English users get localized in-app notifications & emails
+    // Also translate the subject line so it can be rebuilt per-locale in notifyUser()
     const translationTimeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
     const translations = await Promise.race([
         translateContent({ title: titleEn, message: messageEn }, 'all').catch(() => null),
@@ -678,8 +693,10 @@ export async function notifyContentPublish(contentTitle: string, contentType: st
         message: messageEn,
         link,
         emailSubject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`,
-        emailHtml: contentPublishEmail(contentTitle, contentType, link),
+        emailHtml: contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData),
         translations,
+        contentStatus: status,
+        sponsorData,
     })
 }
 

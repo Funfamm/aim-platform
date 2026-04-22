@@ -19,7 +19,7 @@ type Project = {
     status: string; genre: string | null; year: string | null; duration: string | null
     featured: boolean; published: boolean; sortOrder: number; coverImage: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
-    gallery: string | null; credits: string | null
+    gallery: string | null; credits: string | null; sponsorData: string | null
     viewCount: number
     _count: { castingCalls: number }
 }
@@ -29,7 +29,7 @@ type FormData = {
     status: string; genre: string; year: string; duration: string
     featured: boolean; published: boolean; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
-    gallery: string; credits: string
+    gallery: string; credits: string; sponsorData: string
 }
 
 const EMPTY_FORM: FormData = {
@@ -37,7 +37,7 @@ const EMPTY_FORM: FormData = {
     status: 'upcoming', genre: '', year: '', duration: '',
     featured: false, published: false, coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
-    gallery: '', credits: '',
+    gallery: '', credits: '', sponsorData: '',
 }
 
 const STATUSES = ['upcoming', 'in-production', 'completed']
@@ -214,6 +214,7 @@ export default function AdminProjectsPage() {
             projectType: p.projectType || 'movie',
             gallery: p.gallery || '',
             credits: p.credits || '',
+            sponsorData: p.sponsorData || '',
         })
         setSelectedRollIds([])
         setShowModal(true)
@@ -1236,6 +1237,67 @@ export default function AdminProjectsPage() {
                                             />
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* —— Sponsor —— */}
+                                <div className="glass-card" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
+                                    <h4 style={{ marginBottom: 'var(--space-md)', fontSize: '0.95rem', fontWeight: 700 }}>🤝 Project Sponsor</h4>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
+                                        Sponsor info will appear in the publish email sent to all subscribers.
+                                    </p>
+                                    {(() => {
+                                        let sd: { name?: string; logoUrl?: string; description?: string } = {}
+                                        try { if (form.sponsorData) sd = JSON.parse(form.sponsorData) } catch { /* ignore */ }
+                                        const updateSponsor = (field: string, value: string) => {
+                                            const current = { ...sd, [field]: value }
+                                            // Clean empty object
+                                            if (!current.name && !current.logoUrl && !current.description) {
+                                                updateField('sponsorData', '')
+                                            } else {
+                                                updateField('sponsorData', JSON.stringify(current))
+                                            }
+                                        }
+                                        return (
+                                            <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: 'var(--space-md)' }}>
+                                                <div>
+                                                    <label className="form-label" htmlFor="sponsorName">Sponsor Name</label>
+                                                    <input
+                                                        id="sponsorName"
+                                                        className="form-input"
+                                                        placeholder="e.g. Acme Studios"
+                                                        value={sd.name || ''}
+                                                        onChange={e => updateSponsor('name', e.target.value)}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="form-label" htmlFor="sponsorLogo">Sponsor Logo URL</label>
+                                                    <input
+                                                        id="sponsorLogo"
+                                                        className="form-input"
+                                                        placeholder="https://cdn.example.com/sponsor-logo.png"
+                                                        value={sd.logoUrl || ''}
+                                                        onChange={e => updateSponsor('logoUrl', e.target.value)}
+                                                    />
+                                                    {sd.logoUrl && (
+                                                        <div style={{ marginTop: 8 }}>
+                                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                            <img src={sd.logoUrl} alt="Sponsor logo preview" style={{ maxWidth: 160, maxHeight: 60, borderRadius: 6, background: 'var(--bg-tertiary)', padding: 4 }} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="form-label" htmlFor="sponsorDesc">Short Description</label>
+                                                    <input
+                                                        id="sponsorDesc"
+                                                        className="form-input"
+                                                        placeholder="Brief description of the sponsor"
+                                                        value={sd.description || ''}
+                                                        onChange={e => updateSponsor('description', e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )
+                                    })()}
                                 </div>
 
                                 {/* —— Subtitles & Translation —— */}

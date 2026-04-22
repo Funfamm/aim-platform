@@ -40,6 +40,8 @@ interface ProjectData {
     castingCalls: CastingCall[]
     episodes: Episode[]
     translations: string | null
+    gallery: string | null
+    credits: string | null
 }
 
 const statusColors: Record<string, { color: string; bg: string }> = {
@@ -64,6 +66,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
     const [checkingAuth, setCheckingAuth] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
     const [appliedCastingIds, setAppliedCastingIds] = useState<Set<string>>(new Set())
+    const [lightboxImg, setLightboxImg] = useState<string | null>(null)
     const router = useRouter()
     const colors = statusColors[project.status] || statusColors.upcoming
     const statusLabel = t(statusLabelKeys[project.status] || 'comingSoon')
@@ -619,6 +622,197 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                     </div>
                 </div>
             </section>
+
+            {/* ═══ GALLERY SECTION ═══ */}
+            {project.gallery && (() => {
+                const images = project.gallery.split('\n').map(u => u.trim()).filter(Boolean)
+                if (images.length === 0) return null
+                return (
+                    <section id="gallery" style={{
+                        padding: 'var(--space-3xl) 0 var(--space-2xl)',
+                        background: 'linear-gradient(180deg, var(--bg-primary), var(--bg-secondary) 50%, var(--bg-primary))',
+                    }}>
+                        <div className="container">
+                            <div style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>
+                                <span style={{
+                                    fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.14em',
+                                    textTransform: 'uppercase', color: 'var(--accent-gold)',
+                                }}>
+                                    {t('gallery') || 'Gallery'}
+                                </span>
+                                <h2 style={{ marginTop: '4px', fontSize: '1.6rem' }}>
+                                    {t('behindTheScenes') || 'Behind the Scenes'}
+                                </h2>
+                            </div>
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                                gap: 'var(--space-md)',
+                                maxWidth: '1200px',
+                                margin: '0 auto',
+                            }}>
+                                {images.map((url, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => setLightboxImg(url)}
+                                        style={{
+                                            position: 'relative',
+                                            cursor: 'pointer',
+                                            borderRadius: 'var(--radius-lg)',
+                                            overflow: 'hidden',
+                                            border: '1px solid var(--border-subtle)',
+                                            background: '#000',
+                                            aspectRatio: '16/10',
+                                            padding: 0,
+                                            transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                                        }}
+                                        onMouseEnter={e => {
+                                            (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)'
+                                            ;(e.currentTarget as HTMLElement).style.boxShadow = '0 10px 40px rgba(0,0,0,0.4)'
+                                        }}
+                                        onMouseLeave={e => {
+                                            (e.currentTarget as HTMLElement).style.transform = 'scale(1)'
+                                            ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
+                                        }}
+                                    >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={url}
+                                            alt={`${title} gallery ${i + 1}`}
+                                            loading="lazy"
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover',
+                                                display: 'block',
+                                            }}
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )
+            })()}
+
+            {/* ═══ LIGHTBOX ═══ */}
+            {lightboxImg && (
+                <div
+                    onClick={() => setLightboxImg(null)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 9999,
+                        background: 'rgba(0,0,0,0.92)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'zoom-out',
+                        padding: 'var(--space-xl)',
+                    }}
+                >
+                    <button
+                        onClick={() => setLightboxImg(null)}
+                        style={{
+                            position: 'absolute',
+                            top: 20, right: 20,
+                            background: 'rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            width: 40, height: 40,
+                            borderRadius: '50%',
+                            cursor: 'pointer',
+                            fontSize: '1.2rem',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        }}
+                    >
+                        ✕
+                    </button>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={lightboxImg}
+                        alt="Gallery full view"
+                        style={{
+                            maxWidth: '90vw',
+                            maxHeight: '85vh',
+                            objectFit: 'contain',
+                            borderRadius: 'var(--radius-lg)',
+                            boxShadow: '0 20px 80px rgba(0,0,0,0.6)',
+                        }}
+                    />
+                </div>
+            )}
+
+            {/* ═══ CREDITS SECTION ═══ */}
+            {project.credits && (() => {
+                const lines = project.credits.split('\n').map(l => l.trim()).filter(Boolean)
+                if (lines.length === 0) return null
+                const entries = lines.map(line => {
+                    const [role, ...nameParts] = line.split('—').map(s => s.trim())
+                    return { role: role || '', name: nameParts.join('—') || '' }
+                }).filter(e => e.role || e.name)
+                if (entries.length === 0) return null
+                return (
+                    <section id="credits" style={{
+                        padding: 'var(--space-3xl) 0 var(--space-2xl)',
+                    }}>
+                        <div className="container" style={{ maxWidth: '720px' }}>
+                            <div style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>
+                                <span style={{
+                                    fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.14em',
+                                    textTransform: 'uppercase', color: 'var(--accent-gold)',
+                                }}>
+                                    {t('credits') || 'Credits'}
+                                </span>
+                                <h2 style={{ marginTop: '4px', fontSize: '1.6rem' }}>
+                                    {t('teamBehind') || 'The Team Behind'} {title}
+                                </h2>
+                            </div>
+                            <div style={{
+                                background: 'rgba(255,255,255,0.02)',
+                                borderRadius: 'var(--radius-xl)',
+                                border: '1px solid var(--border-subtle)',
+                                overflow: 'hidden',
+                            }}>
+                                {entries.map((entry, i) => (
+                                    <div
+                                        key={i}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            padding: 'var(--space-md) var(--space-lg)',
+                                            borderBottom: i < entries.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                                            transition: 'background 0.2s',
+                                        }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.03)' }}
+                                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                                    >
+                                        <span style={{
+                                            fontSize: '0.8rem',
+                                            color: 'var(--text-tertiary)',
+                                            fontWeight: 500,
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.06em',
+                                            minWidth: '140px',
+                                        }}>
+                                            {entry.role}
+                                        </span>
+                                        <span style={{
+                                            fontSize: '0.95rem',
+                                            fontWeight: 600,
+                                            color: 'var(--text-primary)',
+                                            textAlign: 'right',
+                                        }}>
+                                            {entry.name}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                )
+            })()}
         </>
     )
 }

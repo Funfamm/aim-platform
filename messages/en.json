@@ -516,7 +516,11 @@
     "roleTypeLead": "Lead",
     "roleTypeSupporting": "Supporting",
     "roleTypeExtra": "Extra",
-    "applied": "Applied"
+    "applied": "Applied",
+    "gallery": "Gallery",
+    "behindTheScenes": "Behind the Scenes",
+    "credits": "Credits",
+    "teamBehind": "The Team Behind"
   },
   "castingForm": {
     "pageLabel": "Casting Application",
