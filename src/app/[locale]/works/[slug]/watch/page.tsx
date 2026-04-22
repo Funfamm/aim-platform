@@ -45,6 +45,7 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
             trailerUrl: true,
             projectType: true,
             status: true,
+            published: true,
             episodes: {
                 orderBy: [{ season: 'asc' }, { number: 'asc' }],
             },

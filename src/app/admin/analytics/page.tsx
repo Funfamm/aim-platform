@@ -84,6 +84,7 @@ interface AnalyticsData {
         totalApps: number; appsMonth: number
         totalDonations: number; donationsMonth: number
         subscribers: number
+        mailingList: number
         trailerCount: number
         trailerViews: number
         conversionRate: number; castingViews: number
@@ -346,7 +347,7 @@ export default function AdminAnalyticsPage() {
 
                     /* Engagement strip: 5-col → horizontal scroll */
                     .aa-engage-strip {
-                        grid-template-columns: repeat(5, 140px) !important;
+                        grid-template-columns: repeat(6, 140px) !important;
                         overflow-x: auto !important;
                         -webkit-overflow-scrolling: touch;
                         padding-bottom: 6px;
@@ -905,14 +906,15 @@ export default function AdminAnalyticsPage() {
                                         <StatCard label="Page Views" value={data.traffic.monthViews} sublabel={<><TrendArrow current={data.realTime.todayViews} previous={data.realTime.yesterdayViews} /> <span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>{data.realTime.todayViews} today</span></>} sparkData={data.sparklines.views} color="var(--accent-gold)" delay={0} />
                                         <StatCard label="Users" value={data.engagement.totalUsers} sublabel={<span style={{ color: '#22c55e', fontSize: '0.65rem', fontWeight: 600 }}>+{data.engagement.newUsersMonth} this month</span>} sparkData={data.sparklines.users} color="#22c55e" delay={1} />
                                         <StatCard label="Applications" value={data.engagement.totalApps} sublabel={<span style={{ color: '#3b82f6', fontSize: '0.65rem', fontWeight: 600 }}>+{data.engagement.appsMonth} this month</span>} sparkData={data.sparklines.apps} color="#3b82f6" delay={2} />
-                                        <StatCard label="Subscribers" value={data.engagement.subscribers} sublabel={<span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>newsletter · {data.engagement.conversionRate}% cast. conv.</span>} sparkData={[]} color="#a855f7" delay={3} />
+                                        <StatCard label="Subscribers" value={data.engagement.subscribers} sublabel={<span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>verified members · {data.engagement.conversionRate}% cast. conv.</span>} sparkData={[]} color="#a855f7" delay={3} />
                                     </div>
                                 </div>
 
                                 {/* ── Engagement Metrics Strip ── */}
-                                <div className="aa-engage-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
+                                <div className="aa-engage-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
                                     {[
                                         { label: 'This Week', value: data.traffic.weekViews, icon: '📅', color: 'var(--accent-gold)', glow: 'rgba(212,168,83,0.08)' },
+                                        { label: 'Mailing List', value: data.engagement.mailingList, icon: '📧', color: '#a855f7', glow: 'rgba(168,85,247,0.06)', sublabel: 'newsletter signups' },
                                         { label: 'Casting Views', value: data.engagement.castingViews, icon: '🎭', color: '#f59e0b', glow: 'rgba(245,158,11,0.06)' },
                                         { label: 'Donations', value: data.engagement.totalDonations, icon: '💰', color: '#22c55e', glow: 'rgba(34,197,94,0.06)' },
                                         { label: 'Film Views', value: data.content.totalFilmViews, icon: '🎬', color: '#3b82f6', glow: 'rgba(59,130,246,0.06)' },

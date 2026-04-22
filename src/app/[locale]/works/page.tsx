@@ -19,7 +19,7 @@ export default async function WorksPage() {
             include: { _count: { select: { episodes: true } } },
         }),
         prisma.project.findMany({
-            where:    { genre: { not: null } },
+            where:    { genre: { not: null }, published: true },
             select:   { genre: true },
             distinct: ['genre'],
             orderBy:  { viewCount: 'desc' },

@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
             totalUsers, newUsersMonth,
             totalApps, appsMonth,
             totalDonations, donationsMonth,
-            subscribers, filmViews, castingPageViews,
+            subscribers, mailingList, filmViews, castingPageViews,
             trailerCount, trailerViews,
             // Dashboard data (merged from separate endpoint)
             projectCount, castingCount, pendingCount, reviewedCount,
@@ -79,7 +79,9 @@ export async function GET(req: NextRequest) {
             prisma.application.count({ where: { createdAt: { gte: month } } }),
             prisma.donation.count({ where: { status: 'completed' } }),
             prisma.donation.count({ where: { status: 'completed', createdAt: { gte: month } } }),
-            // Active newsletter subscribers only (not unsubscribed ones)
+            // Subscribers = verified registered users (industry standard)
+            prisma.user.count({ where: { emailVerified: true } }),
+            // Mailing list = newsletter-only signups (footer form, no account required)
             prisma.subscriber.count({ where: { active: true } }),
             prisma.filmView.count(),
             prisma.pageView.count({
@@ -168,7 +170,8 @@ export async function GET(req: NextRequest) {
             appsMonth,
             totalDonations,
             donationsMonth,
-            subscribers,       // active newsletter subscribers only
+            subscribers,       // verified registered users (industry standard)
+            mailingList,       // active newsletter-only signups
             trailerCount,      // projects that have a trailer
             trailerViews,      // trailer-related page views this month
             conversionRate: Math.round(conversionRate * 10) / 10,
@@ -469,7 +472,7 @@ export async function POST() {
         prisma.application.count({ where: { createdAt: { gte: week } } }),
         prisma.castingCall.count({ where: { status: 'open' } }),
         prisma.castingCall.count(),
-        prisma.subscriber.count(),
+        prisma.user.count({ where: { emailVerified: true } }),
         prisma.filmView.count(),
         prisma.pageView.groupBy({
             by: ['path'], where: { createdAt: { gte: month } },
@@ -524,7 +527,7 @@ Your job is to analyze the real platform data below and produce 5-7 specific, ac
 
 ### Users & Engagement
 - Total registered users: ${totalUsers} (${newUsersMonth} new this month)
-- Subscribers: ${subscribers}
+- Verified subscribers (registered users): ${subscribers}
 - Film views (all time): ${filmViews}
 - Top watched films: ${topFilms.map(f => `"${f.title}" (${f.views} views)`).join(', ') || 'no data yet'}
 

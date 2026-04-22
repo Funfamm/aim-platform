@@ -35,8 +35,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         where: { featured: true, published: true },
         orderBy: { sortOrder: 'asc' },
       }),
-      prisma.project.count({ where: { status: 'completed' } }),
-      prisma.project.count({ where: { status: 'upcoming' } }),
+      prisma.project.count({ where: { status: 'completed', published: true } }),
+      prisma.project.count({ where: { status: 'upcoming', published: true } }),
       prisma.castingCall.count({ where: { status: 'open' } }),
       prisma.sponsor.findMany({
         where: {

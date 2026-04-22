@@ -19,7 +19,7 @@ export async function POST(req: Request) {
         prisma.pageView.count({ where: { createdAt: { gte: week } } }),
         prisma.user.count(),
         prisma.application.count({ where: { createdAt: { gte: month } } }),
-        prisma.subscriber.count(),
+        prisma.user.count({ where: { emailVerified: true } }),
         prisma.castingCall.count({ where: { status: 'open' } }),
     ])
 
@@ -31,7 +31,7 @@ ${context}
 Current platform snapshot:
 - Page views (30d): ${monthViews} | This week: ${weekViews}
 - Total users: ${totalUsers} | New applications (30d): ${appsMonth}
-- Subscribers: ${subscribers} | Open casting calls: ${openCastings}
+- Verified subscribers: ${subscribers} | Open casting calls: ${openCastings}
 
 The admin is now asking a follow-up question: "${question}"
 
