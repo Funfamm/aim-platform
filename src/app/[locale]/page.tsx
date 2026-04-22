@@ -32,7 +32,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const [featuredProjects, completedCount, upcomingCount, openCastings, homeSponsors, siteSettings, rawRolls] = await safeQuery(() =>
     Promise.all([
       prisma.project.findMany({
-        where: { featured: true },
+        where: { featured: true, published: true },
         orderBy: { sortOrder: 'asc' },
       }),
       prisma.project.count({ where: { status: 'completed' } }),
@@ -84,7 +84,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const allRollProjectIds = [...new Set(rawRolls.flatMap((r: { projects: Array<{ projectId: string }> }) => r.projects.map(p => p.projectId)))] as string[]
   const rollProjects = allRollProjectIds.length > 0
     ? await prisma.project.findMany({
-        where: { id: { in: allRollProjectIds } },
+        where: { id: { in: allRollProjectIds }, published: true },
         include: { _count: { select: { episodes: true } } },
       })
     : [] as Awaited<ReturnType<typeof prisma.project.findMany>>

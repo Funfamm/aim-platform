@@ -23,7 +23,7 @@ interface LiveEvent {
     participantCount: number   // real-time count from LiveKit (live rooms only)
 }
 
-interface Project { id: string; title: string }
+interface Project { id: string; title: string; status: string; published: boolean; filmUrl: string | null }
 interface CastingCall { id: string; roleName: string; projectId: string }
 
 const EVENT_TYPE_CONFIG: Record<string, { label: string; icon: string; color: string }> = {
@@ -151,6 +151,18 @@ export default function AdminEventsPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault()
+        // Validate Watch Party requires a project with media
+        if (form.eventType === 'watch_party') {
+            if (!form.projectId) {
+                setError('Watch Party requires a linked project. Select one above.')
+                return
+            }
+            const linked = projects.find(p => p.id === form.projectId)
+            if (linked && !linked.filmUrl) {
+                setError(`"${linked.title}" has no film uploaded yet. Upload media first or choose another project.`)
+                return
+            }
+        }
         setCreating(true); setError(null)
         try {
             const res = await fetch('/api/livekit/rooms/create', {
@@ -800,7 +812,11 @@ export default function AdminEventsPage() {
                                             <label className="le-label" htmlFor="le-project">Link to Project</label>
                                             <select id="le-project" className="le-select" value={form.projectId} onChange={e => setForm(f => ({ ...f, projectId: e.target.value }))}>
                                                 <option value="">— None —</option>
-                                                {projects.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                                                {projects.map(p => (
+                                                    <option key={p.id} value={p.id}>
+                                                        {p.title} ({p.status}{p.published ? ' ✓' : ''}){!p.filmUrl ? ' — ⚠ no media' : ''}
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
                                         {form.eventType === 'audition' && (

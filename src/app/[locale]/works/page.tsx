@@ -14,6 +14,7 @@ export default async function WorksPage() {
     // Fetch projects + distinct genres + movie rolls in parallel
     const [projects, genreRows, rawRolls] = await Promise.all([
         prisma.project.findMany({
+            where: { published: true },
             orderBy: { sortOrder: 'asc' },
             include: { _count: { select: { episodes: true } } },
         }),
@@ -48,7 +49,7 @@ export default async function WorksPage() {
     const allRollProjectIds = [...new Set(rawRolls.flatMap((r: RawRoll) => r.projects.map((p: { projectId: string }) => p.projectId)))] as string[]
     const rollProjectsFull = allRollProjectIds.length > 0
         ? await prisma.project.findMany({
-            where: { id: { in: allRollProjectIds } },
+            where: { id: { in: allRollProjectIds }, published: true },
             include: { _count: { select: { episodes: true } } },
           })
         : []

@@ -41,8 +41,8 @@ export async function GET(req: Request) {
     // Clamp page size: default 12, max 20 — protects DB regardless of client input
     const limit = Math.min(parseInt(searchParams.get('limit') || '12', 10), 20)
 
-    // Build where clause
-    const where: Record<string, unknown> = {}
+    // Build where clause — always enforce published gate
+    const where: Record<string, unknown> = { published: true }
     if (featured)          where.featured = true
     if (genre)             where.genre = { equals: genre, mode: 'insensitive' }
     if (status)            where.status = status

@@ -6,7 +6,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
 import { transcribeVideo } from '@/lib/transcribe-client'
 import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
-import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl, requiresTranslationGate } from '@/config/subtitles'
+import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl } from '@/config/subtitles'
 import LangStatusGrid from '@/components/admin/LangStatusGrid'
 import PublishGateModal from '@/components/admin/PublishGateModal'
 import SubtitleEditor, { type SubtitleCue } from '@/components/admin/SubtitleEditor'
@@ -17,7 +17,7 @@ import { readSSEStream } from '@/lib/sse-reader'
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
-    featured: boolean; sortOrder: number; coverImage: string | null
+    featured: boolean; published: boolean; sortOrder: number; coverImage: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
     viewCount: number
     _count: { castingCalls: number }
@@ -26,14 +26,14 @@ type Project = {
 type FormData = {
     title: string; slug: string; tagline: string; description: string
     status: string; genre: string; year: string; duration: string
-    featured: boolean; coverImage: string
+    featured: boolean; published: boolean; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
 }
 
 const EMPTY_FORM: FormData = {
     title: '', slug: '', tagline: '', description: '',
     status: 'upcoming', genre: '', year: '', duration: '',
-    featured: false, coverImage: '',
+    featured: false, published: false, coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
 }
 
@@ -204,6 +204,7 @@ export default function AdminProjectsPage() {
             year: p.year || '',
             duration: p.duration || '',
             featured: p.featured,
+            published: p.published ?? false,
             coverImage: p.coverImage || '',
             trailerUrl: p.trailerUrl || '',
             filmUrl: p.filmUrl || '',
@@ -240,9 +241,9 @@ export default function AdminProjectsPage() {
             setError('Please fill in title and description')
             return
         }
-        // Gate: translation confirmation required before setting a public status
-        // on a project that has a film. Admin must explicitly override if incomplete.
-        if (!override && requiresTranslationGate(form.status, form.filmUrl) && editingId) {
+        // Gate: translation confirmation required before publishing
+        // a project that has a film. Admin must explicitly override if incomplete.
+        if (!override && form.published && form.filmUrl && editingId) {
             const count = translationCount[editingId] ?? 0
             if (count < TOTAL_SUBTITLE_LANGS) {
                 setShowPublishWarning(true)
@@ -1125,12 +1126,18 @@ export default function AdminProjectsPage() {
                                             ))}
                                         </select>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '8px', gap: 'var(--space-lg)', flexWrap: 'wrap' }}>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                                             <input type="checkbox" checked={form.featured}
                                                 onChange={e => updateField('featured', e.target.checked)}
                                                 style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }} />
                                             ★ Featured on homepage
+                                        </label>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '0.88rem', color: form.published ? '#c084fc' : 'var(--text-secondary)', fontWeight: form.published ? 700 : 400, transition: 'all 0.2s' }}>
+                                            <input type="checkbox" checked={form.published}
+                                                onChange={e => updateField('published', e.target.checked)}
+                                                style={{ width: '18px', height: '18px', accentColor: '#c084fc' }} />
+                                            🌐 Published (visible to public)
                                         </label>
                                     </div>
                                 </div>

@@ -55,6 +55,7 @@ export async function GET(req: NextRequest) {
     // ── 1. Projects (always searched) ──
     const projects = await prisma.project.findMany({
       where: {
+        published: true,
         OR: [
           { title: { contains: q, mode: 'insensitive' } },
           { tagline: { contains: q, mode: 'insensitive' } },
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest) {
     // Also search translated project titles for non-English locales
     if (locale !== 'en' && results.filter(r => r.category === 'Films').length < RESULTS_PER_CATEGORY) {
       const allProjects = await prisma.project.findMany({
-        where: { translations: { not: null } },
+        where: { published: true, translations: { not: null } },
         select: { title: true, slug: true, tagline: true, genre: true, year: true, translations: true },
         take: 50, // scan a reasonable number
       })

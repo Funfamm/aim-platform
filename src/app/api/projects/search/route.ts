@@ -19,6 +19,7 @@ export async function GET(req: Request) {
 
     const results = await prisma.project.findMany({
         where: {
+            published: true,
             OR: [
                 { title:   { contains: q, mode: 'insensitive' } },
                 { genre:   { contains: q, mode: 'insensitive' } },

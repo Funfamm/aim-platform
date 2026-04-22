@@ -41,6 +41,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
     if (!project) notFound()
 
+    // Block direct access to unpublished projects
+    if (!project.published) notFound()
+
     // Serialize dates for client component
     const serializedProject = {
         ...project,

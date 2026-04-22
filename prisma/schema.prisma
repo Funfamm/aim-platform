@@ -75,6 +75,7 @@ model Project {
   translations String?
   credits      String?
   featured     Boolean        @default(false)
+  published    Boolean        @default(false)  // visibility gate — only published projects appear on public pages
   sortOrder    Int            @default(0)
   viewCount    Int            @default(0)  // cached counter — incremented by /api/projects/view
   createdAt    DateTime       @default(now())

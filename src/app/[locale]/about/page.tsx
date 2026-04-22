@@ -23,8 +23,8 @@ This is cinema built together. Your talent, your creativity, powered by AI. Welc
 
 async function fetchAboutStats() {
     const [productions, countryRows, memberCount] = await Promise.all([
-        prisma.project.count({ where: { OR: [{ projectType: 'movie' }, { projectType: 'series' }] } }),
-        prisma.project.findMany({ where: { country: { not: null } }, select: { country: true } }),
+        prisma.project.count({ where: { published: true, OR: [{ projectType: 'movie' }, { projectType: 'series' }] } }),
+        prisma.project.findMany({ where: { country: { not: null }, published: true }, select: { country: true } }),
         prisma.user.count({ where: { emailVerified: true, role: 'member' } }),
     ]);
     const distinctCountries = new Set(countryRows.map(r => r.country)).size;

@@ -10,8 +10,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params
     const body = await req.json()
 
-    // Capture prior status so we only notify on the transition to 'published'
-    const prior = await prisma.project.findUnique({ where: { id }, select: { status: true, slug: true } })
+    // Capture prior published state so we only notify on the transition to published
+    const prior = await prisma.project.findUnique({ where: { id }, select: { published: true, slug: true } })
 
     const project = await prisma.project.update({
         where: { id },
@@ -25,6 +25,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.year !== undefined && { year: body.year || null }),
             ...(body.duration !== undefined && { duration: body.duration || null }),
             ...(body.featured !== undefined && { featured: body.featured }),
+            ...(body.published !== undefined && { published: body.published }),
             ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
             ...(body.coverImage !== undefined && { coverImage: body.coverImage || null }),
             ...(body.trailerUrl !== undefined && { trailerUrl: body.trailerUrl || null }),
@@ -47,8 +48,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         )
     }
 
-    // Fire-and-forget: notify users when status transitions to 'published'
-    if (body.status === 'published' && prior?.status !== 'published') {
+    // Fire-and-forget: notify users when project is newly published
+    if (body.published === true && !prior?.published) {
         const link = `/works/${project.slug}`
         notifyContentPublish(project.title, project.projectType || 'project', link).catch(() => {})
     }

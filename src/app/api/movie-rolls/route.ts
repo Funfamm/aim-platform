@@ -30,7 +30,7 @@ export async function GET(req: Request) {
 
     // Fetch project data in one query
     const projects = await prisma.project.findMany({
-        where: { id: { in: projectIds } },
+        where: { id: { in: projectIds }, published: true },
         select: {
             id: true,
             title: true,

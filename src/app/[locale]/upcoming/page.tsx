@@ -12,7 +12,7 @@ export const metadata = {
 
 export default async function UpcomingPage() {
     const upcomingProjects = await prisma.project.findMany({
-        where: { status: { in: ['upcoming', 'in-production'] } },
+        where: { status: { in: ['upcoming', 'in-production'] }, published: true },
         orderBy: { sortOrder: 'asc' },
         include: {
             castingCalls: {

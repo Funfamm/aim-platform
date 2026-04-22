@@ -13,7 +13,7 @@ export async function GET() {
         select: {
             id: true, title: true, slug: true, tagline: true, description: true,
             status: true, genre: true, year: true, duration: true,
-            featured: true, sortOrder: true, coverImage: true,
+            featured: true, published: true, sortOrder: true, coverImage: true,
             trailerUrl: true, filmUrl: true, projectType: true,
             viewCount: true,
             _count: { select: { castingCalls: true } },
@@ -57,6 +57,7 @@ export async function POST(req: Request) {
             year: body.year || null,
             duration: body.duration || null,
             featured: body.featured ?? false,
+            published: body.published ?? false,
             sortOrder: (maxOrder._max.sortOrder || 0) + 1,
             coverImage: body.coverImage || null,
             trailerUrl: body.trailerUrl || null,
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
     )
 
     // Fire-and-forget: notify users if project is published immediately
-    if (project.status === 'published') {
+    if (project.published) {
         const link = `/works/${project.slug}`
         notifyContentPublish(project.title, project.projectType || 'project', link).catch(() => {})
     }
