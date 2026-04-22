@@ -786,7 +786,7 @@ export default function AdminProjectsPage() {
                     <h1 className="admin-page-title">Projects</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>{projects.length} total</span>
-                        <button onClick={() => router.push('/admin/projects/new/edit')} className="btn btn-primary btn-sm">+ New Project</button>
+                        <button onClick={openCreate} className="btn btn-primary btn-sm">+ New Project</button>
                     </div>
                 </div>
 
@@ -990,7 +990,7 @@ export default function AdminProjectsPage() {
                                                 >
                                                     🎭 Cast
                                                 </button>
-                                                <button onClick={() => router.push(`/admin/projects/${project.id}/edit`)} className="btn btn-ghost btn-sm">Edit</button>
+                                                <button onClick={() => openEdit(project)} className="btn btn-ghost btn-sm">Edit</button>
                                                 <button
                                                     onClick={() => handleDelete(project.id, project.title)}
                                                     disabled={deleting === project.id}
