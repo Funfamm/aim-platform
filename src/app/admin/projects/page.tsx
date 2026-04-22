@@ -781,7 +781,7 @@ export default function AdminProjectsPage() {
         <div className="admin-layout">
             <AdminSidebar />
 
-            <main className="admin-main">
+            <main className="admin-main" style={showModal ? { display: 'none' } : undefined}>
                 <div className="admin-header">
                     <h1 className="admin-page-title">Projects</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
@@ -1009,28 +1009,19 @@ export default function AdminProjectsPage() {
                     </>
                 )}
             </main>
-
-            {/* ── Modal ── */}
+            {/* ── Full-Page Edit View ── */}
             {showModal && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 1000,
-                    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: 'var(--space-xl)',
-                }} onClick={() => setShowModal(false)}>
-                    <div
-                        onClick={e => e.stopPropagation()}
-                        style={{
-                            background: 'var(--bg-secondary)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: 'var(--radius-xl)',
-                            padding: 'var(--space-xl)',
-                            width: '100%', maxWidth: '600px', maxHeight: '85vh', overflowY: 'auto',
-                        }}
-                    >
-                        <h2 style={{ marginBottom: 'var(--space-lg)', fontSize: '1.2rem' }}>
-                            {editingId ? '✏️ Edit Project' : '🎬 New Project'}
-                        </h2>
+                <main className="admin-main" style={{ overflowY: 'auto' }}>
+                    <div style={{ maxWidth: '720px', margin: '0 auto' }}>
+                        {/* Header with Back button */}
+                        <div className="admin-header" style={{ marginBottom: 'var(--space-lg)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                <button type="button" onClick={() => setShowModal(false)} className="btn btn-ghost btn-sm" style={{ padding: '4px 10px' }}>← Back</button>
+                                <h1 className="admin-page-title" style={{ fontSize: '1.3rem' }}>
+                                    {editingId ? `✏️ ${form.title || 'Edit Project'}` : '🎬 New Project'}
+                                </h1>
+                            </div>
+                        </div>
 
                         <form onSubmit={handleSave}>
                             <div className="admin-form-stack" style={{ gap: 'var(--space-md)' }}>
@@ -1532,16 +1523,21 @@ export default function AdminProjectsPage() {
                                     </div>
                                 )}
 
-                                <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)' }}>
+                                <div style={{
+                                    position: 'sticky', bottom: 0, background: 'var(--bg-secondary)',
+                                    borderTop: '1px solid var(--border-subtle)',
+                                    padding: 'var(--space-md) 0', display: 'flex', gap: 'var(--space-md)',
+                                    justifyContent: 'flex-end', zIndex: 10,
+                                }}>
                                     <button type="button" onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
                                     <button type="submit" className="btn btn-primary" disabled={saving}>
-                                        {saving ? 'Saving...' : editingId ? '💾 Update' : '🎬 Create'}
+                                        {saving ? 'Saving...' : editingId ? '💾 Save Changes' : '🎬 Create Project'}
                                     </button>
                                 </div>
                             </div>
                         </form>
                     </div>
-                </div>
+                </main>
             )}
             {/* ── Subtitle Review Modal ─────────────────────────────────── */}
             {/* ── Cast Management Modal ──────────────────────────────────── */}
