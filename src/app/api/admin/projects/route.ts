@@ -15,6 +15,7 @@ export async function GET() {
             status: true, genre: true, year: true, duration: true,
             featured: true, published: true, sortOrder: true, coverImage: true,
             trailerUrl: true, filmUrl: true, projectType: true,
+            gallery: true, credits: true,
             viewCount: true,
             _count: { select: { castingCalls: true } },
         },
@@ -63,6 +64,8 @@ export async function POST(req: Request) {
             trailerUrl: body.trailerUrl || null,
             filmUrl: body.filmUrl || null,
             projectType: body.projectType || 'movie',
+            gallery: body.gallery || null,
+            credits: body.credits || null,
         },
         include: {
             _count: { select: { castingCalls: true } },

@@ -31,6 +31,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.trailerUrl !== undefined && { trailerUrl: body.trailerUrl || null }),
             ...(body.filmUrl !== undefined && { filmUrl: body.filmUrl || null }),
             ...(body.projectType !== undefined && { projectType: body.projectType }),
+            ...(body.gallery !== undefined && { gallery: body.gallery || null }),
+            ...(body.credits !== undefined && { credits: body.credits || null }),
         },
         include: {
             _count: { select: { castingCalls: true } },

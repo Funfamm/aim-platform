@@ -6,7 +6,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
 import { transcribeVideo } from '@/lib/transcribe-client'
 import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
-import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl } from '@/config/subtitles'
+import { LANGUAGE_NAMES, TOTAL_SUBTITLE_LANGS, isBlockedStreamingUrl, requiresTranslationGate } from '@/config/subtitles'
 import LangStatusGrid from '@/components/admin/LangStatusGrid'
 import PublishGateModal from '@/components/admin/PublishGateModal'
 import SubtitleEditor, { type SubtitleCue } from '@/components/admin/SubtitleEditor'
@@ -19,6 +19,7 @@ type Project = {
     status: string; genre: string | null; year: string | null; duration: string | null
     featured: boolean; published: boolean; sortOrder: number; coverImage: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
+    gallery: string | null; credits: string | null
     viewCount: number
     _count: { castingCalls: number }
 }
@@ -28,6 +29,7 @@ type FormData = {
     status: string; genre: string; year: string; duration: string
     featured: boolean; published: boolean; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
+    gallery: string; credits: string
 }
 
 const EMPTY_FORM: FormData = {
@@ -35,6 +37,7 @@ const EMPTY_FORM: FormData = {
     status: 'upcoming', genre: '', year: '', duration: '',
     featured: false, published: false, coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
+    gallery: '', credits: '',
 }
 
 const STATUSES = ['upcoming', 'in-production', 'completed']
@@ -209,6 +212,8 @@ export default function AdminProjectsPage() {
             trailerUrl: p.trailerUrl || '',
             filmUrl: p.filmUrl || '',
             projectType: p.projectType || 'movie',
+            gallery: p.gallery || '',
+            credits: p.credits || '',
         })
         setSelectedRollIds([])
         setShowModal(true)
@@ -241,9 +246,10 @@ export default function AdminProjectsPage() {
             setError('Please fill in title and description')
             return
         }
-        // Gate: translation confirmation required before publishing
-        // a project that has a film. Admin must explicitly override if incomplete.
-        if (!override && form.published && form.filmUrl && editingId) {
+        // Gate: translation confirmation required before publishing a project
+        // with film, OR when saving a production-ready status with film (original gate).
+        const needsGate = (form.published || requiresTranslationGate(form.status, form.filmUrl)) && !!form.filmUrl
+        if (!override && needsGate && editingId) {
             const count = translationCount[editingId] ?? 0
             if (count < TOTAL_SUBTITLE_LANGS) {
                 setShowPublishWarning(true)
@@ -908,6 +914,7 @@ export default function AdminProjectsPage() {
                                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 50%, var(--bg-glass) 100%)' }} />
                                         <div style={{ position: 'absolute', top: 'var(--space-md)', right: 'var(--space-md)', display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                             <span className={`badge ${status.className}`}>{status.label}</span>
+                                            {project.published && <span className="badge badge-purple">🌐 Published</span>}
                                             {project.featured && <span className="badge badge-gold">★ Featured</span>}
                                             {isTrending && <span className="badge badge-gold">🔥 Trending</span>}
                                         </div>
@@ -1200,6 +1207,36 @@ export default function AdminProjectsPage() {
                                     </div>
                                 </div>
 
+                                {/* —— Gallery & Credits —— */}
+                                <div className="glass-card" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
+                                    <h4 style={{ marginBottom: 'var(--space-md)', fontSize: '0.95rem', fontWeight: 700 }}>📸 Gallery & Credits</h4>
+                                    <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: 'var(--space-md)' }}>
+                                        <div>
+                                            <label className="form-label" htmlFor="gallery">Gallery Images <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(one URL per line)</span></label>
+                                            <textarea
+                                                id="gallery"
+                                                className="form-input"
+                                                rows={3}
+                                                placeholder={"https://cdn.example.com/still-1.jpg\nhttps://cdn.example.com/still-2.jpg"}
+                                                value={form.gallery || ''}
+                                                onChange={e => updateField('gallery', e.target.value)}
+                                                style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label" htmlFor="credits">Credits <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(one per line: Role — Name)</span></label>
+                                            <textarea
+                                                id="credits"
+                                                className="form-input"
+                                                rows={4}
+                                                placeholder={"Director — Jane Doe\nProducer — John Smith\nEditor — Alex Kim"}
+                                                value={form.credits || ''}
+                                                onChange={e => updateField('credits', e.target.value)}
+                                                style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
 
                                 {/* —— Subtitles & Translation —— */}
                                 {editingId && (() => {
