@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
             prisma.project.count(),
             prisma.castingCall.count({ where: { status: 'open' } }),
             prisma.application.count({ where: { status: 'submitted' } }),
-            prisma.application.count({ where: { status: { not: 'submitted' } } }),
+            prisma.application.count({ where: { status: { not: 'submitted' }, createdAt: { gte: month } } }),
             prisma.application.findMany({
                 take: 5,
                 orderBy: { createdAt: 'desc' },
