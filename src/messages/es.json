@@ -168,6 +168,7 @@
         "colorViolet": "Violeta",
         "colorCopper": "Cobre",
         "colorPlatinum": "Platino",
-        "colorCrimson": "Carmesí"
+        "colorCrimson": "Carmesí",
+        "accentColourDesc": "El color elegido se aplica a los resaltados, botones y brillos en toda la plataforma."
     }
 }

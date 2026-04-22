@@ -168,6 +168,7 @@
         "colorViolet": "バイオレット",
         "colorCopper": "コパー",
         "colorPlatinum": "プラチナ",
-        "colorCrimson": "クリムゾン"
+        "colorCrimson": "クリムゾン",
+        "accentColourDesc": "選択したカラーはハイライト、ボタン、グロー効果に適用されます。"
     }
 }

@@ -168,6 +168,7 @@
         "colorViolet": "Violett",
         "colorCopper": "Kupfer",
         "colorPlatinum": "Platin",
-        "colorCrimson": "Karmesin"
+        "colorCrimson": "Karmesin",
+        "accentColourDesc": "Ihre gewählte Farbe wird auf Hervorhebungen, Schaltflächen und Leuchteffekte angewendet."
     }
 }

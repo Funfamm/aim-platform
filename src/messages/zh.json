@@ -168,6 +168,7 @@
         "colorViolet": "紫罗兰",
         "colorCopper": "铜色",
         "colorPlatinum": "铂金",
-        "colorCrimson": "深红"
+        "colorCrimson": "深红",
+        "accentColourDesc": "所选颜色将应用于高亮、按钮和发光效果。"
     }
 }

@@ -194,6 +194,7 @@
         "colorViolet": "بنفسجي",
         "colorCopper": "نحاسي",
         "colorPlatinum": "بلاتيني",
-        "colorCrimson": "قرمزي"
+        "colorCrimson": "قرمزي",
+        "accentColourDesc": "اللون الذي اخترته يُطبّق على الإبرازات والأزرار والتوهجات في جميع أنحاء المنصة."
     }
 }

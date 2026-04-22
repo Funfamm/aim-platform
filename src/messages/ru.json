@@ -168,6 +168,7 @@
         "colorViolet": "Фиолетовый",
         "colorCopper": "Медный",
         "colorPlatinum": "Платиновый",
-        "colorCrimson": "Малиновый"
+        "colorCrimson": "Малиновый",
+        "accentColourDesc": "Выбранный цвет применяется к подсветке, кнопкам и эффектам свечения."
     }
 }

@@ -168,6 +168,7 @@
         "colorViolet": "बैंगनी",
         "colorCopper": "तांबा",
         "colorPlatinum": "प्लेटिनम",
-        "colorCrimson": "किरमिजी"
+        "colorCrimson": "किरमिजी",
+        "accentColourDesc": "आपका चुना हुआ रंग पूरे प्लेटफ़ॉर्म पर हाइलाइट, बटन और ग्लो पर लागू होता है।"
     }
 }

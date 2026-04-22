@@ -168,6 +168,7 @@
         "colorViolet": "바이올렛",
         "colorCopper": "코퍼",
         "colorPlatinum": "플래티넘",
-        "colorCrimson": "크림슨"
+        "colorCrimson": "크림슨",
+        "accentColourDesc": "선택한 색상이 하이라이트, 버튼, 글로우 효과에 적용됩니다."
     }
 }

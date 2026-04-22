@@ -309,6 +309,7 @@
         "colorViolet": "Violet",
         "colorCopper": "Cuivre",
         "colorPlatinum": "Platine",
-        "colorCrimson": "Cramoisi"
+        "colorCrimson": "Cramoisi",
+        "accentColourDesc": "Votre couleur choisie s'applique aux surbrillances, boutons et effets lumineux sur la plateforme."
     }
 }
