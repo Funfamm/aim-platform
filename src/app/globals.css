@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600;1,700&display=swap');
 
-/* ═══════════════════════════════════════════════════════════
-   AIM STUDIO — ULTRA-PREMIUM CINEMATIC DESIGN SYSTEM
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   AIM STUDIO â€” ULTRA-PREMIUM CINEMATIC DESIGN SYSTEM
    Award-winning, breathtaking dark theme for AI filmmaking
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 :root {
-  /* ── Refined Color Palette — Premium Cinematic ── */
+  /* â”€â”€ Refined Color Palette â€” Premium Cinematic â”€â”€ */
   --bg-primary: #0d0f14;
   --bg-secondary: #12151c;
   --bg-tertiary: #181c28;
@@ -39,12 +39,12 @@
   --error: #ef4444;
   --info: #60a5fa;
 
-  /* ── Typography ── */
+  /* â”€â”€ Typography â”€â”€ */
   --font-display: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
   --font-serif: 'Playfair Display', serif;
 
-  /* ── Spacing ── */
+  /* â”€â”€ Spacing â”€â”€ */
   --space-xs: 0.25rem;
   --space-sm: 0.5rem;
   --space-md: 1rem;
@@ -55,21 +55,21 @@
   --space-4xl: 3.5rem;
   --space-5xl: 4.5rem;
 
-  /* ── Borders ── */
+  /* â”€â”€ Borders â”€â”€ */
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  /* ── Transitions ── */
+  /* â”€â”€ Transitions â”€â”€ */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-spring: 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-luxury: 800ms cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* ── Shadows ── */
+  /* â”€â”€ Shadows â”€â”€ */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
@@ -77,551 +77,6 @@
   --shadow-glow: 0 0 40px rgba(228, 185, 90, 0.1);
   --shadow-glow-strong: 0 0 80px rgba(228, 185, 90, 0.2);
   --shadow-gold-lift: 0 8px 30px rgba(228, 185, 90, 0.25), 0 2px 8px rgba(228, 185, 90, 0.15);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   LIGHT THEME — warm cream, dark charcoal, gold retained
-   Applied when <html data-theme="light"> is set
-   ═══════════════════════════════════════════════════════════ */
-[data-theme='light'] {
-  /* Backgrounds */
-  --bg-primary:    #faf9f6;
-  --bg-secondary:  #f3f1ec;
-  --bg-tertiary:   #ece9e2;
-  --bg-card:       #ffffff;
-  --bg-card-hover: #f5f2eb;
-  --bg-glass:      rgba(250, 249, 246, 0.88);
-  --bg-glass-light: rgba(0, 0, 0, 0.04);
-  --bg-glass-gold: rgba(196, 154, 40, 0.07);
-
-  /* Text */
-  --text-primary:   #1a1814;
-  --text-secondary: #4a453e;
-  --text-tertiary:  #6b665e;
-  --text-accent:    #b8922e;
-
-  /* Gold accent — slightly deeper for contrast on light bg */
-  --accent-gold:       #c49a28;
-  --accent-gold-light: #e4b95a;
-  --accent-gold-dark:  #8f6e18;
-  --accent-gold-glow:  rgba(196, 154, 40, 0.15);
-  --accent-ember:      #e0582e;
-  --accent-silver:     #7a7a8a;
-  --accent-cream:      #3a3530;
-
-  /* Borders */
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-medium: rgba(0, 0, 0, 0.14);
-  --border-accent: rgba(196, 154, 40, 0.35);
-  --border-glow:   rgba(196, 154, 40, 0.5);
-
-  /* Shadows — softer, warm-tinted */
-  --shadow-sm: 0 1px 3px rgba(90, 80, 60, 0.12);
-  --shadow-md: 0 4px 20px rgba(90, 80, 60, 0.14);
-  --shadow-lg: 0 8px 40px rgba(90, 80, 60, 0.18);
-  --shadow-xl: 0 20px 80px rgba(90, 80, 60, 0.22);
-  --shadow-glow: 0 0 40px rgba(196, 154, 40, 0.08);
-  --shadow-glow-strong: 0 0 80px rgba(196, 154, 40, 0.14);
-  --shadow-gold-lift: 0 8px 30px rgba(196, 154, 40, 0.2), 0 2px 8px rgba(196, 154, 40, 0.1);
-}
-
-/* Light-mode: tone down the grain texture */
-[data-theme='light'] body::before {
-  opacity: 0.4;
-}
-
-/* Light-mode: scrollbar */
-[data-theme='light'] ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-}
-
-[data-theme='light'] ::-webkit-scrollbar-thumb {
-  background: rgba(196, 154, 40, 0.25);
-}
-
-[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
-  background: rgba(196, 154, 40, 0.35);
-}
-
-/* Light-mode: navbar scrolled state */
-[data-theme='light'] .navbar.scrolled {
-  background: rgba(243, 241, 236, 0.92);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 4px 30px rgba(90, 80, 60, 0.1);
-}
-
-/* Light-mode: navbar pill */
-[data-theme='light'] .navbar-links {
-  background: rgba(250, 249, 246, 0.8);
-  border: 1px solid rgba(196, 154, 40, 0.12);
-  box-shadow: 0 2px 12px rgba(90, 80, 60, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.6);
-}
-
-[data-theme='light'] .navbar-links a {
-  color: rgba(26, 24, 20, 0.65);
-}
-
-[data-theme='light'] .navbar-links a:hover {
-  color: #1a1814;
-  background: rgba(196, 154, 40, 0.08);
-  text-shadow: none;
-}
-
-/* Glass-card opacity token — override with --glass-opacity in any theme */
-:root { --glass-opacity: 0.65; }
-
-/* Light-mode: glass cards */
-[data-theme='light'] .glass-card {
-  background: rgba(255, 255, 255, var(--glass-opacity));
-  border-color: rgba(0, 0, 0, 0.08);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   REUSABLE THEME-AWARE CLASSES
-   Dark-mode defaults, light-mode overrides
-   ═══════════════════════════════════════════════════════════ */
-
-/* Glass panel — semi-transparent section panels */
-.glass-panel {
-  background: rgba(13, 15, 20, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-[data-theme='light'] .glass-panel {
-  background: rgba(255, 255, 255, 0.88) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  box-shadow: 0 2px 16px rgba(90, 80, 60, 0.08);
-}
-
-/* Feature cards — colored gradient cards */
-.feature-card-gold {
-  background: linear-gradient(135deg, rgba(212,168,83,0.15), rgba(13,15,20,0.7));
-}
-.feature-card-purple {
-  background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(13,15,20,0.7));
-}
-.feature-card-blue {
-  background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(13,15,20,0.7));
-}
-
-[data-theme='light'] .feature-card-gold {
-  background: linear-gradient(135deg, rgba(212,168,83,0.12), rgba(250,248,244,0.95)) !important;
-}
-[data-theme='light'] .feature-card-purple {
-  background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(250,248,244,0.95)) !important;
-}
-[data-theme='light'] .feature-card-blue {
-  background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(250,248,244,0.95)) !important;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   LIGHT THEME — COMPREHENSIVE CONTRAST FIXES
-   ═══════════════════════════════════════════════════════════ */
-
-/* ── Home stats pill (hero area) ── */
-[data-theme='light'] .hero-stats-pill {
-  background: rgba(255, 255, 255, 0.8) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-}
-
-/* ── Home stats row (100%, ∞, 24fps) ── */
-[data-theme='light'] .home-stats-row {
-  background: rgba(255, 255, 255, 0.88) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-}
-
-/* ── Hero secondary button ("View Casting Calls") ── */
-[data-theme='light'] .btn-secondary {
-  border-color: rgba(0, 0, 0, 0.25);
-  color: var(--text-primary);
-}
-
-[data-theme='light'] .btn-secondary:hover {
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
-}
-
-/* ── Project cards ── */
-[data-theme='light'] .project-card {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* ── Footer — ensure readability ── */
-[data-theme='light'] .footer {
-  background: var(--bg-secondary);
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-[data-theme='light'] .footer h3,
-[data-theme='light'] .footer h4 {
-  color: var(--text-primary);
-}
-
-[data-theme='light'] .footer p,
-[data-theme='light'] .footer a,
-[data-theme='light'] .footer li {
-  color: var(--text-secondary);
-}
-
-[data-theme='light'] .footer a:hover {
-  color: var(--accent-gold);
-}
-
-[data-theme='light'] .footer-bottom {
-  border-top-color: rgba(0, 0, 0, 0.08);
-  color: var(--text-tertiary);
-}
-
-/* ── Notification cards ── */
-[data-theme='light'] .notif-row:hover {
-  background: rgba(196, 154, 40, 0.06) !important;
-}
-
-/* ── Mobile drawer ── */
-[data-theme='light'] .mobile-drawer {
-  background: var(--bg-primary);
-  border-right-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme='light'] .drawer-quick-card {
-  background: rgba(0, 0, 0, 0.04) !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-[data-theme='light'] .drawer-item {
-  color: var(--text-primary);
-}
-
-/* ── Hero sections: text stays light on dark video backgrounds ── */
-[data-theme='light'] .hero-content,
-[data-theme='light'] .hero-content h1,
-[data-theme='light'] .hero-content p,
-[data-theme='light'] .hero-content span,
-[data-theme='light'] .casting-hero h1,
-[data-theme='light'] .casting-hero span,
-[data-theme='light'] .casting-hero p {
-  color: #f3efe8 !important;
-}
-
-[data-theme='light'] .hero-content .text-label,
-[data-theme='light'] .casting-hero .text-label {
-  color: #e4b95a !important;
-}
-
-[data-theme='light'] .hero-stats-pill {
-  background: rgba(13, 15, 20, 0.5) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-[data-theme='light'] .hero-stats-pill span {
-  color: inherit !important;
-}
-
-/* Light-mode: form inputs */
-[data-theme='light'] .form-input,
-[data-theme='light'] .form-textarea,
-[data-theme='light'] .form-select {
-  background: var(--bg-card);
-  border-color: rgba(0, 0, 0, 0.12);
-  color: var(--text-primary);
-}
-
-/* Accent swatch keyboard focus — WCAG 2.1 AA */
-.accent-swatch:focus-visible {
-  outline: 2px solid var(--accent-gold);
-  outline-offset: 2px;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   LIGHT THEME — PROFESSIONAL-GRADE COMPREHENSIVE FIXES
-   Every element must be readable in both dark and light modes.
-   Reference: Canva-grade contrast and surface hierarchy.
-   ═══════════════════════════════════════════════════════════ */
-
-/* ── 1. Navbar active link — visible in light mode ── */
-[data-theme='light'] .navbar-links a.active {
-  color: #1a1814 !important;
-  background: rgba(196, 154, 40, 0.1);
-}
-
-/* ── 2. Navbar "Sign In" button ── */
-[data-theme='light'] .navbar .navbar-sign-in-btn {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.18);
-  color: var(--text-primary);
-}
-
-/* ── 3. Mobile glass-card — override the dark-specific mobile fix ── */
-@media (max-width: 768px) {
-  [data-theme='light'] .glass-card {
-    background: rgba(255, 255, 255, 0.96) !important;
-    border: 1px solid rgba(0, 0, 0, 0.09) !important;
-    box-shadow: 0 2px 12px rgba(90, 80, 60, 0.1) !important;
-  }
-}
-
-/* ── 4. Admin sidebar ── */
-[data-theme='light'] .admin-sidebar {
-  background: #f5f3ee;
-  border-right-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme='light'] .admin-sidebar-nav a {
-  color: #4a453e;
-}
-
-[data-theme='light'] .admin-sidebar-nav a:hover {
-  background: rgba(196, 154, 40, 0.08);
-  color: #1a1814;
-}
-
-[data-theme='light'] .admin-sidebar-nav a.active {
-  color: #8f6e18;
-  background: rgba(196, 154, 40, 0.12);
-  border-left-color: #c49a28;
-}
-
-[data-theme='light'] .admin-hamburger span {
-  background: var(--text-secondary);
-}
-
-/* ── 5. Stat cards — visible surface on light background ── */
-[data-theme='light'] .stat-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 2px 8px rgba(90, 80, 60, 0.08), 0 1px 3px rgba(0, 0, 0, 0.06);
-}
-
-[data-theme='light'] .stat-card:hover {
-  box-shadow: 0 4px 20px rgba(90, 80, 60, 0.14);
-  border-color: rgba(196, 154, 40, 0.3);
-}
-
-[data-theme='light'] .stat-card-label {
-  color: #6b665e;
-}
-
-[data-theme='light'] .stat-card-value {
-  color: #1a1814;
-}
-
-/* ── 6. Admin table ── */
-[data-theme='light'] .admin-table-wrap {
-  border-color: rgba(0, 0, 0, 0.09);
-  box-shadow: 0 1px 4px rgba(90, 80, 60, 0.06);
-}
-
-[data-theme='light'] .admin-table thead th {
-  background: #f0ede6;
-  color: #4a453e;
-  border-bottom-color: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme='light'] .admin-table tbody td {
-  color: #3a3530;
-  border-bottom-color: rgba(0, 0, 0, 0.06);
-}
-
-[data-theme='light'] .admin-table tbody tr:hover {
-  background: rgba(196, 154, 40, 0.05);
-}
-
-/* ── 7. Admin form sections / cards ── */
-[data-theme='light'] .admin-form-section {
-  background: #ffffff;
-  border-color: rgba(0, 0, 0, 0.09);
-  box-shadow: 0 1px 6px rgba(90, 80, 60, 0.07);
-}
-
-[data-theme='light'] .admin-form-section:hover {
-  border-color: rgba(196, 154, 40, 0.25);
-}
-
-[data-theme='light'] .admin-form-section-title {
-  color: #1a1814;
-}
-
-/* ── 8. Admin inputs ── */
-[data-theme='light'] .admin-input,
-[data-theme='light'] .admin-textarea,
-[data-theme='light'] .admin-select {
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.14) !important;
-  color: #1a1814 !important;
-}
-
-[data-theme='light'] .admin-input:focus,
-[data-theme='light'] .admin-textarea:focus,
-[data-theme='light'] .admin-select:focus {
-  border-color: #c49a28 !important;
-  box-shadow: 0 0 0 3px rgba(196, 154, 40, 0.15) !important;
-}
-
-/* ── 9. Admin dropdown selects ── */
-[data-theme='light'] .admin-layout select,
-[data-theme='light'] .admin-main select {
-  color-scheme: light !important;
-  background-color: #ffffff !important;
-  color: #1a1814 !important;
-  border: 1px solid rgba(0, 0, 0, 0.14) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b665e' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E") !important;
-}
-
-[data-theme='light'] .admin-layout select option,
-[data-theme='light'] .admin-main select option {
-  background: #ffffff !important;
-  color: #1a1814 !important;
-}
-
-/* ── 10. Admin cmd-card (Command Center) ── */
-[data-theme='light'] .cmd-card {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.09) !important;
-  box-shadow: 0 2px 10px rgba(90, 80, 60, 0.08) !important;
-}
-
-[data-theme='light'] .cmd-card h1,
-[data-theme='light'] .cmd-card h2,
-[data-theme='light'] .cmd-card h3,
-[data-theme='light'] .cmd-card p,
-[data-theme='light'] .cmd-card span:not([class*="accent"]):not([style*="color"]) {
-  color: var(--text-primary);
-}
-
-/* ── 11. Admin page title ── */
-[data-theme='light'] .admin-page-title {
-  color: #1a1814;
-}
-
-/* ── 12. Dashboard stat/summary cards ── */
-[data-theme='light'] .glass-panel {
-  background: #ffffff !important;
-  border-color: rgba(0, 0, 0, 0.09) !important;
-  box-shadow: 0 2px 12px rgba(90, 80, 60, 0.09) !important;
-}
-
-/* ── 13. Dashboard "View Details →" links ── */
-[data-theme='light'] a[href*="detail"],
-[data-theme='light'] a[href*="view"] {
-  color: #8f6e18;
-}
-
-/* ── 14. Status badges — "Not Selected", "Submitted", etc. ── */
-[data-theme='light'] .badge {
-  border-width: 1px;
-}
-
-[data-theme='light'] .badge-gold {
-  background: rgba(196, 154, 40, 0.12);
-  color: #8f6e18;
-  border-color: rgba(196, 154, 40, 0.35);
-}
-
-[data-theme='light'] .badge-green {
-  background: rgba(16, 120, 80, 0.1);
-  color: #107850;
-  border-color: rgba(16, 120, 80, 0.3);
-}
-
-[data-theme='light'] .badge-red {
-  background: rgba(185, 28, 28, 0.08);
-  color: #b91c1c;
-  border-color: rgba(185, 28, 28, 0.25);
-}
-
-[data-theme='light'] .badge-blue {
-  background: rgba(37, 99, 235, 0.08);
-  color: #1d4ed8;
-  border-color: rgba(37, 99, 235, 0.25);
-}
-
-/* ── 15. Loading spinner ── */
-[data-theme='light'] [class*="spinner"],
-[data-theme='light'] [class*="loader"] {
-  border-color: rgba(0, 0, 0, 0.12);
-  border-top-color: #c49a28;
-}
-
-/* ── 16. Admin page header area ── */
-[data-theme='light'] .admin-header {
-  border-bottom-color: rgba(0, 0, 0, 0.07);
-}
-
-/* ── 17. Section labels and text-label in light non-hero pages ── */
-[data-theme='light'] .text-label {
-  color: #8f6e18;
-}
-
-/* ── 18. Scroll-row edge fade — match light background ── */
-[data-theme='light'] .scroll-row-wrap::after {
-  background: linear-gradient(to left, #faf9f6 0%, transparent 100%);
-}
-
-/* ── 19. AI score card / gauge ── */
-[data-theme='light'] .ai-score-card {
-  background: #ffffff;
-  border-color: rgba(196, 154, 40, 0.3);
-  box-shadow: 0 2px 12px rgba(90, 80, 60, 0.1);
-}
-
-[data-theme='light'] .ai-score-gauge-inner {
-  background: #ffffff;
-}
-
-/* ── 20. Admin panel resize handle ── */
-[data-theme='light'] .admin-sidebar-resize-handle:hover,
-[data-theme='light'] .admin-sidebar-resize-handle:active {
-  background: linear-gradient(180deg, transparent, rgba(196, 154, 40, 0.3), transparent);
-}
-
-/* ── 21. Drawer items text in light mode ── */
-[data-theme='light'] .drawer-item,
-[data-theme='light'] .drawer-user-name,
-[data-theme='light'] .drawer-section-label {
-  color: var(--text-primary);
-}
-
-[data-theme='light'] .drawer-user-role {
-  color: var(--text-secondary);
-}
-
-[data-theme='light'] .drawer-lang-btn {
-  color: var(--text-secondary);
-}
-
-[data-theme='light'] .drawer-lang-btn.active {
-  color: #8f6e18;
-  background: rgba(196, 154, 40, 0.1);
-}
-
-/* ── 22. Dashboard tabs ── */
-[data-theme='light'] .dashboard-tab-btn {
-  color: var(--text-secondary);
-  border-bottom-color: transparent;
-}
-
-[data-theme='light'] .dashboard-tab-btn.active {
-  color: #8f6e18;
-  border-bottom-color: #c49a28;
-}
-
-/* ── 23. Application status inline styles override ── */
-[data-theme='light'] span[style*="rgba(239,68,68"],
-[data-theme='light'] span[style*="rgba(239, 68, 68"] {
-  background: rgba(185, 28, 28, 0.1) !important;
-  color: #b91c1c !important;
-}
-
-[data-theme='light'] span[style*="rgba(52,211,153"],
-[data-theme='light'] span[style*="rgba(52, 211, 153"] {
-  background: rgba(16, 120, 80, 0.1) !important;
-  color: #107850 !important;
-}
-
-[data-theme='light'] span[style*="rgba(96,165,250"],
-[data-theme='light'] span[style*="rgba(96, 165, 250"] {
-  background: rgba(37, 99, 235, 0.1) !important;
-  color: #1d4ed8 !important;
 }
 
 
@@ -634,7 +89,7 @@
   --color-muted:   #6b7280;
 }
 
-/* ── Reset & Base ── */
+/* â”€â”€ Reset & Base â”€â”€ */
 *,
 *::before,
 *::after {
@@ -674,7 +129,7 @@ body {
   /* -webkit-overflow-scrolling removed: deprecated and causes bounce on iOS 16+ */
 }
 
-/* ── Responsive visibility utilities ── */
+/* â”€â”€ Responsive visibility utilities â”€â”€ */
 .mobile-only  { display: none !important; }
 .desktop-only { display: block !important; }
 @media (max-width: 768px) {
@@ -682,7 +137,7 @@ body {
   .desktop-only { display: none  !important; }
 }
 
-/* Ultra-fine grain texture overlay — desktop only (SVG filter is GPU-expensive on mobile) */
+/* Ultra-fine grain texture overlay â€” desktop only (SVG filter is GPU-expensive on mobile) */
 body::before {
   content: '';
   position: fixed;
@@ -695,11 +150,11 @@ body::before {
   z-index: 9999;
 }
 @media (max-width: 768px) {
-  /* Disable fixed SVG noise filter on mobile — causes constant GPU composite layer */
+  /* Disable fixed SVG noise filter on mobile â€” causes constant GPU composite layer */
   body::before { display: none; }
 }
 
-/* ── Custom Scrollbar ── */
+/* â”€â”€ Custom Scrollbar â”€â”€ */
 ::-webkit-scrollbar {
   width: 5px;
 }
@@ -717,7 +172,7 @@ body::before {
   background: rgba(212, 168, 83, 0.4);
 }
 
-/* ── Typography ── */
+/* â”€â”€ Typography â”€â”€ */
 h1,
 h2,
 h3,
@@ -771,7 +226,7 @@ a:hover {
   color: var(--text-primary);
 }
 
-/* ── Utility Classes ── */
+/* â”€â”€ Utility Classes â”€â”€ */
 .container {
   width: 100%;
   max-width: 1280px;
@@ -805,7 +260,7 @@ a:hover {
   letter-spacing: 0.01em;
 }
 
-/* ── Accent Text ── */
+/* â”€â”€ Accent Text â”€â”€ */
 .text-accent {
   color: var(--accent-gold);
 }
@@ -823,7 +278,7 @@ a:hover {
   color: var(--accent-gold);
 }
 
-/* ── Glass Card ── */
+/* â”€â”€ Glass Card â”€â”€ */
 .glass-card {
   background: var(--bg-glass);
   backdrop-filter: blur(24px);
@@ -840,19 +295,19 @@ a:hover {
 }
 
 @media (max-width: 768px) {
-  /* Disable backdrop-filter on mobile — major GPU/CPU heat source */
+  /* Disable backdrop-filter on mobile â€” major GPU/CPU heat source */
   .glass-card {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: rgba(18, 21, 28, 0.97) !important;
   }
-  /* Disable transform hover effects on touch — they retrigger composite layers */
+  /* Disable transform hover effects on touch â€” they retrigger composite layers */
   .glass-card:hover {
     transform: none !important;
   }
 }
 
-/* ── Buttons ── */
+/* â”€â”€ Buttons â”€â”€ */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -939,7 +394,7 @@ a:hover {
   letter-spacing: 0.08em;
 }
 
-/* ── Badge ── */
+/* â”€â”€ Badge â”€â”€ */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -976,7 +431,7 @@ a:hover {
   background: rgba(96, 165, 250, 0.08);
 }
 
-/* ── Input Fields ── */
+/* â”€â”€ Input Fields â”€â”€ */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -1025,7 +480,7 @@ a:hover {
   padding-right: 2.5rem;
 }
 
-/* ── Global placeholder contrast — WCAG 2 AA ── */
+/* â”€â”€ Global placeholder contrast â€” WCAG 2 AA â”€â”€ */
 input::placeholder,
 textarea::placeholder,
 select::placeholder {
@@ -1033,7 +488,7 @@ select::placeholder {
   opacity: 1; /* Firefox reduces placeholder opacity by default */
 }
 
-/* ── Divider ── */
+/* â”€â”€ Divider â”€â”€ */
 .divider {
   width: 48px;
   height: 1px;
@@ -1057,14 +512,14 @@ select::placeholder {
   margin: var(--space-lg) auto;
 }
 
-/* ── Grid Layouts ── */
+/* â”€â”€ Grid Layouts â”€â”€ */
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: var(--space-xl);
 }
 
-/* Photo upload grid — always 2 columns, even on mobile */
+/* Photo upload grid â€” always 2 columns, even on mobile */
 .photo-upload-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1100,11 +555,11 @@ select::placeholder {
   gap: var(--space-xl);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MOBILE NATIVE FEEL — Phase A
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE NATIVE FEEL â€” Phase A
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Press feedback: tap scale on all interactive elements ── */
+/* â”€â”€ Press feedback: tap scale on all interactive elements â”€â”€ */
 .press-feedback {
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.12s ease-out, opacity 0.12s ease-out;
@@ -1121,7 +576,7 @@ select::placeholder {
   transform: scale(0.94);
 }
 
-/* ── Horizontal scroll rows: edge fades + zero scrollbar ── */
+/* â”€â”€ Horizontal scroll rows: edge fades + zero scrollbar â”€â”€ */
 .scroll-row-wrap {
   position: relative;
 }
@@ -1145,7 +600,7 @@ select::placeholder {
   display: flex;
   gap: 12px;
   overflow-x: auto;
-  overflow-y: hidden;                      /* must not be visible — iOS turns it into auto = bounce */
+  overflow-y: hidden;                      /* must not be visible â€” iOS turns it into auto = bounce */
   scrollbar-width: none;
   -ms-overflow-style: none;
   /* -webkit-overflow-scrolling removed: causes rubber-band on modern iOS */
@@ -1156,7 +611,7 @@ select::placeholder {
 }
 .scroll-row::-webkit-scrollbar { display: none; }
 
-/* ── content-visibility: skip painting off-screen sections ── */
+/* â”€â”€ content-visibility: skip painting off-screen sections â”€â”€ */
 @media (max-width: 768px) {
   .section {
     content-visibility: auto;
@@ -1164,9 +619,9 @@ select::placeholder {
   }
 }
 
-/* ── GPU promotion for card animations ── */
+/* â”€â”€ GPU promotion for card animations â”€â”€ */
 @media (max-width: 768px) {
-  /* Promote scroll containers to own GPU layer — no will-change: scroll-position (causes jitter) */
+  /* Promote scroll containers to own GPU layer â€” no will-change: scroll-position (causes jitter) */
   .scroll-row,
   .movie-strip {
     transform: translateZ(0);
@@ -1177,7 +632,7 @@ select::placeholder {
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Remove box-shadow transitions on mobile — triggers expensive repaint */
+  /* Remove box-shadow transitions on mobile â€” triggers expensive repaint */
   .glass-panel,
   .card,
   .project-card {
@@ -1186,7 +641,7 @@ select::placeholder {
   }
 
   /* Fix iOS bounce: position:fixed inside scrolling container causes rubber-band.
-     Switch to position:absolute on mobile — the page scroll handles movement. */
+     Switch to position:absolute on mobile â€” the page scroll handles movement. */
   .works-video-bg {
     position: absolute !important;
   }
@@ -1194,14 +649,14 @@ select::placeholder {
   /* Lock movie strip horizontal scroll from leaking into vertical page scroll */
   .movie-strip {
     overscroll-behavior-x: contain;
-    touch-action: pan-x pan-y;   /* Allow BOTH directions — browser picks axis based on gesture angle */
-    overflow-y: hidden !important; /* iOS converts visible→auto causing bounce */
+    touch-action: pan-x pan-y;   /* Allow BOTH directions â€” browser picks axis based on gesture angle */
+    overflow-y: hidden !important; /* iOS converts visibleâ†’auto causing bounce */
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PREMIUM ANIMATIONS
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1391,7 +846,7 @@ select::placeholder {
   opacity: 0;
 }
 
-/* ── Responsive ── */
+/* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1024px) {
   .grid-4 {
     grid-template-columns: repeat(2, 1fr);
@@ -1419,9 +874,9 @@ select::placeholder {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ULTRA-PREMIUM NAVBAR
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .navbar {
   position: fixed;
   top: 0;
@@ -1540,7 +995,7 @@ select::placeholder {
   transition: all var(--transition-fast);
 }
 
-/* Old mobile-menu class removed — replaced by .mobile-drawer (side drawer) */
+/* Old mobile-menu class removed â€” replaced by .mobile-drawer (side drawer) */
 
 /* Medium screens: shrink nav links so they don't crowd the logo */
 @media (max-width: 1150px) and (min-width: 1025px) {
@@ -1569,9 +1024,9 @@ select::placeholder {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ULTRA-PREMIUM HERO SECTION
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .hero {
   position: relative;
   min-height: 100vh;
@@ -1720,9 +1175,9 @@ select::placeholder {
   margin-top: var(--space-xs);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ULTRA-PREMIUM PROJECT CARDS
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .project-card {
   position: relative;
   border-radius: var(--radius-xl);
@@ -1735,7 +1190,7 @@ select::placeholder {
   transition: all var(--transition-slow);
 }
 
-/* Desktop-only hover — mobile never gets these effects */
+/* Desktop-only hover â€” mobile never gets these effects */
 @media (hover: hover) and (pointer: fine) {
   .project-card:hover {
     border-color: var(--border-accent);
@@ -1847,9 +1302,9 @@ select::placeholder {
   margin-left: 3px;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CASTING SECTION
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .casting-card {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -1904,9 +1359,9 @@ select::placeholder {
   color: var(--text-tertiary);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ULTRA-PREMIUM FOOTER
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .footer {
   border-top: 1px solid var(--border-subtle);
   padding: var(--space-2xl) 0 var(--space-xl);
@@ -1918,7 +1373,7 @@ select::placeholder {
 
 @media (max-width: 768px) {
   .footer {
-    /* Clear the fixed mobile tab bar (≈70px) + safe-area + comfortable gap */
+    /* Clear the fixed mobile tab bar (â‰ˆ70px) + safe-area + comfortable gap */
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
   }
 }
@@ -1958,7 +1413,7 @@ select::placeholder {
   gap: var(--space-3xl);
 }
 
-/* Wrapper for Explore + Support link columns — 
+/* Wrapper for Explore + Support link columns â€” 
    on desktop it uses display:contents to integrate into the grid,
    on mobile it becomes a flex row for 2-column layout */
 .footer-link-columns {
@@ -2029,9 +1484,9 @@ select::placeholder {
   box-shadow: 0 4px 12px rgba(212, 168, 83, 0.15);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ADMIN SIDEBAR & DASHBOARD
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .admin-layout {
   display: flex;
   min-height: 100vh;
@@ -2165,7 +1620,7 @@ select::placeholder {
   min-width: 700px;
 }
 
-/* ── Admin Mobile Responsive ── */
+/* â”€â”€ Admin Mobile Responsive â”€â”€ */
 @media (max-width: 768px) {
   .admin-layout {
     flex-direction: column;
@@ -2252,7 +1707,7 @@ select::placeholder {
   }
 }
 
-/* ── Admin ultra-small portrait (≤ 480 px) ── */
+/* â”€â”€ Admin ultra-small portrait (â‰¤ 480 px) â”€â”€ */
 @media (max-width: 480px) {
   .admin-main {
     padding: 64px 12px 24px;
@@ -2285,7 +1740,7 @@ select::placeholder {
   }
 }
 
-/* ── Admin landscape mobile (short screen, landscape orientation) ── */
+/* â”€â”€ Admin landscape mobile (short screen, landscape orientation) â”€â”€ */
 @media (max-height: 500px) and (orientation: landscape) {
   .admin-sidebar {
     max-height: 48px;
@@ -2300,7 +1755,7 @@ select::placeholder {
   }
 }
 
-/* ── Movie Rolls page — mobile action menu ── */
+/* â”€â”€ Movie Rolls page â€” mobile action menu â”€â”€ */
 .mr-actions-expanded {
   display: none;
   border-top: 1px solid rgba(255,255,255,0.06);
@@ -2343,7 +1798,7 @@ select::placeholder {
   }
 }
 
-/* ── Admin hamburger toggle ── */
+/* â”€â”€ Admin hamburger toggle â”€â”€ */
 .admin-hamburger {
   display: none;
   flex-direction: column;
@@ -2371,7 +1826,7 @@ select::placeholder {
   .admin-sidebar-subtitle { display: none; }
 }
 
-/* ── Hamburger → X morphing animation ── */
+/* â”€â”€ Hamburger â†’ X morphing animation â”€â”€ */
 .admin-hamburger.is-open span:nth-child(1) {
   transform: translateY(7px) rotate(45deg);
 }
@@ -2393,7 +1848,7 @@ select::placeholder {
   to   { opacity: 1; }
 }
 
-/* ── ㉒ Resizable Admin Content Panels ── */
+/* â”€â”€ ã‰’ Resizable Admin Content Panels â”€â”€ */
 /* Apply .admin-panel-resizable to any two-pane admin layout wrapper */
 .admin-panel-resizable {
   display: flex;
@@ -2628,9 +2083,9 @@ select::placeholder {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ADMIN FORM ELEMENTS
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .admin-form-section {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
@@ -2726,8 +2181,8 @@ select::placeholder {
   gap: var(--space-lg);
 }
 
-/* ═══════════════════════════════════════════════════════════
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .apply-page {
   padding-top: 8rem;
   padding-bottom: 4rem;
@@ -2830,9 +2285,9 @@ select::placeholder {
   background: linear-gradient(90deg, var(--accent-gold), var(--border-subtle));
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PAGE TRANSITIONS & LOADING
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .page-loading {
   position: fixed;
   inset: 0;
@@ -2858,7 +2313,7 @@ select::placeholder {
   }
 }
 
-/* ── Movie row horizontal strip — shimmer + scrollbar ─────────────── */
+/* â”€â”€ Movie row horizontal strip â€” shimmer + scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @keyframes shimmerSweep {
   0%   { background-position: -400px 0; }
   100% { background-position:  400px 0; }
@@ -2868,8 +2323,8 @@ select::placeholder {
   display: none;
 }
 
-/* Skeleton card — shared across all rows, defined once here to prevent
-   per-instance <style> injection (would duplicate N × row_count times) */
+/* Skeleton card â€” shared across all rows, defined once here to prevent
+   per-instance <style> injection (would duplicate N Ã— row_count times) */
 .skeleton-card {
   flex-shrink: 0;
   width: 175px;
@@ -2911,9 +2366,9 @@ select::placeholder {
   animation: shimmerSweep 1.4s ease-in-out infinite;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    LOGIN PAGE
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .login-page {
   min-height: 100vh;
   min-height: 100dvh;
@@ -2958,9 +2413,9 @@ select::placeholder {
   margin-bottom: var(--space-2xl);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PROJECT DETAIL PAGE
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .project-hero {
   position: relative;
   min-height: 70vh;
@@ -3007,9 +2462,9 @@ select::placeholder {
   color: var(--text-secondary);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    MODAL / DIALOG
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -3057,9 +2512,9 @@ select::placeholder {
   color: var(--text-primary);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TOAST NOTIFICATIONS
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .toast {
   position: fixed;
   bottom: var(--space-xl);
@@ -3088,9 +2543,9 @@ select::placeholder {
   border-left: 3px solid var(--info);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    3D EFFECTS & TILT CARDS
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Tilt Card Wrapper */
 .tilt-card-wrapper {
@@ -3103,7 +2558,7 @@ select::placeholder {
   will-change: transform;
 }
 
-/* 3D depth shadow — sits behind the card */
+/* 3D depth shadow â€” sits behind the card */
 .tilt-card-shadow {
   position: absolute;
   inset: 5%;
@@ -3134,7 +2589,7 @@ select::placeholder {
   mix-blend-mode: soft-light;
 }
 
-/* Edge light — subtle gold rim on hover */
+/* Edge light â€” subtle gold rim on hover */
 .tilt-card-edge-light {
   position: absolute;
   inset: -1px;
@@ -3197,7 +2652,7 @@ select::placeholder {
 }
 
 
-/* Premium mobile card hover — desktop only */
+/* Premium mobile card hover â€” desktop only */
 @media (hover: hover) and (pointer: fine) {
   .movie-card-premium:hover {
     border-color: rgba(212,168,83,0.22) !important;
@@ -3207,11 +2662,11 @@ select::placeholder {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    ACCESSIBILITY
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* Skip-to-content link — hidden until focused via Tab */
+/* Skip-to-content link â€” hidden until focused via Tab */
 .skip-to-content {
   position: absolute;
   top: -100%;
@@ -3233,7 +2688,7 @@ select::placeholder {
   outline: none;
 }
 
-/* Focus-visible — gold outline for keyboard users only */
+/* Focus-visible â€” gold outline for keyboard users only */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
@@ -3281,11 +2736,11 @@ textarea:focus:not(:focus-visible) {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    COMPREHENSIVE RESPONSIVE DESIGN
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Responsive Grid Utility Classes ── */
+/* â”€â”€ Responsive Grid Utility Classes â”€â”€ */
 .responsive-grid-2-1 {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -3352,7 +2807,7 @@ textarea:focus:not(:focus-visible) {
   gap: var(--space-xl);
 }
 
-/* ── Tablet (max-width: 1024px) ── */
+/* â”€â”€ Tablet (max-width: 1024px) â”€â”€ */
 @media (max-width: 1024px) {
 
   /* Typography scale down */
@@ -3385,12 +2840,12 @@ textarea:focus:not(:focus-visible) {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* 3-column → 2-column on tablet */
+  /* 3-column â†’ 2-column on tablet */
   .grid-3col {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Auto-fill — smaller min */
+  /* Auto-fill â€” smaller min */
   .grid-auto-fill {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
@@ -3401,17 +2856,17 @@ textarea:focus:not(:focus-visible) {
   }
 }
 
-/* ── Mobile (max-width: 768px) ── */
+/* â”€â”€ Mobile (max-width: 768px) â”€â”€ */
 @media (max-width: 768px) {
 
-  /* Base container — prevent overflow */
+  /* Base container â€” prevent overflow */
   .container {
     padding: 0 var(--space-md);
     max-width: 100dvw;
     overflow-x: hidden;
   }
 
-  /* Prevent iOS input zoom — inputs must be ≥16px on iOS */
+  /* Prevent iOS input zoom â€” inputs must be â‰¥16px on iOS */
   input,
   select,
   textarea {
@@ -3433,7 +2888,7 @@ textarea:focus:not(:focus-visible) {
     gap: var(--space-xl) !important;
   }
 
-  /* Glass cards — tighter on mobile */
+  /* Glass cards â€” tighter on mobile */
   .glass-card {
     padding: var(--space-md) !important;
     max-width: 100% !important;
@@ -3548,13 +3003,13 @@ textarea:focus:not(:focus-visible) {
     border-radius: var(--radius-md);
   }
 
-  /* Works gallery — single column on mobile */
+  /* Works gallery â€” single column on mobile */
   .works-grid {
     grid-template-columns: 1fr;
     gap: var(--space-lg);
   }
 
-  /* All multi-column grids → single column on mobile */
+  /* All multi-column grids â†’ single column on mobile */
   .form-grid-2col,
   .grid-3col {
     grid-template-columns: 1fr !important;
@@ -3564,7 +3019,7 @@ textarea:focus:not(:focus-visible) {
     grid-template-columns: 1fr !important;
   }
 
-  /* ── Compact mobile footer: 2-column link grid ── */
+  /* â”€â”€ Compact mobile footer: 2-column link grid â”€â”€ */
   .footer-responsive-grid {
     grid-template-columns: 1fr !important;
     text-align: center;
@@ -3672,7 +3127,7 @@ textarea:focus:not(:focus-visible) {
     gap: var(--space-lg) !important;
   }
 
-  /* Admin form 2-column grids → single column */
+  /* Admin form 2-column grids â†’ single column */
   .admin-form-grid {
     grid-template-columns: 1fr !important;
   }
@@ -3697,7 +3152,7 @@ textarea:focus:not(:focus-visible) {
     font-size: 1.6rem !important;
   }
 
-  /* Settings tab + content → stack */
+  /* Settings tab + content â†’ stack */
   .settings-content-layout {
     flex-direction: column !important;
   }
@@ -3719,21 +3174,21 @@ textarea:focus:not(:focus-visible) {
     white-space: nowrap;
   }
 
-  /* Form inline 2-column → single column */
+  /* Form inline 2-column â†’ single column */
   .form-inline-2col {
     grid-template-columns: 1fr !important;
   }
 }
 
-/* ── Portrait-orientation guard for card grids ────────────────────────────
+/* â”€â”€ Portrait-orientation guard for card grids â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    Some phones in landscape are wider than 768px, so the max-width:768px
    breakpoint never fires. When rotated back to portrait the browser may
    not re-evaluate those queries quickly. This rule fires exclusively in
    portrait, regardless of pixel width, ensuring grids always collapse to
    single-column on any phone held in portrait orientation.
-   ────────────────────────────────────────────────────────────────────── */
+   â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 @media (orientation: portrait) and (max-width: 900px) {
-  /* Works gallery and main content grids → single column */
+  /* Works gallery and main content grids â†’ single column */
   .works-grid,
   .featured-grid,
   .grid-auto-fill,
@@ -3742,19 +3197,19 @@ textarea:focus:not(:focus-visible) {
     grid-template-columns: 1fr !important;
   }
 
-  /* Admin stat cards → 2 columns (readable in portrait) */
+  /* Admin stat cards â†’ 2 columns (readable in portrait) */
   .grid-4 {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  /* Admin form grids → single column */
+  /* Admin form grids â†’ single column */
   .admin-form-grid,
   .form-inline-2col {
     grid-template-columns: 1fr !important;
   }
 }
 
-/* ── Small Mobile (max-width: 480px) ── */
+/* â”€â”€ Small Mobile (max-width: 480px) â”€â”€ */
 @media (max-width: 480px) {
 
   /* Even tighter spacing */
@@ -3786,23 +3241,23 @@ textarea:focus:not(:focus-visible) {
     font-size: 1rem;
   }
 
-  /* Admin sidebar — remove conflicting flex rules on small screens */
+  /* Admin sidebar â€” remove conflicting flex rules on small screens */
   .admin-sidebar-nav {
     display: grid;  /* keep 2-col grid from the 768px breakpoint */
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   PREMIUM RESPONSIVE — DEVICE-SPECIFIC POLISH
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   PREMIUM RESPONSIVE â€” DEVICE-SPECIFIC POLISH
    Added for cross-device premium display
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ── Global overflow prevention ── */
+/* â”€â”€ Global overflow prevention â”€â”€ */
 img, video, iframe, canvas {
   max-width: 100%;
 }
 
-/* ── Navbar: hide bell + globe on mobile, hamburger to left ── */
+/* â”€â”€ Navbar: hide bell + globe on mobile, hamburger to left â”€â”€ */
 @media (max-width: 1024px) {
   .navbar-desktop-only {
     display: none !important;
@@ -3813,7 +3268,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── Hero CTAs: stack vertically on small screens ── */
+/* â”€â”€ Hero CTAs: stack vertically on small screens â”€â”€ */
 @media (max-width: 640px) {
   .hero-cta-row {
     flex-direction: column !important;
@@ -3825,7 +3280,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── Hero stats pill: compact on small screens ── */
+/* â”€â”€ Hero stats pill: compact on small screens â”€â”€ */
 @media (max-width: 640px) {
   .hero-stats-pill {
     gap: var(--space-md) !important;
@@ -3835,7 +3290,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── Homepage stats row: stack on tiny screens ── */
+/* â”€â”€ Homepage stats row: stack on tiny screens â”€â”€ */
 @media (max-width: 480px) {
   .home-stats-row {
     flex-direction: column !important;
@@ -3848,7 +3303,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── Works CTA bar: stack on mobile ── */
+/* â”€â”€ Works CTA bar: stack on mobile â”€â”€ */
 @media (max-width: 640px) {
   .works-cta-bar {
     flex-direction: column !important;
@@ -3862,7 +3317,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── CTA button rows: full-width stack on mobile ── */
+/* â”€â”€ CTA button rows: full-width stack on mobile â”€â”€ */
 @media (max-width: 640px) {
   .cta-button-row {
     flex-direction: column !important;
@@ -3875,7 +3330,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── Casting hero: reduce height on mobile — less empty space ── */
+/* â”€â”€ Casting hero: reduce height on mobile â€” less empty space â”€â”€ */
 @media (max-width: 768px) {
   .casting-hero {
     height: auto !important;
@@ -3883,7 +3338,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── Social media grid: stack on mobile ── */
+/* â”€â”€ Social media grid: stack on mobile â”€â”€ */
 @media (max-width: 640px) {
   .social-grid {
     grid-template-columns: 1fr !important;
@@ -3891,9 +3346,9 @@ img, video, iframe, canvas {
 }
 
 
-/* ═══════════════════════════════════════════════════════════
-   MOBILE-FIRST GLOBAL GUARDS — nothing should overflow
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE-FIRST GLOBAL GUARDS â€” nothing should overflow
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (max-width: 768px) {
   /* Prevent any hero title from overflowing the viewport */
   h1, h2 {
@@ -3901,31 +3356,31 @@ img, video, iframe, canvas {
     word-break: break-word;
   }
 
-  /* Upcoming hero title — clipped at large sizes */
+  /* Upcoming hero title â€” clipped at large sizes */
   .upcoming-hero-title {
     font-size: clamp(1.6rem, 7vw, 2.4rem) !important;
   }
 
-  /* About page stat cards — responsive 2×2 grid on mobile */
+  /* About page stat cards â€” responsive 2Ã—2 grid on mobile */
   .about-stats-grid {
     padding: var(--space-lg) var(--space-md) !important;
     grid-template-columns: repeat(2, 1fr) !important;
   }
 
-  /* About page mission+story — stack vertically on mobile */
+  /* About page mission+story â€” stack vertically on mobile */
   .about-mission-grid {
     grid-template-columns: 1fr !important;
   }
 
-  /* About page timeline — reduce left padding */
+  /* About page timeline â€” reduce left padding */
   .about-timeline {
     padding-left: 40px !important;
   }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MOBILE SIDE DRAWER — PREMIUM APP-STYLE MENU
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE SIDE DRAWER â€” PREMIUM APP-STYLE MENU
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Backdrop overlay */
 .mobile-drawer-backdrop {
@@ -3943,9 +3398,9 @@ img, video, iframe, canvas {
   to { opacity: 1; }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   MOBILE DRAWER — ULTRA-PREMIUM CINEMATIC DESIGN
-   ══════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE DRAWER â€” ULTRA-PREMIUM CINEMATIC DESIGN
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Drawer panel */
 .mobile-drawer {
@@ -4029,7 +3484,7 @@ img, video, iframe, canvas {
   to   { opacity: 1; transform: translateX(0) scale(1); }
 }
 
-/* ── Profile Header ── */
+/* â”€â”€ Profile Header â”€â”€ */
 .drawer-profile {
   display: flex;
   align-items: center;
@@ -4154,7 +3609,7 @@ img, video, iframe, canvas {
   transform: rotate(90deg) scale(1.1);
 }
 
-/* ── Quick Actions — Glass Card Grid ── */
+/* â”€â”€ Quick Actions â€” Glass Card Grid â”€â”€ */
 .drawer-quick-actions {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -4255,7 +3710,7 @@ img, video, iframe, canvas {
   color: var(--accent-gold);
 }
 
-/* ── Sections ── */
+/* â”€â”€ Sections â”€â”€ */
 .drawer-section {
   padding: 14px 16px;
   border-bottom: none;
@@ -4288,7 +3743,7 @@ img, video, iframe, canvas {
 }
 
 .drawer-section-label::before {
-  content: '◆';
+  content: 'â—†';
   font-size: 0.35rem;
   color: var(--accent-gold);
   opacity: 0.5;
@@ -4302,7 +3757,7 @@ img, video, iframe, canvas {
   margin-left: 8px;
 }
 
-/* ── Nav Items — Premium Interactive ── */
+/* â”€â”€ Nav Items â€” Premium Interactive â”€â”€ */
 .drawer-item {
   display: flex;
   align-items: center;
@@ -4458,7 +3913,7 @@ img, video, iframe, canvas {
   box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
 }
 
-/* ── Language Grid — Premium Pills ── */
+/* â”€â”€ Language Grid â€” Premium Pills â”€â”€ */
 .drawer-lang-grid {
   display: flex;
   flex-wrap: wrap;
@@ -4494,7 +3949,7 @@ img, video, iframe, canvas {
   box-shadow: 0 0 16px rgba(212, 168, 83, 0.08);
 }
 
-/* ── Sign Out — Danger Zone ── */
+/* â”€â”€ Sign Out â€” Danger Zone â”€â”€ */
 .drawer-signout-section {
   margin-top: auto;
   padding-top: 8px !important;
@@ -4521,7 +3976,7 @@ img, video, iframe, canvas {
   color: #ef4444;
 }
 
-/* ── Drawer Branding Footer — Animated Gold Shimmer ── */
+/* â”€â”€ Drawer Branding Footer â€” Animated Gold Shimmer â”€â”€ */
 .drawer-footer-brand {
   padding: 16px 20px 24px;
   text-align: center;
@@ -4559,9 +4014,9 @@ img, video, iframe, canvas {
   100% { background-position: 200% center; }
 }
 
-/* ═══════════════════════════════════════════════════════════
-   MOBILE BOTTOM TAB BAR — PREMIUM PILL NAVIGATION
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE BOTTOM TAB BAR â€” PREMIUM PILL NAVIGATION
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .mobile-tab-bar {
   display: none;
 }
@@ -4581,7 +4036,7 @@ img, video, iframe, canvas {
     pointer-events: none; /* children get pointer events */
   }
 
-  /* ── Shared pill base ── */
+  /* â”€â”€ Shared pill base â”€â”€ */
   .tab-pill {
     display: flex;
     align-items: center;
@@ -4592,7 +4047,7 @@ img, video, iframe, canvas {
     transition: box-shadow 0.3s ease;
   }
 
-  /* ── Main navigation pill ── */
+  /* â”€â”€ Main navigation pill â”€â”€ */
   .tab-pill-nav {
     flex: 1;
     height: 56px;
@@ -4606,7 +4061,7 @@ img, video, iframe, canvas {
     max-width: 380px;
   }
 
-  /* ── Search pill ── */
+  /* â”€â”€ Search pill â”€â”€ */
   .tab-pill-search {
     width: 56px;
     height: 56px;
@@ -4632,7 +4087,7 @@ img, video, iframe, canvas {
     height: 22px;
   }
 
-  /* ── Tab items inside nav pill ── */
+  /* â”€â”€ Tab items inside nav pill â”€â”€ */
   .tab-item {
     display: flex;
     flex-direction: column;
@@ -4712,11 +4167,11 @@ img, video, iframe, canvas {
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
 
-  /* ═══ COLLAPSE ANIMATION ═══
+  /* â•â•â• COLLAPSE ANIMATION â•â•â•
      When collapsed, collapsible tabs slide behind the home tab:
-     - opacity → 0
-     - max-width → 0
-     - transform → translateX toward home
+     - opacity â†’ 0
+     - max-width â†’ 0
+     - transform â†’ translateX toward home
      The home tab stays fully visible and acts as a "hub" icon. */
 
   .mobile-tab-bar.collapsed .tab-collapsible {
@@ -4750,7 +4205,7 @@ img, video, iframe, canvas {
     transition: max-width 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
   }
 
-  /* ═══ SEARCH OVERLAY ═══ */
+  /* â•â•â• SEARCH OVERLAY â•â•â• */
   .mobile-search-overlay {
     position: fixed;
     inset: 0;
@@ -4863,7 +4318,7 @@ img, video, iframe, canvas {
     background: rgba(212, 168, 83, 0.1);
   }
 
-  /* ═══ SEARCH STATE MACHINE: TAB BAR ═══ */
+  /* â•â•â• SEARCH STATE MACHINE: TAB BAR â•â•â• */
 
   /* Search bar pill (morphs from the search button) */
   .tab-search-bar {
@@ -4951,7 +4406,7 @@ img, video, iframe, canvas {
     opacity: 0; max-width: 0; flex: 0; padding: 0; pointer-events: none;
   }
 
-  /* ═══ SUGGESTIONS PANEL (slides up from tab bar) ═══ */
+  /* â•â•â• SUGGESTIONS PANEL (slides up from tab bar) â•â•â• */
   .search-suggestions-backdrop {
     position: fixed;
     inset: 0;
@@ -5062,12 +4517,12 @@ img, video, iframe, canvas {
   /* Extra body padding so content isn't hidden behind tab bar */
   body { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 
-  /* Hide the floating admin button on mobile — it overlaps the tab bar */
+  /* Hide the floating admin button on mobile â€” it overlaps the tab bar */
 }
 
-/* ═══════════════════════════════════════════════════════════
-   LIVE EVENT — ROOM SHELL
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   LIVE EVENT â€” ROOM SHELL
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 .room-shell {
   display: flex;
@@ -5120,7 +4575,7 @@ img, video, iframe, canvas {
   white-space: nowrap;
 }
 
-/* Action buttons container — pushed to the right */
+/* Action buttons container â€” pushed to the right */
 .room-shell-actions {
   display: flex;
   align-items: center;
@@ -5129,7 +4584,7 @@ img, video, iframe, canvas {
   flex-shrink: 0;
 }
 
-/* Leave button — always visible */
+/* Leave button â€” always visible */
 .room-shell-leave-btn {
   display: inline-flex;
   align-items: center;
@@ -5152,7 +4607,7 @@ img, video, iframe, canvas {
   transform: scale(1.03);
 }
 
-/* End event button — admin/host only, more destructive */
+/* End event button â€” admin/host only, more destructive */
 .room-shell-end-btn {
   display: inline-flex;
   align-items: center;
@@ -5268,9 +4723,9 @@ img, video, iframe, canvas {
 }
 
 
-/* ═══════════════════════════════════════════════════════════════
-   MOBILE PERFORMANCE — Thermal & Battery Optimizations
-   ═══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE PERFORMANCE â€” Thermal & Battery Optimizations
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    Problem: backdrop-filter:blur() creates a GPU compositing layer
    for EVERY element using it. With 50+ instances, mobile GPUs
    overheat trying to re-composite all layers during scroll.
@@ -5278,30 +4733,30 @@ img, video, iframe, canvas {
    Solution: Replace blur with solid semi-transparent backgrounds
    on mobile. Visually nearly identical, GPU cost reduced from
    50+ compositing layers to zero blur layers.
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (max-width: 768px) {
-  /* ── Kill ALL backdrop-filter blur — the single biggest heat source ── */
+  /* â”€â”€ Kill ALL backdrop-filter blur â€” the single biggest heat source â”€â”€ */
   * {
     -webkit-backdrop-filter: none !important;
     backdrop-filter: none !important;
   }
 
-  /* ── Disable film grain pseudo-element (fixed SVG filter = constant GPU paint) ── */
+  /* â”€â”€ Disable film grain pseudo-element (fixed SVG filter = constant GPU paint) â”€â”€ */
   body::before {
     display: none !important;
   }
 
-  /* ── Hide Scene3D canvas (JS also skips rendering it, belt-and-suspenders) ── */
+  /* â”€â”€ Hide Scene3D canvas (JS also skips rendering it, belt-and-suspenders) â”€â”€ */
   .scene-3d-canvas {
     display: none !important;
   }
 
-  /* ── Kill CSS class-based infinite animations ──────────────────────────────
+  /* â”€â”€ Kill CSS class-based infinite animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
      These are NOT caught by [style*="animation"] because they are defined in
      stylesheets, not inline styles. Each one runs a continual GPU repaint loop.
   */
 
-  /* Navbar logo dot — lightweight opacity animation, keep it on mobile */
+  /* Navbar logo dot â€” lightweight opacity animation, keep it on mobile */
 
   /* Hero label dot */
   .hero-label .dot {
@@ -5320,7 +4775,7 @@ img, video, iframe, canvas {
     animation: none !important;
   }
 
-  /* ── Disable page-entrance animations on mobile ──────────────────────────
+  /* â”€â”€ Disable page-entrance animations on mobile â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
      These add visual polish on desktop but cause layout jank on mobile as
      elements animate in. Since the page loads fast on mobile anyway, skip them.
   */
@@ -5332,7 +4787,7 @@ img, video, iframe, canvas {
     transform: none !important;
   }
 
-  /* No staggered delay — everything appears instantly */
+  /* No staggered delay â€” everything appears instantly */
   /* IMPORTANT: .delay-* classes have opacity:0 as base; must override so elements are visible */
   .delay-1, .delay-2, .delay-3, .delay-4, .delay-5 {
     animation: none !important;
@@ -5342,17 +4797,17 @@ img, video, iframe, canvas {
     transition-delay: 0ms !important;
   }
 
-  /* ── Promote MobileTabBar to its own GPU compositing layer ───────────────
+  /* â”€â”€ Promote MobileTabBar to its own GPU compositing layer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
      Without this, the browser repaints the tab bar whenever ANYTHING on the
      page changes (e.g. scroll position). With its own layer, the tab bar
-     composites independently — zero repaint cost during scrolling.
+     composites independently â€” zero repaint cost during scrolling.
   */
   .mobile-tab-bar {
     transform: translateZ(0);
     will-change: transform;
   }
 
-  /* ── Remove hover transforms (touch devices don't hover) ─────────────────
+  /* â”€â”€ Remove hover transforms (touch devices don't hover) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
      Hover transforms with translateY/scale trigger compositing layer creation
      on mobile, which wastes memory and GPU time.
   */
@@ -5364,26 +4819,26 @@ img, video, iframe, canvas {
     box-shadow: var(--shadow-md) !important;
   }
 
-  /* ── Simplify navbar transition (avoids style recalc on every scroll) ── */
+  /* â”€â”€ Simplify navbar transition (avoids style recalc on every scroll) â”€â”€ */
   .navbar {
     transition: background 0.15s linear !important;
   }
 }
 
 
-/* ═══════════════════════════════════════════════════════════════
-   MOBILE PREMIUM BACKGROUNDS — Depth, Warmth & Visual Rhythm
-   ═══════════════════════════════════════════════════════════════
-   Problem: Every section sits on flat #0d0f14 — no depth, no
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   MOBILE PREMIUM BACKGROUNDS â€” Depth, Warmth & Visual Rhythm
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Problem: Every section sits on flat #0d0f14 â€” no depth, no
    contrast between areas, everything merges into a dull black slab.
    
    Solution: Warm gradient body, subtle section-level color washes,
    better glass fallbacks, and soft dividers between sections.
    ALL GPU-safe: no backdrop-filter, no animations, no 3D.
-   ═══════════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 @media (max-width: 768px) {
 
-  /* ── 1. Body: warm gradient instead of flat black ── */
+  /* â”€â”€ 1. Body: warm gradient instead of flat black â”€â”€ */
   body {
     background:
       linear-gradient(
@@ -5397,7 +4852,7 @@ img, video, iframe, canvas {
     background-attachment: fixed !important;
   }
 
-  /* iOS doesn't support fixed backgrounds well — fallback */
+  /* iOS doesn't support fixed backgrounds well â€” fallback */
   @supports (-webkit-touch-callout: none) {
     body {
       background: linear-gradient(180deg, #0d0f14, #12162a, #0f1119) !important;
@@ -5405,7 +4860,7 @@ img, video, iframe, canvas {
     }
   }
 
-  /* ── 2. Sections: alternating warm/cool tones for rhythm ── */
+  /* â”€â”€ 2. Sections: alternating warm/cool tones for rhythm â”€â”€ */
   .section:nth-child(odd) {
     background: rgba(255, 255, 255, 0.012);
   }
@@ -5414,13 +4869,13 @@ img, video, iframe, canvas {
     background: transparent;
   }
 
-  /* ── 3. Section dividers between content areas ── */
+  /* â”€â”€ 3. Section dividers between content areas â”€â”€ */
   .section + .section {
     border-top: 1px solid rgba(212, 168, 83, 0.06);
     box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.02);
   }
 
-  /* ── 4. Glass card mobile fallback: warmer, lifted ── */
+  /* â”€â”€ 4. Glass card mobile fallback: warmer, lifted â”€â”€ */
   .glass-card {
     background: linear-gradient(
       160deg,
@@ -5432,7 +4887,7 @@ img, video, iframe, canvas {
                 inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
   }
 
-  /* ── 5. Glass panels: lifted from background ── */
+  /* â”€â”€ 5. Glass panels: lifted from background â”€â”€ */
   .glass-panel {
     background: linear-gradient(
       160deg,
@@ -5443,7 +4898,7 @@ img, video, iframe, canvas {
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25) !important;
   }
 
-  /* ── 6. Feature cards: richer tints on mobile ── */
+  /* â”€â”€ 6. Feature cards: richer tints on mobile â”€â”€ */
   .feature-card-gold {
     background: linear-gradient(135deg, rgba(212,168,83,0.12), rgba(16,18,30,0.85)) !important;
     border: 1px solid rgba(212,168,83,0.12) !important;
@@ -5457,7 +4912,7 @@ img, video, iframe, canvas {
     border: 1px solid rgba(59,130,246,0.10) !important;
   }
 
-  /* ── 7. Footer: subtle lift with warm top border ── */
+  /* â”€â”€ 7. Footer: subtle lift with warm top border â”€â”€ */
   .footer {
     background: linear-gradient(
       180deg,
@@ -5472,14 +4927,14 @@ img, video, iframe, canvas {
     background: linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.4), transparent) !important;
   }
 
-  /* ── 8. Navbar scrolled: warmer, more premium ── */
+  /* â”€â”€ 8. Navbar scrolled: warmer, more premium â”€â”€ */
   .navbar.scrolled {
     background: rgba(14, 16, 26, 0.92) !important;
     border-bottom-color: rgba(212, 168, 83, 0.06) !important;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
   }
 
-  /* ── 9. Mobile tab bar: match the warmer palette ── */
+  /* â”€â”€ 9. Mobile tab bar: match the warmer palette â”€â”€ */
   .tab-pill-nav {
     background: rgba(14, 16, 28, 0.92) !important;
     border-color: rgba(212, 168, 83, 0.07) !important;
@@ -5488,7 +4943,7 @@ img, video, iframe, canvas {
       0 0 0 0.5px rgba(212, 168, 83, 0.04) inset !important;
   }
 
-  /* ── 10. Mobile drawer: warmer ambient gradient ── */
+  /* â”€â”€ 10. Mobile drawer: warmer ambient gradient â”€â”€ */
   .mobile-drawer {
     background: linear-gradient(
       195deg,
@@ -5497,7 +4952,7 @@ img, video, iframe, canvas {
     ) !important;
   }
 
-  /* ── 11. Form inputs: lifted from background ── */
+  /* â”€â”€ 11. Form inputs: lifted from background â”€â”€ */
   .form-input, .form-textarea, .form-select {
     background: rgba(18, 22, 38, 0.8) !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
@@ -5506,7 +4961,7 @@ img, video, iframe, canvas {
     background: rgba(20, 24, 42, 0.9) !important;
   }
 
-  /* ── 12. Casting cards: visible on mobile ── */
+  /* â”€â”€ 12. Casting cards: visible on mobile â”€â”€ */
   .casting-card {
     background: linear-gradient(
       160deg,
@@ -5516,7 +4971,7 @@ img, video, iframe, canvas {
     border-color: rgba(255, 255, 255, 0.06) !important;
   }
 
-  /* ── 13. Project card overlays: slightly warmer gradient ── */
+  /* â”€â”€ 13. Project card overlays: slightly warmer gradient â”€â”€ */
   .project-card-overlay {
     background: linear-gradient(
       180deg,
@@ -5525,7 +4980,7 @@ img, video, iframe, canvas {
     ) !important;
   }
 
-  /* ── 14. Badge visibility — ensure badges pop on warmer bg ── */
+  /* â”€â”€ 14. Badge visibility â€” ensure badges pop on warmer bg â”€â”€ */
   .badge-gold { background: rgba(212, 168, 83, 0.12) !important; }
   .badge-green { background: rgba(52, 211, 153, 0.12) !important; }
   .badge-blue { background: rgba(96, 165, 250, 0.12) !important; }
@@ -5533,8 +4988,8 @@ img, video, iframe, canvas {
 }
 
 
-/* ── Page transition keyframes (used by PageTransition.tsx on mobile) ──
-   GPU-safe: transform + opacity only — no layout properties touched.
+/* â”€â”€ Page transition keyframes (used by PageTransition.tsx on mobile) â”€â”€
+   GPU-safe: transform + opacity only â€” no layout properties touched.
    The 20px starting offset matches the 8px exit translate for a coherent
    slide feel without being jarring on small screens.                    */
 @keyframes slideInRight {
@@ -5559,7 +5014,7 @@ img, video, iframe, canvas {
   }
 }
 
-/* ── Respect prefers-reduced-motion globally ── */
+/* â”€â”€ Respect prefers-reduced-motion globally â”€â”€ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

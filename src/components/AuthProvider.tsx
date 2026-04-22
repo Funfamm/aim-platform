@@ -12,7 +12,6 @@ interface User {
     hasPassword?: boolean
     authProvider?: 'google' | 'apple' | 'credentials'
     accentColor?: string
-    themeMode?: string
 }
 
 interface AuthContextType {
@@ -26,11 +25,16 @@ interface AuthContextType {
 
 // ── Accent colour definitions (must match ProfileTab.tsx & layout.tsx) ──
 const ACCENT_COLORS: Record<string, { base: string; light: string; dark: string; glow: string; glowStrong: string; lift: string }> = {
-    gold:   { base: '#e4b95a', light: '#f5dfa0', dark: '#b8922e', glow: 'rgba(228,185,90,0.15)', glowStrong: 'rgba(228,185,90,0.25)', lift: '0 8px 30px rgba(228,185,90,0.25),0 2px 8px rgba(228,185,90,0.15)' },
-    silver: { base: '#c8c8d4', light: '#e8e8f0', dark: '#8888a0', glow: 'rgba(200,200,212,0.15)', glowStrong: 'rgba(200,200,212,0.25)', lift: '0 8px 30px rgba(200,200,212,0.25),0 2px 8px rgba(200,200,212,0.15)' },
-    ember:  { base: '#f06b47', light: '#f9a88e', dark: '#b84820', glow: 'rgba(240,107,71,0.15)', glowStrong: 'rgba(240,107,71,0.25)', lift: '0 8px 30px rgba(240,107,71,0.25),0 2px 8px rgba(240,107,71,0.15)' },
-    jade:   { base: '#34d399', light: '#6ee7b7', dark: '#059669', glow: 'rgba(52,211,153,0.15)', glowStrong: 'rgba(52,211,153,0.25)', lift: '0 8px 30px rgba(52,211,153,0.25),0 2px 8px rgba(52,211,153,0.15)' },
-    azure:  { base: '#60a5fa', light: '#93c5fd', dark: '#2563eb', glow: 'rgba(96,165,250,0.15)', glowStrong: 'rgba(96,165,250,0.25)', lift: '0 8px 30px rgba(96,165,250,0.25),0 2px 8px rgba(96,165,250,0.15)' },
+    gold:     { base: '#e4b95a', light: '#f5dfa0', dark: '#b8922e', glow: 'rgba(228,185,90,0.15)', glowStrong: 'rgba(228,185,90,0.25)', lift: '0 8px 30px rgba(228,185,90,0.25),0 2px 8px rgba(228,185,90,0.15)' },
+    silver:   { base: '#c8c8d4', light: '#e8e8f0', dark: '#8888a0', glow: 'rgba(200,200,212,0.15)', glowStrong: 'rgba(200,200,212,0.25)', lift: '0 8px 30px rgba(200,200,212,0.25),0 2px 8px rgba(200,200,212,0.15)' },
+    ember:    { base: '#f06b47', light: '#f9a88e', dark: '#b84820', glow: 'rgba(240,107,71,0.15)', glowStrong: 'rgba(240,107,71,0.25)', lift: '0 8px 30px rgba(240,107,71,0.25),0 2px 8px rgba(240,107,71,0.15)' },
+    jade:     { base: '#34d399', light: '#6ee7b7', dark: '#059669', glow: 'rgba(52,211,153,0.15)', glowStrong: 'rgba(52,211,153,0.25)', lift: '0 8px 30px rgba(52,211,153,0.25),0 2px 8px rgba(52,211,153,0.15)' },
+    azure:    { base: '#60a5fa', light: '#93c5fd', dark: '#2563eb', glow: 'rgba(96,165,250,0.15)', glowStrong: 'rgba(96,165,250,0.25)', lift: '0 8px 30px rgba(96,165,250,0.25),0 2px 8px rgba(96,165,250,0.15)' },
+    rose:     { base: '#f472b6', light: '#f9a8d4', dark: '#db2777', glow: 'rgba(244,114,182,0.15)', glowStrong: 'rgba(244,114,182,0.25)', lift: '0 8px 30px rgba(244,114,182,0.25),0 2px 8px rgba(244,114,182,0.15)' },
+    violet:   { base: '#a78bfa', light: '#c4b5fd', dark: '#7c3aed', glow: 'rgba(167,139,250,0.15)', glowStrong: 'rgba(167,139,250,0.25)', lift: '0 8px 30px rgba(167,139,250,0.25),0 2px 8px rgba(167,139,250,0.15)' },
+    copper:   { base: '#d4956a', light: '#e8b896', dark: '#a0623a', glow: 'rgba(212,149,106,0.15)', glowStrong: 'rgba(212,149,106,0.25)', lift: '0 8px 30px rgba(212,149,106,0.25),0 2px 8px rgba(212,149,106,0.15)' },
+    platinum: { base: '#e2e8f0', light: '#f1f5f9', dark: '#94a3b8', glow: 'rgba(226,232,240,0.15)', glowStrong: 'rgba(226,232,240,0.25)', lift: '0 8px 30px rgba(226,232,240,0.25),0 2px 8px rgba(226,232,240,0.15)' },
+    crimson:  { base: '#ef4444', light: '#f87171', dark: '#b91c1c', glow: 'rgba(239,68,68,0.15)', glowStrong: 'rgba(239,68,68,0.25)', lift: '0 8px 30px rgba(239,68,68,0.25),0 2px 8px rgba(239,68,68,0.15)' },
 }
 
 /** Apply accent colour CSS variables to the document root */
@@ -67,16 +71,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (data.user?.accentColor && ACCENT_COLORS[data.user.accentColor]) {
                     localStorage.setItem('aim-accent', data.user.accentColor)
                     applyAccentVars(data.user.accentColor)
-                }
-
-                // Apply saved theme immediately on login / refresh
-                if (data.user?.themeMode) {
-                    localStorage.setItem('aim-theme', data.user.themeMode)
-                    if (data.user.themeMode === 'light') {
-                        document.documentElement.setAttribute('data-theme', 'light')
-                    } else {
-                        document.documentElement.removeAttribute('data-theme')
-                    }
                 }
             } else {
                 setUser(null)
@@ -142,10 +136,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Reset accent colour to default gold & clear localStorage
         localStorage.removeItem('aim-accent')
         applyAccentVars('gold')
-
-        // Reset theme to dark & clear localStorage
-        localStorage.removeItem('aim-theme')
-        document.documentElement.removeAttribute('data-theme')
     }
 
     return (

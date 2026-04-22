@@ -13,7 +13,6 @@ interface ProfileTabProps {
         hasPassword?: boolean
         authProvider?: 'google' | 'apple' | 'credentials'
         accentColor?: string
-        themeMode?: string
     }
     refreshUser: () => Promise<void>
     hasCastingCalls?: boolean
@@ -97,6 +96,56 @@ const ACCENTS = [
         glowStrong: 'rgba(96,165,250,0.25)',
         lift: '0 8px 30px rgba(96,165,250,0.25),0 2px 8px rgba(96,165,250,0.15)',
     },
+    {
+        key: 'rose',
+        i18nKey: 'colorRose',
+        base: '#f472b6',
+        light: '#f9a8d4',
+        dark: '#db2777',
+        glow: 'rgba(244,114,182,0.15)',
+        glowStrong: 'rgba(244,114,182,0.25)',
+        lift: '0 8px 30px rgba(244,114,182,0.25),0 2px 8px rgba(244,114,182,0.15)',
+    },
+    {
+        key: 'violet',
+        i18nKey: 'colorViolet',
+        base: '#a78bfa',
+        light: '#c4b5fd',
+        dark: '#7c3aed',
+        glow: 'rgba(167,139,250,0.15)',
+        glowStrong: 'rgba(167,139,250,0.25)',
+        lift: '0 8px 30px rgba(167,139,250,0.25),0 2px 8px rgba(167,139,250,0.15)',
+    },
+    {
+        key: 'copper',
+        i18nKey: 'colorCopper',
+        base: '#d4956a',
+        light: '#e8b896',
+        dark: '#a0623a',
+        glow: 'rgba(212,149,106,0.15)',
+        glowStrong: 'rgba(212,149,106,0.25)',
+        lift: '0 8px 30px rgba(212,149,106,0.25),0 2px 8px rgba(212,149,106,0.15)',
+    },
+    {
+        key: 'platinum',
+        i18nKey: 'colorPlatinum',
+        base: '#e2e8f0',
+        light: '#f1f5f9',
+        dark: '#94a3b8',
+        glow: 'rgba(226,232,240,0.15)',
+        glowStrong: 'rgba(226,232,240,0.25)',
+        lift: '0 8px 30px rgba(226,232,240,0.25),0 2px 8px rgba(226,232,240,0.15)',
+    },
+    {
+        key: 'crimson',
+        i18nKey: 'colorCrimson',
+        base: '#ef4444',
+        light: '#f87171',
+        dark: '#b91c1c',
+        glow: 'rgba(239,68,68,0.15)',
+        glowStrong: 'rgba(239,68,68,0.25)',
+        lift: '0 8px 30px rgba(239,68,68,0.25),0 2px 8px rgba(239,68,68,0.15)',
+    },
 ] as const
 
 type AccentKey = typeof ACCENTS[number]['key']
@@ -153,39 +202,6 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
 
     const isOAuthOnly = !user.hasPassword && (user.authProvider === 'google' || user.authProvider === 'apple')
     const providerLabel = user.authProvider === 'google' ? 'Google' : user.authProvider === 'apple' ? 'Apple' : ''
-
-    // Theme — persisted to DB (server) + localStorage (instant/fallback)
-    const [themeMode, setThemeMode] = useState<'dark' | 'light'>(() => {
-        // Server value takes priority, then localStorage, then default
-        if (user.themeMode === 'light' || user.themeMode === 'dark') return user.themeMode
-        if (typeof window === 'undefined') return 'dark'
-        const local = localStorage.getItem('aim-theme')
-        return local === 'light' ? 'light' : 'dark'
-    })
-
-    function applyTheme(mode: 'dark' | 'light') {
-        if (mode === 'light') {
-            document.documentElement.setAttribute('data-theme', 'light')
-        } else {
-            document.documentElement.removeAttribute('data-theme')
-        }
-    }
-
-    useEffect(() => {
-        applyTheme(themeMode)
-    }, [themeMode])
-
-    function handleTheme(key: 'dark' | 'light') {
-        setThemeMode(key)
-        localStorage.setItem('aim-theme', key)
-        applyTheme(key)
-        // Persist to server (fire-and-forget)
-        fetch('/api/auth/profile', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ themeMode: key }),
-        }).catch(() => { /* silent */ })
-    }
 
     // Accent colour — persisted to DB (server) + localStorage (instant/fallback)
     const [accentKey, setAccentKey] = useState<AccentKey>(() => {
@@ -559,34 +575,9 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
                         <h3 style={sectionTitle}>🎨 {t('appearance')}</h3>
                         <p style={sectionDesc}>{t('appearanceDesc')}</p>
 
-                        {/* Theme switcher */}
-                        <label style={{ ...labelStyle, marginBottom: '6px' }}>{t('theme')}</label>
-                        <div
-                            role="radiogroup"
-                            aria-label="Theme selection"
-                            style={{ display: 'flex', gap: '3px', background: 'var(--bg-glass-light)', borderRadius: 'var(--radius-sm)', padding: '3px', border: '1px solid var(--border-subtle)', marginBottom: '4px' }}
-                        >
-                            {([['dark', `🌙 ${t('dark')}`], ['light', `☀️ ${t('light')}`]] as const).map(([key, label]) => (
-                                <button
-                                    key={key}
-                                    role="radio"
-                                    aria-checked={themeMode === key}
-                                    onClick={() => handleTheme(key)}
-                                    style={{
-                                        flex: 1, padding: '0.45rem 0.6rem', fontSize: '0.72rem', fontWeight: 600,
-                                        border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                                        background: themeMode === key ? 'var(--accent-gold)' : 'transparent',
-                                        color: themeMode === key ? 'var(--bg-primary)' : 'var(--text-tertiary)',
-                                        transition: 'all 0.25s ease',
-                                        boxShadow: themeMode === key ? 'var(--shadow-glow)' : 'none',
-                                        outline: 'none',
-                                    }}
-                                >{label}</button>
-                            ))}
-                        </div>
-
                         {/* Accent colour picker */}
                         <label style={{ ...labelStyle, marginBottom: '8px' }}>{t('accentColour')}</label>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginBottom: '10px' }}>{t('accentColourDesc')}</div>
                         <div
                             role="radiogroup"
                             aria-label="Accent colour selection"
