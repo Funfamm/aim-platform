@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
@@ -90,6 +91,7 @@ type ReviewSubtitle = {
 }
 
 export default function AdminProjectsPage() {
+    const router = useRouter()
     const [projects, setProjects] = useState<Project[]>([])
     const [loading, setLoading] = useState(true)
     const [sortBy, setSortBy] = useState<'default' | 'views'>('default')
@@ -784,7 +786,7 @@ export default function AdminProjectsPage() {
                     <h1 className="admin-page-title">Projects</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-tertiary)' }}>{projects.length} total</span>
-                        <button onClick={openCreate} className="btn btn-primary btn-sm">+ New Project</button>
+                        <button onClick={() => router.push('/admin/projects/new/edit')} className="btn btn-primary btn-sm">+ New Project</button>
                     </div>
                 </div>
 
@@ -988,7 +990,7 @@ export default function AdminProjectsPage() {
                                                 >
                                                     🎭 Cast
                                                 </button>
-                                                <button onClick={() => openEdit(project)} className="btn btn-ghost btn-sm">Edit</button>
+                                                <button onClick={() => router.push(`/admin/projects/${project.id}/edit`)} className="btn btn-ghost btn-sm">Edit</button>
                                                 <button
                                                     onClick={() => handleDelete(project.id, project.title)}
                                                     disabled={deleting === project.id}
