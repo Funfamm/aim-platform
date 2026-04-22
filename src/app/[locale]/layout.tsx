@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import AnalyticsTracker from "@/components/AnalyticsTracker";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { HtmlDirSetter } from "@/components/HtmlDirSetter";
+import OrientationFix from "@/components/OrientationFix";
 import Navbar from "@/components/Navbar";
 import MobileTabBar from "@/components/MobileTabBar";
 import PageTransition from "@/components/PageTransition";
@@ -63,6 +64,7 @@ export default async function LocaleLayout({
       <NextIntlClientProvider messages={messages}>
         <AuthProvider>
           <HtmlDirSetter locale={locale} dir={isRtl ? 'rtl' : 'ltr'} />
+          <OrientationFix />
           <AnalyticsTracker />
           <div dir={isRtl ? 'rtl' : 'ltr'} style={{ direction: isRtl ? 'rtl' : 'ltr' }}>
             <SiteSettingsWrapper>

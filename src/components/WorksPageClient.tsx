@@ -314,12 +314,14 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                 {/* Dark overlay behind cards — full-bleed, connects into footer */}
                 {/* NOTE: do NOT set both left AND right here — RTL mode overrides `left` to auto
                     when all three (left, right, width) are set, shifting the overlay off-screen.
-                    Use only left:50% + width:100vw + translateX(-50%) to centre in both directions. */}
+                    Use only left:50% + width:100dvw + translateX(-50%) to centre in both directions.
+                    dvw (dynamic viewport width) re-evaluates after orientation change on mobile;
+                    plain vw can be stale and keep landscape width after rotating back to portrait. */}
                 <div style={{
                     position: 'absolute',
                     top: 0, bottom: 0,
                     left: '50%',
-                    width: '100vw',
+                    width: '100dvw',
                     transform: 'translateX(-50%)',
                     background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
                     pointerEvents: 'none',
