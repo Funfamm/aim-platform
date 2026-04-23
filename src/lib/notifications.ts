@@ -317,6 +317,50 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
                 batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id }))
             )
         }
+
+        // ── Also email newsletter subscribers (non-registered users) ──
+        if (opts.type === 'content_publish' && settings?.emailsEnabled !== false) {
+            try {
+                const db = prisma as any
+                // Get all active subscribers
+                const subscribers: { email: string; name: string | null }[] =
+                    await db.subscriber.findMany({
+                        where: { active: true },
+                        select: { email: true, name: true },
+                    })
+
+                // Deduplicate: exclude subscribers whose email matches a registered user
+                const registeredEmails = new Set(
+                    (await db.user.findMany({ select: { email: true } }))
+                        .map((u: { email: string | null }) => u.email?.toLowerCase())
+                        .filter(Boolean)
+                )
+                const uniqueSubs = subscribers.filter(
+                    s => !registeredEmails.has(s.email.toLowerCase())
+                )
+
+                if (uniqueSubs.length > 0) {
+                    logger.info('notifications', `Also emailing ${uniqueSubs.length} newsletter subscribers`)
+                    const emailHtml = opts.emailHtml || ''
+                    const emailSubject = opts.emailSubject || opts.title
+
+                    for (let i = 0; i < uniqueSubs.length; i += BATCH) {
+                        const batch = uniqueSubs.slice(i, i + BATCH)
+                        await Promise.allSettled(
+                            batch.map(sub =>
+                                sendEmail({
+                                    to: sub.email,
+                                    subject: emailSubject,
+                                    html: emailHtml,
+                                }).catch(err => logger.error('notifications', `Subscriber email failed: ${sub.email}`, { error: err }))
+                            )
+                        )
+                    }
+                }
+            } catch (err) {
+                logger.error('notifications', 'Subscriber broadcast failed', { error: err })
+            }
+        }
     } catch (err) {
         logger.error('notifications', 'broadcastNotification failed', { error: err })
     }

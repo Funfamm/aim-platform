@@ -448,7 +448,7 @@ model SiteSettings {
   audioUploadEnabled            Boolean        @default(true)
   notifyOnNewRole               Boolean        @default(true)
   notifyOnAnnouncement          Boolean        @default(true)
-  notifyOnContentPublish        Boolean        @default(false)
+  notifyOnContentPublish        Boolean        @default(true)
   emailReplyTo                  String?
   resultRevealDelayHours        Int            @default(6)
   auditDelayHours               Int            @default(2)  // hours after submission to run auto-audit (legacy)

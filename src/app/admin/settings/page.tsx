@@ -737,7 +737,7 @@ export default function AdminSettingsPage() {
         smtpHost: '', smtpPort: 587, smtpUser: '', smtpPass: '',
         smtpFromName: '', smtpFromEmail: '', smtpSecure: false,
         emailsEnabled: false, emailTransport: 'graph', emailReplyTo: '',
-        notifyOnNewRole: true, notifyOnAnnouncement: true, notifyOnContentPublish: false,
+        notifyOnNewRole: true, notifyOnAnnouncement: true, notifyOnContentPublish: true,
     })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
@@ -852,7 +852,7 @@ export default function AdminSettingsPage() {
                     emailReplyTo: data.emailReplyTo || '',
                     notifyOnNewRole: data.notifyOnNewRole ?? true,
                     notifyOnAnnouncement: data.notifyOnAnnouncement ?? true,
-                    notifyOnContentPublish: data.notifyOnContentPublish ?? false,
+                    notifyOnContentPublish: data.notifyOnContentPublish ?? true,
                     aboutPageData: data.aboutPageData || '',
                 })
                 setDirty(false)
