@@ -18,14 +18,15 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { title, message, link, translations, bodyHtml, imageUrl, notifyGroups } = body as {
+    const { title, message, link, translations, bodyHtml, imageUrl, notifyGroups, specificUserIds } = body as {
         title?: string
         message?: string
         link?: string
         translations?: Record<string, Record<string, string>>
         bodyHtml?: string
         imageUrl?: string
-        notifyGroups?: { subscribers?: boolean; members?: boolean }
+        notifyGroups?: { subscribers?: boolean; members?: boolean; cast?: boolean }
+        specificUserIds?: string[]
     }
 
     if (!title || !message) {
@@ -47,12 +48,12 @@ export async function POST(req: Request) {
     }
 
     // Read audience selection — default to nobody if omitted (admin must opt-in each group)
-    const groups: { subscribers?: boolean; members?: boolean } = notifyGroups ?? {
-        subscribers: false, members: false,
+    const groups: { subscribers?: boolean; members?: boolean; cast?: boolean } = notifyGroups ?? {
+        subscribers: false, members: false, cast: false,
     }
 
     // Fire-and-forget — returns immediately; delivery is async
-    notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml, groups).catch((err) => {
+    notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml, groups, specificUserIds).catch((err) => {
         console.error('[announcements] broadcast failed:', err)
     })
 

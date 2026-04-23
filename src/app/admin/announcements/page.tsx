@@ -57,10 +57,16 @@ export default function AnnouncementsAdminPage() {
     // ── Broadcast state ──
     const [sending, setSending] = useState(false)
     const [result, setResult]   = useState<{ success?: boolean; error?: string } | null>(null)
-    const [notifyGroups, setNotifyGroups] = useState<{ subscribers: boolean; members: boolean }>({
+    const [notifyGroups, setNotifyGroups] = useState<{ subscribers: boolean; members: boolean; cast: boolean }>({
         members: true,
         subscribers: false,
+        cast: false,
     })
+    // Specific user targeting
+    const [userSearch, setUserSearch] = useState('')
+    const [userResults, setUserResults] = useState<{ id: string; name: string | null; email: string }[]>([])
+    const [selectedUsers, setSelectedUsers] = useState<{ id: string; name: string | null; email: string }[]>([])
+    const [searchingUsers, setSearchingUsers] = useState(false)
 
     // ── Persist draft to localStorage whenever relevant state changes ──
     useEffect(() => {
@@ -78,9 +84,35 @@ export default function AnnouncementsAdminPage() {
 
     // ── Derived ──
     const allTranslated = hasTranslated && missingLocales.length === 0
-    const someAudienceSelected = notifyGroups.members || notifyGroups.subscribers
+    const someAudienceSelected = notifyGroups.members || notifyGroups.subscribers || notifyGroups.cast || selectedUsers.length > 0
     const canBroadcast  = allTranslated && title.trim() && message.trim() && !sending && someAudienceSelected
     const someRetrying  = retryingLocales.length > 0
+
+    // ── User search with debounce ──
+    useEffect(() => {
+        if (!userSearch.trim() || userSearch.trim().length < 2) {
+            setUserResults([])
+            return
+        }
+        setSearchingUsers(true)
+        const t = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/admin/users?search=${encodeURIComponent(userSearch.trim())}&limit=10`)
+                if (res.ok) {
+                    const data = await res.json()
+                    const users = (data.users || []).map((u: { id: string; name: string | null; email: string }) => ({
+                        id: u.id, name: u.name, email: u.email,
+                    }))
+                    // Filter out already-selected users
+                    const selectedIds = new Set(selectedUsers.map(u => u.id))
+                    setUserResults(users.filter((u: { id: string }) => !selectedIds.has(u.id)))
+                }
+            } catch { /* ignore */ }
+            finally { setSearchingUsers(false) }
+        }, 300)
+        return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userSearch])
 
     // ─────────────────────────────────────────────────────────────────────────
     // Core translate call — handles both full translate and per-locale retries
@@ -193,6 +225,7 @@ export default function AnnouncementsAdminPage() {
                     imageUrl: imageUrl.trim() || undefined,
                     link: link.trim() || undefined,
                     notifyGroups,
+                    specificUserIds: selectedUsers.map(u => u.id),
                     // Thread translated bodyText back as bodyHtml in each locale's translation entry
                     translations: Object.fromEntries(
                         Object.entries(translations).map(([locale, t]) => [
@@ -560,6 +593,7 @@ export default function AnnouncementsAdminPage() {
                                 {([
                                     { key: 'members' as const, icon: '👥', label: 'Registered Members', desc: 'Logged-in users with announcement notifications enabled.' },
                                     { key: 'subscribers' as const, icon: '📬', label: 'Newsletter Subscribers', desc: 'People who signed up for content updates — not logged-in users.' },
+                                    { key: 'cast' as const, icon: '🎭', label: 'Cast Members', desc: 'Users who have applied to casting calls on any project.' },
                                 ] as const).map(group => (
                                     <label key={group.key} style={{
                                         display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px 12px',
@@ -583,7 +617,96 @@ export default function AnnouncementsAdminPage() {
                                 ))}
                             </div>
                             {!someAudienceSelected && (
-                                <p style={{ margin: '8px 0 0', fontSize: '0.7rem', color: '#ef4444' }}>⚠️ Select at least one audience group to broadcast.</p>
+                                <p style={{ margin: '8px 0 0', fontSize: '0.7rem', color: '#ef4444' }}>⚠️ Select at least one audience group or specific user to broadcast.</p>
+                            )}
+                        </div>
+
+                        {/* Specific User Targeting */}
+                        <div style={{
+                            padding: '14px 18px', borderRadius: '12px',
+                            background: 'rgba(59,130,246,0.04)', border: '1px solid rgba(59,130,246,0.15)',
+                        }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '10px' }}>
+                                🎯 Target Specific Users (optional)
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
+                                Search by name or email to send to individual users — in addition to selected audience groups.
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search users by name or email..."
+                                value={userSearch}
+                                onChange={e => setUserSearch(e.target.value)}
+                                style={{
+                                    width: '100%', padding: '9px 14px', borderRadius: '8px',
+                                    background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)',
+                                    color: 'var(--text-primary)', fontSize: '0.82rem', outline: 'none',
+                                }}
+                            />
+                            {searchingUsers && (
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', padding: '6px 0' }}>🔍 Searching...</div>
+                            )}
+                            {userResults.length > 0 && (
+                                <div style={{
+                                    marginTop: '6px', maxHeight: '180px', overflowY: 'auto',
+                                    borderRadius: '8px', border: '1px solid var(--border-subtle)',
+                                    background: 'var(--bg-secondary)',
+                                }}>
+                                    {userResults.map(u => (
+                                        <button
+                                            key={u.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedUsers(prev => [...prev, u])
+                                                setUserResults(prev => prev.filter(r => r.id !== u.id))
+                                                setUserSearch('')
+                                            }}
+                                            style={{
+                                                display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+                                                padding: '8px 12px', background: 'none', border: 'none',
+                                                borderBottom: '1px solid var(--border-subtle)',
+                                                color: 'var(--text-primary)', cursor: 'pointer', fontSize: '0.82rem',
+                                                textAlign: 'left',
+                                            }}
+                                            onMouseOver={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.06)')}
+                                            onMouseOut={e => (e.currentTarget.style.background = 'none')}
+                                        >
+                                            <span style={{ fontWeight: 600 }}>{u.name || 'No name'}</span>
+                                            <span style={{ color: 'var(--text-tertiary)', fontSize: '0.72rem' }}>{u.email}</span>
+                                            <span style={{ marginLeft: 'auto', color: '#60a5fa', fontSize: '0.7rem' }}>+ Add</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                            {selectedUsers.length > 0 && (
+                                <div style={{ marginTop: '10px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                    {selectedUsers.map(u => (
+                                        <span key={u.id} style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                            padding: '4px 10px', borderRadius: '99px', fontSize: '0.72rem', fontWeight: 600,
+                                            background: 'rgba(59,130,246,0.1)', color: '#60a5fa',
+                                            border: '1px solid rgba(59,130,246,0.2)',
+                                        }}>
+                                            {u.name || u.email}
+                                            <button
+                                                type="button"
+                                                onClick={() => setSelectedUsers(prev => prev.filter(s => s.id !== u.id))}
+                                                style={{
+                                                    background: 'none', border: 'none', color: '#ef4444',
+                                                    cursor: 'pointer', fontSize: '0.8rem', padding: 0, lineHeight: 1,
+                                                }}
+                                            >×</button>
+                                        </span>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedUsers([])}
+                                        style={{
+                                            background: 'none', border: 'none', color: 'var(--text-tertiary)',
+                                            cursor: 'pointer', fontSize: '0.68rem',
+                                        }}
+                                    >Clear all</button>
+                                </div>
                             )}
                         </div>
 

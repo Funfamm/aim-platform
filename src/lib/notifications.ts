@@ -324,49 +324,9 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             )
         }
 
-        // ── Also email newsletter subscribers (non-registered users) ──
-        if (opts.type === 'content_publish' && settings?.emailsEnabled !== false) {
-            try {
-                const db = prisma as any
-                // Get all active subscribers
-                const subscribers: { email: string; name: string | null }[] =
-                    await db.subscriber.findMany({
-                        where: { active: true },
-                        select: { email: true, name: true },
-                    })
-
-                // Deduplicate: exclude subscribers whose email matches a registered user
-                const registeredEmails = new Set(
-                    (await db.user.findMany({ select: { email: true } }))
-                        .map((u: { email: string | null }) => u.email?.toLowerCase())
-                        .filter(Boolean)
-                )
-                const uniqueSubs = subscribers.filter(
-                    s => !registeredEmails.has(s.email.toLowerCase())
-                )
-
-                if (uniqueSubs.length > 0) {
-                    logger.info('notifications', `Also emailing ${uniqueSubs.length} newsletter subscribers`)
-                    const emailHtml = opts.emailHtml || ''
-                    const emailSubject = opts.emailSubject || opts.title
-
-                    for (let i = 0; i < uniqueSubs.length; i += BATCH) {
-                        const batch = uniqueSubs.slice(i, i + BATCH)
-                        await Promise.allSettled(
-                            batch.map(sub =>
-                                sendEmail({
-                                    to: sub.email,
-                                    subject: emailSubject,
-                                    html: emailHtml,
-                                }).catch(err => logger.error('notifications', `Subscriber email failed: ${sub.email}`, { error: err }))
-                            )
-                        )
-                    }
-                }
-            } catch (err) {
-                logger.error('notifications', 'Subscriber broadcast failed', { error: err })
-            }
-        }
+        // NOTE: Subscriber emails are handled separately by notifyContentPublish()
+        // and notifyAnnouncement() with proper notifyGroups gating. Do NOT add
+        // subscriber logic here — it would bypass the audience selection gate.
     } catch (err) {
         logger.error('notifications', 'broadcastNotification failed', { error: err })
     }
@@ -670,7 +630,8 @@ export async function notifyAnnouncement(
     prebuiltTranslations?: Record<string, Record<string, string>> | null,
     imageUrl?: string,
     bodyHtml?: string,
-    notifyGroups: { subscribers?: boolean; members?: boolean } = { subscribers: false, members: true },
+    notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = { subscribers: false, members: true, cast: false },
+    specificUserIds?: string[],
 ): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/notifications'
@@ -746,6 +707,50 @@ export async function notifyAnnouncement(
                 })
                 if (!sent) logger.warn('notifications', `Subscriber announcement email failed: ${sub.email}`)
             }))
+        }
+    }
+
+    // ── Cast members (all applicants across all projects) ──────────────────────
+    if (notifyGroups.cast === true) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = prisma as any
+        const castApplicants = await db.application.findMany({
+            where: { userId: { not: null } },
+            select: { userId: true },
+            distinct: ['userId'],
+        })
+        const castUserIds = castApplicants.map((a: { userId: string }) => a.userId)
+        if (castUserIds.length > 0) {
+            logger.info('notifications', `Announcement to ${castUserIds.length} cast members`)
+            await broadcastNotification({ ...broadcastOpts, targetUserIds: castUserIds })
+        }
+    }
+
+    // ── Specific users (admin-selected individual targets) ─────────────────────
+    if (specificUserIds && specificUserIds.length > 0) {
+        // Deduplicate: exclude users already notified via Members (all) or Cast groups
+        const alreadyNotified = new Set<string>()
+        if (notifyGroups.members === true) {
+            // Members broadcast hits ALL users — so every specificUserId is already covered
+            // No need to re-send to any of them
+            logger.info('notifications', `Skipping ${specificUserIds.length} specific users — already covered by Members broadcast`)
+        } else {
+            // Only exclude cast member IDs if cast was also selected
+            if (notifyGroups.cast === true) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const db2 = prisma as any
+                const castApps = await db2.application.findMany({
+                    where: { userId: { not: null } },
+                    select: { userId: true },
+                    distinct: ['userId'],
+                })
+                castApps.forEach((a: { userId: string }) => alreadyNotified.add(a.userId))
+            }
+            const dedupedIds = specificUserIds.filter(id => !alreadyNotified.has(id))
+            if (dedupedIds.length > 0) {
+                logger.info('notifications', `Announcement to ${dedupedIds.length} specific users (${specificUserIds.length - dedupedIds.length} deduped)`)
+                await broadcastNotification({ ...broadcastOpts, targetUserIds: dedupedIds })
+            }
         }
     }
 }

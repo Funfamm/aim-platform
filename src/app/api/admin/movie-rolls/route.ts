@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { translateAndSave } from '@/lib/translate'
 
 function slugify(text: string) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -58,6 +59,27 @@ export async function POST(req: Request) {
         },
     })
 
+    // Fire-and-forget: auto-translate the roll title to all languages
+    if (!body.titleI18n) {
+        translateAndSave(
+            { title: body.title },
+            async (translations) => {
+                // translateAndSave returns { locale: { title: "..." } }
+                // Convert to titleI18n format: { locale: "..." }
+                const parsed = JSON.parse(translations)
+                const flat: Record<string, string> = {}
+                for (const [loc, fields] of Object.entries(parsed)) {
+                    flat[loc] = (fields as Record<string, string>).title || ''
+                }
+                await prisma.movieRoll.update({
+                    where: { id: roll.id },
+                    data: { titleI18n: JSON.stringify(flat) },
+                })
+            },
+            'all'
+        )
+    }
+
     return NextResponse.json(roll, { status: 201 })
 }
 
@@ -83,6 +105,25 @@ export async function PUT(req: Request) {
             ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
         },
     })
+
+    // Fire-and-forget: re-translate if title changed and no manual titleI18n provided
+    if (body.title && !body.titleI18n) {
+        translateAndSave(
+            { title: body.title },
+            async (translations) => {
+                const parsed = JSON.parse(translations)
+                const flat: Record<string, string> = {}
+                for (const [loc, fields] of Object.entries(parsed)) {
+                    flat[loc] = (fields as Record<string, string>).title || ''
+                }
+                await prisma.movieRoll.update({
+                    where: { id: body.id },
+                    data: { titleI18n: JSON.stringify(flat) },
+                })
+            },
+            'all'
+        )
+    }
 
     return NextResponse.json(roll)
 }
