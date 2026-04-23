@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
 
 interface AuditRow {
@@ -41,8 +41,38 @@ export default function AdminAuditPage() {
     const [from, setFrom] = useState('')
     const [to, setTo] = useState('')
 
-    // fetchLogs manages page state internally so effects only call one function
-    const fetchLogs = useCallback(async (p: number) => {
+    // Re-fetch whenever filters change (page resets to 1)
+    // or when page changes via pagination buttons.
+    // All setState calls live inside the async function defined within the effect.
+    useEffect(() => {
+        let cancelled = false
+        const p = 1
+        setPage(p)
+
+        const params = new URLSearchParams({ page: String(p), limit: '50' })
+        if (action) params.set('action', action)
+        if (adminEmail) params.set('adminEmail', adminEmail)
+        if (targetEmail) params.set('targetEmail', targetEmail)
+        if (from) params.set('from', from)
+        if (to) params.set('to', to)
+
+        setLoading(true)
+        fetch(`/api/admin/audit?${params}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (cancelled || !data) return
+                setLogs(data.logs)
+                setTotal(data.total)
+                setTotalPages(data.pagination.totalPages)
+                setLoading(false)
+            })
+            .catch(() => { if (!cancelled) setLoading(false) })
+
+        return () => { cancelled = true }
+    }, [action, adminEmail, targetEmail, from, to]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Pagination — fetch a specific page without resetting filters
+    function goToPage(p: number) {
         setPage(p)
         setLoading(true)
         const params = new URLSearchParams({ page: String(p), limit: '50' })
@@ -51,18 +81,17 @@ export default function AdminAuditPage() {
         if (targetEmail) params.set('targetEmail', targetEmail)
         if (from) params.set('from', from)
         if (to) params.set('to', to)
-        const res = await fetch(`/api/admin/audit?${params}`)
-        if (res.ok) {
-            const data = await res.json()
-            setLogs(data.logs)
-            setTotal(data.total)
-            setTotalPages(data.pagination.totalPages)
-        }
-        setLoading(false)
-    }, [action, adminEmail, targetEmail, from, to])
-
-    // Reset to page 1 whenever filters change
-    useEffect(() => { fetchLogs(1) }, [fetchLogs])
+        fetch(`/api/admin/audit?${params}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (!data) return
+                setLogs(data.logs)
+                setTotal(data.total)
+                setTotalPages(data.pagination.totalPages)
+                setLoading(false)
+            })
+            .catch(() => setLoading(false))
+    }
 
     return (
         <div className="admin-layout">
@@ -140,10 +169,10 @@ export default function AdminAuditPage() {
                 {/* Pagination */}
                 {totalPages > 1 && (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '16px' }}>
-                        <button disabled={page <= 1} onClick={() => fetchLogs(page - 1)}
+                        <button disabled={page <= 1} onClick={() => goToPage(page - 1)}
                             style={{ ...inp, cursor: page > 1 ? 'pointer' : 'not-allowed', opacity: page <= 1 ? 0.3 : 1 }}>Prev</button>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Page {page} of {totalPages.toLocaleString()}</span>
-                        <button disabled={page >= totalPages} onClick={() => fetchLogs(page + 1)}
+                        <button disabled={page >= totalPages} onClick={() => goToPage(page + 1)}
                             style={{ ...inp, cursor: page < totalPages ? 'pointer' : 'not-allowed', opacity: page >= totalPages ? 0.3 : 1 }}>Next</button>
                     </div>
                 )}

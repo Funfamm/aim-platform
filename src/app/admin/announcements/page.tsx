@@ -57,6 +57,10 @@ export default function AnnouncementsAdminPage() {
     // ── Broadcast state ──
     const [sending, setSending] = useState(false)
     const [result, setResult]   = useState<{ success?: boolean; error?: string } | null>(null)
+    const [notifyGroups, setNotifyGroups] = useState<{ subscribers: boolean; members: boolean }>({
+        members: true,
+        subscribers: false,
+    })
 
     // ── Persist draft to localStorage whenever relevant state changes ──
     useEffect(() => {
@@ -74,7 +78,8 @@ export default function AnnouncementsAdminPage() {
 
     // ── Derived ──
     const allTranslated = hasTranslated && missingLocales.length === 0
-    const canBroadcast  = allTranslated && title.trim() && message.trim() && !sending
+    const someAudienceSelected = notifyGroups.members || notifyGroups.subscribers
+    const canBroadcast  = allTranslated && title.trim() && message.trim() && !sending && someAudienceSelected
     const someRetrying  = retryingLocales.length > 0
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -187,6 +192,7 @@ export default function AnnouncementsAdminPage() {
                     bodyHtml: bodyHtml || undefined,
                     imageUrl: imageUrl.trim() || undefined,
                     link: link.trim() || undefined,
+                    notifyGroups,
                     // Thread translated bodyText back as bodyHtml in each locale's translation entry
                     translations: Object.fromEntries(
                         Object.entries(translations).map(([locale, t]) => [
@@ -539,7 +545,46 @@ export default function AnnouncementsAdminPage() {
                             border: '1px solid rgba(255,255,255,0.04)',
                         }}>
                             <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>ℹ️</span>
-                            <span>Only opted-in users are notified. Emails delivered in each user&apos;s language simultaneously.</span>
+                            <span>Only opted-in users in selected groups are notified. Emails delivered in each user&apos;s language simultaneously.</span>
+                        </div>
+
+                        {/* Audience selector */}
+                        <div style={{
+                            padding: '14px 18px', borderRadius: '12px',
+                            background: 'rgba(192,132,252,0.04)', border: '1px solid rgba(192,132,252,0.15)',
+                        }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#c084fc', marginBottom: '10px' }}>
+                                📨 Notify Audience
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {([
+                                    { key: 'members' as const, icon: '👥', label: 'Registered Members', desc: 'Logged-in users with announcement notifications enabled.' },
+                                    { key: 'subscribers' as const, icon: '📬', label: 'Newsletter Subscribers', desc: 'People who signed up for content updates — not logged-in users.' },
+                                ] as const).map(group => (
+                                    <label key={group.key} style={{
+                                        display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', padding: '10px 12px',
+                                        borderRadius: '8px', border: `1px solid ${notifyGroups[group.key] ? 'rgba(192,132,252,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                                        background: notifyGroups[group.key] ? 'rgba(192,132,252,0.06)' : 'transparent',
+                                        transition: 'all 0.15s',
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={notifyGroups[group.key]}
+                                            onChange={e => setNotifyGroups(prev => ({ ...prev, [group.key]: e.target.checked }))}
+                                            style={{ width: '16px', height: '16px', accentColor: '#c084fc', marginTop: '2px', flexShrink: 0 }}
+                                        />
+                                        <div>
+                                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: notifyGroups[group.key] ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                                {group.icon} {group.label}
+                                            </div>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>{group.desc}</div>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
+                            {!someAudienceSelected && (
+                                <p style={{ margin: '8px 0 0', fontSize: '0.7rem', color: '#ef4444' }}>⚠️ Select at least one audience group to broadcast.</p>
+                            )}
                         </div>
 
                         <button

@@ -670,6 +670,7 @@ export async function notifyAnnouncement(
     prebuiltTranslations?: Record<string, Record<string, string>> | null,
     imageUrl?: string,
     bodyHtml?: string,
+    notifyGroups: { subscribers?: boolean; members?: boolean } = { subscribers: false, members: true },
 ): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/notifications'
@@ -699,9 +700,9 @@ export async function notifyAnnouncement(
         ])
     }
 
-    await broadcastNotification({
-        type: 'announcement',
-        preferenceKey: 'announcement',
+    const broadcastOpts = {
+        type: 'announcement' as const,
+        preferenceKey: 'announcement' as const,
         title,
         message,
         link: inAppLink,
@@ -712,7 +713,41 @@ export async function notifyAnnouncement(
         // Thread these through so every per-locale rebuild also gets the banner + rich body
         imageUrl,
         bodyHtml,
-    })
+    }
+
+    // ── Registered members (opted-in) ─────────────────────────────────────────
+    if (notifyGroups.members === true) {
+        await broadcastNotification(broadcastOpts)
+    }
+
+    // ── Newsletter subscribers ─────────────────────────────────────────────────
+    if (notifyGroups.subscribers === true) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = prisma as any
+        const registeredEmails = await db.user.findMany({ select: { email: true } })
+            .then((rows: { email: string }[]) => new Set(rows.map((r: { email: string }) => r.email.toLowerCase())))
+
+        const subscribers = await db.subscriber.findMany({
+            where: { active: true },
+            select: { email: true, name: true },
+        })
+
+        const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
+        logger.info('notifications', `Announcement to ${uniqueSubs.length} newsletter subscribers`)
+
+        const BATCH = 50
+        for (let i = 0; i < uniqueSubs.length; i += BATCH) {
+            const batch = uniqueSubs.slice(i, i + BATCH)
+            await Promise.allSettled(batch.map(async (sub: { email: string; name: string | null }) => {
+                const sent = await sendEmail({
+                    to: sub.email,
+                    subject: `📣 ${title} | AIM Studio`,
+                    html: announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml),
+                })
+                if (!sent) logger.warn('notifications', `Subscriber announcement email failed: ${sub.email}`)
+            }))
+        }
+    }
 }
 
 

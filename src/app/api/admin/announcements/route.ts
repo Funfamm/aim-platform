@@ -18,13 +18,14 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { title, message, link, translations, bodyHtml, imageUrl } = body as {
+    const { title, message, link, translations, bodyHtml, imageUrl, notifyGroups } = body as {
         title?: string
         message?: string
         link?: string
         translations?: Record<string, Record<string, string>>
         bodyHtml?: string
         imageUrl?: string
+        notifyGroups?: { subscribers?: boolean; members?: boolean }
     }
 
     if (!title || !message) {
@@ -45,8 +46,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'imageUrl must be a valid https URL' }, { status: 400 })
     }
 
+    // Read audience selection — default to nobody if omitted (admin must opt-in each group)
+    const groups: { subscribers?: boolean; members?: boolean } = notifyGroups ?? {
+        subscribers: false, members: false,
+    }
+
     // Fire-and-forget — returns immediately; delivery is async
-    notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml).catch((err) => {
+    notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml, groups).catch((err) => {
         console.error('[announcements] broadcast failed:', err)
     })
 
