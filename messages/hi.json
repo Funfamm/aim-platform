@@ -1338,5 +1338,13 @@
     "showChat": "चैट दिखाएं",
     "scheduledFor": "स्क्रीनिंग {date} के लिए निर्धारित",
     "controlError": "कमांड भेजने में विफल। कृपया पुनः प्रयास करें।"
+  },
+  "backButton": {
+    "back": "वापस",
+    "backToWorks": "कार्यों पर वापस",
+    "backToProject": "प्रोजेक्ट पर वापस",
+    "backToCasting": "कास्टिंग पर वापस",
+    "backToScripts": "स्क्रिप्ट पर वापस",
+    "backToTraining": "प्रशिक्षण पर वापस"
   }
 }

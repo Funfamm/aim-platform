@@ -1338,5 +1338,13 @@
     "showChat": "Mostrar chat",
     "scheduledFor": "Exibição agendada para {date}",
     "controlError": "Falha ao enviar comando. Tente novamente."
+  },
+  "backButton": {
+    "back": "Voltar",
+    "backToWorks": "Voltar às Obras",
+    "backToProject": "Voltar ao Projeto",
+    "backToCasting": "Voltar ao Elenco",
+    "backToScripts": "Voltar aos Roteiros",
+    "backToTraining": "Voltar ao Treinamento"
   }
 }

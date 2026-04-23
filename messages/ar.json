@@ -1340,5 +1340,13 @@
     "showChat": "عرض المحادثة",
     "scheduledFor": "العرض مجدول في {date}",
     "controlError": "فشل إرسال الأمر. يرجى المحاولة مرة أخرى."
+  },
+  "backButton": {
+    "back": "رجوع",
+    "backToWorks": "العودة للأعمال",
+    "backToProject": "العودة للمشروع",
+    "backToCasting": "العودة للتمثيل",
+    "backToScripts": "العودة للنصوص",
+    "backToTraining": "العودة للتدريب"
   }
 }

@@ -1338,5 +1338,13 @@
     "showChat": "채팅 보기",
     "scheduledFor": "상영 예정: {date}",
     "controlError": "명령 전송 실패. 다시 시도해 주세요."
+  },
+  "backButton": {
+    "back": "뒤로",
+    "backToWorks": "작품으로 돌아가기",
+    "backToProject": "프로젝트로 돌아가기",
+    "backToCasting": "캐스팅으로 돌아가기",
+    "backToScripts": "스크립트로 돌아가기",
+    "backToTraining": "훈련으로 돌아가기"
   }
 }

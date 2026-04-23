@@ -1338,5 +1338,13 @@
     "showChat": "Afficher le chat",
     "scheduledFor": "Projection prévue le {date}",
     "controlError": "Échec de la commande. Veuillez réessayer."
+  },
+  "backButton": {
+    "back": "Retour",
+    "backToWorks": "Retour aux Œuvres",
+    "backToProject": "Retour au Projet",
+    "backToCasting": "Retour au Casting",
+    "backToScripts": "Retour aux Scripts",
+    "backToTraining": "Retour à la Formation"
   }
 }

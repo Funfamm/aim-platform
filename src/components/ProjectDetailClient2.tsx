@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 
+import BackButton from '@/components/BackButton'
+
 interface CastingCall {
     id: string
     roleName: string
@@ -232,6 +234,10 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                     paddingBottom: 'var(--space-3xl)',
                 }}>
                     <div style={{ maxWidth: '680px' }}>
+                        {/* Back to Works — mobile-only */}
+                        <div className="animate-fade-in-up" style={{ marginBottom: 'var(--space-sm)' }}>
+                            <BackButton fallbackHref="/works" labelKey="backToWorks" mode="mobile-only" />
+                        </div>
                         {/* Status badge */}
                         <div className="animate-fade-in-up" style={{ marginBottom: 'var(--space-md)' }}>
                             <span style={{

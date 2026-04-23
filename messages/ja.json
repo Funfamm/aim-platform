@@ -1339,5 +1339,13 @@
     "showChat": "チャットを表示",
     "scheduledFor": "上映予定日時：{date}",
     "controlError": "コマンドの送信に失敗しました。もう一度お試しください。"
+  },
+  "backButton": {
+    "back": "戻る",
+    "backToWorks": "作品一覧に戻る",
+    "backToProject": "プロジェクトに戻る",
+    "backToCasting": "キャスティングに戻る",
+    "backToScripts": "スクリプトに戻る",
+    "backToTraining": "トレーニングに戻る"
   }
 }

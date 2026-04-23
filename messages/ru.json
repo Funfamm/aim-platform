@@ -1338,5 +1338,13 @@
     "showChat": "Показать чат",
     "scheduledFor": "Показ запланирован на {date}",
     "controlError": "Не удалось отправить команду. Попробуйте ещё раз."
+  },
+  "backButton": {
+    "back": "Назад",
+    "backToWorks": "Назад к работам",
+    "backToProject": "Назад к проекту",
+    "backToCasting": "Назад к кастингу",
+    "backToScripts": "Назад к сценариям",
+    "backToTraining": "Назад к обучению"
   }
 }

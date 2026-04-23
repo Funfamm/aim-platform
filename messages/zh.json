@@ -1338,5 +1338,13 @@
     "showChat": "显示聊天",
     "scheduledFor": "放映时间：{date}",
     "controlError": "发送命令失败，请重试。"
+  },
+  "backButton": {
+    "back": "返回",
+    "backToWorks": "返回作品",
+    "backToProject": "返回项目",
+    "backToCasting": "返回选角",
+    "backToScripts": "返回剧本",
+    "backToTraining": "返回培训"
   }
 }

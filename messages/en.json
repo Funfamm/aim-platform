@@ -1306,5 +1306,13 @@
     "showChat": "Show Chat",
     "scheduledFor": "Screening scheduled for {date}",
     "controlError": "Failed to send command. Please try again."
+  },
+  "backButton": {
+    "back": "Back",
+    "backToWorks": "Back to Works",
+    "backToProject": "Back to Project",
+    "backToCasting": "Back to Casting",
+    "backToScripts": "Back to Scripts",
+    "backToTraining": "Back to Training"
   }
 }

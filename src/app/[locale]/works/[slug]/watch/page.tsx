@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import Footer from '@/components/Footer'
 import WatchPlayer from '@/components/WatchPlayer'
 import CastShowcase from '@/components/CastShowcase'
+import BackButton from '@/components/BackButton'
 import { getLocale } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
@@ -114,6 +115,7 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
 
     return (
         <>
+            <BackButton fallbackHref={`/works/${slug}`} labelKey="backToProject" variant="overlay" />
             <WatchPlayer project={serializedProject} userPreferredLang={userPreferredLang} />
             {serializedCast.length > 0 && (
                 <CastShowcase

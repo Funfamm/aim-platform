@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Footer from '@/components/Footer'
 import ApplicationForm from '@/components/ApplicationForm'
 import CinematicBackground from '@/components/CinematicBackground'
+import BackButton from '@/components/BackButton'
 import AlreadyAppliedView from '@/components/casting/AlreadyAppliedView'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
@@ -99,6 +100,9 @@ export default async function ApplyPage({
                 <CinematicBackground variant="casting" />
                 <main className="apply-page">
                     <div className="container">
+                        <div style={{ marginBottom: 'var(--space-md)' }}>
+                            <BackButton fallbackHref="/casting" labelKey="backToCasting" mode="mobile-only" />
+                        </div>
                         <div className="section-header" style={{ marginBottom: 'var(--space-xl)' }}>
                             <span className="text-label">{tAlready('pageLabel')}</span>
                             <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
@@ -133,6 +137,9 @@ export default async function ApplyPage({
             <CinematicBackground variant="casting" />
             <main className="apply-page">
                 <div className="container">
+                    <div style={{ marginBottom: 'var(--space-md)' }}>
+                        <BackButton fallbackHref="/casting" labelKey="backToCasting" mode="mobile-only" />
+                    </div>
                     <div className="section-header" style={{ marginBottom: 'var(--space-xl)' }}>
                         <span className="text-label">{t('pageLabel')}</span>
                         <h1 style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>

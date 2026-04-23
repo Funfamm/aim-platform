@@ -1338,5 +1338,13 @@
     "showChat": "Chat anzeigen",
     "scheduledFor": "Vorführung geplant für {date}",
     "controlError": "Befehl fehlgeschlagen. Bitte erneut versuchen."
+  },
+  "backButton": {
+    "back": "Zurück",
+    "backToWorks": "Zurück zu Werken",
+    "backToProject": "Zurück zum Projekt",
+    "backToCasting": "Zurück zum Casting",
+    "backToScripts": "Zurück zu Skripten",
+    "backToTraining": "Zurück zum Training"
   }
 }
