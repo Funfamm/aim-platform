@@ -41,7 +41,9 @@ export default function AdminAuditPage() {
     const [from, setFrom] = useState('')
     const [to, setTo] = useState('')
 
-    const fetchLogs = useCallback(async (p = 1) => {
+    // fetchLogs manages page state internally so effects only call one function
+    const fetchLogs = useCallback(async (p: number) => {
+        setPage(p)
         setLoading(true)
         const params = new URLSearchParams({ page: String(p), limit: '50' })
         if (action) params.set('action', action)
@@ -59,7 +61,8 @@ export default function AdminAuditPage() {
         setLoading(false)
     }, [action, adminEmail, targetEmail, from, to])
 
-    useEffect(() => { setPage(1); fetchLogs(1) }, [fetchLogs])
+    // Reset to page 1 whenever filters change
+    useEffect(() => { fetchLogs(1) }, [fetchLogs])
 
     return (
         <div className="admin-layout">
@@ -137,10 +140,10 @@ export default function AdminAuditPage() {
                 {/* Pagination */}
                 {totalPages > 1 && (
                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '16px' }}>
-                        <button disabled={page <= 1} onClick={() => { setPage(p => p - 1); fetchLogs(page - 1) }}
+                        <button disabled={page <= 1} onClick={() => fetchLogs(page - 1)}
                             style={{ ...inp, cursor: page > 1 ? 'pointer' : 'not-allowed', opacity: page <= 1 ? 0.3 : 1 }}>Prev</button>
                         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Page {page} of {totalPages.toLocaleString()}</span>
-                        <button disabled={page >= totalPages} onClick={() => { setPage(p => p + 1); fetchLogs(page + 1) }}
+                        <button disabled={page >= totalPages} onClick={() => fetchLogs(page + 1)}
                             style={{ ...inp, cursor: page < totalPages ? 'pointer' : 'not-allowed', opacity: page >= totalPages ? 0.3 : 1 }}>Next</button>
                     </div>
                 )}
