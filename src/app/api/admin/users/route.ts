@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { generateDeletedEmail } from '@/lib/utils';
+import { generateDeletedEmail } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 export async function GET(request: NextRequest) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
@@ -80,7 +81,8 @@ export async function GET(request: NextRequest) {
 
 
 export async function DELETE(request: NextRequest) {
-    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    let admin: { userId: string; email?: string; role: string } | null = null
+    try { admin = await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     try {
         const { ids, purge = false } = await request.json() as { ids: string[]; purge?: boolean }
@@ -114,6 +116,13 @@ export async function DELETE(request: NextRequest) {
                 // Delete users (cascades everything else)
                 await tx.user.deleteMany({ where: { id: { in: safeIds } } })
             })
+            // Write audit log rows
+            Promise.allSettled(usersToDelete.map(u =>
+                (prisma as any).auditLog.create({ data: {
+                    adminId: admin?.userId ?? 'unknown', adminEmail: admin?.email ?? 'unknown',
+                    action: 'purge', targetType: 'user', targetId: u.id, targetEmail: u.email,
+                } })
+            )).catch(err => logger.error('audit', 'Failed to write purge audit logs', { error: err }))
             return NextResponse.json({ deleted: safeIds.length, purged: true, message: `${safeIds.length} user(s) and ALL their data have been permanently purged.` })
         } else {
             // ── SOFT REMOVE ── anonymize PII, preserve audit trail
@@ -152,6 +161,13 @@ export async function DELETE(request: NextRequest) {
                 // 4. Delete users (cascades Watchlist, Notifications, Badges, etc.)
                 await tx.user.deleteMany({ where: { id: { in: safeIds } } })
             })
+            // Write audit log rows
+            Promise.allSettled(usersToDelete.map(u =>
+                (prisma as any).auditLog.create({ data: {
+                    adminId: admin?.userId ?? 'unknown', adminEmail: admin?.email ?? 'unknown',
+                    action: 'delete', targetType: 'user', targetId: u.id, targetEmail: u.email,
+                } })
+            )).catch(err => logger.error('audit', 'Failed to write delete audit logs', { error: err }))
             return NextResponse.json({ deleted: safeIds.length, purged: false, message: `${safeIds.length} user(s) anonymized and removed. Casting records preserved.` })
         }
     } catch (err) {

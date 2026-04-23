@@ -24,6 +24,7 @@ import {
     contentPublishEmail,
     scriptStatusUpdateEmail,
 } from '@/lib/email-templates'
+import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -209,7 +210,9 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                         locale
                     )
                 } else if (opts.type === 'content_publish') {
-                    html = contentPublishEmail(displayTitle, displayMessage, localizedLink ?? opts.link ?? '', locale, opts.contentStatus ?? 'completed', opts.sponsorData)
+                    const siteUrl = (localizedLink ?? opts.link ?? '').split('/').slice(0, 3).join('/')
+                    const unsubUrl = buildUnsubscribeUrl(siteUrl, user.email, 'member')
+                    html = contentPublishEmail(displayTitle, displayMessage, localizedLink ?? opts.link ?? '', locale, opts.contentStatus ?? 'completed', opts.sponsorData, unsubUrl)
                 } else {
                     // Generic fallback: rebuild plain HTML with localized text
                     html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link, locale)
@@ -771,7 +774,8 @@ export async function notifyContentPublish(
         for (let i = 0; i < uniqueSubs.length; i += BATCH) {
             const batch = uniqueSubs.slice(i, i + BATCH)
             await Promise.allSettled(batch.map(async (sub: { email: string; name: string | null }) => {
-                const html = contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData)
+                const unsubUrl = buildUnsubscribeUrl(link.split('/').slice(0, 3).join('/'), sub.email, 'subscriber')
+                const html = contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData, unsubUrl)
                 const sent = await sendEmail({
                     to: sub.email,
                     subject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`,

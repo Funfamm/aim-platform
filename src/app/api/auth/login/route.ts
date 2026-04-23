@@ -9,6 +9,8 @@ import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
 import { generateCsrfToken } from '@/lib/csrf'
 import { recordAuthSuccess, recordAuthFailure } from '@/lib/metrics'
 import { readInviteCookie } from '@/lib/invite-cookie'
+import { sendEmail } from '@/lib/mailer'
+import { accountLockedEmail } from '@/lib/email-templates'
 
 export async function POST(request: Request) {
     const blocked = authLimiter.check(request)
@@ -86,6 +88,15 @@ export async function POST(request: Request) {
             const remaining = MAX_ATTEMPTS - newAttempts
             if (shouldLock) {
                 logger.warn('auth/login', `Account locked after ${MAX_ATTEMPTS} failed attempts: ${normalizedEmail}`)
+                // Fire security alert email — tell the account owner their account is locked
+                const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+                const resetLink = `${siteUrl}/en/forgot-password`
+                const userLocale = (user as unknown as Record<string, string>).preferredLanguage || 'en'
+                sendEmail({
+                    to: user.email,
+                    subject: accountLockedEmail(user.name, user.email, LOCKOUT_MINUTES, userLocale, resetLink).subject,
+                    html: accountLockedEmail(user.name, user.email, LOCKOUT_MINUTES, userLocale, resetLink).html,
+                }).catch(() => { /* non-critical — never block login response */ })
                 return NextResponse.json({
                     error: `Too many failed attempts. Your account is locked for ${LOCKOUT_MINUTES} minutes.`,
                     locked: true,

@@ -26,6 +26,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.duration !== undefined && { duration: body.duration || null }),
             ...(body.featured !== undefined && { featured: body.featured }),
             ...(body.published !== undefined && { published: body.published }),
+            // Clear publishAt when manually publishing
+            ...(body.published === true && { publishAt: null }),
+            // Save publishAt when scheduling — accepts ISO string or null
+            ...('publishAt' in body && body.published !== true && { publishAt: body.publishAt ? new Date(body.publishAt) : null }),
             ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
             ...(body.coverImage !== undefined && { coverImage: body.coverImage || null }),
             ...(body.trailerUrl !== undefined && { trailerUrl: body.trailerUrl || null }),

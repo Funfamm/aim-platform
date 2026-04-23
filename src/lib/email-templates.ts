@@ -1007,7 +1007,63 @@ export function announcementEmail(
     `, title)
 }
 
+/** Security alert: account locked after repeated failed login attempts */
+export function accountLockedEmail(
+    name: string,
+    _email: string,
+    minutesLocked: number,
+    locale: string = 'en',
+    resetLink: string = '',
+): { subject: string; html: string } {
+    const strings: Record<string, { subject: string; heading: string; body: string; hint: string; btn: string; footer: string }> = {
+        en: { subject: '⚠️ Your AIM Studio account has been locked', heading: 'Account temporarily locked', body: `Someone tried to sign in to your account ${minutesLocked === 60 ? '5' : 'multiple'} times with the wrong password. For your protection, your account has been locked for <strong>${minutesLocked} minute${minutesLocked !== 1 ? 's' : ''}</strong>.`, hint: 'If this was you, simply wait and try again. If you suspect unauthorized access, reset your password immediately.', btn: 'Reset My Password', footer: 'If you did not attempt to log in, your account information may have been compromised. Reset your password immediately.' },
+        ar: { subject: '⚠️ تم قفل حسابك في AIM Studio', heading: 'تم قفل الحساب مؤقتاً', body: `حاول شخص ما تسجيل الدخول إلى حسابك بكلمة مرور خاطئة عدة مرات. تم قفل حسابك لمدة <strong>${minutesLocked} دقيقة</strong> لحمايتك.`, hint: 'إذا كنت أنت من حاول تسجيل الدخول، فانتظر وحاول مجدداً. إذا اشتبهت في وصول غير مصرح به، قم بإعادة تعيين كلمة المرور.', btn: 'إعادة تعيين كلمة المرور', footer: 'إذا لم تحاول تسجيل الدخول، فقد يكون حسابك في خطر.' },
+        de: { subject: '⚠️ Ihr AIM Studio Konto wurde gesperrt', heading: 'Konto vorübergehend gesperrt', body: `Jemand hat versucht, sich mehrfach mit einem falschen Passwort in Ihr Konto einzuloggen. Zum Schutz wurde Ihr Konto für <strong>${minutesLocked} Minuten</strong> gesperrt.`, hint: 'Wenn Sie das waren, warten Sie und versuchen Sie es erneut. Bei Verdacht auf unbefugten Zugriff setzen Sie Ihr Passwort zurück.', btn: 'Passwort zurücksetzen', footer: 'Wenn Sie sich nicht angemeldet haben, könnte Ihr Konto gefährdet sein.' },
+        es: { subject: '⚠️ Tu cuenta de AIM Studio ha sido bloqueada', heading: 'Cuenta bloqueada temporalmente', body: `Alguien intentó iniciar sesión en tu cuenta varias veces con una contraseña incorrecta. Tu cuenta ha sido bloqueada por <strong>${minutesLocked} minutos</strong> para protegerte.`, hint: 'Si fuiste tú, espera y vuelve a intentarlo. Si sospechas acceso no autorizado, restablece tu contraseña.', btn: 'Restablecer mi contraseña', footer: 'Si no intentaste iniciar sesión, tu cuenta puede estar en riesgo.' },
+        fr: { subject: '⚠️ Votre compte AIM Studio a été verrouillé', heading: 'Compte temporairement verrouillé', body: `Quelqu'un a tenté de se connecter à votre compte plusieurs fois avec un mot de passe incorrect. Votre compte a été verrouillé pendant <strong>${minutesLocked} minutes</strong> pour votre protection.`, hint: "Si c'était vous, attendez et réessayez. Si vous soupçonnez un accès non autorisé, réinitialisez votre mot de passe.", btn: 'Réinitialiser mon mot de passe', footer: "Si vous n'avez pas tenté de vous connecter, votre compte est peut-être compromis." },
+        hi: { subject: '⚠️ आपका AIM Studio खाता लॉक हो गया है', heading: 'खाता अस्थायी रूप से लॉक है', body: `किसी ने आपके खाते में गलत पासवर्ड से कई बार लॉगिन करने की कोशिश की। आपकी सुरक्षा के लिए आपका खाता <strong>${minutesLocked} मिनट</strong> के लिए लॉक कर दिया गया है।`, hint: 'यदि यह आप थे, तो प्रतीक्षा करें और पुनः प्रयास करें। यदि आपको अनधिकृत पहुंच का संदेह है, तो अपना पासवर्ड रीसेट करें।', btn: 'पासवर्ड रीसेट करें', footer: 'यदि आपने लॉगिन का प्रयास नहीं किया, तो आपका खाता खतरे में हो सकता है।' },
+        ja: { subject: '⚠️ AIM Studio アカウントがロックされました', heading: 'アカウントが一時的にロックされています', body: `誰かが誤ったパスワードで複数回ログインを試みました。お客様の保護のため、アカウントは <strong>${minutesLocked}分間</strong>ロックされました。`, hint: 'ご自身の操作であれば、しばらくお待ちの上再度お試しください。不正アクセスが疑われる場合は、すぐにパスワードをリセットしてください。', btn: 'パスワードをリセット', footer: 'ログインを試みていない場合、アカウントが危険にさらされている可能性があります。' },
+        ko: { subject: '⚠️ AIM Studio 계정이 잠겼습니다', heading: '계정이 일시적으로 잠겼습니다', body: `누군가 잘못된 비밀번호로 여러 번 로그인을 시도했습니다. 계정 보호를 위해 <strong>${minutesLocked}분</strong> 동안 계정이 잠겼습니다.`, hint: '본인의 시도였다면 잠시 기다렸다가 다시 시도하세요. 무단 접근이 의심되면 즉시 비밀번호를 재설정하세요.', btn: '비밀번호 재설정', footer: '로그인을 시도하지 않으셨다면 계정이 위험에 처했을 수 있습니다.' },
+        pt: { subject: '⚠️ Sua conta AIM Studio foi bloqueada', heading: 'Conta temporariamente bloqueada', body: `Alguém tentou entrar na sua conta várias vezes com uma senha incorreta. Sua conta foi bloqueada por <strong>${minutesLocked} minutos</strong> para sua proteção.`, hint: 'Se foi você, aguarde e tente novamente. Se suspeitar de acesso não autorizado, redefina sua senha.', btn: 'Redefinir minha senha', footer: 'Se você não tentou fazer login, sua conta pode estar comprometida.' },
+        ru: { subject: '⚠️ Ваш аккаунт AIM Studio заблокирован', heading: 'Аккаунт временно заблокирован', body: `Кто-то несколько раз пытался войти в ваш аккаунт с неверным паролем. Для вашей защиты аккаунт заблокирован на <strong>${minutesLocked} минут</strong>.`, hint: 'Если это были вы, подождите и попробуйте снова. При подозрении на несанкционированный доступ немедленно сбросьте пароль.', btn: 'Сбросить пароль', footer: 'Если вы не пытались войти, ваш аккаунт мог быть скомпрометирован.' },
+        zh: { subject: '⚠️ 您的 AIM Studio 帐户已被锁定', heading: '帐户已暂时锁定', body: `有人多次尝试使用错误密码登录您的帐户。为了保护您，您的帐户已被锁定 <strong>${minutesLocked} 分钟</strong>。`, hint: '如果是您本人操作，请等待后重试。如果怀疑是未经授权的访问，请立即重置密码。', btn: '重置密码', footer: '如果您未尝试登录，您的帐户可能已遭到泄露。' },
+    }
+    const s = strings[locale] ?? strings['en']
+    const html = emailWrapper(`
+        <div style="text-align:center;padding:8px 0 24px;">
+            <div style="font-size:56px;margin-bottom:12px;">🔒</div>
+        </div>
+        ${heading(s.heading)}
+        ${paragraph(s.body)}
+        ${paragraph(`<span style="font-size:14px;color:${TEXT_SECONDARY};">${s.hint}</span>`)}
+        ${resetLink ? button(s.btn, resetLink) : ''}
+        ${divider()}
+        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${s.footer}</span>`)}
+    `, s.subject, undefined, locale)
+    return { subject: s.subject, html }
+}
+
 /** Sent to opted-in users when admin publishes new content */
+// ── Unsubscribe label map (inline — no DB call, email-safe) ──────────────────
+const UNSUB_LABEL: Record<string, string> = {
+    en: 'Unsubscribe', ar: 'إلغاء الاشتراك', de: 'Abmelden', es: 'Cancelar suscripción',
+    fr: 'Se désabonner', hi: 'सदस्यता रद्द करें', ja: '配信停止', ko: '구독 취소',
+    pt: 'Cancelar inscrição', ru: 'Отписаться', zh: '取消订阅',
+}
+const UNSUB_REASON: Record<string, string> = {
+    en: "You're receiving this because you opted in to content updates.",
+    ar: 'أنت تتلقى هذا لأنك اشتركت في تحديثات المحتوى.',
+    de: 'Sie erhalten diese E-Mail, weil Sie sich für Inhaltsaktualisierungen angemeldet haben.',
+    es: 'Recibes esto porque te suscribiste a las actualizaciones de contenido.',
+    fr: 'Vous recevez ceci parce que vous avez choisi de recevoir des mises à jour de contenu.',
+    hi: 'आप यह इसलिए प्राप्त कर रहे हैं क्योंकि आपने सामग्री अपडेट के लिए साइन अप किया था।',
+    ja: 'コンテンツ更新のオプトインをされたため、このメールをお送りしています。',
+    ko: '콘텐츠 업데이트에 동의하셨기 때문에 이 이메일을 받으셨습니다.',
+    pt: 'Você está recebendo isso porque optou por atualizações de conteúdo.',
+    ru: 'Вы получили это письмо, потому что подписались на обновления контента.',
+    zh: '您收到此邮件是因为您订阅了内容更新。',
+}
+
 export function contentPublishEmail(
     contentTitle: string,
     contentType: string,
@@ -1015,6 +1071,7 @@ export function contentPublishEmail(
     locale: string = 'en',
     status: string = 'completed',
     sponsorData?: { name: string; logoUrl?: string; description?: string } | null,
+    unsubscribeUrl?: string,
 ): string {
     const typeEmoji: Record<string, string> = { project: '🎬', video: '▶️', blog: '📝', training: '🎓', default: '✨' }
     const emoji = typeEmoji[contentType.toLowerCase()] ?? typeEmoji.default
@@ -1074,7 +1131,8 @@ export function contentPublishEmail(
         ${sponsorHtml}
         ${button(ctaText, link)}
         ${divider()}
-        ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerText}</span>`)}
+        <p style="margin:0 0 4px;font-size:12px;color:#6b7280;text-align:center;line-height:1.6;">${UNSUB_REASON[locale] ?? UNSUB_REASON['en']}</p>
+        ${unsubscribeUrl ? `<p style="margin:6px 0 0;font-size:11px;text-align:center;"><a href="${unsubscribeUrl}" style="color:#9ca3af;text-decoration:underline;">${UNSUB_LABEL[locale] ?? UNSUB_LABEL['en']}</a></p>` : ''}
     `, `New ${contentType}: ${contentTitle}`)
 }
 

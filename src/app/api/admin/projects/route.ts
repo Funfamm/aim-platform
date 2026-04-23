@@ -92,8 +92,13 @@ export async function POST(req: Request) {
         try {
             if (body.sponsorData) sponsorParsed = typeof body.sponsorData === 'string' ? JSON.parse(body.sponsorData) : body.sponsorData
         } catch { /* ignore */ }
+        // Read audience selection from admin form.
+        // Default to nobody — admin must explicitly opt-in each group.
+        const notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = body.notifyGroups ?? {
+            subscribers: false, members: false, cast: false,
+        }
         try {
-            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed)
+            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed, notifyGroups, project.id)
         } catch (err) {
             console.error('[publish] notifyContentPublish failed (POST):', err)
         }

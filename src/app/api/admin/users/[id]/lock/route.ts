@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { logger } from '@/lib/logger'
 
 /**
  * PATCH /api/admin/users/[id]/lock
@@ -9,12 +10,15 @@ import { prisma } from '@/lib/db'
  * suspend   → sets suspended=true (manual ban — persists until admin unsuspends)
  * unsuspend → clears suspended flag
  * unlock    → clears lockedUntil + resets failedLoginAttempts (brute-force lockout)
+ *
+ * Every action is logged to the AuditLog table.
  */
 export async function PATCH(
     req: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
+    let admin: { userId: string; email?: string; role: string } | null = null
+    try { admin = await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
     const { id } = await params
     const { action } = await req.json() as { action: 'suspend' | 'unsuspend' | 'unlock' }
@@ -49,6 +53,18 @@ export async function PATCH(
         select: { id: true, email: true, suspended: true, lockedUntil: true, failedLoginAttempts: true },
     })
 
-    console.log(`[admin/lock] ${message}`)
+    // Write audit log row — fire-and-forget, never block the response
+    db.auditLog.create({
+        data: {
+            adminId: admin?.userId ?? 'unknown',
+            adminEmail: admin?.email ?? 'unknown',
+            action,
+            targetType: 'user',
+            targetId: id,
+            targetEmail: target.email,
+        },
+    }).catch((err: unknown) => logger.error('audit', `Failed to write audit log for ${action}`, { error: err }))
+
+    logger.info('admin/lock', `[${admin?.email}] ${message}`)
     return NextResponse.json({ ok: true, message, user: updated })
 }

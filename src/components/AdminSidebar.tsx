@@ -21,6 +21,7 @@ const NAV_ITEMS = [
     { href: '/admin/sponsors', label: '🤝 Sponsors' },
     { href: '/admin/donations', label: '💰 Donations' },
     { href: '/admin/users', label: '👥 Users' },
+    { href: '/admin/audit', label: '🛡️ Audit Log' },
     { href: '/admin/subscribers', label: '📬 Subscribers' },
     { href: '/admin/announcements', label: '📣 Announcements' },
     { href: '/admin/settings', label: '⚙️ Settings' },

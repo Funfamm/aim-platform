@@ -18,7 +18,7 @@ import { readSSEStream } from '@/lib/sse-reader'
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
-    featured: boolean; published: boolean; sortOrder: number; coverImage: string | null
+    featured: boolean; published: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
     gallery: string | null; credits: string | null; sponsorData: string | null
     viewCount: number
@@ -28,7 +28,7 @@ type Project = {
 type FormData = {
     title: string; slug: string; tagline: string; description: string
     status: string; genre: string; year: string; duration: string
-    featured: boolean; published: boolean; coverImage: string
+    featured: boolean; published: boolean; publishAt: string; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
 }
@@ -36,7 +36,7 @@ type FormData = {
 const EMPTY_FORM: FormData = {
     title: '', slug: '', tagline: '', description: '',
     status: 'upcoming', genre: '', year: '', duration: '',
-    featured: false, published: false, coverImage: '',
+    featured: false, published: false, publishAt: '', coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
 }
@@ -216,6 +216,7 @@ export default function AdminProjectsPage() {
             duration: p.duration || '',
             featured: p.featured,
             published: p.published ?? false,
+            publishAt: p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : '',
             coverImage: p.coverImage || '',
             trailerUrl: p.trailerUrl || '',
             filmUrl: p.filmUrl || '',
@@ -279,6 +280,8 @@ export default function AdminProjectsPage() {
             const payload = {
                 ...form,
                 slug: form.slug || slugify(form.title),
+                // Convert datetime-local string to ISO or null
+                publishAt: form.publishAt ? new Date(form.publishAt).toISOString() : null,
                 // Only include audience selection when actually publishing
                 notifyGroups: form.published ? notifyGroups : undefined,
             }
@@ -1148,6 +1151,37 @@ export default function AdminProjectsPage() {
                                                 style={{ width: '18px', height: '18px', accentColor: '#c084fc' }} />
                                             🌐 Published (visible to public)
                                         </label>
+
+                                        {/* Scheduled publish — only shown when not yet published */}
+                                        {!form.published && (
+                                            <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', fontSize: '0.8rem', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+                                                    <span>⏰ Schedule publish:</span>
+                                                    <input
+                                                        type="datetime-local"
+                                                        value={form.publishAt}
+                                                        onChange={e => updateField('publishAt', e.target.value)}
+                                                        min={new Date().toISOString().slice(0, 16)}
+                                                        style={{
+                                                            padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem',
+                                                            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+                                                            color: 'var(--text-primary)', fontFamily: 'inherit',
+                                                        }}
+                                                    />
+                                                    {form.publishAt && (
+                                                        <button onClick={() => updateField('publishAt', '')}
+                                                            style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', border: 'none', background: 'rgba(239,68,68,0.1)', color: '#ef4444', cursor: 'pointer' }}>
+                                                            Clear
+                                                        </button>
+                                                    )}
+                                                </label>
+                                                {form.publishAt && (
+                                                    <p style={{ margin: '6px 0 0 0', fontSize: '0.7rem', color: '#fbbf24' }}>
+                                                        ⏳ Will auto-publish {new Date(form.publishAt).toLocaleString()} (your local time)
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Notify Audience — appears only when publishing */}

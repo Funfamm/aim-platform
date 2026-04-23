@@ -80,6 +80,7 @@ model Project {
   sponsorData  String?        // JSON: { name, logoUrl?, description? } — per-project sponsor for publish emails
   featured     Boolean        @default(false)
   published    Boolean        @default(false)  // visibility gate — only published projects appear on public pages
+  publishAt    DateTime?                       // if set, cron publishes the project at this time
   sortOrder    Int            @default(0)
   viewCount    Int            @default(0)  // cached counter — incremented by /api/projects/view
   createdAt    DateTime       @default(now())
@@ -534,11 +535,13 @@ model ApplicationNotification {
 }
 
 model Subscriber {
-  id           String   @id @default(cuid())
-  email        String   @unique
+  id           String    @id @default(cuid())
+  email        String    @unique
   name         String?
-  subscribedAt DateTime @default(now())
-  active       Boolean  @default(true)
+  subscribedAt DateTime  @default(now())
+  active       Boolean   @default(false)   // false until double opt-in confirmed
+  confirmToken String?                      // null once confirmed
+  confirmedAt  DateTime?                    // set when subscriber clicks confirmation link
 }
 
 model EmailLog {
@@ -1190,4 +1193,24 @@ model LiveEventAnalyticEvent {
   @@index([eventId, name])
   @@index([eventId, createdAt])
   @@index([userId])
+}
+
+// ── Admin action audit trail ──────────────────────────────────────────────────
+// Lightweight record of every destructive/security-sensitive admin action.
+// Preserved indefinitely — never cascade-deleted.
+model AuditLog {
+  id          String   @id @default(cuid())
+  adminId     String                        // userId of the admin who acted
+  adminEmail  String
+  action      String                        // suspend|unsuspend|unlock|delete|purge
+  targetType  String                        // user|subscriber
+  targetId    String
+  targetEmail String
+  reason      String?                       // optional context supplied by admin
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([targetEmail])
 }
