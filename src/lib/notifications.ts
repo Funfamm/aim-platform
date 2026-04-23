@@ -748,12 +748,12 @@ export async function notifyContentPublish(
     }
 
     // ── Registered members ─────────────────────────────────────────────────────
-    if (notifyGroups.members !== false) {
+    if (notifyGroups.members === true) {
         await broadcastNotification(broadcastOpts)
     }
 
     // ── Newsletter subscribers (non-registered) ────────────────────────────────
-    if (notifyGroups.subscribers !== false) {
+    if (notifyGroups.subscribers === true) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
         const registeredEmails = await db.user.findMany({ select: { email: true } })

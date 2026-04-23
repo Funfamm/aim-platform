@@ -118,10 +118,34 @@ export default function AdminUsersPage() {
         setLockLoading(null)
     }
 
+    const handleBulkSuspend = async () => {
+        const suspendable = Array.from(selected).filter(id => {
+            const u = users.find(u => u.id === id)
+            return u && u.role !== 'superadmin' && !u.suspended
+        })
+        if (suspendable.length === 0) return
+        setLockLoading('bulk')
+        await Promise.allSettled(suspendable.map(id =>
+            fetch(`/api/admin/users/${id}/lock`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'suspend' }),
+            })
+        ))
+        showToast(`🚫 ${suspendable.length} account${suspendable.length !== 1 ? 's' : ''} suspended`)
+        setLockLoading(null)
+        await fetchUsers(pagination.page)
+    }
+
     // Separate deletable from protected (superadmins)
     const deletableSelected = Array.from(selected).filter(id => {
         const u = users.find(u => u.id === id)
         return u && u.role !== 'superadmin'
+    })
+
+    const suspendableSelected = Array.from(selected).filter(id => {
+        const u = users.find(u => u.id === id)
+        return u && u.role !== 'superadmin' && !u.suspended
     })
 
     return (
@@ -226,6 +250,21 @@ export default function AdminUsersPage() {
                             }}
                         >
                             🗑 Remove {deletableSelected.length > 0 ? `${deletableSelected.length} ` : ''}User{deletableSelected.length !== 1 ? 's' : ''}
+                        </button>
+                        <button
+                            onClick={handleBulkSuspend}
+                            disabled={suspendableSelected.length === 0 || lockLoading === 'bulk'}
+                            title="Suspend selected accounts — they will not be able to log in"
+                            style={{
+                                padding: '7px 16px', borderRadius: '8px',
+                                border: '1px solid rgba(239,68,68,0.4)',
+                                cursor: suspendableSelected.length === 0 ? 'not-allowed' : 'pointer',
+                                background: 'rgba(239,68,68,0.08)',
+                                color: '#ef4444', fontWeight: 700, fontSize: '0.8rem',
+                                opacity: suspendableSelected.length === 0 ? 0.4 : 1,
+                            }}
+                        >
+                            {lockLoading === 'bulk' ? '…' : `🚫 Suspend${suspendableSelected.length > 0 ? ` ${suspendableSelected.length}` : ''}`}
                         </button>
                         <button
                             onClick={() => { setPurgeMode(true); setConfirmDelete(true) }}
@@ -437,7 +476,7 @@ export default function AdminUsersPage() {
                                             <td style={{ padding: '8px 12px' }}>
                                                 {u.role !== 'superadmin' && (
                                                     <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                                                        {u.suspended ? (
+                                                        {u.suspended && (
                                                             <button
                                                                 type="button"
                                                                 disabled={lockLoading === u.id}
@@ -445,15 +484,6 @@ export default function AdminUsersPage() {
                                                                 style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}
                                                             >
                                                                 {lockLoading === u.id ? '…' : '✓ Unsuspend'}
-                                                            </button>
-                                                        ) : (
-                                                            <button
-                                                                type="button"
-                                                                disabled={lockLoading === u.id}
-                                                                onClick={() => handleLockAction(u.id, 'suspend')}
-                                                                style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
-                                                            >
-                                                                {lockLoading === u.id ? '…' : '🚫 Suspend'}
                                                             </button>
                                                         )}
                                                         {(u.lockedUntil || u.failedLoginAttempts > 0) && (

@@ -62,9 +62,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             const sd = body.sponsorData || (project as Record<string, unknown>).sponsorData
             if (sd) sponsorParsed = typeof sd === 'string' ? JSON.parse(sd) : sd
         } catch { /* ignore malformed */ }
-        // Read audience selection from admin form (default: everyone if not specified)
+        // Read audience selection from admin form.
+        // If notifyGroups is missing from the payload (e.g. old client), default to nobody
+        // to prevent accidental sends. The admin must explicitly opt-in each group.
         const notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = body.notifyGroups ?? {
-            subscribers: true, members: true, cast: false,
+            subscribers: false, members: false, cast: false,
         }
         try {
             await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed, notifyGroups, id)
