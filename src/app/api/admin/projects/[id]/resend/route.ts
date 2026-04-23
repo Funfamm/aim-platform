@@ -18,7 +18,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const project = await prisma.project.findUnique({
         where: { id },
-        select: { id: true, title: true, slug: true, status: true, published: true, sponsorData: true, projectType: true },
+        select: { id: true, title: true, slug: true, status: true, published: true, sponsorData: true, projectType: true, translations: true },
     })
 
     if (!project) {
@@ -61,6 +61,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         sponsorParsed,
         notifyGroups,
         project.id,
+        project.translations,
     ).catch(err => {
         console.error('[resend] notifyContentPublish failed:', err)
     })

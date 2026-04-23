@@ -131,7 +131,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
             inApp: true,
             newRole: true,
             announcement: true,
-            contentPublish: false,
+            contentPublish: true,
             statusChange: true,
         }
         // If the user opted out of localized emails, force English for all channels
@@ -219,7 +219,10 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 } else if (opts.type === 'content_publish') {
                     const siteUrl = (localizedLink ?? opts.link ?? '').split('/').slice(0, 3).join('/')
                     const unsubUrl = buildUnsubscribeUrl(siteUrl, user.email, 'member')
-                    html = contentPublishEmail(displayTitle, displayMessage, localizedLink ?? opts.link ?? '', locale, opts.contentStatus ?? 'completed', opts.sponsorData, unsubUrl)
+                    // Use localized project title if available (stored as contentTitle in translations map)
+                    const lt = opts.translations?.[locale] as Record<string, string> | undefined
+                    const localizedContentTitle = lt?.contentTitle || displayTitle
+                    html = contentPublishEmail(localizedContentTitle, displayMessage, localizedLink ?? opts.link ?? '', locale, opts.contentStatus ?? 'completed', opts.sponsorData, unsubUrl)
                 } else {
                     // Generic fallback: rebuild plain HTML with localized text
                     html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link, locale)
@@ -774,16 +777,39 @@ export async function notifyContentPublish(
     sponsorData?: { name: string; logoUrl?: string; description?: string } | null,
     notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = { subscribers: true, members: true, cast: false },
     projectId?: string,
+    projectTranslationsJson?: string | null,
 ): Promise<void> {
     const titleEn = `New ${contentType}: ${contentTitle}`
     const messageEn = `We just published "${contentTitle}". Check it out!`
 
-    // Pre-translate for non-English users
+    // Parse project title translations from DB JSON
+    // Format: { locale: { title, tagline, description, genre } }
+    let projectTitles: Record<string, string> = {}
+    try {
+        if (projectTranslationsJson) {
+            const parsed = JSON.parse(projectTranslationsJson)
+            for (const [locale, fields] of Object.entries(parsed)) {
+                const f = fields as Record<string, string>
+                if (f?.title) projectTitles[locale] = f.title
+            }
+        }
+    } catch { /* malformed JSON — use English */ }
+
+    // Pre-translate notification text for non-English users
     const translationTimeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
     const translations = await Promise.race([
         translateContent({ title: titleEn, message: messageEn }, 'all').catch(() => null),
         translationTimeout,
     ])
+
+    // Merge localized project titles into the translations map
+    // so contentPublishEmail uses the translated title in each locale
+    if (translations) {
+        for (const [locale, localizedTitle] of Object.entries(projectTitles)) {
+            if (!translations[locale]) translations[locale] = { title: '', message: '' }
+            translations[locale].contentTitle = localizedTitle
+        }
+    }
 
     const broadcastOpts = {
         type: 'content_publish' as const,
@@ -818,6 +844,8 @@ export async function notifyContentPublish(
         const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
         logger.info('notifications', `Publishing to ${uniqueSubs.length} newsletter subscribers`)
 
+        // Subscribers don't have locale profiles — send with translated titles
+        // where available, defaulting to English for unknown locales
         const BATCH = EMAIL_BATCH_SIZE
         for (let i = 0; i < uniqueSubs.length; i += BATCH) {
             if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)

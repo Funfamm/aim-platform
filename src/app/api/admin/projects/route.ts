@@ -98,7 +98,7 @@ export async function POST(req: Request) {
             subscribers: false, members: false, cast: false,
         }
         try {
-            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed, notifyGroups, project.id)
+            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed, notifyGroups, project.id, project.translations)
         } catch (err) {
             console.error('[publish] notifyContentPublish failed (POST):', err)
         }

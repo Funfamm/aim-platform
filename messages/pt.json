@@ -134,7 +134,8 @@
     "searchPlaceholder": "Pesquisar filmes, gêneros...",
     "seeAllResults": "Ver todos os resultados para \"{query}\"",
     "curated": "Curado",
-    "titlesCount": "{count} títulos"
+    "titlesCount": "{count} títulos",
+    "watched": "assistido"
   },
   "upcoming": {
     "label": "Em Breve",

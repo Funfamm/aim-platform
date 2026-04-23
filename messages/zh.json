@@ -134,7 +134,8 @@
     "searchPlaceholder": "搜索电影、类型...",
     "seeAllResults": "查看\"{query}\"的全部结果",
     "curated": "精选",
-    "titlesCount": "{count}部"
+    "titlesCount": "{count}部",
+    "watched": "已观看"
   },
   "upcoming": {
     "label": "即将推出",

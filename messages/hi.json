@@ -134,7 +134,8 @@
     "searchPlaceholder": "फिल्में, शैलियाँ खोजें...",
     "seeAllResults": "\"{query}\" के सभी परिणाम देखें",
     "curated": "क्यूरेटेड",
-    "titlesCount": "{count} शीर्षक"
+    "titlesCount": "{count} शीर्षक",
+    "watched": "देखा गया"
   },
   "upcoming": {
     "label": "आगामी",

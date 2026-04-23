@@ -134,7 +134,8 @@
     "searchPlaceholder": "영화, 장르 검색...",
     "seeAllResults": "\"{query}\" 전체 결과 보기",
     "curated": "큐레이션",
-    "titlesCount": "{count}편"
+    "titlesCount": "{count}편",
+    "watched": "시청함"
   },
   "upcoming": {
     "label": "곧 공개",

@@ -74,8 +74,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         const notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = body.notifyGroups ?? {
             subscribers: false, members: false, cast: false,
         }
+        // Fetch existing translations for localized email titles
+        const projWithTranslations = await prisma.project.findUnique({
+            where: { id },
+            select: { translations: true },
+        })
         try {
-            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed, notifyGroups, id)
+            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed, notifyGroups, id, projWithTranslations?.translations)
         } catch (err) {
             console.error('[publish] notifyContentPublish failed:', err)
         }

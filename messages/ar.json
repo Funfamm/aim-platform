@@ -136,7 +136,8 @@
     "searchPlaceholder": "ابحث عن الأفلام، الأنواع...",
     "seeAllResults": "عرض جميع النتائج لـ \"{query}\"",
     "curated": "مختار",
-    "titlesCount": "{count} عناوين"
+    "titlesCount": "{count} عناوين",
+    "watched": "تمت المشاهدة"
   },
   "upcoming": {
     "label": "قريباً",

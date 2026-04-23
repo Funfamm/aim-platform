@@ -117,7 +117,8 @@
     "searchPlaceholder": "映画、ジャンルを検索...",
     "seeAllResults": "「{query}」の全件を見る",
     "curated": "キュレーション",
-    "titlesCount": "{count}作品"
+    "titlesCount": "{count}作品",
+    "watched": "視聴済み"
   },
   "upcoming": {
     "label": "近日公開",

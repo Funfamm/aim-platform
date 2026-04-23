@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
                         sponsorData,
                         groups,
                         project.id,
+                        project.translations,
                     )
 
                     logger.info('cron/publish-scheduled', `Published: ${project.title} (${project.id})`)

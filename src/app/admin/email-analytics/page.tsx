@@ -57,9 +57,9 @@ export default function EmailAnalyticsPage() {
     }
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+        <div className="admin-layout">
             <AdminSidebar />
-            <main style={{ flex: 1, padding: '32px', maxWidth: '1000px', margin: '0 auto' }}>
+            <main className="admin-main" style={{ maxWidth: '1000px' }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px' }}>📧 Email Analytics</h1>
                 <p style={{ color: 'var(--text-tertiary)', fontSize: '0.82rem', marginBottom: '24px' }}>
                     Delivery metrics, open tracking, and subscriber management.

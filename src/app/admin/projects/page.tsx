@@ -1172,7 +1172,7 @@ export default function AdminProjectsPage() {
                                                         type="datetime-local"
                                                         value={form.publishAt}
                                                         onChange={e => updateField('publishAt', e.target.value)}
-                                                        min={new Date().toISOString().slice(0, 16)}
+                                                        min={(() => { const n = new Date(); return new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16) })()}
                                                         style={{
                                                             padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem',
                                                             background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',

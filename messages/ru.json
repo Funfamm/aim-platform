@@ -134,7 +134,8 @@
     "searchPlaceholder": "Поиск фильмов, жанров...",
     "seeAllResults": "Показать все результаты для \"{query}\"",
     "curated": "Подборка",
-    "titlesCount": "{count} фильмов"
+    "titlesCount": "{count} фильмов",
+    "watched": "просмотрено"
   },
   "upcoming": {
     "label": "Скоро",

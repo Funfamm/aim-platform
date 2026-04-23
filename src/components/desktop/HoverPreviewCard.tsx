@@ -345,7 +345,7 @@ export default function HoverPreviewCard({ project, anchor, locale, onClose, onK
                         )}
                         {watchProgress !== null && watchProgress > 0.05 && (
                             <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)' }}>
-                                {Math.round(watchProgress * 100)}% watched
+                                {Math.round(watchProgress * 100)}% {t('watched')}
                             </span>
                         )}
                     </div>

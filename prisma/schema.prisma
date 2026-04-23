@@ -475,7 +475,7 @@ model UserNotificationPreference {
   userId         String   @unique
   newRole        Boolean  @default(true)
   announcement   Boolean  @default(true)
-  contentPublish Boolean  @default(false)
+  contentPublish Boolean  @default(true)
   statusChange   Boolean  @default(true)
   email          Boolean  @default(true)
   inApp          Boolean  @default(true)

@@ -134,7 +134,8 @@
     "searchPlaceholder": "Filme, Genres suchen...",
     "seeAllResults": "Alle Ergebnisse für \"{query}\" anzeigen",
     "curated": "Kuratiert",
-    "titlesCount": "{count} Titel"
+    "titlesCount": "{count} Titel",
+    "watched": "gesehen"
   },
   "upcoming": {
     "label": "Demnächst",
