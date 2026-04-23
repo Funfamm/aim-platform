@@ -47,6 +47,7 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
             projectType: true,
             status: true,
             published: true,
+            projectTranslationsJson: true,
             episodes: {
                 orderBy: [{ season: 'asc' }, { number: 'asc' }],
             },
@@ -93,6 +94,7 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
 
     const serializedProject = {
         ...project,
+        projectTranslationsJson: project.projectTranslationsJson ?? null,
         episodes: project.episodes.map(e => ({
             ...e,
             createdAt: e.createdAt.toISOString(),

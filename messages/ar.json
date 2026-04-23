@@ -521,7 +521,25 @@
     "roleTypeExtra": "كومبارس",
     "withdraw": "سحب",
     "applyAgain": "تطبيق مجددًا",
-    "applied": "تم التقديم"
+    "applied": "تم التقديم",
+    "gallery": "المعرض",
+    "behindTheScenes": "خلف الكواليس",
+    "credits": "الاعتمادات",
+    "teamBehind": "الفريق خلف",
+    "roleDirector": "المخرج",
+    "roleProducer": "المنتج",
+    "roleEditor": "المحرر",
+    "roleWriter": "الكاتب",
+    "roleCinematographer": "المصور السينمائي",
+    "roleComposer": "الملحن",
+    "roleNarrator": "الراوي",
+    "roleActor": "الممثل",
+    "roleExecProducer": "المنتج التنفيذي",
+    "roleCoDirector": "مساعد المخرج",
+    "roleSoundDesigner": "مصمم الصوت",
+    "roleArtDirector": "المدير الفني",
+    "roleCostumeDesigner": "مصمم الأزياء",
+    "roleMakeupArtist": "فنان المكياج"
   },
   "castingForm": {
     "pageLabel": "طلب كاستنج",
@@ -1348,5 +1366,11 @@
     "backToCasting": "العودة للتمثيل",
     "backToScripts": "العودة للنصوص",
     "backToTraining": "العودة للتدريب"
+  },
+  "watchPlayer": {
+    "hintPlay": "تشغيل",
+    "hintVolume": "الصوت",
+    "hintMute": "كتم",
+    "hintFullscreen": "ملء الشاشة"
   }
 }

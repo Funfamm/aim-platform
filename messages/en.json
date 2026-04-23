@@ -521,7 +521,21 @@
     "gallery": "Gallery",
     "behindTheScenes": "Behind the Scenes",
     "credits": "Credits",
-    "teamBehind": "The Team Behind"
+    "teamBehind": "The Team Behind",
+    "roleDirector": "Director",
+    "roleProducer": "Producer",
+    "roleEditor": "Editor",
+    "roleWriter": "Writer",
+    "roleCinematographer": "Cinematographer",
+    "roleComposer": "Composer",
+    "roleNarrator": "Narrator",
+    "roleActor": "Actor",
+    "roleExecProducer": "Executive Producer",
+    "roleCoDirector": "Co-Director",
+    "roleSoundDesigner": "Sound Designer",
+    "roleArtDirector": "Art Director",
+    "roleCostumeDesigner": "Costume Designer",
+    "roleMakeupArtist": "Makeup Artist"
   },
   "castingForm": {
     "pageLabel": "Casting Application",
@@ -1314,5 +1328,11 @@
     "backToCasting": "Back to Casting",
     "backToScripts": "Back to Scripts",
     "backToTraining": "Back to Training"
+  },
+  "watchPlayer": {
+    "hintPlay": "play",
+    "hintVolume": "volume",
+    "hintMute": "mute",
+    "hintFullscreen": "fullscreen"
   }
 }

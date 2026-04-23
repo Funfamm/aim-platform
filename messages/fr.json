@@ -519,7 +519,25 @@
     "roleTypeExtra": "Figurant",
     "withdraw": "Retirer",
     "applyAgain": "Postuler à nouveau",
-    "applied": "Candidature envoyée"
+    "applied": "Candidature envoyée",
+    "gallery": "Galerie",
+    "behindTheScenes": "Les Coulisses",
+    "credits": "Crédits",
+    "teamBehind": "L'Équipe Derrière",
+    "roleDirector": "Réalisateur",
+    "roleProducer": "Producteur",
+    "roleEditor": "Monteur",
+    "roleWriter": "Scénariste",
+    "roleCinematographer": "Directeur Photo",
+    "roleComposer": "Compositeur",
+    "roleNarrator": "Narrateur",
+    "roleActor": "Acteur",
+    "roleExecProducer": "Producteur Exécutif",
+    "roleCoDirector": "Co-réalisateur",
+    "roleSoundDesigner": "Concepteur Sonore",
+    "roleArtDirector": "Directeur Artistique",
+    "roleCostumeDesigner": "Costumier",
+    "roleMakeupArtist": "Maquilleur"
   },
   "castingForm": {
     "pageLabel": "Candidature Casting",
@@ -1346,5 +1364,11 @@
     "backToCasting": "Retour au Casting",
     "backToScripts": "Retour aux Scripts",
     "backToTraining": "Retour à la Formation"
+  },
+  "watchPlayer": {
+    "hintPlay": "lecture",
+    "hintVolume": "volume",
+    "hintMute": "muet",
+    "hintFullscreen": "plein écran"
   }
 }

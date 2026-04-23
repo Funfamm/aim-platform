@@ -1378,12 +1378,12 @@ export default function AdminProjectsPage() {
                                     <h4 style={{ marginBottom: 'var(--space-md)', fontSize: '0.95rem', fontWeight: 700 }}>📸 Gallery & Credits</h4>
                                     <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: 'var(--space-md)' }}>
                                         <div>
-                                            <label className="form-label" htmlFor="gallery">Gallery Images <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(one URL per line)</span></label>
+                                            <label className="form-label" htmlFor="gallery">Gallery Media <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(images &amp; videos — one URL per line)</span></label>
                                             <textarea
                                                 id="gallery"
                                                 className="form-input"
                                                 rows={3}
-                                                placeholder={"https://cdn.example.com/still-1.jpg\nhttps://cdn.example.com/still-2.jpg"}
+                                                placeholder={"https://cdn.example.com/still-1.jpg\nhttps://cdn.example.com/bts-clip.mp4\nhttps://cdn.example.com/still-2.jpg"}
                                                 value={form.gallery || ''}
                                                 onChange={e => updateField('gallery', e.target.value)}
                                                 style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}

@@ -519,7 +519,25 @@
     "roleTypeExtra": "Массовка",
     "withdraw": "Отозвать",
     "applyAgain": "Подать заявку снова",
-    "applied": "Подано"
+    "applied": "Подано",
+    "gallery": "Галерея",
+    "behindTheScenes": "За кулисами",
+    "credits": "Титры",
+    "teamBehind": "Команда",
+    "roleDirector": "Режиссёр",
+    "roleProducer": "Продюсер",
+    "roleEditor": "Монтажёр",
+    "roleWriter": "Сценарист",
+    "roleCinematographer": "Оператор",
+    "roleComposer": "Композитор",
+    "roleNarrator": "Рассказчик",
+    "roleActor": "Актёр",
+    "roleExecProducer": "Исполнительный продюсер",
+    "roleCoDirector": "Со-режиссёр",
+    "roleSoundDesigner": "Звукорежиссёр",
+    "roleArtDirector": "Арт-директор",
+    "roleCostumeDesigner": "Художник по костюмам",
+    "roleMakeupArtist": "Визажист"
   },
   "castingForm": {
     "pageLabel": "Заявка на Кастинг",
@@ -1346,5 +1364,11 @@
     "backToCasting": "Назад к кастингу",
     "backToScripts": "Назад к сценариям",
     "backToTraining": "Назад к обучению"
+  },
+  "watchPlayer": {
+    "hintPlay": "воспроизведение",
+    "hintVolume": "громкость",
+    "hintMute": "без звука",
+    "hintFullscreen": "полный экран"
   }
 }

@@ -631,8 +631,9 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
 
             {/* ═══ GALLERY SECTION ═══ */}
             {project.gallery && (() => {
-                const images = project.gallery.split('\n').map(u => u.trim()).filter(Boolean)
-                if (images.length === 0) return null
+                const items = project.gallery.split('\n').map(u => u.trim()).filter(Boolean)
+                if (items.length === 0) return null
+                const isVideo = (url: string) => /\.(mp4|webm|mov|ogg)(\?|$)/i.test(url)
                 return (
                     <section id="gallery" style={{
                         padding: 'var(--space-3xl) 0 var(--space-2xl)',
@@ -644,10 +645,10 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                     fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.14em',
                                     textTransform: 'uppercase', color: 'var(--accent-gold)',
                                 }}>
-                                    {t('gallery') || 'Gallery'}
+                                    {t('gallery')}
                                 </span>
                                 <h2 style={{ marginTop: '4px', fontSize: '1.6rem' }}>
-                                    {t('behindTheScenes') || 'Behind the Scenes'}
+                                    {t('behindTheScenes')}
                                 </h2>
                             </div>
                             <div style={{
@@ -657,43 +658,59 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                 maxWidth: '1200px',
                                 margin: '0 auto',
                             }}>
-                                {images.map((url, i) => (
-                                    <button
+                                {items.map((url, i) => (
+                                    <div
                                         key={i}
-                                        onClick={() => setLightboxImg(url)}
                                         style={{
                                             position: 'relative',
-                                            cursor: 'pointer',
                                             borderRadius: 'var(--radius-lg)',
                                             overflow: 'hidden',
                                             border: '1px solid var(--border-subtle)',
                                             background: '#000',
                                             aspectRatio: '16/10',
-                                            padding: 0,
                                             transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                                            cursor: isVideo(url) ? 'default' : 'pointer',
                                         }}
+                                        onClick={() => { if (!isVideo(url)) setLightboxImg(url) }}
                                         onMouseEnter={e => {
-                                            (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)'
-                                            ;(e.currentTarget as HTMLElement).style.boxShadow = '0 10px 40px rgba(0,0,0,0.4)'
+                                            (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)';
+                                            (e.currentTarget as HTMLElement).style.boxShadow = '0 10px 40px rgba(0,0,0,0.4)'
                                         }}
                                         onMouseLeave={e => {
-                                            (e.currentTarget as HTMLElement).style.transform = 'scale(1)'
-                                            ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
+                                            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+                                            (e.currentTarget as HTMLElement).style.boxShadow = 'none'
                                         }}
                                     >
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img
-                                            src={url}
-                                            alt={`${title} gallery ${i + 1}`}
-                                            loading="lazy"
-                                            style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                display: 'block',
-                                            }}
-                                        />
-                                    </button>
+                                        {isVideo(url) ? (
+                                            <video
+                                                src={url}
+                                                controls
+                                                preload="metadata"
+                                                playsInline
+                                                controlsList="nodownload"
+                                                onContextMenu={e => e.preventDefault()}
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    display: 'block',
+                                                }}
+                                            />
+                                        ) : (
+                                            /* eslint-disable-next-line @next/next/no-img-element */
+                                            <img
+                                                src={url}
+                                                alt={`${title} gallery ${i + 1}`}
+                                                loading="lazy"
+                                                style={{
+                                                    width: '100%',
+                                                    height: '100%',
+                                                    objectFit: 'cover',
+                                                    display: 'block',
+                                                }}
+                                            />
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -753,9 +770,24 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
             {project.credits && (() => {
                 const lines = project.credits.split('\n').map(l => l.trim()).filter(Boolean)
                 if (lines.length === 0) return null
+                // Translate common role labels
+                const roleKeyMap: Record<string, string> = {
+                    'director': 'roleDirector', 'producer': 'roleProducer',
+                    'editor': 'roleEditor', 'writer': 'roleWriter',
+                    'cinematographer': 'roleCinematographer', 'composer': 'roleComposer',
+                    'narrator': 'roleNarrator', 'actor': 'roleActor',
+                    'executive producer': 'roleExecProducer', 'co-director': 'roleCoDirector',
+                    'sound designer': 'roleSoundDesigner', 'art director': 'roleArtDirector',
+                    'costume designer': 'roleCostumeDesigner', 'makeup artist': 'roleMakeupArtist',
+                }
+                const translateRole = (role: string): string => {
+                    const key = roleKeyMap[role.toLowerCase().trim()]
+                    if (!key) return role // No mapping — keep as-is
+                    try { return t(key) } catch { return role }
+                }
                 const entries = lines.map(line => {
                     const [role, ...nameParts] = line.split('—').map(s => s.trim())
-                    return { role: role || '', name: nameParts.join('—') || '' }
+                    return { role: translateRole(role || ''), name: nameParts.join('—') || '' }
                 }).filter(e => e.role || e.name)
                 if (entries.length === 0) return null
                 return (
@@ -768,10 +800,10 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                     fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.14em',
                                     textTransform: 'uppercase', color: 'var(--accent-gold)',
                                 }}>
-                                    {t('credits') || 'Credits'}
+                                    {t('credits')}
                                 </span>
                                 <h2 style={{ marginTop: '4px', fontSize: '1.6rem' }}>
-                                    {t('teamBehind') || 'The Team Behind'} {title}
+                                    {t('teamBehind')} {title}
                                 </h2>
                             </div>
                             <div style={{

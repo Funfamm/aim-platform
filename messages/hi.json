@@ -519,7 +519,25 @@
     "roleTypeExtra": "एक्स्ट्रा",
     "withdraw": "वापस लें",
     "applyAgain": "फिर से आवेदन करें",
-    "applied": "आवेदन किया"
+    "applied": "आवेदन किया",
+    "gallery": "गैलरी",
+    "behindTheScenes": "पर्दे के पीछे",
+    "credits": "श्रेय",
+    "teamBehind": "इसके पीछे की टीम",
+    "roleDirector": "निर्देशक",
+    "roleProducer": "निर्माता",
+    "roleEditor": "संपादक",
+    "roleWriter": "लेखक",
+    "roleCinematographer": "छायाकार",
+    "roleComposer": "संगीतकार",
+    "roleNarrator": "कथावाचक",
+    "roleActor": "अभिनेता",
+    "roleExecProducer": "कार्यकारी निर्माता",
+    "roleCoDirector": "सह-निर्देशक",
+    "roleSoundDesigner": "ध्वनि डिज़ाइनर",
+    "roleArtDirector": "कला निर्देशक",
+    "roleCostumeDesigner": "पोशाक डिज़ाइनर",
+    "roleMakeupArtist": "मेकअप कलाकार"
   },
   "castingForm": {
     "pageLabel": "कास्टिंग आवेदन",
@@ -1346,5 +1364,11 @@
     "backToCasting": "कास्टिंग पर वापस",
     "backToScripts": "स्क्रिप्ट पर वापस",
     "backToTraining": "प्रशिक्षण पर वापस"
+  },
+  "watchPlayer": {
+    "hintPlay": "चलाएं",
+    "hintVolume": "आवाज़",
+    "hintMute": "म्यूट",
+    "hintFullscreen": "पूर्ण स्क्रीन"
   }
 }

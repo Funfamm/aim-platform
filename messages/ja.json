@@ -502,7 +502,25 @@
     "roleTypeExtra": "エキストラ",
     "withdraw": "取り下げ",
     "applyAgain": "再応募",
-    "applied": "応募済み"
+    "applied": "応募済み",
+    "gallery": "ギャラリー",
+    "behindTheScenes": "舞台裏",
+    "credits": "クレジット",
+    "teamBehind": "チーム",
+    "roleDirector": "監督",
+    "roleProducer": "プロデューサー",
+    "roleEditor": "編集",
+    "roleWriter": "脚本",
+    "roleCinematographer": "撮影監督",
+    "roleComposer": "作曲",
+    "roleNarrator": "ナレーター",
+    "roleActor": "俳優",
+    "roleExecProducer": "エグゼクティブプロデューサー",
+    "roleCoDirector": "共同監督",
+    "roleSoundDesigner": "サウンドデザイナー",
+    "roleArtDirector": "アートディレクター",
+    "roleCostumeDesigner": "衣装デザイナー",
+    "roleMakeupArtist": "メイクアップアーティスト"
   },
   "castingForm": {
     "pageLabel": "キャスティング応募",
@@ -1347,5 +1365,11 @@
     "backToCasting": "キャスティングに戻る",
     "backToScripts": "スクリプトに戻る",
     "backToTraining": "トレーニングに戻る"
+  },
+  "watchPlayer": {
+    "hintPlay": "再生",
+    "hintVolume": "音量",
+    "hintMute": "ミュート",
+    "hintFullscreen": "フルスクリーン"
   }
 }

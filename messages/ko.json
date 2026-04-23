@@ -519,7 +519,25 @@
     "roleTypeExtra": "엑스트라",
     "withdraw": "취소",
     "applyAgain": "다시 지원",
-    "applied": "지원 완료"
+    "applied": "지원 완료",
+    "gallery": "갤러리",
+    "behindTheScenes": "비하인드 스토리",
+    "credits": "크레딧",
+    "teamBehind": "팀",
+    "roleDirector": "감독",
+    "roleProducer": "프로듀서",
+    "roleEditor": "편집",
+    "roleWriter": "작가",
+    "roleCinematographer": "촬영감독",
+    "roleComposer": "작곡",
+    "roleNarrator": "내레이터",
+    "roleActor": "배우",
+    "roleExecProducer": "총괄 프로듀서",
+    "roleCoDirector": "공동 감독",
+    "roleSoundDesigner": "사운드 디자이너",
+    "roleArtDirector": "아트 디렉터",
+    "roleCostumeDesigner": "의상 디자이너",
+    "roleMakeupArtist": "메이크업 아티스트"
   },
   "castingForm": {
     "pageLabel": "캐스팅 지원",
@@ -1346,5 +1364,11 @@
     "backToCasting": "캐스팅으로 돌아가기",
     "backToScripts": "스크립트로 돌아가기",
     "backToTraining": "훈련으로 돌아가기"
+  },
+  "watchPlayer": {
+    "hintPlay": "재생",
+    "hintVolume": "볼륨",
+    "hintMute": "음소거",
+    "hintFullscreen": "전체화면"
   }
 }

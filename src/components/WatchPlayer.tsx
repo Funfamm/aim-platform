@@ -5,7 +5,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
 import { LANGUAGE_NAMES, SUBTITLE_TARGET_LANGS } from '@/config/subtitles'
 import FallbackNotice from '@/components/player/FallbackNotice'
@@ -21,6 +21,7 @@ interface WatchProject {
     duration: string | null; coverImage: string | null
     filmUrl: string | null; trailerUrl: string | null
     projectType: string; status: string; episodes: Episode[]
+    projectTranslationsJson?: string | null
 }
 
 /* ─────────────────────────── Helpers ─────────────────────────── */
@@ -43,6 +44,16 @@ export default function WatchPlayer({
     userPreferredLang?: string
 }) {
     const tPlayer = useTranslations('watchPlayer')
+    const locale = useLocale()
+
+    // Resolve translated title
+    const translatedTitle = (() => {
+        if (locale === 'en' || !project.projectTranslationsJson) return project.title
+        try {
+            const tr = JSON.parse(project.projectTranslationsJson)?.[locale]
+            return tr?.title || project.title
+        } catch { return project.title }
+    })()
 
     /* ── Refs ── */
     const videoRef    = useRef<HTMLVideoElement>(null)
@@ -861,7 +872,7 @@ export default function WatchPlayer({
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M19 12H5M12 19l-7-7 7-7" />
                     </svg>
-                    {tPlayer('backTo', { title: project.title })}
+                    {tPlayer('backTo', { title: translatedTitle })}
                 </Link>
 
                 {/* ── Resume Banner ── */}
@@ -1549,8 +1560,8 @@ export default function WatchPlayer({
                                 marginTop: '4px', fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)',
                                 display: 'flex', gap: '12px', justifyContent: 'center',
                             }}>
-                                <span>Space/K: play</span><span>← →: ±10s</span>
-                                <span>↑ ↓: volume</span><span>M: mute</span><span>F: fullscreen</span>
+                                <span>Space/K: {tPlayer('hintPlay')}</span><span>← →: ±10s</span>
+                                <span>↑ ↓: {tPlayer('hintVolume')}</span><span>M: {tPlayer('hintMute')}</span><span>F: {tPlayer('hintFullscreen')}</span>
                             </div>
                         </div>
                     )}

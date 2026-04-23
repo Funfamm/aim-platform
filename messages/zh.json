@@ -519,7 +519,25 @@
     "roleTypeExtra": "临演",
     "withdraw": "撤回",
     "applyAgain": "重新申请",
-    "applied": "已申请"
+    "applied": "已申请",
+    "gallery": "画廊",
+    "behindTheScenes": "幕后花絮",
+    "credits": "演职人员",
+    "teamBehind": "团队",
+    "roleDirector": "导演",
+    "roleProducer": "制片人",
+    "roleEditor": "剪辑",
+    "roleWriter": "编剧",
+    "roleCinematographer": "摄影指导",
+    "roleComposer": "作曲",
+    "roleNarrator": "旁白",
+    "roleActor": "演员",
+    "roleExecProducer": "执行制片人",
+    "roleCoDirector": "联合导演",
+    "roleSoundDesigner": "声音设计",
+    "roleArtDirector": "美术指导",
+    "roleCostumeDesigner": "服装设计",
+    "roleMakeupArtist": "化妆师"
   },
   "castingForm": {
     "pageLabel": "选角申请",
@@ -1346,5 +1364,11 @@
     "backToCasting": "返回选角",
     "backToScripts": "返回剧本",
     "backToTraining": "返回培训"
+  },
+  "watchPlayer": {
+    "hintPlay": "播放",
+    "hintVolume": "音量",
+    "hintMute": "静音",
+    "hintFullscreen": "全屏"
   }
 }

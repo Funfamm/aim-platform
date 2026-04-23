@@ -339,9 +339,9 @@ export default function ProjectEditPage() {
                         {openSections.gallery && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
                                 <div>
-                                    <label className="form-label">Gallery Images <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(one URL per line)</span></label>
+                                    <label className="form-label" htmlFor="gallery">Gallery Media <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(images &amp; videos — one URL per line)</span></label>
                                     <textarea className="form-input" rows={3} value={form.gallery} onChange={e => updateField('gallery', e.target.value)}
-                                        placeholder={"https://cdn.example.com/still-1.jpg\nhttps://cdn.example.com/still-2.jpg"}
+                                        placeholder={"https://cdn.example.com/still-1.jpg\nhttps://cdn.example.com/bts-clip.mp4\nhttps://cdn.example.com/still-2.jpg"}
                                         style={{ fontFamily: 'monospace', fontSize: '0.82rem' }} />
                                 </div>
                                 <div>
