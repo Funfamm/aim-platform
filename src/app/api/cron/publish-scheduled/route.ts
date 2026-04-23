@@ -47,6 +47,7 @@ export async function GET(request: NextRequest) {
             select: {
                 id: true, title: true, slug: true, status: true,
                 sponsorData: true, translations: true,
+                publishNotifyGroups: true,
             },
         })
 
@@ -58,12 +59,12 @@ export async function GET(request: NextRequest) {
         logger.info('cron/publish-scheduled', `Found ${dueProjets.length} project(s) to publish`)
 
         const results = await Promise.allSettled(
-            dueProjets.map(async (project: { id: string; title: string; slug: string; status: string; sponsorData: string | null; translations: string | null }) => {
+            dueProjets.map(async (project: { id: string; title: string; slug: string; status: string; sponsorData: string | null; translations: string | null; publishNotifyGroups: string | null }) => {
                 try {
-                    // 1. Mark as published + clear the scheduled time
+                    // 1. Mark as published + clear the scheduled time + clear saved audience
                     await db.project.update({
                         where: { id: project.id },
-                        data: { published: true, publishAt: null },
+                        data: { published: true, publishAt: null, publishNotifyGroups: null },
                     })
 
                     // 2. Parse sponsor data if present
@@ -72,7 +73,15 @@ export async function GET(request: NextRequest) {
                         try { sponsorData = JSON.parse(project.sponsorData) } catch { /* ignore */ }
                     }
 
-                    // 3. Fire the same notification pipeline as a manual publish
+                    // 3. Parse audience selection — defaults to nobody if not set
+                    let groups: { subscribers?: boolean; members?: boolean; cast?: boolean } = {
+                        subscribers: false, members: false, cast: false,
+                    }
+                    if (project.publishNotifyGroups) {
+                        try { groups = JSON.parse(project.publishNotifyGroups) } catch { /* ignore */ }
+                    }
+
+                    // 4. Fire the notification pipeline with saved audience selection
                     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
                     await notifyContentPublish(
                         project.title,
@@ -80,7 +89,7 @@ export async function GET(request: NextRequest) {
                         `${siteUrl}/en/works/${project.slug}`,
                         project.status,
                         sponsorData,
-                        { subscribers: true, members: true, cast: true },
+                        groups,
                         project.id,
                     )
 

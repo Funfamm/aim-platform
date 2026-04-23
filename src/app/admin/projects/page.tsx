@@ -133,11 +133,15 @@ export default function AdminProjectsPage() {
     const [translatingId, setTranslatingId] = useState<string | null>(null)
     // Publish confirmation gate
     const [showPublishWarning, setShowPublishWarning] = useState(false)
+    // Track whether the project was already published when edit started
+    const [wasPublished, setWasPublished] = useState(false)
+    const [resending, setResending] = useState(false)
     // Publish notification audience — which groups get the email when published
+    // Default to ALL FALSE — admin must explicitly opt-in each group
     const [notifyGroups, setNotifyGroups] = useState<{ subscribers: boolean; members: boolean; cast: boolean }>({
-        subscribers: true,
-        members: true,
-        cast: true,
+        subscribers: false,
+        members: false,
+        cast: false,
     })
 
     // ── Subtitle Editor modal ──────────────────────────────────────────────────
@@ -227,6 +231,9 @@ export default function AdminProjectsPage() {
         })
         setSelectedRollIds([])
         setShowModal(true)
+        setWasPublished(p.published ?? false)
+        // Reset audience checkboxes when opening a project
+        setNotifyGroups({ subscribers: false, members: false, cast: false })
         setError('')
         // Fetch rolls + current assignments + subtitle approval status in parallel
         setRollsLoading(true)
@@ -282,8 +289,12 @@ export default function AdminProjectsPage() {
                 slug: form.slug || slugify(form.title),
                 // Convert datetime-local string to ISO or null
                 publishAt: form.publishAt ? new Date(form.publishAt).toISOString() : null,
-                // Only include audience selection when actually publishing
+                // Include audience selection when publishing immediately
                 notifyGroups: form.published ? notifyGroups : undefined,
+                // Persist audience selection for scheduled publish (cron will read this)
+                publishNotifyGroups: form.publishAt && !form.published
+                    ? JSON.stringify(notifyGroups)
+                    : undefined,
             }
             const url = editingId ? `/api/admin/projects/${editingId}` : '/api/admin/projects'
             const method = editingId ? 'PUT' : 'POST'
@@ -1184,8 +1195,8 @@ export default function AdminProjectsPage() {
                                         )}
                                     </div>
 
-                                    {/* Notify Audience — appears only when publishing */}
-                                    {form.published && !editingId?.startsWith('new') && (
+                                    {/* Notify Audience — appears when publishing OR scheduling OR re-sending */}
+                                    {(form.published || form.publishAt) && !editingId?.startsWith('new') && (
                                         <div style={{
                                             marginTop: 'var(--space-md)',
                                             padding: 'var(--space-md)',
@@ -1194,10 +1205,15 @@ export default function AdminProjectsPage() {
                                             border: '1px solid rgba(192,132,252,0.2)',
                                         }}>
                                             <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#c084fc', marginBottom: 'var(--space-sm)' }}>
-                                                📨 Notify Audience on Publish
+                                                {wasPublished ? '📩 Re-send Notifications' : form.publishAt ? '📅 Scheduled Publish Audience' : '📨 Notify Audience on Publish'}
                                             </div>
                                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
-                                                Select who receives the publish email when you save. Only fires on the <strong style={{ color: 'var(--text-secondary)' }}>first</strong> publish — not on re-saves.
+                                                {wasPublished
+                                                    ? 'This project is already published. Select audience groups and click Re-send to notify additional users.'
+                                                    : form.publishAt
+                                                        ? 'Select who will be notified when the scheduled publish fires. This selection is saved with the project.'
+                                                        : <>Select who receives the publish email when you save. Only fires on the <strong style={{ color: 'var(--text-secondary)' }}>first</strong> publish — not on re-saves.</>
+                                                }
                                             </div>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                                 {([
@@ -1251,8 +1267,49 @@ export default function AdminProjectsPage() {
                                             </div>
                                             {!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast && (
                                                 <div style={{ marginTop: 'var(--space-sm)', fontSize: '0.72rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                                                    ⚠️ No audience selected — no emails will be sent on publish.
+                                                    ⚠️ No audience selected — {wasPublished ? 'select groups to re-send.' : 'no emails will be sent on publish.'}
                                                 </div>
+                                            )}
+                                            {/* Re-send button for already-published projects */}
+                                            {wasPublished && editingId && (
+                                                <button
+                                                    type="button"
+                                                    disabled={resending || (!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast)}
+                                                    onClick={async () => {
+                                                        if (!confirm('Re-send publish notifications to the selected audience groups? This will send emails NOW.')) return
+                                                        setResending(true)
+                                                        try {
+                                                            const res = await fetch(`/api/admin/projects/${editingId}/resend`, {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ notifyGroups }),
+                                                            })
+                                                            if (res.ok) {
+                                                                alert('✅ Notifications queued for the selected audience.')
+                                                            } else {
+                                                                const data = await res.json()
+                                                                alert(`❌ ${data.error || 'Failed to queue notifications.'}`)
+                                                            }
+                                                        } catch {
+                                                            alert('❌ Network error.')
+                                                        } finally {
+                                                            setResending(false)
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        marginTop: 'var(--space-md)', padding: '8px 18px',
+                                                        borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                                                        fontSize: '0.8rem', fontWeight: 700,
+                                                        background: (!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast)
+                                                            ? 'rgba(255,255,255,0.04)'
+                                                            : 'rgba(192,132,252,0.12)',
+                                                        border: `1px solid ${(!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast) ? 'rgba(255,255,255,0.06)' : 'rgba(192,132,252,0.3)'}`,
+                                                        color: (!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast) ? 'var(--text-tertiary)' : '#c084fc',
+                                                        opacity: resending ? 0.6 : 1,
+                                                    }}
+                                                >
+                                                    {resending ? '⏳ Sending...' : '📩 Re-send Notifications'}
+                                                </button>
                                             )}
                                         </div>
                                     )}

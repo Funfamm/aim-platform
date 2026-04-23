@@ -81,6 +81,7 @@ model Project {
   featured     Boolean        @default(false)
   published    Boolean        @default(false)  // visibility gate — only published projects appear on public pages
   publishAt    DateTime?                       // if set, cron publishes the project at this time
+  publishNotifyGroups String?                   // JSON: { subscribers, members, cast } — audience for scheduled publish
   sortOrder    Int            @default(0)
   viewCount    Int            @default(0)  // cached counter — incremented by /api/projects/view
   createdAt    DateTime       @default(now())

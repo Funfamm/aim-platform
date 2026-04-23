@@ -30,6 +30,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.published === true && { publishAt: null }),
             // Save publishAt when scheduling — accepts ISO string or null
             ...('publishAt' in body && body.published !== true && { publishAt: body.publishAt ? new Date(body.publishAt) : null }),
+            // Persist audience selection for scheduled publish
+            ...('publishNotifyGroups' in body && { publishNotifyGroups: body.publishNotifyGroups || null }),
             ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
             ...(body.coverImage !== undefined && { coverImage: body.coverImage || null }),
             ...(body.trailerUrl !== undefined && { trailerUrl: body.trailerUrl || null }),
