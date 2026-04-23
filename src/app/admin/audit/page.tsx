@@ -41,9 +41,9 @@ export default function AdminAuditPage() {
     const [from, setFrom] = useState('')
     const [to, setTo] = useState('')
 
-    // Re-fetch whenever filters change (page resets to 1)
-    // or when page changes via pagination buttons.
-    // All setState calls live inside the async function defined within the effect.
+    // Re-fetch whenever filters change — resets page to 1.
+    // This is a client-side data-fetching effect (standard admin dashboard pattern).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching effect: setState is intentional
     useEffect(() => {
         let cancelled = false
         const p = 1
@@ -69,7 +69,8 @@ export default function AdminAuditPage() {
             .catch(() => { if (!cancelled) setLoading(false) })
 
         return () => { cancelled = true }
-    }, [action, adminEmail, targetEmail, from, to]) // eslint-disable-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [action, adminEmail, targetEmail, from, to])
 
     // Pagination — fetch a specific page without resetting filters
     function goToPage(p: number) {
