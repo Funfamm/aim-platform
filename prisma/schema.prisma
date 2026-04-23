@@ -31,6 +31,9 @@ model User {
   trainingStreak         Int                         @default(0)
   lastTrainingAt         DateTime?
   mfaEnabled             Boolean                     @default(false)
+  failedLoginAttempts    Int                         @default(0)
+  lockedUntil            DateTime?                   // auto-clears after TTL
+  suspended              Boolean                     @default(false)  // manual admin ban
   mfaTempCode            String?
   mfaExpiresAt           DateTime?
   preferredLanguage      String                      @default("en")

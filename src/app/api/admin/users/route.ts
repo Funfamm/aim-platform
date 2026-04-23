@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
             select: {
                 id: true, name: true, email: true, role: true, createdAt: true,
                 passwordHash: true, googleId: true, appleId: true, preferredLanguage: true,
+                suspended: true, lockedUntil: true, failedLoginAttempts: true,
                 _count: { select: { applications: true, donations: true } },
             },
         }),
@@ -66,6 +67,9 @@ export async function GET(request: NextRequest) {
                 createdAt: u.createdAt.toISOString(),
                 preferredLanguage: u.preferredLanguage,
                 authProvider,
+                suspended: u.suspended ?? false,
+                lockedUntil: u.lockedUntil ? u.lockedUntil.toISOString() : null,
+                failedLoginAttempts: u.failedLoginAttempts ?? 0,
             }
         }),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },

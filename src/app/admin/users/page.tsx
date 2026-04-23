@@ -6,7 +6,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import { locales, localeNames } from '@/i18n/routing'
 
 
-interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; preferredLanguage: string; authProvider: 'email' | 'google' | 'apple' | 'multiple' }
+interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; preferredLanguage: string; authProvider: 'email' | 'google' | 'apple' | 'multiple'; suspended: boolean; lockedUntil: string | null; failedLoginAttempts: number }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
 
 export default function AdminUsersPage() {
@@ -23,6 +23,10 @@ export default function AdminUsersPage() {
     const [deleting, setDeleting] = useState(false)
     const [confirmDelete, setConfirmDelete] = useState(false)
     const [purgeMode, setPurgeMode] = useState(false)
+    const [lockLoading, setLockLoading] = useState<string | null>(null) // userId being actioned
+    const [toast, setToast] = useState('')
+
+    const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 3500) }
 
     const fetchUsers = useCallback(async (page = 1) => {
         setLoading(true)
@@ -93,6 +97,27 @@ export default function AdminUsersPage() {
         color: 'var(--text-primary)', fontSize: '0.8rem', fontFamily: 'inherit',
     }
 
+    const handleLockAction = async (userId: string, action: 'suspend' | 'unsuspend' | 'unlock') => {
+        setLockLoading(userId)
+        try {
+            const res = await fetch(`/api/admin/users/${userId}/lock`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action }),
+            })
+            const data = await res.json()
+            if (res.ok) {
+                showToast(action === 'suspend' ? '🚫 Account suspended' : action === 'unsuspend' ? '✅ Account unsuspended' : '🔓 Account unlocked')
+                await fetchUsers(pagination.page)
+            } else {
+                showToast(`Error: ${data.error}`)
+            }
+        } catch {
+            showToast('Network error — please try again')
+        }
+        setLockLoading(null)
+    }
+
     // Separate deletable from protected (superadmins)
     const deletableSelected = Array.from(selected).filter(id => {
         const u = users.find(u => u.id === id)
@@ -105,6 +130,17 @@ export default function AdminUsersPage() {
 
             <main className="admin-main">
                 <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '0 0 16px' }}>👥 Users</h1>
+
+                {/* Toast */}
+                {toast && (
+                    <div style={{
+                        position: 'fixed', top: '20px', right: '20px', zIndex: 9999,
+                        background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-lg)', padding: '12px 20px',
+                        fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+                    }}>{toast}</div>
+                )}
 
                 {/* Stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '8px', marginBottom: '16px' }}>
@@ -295,7 +331,7 @@ export default function AdminUsersPage() {
                                             style={{ cursor: 'pointer', accentColor: 'var(--accent-gold)', width: '14px', height: '14px' }}
                                         />
                                     </th>
-                                    {['Name', 'Email', 'Role', 'Via', 'Apps', 'Donations', 'Joined', 'Language'].map(h => (
+                                    {['Name', 'Email', 'Role', 'Via', 'Status', 'Apps', 'Joined', 'Actions'].map(h => (
                                         <th key={h} style={{ padding: '8px 12px', fontWeight: 700, fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', textAlign: 'left' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -379,13 +415,59 @@ export default function AdminUsersPage() {
                                                     </span>
                                                 )}
                                             </td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                {/* Lock / Suspend status badge */}
+                                                {u.suspended ? (
+                                                    <span style={{ fontSize: '0.6rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 700, background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.25)' }}>🚫 Suspended</span>
+                                                ) : u.lockedUntil && new Date(u.lockedUntil) > new Date() ? (
+                                                    <span title={`Locked until ${new Date(u.lockedUntil).toLocaleTimeString()}`} style={{ fontSize: '0.6rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 700, background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.25)' }}>
+                                                        🔒 Locked{u.failedLoginAttempts > 0 ? ` (${u.failedLoginAttempts} fails)` : ''}
+                                                    </span>
+                                                ) : u.failedLoginAttempts > 0 ? (
+                                                    <span style={{ fontSize: '0.6rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 700, background: 'rgba(251,191,36,0.06)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.15)' }}>⚠️ {u.failedLoginAttempts} fail{u.failedLoginAttempts !== 1 ? 's' : ''}</span>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>✓ OK</span>
+                                                )}
+                                            </td>
                                             <td style={{ padding: '8px 12px' }}>{u.applications}</td>
                                             <td style={{ padding: '8px 12px' }}>{u.donations}</td>
                                             <td style={{ padding: '8px 12px', fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                                 {new Date(u.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </td>
-                                            <td style={{ padding: '8px 12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                                                {u.preferredLanguage?.toUpperCase() || 'EN'}
+                                            <td style={{ padding: '8px 12px' }}>
+                                                {u.role !== 'superadmin' && (
+                                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                        {u.suspended ? (
+                                                            <button
+                                                                type="button"
+                                                                disabled={lockLoading === u.id}
+                                                                onClick={() => handleLockAction(u.id, 'unsuspend')}
+                                                                style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}
+                                                            >
+                                                                {lockLoading === u.id ? '…' : '✓ Unsuspend'}
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                type="button"
+                                                                disabled={lockLoading === u.id}
+                                                                onClick={() => handleLockAction(u.id, 'suspend')}
+                                                                style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#ef4444' }}
+                                                            >
+                                                                {lockLoading === u.id ? '…' : '🚫 Suspend'}
+                                                            </button>
+                                                        )}
+                                                        {(u.lockedUntil || u.failedLoginAttempts > 0) && (
+                                                            <button
+                                                                type="button"
+                                                                disabled={lockLoading === u.id}
+                                                                onClick={() => handleLockAction(u.id, 'unlock')}
+                                                                style={{ padding: '3px 8px', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 700, cursor: 'pointer', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', color: '#fbbf24' }}
+                                                            >
+                                                                {lockLoading === u.id ? '…' : '🔓 Unlock'}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </td>
                                         </tr>
                                     )

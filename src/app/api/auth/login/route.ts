@@ -31,22 +31,79 @@ export async function POST(request: Request) {
                 passwordHash: true, avatar: true, bannerUrl: true,
                 emailVerified: true, tokenVersion: true, mfaEnabled: true,
                 preferredLanguage: true, accentColor: true, themeMode: true,
+                failedLoginAttempts: true, lockedUntil: true, suspended: true,
             },
         }), 'login_find_user') as {
             id: string; name: string; email: string; role: string;
             passwordHash: string | null; avatar: string | null; bannerUrl: string | null;
             emailVerified: boolean; tokenVersion: number; mfaEnabled: boolean;
             preferredLanguage: string | null; accentColor: string | null; themeMode: string | null;
+            failedLoginAttempts: number; lockedUntil: Date | null; suspended: boolean;
         } | null
+
         if (!user || !user.passwordHash) {
             recordAuthFailure('invalid_credentials')
             return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
         }
 
+        // ── Account suspension (manual admin ban) ──────────────────────────────
+        if (user.suspended) {
+            recordAuthFailure('suspended')
+            logger.warn('auth/login', `Login blocked — account suspended: ${normalizedEmail}`)
+            return NextResponse.json({
+                error: 'Your account has been suspended. Please contact support.',
+                suspended: true,
+            }, { status: 403 })
+        }
+
+        // ── Automatic lockout (too many failed attempts) ───────────────────────
+        const now = new Date()
+        if (user.lockedUntil && user.lockedUntil > now) {
+            const minutesLeft = Math.ceil((user.lockedUntil.getTime() - now.getTime()) / 60_000)
+            recordAuthFailure('locked')
+            logger.warn('auth/login', `Login blocked — account locked: ${normalizedEmail} (${minutesLeft}m remaining)`)
+            return NextResponse.json({
+                error: `Account temporarily locked due to too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`,
+                locked: true,
+                minutesLeft,
+            }, { status: 423 })
+        }
+
         const valid = await compare(password, user.passwordHash)
         if (!valid) {
             recordAuthFailure('invalid_credentials')
-            return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+            const MAX_ATTEMPTS = 5
+            const LOCKOUT_MINUTES = 60
+            const newAttempts = (user.failedLoginAttempts ?? 0) + 1
+            const shouldLock = newAttempts >= MAX_ATTEMPTS
+            await (prisma as any).user.update({
+                where: { id: user.id },
+                data: {
+                    failedLoginAttempts: newAttempts,
+                    lockedUntil: shouldLock ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000) : undefined,
+                },
+            })
+            const remaining = MAX_ATTEMPTS - newAttempts
+            if (shouldLock) {
+                logger.warn('auth/login', `Account locked after ${MAX_ATTEMPTS} failed attempts: ${normalizedEmail}`)
+                return NextResponse.json({
+                    error: `Too many failed attempts. Your account is locked for ${LOCKOUT_MINUTES} minutes.`,
+                    locked: true,
+                    minutesLeft: LOCKOUT_MINUTES,
+                }, { status: 423 })
+            }
+            return NextResponse.json({
+                error: `Invalid email or password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before lockout.`,
+                attemptsRemaining: remaining,
+            }, { status: 401 })
+        }
+
+        // ── Successful login — reset failed attempts ───────────────────────────
+        if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+            void (prisma as any).user.update({
+                where: { id: user.id },
+                data: { failedLoginAttempts: 0, lockedUntil: null },
+            }).catch(() => {})
         }
 
         // All fields already included in the initial query — no second round-trip needed
