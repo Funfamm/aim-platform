@@ -201,9 +201,28 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             return false
         }
 
+        // Generate a unique tracking ID for open analytics
+        const trackingId = crypto.randomUUID()
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+        const pixelUrl = `${siteUrl}/api/track/open/${trackingId}`
+        const trackingPixel = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />`
+
+        // Inject tracking pixel before </body> or at the end of the HTML
+        let htmlWithPixel = options.html
+        if (htmlWithPixel.includes('</body>')) {
+            htmlWithPixel = htmlWithPixel.replace('</body>', `${trackingPixel}</body>`)
+        } else if (htmlWithPixel.includes('</div>')) {
+            // Append before last closing div
+            const lastIdx = htmlWithPixel.lastIndexOf('</div>')
+            htmlWithPixel = htmlWithPixel.slice(0, lastIdx) + trackingPixel + htmlWithPixel.slice(lastIdx)
+        } else {
+            htmlWithPixel += trackingPixel
+        }
+
         // Use admin-configured reply-to unless caller explicitly set one
         const finalOptions: EmailOptions = {
             ...options,
+            html: htmlWithPixel,
             replyTo: options.replyTo ?? config.replyTo,
         }
 
@@ -215,9 +234,10 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
         logger.info('mailer', `Email sent to ${options.to}: ${options.subject}`)
 
-        // Fire-and-forget delivery log
+        // Fire-and-forget delivery log with tracking ID
         prisma.emailLog.create({
             data: {
+                trackingId,
                 to: options.to,
                 subject: options.subject,
                 type: detectEmailType(options.subject),
@@ -250,6 +270,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         return false
     }
 }
+
 
 /**
  * Send a test email to verify configuration.

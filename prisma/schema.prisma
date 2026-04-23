@@ -539,6 +539,7 @@ model Subscriber {
   id           String    @id @default(cuid())
   email        String    @unique
   name         String?
+  source       String?                       // "organic" | "admin_csv_import" | "api" — traceability
   subscribedAt DateTime  @default(now())
   active       Boolean   @default(false)   // false until double opt-in confirmed
   confirmToken String?                      // null once confirmed
@@ -546,18 +547,21 @@ model Subscriber {
 }
 
 model EmailLog {
-  id        String   @id @default(cuid())
-  to        String
-  subject   String
-  type      String   @default("general")
-  transport String   @default("unknown")
-  success   Boolean
-  error     String?
-  sentAt    DateTime @default(now())
+  id         String    @id @default(cuid())
+  trackingId String?   @unique            // UUID for open-tracking pixel
+  to         String
+  subject    String
+  type       String    @default("general")
+  transport  String    @default("unknown")
+  success    Boolean
+  error      String?
+  sentAt     DateTime  @default(now())
+  openedAt   DateTime?                     // set when tracking pixel is loaded
 
   @@index([sentAt])
   @@index([success])
   @@index([type])
+  @@index([trackingId])
 }
 
 model Donation {

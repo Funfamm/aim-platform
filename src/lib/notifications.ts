@@ -26,6 +26,13 @@ import {
 } from '@/lib/email-templates'
 import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 
+// ── Configurable email rate limiting ────────────────────────────────────────
+// Safe defaults prevent SMTP/Graph provider rate-limit drops.
+const EMAIL_BATCH_SIZE  = Math.max(1, parseInt(process.env.EMAIL_BATCH_SIZE  || '10', 10))
+const EMAIL_BATCH_DELAY_MS = Math.max(0, parseInt(process.env.EMAIL_BATCH_DELAY_MS || '1000', 10))
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
+
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export type NotificationType =
@@ -314,11 +321,11 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             return true
         })
 
-        logger.info('notifications', `Broadcasting "${opts.type}" to ${targeted.length}/${users.length} users`)
+        logger.info('notifications', `Broadcasting "${opts.type}" to ${targeted.length}/${users.length} users (batch=${EMAIL_BATCH_SIZE}, delay=${EMAIL_BATCH_DELAY_MS}ms)`)
 
-        const BATCH = 50
-        for (let i = 0; i < targeted.length; i += BATCH) {
-            const batch = targeted.slice(i, i + BATCH)
+        for (let i = 0; i < targeted.length; i += EMAIL_BATCH_SIZE) {
+            if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)
+            const batch = targeted.slice(i, i + EMAIL_BATCH_SIZE)
             await Promise.allSettled(
                 batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id }))
             )
@@ -696,8 +703,9 @@ export async function notifyAnnouncement(
         const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
         logger.info('notifications', `Announcement to ${uniqueSubs.length} newsletter subscribers`)
 
-        const BATCH = 50
+        const BATCH = EMAIL_BATCH_SIZE
         for (let i = 0; i < uniqueSubs.length; i += BATCH) {
+            if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)
             const batch = uniqueSubs.slice(i, i + BATCH)
             await Promise.allSettled(batch.map(async (sub: { email: string; name: string | null }) => {
                 const sent = await sendEmail({
@@ -810,8 +818,9 @@ export async function notifyContentPublish(
         const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
         logger.info('notifications', `Publishing to ${uniqueSubs.length} newsletter subscribers`)
 
-        const BATCH = 50
+        const BATCH = EMAIL_BATCH_SIZE
         for (let i = 0; i < uniqueSubs.length; i += BATCH) {
+            if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)
             const batch = uniqueSubs.slice(i, i + BATCH)
             await Promise.allSettled(batch.map(async (sub: { email: string; name: string | null }) => {
                 const unsubUrl = buildUnsubscribeUrl(link.split('/').slice(0, 3).join('/'), sub.email, 'subscriber')
