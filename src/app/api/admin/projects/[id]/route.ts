@@ -55,18 +55,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (body.published === true && !prior?.published) {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
         const projectStatus = body.status ?? project.status ?? 'completed'
-        // Status-aware link destination:
-        // - completed → watch page (full movie)
-        // - upcoming / in-production → details page (trailer / info)
         const pagePath = projectStatus === 'completed' ? `/en/works/${project.slug}/watch` : `/en/works/${project.slug}`
         const link = `${siteUrl}${pagePath}`
-        // Parse sponsor data from the saved project (body.sponsorData is a JSON string)
         let sponsorParsed: { name: string; logoUrl?: string; description?: string } | null = null
         try {
             const sd = body.sponsorData || (project as Record<string, unknown>).sponsorData
             if (sd) sponsorParsed = typeof sd === 'string' ? JSON.parse(sd) : sd
         } catch { /* ignore malformed */ }
-        notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed).catch(() => {})
+        // Await the notification BEFORE returning — Vercel kills fire-and-forget promises
+        // immediately after the response is sent in serverless environments.
+        try {
+            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed)
+        } catch (err) {
+            console.error('[publish] notifyContentPublish failed:', err)
+        }
     }
 
     return NextResponse.json(project)

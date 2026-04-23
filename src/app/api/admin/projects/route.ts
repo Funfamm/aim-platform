@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         'all'
     )
 
-    // Fire-and-forget: notify users if project is published immediately
+    // Notify users if project is published immediately on creation
     if (project.published) {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
         const projectStatus = project.status || 'completed'
@@ -92,7 +92,11 @@ export async function POST(req: Request) {
         try {
             if (body.sponsorData) sponsorParsed = typeof body.sponsorData === 'string' ? JSON.parse(body.sponsorData) : body.sponsorData
         } catch { /* ignore */ }
-        notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed).catch(() => {})
+        try {
+            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed)
+        } catch (err) {
+            console.error('[publish] notifyContentPublish failed (POST):', err)
+        }
     }
 
     return NextResponse.json(project, { status: 201 })
