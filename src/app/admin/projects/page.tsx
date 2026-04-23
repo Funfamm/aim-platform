@@ -133,6 +133,12 @@ export default function AdminProjectsPage() {
     const [translatingId, setTranslatingId] = useState<string | null>(null)
     // Publish confirmation gate
     const [showPublishWarning, setShowPublishWarning] = useState(false)
+    // Publish notification audience — which groups get the email when published
+    const [notifyGroups, setNotifyGroups] = useState<{ subscribers: boolean; members: boolean; cast: boolean }>({
+        subscribers: true,
+        members: true,
+        cast: true,
+    })
 
     // ── Subtitle Editor modal ──────────────────────────────────────────────────
     const [editorProjectId, setEditorProjectId]       = useState<string | null>(null)
@@ -273,6 +279,8 @@ export default function AdminProjectsPage() {
             const payload = {
                 ...form,
                 slug: form.slug || slugify(form.title),
+                // Only include audience selection when actually publishing
+                notifyGroups: form.published ? notifyGroups : undefined,
             }
             const url = editingId ? `/api/admin/projects/${editingId}` : '/api/admin/projects'
             const method = editingId ? 'PUT' : 'POST'
@@ -1141,6 +1149,79 @@ export default function AdminProjectsPage() {
                                             🌐 Published (visible to public)
                                         </label>
                                     </div>
+
+                                    {/* Notify Audience — appears only when publishing */}
+                                    {form.published && !editingId?.startsWith('new') && (
+                                        <div style={{
+                                            marginTop: 'var(--space-md)',
+                                            padding: 'var(--space-md)',
+                                            borderRadius: 'var(--radius-lg)',
+                                            background: 'rgba(192,132,252,0.04)',
+                                            border: '1px solid rgba(192,132,252,0.2)',
+                                        }}>
+                                            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#c084fc', marginBottom: 'var(--space-sm)' }}>
+                                                📨 Notify Audience on Publish
+                                            </div>
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
+                                                Select who receives the publish email when you save. Only fires on the <strong style={{ color: 'var(--text-secondary)' }}>first</strong> publish — not on re-saves.
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                                                {([
+                                                    {
+                                                        key: 'subscribers' as const,
+                                                        icon: '📬',
+                                                        label: 'Newsletter Subscribers',
+                                                        desc: 'People who signed up to hear about new content — not logged-in users.',
+                                                        recommended: true,
+                                                    },
+                                                    {
+                                                        key: 'members' as const,
+                                                        icon: '👥',
+                                                        label: 'Registered Members',
+                                                        desc: 'Logged-in users with content notifications enabled.',
+                                                        recommended: true,
+                                                    },
+                                                    {
+                                                        key: 'cast' as const,
+                                                        icon: '🎭',
+                                                        label: 'Cast Members',
+                                                        desc: 'Users who applied to casting calls on this specific project.',
+                                                        recommended: false,
+                                                    },
+                                                ] as const).map(group => (
+                                                    <label key={group.key} style={{
+                                                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                                                        cursor: 'pointer', padding: '8px 10px',
+                                                        borderRadius: 'var(--radius-md)',
+                                                        background: notifyGroups[group.key] ? 'rgba(192,132,252,0.06)' : 'transparent',
+                                                        border: `1px solid ${notifyGroups[group.key] ? 'rgba(192,132,252,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                                                        transition: 'all 0.15s',
+                                                    }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={notifyGroups[group.key]}
+                                                            onChange={e => setNotifyGroups(prev => ({ ...prev, [group.key]: e.target.checked }))}
+                                                            style={{ width: '15px', height: '15px', accentColor: '#c084fc', marginTop: '1px', flexShrink: 0 }}
+                                                        />
+                                                        <div>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 600, color: notifyGroups[group.key] ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                                                                {group.icon} {group.label}
+                                                                {group.recommended && (
+                                                                    <span style={{ fontSize: '0.58rem', padding: '1px 5px', borderRadius: '3px', background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)', fontWeight: 700 }}>RECOMMENDED</span>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>{group.desc}</div>
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            {!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast && (
+                                                <div style={{ marginTop: 'var(--space-sm)', fontSize: '0.72rem', color: '#fbbf24', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                                                    ⚠️ No audience selected — no emails will be sent on publish.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Cover Image — Drag & Drop */}

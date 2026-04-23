@@ -47,11 +47,11 @@ export default function LoginPage() {
         const errorCode = searchParams.get('error')
         if (!errorCode) return
         if (errorCode === 'admin_oauth_disallowed') {
-            setError('Admin accounts must sign in with email and password. Please use the form below.')
+            setError(t('adminOauthDisallowed'))
         } else if (errorCode === 'oauth_not_configured') {
-            setError('OAuth login is not configured. Please contact an administrator.')
+            setError(t('oauthNotConfigured'))
         } else if (errorCode === 'oauth_failed' || errorCode === 'apple_failed') {
-            setError('OAuth sign-in failed. Please try again or use email and password.')
+            setError(t('oauthFailed'))
         }
     }, [searchParams])
 
@@ -90,9 +90,21 @@ export default function LoginPage() {
                 router.push(`/verify-email?email=${encodeURIComponent(email)}`)
             } else {
                 let err = data.error || t('loginFailed')
-                if (data.error === 'Invalid email or password') err = t('invalidCredentials')
-                else if (data.error === 'Email and password are required') err = t('credentialsRequired')
-                else if (data.error === 'Please verify your email before logging in.') err = t('verifyEmailRequired')
+                if (data.suspended) {
+                    err = t('accountSuspended')
+                } else if (data.locked) {
+                    const min = data.minutesLeft ?? 60
+                    err = t('accountLocked', { minutes: min, plural: min !== 1 ? 's' : '' })
+                } else if (data.attemptsRemaining !== undefined) {
+                    const rem = data.attemptsRemaining
+                    err = t('attemptsRemaining', { remaining: rem, plural: rem !== 1 ? 's' : '' })
+                } else if (data.error === 'Invalid email or password') {
+                    err = t('invalidCredentials')
+                } else if (data.error === 'Email and password are required') {
+                    err = t('credentialsRequired')
+                } else if (data.error === 'Please verify your email before logging in.') {
+                    err = t('verifyEmailRequired')
+                }
                 setError(err)
             }
         } catch {

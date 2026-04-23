@@ -789,7 +789,14 @@
     "emailInvalid": "有効なメールアドレスを入力してください。",
     "invalidCredentials": "無効な電子メールまたはパスワード",
     "credentialsRequired": "メールアドレスとパスワードが必要です",
-    "verifyEmailRequired": "ログインする前にメールアドレスを確認してください。"
+    "verifyEmailRequired": "ログインする前にメールアドレスを確認してください。",
+    "accountSuspended": "アカウントが停止されています。サポートにお問い合わせください。",
+    "accountLocked": "ログイン試行に何度も失敗したため、アカウントが一時的にロックされました。{minutes}分後に再試行してください。",
+    "attemptsRemaining": "メールアドレスまたはパスワードが無効です。あと{remaining}回で入力がロックされます。",
+    "tooManyAttempts": "試行回数が多すぎます。アカウントは{minutes}分間ロックされています。",
+    "adminOauthDisallowed": "管理者アカウントはメールアドレスとパスワードでサインインする必要があります。",
+    "oauthNotConfigured": "OAuthログインが設定されていません。管理者にお問い合わせください。",
+    "oauthFailed": "OAuthサインインに失敗しました。再試行するか、メールアドレスとパスワードを使用してください。"
   },
   "contact": {
     "label": "お問合せ",

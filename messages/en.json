@@ -807,7 +807,14 @@
     "emailInvalid": "Please enter a valid email address.",
     "invalidCredentials": "Invalid email or password",
     "credentialsRequired": "Email and password are required",
-    "verifyEmailRequired": "Please verify your email before logging in."
+    "verifyEmailRequired": "Please verify your email before logging in.",
+    "accountSuspended": "Your account has been suspended. Please contact support.",
+    "accountLocked": "Account temporarily locked due to too many failed attempts. Try again in {minutes} minute{plural}.",
+    "attemptsRemaining": "Invalid email or password. {remaining} attempt{plural} remaining before lockout.",
+    "tooManyAttempts": "Too many failed attempts. Your account is locked for {minutes} minutes.",
+    "adminOauthDisallowed": "Admin accounts must sign in with email and password. Please use the form below.",
+    "oauthNotConfigured": "OAuth login is not configured. Please contact an administrator.",
+    "oauthFailed": "OAuth sign-in failed. Please try again or use email and password."
   },
   "contact": {
     "label": "Get in Touch",

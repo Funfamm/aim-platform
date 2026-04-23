@@ -45,9 +45,11 @@ export default function AdminSubscribersPage() {
         setLoading(false)
     }, [search, status, sort])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchData(1) }, [fetchData])
 
     // debounced search
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         const t = setTimeout(() => fetchData(1), 300)
         return () => clearTimeout(t)

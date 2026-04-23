@@ -806,7 +806,14 @@
     "emailInvalid": "Veuillez entrer une adresse email valide.",
     "invalidCredentials": "Email ou mot de passe invalide",
     "credentialsRequired": "L'e-mail et le mot de passe sont requis",
-    "verifyEmailRequired": "Veuillez vérifier votre adresse e-mail avant de vous connecter."
+    "verifyEmailRequired": "Veuillez vérifier votre adresse e-mail avant de vous connecter.",
+    "accountSuspended": "Votre compte a été suspendu. Veuillez contacter le support.",
+    "accountLocked": "Compte temporairement verrouillé en raison de trop nombreuses tentatives échouées. Réessayez dans {minutes} minute{plural}.",
+    "attemptsRemaining": "E-mail ou mot de passe incorrect. {remaining} tentative{plural} restante{plural} avant le verrouillage.",
+    "tooManyAttempts": "Trop de tentatives échouées. Votre compte est verrouillé pour {minutes} minutes.",
+    "adminOauthDisallowed": "Les comptes administrateur doivent se connecter avec un e-mail et un mot de passe.",
+    "oauthNotConfigured": "La connexion OAuth n'est pas configurée. Contactez un administrateur.",
+    "oauthFailed": "La connexion OAuth a échoué. Réessayez ou utilisez un e-mail et un mot de passe."
   },
   "contact": {
     "label": "Nous contacter",

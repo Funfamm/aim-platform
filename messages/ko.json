@@ -806,7 +806,14 @@
     "emailInvalid": "유효한 이메일 주소를 입력해 주세요.",
     "invalidCredentials": "잘못된 이메일 또는 비밀번호",
     "credentialsRequired": "이메일과 비밀번호가 필요합니다",
-    "verifyEmailRequired": "로그인하기 전에 이메일을 확인해 주세요."
+    "verifyEmailRequired": "로그인하기 전에 이메일을 확인해 주세요.",
+    "accountSuspended": "계정이 정지되었습니다. 고객 지원에 문의해 주세요.",
+    "accountLocked": "로그인 시도가 너무 많아 계정이 일시적으로 잠겼습니다. {minutes}분 후에 다시 시도하세요.",
+    "attemptsRemaining": "잘못된 이메일 또는 비밀번호입니다. 잠금까지 {remaining}번의 시도가 남았습니다.",
+    "tooManyAttempts": "시도 횟수가 너무 많습니다. 계정이 {minutes}분 동안 잠겼습니다.",
+    "adminOauthDisallowed": "관리자 계정은 이메일과 비밀번호로 로그인해야 합니다.",
+    "oauthNotConfigured": "OAuth 로그인이 구성되지 않았습니다. 관리자에게 문의하세요.",
+    "oauthFailed": "OAuth 로그인에 실패했습니다. 다시 시도하거나 이메일과 비밀번호를 사용하세요."
   },
   "contact": {
     "label": "문의하기",

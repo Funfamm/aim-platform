@@ -806,7 +806,14 @@
     "emailInvalid": "Por favor, insira um endereço de e-mail válido.",
     "invalidCredentials": "E-mail ou senha inválida",
     "credentialsRequired": "E-mail e senha são obrigatórios",
-    "verifyEmailRequired": "Verifique seu e-mail antes de fazer login."
+    "verifyEmailRequired": "Verifique seu e-mail antes de fazer login.",
+    "accountSuspended": "Sua conta foi suspensa. Por favor, entre em contato com o suporte.",
+    "accountLocked": "Conta temporariamente bloqueada devido a muitas tentativas falhadas. Tente novamente em {minutes} minuto{plural}.",
+    "attemptsRemaining": "E-mail ou senha inválidos. {remaining} tentativa{plural} restante{plural} antes do bloqueio.",
+    "tooManyAttempts": "Muitas tentativas falhadas. Sua conta está bloqueada por {minutes} minutos.",
+    "adminOauthDisallowed": "Contas de administrador devem entrar com e-mail e senha.",
+    "oauthNotConfigured": "O login OAuth não está configurado. Por favor, contacte um administrador.",
+    "oauthFailed": "O login OAuth falhou. Tente novamente ou use e-mail e senha."
   },
   "contact": {
     "label": "Entre em Contato",

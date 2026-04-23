@@ -82,6 +82,8 @@ interface NotifyAllOptions {
     contentStatus?: string
     /** Project sponsor data — threaded to contentPublishEmail */
     sponsorData?: { name: string; logoUrl?: string; description?: string } | null
+    /** When set, only notify these specific user IDs (e.g. cast applicants) */
+    targetUserIds?: string[]
 }
 
 // ─── Core: notify a single user ───────────────────────────────────────────────
@@ -293,6 +295,7 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
         const db = prisma as any
         const users: { id: string; notificationPreference: Record<string, boolean> | null }[] =
             await db.user.findMany({
+                where: opts.targetUserIds ? { id: { in: opts.targetUserIds } } : undefined,
                 select: {
                     id: true,
                     notificationPreference: opts.preferenceKey
@@ -718,21 +721,22 @@ export async function notifyContentPublish(
     link: string,
     status: string = 'completed',
     sponsorData?: { name: string; logoUrl?: string; description?: string } | null,
+    notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = { subscribers: true, members: true, cast: false },
+    projectId?: string,
 ): Promise<void> {
     const titleEn = `New ${contentType}: ${contentTitle}`
     const messageEn = `We just published "${contentTitle}". Check it out!`
 
-    // Pre-translate so non-English users get localized in-app notifications & emails
-    // Also translate the subject line so it can be rebuilt per-locale in notifyUser()
+    // Pre-translate for non-English users
     const translationTimeout = new Promise<null>(resolve => setTimeout(() => resolve(null), 10_000))
     const translations = await Promise.race([
         translateContent({ title: titleEn, message: messageEn }, 'all').catch(() => null),
         translationTimeout,
     ])
 
-    await broadcastNotification({
-        type: 'content_publish',
-        preferenceKey: 'contentPublish',
+    const broadcastOpts = {
+        type: 'content_publish' as const,
+        preferenceKey: 'contentPublish' as const,
         title: titleEn,
         message: messageEn,
         link,
@@ -741,7 +745,62 @@ export async function notifyContentPublish(
         translations,
         contentStatus: status,
         sponsorData,
-    })
+    }
+
+    // ── Registered members ─────────────────────────────────────────────────────
+    if (notifyGroups.members !== false) {
+        await broadcastNotification(broadcastOpts)
+    }
+
+    // ── Newsletter subscribers (non-registered) ────────────────────────────────
+    if (notifyGroups.subscribers !== false) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = prisma as any
+        const registeredEmails = await db.user.findMany({ select: { email: true } })
+            .then((rows: { email: string }[]) => new Set(rows.map((r: { email: string }) => r.email.toLowerCase())))
+
+        const subscribers = await db.subscriber.findMany({
+            where: { active: true },
+            select: { email: true, name: true },
+        })
+
+        const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
+        logger.info('notifications', `Publishing to ${uniqueSubs.length} newsletter subscribers`)
+
+        const BATCH = 50
+        for (let i = 0; i < uniqueSubs.length; i += BATCH) {
+            const batch = uniqueSubs.slice(i, i + BATCH)
+            await Promise.allSettled(batch.map(async (sub: { email: string; name: string | null }) => {
+                const html = contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData)
+                const sent = await sendEmail({
+                    to: sub.email,
+                    subject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`,
+                    html,
+                })
+                if (!sent) logger.warn('notifications', `Subscriber email failed: ${sub.email}`)
+            }))
+        }
+    }
+
+    // ── Cast members (applicants of this specific project) ────────────────────
+    if (notifyGroups.cast && projectId) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const db = prisma as any
+        // Find users who applied to casting calls on this project
+        const castApplicants = await db.application.findMany({
+            where: {
+                castingCall: { projectId },
+                userId: { not: null },
+            },
+            select: { userId: true },
+            distinct: ['userId'],
+        })
+        const castUserIds = castApplicants.map((a: { userId: string }) => a.userId).filter(Boolean)
+        if (castUserIds.length > 0) {
+            logger.info('notifications', `Publishing to ${castUserIds.length} cast applicants for project ${projectId}`)
+            await broadcastNotification({ ...broadcastOpts, targetUserIds: castUserIds })
+        }
+    }
 }
 
 // ─── Auto-advance logic ───────────────────────────────────────────────────────

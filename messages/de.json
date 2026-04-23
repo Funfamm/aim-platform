@@ -806,7 +806,14 @@
     "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
     "invalidCredentials": "Ungültige E-Mail-Adresse oder ungültiges Passwort",
     "credentialsRequired": "E-Mail und Passwort sind erforderlich",
-    "verifyEmailRequired": "Bitte überprüfen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden."
+    "verifyEmailRequired": "Bitte überprüfen Sie Ihre E-Mail-Adresse, bevor Sie sich anmelden.",
+    "accountSuspended": "Ihr Konto wurde gesperrt. Bitte wenden Sie sich an den Support.",
+    "accountLocked": "Konto vorübergehend gesperrt aufgrund zu vieler fehlgeschlagener Versuche. Versuchen Sie es in {minutes} Minute{plural} erneut.",
+    "attemptsRemaining": "Ungültige E-Mail-Adresse oder ungültiges Passwort. Noch {remaining} Versuch{plural} vor der Sperrung.",
+    "tooManyAttempts": "Zu viele fehlgeschlagene Versuche. Ihr Konto ist für {minutes} Minuten gesperrt.",
+    "adminOauthDisallowed": "Administrator-Konten müssen sich mit E-Mail und Passwort anmelden.",
+    "oauthNotConfigured": "OAuth-Anmeldung ist nicht konfiguriert. Bitte wenden Sie sich an einen Administrator.",
+    "oauthFailed": "OAuth-Anmeldung fehlgeschlagen. Versuchen Sie es erneut oder verwenden Sie E-Mail und Passwort."
   },
   "contact": {
     "label": "Kontakt",

@@ -806,7 +806,14 @@
     "emailInvalid": "请输入有效的电子邮件地址。",
     "invalidCredentials": "电子邮件或密码无效",
     "credentialsRequired": "需要电子邮件和密码",
-    "verifyEmailRequired": "请在登录前验证您的电子邮件。"
+    "verifyEmailRequired": "请在登录前验证您的电子邮件。",
+    "accountSuspended": "您的账户已被停用，请联系客服支持。",
+    "accountLocked": "由于多次登录失败，账户已暂时锁定。请在 {minutes} 分钟后重试。",
+    "attemptsRemaining": "邮箱或密码错误，锁定前还剩 {remaining} 次尝试机会。",
+    "tooManyAttempts": "尝试次数过多，您的账户已被锁定 {minutes} 分钟。",
+    "adminOauthDisallowed": "管理员账户必须使用邮箱和密码登录。",
+    "oauthNotConfigured": "OAuth 登录未配置，请联系管理员。",
+    "oauthFailed": "OAuth 登录失败，请重试或使用邮箱和密码登录。"
   },
   "contact": {
     "label": "联系我们",

@@ -51,7 +51,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         )
     }
 
-    // Fire-and-forget: notify users when project is newly published
+    // Notify selected audience when project is newly published
     if (body.published === true && !prior?.published) {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
         const projectStatus = body.status ?? project.status ?? 'completed'
@@ -62,10 +62,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             const sd = body.sponsorData || (project as Record<string, unknown>).sponsorData
             if (sd) sponsorParsed = typeof sd === 'string' ? JSON.parse(sd) : sd
         } catch { /* ignore malformed */ }
-        // Await the notification BEFORE returning — Vercel kills fire-and-forget promises
-        // immediately after the response is sent in serverless environments.
+        // Read audience selection from admin form (default: everyone if not specified)
+        const notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = body.notifyGroups ?? {
+            subscribers: true, members: true, cast: false,
+        }
         try {
-            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed)
+            await notifyContentPublish(project.title, project.projectType || 'project', link, projectStatus, sponsorParsed, notifyGroups, id)
         } catch (err) {
             console.error('[publish] notifyContentPublish failed:', err)
         }

@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
         // ── Account suspension (manual admin ban) ──────────────────────────────
         if (user.suspended) {
-            recordAuthFailure('suspended')
+            recordAuthFailure('invalid_credentials')
             logger.warn('auth/login', `Login blocked — account suspended: ${normalizedEmail}`)
             return NextResponse.json({
                 error: 'Your account has been suspended. Please contact support.',
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         const now = new Date()
         if (user.lockedUntil && user.lockedUntil > now) {
             const minutesLeft = Math.ceil((user.lockedUntil.getTime() - now.getTime()) / 60_000)
-            recordAuthFailure('locked')
+            recordAuthFailure('invalid_credentials')
             logger.warn('auth/login', `Login blocked — account locked: ${normalizedEmail} (${minutesLeft}m remaining)`)
             return NextResponse.json({
                 error: `Account temporarily locked due to too many failed attempts. Try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`,
