@@ -21,7 +21,7 @@ interface WatchProject {
     duration: string | null; coverImage: string | null
     filmUrl: string | null; trailerUrl: string | null
     projectType: string; status: string; episodes: Episode[]
-    projectTranslationsJson?: string | null
+    translations?: string | null
 }
 
 /* ─────────────────────────── Helpers ─────────────────────────── */
@@ -48,9 +48,9 @@ export default function WatchPlayer({
 
     // Resolve translated title
     const translatedTitle = (() => {
-        if (locale === 'en' || !project.projectTranslationsJson) return project.title
+        if (locale === 'en' || !project.translations) return project.title
         try {
-            const tr = JSON.parse(project.projectTranslationsJson)?.[locale]
+            const tr = JSON.parse(project.translations)?.[locale]
             return tr?.title || project.title
         } catch { return project.title }
     })()
