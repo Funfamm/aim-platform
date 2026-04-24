@@ -37,7 +37,7 @@ export default async function StartProjectPage({ params }: { params: Promise<{ l
                 zIndex: 1,
                 maxWidth: '900px',
                 margin: '0 auto',
-                padding: 'clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 1.5rem) clamp(2rem, 5vw, 4rem)',
+                padding: 'clamp(5rem, 8vw, 6rem) clamp(1rem, 3vw, 1.5rem) clamp(2rem, 5vw, 4rem)',
             }}>
                 {/* ── Hero ── */}
                 <div style={{

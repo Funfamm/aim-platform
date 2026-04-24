@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
 
         // ── Send emails (Promise.allSettled — never blocks response) ─────
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-        const trackingUrl = `${siteUrl}/my-projects?id=${saved.id}&token=${accessToken}`
+        const trackingUrl = `${siteUrl}/en/my-projects?id=${saved.id}&token=${accessToken}`
 
         const emailPromises: Promise<boolean>[] = []
 

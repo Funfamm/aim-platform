@@ -64,8 +64,8 @@ export async function PATCH(
     if (statusChanged && !SILENT_STATUSES.has(data.status as string)) {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://aimstudio.com'
         const trackingUrl = current.accessToken
-            ? `${siteUrl}/my-projects?id=${current.id}&token=${current.accessToken}`
-            : `${siteUrl}/my-projects`
+            ? `${siteUrl}/en/my-projects?id=${current.id}&token=${current.accessToken}`
+            : `${siteUrl}/en/my-projects`
 
         const html = projectStatusUpdateEmail(
             current.clientName,
