@@ -10,6 +10,7 @@ interface Props {
         projectType: string
         status: string
         createdAt: string
+        accessToken: string
     }
 }
 
@@ -170,6 +171,13 @@ export default function ConfirmationView({ project }: Props) {
 
             {/* CTAs */}
             <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <Link
+                    href={`/my-projects?id=${project.id}&token=${project.accessToken}`}
+                    className="sp-btn sp-btn-primary"
+                    style={{ textDecoration: 'none' }}
+                >
+                    {t('buttons.trackProject') || 'Track Your Project'}
+                </Link>
                 <button
                     type="button"
                     onClick={() => window.location.reload()}
@@ -177,13 +185,6 @@ export default function ConfirmationView({ project }: Props) {
                 >
                     {t('buttons.submitAnother')}
                 </button>
-                <Link
-                    href="/"
-                    className="sp-btn sp-btn-primary"
-                    style={{ textDecoration: 'none' }}
-                >
-                    {t('buttons.returnHome')}
-                </Link>
             </div>
         </div>
     )

@@ -82,7 +82,7 @@ export default function MyProjectsClient() {
 
     // ── Auth required screen ────────────────────────────────────────────
     if (needsAuth) {
-        const callbackUrl = encodeURIComponent(
+        const redirectPath = encodeURIComponent(
             `/my-projects${paramId ? `?id=${paramId}` : ''}${paramToken ? `&token=${paramToken}` : ''}`
         )
         return (
@@ -101,14 +101,14 @@ export default function MyProjectsClient() {
                 </p>
                 <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center', flexWrap: 'wrap' }}>
                     <Link
-                        href={`/auth/login?callbackUrl=${callbackUrl}`}
+                        href={`/login?redirect=${redirectPath}`}
                         className="sp-btn sp-btn-primary"
                         style={{ textDecoration: 'none' }}
                     >
                         Sign In
                     </Link>
                     <Link
-                        href={`/auth/register?callbackUrl=${callbackUrl}`}
+                        href={`/register?redirect=${redirectPath}`}
                         className="sp-btn sp-btn-ghost"
                         style={{ textDecoration: 'none' }}
                     >

@@ -189,6 +189,7 @@ export async function POST(req: NextRequest) {
                 projectType: saved.projectType,
                 status: saved.status,
                 createdAt: saved.createdAt.toISOString(),
+                accessToken,
             },
         })
     } catch (error) {

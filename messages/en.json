@@ -226,6 +226,7 @@
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
+      "trackProject": "Track Your Project",
     "close": "Close",
     "back": "Back",
     "next": "Next",
@@ -1026,6 +1027,7 @@
     "savePreferences": "Save Preferences",
     "preferencesSaved": "Preferences saved",
     "edit": "Edit",
+      "trackProject": "Track Your Project",
     "cancel": "Cancel",
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
@@ -1448,7 +1450,8 @@
       "submit": "Submit Project Request",
       "submitAnother": "Submit Another Project",
       "returnHome": "Return Home",
-      "edit": "Edit"
+      "edit": "Edit",
+      "trackProject": "Track Your Project"
     },
     "confirmation": {
       "title": "Your Project Has Been Received",
@@ -1458,6 +1461,10 @@
       "step1": "We review your submission",
       "step2": "We confirm scope and timeline",
       "step3": "Production begins"
+    },
+    "helpers2": {
+      "reviewHint": "Review your project details before submitting."
+    
     },
     "statuses": {
       "received": "Received",
@@ -1484,6 +1491,7 @@
     },
     "helpers": {
       "overviewHint": "Tell us what you want to create. Keep it simple — we will refine it with you.",
+      "reviewHint": "Review your project details before submitting.",
       "uploadHint": "Add photos, videos, logos, music, or reference files that help us understand your vision.",
       "uploading": "Uploading...",
       "uploadTypes": "Images, videos, audio, PDF, ZIP",

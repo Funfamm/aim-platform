@@ -54,7 +54,7 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
         <section>
             <h2 className="sp-step-title">{t('steps.review')}</h2>
             <p className="sp-step-subtitle" style={{ marginBottom: 'var(--space-lg)' }}>
-                Review your project details before submitting.
+                {t('helpers.reviewHint') || 'Review your project details before submitting.'}
             </p>
 
             <div style={{

@@ -36,6 +36,9 @@ export default function DynamicFieldsStep({ form, updateField }: Props) {
         'socialLinks', 'competitorLinks',
     ])
 
+    // Fields that should use a date picker
+    const dateFields = new Set(['eventDate'])
+
     return (
         <section>
             <h2 className="sp-step-title">{t('steps.dynamic')}</h2>
@@ -49,7 +52,31 @@ export default function DynamicFieldsStep({ form, updateField }: Props) {
                         <label className="sp-label" htmlFor={`sp-cf-${field}`}>
                             {t(`dynamicFields.${field}`)}
                         </label>
-                        {longFields.has(field) ? (
+                        {dateFields.has(field) ? (
+                            <div
+                                onClick={() => {
+                                    const input = document.getElementById(`sp-cf-${field}`) as HTMLInputElement | null
+                                    if (input) {
+                                        if (typeof input.showPicker === 'function') {
+                                            try { input.showPicker() } catch { input.focus() }
+                                        } else {
+                                            input.focus()
+                                        }
+                                    }
+                                }}
+                                style={{ cursor: 'pointer' }}
+                            >
+                                <input
+                                    id={`sp-cf-${field}`}
+                                    type="date"
+                                    className="sp-input"
+                                    min={new Date().toISOString().split('T')[0]}
+                                    value={form.customFields[field] || ''}
+                                    onChange={e => updateCustom(field, e.target.value)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                            </div>
+                        ) : longFields.has(field) ? (
                             <textarea
                                 id={`sp-cf-${field}`}
                                 className="sp-input"

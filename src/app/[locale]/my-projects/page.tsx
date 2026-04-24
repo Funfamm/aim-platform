@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { setRequestLocale } from 'next-intl/server'
 import type { Metadata } from 'next'
 import MyProjectsClient from '@/components/start-project/MyProjectsClient'
@@ -22,7 +23,14 @@ export default async function MyProjectsPage({ params }: { params: Promise<{ loc
                 margin: '0 auto',
                 padding: 'clamp(1rem, 3vw, 2rem) clamp(1rem, 3vw, 1.5rem) clamp(2rem, 5vw, 4rem)',
             }}>
-                <MyProjectsClient />
+                <Suspense fallback={
+                    <div style={{ textAlign: 'center', paddingTop: 'clamp(3rem, 8vw, 6rem)' }}>
+                        <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Loading...</p>
+                    </div>
+                }>
+                    <MyProjectsClient />
+                </Suspense>
             </section>
         </main>
     )

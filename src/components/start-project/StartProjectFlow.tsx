@@ -105,6 +105,7 @@ interface SubmittedProject {
     projectType: string
     status: string
     createdAt: string
+    accessToken: string
 }
 
 // ── Validation per step ─────────────────────────────────────────────────────
