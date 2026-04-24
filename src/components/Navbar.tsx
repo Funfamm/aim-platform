@@ -75,6 +75,7 @@ export default function Navbar() {
         ...(sections.scripts ? [{ href: '/scripts', label: t('scripts') }] : []),
         ...(sections.training ? [{ href: '/training', label: t('training') }] : []),
         ...(sections.donations ? [{ href: '/donate', label: t('donate') }] : []),
+        { href: '/start-project', label: t('startProject') },
     ]
 
     // Get current locale from next-intl (already declared as `locale` above — reuse it)
@@ -613,7 +614,20 @@ export default function Navbar() {
                         {t('about')}
                     </Link>
 
-                    {/* 10. Contact — utility, pre-filled for logged-in users */}
+                    {/* 10. Start a Project — CTA */}
+                    <Link href="/start-project" prefetch={false} onClick={() => setMobileOpen(false)}
+                        className={`drawer-item ${pathname === '/start-project' ? 'active-page' : ''}`}>
+                        <span className="drawer-icon-glow">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                                <path d="M2 17l10 5 10-5" />
+                                <path d="M2 12l10 5 10-5" />
+                            </svg>
+                        </span>
+                        {t('startProject')}
+                    </Link>
+
+                    {/* 11. Contact — utility, pre-filled for logged-in users */}
                     <Link href="/contact" prefetch={false} onClick={() => setMobileOpen(false)}
                         className={`drawer-item ${pathname === '/contact' ? 'active-page' : ''}`}>
                         <span className="drawer-icon-glow">

@@ -1,22 +1,39 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import AdminSidebar from '@/components/AdminSidebar'
 
 interface ProjectRequest {
     id: string; projectType: string; status: string; clientName: string; email: string; phone: string | null
     projectTitle: string; description: string; deadline: string | null; urgent: boolean; adminNotes: string | null
-    createdAt: string; updatedAt: string; uploads: Array<{ name: string; url: string }> | null
+    createdAt: string; updatedAt: string; uploads: Array<{ name: string; url: string; size: number }> | null
     budgetRange: string | null; language: string; tone: string[] | null; addOns: string[] | null
-    customFields: Record<string, string> | null; companyName: string | null
+    customFields: Record<string, string> | null; companyName: string | null; aspectRatio: string | null
+    deliveryPlatform: string | null; duration: string | null; audience: string | null; projectGoal: string | null
+    visualStyle: string | null; avoidNotes: string | null; emotionalFeeling: string | null
+    inspirationLinks: string[] | null; rushDelivery: boolean
 }
 
 const STATUSES = ['received', 'reviewing', 'scope_confirmed', 'in_production', 'awaiting_client', 'delivered', 'completed', 'cancelled']
-const STATUS_COLORS: Record<string, string> = {
-    received: '#3b82f6', reviewing: '#8b5cf6', scope_confirmed: '#06b6d4', in_production: '#f59e0b',
-    awaiting_client: '#f97316', delivered: '#10b981', completed: '#34d399', cancelled: '#ef4444',
+const STATUS_STYLES: Record<string, { label: string; bg: string; color: string }> = {
+    received:        { label: 'Received',        bg: 'rgba(59,130,246,0.12)',  color: '#60a5fa' },
+    reviewing:       { label: 'Reviewing',       bg: 'rgba(139,92,246,0.12)', color: '#a78bfa' },
+    scope_confirmed: { label: 'Scope Confirmed', bg: 'rgba(6,182,212,0.12)',  color: '#22d3ee' },
+    in_production:   { label: 'In Production',   bg: 'rgba(245,158,11,0.12)', color: '#f59e0b' },
+    awaiting_client: { label: 'Awaiting Client', bg: 'rgba(249,115,22,0.12)', color: '#f97316' },
+    delivered:       { label: 'Delivered',        bg: 'rgba(16,185,129,0.12)', color: '#10b981' },
+    completed:       { label: 'Completed',        bg: 'rgba(52,211,153,0.12)', color: '#34d399' },
+    cancelled:       { label: 'Cancelled',        bg: 'rgba(239,68,68,0.10)', color: '#f87171' },
 }
 const TYPE_ICONS: Record<string, string> = {
     birthday: '🎉', brand: '🏢', commercial: '📺', music: '🎵', film: '🎬', event: '📣', custom: '✨',
+}
+
+const inp: React.CSSProperties = {
+    padding: '7px 12px', background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
+    color: 'var(--text-primary)', fontSize: '0.8rem', fontFamily: 'inherit',
+    colorScheme: 'dark',
 }
 
 export default function ProjectRequestsPage() {
@@ -28,6 +45,7 @@ export default function ProjectRequestsPage() {
     const [filterUrgent, setFilterUrgent] = useState(false)
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [editNotes, setEditNotes] = useState('')
+    const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
 
     const fetchRequests = useCallback(async () => {
         setLoading(true)
@@ -40,6 +58,12 @@ export default function ProjectRequestsPage() {
             const data = await res.json()
             setRequests(data.requests || [])
             setTotal(data.total || 0)
+            // Build status counts from full list
+            const counts: Record<string, number> = {}
+            for (const r of (data.requests || [])) {
+                counts[r.status] = (counts[r.status] || 0) + 1
+            }
+            setStatusCounts(counts)
         } catch { /* ignore */ }
         setLoading(false)
     }, [filterStatus, filterType, filterUrgent])
@@ -62,155 +86,250 @@ export default function ProjectRequestsPage() {
 
     const selected = requests.find(r => r.id === selectedId)
 
-    return (
-        <div style={{ padding: 'var(--space-lg)' }}>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 800, marginBottom: 'var(--space-lg)' }}>
-                📋 Project Requests <span style={{ fontSize: '0.85rem', fontWeight: 400, color: 'var(--text-tertiary)' }}>({total})</span>
-            </h1>
-
-            {/* ── Filters ── */}
-            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: 'var(--space-lg)' }}>
-                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontSize: '0.82rem' }}>
-                    <option value="">All statuses</option>
-                    {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, ' ')}</option>)}
-                </select>
-                <select value={filterType} onChange={e => setFilterType(e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontSize: '0.82rem' }}>
-                    <option value="">All types</option>
-                    {Object.keys(TYPE_ICONS).map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-                    <input type="checkbox" checked={filterUrgent} onChange={e => setFilterUrgent(e.target.checked)} /> Urgent only
-                </label>
+    // Info row helper
+    function infoRow(label: string, value: string | null | undefined) {
+        if (!value) return null
+        return (
+            <div key={label} style={{ display: 'flex', gap: '8px', padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.82rem' }}>
+                <span style={{ width: '120px', flexShrink: 0, color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</span>
+                <span style={{ color: 'var(--text-primary)', wordBreak: 'break-word' }}>{value}</span>
             </div>
+        )
+    }
 
-            {loading ? (
-                <p style={{ color: 'var(--text-tertiary)' }}>Loading...</p>
-            ) : requests.length === 0 ? (
-                <p style={{ color: 'var(--text-tertiary)' }}>No project requests found.</p>
-            ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {requests.map(r => (
-                        <button key={r.id} type="button" onClick={() => { setSelectedId(r.id); setEditNotes(r.adminNotes || '') }}
-                            style={{
-                                display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px',
-                                borderRadius: 'var(--radius-md)', background: selectedId === r.id ? 'rgba(212,168,83,0.08)' : 'rgba(255,255,255,0.03)',
-                                border: `1px solid ${selectedId === r.id ? 'rgba(212,168,83,0.3)' : 'var(--border-subtle)'}`,
-                                cursor: 'pointer', textAlign: 'left', width: '100%', transition: 'all 0.15s',
-                            }}>
-                            <span style={{ fontSize: '1.3rem' }}>{TYPE_ICONS[r.projectType] || '✨'}</span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                    <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>{r.projectTitle}</span>
-                                    {r.urgent && <span style={{ fontSize: '0.6rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(239,68,68,0.15)', color: '#f87171', fontWeight: 700 }}>URGENT</span>}
-                                    <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '10px', background: `${STATUS_COLORS[r.status] || '#666'}22`, color: STATUS_COLORS[r.status] || '#666', fontWeight: 700 }}>
-                                        {r.status.replace(/_/g, ' ')}
-                                    </span>
+    return (
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
+                {/* ── Header ── */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: 0 }}>📋 Project Requests</h1>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 600 }}>{total} total</span>
+                </div>
+
+                {/* ── Status Pills ── */}
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    <button onClick={() => setFilterStatus('')} style={{
+                        padding: '5px 14px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '6px', border: 'none', cursor: 'pointer',
+                        background: !filterStatus ? 'var(--accent-gold-glow, rgba(212,168,83,0.12))' : 'rgba(255,255,255,0.03)',
+                        color: !filterStatus ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                    }}>All ({total})</button>
+                    {STATUSES.filter(s => statusCounts[s]).map(s => {
+                        const st = STATUS_STYLES[s]
+                        return (
+                            <button key={s} onClick={() => setFilterStatus(filterStatus === s ? '' : s)} style={{
+                                padding: '5px 14px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '6px', border: 'none', cursor: 'pointer',
+                                background: filterStatus === s ? st.bg : 'rgba(255,255,255,0.03)',
+                                color: filterStatus === s ? st.color : 'var(--text-tertiary)',
+                            }}>{st.label} ({statusCounts[s]})</button>
+                        )
+                    })}
+                </div>
+
+                {/* ── Filters row ── */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
+                    <select value={filterType} onChange={e => setFilterType(e.target.value)}
+                        style={{ ...inp, appearance: 'auto' }}>
+                        <option value="">All types</option>
+                        {Object.entries(TYPE_ICONS).map(([t, icon]) => <option key={t} value={t}>{icon} {t}</option>)}
+                    </select>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none' }}>
+                        <input type="checkbox" checked={filterUrgent} onChange={e => setFilterUrgent(e.target.checked)}
+                            style={{ accentColor: '#f87171', cursor: 'pointer' }} /> 🔥 Urgent only
+                    </label>
+                </div>
+
+                {/* ── List ── */}
+                {loading ? (
+                    <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)' }}>Loading...</div>
+                ) : requests.length === 0 ? (
+                    <div style={{ padding: '40px', textAlign: 'center', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <div style={{ fontSize: '2rem', opacity: 0.3, marginBottom: '8px' }}>📋</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-secondary)' }}>No project requests yet</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>When clients submit projects via /start-project, they will appear here.</div>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        {requests.map(r => {
+                            const st = STATUS_STYLES[r.status] || STATUS_STYLES.received
+                            return (
+                                <button key={r.id} type="button"
+                                    onClick={() => { setSelectedId(r.id); setEditNotes(r.adminNotes || '') }}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px',
+                                        borderRadius: '8px', width: '100%', textAlign: 'left',
+                                        background: selectedId === r.id ? 'rgba(212,168,83,0.04)' : 'rgba(255,255,255,0.02)',
+                                        border: `1px solid ${selectedId === r.id ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.05)'}`,
+                                        borderLeft: r.urgent ? '3px solid rgba(239,68,68,0.5)' : undefined,
+                                        cursor: 'pointer', transition: 'all 0.15s',
+                                    }}>
+                                    <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>{TYPE_ICONS[r.projectType] || '✨'}</span>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{r.projectTitle}</span>
+                                            {r.urgent && <span style={{ fontSize: '0.52rem', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>URGENT</span>}
+                                            <span style={{ fontSize: '0.52rem', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
+                                            {r.rushDelivery && <span style={{ fontSize: '0.52rem', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, background: 'rgba(249,115,22,0.12)', color: '#f97316' }}>RUSH</span>}
+                                        </div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', display: 'flex', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
+                                            <span style={{ fontFamily: 'monospace', fontSize: '0.62rem' }}>{r.id}</span>
+                                            <span>👤 {r.clientName}</span>
+                                            <span>📧 {r.email}</span>
+                                            {r.budgetRange && <span>💰 {r.budgetRange}</span>}
+                                        </div>
+                                    </div>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', flexShrink: 0, textAlign: 'right', lineHeight: 1.4 }}
+                                        title={new Date(r.createdAt).toLocaleString()}>
+                                        <div>{new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
+                                        <div style={{ fontSize: '0.58rem', opacity: 0.7 }}>{new Date(r.createdAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</div>
+                                    </div>
+                                </button>
+                            )
+                        })}
+                    </div>
+                )}
+
+                {/* ── Detail Panel ── */}
+                {selected && (
+                    <div style={{
+                        marginTop: '16px', borderRadius: '12px', overflow: 'hidden',
+                        border: '1px solid rgba(212,168,83,0.15)', background: 'rgba(212,168,83,0.02)',
+                    }}>
+                        {/* Header */}
+                        <div style={{ padding: '16px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                    <span style={{ fontSize: '1.3rem' }}>{TYPE_ICONS[selected.projectType] || '✨'}</span>
+                                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>{selected.projectTitle}</h2>
                                 </div>
-                                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '3px' }}>
-                                    {r.id} · {r.clientName} · {new Date(r.createdAt).toLocaleDateString()}
+                                <p style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontFamily: 'monospace', margin: 0 }}>{selected.id} · {selected.projectType} · {selected.language.toUpperCase()}</p>
+                            </div>
+                            <button onClick={() => setSelectedId(null)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '1.1rem', padding: '4px' }}>✕</button>
+                        </div>
+
+                        <div style={{ padding: '16px 18px' }}>
+                            {/* Client info */}
+                            {infoRow('Client', selected.clientName)}
+                            {infoRow('Email', selected.email)}
+                            {infoRow('Phone', selected.phone)}
+                            {infoRow('Company', selected.companyName)}
+                            {infoRow('Budget', selected.budgetRange)}
+                            {infoRow('Deadline', selected.deadline ? new Date(selected.deadline).toLocaleDateString() : null)}
+                            {infoRow('Audience', selected.audience)}
+                            {infoRow('Goal', selected.projectGoal)}
+                            {infoRow('Duration', selected.duration)}
+                            {infoRow('Aspect Ratio', selected.aspectRatio)}
+                            {infoRow('Platform', selected.deliveryPlatform)}
+                            {infoRow('Visual Style', selected.visualStyle)}
+                            {infoRow('Feeling', selected.emotionalFeeling)}
+                            {infoRow('Created', new Date(selected.createdAt).toLocaleString())}
+
+                            {/* Description */}
+                            <div style={{ marginTop: '12px', padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '6px' }}>Description</div>
+                                {selected.description}
+                            </div>
+
+                            {/* Tone pills */}
+                            {Array.isArray(selected.tone) && selected.tone.length > 0 && (
+                                <div style={{ marginTop: '10px' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '6px' }}>Tone</div>
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                        {selected.tone.map(t => <span key={t} style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 600, background: 'rgba(212,168,83,0.08)', color: 'var(--accent-gold)', border: '1px solid rgba(212,168,83,0.15)' }}>{t}</span>)}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Add-ons */}
+                            {Array.isArray(selected.addOns) && selected.addOns.length > 0 && (
+                                <div style={{ marginTop: '10px' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '6px' }}>Add-ons</div>
+                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                        {selected.addOns.map(a => <span key={a} style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 600, background: 'rgba(52,211,153,0.08)', color: '#34d399', border: '1px solid rgba(52,211,153,0.15)' }}>{a}</span>)}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Custom fields */}
+                            {selected.customFields && Object.keys(selected.customFields).length > 0 && (
+                                <div style={{ marginTop: '10px' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '6px' }}>Type-Specific Fields</div>
+                                    {Object.entries(selected.customFields).filter(([, v]) => v).map(([k, v]) => infoRow(k.replace(/([A-Z])/g, ' $1').trim(), v))}
+                                </div>
+                            )}
+
+                            {/* ── Status selector ── */}
+                            <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Status</div>
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                    {STATUSES.map(s => {
+                                        const st = STATUS_STYLES[s]
+                                        return (
+                                            <button key={s} type="button" onClick={() => updateRequest(selected.id, { status: s })}
+                                                style={{
+                                                    padding: '4px 10px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer',
+                                                    background: selected.status === s ? st.bg : 'rgba(255,255,255,0.03)',
+                                                    border: `1px solid ${selected.status === s ? st.color + '44' : 'rgba(255,255,255,0.06)'}`,
+                                                    color: selected.status === s ? st.color : 'var(--text-tertiary)',
+                                                    transition: 'all 0.15s',
+                                                }}>
+                                                {st.label}
+                                            </button>
+                                        )
+                                    })}
                                 </div>
                             </div>
-                        </button>
-                    ))}
-                </div>
-            )}
 
-            {/* ── Detail panel ── */}
-            {selected && (
-                <div style={{
-                    marginTop: 'var(--space-xl)', padding: 'var(--space-lg)', borderRadius: 'var(--radius-lg)',
-                    background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)',
-                }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-lg)' }}>
-                        <div>
-                            <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>{selected.projectTitle}</h2>
-                            <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>{selected.id}</p>
-                        </div>
-                        <button onClick={() => setSelectedId(null)} style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
-                    </div>
+                            {/* Urgent toggle */}
+                            <div style={{ marginTop: '10px' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', cursor: 'pointer', color: 'var(--text-secondary)' }}>
+                                    <input type="checkbox" checked={selected.urgent} onChange={e => updateRequest(selected.id, { urgent: e.target.checked })}
+                                        style={{ accentColor: '#f87171' }} />
+                                    🔥 Mark as urgent
+                                </label>
+                            </div>
 
-                    {/* Info rows */}
-                    {[
-                        ['Client', selected.clientName], ['Email', selected.email], ['Phone', selected.phone],
-                        ['Company', selected.companyName], ['Type', selected.projectType], ['Budget', selected.budgetRange],
-                        ['Deadline', selected.deadline ? new Date(selected.deadline).toLocaleDateString() : null],
-                        ['Language', selected.language], ['Created', new Date(selected.createdAt).toLocaleString()],
-                    ].filter(([, v]) => v).map(([k, v]) => (
-                        <div key={k as string} style={{ display: 'flex', gap: '8px', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.82rem' }}>
-                            <span style={{ width: '100px', flexShrink: 0, color: 'var(--text-tertiary)', fontWeight: 600 }}>{k}</span>
-                            <span style={{ color: 'var(--text-primary)' }}>{v}</span>
-                        </div>
-                    ))}
+                            {/* Admin notes */}
+                            <div style={{ marginTop: '14px' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '6px' }}>Admin Notes</div>
+                                <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)}
+                                    placeholder="Internal notes about this project request..."
+                                    style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)', fontSize: '0.8rem', fontFamily: 'inherit', resize: 'vertical', colorScheme: 'dark', boxSizing: 'border-box' }} />
+                                <button onClick={() => updateRequest(selected.id, { adminNotes: editNotes })}
+                                    style={{ marginTop: '6px', padding: '6px 14px', borderRadius: '6px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
+                                    Save Notes
+                                </button>
+                            </div>
 
-                    <div style={{ marginTop: 'var(--space-md)', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.03)', fontSize: '0.82rem', lineHeight: 1.6 }}>
-                        <strong>Description:</strong><br />{selected.description}
-                    </div>
+                            {/* Uploads */}
+                            {Array.isArray(selected.uploads) && selected.uploads.length > 0 && (
+                                <div style={{ marginTop: '14px' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>
+                                        Uploaded Files ({selected.uploads.length})
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                        {selected.uploads.map((f, i) => (
+                                            <a key={i} href={f.url} target="_blank" rel="noopener noreferrer"
+                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.78rem', color: '#60a5fa', textDecoration: 'none' }}>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>📎 {f.name}</span>
+                                                {f.size > 0 && <span style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', flexShrink: 0, marginLeft: '8px' }}>{(f.size / 1024 / 1024).toFixed(1)} MB</span>}
+                                            </a>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
-                    {/* Status selector */}
-                    <div style={{ marginTop: 'var(--space-lg)', display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>Status:</span>
-                        {STATUSES.map(s => (
-                            <button key={s} type="button" onClick={() => updateRequest(selected.id, { status: s })}
-                                style={{
-                                    padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer',
-                                    background: selected.status === s ? `${STATUS_COLORS[s]}22` : 'transparent',
-                                    border: `1px solid ${selected.status === s ? STATUS_COLORS[s] : 'var(--border-subtle)'}`,
-                                    color: selected.status === s ? STATUS_COLORS[s] : 'var(--text-tertiary)',
-                                }}>
-                                {s.replace(/_/g, ' ')}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Urgent toggle */}
-                    <div style={{ marginTop: 'var(--space-md)' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', cursor: 'pointer' }}>
-                            <input type="checkbox" checked={selected.urgent} onChange={e => updateRequest(selected.id, { urgent: e.target.checked })} />
-                            Mark as urgent
-                        </label>
-                    </div>
-
-                    {/* Admin notes */}
-                    <div style={{ marginTop: 'var(--space-md)' }}>
-                        <label style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                            Admin Notes
-                        </label>
-                        <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)}
-                            style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)', color: 'var(--text-primary)', fontSize: '0.82rem', fontFamily: 'inherit', resize: 'vertical' }} />
-                        <button onClick={() => updateRequest(selected.id, { adminNotes: editNotes })}
-                            style={{ marginTop: '6px', padding: '6px 14px', borderRadius: '6px', background: 'rgba(212,168,83,0.15)', border: '1px solid rgba(212,168,83,0.3)', color: 'var(--accent-gold)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer' }}>
-                            Save Notes
-                        </button>
-                    </div>
-
-                    {/* Uploads */}
-                    {Array.isArray(selected.uploads) && selected.uploads.length > 0 && (
-                        <div style={{ marginTop: 'var(--space-lg)' }}>
-                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase' }}>
-                                Uploaded Files ({selected.uploads.length})
-                            </span>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
-                                {selected.uploads.map((f, i) => (
-                                    <a key={i} href={f.url} target="_blank" rel="noopener noreferrer"
-                                        style={{ fontSize: '0.8rem', color: '#60a5fa', textDecoration: 'underline' }}>
-                                        {f.name}
-                                    </a>
-                                ))}
+                            {/* Delete */}
+                            <div style={{ marginTop: '18px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                <button onClick={() => deleteRequest(selected.id)}
+                                    style={{ padding: '7px 16px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
+                                    🗑️ Delete Request
+                                </button>
                             </div>
                         </div>
-                    )}
-
-                    {/* Delete */}
-                    <div style={{ marginTop: 'var(--space-xl)', borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
-                        <button onClick={() => deleteRequest(selected.id)}
-                            style={{ padding: '8px 16px', borderRadius: '8px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}>
-                            Delete Request
-                        </button>
                     </div>
-                </div>
-            )}
+                )}
+            </main>
         </div>
     )
 }

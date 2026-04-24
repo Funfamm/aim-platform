@@ -19,7 +19,8 @@
     "guest": "게스트",
     "admin": "관리자",
     "member": "회원",
-    "adminPanel": "관리자 패널"
+    "adminPanel": "관리자 패널",
+    "startProject": "프로젝트 시작"
   },
   "search": {
     "searchButton": "검색",

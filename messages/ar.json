@@ -19,7 +19,8 @@
     "guest": "زائر",
     "admin": "مشرف",
     "member": "عضو",
-    "adminPanel": "لوحة الإدارة"
+    "adminPanel": "لوحة الإدارة",
+    "startProject": "ابدأ مشروعًا"
   },
   "search": {
     "searchButton": "بحث",

@@ -19,7 +19,8 @@
     "guest": "अतिथि",
     "admin": "व्यवस्थापक",
     "member": "सदस्य",
-    "adminPanel": "एडमिन पैनल"
+    "adminPanel": "एडमिन पैनल",
+    "startProject": "प्रोजेक्ट शुरू करें"
   },
   "search": {
     "searchButton": "खोजें",

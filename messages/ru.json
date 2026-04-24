@@ -19,7 +19,8 @@
     "guest": "Гость",
     "admin": "Админ",
     "member": "Участник",
-    "adminPanel": "Панель Админа"
+    "adminPanel": "Панель Админа",
+    "startProject": "Начать проект"
   },
   "search": {
     "searchButton": "Поиск",

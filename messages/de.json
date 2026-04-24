@@ -19,7 +19,8 @@
     "guest": "Gast",
     "admin": "Admin",
     "member": "Mitglied",
-    "adminPanel": "Admin-Panel"
+    "adminPanel": "Admin-Panel",
+    "startProject": "Projekt starten"
   },
   "search": {
     "searchButton": "Suchen",

@@ -19,7 +19,8 @@
     "guest": "访客",
     "admin": "管理员",
     "member": "会员",
-    "adminPanel": "管理面板"
+    "adminPanel": "管理面板",
+    "startProject": "开始项目"
   },
   "search": {
     "searchButton": "搜索",

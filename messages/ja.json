@@ -20,7 +20,8 @@
     "guest": "ゲスト",
     "admin": "管理者",
     "member": "メンバー",
-    "adminPanel": "管理パネル"
+    "adminPanel": "管理パネル",
+    "startProject": "プロジェクトを始める"
   },
   "hero": {
     "label": "AI映画",
