@@ -36,13 +36,29 @@ export default function OverviewStep({ form, updateField, fieldErrors }: Props) 
 
                 <div>
                     <label className="sp-label" htmlFor="sp-deadline">{t('fields.deadline')}</label>
-                    <input
-                        id="sp-deadline"
-                        type="date"
-                        className="sp-input"
-                        value={form.deadline}
-                        onChange={e => updateField('deadline', e.target.value)}
-                    />
+                    <div
+                        onClick={() => {
+                            const input = document.getElementById('sp-deadline') as HTMLInputElement | null
+                            if (input) {
+                                if (typeof input.showPicker === 'function') {
+                                    try { input.showPicker() } catch { input.focus() }
+                                } else {
+                                    input.focus()
+                                }
+                            }
+                        }}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        <input
+                            id="sp-deadline"
+                            type="date"
+                            className="sp-input"
+                            min={new Date().toISOString().split('T')[0]}
+                            value={form.deadline}
+                            onChange={e => updateField('deadline', e.target.value)}
+                            style={{ cursor: 'pointer' }}
+                        />
+                    </div>
                 </div>
 
                 <div>

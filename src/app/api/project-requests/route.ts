@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/db'
 import { generateProjectId } from '@/lib/projectRequestId'
 import { requireAdmin } from '@/lib/auth'
+import { sendEmail } from '@/lib/mailer'
+import { projectRequestConfirmation, projectRequestAdminNotification } from '@/lib/project-request-emails'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -77,12 +81,14 @@ export async function POST(req: NextRequest) {
             uploads = []
         }
 
-        // ── Generate ID and save ────────────────────────────────────────────
+        // ── Generate ID, access token, and save ────────────────────────────
         const projectId = await generateProjectId()
+        const accessToken = randomBytes(32).toString('hex')
 
         const saved = await prisma.projectRequest.create({
             data: {
                 id: projectId,
+                accessToken,
                 projectType: body.projectType,
                 clientName: body.clientName.trim(),
                 email: body.email.trim().toLowerCase(),
@@ -115,8 +121,65 @@ export async function POST(req: NextRequest) {
             },
         })
 
-        // TODO: Send confirmation email to client (localized)
-        // TODO: Send admin notification email
+        // ── Send emails (Promise.allSettled — never blocks response) ─────
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+        const trackingUrl = `${siteUrl}/my-projects?id=${saved.id}&token=${accessToken}`
+
+        const emailPromises: Promise<boolean>[] = []
+
+        // 1. Client confirmation
+        emailPromises.push(
+            sendEmail({
+                to: saved.email,
+                subject: `🎬 Project Received: ${saved.projectTitle} — ID: ${saved.id}`,
+                html: projectRequestConfirmation(
+                    saved.clientName,
+                    saved.id,
+                    saved.projectTitle,
+                    saved.projectType,
+                    trackingUrl,
+                ),
+            })
+        )
+
+        // 2. Admin notification
+        try {
+            const settings = await prisma.siteSettings.findFirst({
+                select: { notifyEmail: true, contactEmail: true },
+            })
+            const adminEmail = settings?.notifyEmail || settings?.contactEmail
+            if (adminEmail) {
+                emailPromises.push(
+                    sendEmail({
+                        to: adminEmail,
+                        subject: `📋 New Project: ${saved.projectTitle} from ${saved.clientName}`,
+                        html: projectRequestAdminNotification(
+                            saved.clientName,
+                            saved.email,
+                            saved.id,
+                            saved.projectTitle,
+                            saved.projectType,
+                            saved.budgetRange,
+                            saved.deadline?.toLocaleDateString() || null,
+                            saved.rushDelivery,
+                            siteUrl,
+                        ),
+                        replyTo: saved.email,
+                    })
+                )
+            }
+        } catch (err) {
+            logger.warn('project-requests', 'Failed to resolve admin email for notification', { error: err as Error })
+        }
+
+        // Fire all — never fail the submission
+        Promise.allSettled(emailPromises).then(results => {
+            results.forEach((r, i) => {
+                if (r.status === 'rejected') {
+                    logger.error('project-requests', `Email ${i} failed`, { error: r.reason })
+                }
+            })
+        })
 
         return NextResponse.json({
             success: true,

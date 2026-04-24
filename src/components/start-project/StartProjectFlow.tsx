@@ -290,7 +290,7 @@ export default function StartProjectFlow() {
                     disabled={stepIndex === 0}
                     className="sp-btn sp-btn-ghost"
                 >
-                    ← {t('buttons.back')}
+                    {t('buttons.back')}
                 </button>
 
                 {currentStep !== 'review' ? (
@@ -299,7 +299,7 @@ export default function StartProjectFlow() {
                         onClick={goNext}
                         className="sp-btn sp-btn-primary"
                     >
-                        {t('buttons.continue')} →
+                        {t('buttons.continue')}
                     </button>
                 ) : (
                     <button
