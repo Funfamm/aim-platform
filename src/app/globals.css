@@ -5195,6 +5195,25 @@ img, video, iframe, canvas {
   background: rgba(255,255,255,0.06);
   box-shadow: 0 0 0 3px rgba(212,168,83,0.08), 0 0 20px rgba(212,168,83,0.06);
 }
+/* ── Select dropdown dark-mode fix ── */
+select.sp-input {
+  color: var(--text-primary);
+  background-color: #14161c;
+  cursor: pointer;
+}
+select.sp-input option {
+  background: #14161c;
+  color: #e5e5e5;
+  padding: 8px 12px;
+}
+select.sp-input option:checked {
+  background: rgba(212,168,83,0.25);
+  color: #fff;
+}
+select.sp-input option:disabled,
+select.sp-input option[value=""] {
+  color: #6b7280;
+}
 
 /* ── Errors ── */
 .sp-error {

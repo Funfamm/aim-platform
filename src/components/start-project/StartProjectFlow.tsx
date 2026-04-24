@@ -108,10 +108,24 @@ interface SubmittedProject {
     accessToken: string
 }
 
+// ── Required dynamic fields per project type (first 2 are always mandatory) ──
+const REQUIRED_DYNAMIC: Record<string, string[]> = {
+    birthday: ['celebrantName', 'ageTurning'],
+    brand:    ['brandName', 'industry'],
+    commercial: ['productName', 'campaignGoal'],
+    music:    ['songName', 'artistName'],
+    film:     ['storyTitle', 'genre'],
+    event:    ['eventName', 'eventDate'],
+    custom:   ['requestDescription', 'whatIsThisFor'],
+}
+
 // ── Validation per step ─────────────────────────────────────────────────────
 function validateStep(step: StepKey, form: StartProjectFormData): string[] {
     const errors: string[] = []
     switch (step) {
+        case 'projectType':
+            if (!form.projectType) errors.push('projectType')
+            break
         case 'contact':
             if (!form.clientName.trim()) errors.push('clientName')
             if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.push('email')
@@ -120,6 +134,17 @@ function validateStep(step: StepKey, form: StartProjectFormData): string[] {
             if (!form.projectTitle.trim()) errors.push('projectTitle')
             if (form.description.trim().length < 10) errors.push('description')
             break
+        case 'creative':
+            if (form.tone.length === 0) errors.push('tone')
+            if (!form.visualStyle.trim()) errors.push('visualStyle')
+            break
+        case 'dynamic': {
+            const required = REQUIRED_DYNAMIC[form.projectType] || REQUIRED_DYNAMIC.custom
+            for (const field of required) {
+                if (!form.customFields[field]?.trim()) errors.push(field)
+            }
+            break
+        }
         case 'delivery':
             if (!form.budgetRange) errors.push('budgetRange')
             break

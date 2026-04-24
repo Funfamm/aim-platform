@@ -21,7 +21,7 @@ interface Props {
     fieldErrors: string[]
 }
 
-export default function CreativeDirectionStep({ form, updateField }: Props) {
+export default function CreativeDirectionStep({ form, updateField, fieldErrors }: Props) {
     const t = useTranslations('startProject')
     const [showOtherStyle, setShowOtherStyle] = useState(
         () => form.visualStyle !== '' && !VISUAL_STYLE_OPTIONS.includes(form.visualStyle)
@@ -47,7 +47,7 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
                 {/* Tone pills */}
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                        <label className="sp-label" style={{ marginBottom: 0 }}>{t('fields.tone')}</label>
+                        <label className="sp-label" style={{ marginBottom: 0 }}>{t('fields.tone')} *</label>
                         <span style={{
                             fontSize: '0.65rem', fontWeight: 600,
                             color: atLimit ? 'var(--accent-gold)' : 'var(--text-tertiary)',
@@ -90,10 +90,11 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
                             )
                         })}
                     </div>
+                    {fieldErrors.includes('tone') && <p className="sp-error">{t('validation.toneRequired') || 'Select at least 1 tone'}</p>}
                 </div>
 
                 <div>
-                    <label className="sp-label" htmlFor="sp-visualStyle">{t('fields.visualStyle')}</label>
+                    <label className="sp-label" htmlFor="sp-visualStyle">{t('fields.visualStyle')} *</label>
                     <select
                         id="sp-visualStyle"
                         className="sp-input"
@@ -108,7 +109,7 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
                                 setShowOtherStyle(false)
                             }
                         }}
-                        style={{ appearance: 'auto' }}
+                        style={{ appearance: 'auto', ...(fieldErrors.includes('visualStyle') ? { border: '1.5px solid rgba(239,68,68,0.5)' } : {}) }}
                     >
                         <option value="">— {t('fields.visualStyle')} —</option>
                         {VISUAL_STYLE_OPTIONS.map(opt => (
@@ -126,6 +127,7 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
                             onChange={e => updateField('visualStyle', e.target.value)}
                         />
                     )}
+                    {fieldErrors.includes('visualStyle') && <p className="sp-error">{t('validation.required')}</p>}
                 </div>
 
                 <div>

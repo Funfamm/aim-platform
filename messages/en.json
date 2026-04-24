@@ -308,7 +308,7 @@
     "roleTypeExtra": "Extra",
     "withdraw": "Withdraw",
     "applyAgain": "Apply Again",
-    "applied": "Applied âœ“"
+    "applied": "Applied"
   },
   "alreadyApplied": {
     "pageLabel": "Application Status",
@@ -325,7 +325,7 @@
     "fieldSkills": "Special Skills",
     "fieldAppliedOn": "Applied On",
     "withdrawNote": "Your application is still being reviewed. You can withdraw and reapply if you'd like to update your information.",
-    "withdrawBtn": "â†© Withdraw Application",
+    "withdrawBtn": "Withdraw Application",
     "withdrawing": "Withdrawing…",
     "withdrawConfirm": "Are you sure you want to withdraw your application? You can reapply afterwards.",
     "withdrawError": "Failed to withdraw. Please try again.",
@@ -1496,7 +1496,8 @@
       "unsupportedFile": "This file type is not supported",
       "descriptionMin": "Please describe your project (min 10 characters)",
       "consentRequired": "You must agree to be contacted",
-      "maxFiles": "Maximum 10 files allowed"
+      "maxFiles": "Maximum 10 files allowed",
+      "toneRequired": "Select at least 1 tone"
     },
     "consent": {
       "uploadPermission": "I confirm I have permission to share the uploaded content.",

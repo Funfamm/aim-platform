@@ -20,7 +20,7 @@ interface Props {
     fieldErrors: string[]
 }
 
-export default function DynamicFieldsStep({ form, updateField }: Props) {
+export default function DynamicFieldsStep({ form, updateField, fieldErrors }: Props) {
     const t = useTranslations('startProject')
     const fields = TYPE_FIELDS[form.projectType] || TYPE_FIELDS.custom
 
@@ -39,6 +39,20 @@ export default function DynamicFieldsStep({ form, updateField }: Props) {
     // Fields that should use a date picker
     const dateFields = new Set(['eventDate'])
 
+    // Required fields for current project type (first 2)
+    const REQUIRED_DYNAMIC: Record<string, string[]> = {
+        birthday: ['celebrantName', 'ageTurning'],
+        brand:    ['brandName', 'industry'],
+        commercial: ['productName', 'campaignGoal'],
+        music:    ['songName', 'artistName'],
+        film:     ['storyTitle', 'genre'],
+        event:    ['eventName', 'eventDate'],
+        custom:   ['requestDescription', 'whatIsThisFor'],
+    }
+    const requiredFields = new Set(REQUIRED_DYNAMIC[form.projectType] || REQUIRED_DYNAMIC.custom)
+    const hasError = (f: string) => fieldErrors.includes(f)
+    const errorStyle = { border: '1.5px solid rgba(239,68,68,0.5)' }
+
     return (
         <section>
             <h2 className="sp-step-title">{t('steps.dynamic')}</h2>
@@ -50,7 +64,7 @@ export default function DynamicFieldsStep({ form, updateField }: Props) {
                 {fields.map(field => (
                     <div key={field}>
                         <label className="sp-label" htmlFor={`sp-cf-${field}`}>
-                            {t(`dynamicFields.${field}`)}
+                            {t(`dynamicFields.${field}`)}{requiredFields.has(field) ? ' *' : ''}
                         </label>
                         {dateFields.has(field) ? (
                             <div
@@ -80,7 +94,7 @@ export default function DynamicFieldsStep({ form, updateField }: Props) {
                             <textarea
                                 id={`sp-cf-${field}`}
                                 className="sp-input"
-                                style={{ minHeight: '80px', resize: 'vertical' }}
+                                style={{ minHeight: '80px', resize: 'vertical', ...(hasError(field) ? errorStyle : {}) }}
                                 placeholder={t(`dynamicFields.${field}`)}
                                 value={form.customFields[field] || ''}
                                 onChange={e => updateCustom(field, e.target.value)}
@@ -89,11 +103,13 @@ export default function DynamicFieldsStep({ form, updateField }: Props) {
                             <input
                                 id={`sp-cf-${field}`}
                                 className="sp-input"
+                                style={hasError(field) ? errorStyle : undefined}
                                 placeholder={t(`dynamicFields.${field}`)}
                                 value={form.customFields[field] || ''}
                                 onChange={e => updateCustom(field, e.target.value)}
                             />
                         )}
+                        {hasError(field) && <p className="sp-error">{t('validation.required')}</p>}
                     </div>
                 ))}
             </div>
