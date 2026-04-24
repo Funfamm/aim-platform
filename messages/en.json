@@ -1539,6 +1539,11 @@
       "desiredResult": "What result should it achieve?",
       "requiredDeliverables": "Required deliverables",
       "specialNotes": "Special notes"
+    },
+    "trustBadges": {
+      "fast": "Fast Turnaround",
+      "quality": "Premium Quality",
+      "global": "Global Service"
     }
   }
 }

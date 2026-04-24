@@ -136,6 +136,7 @@ export default function StartProjectFlow() {
     const [submittedProject, setSubmittedProject] = useState<SubmittedProject | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
+    const [animKey, setAnimKey] = useState(0) // forces re-mount for animation
 
     const currentStep = STEPS[stepIndex]
 
@@ -157,12 +158,14 @@ export default function StartProjectFlow() {
         }
         setFieldErrors([])
         setStepIndex(i => Math.min(STEPS.length - 1, i + 1))
+        setAnimKey(k => k + 1)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }, [currentStep, form])
 
     const goBack = useCallback(() => {
         setFieldErrors([])
         setStepIndex(i => Math.max(0, i - 1))
+        setAnimKey(k => k + 1)
         window.scrollTo({ top: 0, behavior: 'smooth' })
     }, [])
 
@@ -170,6 +173,7 @@ export default function StartProjectFlow() {
         if (idx < stepIndex) {
             setFieldErrors([])
             setStepIndex(idx)
+            setAnimKey(k => k + 1)
             window.scrollTo({ top: 0, behavior: 'smooth' })
         }
     }, [stepIndex])
@@ -214,9 +218,12 @@ export default function StartProjectFlow() {
     const stepProps = { form, updateField, fieldErrors }
 
     return (
-        <div className="glass-card" style={{
-            padding: 'clamp(1rem, 3vw, 1.5rem)',
+        <div style={{
             borderRadius: 'var(--radius-xl)',
+            background: 'rgba(255,255,255,0.02)',
+            border: '1px solid rgba(255,255,255,0.06)',
+            padding: 'clamp(1rem, 3vw, 1.5rem)',
+            backdropFilter: 'blur(8px)',
         }}>
             <StepProgress
                 steps={STEPS as unknown as string[]}
@@ -224,7 +231,20 @@ export default function StartProjectFlow() {
                 onStepClick={goToStep}
             />
 
-            <div style={{ marginTop: 'var(--space-lg)', minHeight: '300px' }}>
+            {/* Step counter for mobile */}
+            <div style={{
+                textAlign: 'center',
+                marginTop: 'var(--space-sm)',
+                fontSize: '0.68rem',
+                fontWeight: 600,
+                color: 'var(--text-tertiary)',
+                letterSpacing: '0.1em',
+            }}>
+                {stepIndex + 1} / {STEPS.length}
+            </div>
+
+            {/* Animated step body */}
+            <div key={animKey} className="sp-step-body" style={{ marginTop: 'var(--space-lg)', minHeight: '280px' }}>
                 {currentStep === 'projectType' && <ProjectTypeStep {...stepProps} />}
                 {currentStep === 'contact' && <ContactStep {...stepProps} />}
                 {currentStep === 'overview' && <OverviewStep {...stepProps} />}
@@ -239,15 +259,18 @@ export default function StartProjectFlow() {
             {submitError && (
                 <div style={{
                     marginTop: 'var(--space-md)',
-                    padding: '10px 14px',
+                    padding: '12px 16px',
                     borderRadius: 'var(--radius-md)',
-                    background: 'rgba(239,68,68,0.1)',
-                    border: '1px solid rgba(239,68,68,0.3)',
+                    background: 'rgba(239,68,68,0.08)',
+                    border: '1px solid rgba(239,68,68,0.2)',
                     color: '#f87171',
                     fontSize: '0.82rem',
                     fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
                 }}>
-                    ✕ {submitError}
+                    <span>⚠️</span> {submitError}
                 </div>
             )}
 
@@ -257,7 +280,7 @@ export default function StartProjectFlow() {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 gap: 'var(--space-md)',
-                borderTop: '1px solid var(--border-subtle)',
+                borderTop: '1px solid rgba(255,255,255,0.05)',
                 paddingTop: 'var(--space-lg)',
                 marginTop: 'var(--space-lg)',
             }}>
@@ -267,7 +290,7 @@ export default function StartProjectFlow() {
                     disabled={stepIndex === 0}
                     className="sp-btn sp-btn-ghost"
                 >
-                    {t('buttons.back')}
+                    ← {t('buttons.back')}
                 </button>
 
                 {currentStep !== 'review' ? (
@@ -276,7 +299,7 @@ export default function StartProjectFlow() {
                         onClick={goNext}
                         className="sp-btn sp-btn-primary"
                     >
-                        {t('buttons.continue')}
+                        {t('buttons.continue')} →
                     </button>
                 ) : (
                     <button
@@ -284,9 +307,12 @@ export default function StartProjectFlow() {
                         onClick={handleSubmit}
                         disabled={isSubmitting}
                         className="sp-btn sp-btn-primary"
-                        style={{ opacity: isSubmitting ? 0.6 : 1 }}
+                        style={{
+                            opacity: isSubmitting ? 0.6 : 1,
+                            minWidth: '180px',
+                        }}
                     >
-                        {isSubmitting ? '⏳...' : t('buttons.submit')}
+                        {isSubmitting ? '⏳ Submitting...' : `🚀 ${t('buttons.submit')}`}
                     </button>
                 )}
             </div>

@@ -1575,6 +1575,11 @@
       "desiredResult": "What result should it achieve?",
       "requiredDeliverables": "Required deliverables",
       "specialNotes": "Special notes"
+    },
+    "trustBadges": {
+      "fast": "Быстрая доставка",
+      "quality": "Премиум качество",
+      "global": "Глобальный сервис"
     }
   }
 }

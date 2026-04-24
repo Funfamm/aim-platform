@@ -1575,6 +1575,11 @@
       "desiredResult": "What result should it achieve?",
       "requiredDeliverables": "Required deliverables",
       "specialNotes": "Special notes"
+    },
+    "trustBadges": {
+      "fast": "빠른 납품",
+      "quality": "프리미엄 품질",
+      "global": "글로벌 서비스"
     }
   }
 }

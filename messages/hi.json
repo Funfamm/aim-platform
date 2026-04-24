@@ -1575,6 +1575,11 @@
       "desiredResult": "What result should it achieve?",
       "requiredDeliverables": "Required deliverables",
       "specialNotes": "Special notes"
+    },
+    "trustBadges": {
+      "fast": "तेज़ डिलीवरी",
+      "quality": "प्रीमियम गुणवत्ता",
+      "global": "वैश्विक सेवा"
     }
   }
 }

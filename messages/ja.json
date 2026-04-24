@@ -1576,6 +1576,11 @@
       "desiredResult": "What result should it achieve?",
       "requiredDeliverables": "Required deliverables",
       "specialNotes": "Special notes"
+    },
+    "trustBadges": {
+      "fast": "迅速な納品",
+      "quality": "プレミアム品質",
+      "global": "グローバルサービス"
     }
   }
 }

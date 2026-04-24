@@ -104,20 +104,8 @@ export default function UploadStep({ form, updateField }: Props) {
             <p className="sp-step-subtitle">{t('helpers.uploadHint')}</p>
 
             {/* Drop zone */}
-            <label style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: '160px',
-                marginTop: 'var(--space-lg)',
-                padding: 'var(--space-xl)',
-                borderRadius: 'var(--radius-lg)',
-                border: '2px dashed rgba(212,168,83,0.3)',
-                background: 'rgba(255,255,255,0.03)',
+            <label className="sp-dropzone" style={{
                 cursor: uploading ? 'wait' : 'pointer',
-                textAlign: 'center',
-                transition: 'border-color 0.2s',
             }}>
                 <span style={{ fontSize: '2rem', marginBottom: '8px' }}>
                     {uploading ? '⏳' : '📁'}

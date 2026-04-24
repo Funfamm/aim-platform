@@ -21,18 +21,19 @@ export default function ConfirmationView({ project }: Props) {
     const t = useTranslations('startProject')
 
     return (
-        <div className="glass-card" style={{
+        <div style={{
+            maxWidth: '600px',
+            margin: '0 auto',
             padding: 'clamp(1.5rem, 4vw, 2.5rem)',
-            borderRadius: 'var(--radius-xl)',
             textAlign: 'center',
         }}>
-            {/* Success icon */}
-            <div style={{
-                width: '72px',
-                height: '72px',
+            {/* Success icon with pulse */}
+            <div className="sp-success-icon" style={{
+                width: '80px',
+                height: '80px',
                 borderRadius: '50%',
-                background: 'rgba(52,211,153,0.1)',
-                border: '2px solid rgba(52,211,153,0.3)',
+                background: 'linear-gradient(135deg, rgba(52,211,153,0.15), rgba(52,211,153,0.05))',
+                border: '2px solid rgba(52,211,153,0.4)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -65,14 +66,14 @@ export default function ConfirmationView({ project }: Props) {
                 display: 'inline-block',
                 padding: 'var(--space-md) var(--space-xl)',
                 borderRadius: 'var(--radius-lg)',
-                background: 'rgba(212,168,83,0.08)',
-                border: '1px solid rgba(212,168,83,0.2)',
+                background: 'rgba(212,168,83,0.06)',
+                border: '1px solid rgba(212,168,83,0.15)',
                 marginBottom: 'var(--space-xl)',
             }}>
-                <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '4px' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '6px' }}>
                     {t('confirmation.projectId')}
                 </div>
-                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)', fontFamily: 'monospace' }}>
+                <div style={{ fontSize: 'clamp(1rem, 3vw, 1.3rem)', fontWeight: 800, color: 'var(--accent-gold)', fontFamily: 'monospace', letterSpacing: '0.05em' }}>
                     {project.id}
                 </div>
             </div>
@@ -93,17 +94,17 @@ export default function ConfirmationView({ project }: Props) {
 
             {/* Status flow */}
             <div style={{
-                background: 'rgba(255,255,255,0.03)',
+                background: 'rgba(255,255,255,0.02)',
                 borderRadius: 'var(--radius-lg)',
                 padding: 'var(--space-lg)',
-                border: '1px solid var(--border-subtle)',
+                border: '1px solid rgba(255,255,255,0.06)',
                 textAlign: 'left',
                 marginBottom: 'var(--space-xl)',
             }}>
-                <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: 'var(--space-md)' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: 'var(--space-md)' }}>
                     {t('confirmation.nextSteps')}
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {STATUS_FLOW.map((status, i) => {
                         const isCurrent = status === project.status
                         const isPast = i < STATUS_FLOW.indexOf(project.status)
@@ -111,21 +112,23 @@ export default function ConfirmationView({ project }: Props) {
                             <div key={status} style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '10px',
-                                opacity: isPast || isCurrent ? 1 : 0.35,
+                                gap: '12px',
+                                opacity: isPast || isCurrent ? 1 : 0.3,
+                                transition: 'opacity 0.3s',
                             }}>
                                 <div style={{
-                                    width: '22px',
-                                    height: '22px',
+                                    width: '24px',
+                                    height: '24px',
                                     borderRadius: '50%',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     fontSize: '0.6rem',
                                     fontWeight: 800,
+                                    flexShrink: 0,
                                     background: isCurrent ? 'rgba(52,211,153,0.15)' : 'rgba(255,255,255,0.05)',
                                     border: `1.5px solid ${isCurrent ? '#34d399' : isPast ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)'}`,
-                                    color: isCurrent ? '#34d399' : isPast ? '#34d399' : 'var(--text-tertiary)',
+                                    color: isCurrent || isPast ? '#34d399' : 'var(--text-tertiary)',
                                 }}>
                                     {isPast ? '✓' : i + 1}
                                 </div>
@@ -146,12 +149,23 @@ export default function ConfirmationView({ project }: Props) {
             <div style={{
                 fontSize: '0.82rem',
                 color: 'var(--text-secondary)',
-                lineHeight: 1.7,
+                lineHeight: 1.8,
                 marginBottom: 'var(--space-xl)',
+                textAlign: 'left',
+                padding: '0 var(--space-sm)',
             }}>
-                <p>📧 {t('confirmation.step1')}</p>
-                <p>📋 {t('confirmation.step2')}</p>
-                <p>🎬 {t('confirmation.step3')}</p>
+                <p style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                    <span style={{ flexShrink: 0 }}>📧</span>
+                    <span>{t('confirmation.step1')}</span>
+                </p>
+                <p style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '6px' }}>
+                    <span style={{ flexShrink: 0 }}>📋</span>
+                    <span>{t('confirmation.step2')}</span>
+                </p>
+                <p style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '6px' }}>
+                    <span style={{ flexShrink: 0 }}>🎬</span>
+                    <span>{t('confirmation.step3')}</span>
+                </p>
             </div>
 
             {/* CTAs */}

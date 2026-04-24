@@ -1577,6 +1577,11 @@
       "desiredResult": "What result should it achieve?",
       "requiredDeliverables": "Required deliverables",
       "specialNotes": "Special notes"
+    },
+    "trustBadges": {
+      "fast": "تسليم سريع",
+      "quality": "جودة ممتازة",
+      "global": "خدمة عالمية"
     }
   }
 }

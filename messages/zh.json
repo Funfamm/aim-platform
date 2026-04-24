@@ -1575,6 +1575,11 @@
       "desiredResult": "What result should it achieve?",
       "requiredDeliverables": "Required deliverables",
       "specialNotes": "Special notes"
+    },
+    "trustBadges": {
+      "fast": "快速交付",
+      "quality": "优质品质",
+      "global": "全球服务"
     }
   }
 }

@@ -1575,6 +1575,11 @@
       "desiredResult": "Résultat souhaité?",
       "requiredDeliverables": "Livrables requis",
       "specialNotes": "Notes spéciales"
+    },
+    "trustBadges": {
+      "fast": "Livraison rapide",
+      "quality": "Qualité Premium",
+      "global": "Service Mondial"
     }
   }
 }

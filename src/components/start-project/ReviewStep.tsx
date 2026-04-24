@@ -18,19 +18,12 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
     function renderRow(label: string, value: string | string[] | undefined, step: number) {
         if (!value || (Array.isArray(value) && value.length === 0)) return null
         return (
-            <div key={label} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                padding: '10px 0',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-                gap: '12px',
-            }}>
-                <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '3px' }}>
+            <div key={label} className="sp-review-row">
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '3px' }}>
                         {label}
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', lineHeight: 1.5, wordBreak: 'break-word' }}>
                         {Array.isArray(value) ? value.join(', ') : value}
                     </div>
                 </div>
@@ -41,11 +34,14 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
                         fontSize: '0.68rem',
                         fontWeight: 700,
                         color: 'var(--accent-gold)',
-                        background: 'none',
-                        border: 'none',
+                        background: 'rgba(212,168,83,0.06)',
+                        border: '1px solid rgba(212,168,83,0.15)',
                         cursor: 'pointer',
                         flexShrink: 0,
-                        padding: '2px 8px',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        minHeight: '32px',
+                        WebkitTapHighlightColor: 'transparent',
                     }}
                 >
                     {t('buttons.edit')}
@@ -57,12 +53,15 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
     return (
         <section>
             <h2 className="sp-step-title">{t('steps.review')}</h2>
+            <p className="sp-step-subtitle" style={{ marginBottom: 'var(--space-lg)' }}>
+                Review your project details before submitting.
+            </p>
 
             <div style={{
-                background: 'rgba(255,255,255,0.03)',
+                background: 'rgba(255,255,255,0.02)',
                 borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-lg)',
-                border: '1px solid var(--border-subtle)',
+                padding: 'clamp(12px, 3vw, 20px)',
+                border: '1px solid rgba(255,255,255,0.06)',
             }}>
                 {renderRow(t('fields.projectType'), t(`projectTypes.${form.projectType}.title`), 0)}
                 {renderRow(t('fields.clientName'), form.clientName, 1)}
@@ -73,13 +72,16 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
                 {renderRow(t('fields.description'), form.description, 2)}
                 {form.deadline && renderRow(t('fields.deadline'), form.deadline, 2)}
                 {form.tone.length > 0 && renderRow(t('fields.tone'), form.tone.map(tone => t(`tones.${tone}`)), 3)}
+                {form.visualStyle && renderRow(t('fields.visualStyle'), form.visualStyle, 3)}
                 {form.budgetRange && renderRow(t('fields.budgetRange'), t(`budgetOptions.${form.budgetRange}`), 6)}
                 {form.aspectRatio && renderRow(t('fields.aspectRatio'), t(`aspectOptions.${form.aspectRatio}`), 6)}
+                {form.duration && renderRow(t('fields.duration'), form.duration, 6)}
+                {form.deliveryPlatform && renderRow(t('fields.deliveryPlatform'), form.deliveryPlatform, 6)}
                 {form.addOns.length > 0 && renderRow(t('fields.addOns'), form.addOns.map(a => t(`addonOptions.${a}`)), 6)}
                 {form.uploads.length > 0 && renderRow(t('fields.uploads'), `${form.uploads.length} ${t('helpers.filesUploaded')}`, 5)}
             </div>
 
-            {/* ── Consent checkboxes (audit fix #6) ── */}
+            {/* ── Consent checkboxes ── */}
             <div style={{
                 marginTop: 'var(--space-lg)',
                 display: 'flex',
@@ -94,14 +96,20 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
                     fontSize: '0.82rem',
                     color: 'var(--text-secondary)',
                     lineHeight: 1.5,
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    transition: 'border-color 0.2s',
+                    WebkitTapHighlightColor: 'transparent',
                 }}>
                     <input
                         type="checkbox"
                         checked={form.consentUpload}
                         onChange={e => updateField('consentUpload', e.target.checked)}
-                        style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)', marginTop: '2px', flexShrink: 0 }}
+                        style={{ width: '20px', height: '20px', accentColor: 'var(--accent-gold)', marginTop: '1px', flexShrink: 0, cursor: 'pointer' }}
                     />
-                    {t('consent.uploadPermission')}
+                    <span>{t('consent.uploadPermission')}</span>
                 </label>
 
                 <label style={{
@@ -112,17 +120,20 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
                     fontSize: '0.82rem',
                     color: hasError('consentContact') ? '#f87171' : 'var(--text-secondary)',
                     lineHeight: 1.5,
-                    border: hasError('consentContact') ? '1px solid rgba(239,68,68,0.4)' : 'none',
+                    padding: '10px 12px',
                     borderRadius: 'var(--radius-md)',
-                    padding: hasError('consentContact') ? '8px 10px' : '0',
+                    background: hasError('consentContact') ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${hasError('consentContact') ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.06)'}`,
+                    transition: 'border-color 0.2s, background 0.2s',
+                    WebkitTapHighlightColor: 'transparent',
                 }}>
                     <input
                         type="checkbox"
                         checked={form.consentContact}
                         onChange={e => updateField('consentContact', e.target.checked)}
-                        style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)', marginTop: '2px', flexShrink: 0 }}
+                        style={{ width: '20px', height: '20px', accentColor: 'var(--accent-gold)', marginTop: '1px', flexShrink: 0, cursor: 'pointer' }}
                     />
-                    {t('consent.contactAgreement')} *
+                    <span>{t('consent.contactAgreement')} *</span>
                 </label>
                 {hasError('consentContact') && (
                     <p className="sp-error">{t('validation.consentRequired')}</p>

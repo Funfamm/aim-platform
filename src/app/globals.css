@@ -5123,13 +5123,19 @@ img, video, iframe, canvas {
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
 /* ── Start Project (/start-project) ─────────────────────────────────────── */
+/* Premium mobile-first design system                                        */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── Step titles ── */
 .sp-step-title {
   font-family: var(--font-display);
   font-size: clamp(1.2rem, 3vw, 1.6rem);
   font-weight: 800;
   margin-bottom: 4px;
+  background: linear-gradient(135deg, var(--text-primary) 0%, rgba(255,255,255,0.7) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .sp-step-subtitle {
   font-size: 0.85rem;
@@ -5138,6 +5144,7 @@ img, video, iframe, canvas {
   margin-bottom: var(--space-md);
 }
 
+/* ── Form layout ── */
 .sp-form-stack {
   display: flex;
   flex-direction: column;
@@ -5153,6 +5160,7 @@ img, video, iframe, canvas {
   .sp-form-grid-2 { grid-template-columns: 1fr; }
 }
 
+/* ── Labels ── */
 .sp-label {
   display: block;
   font-size: 0.72rem;
@@ -5163,6 +5171,7 @@ img, video, iframe, canvas {
   margin-bottom: 6px;
 }
 
+/* ── Inputs — premium focus ring ── */
 .sp-input {
   width: 100%;
   padding: 12px 14px;
@@ -5173,17 +5182,21 @@ img, video, iframe, canvas {
   font-size: 0.88rem;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.15s, background 0.15s;
-  min-height: 44px; /* mobile tap target */
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  min-height: 48px; /* generous mobile tap target */
+  box-sizing: border-box;
+  -webkit-appearance: none;
 }
 .sp-input::placeholder {
   color: var(--text-tertiary);
 }
 .sp-input:focus {
-  border-color: rgba(212,168,83,0.4);
+  border-color: rgba(212,168,83,0.5);
   background: rgba(255,255,255,0.06);
+  box-shadow: 0 0 0 3px rgba(212,168,83,0.08), 0 0 20px rgba(212,168,83,0.06);
 }
 
+/* ── Errors ── */
 .sp-error {
   font-size: 0.75rem;
   color: #f87171;
@@ -5191,19 +5204,22 @@ img, video, iframe, canvas {
   margin-top: 4px;
 }
 
+/* ── Buttons — refined with better mobile sizing ── */
 .sp-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: 99px;
   font-size: 0.88rem;
   font-weight: 700;
   font-family: inherit;
   border: none;
   cursor: pointer;
-  transition: all 0.2s;
-  min-height: 44px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 48px;
+  letter-spacing: 0.01em;
+  -webkit-tap-highlight-color: transparent;
 }
 .sp-btn-primary {
   background: linear-gradient(135deg, var(--accent-gold), #e8c547);
@@ -5212,7 +5228,11 @@ img, video, iframe, canvas {
 }
 .sp-btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(212,168,83,0.35);
+  box-shadow: 0 6px 28px rgba(212,168,83,0.4);
+}
+.sp-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(212,168,83,0.3);
 }
 .sp-btn-ghost {
   background: transparent;
@@ -5221,8 +5241,125 @@ img, video, iframe, canvas {
 }
 .sp-btn-ghost:hover {
   background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.15);
 }
 .sp-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+  transform: none !important;
 }
+
+/* ── Step transition animation ── */
+@keyframes spFadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sp-step-body {
+  animation: spFadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ── Project type cards — premium grid ── */
+.sp-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+@media (max-width: 540px) {
+  .sp-type-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+}
+@media (max-width: 360px) {
+  .sp-type-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Step progress — simplified for mobile ── */
+.sp-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 0;
+  mask-image: linear-gradient(to right, transparent 0, black 4%, black 96%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0, black 4%, black 96%, transparent 100%);
+}
+.sp-progress-wrap::-webkit-scrollbar { display: none; }
+
+/* ── Pill buttons (tone, budget, etc.) ── */
+.sp-pill {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 40px;
+  -webkit-tap-highlight-color: transparent;
+}
+.sp-pill:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,255,255,0.15);
+}
+.sp-pill[data-active="true"] {
+  border-color: rgba(212,168,83,0.5);
+  background: rgba(212,168,83,0.12);
+  color: var(--accent-gold);
+}
+
+/* ── Upload dropzone ── */
+.sp-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+  margin-top: var(--space-lg);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  border: 2px dashed rgba(212,168,83,0.25);
+  background: rgba(255,255,255,0.02);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+.sp-dropzone:hover {
+  border-color: rgba(212,168,83,0.5);
+  background: rgba(212,168,83,0.03);
+}
+
+/* ── Mobile safe area — prevent bottom nav overlap ── */
+@media (max-width: 768px) {
+  .sp-bottom-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+  }
+}
+
+/* ── Review row ── */
+.sp-review-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 12px;
+}
+.sp-review-row:last-child { border-bottom: none; }
+
+/* ── Confirmation success pulse ── */
+@keyframes spSuccessPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.3); }
+  50%      { box-shadow: 0 0 0 16px rgba(52,211,153,0); }
+}
+.sp-success-icon {
+  animation: spSuccessPulse 2s ease-in-out infinite;
+}
+
