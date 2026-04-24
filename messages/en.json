@@ -1406,7 +1406,9 @@
       "aspectRatio": "Aspect Ratio",
       "deliveryPlatform": "Delivery Platform",
       "addOns": "Add-ons",
-      "uploads": "Upload Files"
+      "uploads": "Upload Files",
+      "other": "Other",
+      "describeStyle": "Describe your preferred style..."
     },
     "tones": {
       "cinematic": "Cinematic",
@@ -1419,6 +1421,17 @@
       "cleanMinimal": "Clean / Minimal",
       "dramatic": "Dramatic",
       "professional": "Professional"
+    },
+    "visualStyles": {
+      "realistic": "Realistic / Live Action",
+      "animated": "Animated / Cartoon",
+      "motionGraphics": "Motion Graphics",
+      "documentary": "Documentary Style",
+      "vintage": "Vintage / Retro",
+      "neon": "Neon / Futuristic",
+      "blackAndWhite": "Black & White",
+      "abstract": "Abstract / Artistic",
+      "corporate": "Corporate / Clean"
     },
     "budgetOptions": {
       "30-50": "$30–$50",

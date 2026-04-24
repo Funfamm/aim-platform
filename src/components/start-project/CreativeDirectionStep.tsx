@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { StartProjectFormData } from './StartProjectFlow'
 
@@ -9,6 +10,11 @@ const TONE_OPTIONS = [
 ]
 const MAX_TONES = 3
 
+const VISUAL_STYLE_OPTIONS = [
+    'realistic', 'animated', 'motionGraphics', 'documentary',
+    'vintage', 'neon', 'blackAndWhite', 'abstract', 'corporate',
+]
+
 interface Props {
     form: StartProjectFormData
     updateField: <K extends keyof StartProjectFormData>(field: K, value: StartProjectFormData[K]) => void
@@ -17,6 +23,9 @@ interface Props {
 
 export default function CreativeDirectionStep({ form, updateField }: Props) {
     const t = useTranslations('startProject')
+    const [showOtherStyle, setShowOtherStyle] = useState(
+        () => form.visualStyle !== '' && !VISUAL_STYLE_OPTIONS.includes(form.visualStyle)
+    )
 
     const toggleTone = (tone: string) => {
         const current = form.tone
@@ -85,13 +94,38 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
 
                 <div>
                     <label className="sp-label" htmlFor="sp-visualStyle">{t('fields.visualStyle')}</label>
-                    <input
+                    <select
                         id="sp-visualStyle"
                         className="sp-input"
-                        placeholder={t('fields.visualStyle')}
-                        value={form.visualStyle}
-                        onChange={e => updateField('visualStyle', e.target.value)}
-                    />
+                        value={VISUAL_STYLE_OPTIONS.includes(form.visualStyle) ? form.visualStyle : showOtherStyle ? 'other' : ''}
+                        onChange={e => {
+                            if (e.target.value === 'other') {
+                                updateField('visualStyle', '')
+                                setShowOtherStyle(true)
+                                setTimeout(() => document.getElementById('sp-visualStyleOther')?.focus(), 50)
+                            } else {
+                                updateField('visualStyle', e.target.value)
+                                setShowOtherStyle(false)
+                            }
+                        }}
+                        style={{ appearance: 'auto' }}
+                    >
+                        <option value="">— {t('fields.visualStyle')} —</option>
+                        {VISUAL_STYLE_OPTIONS.map(opt => (
+                            <option key={opt} value={opt}>{t(`visualStyles.${opt}`)}</option>
+                        ))}
+                        <option value="other">{t('fields.other') || 'Other'}</option>
+                    </select>
+                    {showOtherStyle && (
+                        <input
+                            id="sp-visualStyleOther"
+                            className="sp-input"
+                            style={{ marginTop: '8px' }}
+                            placeholder={t('fields.describeStyle') || 'Describe your preferred style...'}
+                            value={form.visualStyle}
+                            onChange={e => updateField('visualStyle', e.target.value)}
+                        />
+                    )}
                 </div>
 
                 <div>
