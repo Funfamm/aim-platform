@@ -204,3 +204,80 @@ export function projectRequestAdminNotification(
         ${siteUrl ? secondaryButton('Review in Admin Panel', `${siteUrl}/admin/project-requests`) : ''}
     `, `New project: ${projectTitle} from ${clientName}`)
 }
+
+
+// ──────────────────────────────────────────────────────────────
+// Client Status Update Email
+// Sent when admin changes the project status
+// ──────────────────────────────────────────────────────────────
+
+const STATUS_META: Record<string, { label: string; color: string; emoji: string; message: string }> = {
+    received:        { label: 'Received',        color: '#60a5fa', emoji: '📥', message: 'Your project brief has been received and is in our queue.' },
+    reviewing:       { label: 'Under Review',    color: '#a78bfa', emoji: '🔍', message: 'Our team is now reviewing your project brief and requirements.' },
+    scope_confirmed: { label: 'Scope Confirmed', color: '#22d3ee', emoji: '📋', message: 'We have confirmed the scope and timeline for your project. Production will begin shortly.' },
+    in_production:   { label: 'In Production',   color: '#f59e0b', emoji: '🎬', message: 'Your project is now in active production. Our team is working on bringing your vision to life.' },
+    awaiting_client: { label: 'Awaiting Your Response', color: '#f97316', emoji: '⏳', message: 'We need your input to proceed. Please check your project tracker or reply to this email.' },
+    delivered:       { label: 'Delivered',        color: '#10b981', emoji: '📦', message: 'Your project has been delivered! Please review the final deliverables and let us know if any revisions are needed.' },
+    completed:       { label: 'Completed',        color: '#34d399', emoji: '✅', message: 'Your project is complete. Thank you for choosing AIM Studio. We hope you love the result!' },
+    cancelled:       { label: 'Cancelled',        color: '#f87171', emoji: '❌', message: 'This project has been cancelled. If you have any questions, please reach out to our team.' },
+}
+
+const STATUS_FLOW = ['received', 'reviewing', 'scope_confirmed', 'in_production', 'delivered', 'completed']
+
+export function projectStatusUpdateEmail(
+    clientName: string,
+    projectId: string,
+    projectTitle: string,
+    newStatus: string,
+    trackingUrl: string,
+): string {
+    const meta = STATUS_META[newStatus] || STATUS_META.received
+    const currentIdx = STATUS_FLOW.indexOf(newStatus)
+
+    // Build the progress timeline
+    const timelineHtml = STATUS_FLOW.map((status, i) => {
+        const sMeta = STATUS_META[status]
+        const isPast = i < currentIdx
+        const isCurrent = status === newStatus
+        const isFuture = i > currentIdx
+        const dotColor = isCurrent ? sMeta.color : isPast ? ACCENT_GREEN : '#3a3d45'
+        const textColor = isCurrent ? TEXT_PRIMARY : isPast ? TEXT_SECONDARY : '#3a3d45'
+        const checkmark = isPast ? '✓' : isCurrent ? sMeta.emoji : '○'
+
+        return `<tr>
+            <td style="padding: 5px 0; font-size: 16px; width: 28px; text-align: center; color: ${dotColor}; vertical-align: middle;">${checkmark}</td>
+            <td style="padding: 5px 0 5px 10px; font-size: 13px; color: ${textColor}; font-weight: ${isCurrent ? '700' : '400'}; vertical-align: middle;">
+                ${sMeta.label}
+                ${isCurrent ? `<span style="display: inline-block; margin-left: 8px; padding: 1px 8px; background: ${sMeta.color}18; border: 1px solid ${sMeta.color}40; border-radius: 4px; font-size: 10px; font-weight: 700; color: ${sMeta.color}; text-transform: uppercase;">Current</span>` : ''}
+            </td>
+        </tr>`
+    }).join('')
+
+    return emailWrapper(`
+        ${heading(`${meta.emoji} Project Update`)}
+        ${subtext(`Hi ${clientName}, there is an update on your project.`)}
+
+        ${infoCard(`
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${infoRow('Project', projectTitle)}
+                ${infoRow('Project ID', `<span style="color: ${BRAND_COLOR}; font-family: monospace; letter-spacing: 0.5px;">${projectId}</span>`)}
+                ${infoRow('New Status', `<span style="display: inline-block; padding: 3px 12px; background: ${meta.color}18; border: 1px solid ${meta.color}40; border-radius: 4px; font-size: 12px; font-weight: 700; color: ${meta.color};">${meta.label}</span>`)}
+            </table>
+        `, meta.color)}
+
+        ${paragraph(meta.message)}
+
+        ${divider()}
+
+        <div style="background-color: ${BG_DARK}; border-radius: 8px; padding: 18px 22px; margin-bottom: 24px;">
+            <p style="margin: 0 0 12px; font-size: 13px; font-weight: 700; color: ${BRAND_COLOR}; text-transform: uppercase; letter-spacing: 0.5px;">Progress</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${timelineHtml}
+            </table>
+        </div>
+
+        ${button('View Project Status', trackingUrl)}
+
+        ${paragraph(`<span style="font-size: 12px; color: #6b7280;">Your Project ID is <strong>${projectId}</strong>. Bookmark your tracking page for real-time updates.</span>`)}
+    `, `Project "${projectTitle}" — Status: ${meta.label}`)
+}
