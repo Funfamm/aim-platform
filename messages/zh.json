@@ -72,7 +72,8 @@
     "upcomingStat": "即将推出",
     "castingStat": "选角",
     "limitlessDesc": "无边界，无障碍。AI以前所未有的规模和深度释放叙事创作力。",
-    "cinematicDesc": "每一帧都经过精心设计，每一个剪辑都精准无误。我们的AI流水线以前所未有的速度提供电影级质量。"
+    "cinematicDesc": "每一帧都经过精心设计，每一个剪辑都精准无误。我们的AI流水线以前所未有的速度提供电影级质量。",
+    "curatedCollections": "精选合集"
   },
   "casting": {
     "label": "公开选角",

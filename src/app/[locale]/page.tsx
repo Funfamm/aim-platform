@@ -220,7 +220,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             }}>
               <div style={{ width: '24px', height: '2px', background: 'var(--accent-gold)', borderRadius: '2px' }} />
               <span style={{ fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--accent-gold)' }}>
-                Curated Collections
+                {t('curatedCollections')}
               </span>
             </div>
             {(homeRolls as Array<{ id: string; title: string; titleI18n: string | null; icon: string; slug: string; projects: unknown[] }>).map((roll) => (
