@@ -160,6 +160,7 @@ export default function ProjectRequestsPage() {
         setLoading(false)
     }, [filterStatus, filterType, filterUrgent])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching on mount + filter change is intentional
     useEffect(() => { fetchRequests() }, [fetchRequests])
 
     const updateRequest = async (id: string, patch: Record<string, unknown>) => {
