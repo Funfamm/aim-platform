@@ -1,7 +1,63 @@
-# AIM Platform – Production‑Ready Deployment
+# Impact AI Studio Platform
 
-## Overview
-A modern **Next.js 15** AI‑driven filmmaking platform built with **TypeScript**, **Prisma**, **BullMQ**, and **Sentry**. The repository now includes a hardened CI/CD pipeline, zero‑cost security hardening, observability via Prometheus, and full release automation.
+A full-stack AI media and project submission platform built to support film publishing, client project requests, admin workflows, multilingual user experiences, email notifications, uploads, and production deployment.
+
+This project demonstrates hands-on experience with modern web development, application support, technical troubleshooting, deployment workflows, and product-focused problem solving.
+
+## Project Overview
+
+Impact AI Studio Platform is designed as a professional media and AI service platform where users can explore creative projects, submit custom project requests, receive updates, and interact with a polished web experience.
+
+The platform includes public-facing pages, admin workflow planning, project submission flows, multilingual user experience improvements, email notification logic, upload workflows, and deployment hardening.
+
+## My Role
+
+I worked across product planning, frontend structure, admin workflow design, troubleshooting, deployment support, and technical documentation. My work focused on turning real business needs into usable platform features while improving reliability, usability, and production readiness.
+
+Key areas I worked on include:
+
+- Planning and refining user-facing project submission workflows
+- Improving admin-side workflow structure and feature logic
+- Supporting multilingual UX and translation-related platform behavior
+- Troubleshooting deployment, DNS, hosting, upload, and browser issues
+- Documenting technical changes, system behavior, and implementation plans
+- Testing platform behavior across desktop and mobile experiences
+
+## Tech Stack
+
+- **Frontend:** Next.js, React, TypeScript, Tailwind CSS
+- **Backend / Data:** Prisma, SQL/database workflows
+- **Deployment:** Vercel, Render, GitHub
+- **Cloud / Assets:** Cloudflare-based asset and upload workflows
+- **Quality / Monitoring:** GitHub Actions, testing workflows, observability planning
+- **Development Focus:** Responsive design, application support, deployment troubleshooting, admin workflows, and technical documentation
+
+## Key Features
+
+- Public media and project pages
+- Client project submission workflow
+- Admin workflow and project management planning
+- Email notification and status update logic
+- Multilingual user experience support
+- Upload and asset management workflows
+- Mobile-responsive interface improvements
+- Deployment and production troubleshooting
+- Documentation for implementation, QA, and platform hardening
+
+## Why This Project Matters
+
+This project connects software development with real-world business needs. It shows my ability to work with modern web technologies while also thinking about user experience, reliability, support workflows, and production deployment.
+
+It is especially relevant to roles such as:
+
+- Application Developer
+- Web Developer
+- IT Support Analyst
+- Application Support Analyst
+- QA Tester
+- Technical Support Specialist
+- Junior Software Developer
+
 
 ## Quick Start
 ```bash
