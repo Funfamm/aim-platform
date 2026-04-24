@@ -20,6 +20,7 @@ const NAV_ITEMS = [
     { href: '/admin/media', label: '🖼️ Media' },
     { href: '/admin/sponsors', label: '🤝 Sponsors' },
     { href: '/admin/donations', label: '💰 Donations' },
+    { href: '/admin/project-requests', label: '📋 Project Requests' },
     { href: '/admin/users', label: '👥 Users' },
     { href: '/admin/audit', label: '🛡️ Audit Log' },
     { href: '/admin/subscribers', label: '📬 Subscribers' },

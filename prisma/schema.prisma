@@ -1219,3 +1219,65 @@ model AuditLog {
   @@index([createdAt])
   @@index([targetEmail])
 }
+
+// ── Client project request submissions (/start-project) ──────────────────────
+model ProjectRequest {
+  id               String   @id                       // AIM-YYYYMMDD-NNN format
+  projectType      String                             // birthday|brand|commercial|music|film|event|custom
+  status           String   @default("received")      // received|reviewing|scope_confirmed|in_production|awaiting_client|delivered|completed|cancelled
+
+  // Contact
+  clientName       String
+  email            String
+  phone            String?
+  contactMethod    String?
+  companyName      String?
+
+  // Project overview
+  projectTitle     String
+  description      String   @db.Text
+  deadline         DateTime?
+  audience         String?
+  projectGoal      String?
+
+  // Creative direction
+  tone             Json?                              // string[] e.g. ["cinematic","bold"]
+  visualStyle      String?
+  inspirationLinks Json?                              // string[] of URLs
+  avoidNotes       String?  @db.Text
+  emotionalFeeling String?
+
+  // Budget & delivery
+  budgetRange      String?
+  budgetCurrency   String   @default("USD")
+  duration         String?
+  aspectRatio      String?
+  deliveryPlatform String?
+  addOns           Json?                              // string[] e.g. ["voiceover","subtitles"]
+  rushDelivery     Boolean  @default(false)
+
+  // Dynamic type-specific fields
+  customFields     Json?                              // varies per projectType
+
+  // File uploads
+  uploads          Json?                              // [{key,url,name,type,size}]
+
+  // Consent (audit fix #6)
+  consentUpload    Boolean  @default(false)
+  consentContact   Boolean  @default(false)
+
+  // Meta
+  language         String   @default("en")
+  adminNotes       String?  @db.Text
+  urgent           Boolean  @default(false)
+  userId           String?                            // linked if user is logged in
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([status])
+  @@index([projectType])
+  @@index([email])
+  @@index([createdAt])
+  @@index([urgent, status])
+}

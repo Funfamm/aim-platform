@@ -1370,5 +1370,210 @@
     "hintVolume": "volumen",
     "hintMute": "silenciar",
     "hintFullscreen": "pantalla completa"
+  },
+  "startProject": {
+    "hero": {
+      "title": "Creemos Algo Inolvidable",
+      "subtitle": "Cuéntanos qué quieres crear — desde videos de cumpleaños hasta comerciales, branding y producciones personalizadas.",
+      "cta": "Iniciar Tu Proyecto"
+    },
+    "steps": {
+      "projectType": "Tipo de Proyecto",
+      "contact": "Tus Datos",
+      "overview": "Resumen",
+      "creative": "Dirección Creativa",
+      "dynamic": "Detalles",
+      "uploads": "Archivos",
+      "delivery": "Presupuesto",
+      "review": "Revisar"
+    },
+    "projectTypes": {
+      "birthday": {
+        "title": "Cumpleaños / Celebración",
+        "description": "Videos personalizados para cumpleaños, hitos y momentos familiares."
+      },
+      "brand": {
+        "title": "Marca / Negocio",
+        "description": "Visuales profesionales para tu negocio, producto o servicio."
+      },
+      "commercial": {
+        "title": "Comercial / Anuncio",
+        "description": "Contenido listo para campañas, promociones y lanzamientos."
+      },
+      "music": {
+        "title": "Música / Visual Creativo",
+        "description": "Narrativa visual para canciones, letras y actuaciones."
+      },
+      "film": {
+        "title": "Cortometraje / Historia",
+        "description": "Conceptos de video narrativos, escenas e ideas cinematográficas."
+      },
+      "event": {
+        "title": "Evento / Promo",
+        "description": "Contenido promocional para eventos y anuncios."
+      },
+      "custom": {
+        "title": "Proyecto Personalizado",
+        "description": "Cuéntanos lo que necesitas y diseñaremos el enfoque creativo."
+      }
+    },
+    "fields": {
+      "projectType": "Tipo de Proyecto",
+      "clientName": "Nombre Completo",
+      "email": "Correo Electrónico",
+      "phone": "Teléfono / WhatsApp",
+      "contactMethod": "Método de Contacto",
+      "companyName": "Empresa",
+      "projectTitle": "Título del Proyecto",
+      "description": "Describe tu proyecto",
+      "deadline": "Fecha Límite",
+      "audience": "Público Objetivo",
+      "projectGoal": "Objetivo",
+      "tone": "Tono / Estilo",
+      "visualStyle": "Estilo Visual",
+      "inspirationLinks": "Enlaces de Inspiración",
+      "avoidNotes": "¿Algo que evitar?",
+      "emotionalFeeling": "Sentimiento deseado",
+      "budgetRange": "Rango de Presupuesto",
+      "duration": "Duración Deseada",
+      "aspectRatio": "Relación de Aspecto",
+      "deliveryPlatform": "Plataforma de Entrega",
+      "addOns": "Complementos",
+      "uploads": "Subir Archivos"
+    },
+    "tones": {
+      "cinematic": "Cinematográfico",
+      "emotional": "Emocional",
+      "fun": "Divertido",
+      "luxury": "Lujo",
+      "kidsFriendly": "Para niños",
+      "bold": "Audaz",
+      "inspirational": "Inspirador",
+      "cleanMinimal": "Limpio / Minimalista",
+      "dramatic": "Dramático",
+      "professional": "Profesional"
+    },
+    "budgetOptions": {
+      "30-50": "$30–$50",
+      "50-100": "$50–$100",
+      "100-250": "$100–$250",
+      "250-500": "$250–$500",
+      "500+": "$500+",
+      "not-sure": "No estoy seguro"
+    },
+    "aspectOptions": {
+      "16:9": "16:9 YouTube",
+      "9:16": "9:16 TikTok/Reels",
+      "1:1": "1:1 Cuadrado",
+      "multiple": "Múltiples formatos",
+      "not-sure": "No estoy seguro"
+    },
+    "addonOptions": {
+      "voiceover": "Voz en off",
+      "subtitles": "Subtítulos",
+      "translation": "Traducción",
+      "multipleVersions": "Múltiples versiones",
+      "thumbnail": "Miniatura/Póster",
+      "rushDelivery": "Entrega urgente"
+    },
+    "buttons": {
+      "back": "Atrás",
+      "continue": "Continuar",
+      "review": "Revisar",
+      "submit": "Enviar Solicitud",
+      "submitAnother": "Enviar Otro Proyecto",
+      "returnHome": "Volver al Inicio",
+      "edit": "Editar"
+    },
+    "confirmation": {
+      "title": "Tu Proyecto Ha Sido Recibido",
+      "subtitle": "Recibimos tu solicitud y la revisaremos pronto.",
+      "projectId": "ID del Proyecto",
+      "nextSteps": "¿Qué sigue?",
+      "step1": "Revisamos tu solicitud",
+      "step2": "Confirmamos alcance y plazos",
+      "step3": "Comienza la producción"
+    },
+    "statuses": {
+      "received": "Recibido",
+      "reviewing": "En Revisión",
+      "scope_confirmed": "Alcance Confirmado",
+      "in_production": "En Producción",
+      "awaiting_client": "Esperando Cliente",
+      "delivered": "Entregado",
+      "completed": "Completado",
+      "cancelled": "Cancelado"
+    },
+    "validation": {
+      "required": "Este campo es obligatorio",
+      "email": "Ingresa un correo válido",
+      "fileTooLarge": "Este archivo es muy grande",
+      "unsupportedFile": "Tipo de archivo no soportado",
+      "descriptionMin": "Describe tu proyecto (mín. 10 caracteres)",
+      "consentRequired": "Debes aceptar ser contactado",
+      "maxFiles": "Máximo 10 archivos permitidos"
+    },
+    "consent": {
+      "uploadPermission": "Confirmo que tengo permiso para compartir el contenido subido.",
+      "contactAgreement": "Acepto ser contactado sobre esta solicitud de proyecto."
+    },
+    "helpers": {
+      "overviewHint": "Cuéntanos lo que quieres crear. Mantenlo simple — lo perfeccionaremos contigo.",
+      "uploadHint": "Agrega fotos, videos, logos, música o archivos de referencia.",
+      "uploading": "Subiendo...",
+      "uploadTypes": "Imágenes, videos, audio, PDF, ZIP",
+      "remaining": "restantes",
+      "filesUploaded": "archivos subidos"
+    },
+    "dynamicFields": {
+      "celebrantName": "Nombre del festejado",
+      "ageTurning": "Edad que cumple",
+      "relationship": "Relación",
+      "eventDate": "Fecha del evento",
+      "favoriteColors": "Colores favoritos",
+      "favoriteCharacters": "Personajes / hobbies favoritos",
+      "messageToInclude": "Mensaje a incluir",
+      "preferredMood": "Ambiente preferido",
+      "brandName": "Nombre de marca",
+      "industry": "Industria",
+      "website": "Sitio web",
+      "socialLinks": "Redes sociales",
+      "brandColors": "Colores de marca",
+      "mainMessage": "Mensaje principal",
+      "targetAudience": "Público objetivo",
+      "desiredCTA": "CTA deseado",
+      "productName": "Nombre del producto",
+      "campaignGoal": "Objetivo de campaña",
+      "platform": "Plataforma",
+      "videoDuration": "Duración del video",
+      "offer": "Oferta / promoción",
+      "cta": "Llamada a la acción",
+      "scriptReady": "¿Guión listo?",
+      "competitorLinks": "Enlaces de competencia",
+      "songName": "Nombre de la canción",
+      "artistName": "Nombre del artista",
+      "mood": "Ambiente",
+      "lyricsSyncRequired": "¿Sincronización de letras?",
+      "storyline": "Argumento",
+      "performanceOrCinematic": "¿Actuación o cinemático?",
+      "storyTitle": "Título de la historia",
+      "genre": "Género",
+      "synopsis": "Sinopsis",
+      "mainCharacters": "Personajes principales",
+      "runtimeTarget": "Duración objetivo",
+      "dialogueRequired": "¿Diálogos requeridos?",
+      "mustHaveScenes": "Escenas imprescindibles",
+      "visualTone": "Tono visual",
+      "eventName": "Nombre del evento",
+      "venue": "Lugar/ubicación",
+      "promoGoal": "Propósito del promo",
+      "speakers": "Ponentes/conductores",
+      "importantDetails": "Detalles importantes",
+      "requestDescription": "Describe tu solicitud",
+      "whatIsThisFor": "¿Para qué es esto?",
+      "desiredResult": "¿Qué resultado esperas?",
+      "requiredDeliverables": "Entregables requeridos",
+      "specialNotes": "Notas especiales"
+    }
   }
 }

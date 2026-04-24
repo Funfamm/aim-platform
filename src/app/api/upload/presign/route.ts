@@ -34,6 +34,29 @@ const ALLOWED_DOCUMENT_TYPES = [
     'text/plain',
     'application/octet-stream',
 ]
+const ALLOWED_PROJECT_ASSET_TYPES = [
+    ...ALLOWED_IMAGE_TYPES,
+    'video/mp4', 'video/webm', 'video/quicktime',
+    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/m4a',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/zip',
+]
+const MAX_PROJECT_ASSET_SIZE = 10 * 1024 * 1024 // 10 MB
+
+// Rate limiting for public project-asset uploads (audit fix #2)
+const uploadRateMap = new Map<string, { count: number; resetAt: number }>()
+function isUploadRateLimited(ip: string): boolean {
+    const now = Date.now()
+    const entry = uploadRateMap.get(ip)
+    if (!entry || now > entry.resetAt) {
+        uploadRateMap.set(ip, { count: 1, resetAt: now + 3600000 })
+        return false
+    }
+    entry.count++
+    return entry.count > 30 // 30 presigns per IP per hour
+}
 
 function slugify(value: string) {
     return value
@@ -79,10 +102,13 @@ export async function POST(req: NextRequest) {
         } = body as {
             fileName: string
             fileType: string
-            kind: 'image' | 'audio' | 'document' | 'video'
+            fileSize?: number
+            kind: 'image' | 'audio' | 'document' | 'video' | 'project-asset'
             name?: string
             castingCallId?: string
             scriptCallId?: string
+            clientEmail?: string
+            projectType?: string
         }
 
         if (!fileName || !fileType || !kind) {
@@ -93,6 +119,23 @@ export async function POST(req: NextRequest) {
         if (kind === 'video') {
             try { await requireAdmin() } catch {
                 return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
+        }
+
+        // Project-asset uploads: public but rate-limited + size-gated (audit fix #2)
+        if (kind === 'project-asset') {
+            const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+            if (isUploadRateLimited(ip)) {
+                return NextResponse.json({ error: 'Upload rate limit exceeded. Please try again later.' }, { status: 429 })
+            }
+            if (body.fileSize && body.fileSize > MAX_PROJECT_ASSET_SIZE) {
+                return NextResponse.json({ error: 'File exceeds 10 MB limit' }, { status: 400 })
+            }
+            // Block executable file extensions
+            const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
+            const blocked = ['exe', 'bat', 'cmd', 'msi', 'sh', 'ps1', 'scr', 'com', 'vbs', 'js']
+            if (blocked.includes(ext)) {
+                return NextResponse.json({ error: 'Executable file types are not allowed' }, { status: 400 })
             }
         }
 
@@ -132,6 +175,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: `Unsupported document type. Please upload PDF, FDX, or TXT.` }, { status: 400 })
             }
         }
+        if (kind === 'project-asset' && !ALLOWED_PROJECT_ASSET_TYPES.includes(resolvedType)) {
+            return NextResponse.json({ error: `Unsupported file type: ${resolvedType}` }, { status: 400 })
+        }
 
         // ── Build folder path ────────────────────────────────────────────────
         // Pattern: casting/calls/{castingCallId}/{nameSlug}-{hash}/{photos|audio}/{ts}-{uuid}.ext
@@ -139,8 +185,10 @@ export async function POST(req: NextRequest) {
         // scan exactly one casting call's applicants without trawling all uploads.
         const nameSlug   = name ? slugify(name) : 'applicant'
         const nameHash   = shortHash(name || 'applicant')
-        const category   = kind === 'image' ? 'photos' : kind === 'audio' ? 'audio' : kind === 'video' ? 'videos' : 'scripts'
-        const folder     = kind === 'document'
+        const category   = kind === 'image' ? 'photos' : kind === 'audio' ? 'audio' : kind === 'video' ? 'videos' : kind === 'project-asset' ? 'assets' : 'scripts'
+        const folder     = kind === 'project-asset'
+            ? `project-requests/${body.projectType || 'custom'}/${shortHash(body.clientEmail || 'anon')}/assets`
+            : kind === 'document'
             ? `scripts/calls/${scriptCallId}/${nameSlug}-${nameHash}/scripts`
             : kind === 'video'
             ? `uploads/videos/admin`
