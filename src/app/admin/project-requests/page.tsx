@@ -29,11 +29,98 @@ const TYPE_ICONS: Record<string, string> = {
     birthday: '🎉', brand: '🏢', commercial: '📺', music: '🎵', film: '🎬', event: '📣', custom: '✨',
 }
 
+// ── Status Transition Rules ──────────────────────────────────────────────────
+// Defines which statuses can transition to which. Prevents accidental
+// skipping of workflow steps or illogical state changes.
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    received:        ['reviewing', 'cancelled'],
+    reviewing:       ['scope_confirmed', 'awaiting_client', 'cancelled'],
+    scope_confirmed: ['in_production', 'awaiting_client', 'cancelled'],
+    in_production:   ['awaiting_client', 'delivered', 'cancelled'],
+    awaiting_client: ['reviewing', 'scope_confirmed', 'in_production', 'cancelled'],
+    delivered:       ['completed', 'in_production'],   // reopen or complete
+    completed:       [],                                 // terminal — no changes
+    cancelled:       ['received'],                       // reopen only
+}
+const DESTRUCTIVE_STATUSES = new Set(['cancelled', 'completed'])
+
 const inp: React.CSSProperties = {
     padding: '7px 12px', background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px',
     color: 'var(--text-primary)', fontSize: '0.8rem', fontFamily: 'inherit',
     colorScheme: 'dark',
+}
+
+// ── Toast helper ─────────────────────────────────────────────────────────────
+function Toast({ message, type, onClose }: { message: string; type: 'success' | 'error' | 'warn'; onClose: () => void }) {
+    useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t) }, [onClose])
+    const colors = { success: '#34d399', error: '#f87171', warn: '#f59e0b' }
+    const bgs = { success: 'rgba(52,211,153,0.12)', error: 'rgba(239,68,68,0.12)', warn: 'rgba(245,158,11,0.12)' }
+    return (
+        <div style={{
+            position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999,
+            padding: '12px 20px', borderRadius: '10px',
+            background: bgs[type], border: `1px solid ${colors[type]}40`,
+            color: colors[type], fontSize: '0.82rem', fontWeight: 700,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+            animation: 'spFadeIn 0.3s ease-out',
+            display: 'flex', alignItems: 'center', gap: '8px',
+        }}>
+            <span>{type === 'success' ? '✓' : type === 'error' ? '✕' : '⚠'}</span>
+            {message}
+        </div>
+    )
+}
+
+// ── Confirmation Modal ───────────────────────────────────────────────────────
+function ConfirmModal({ title, message, detail, confirmLabel, confirmColor, onConfirm, onCancel, danger }: {
+    title: string; message: string; detail?: string; confirmLabel: string
+    confirmColor: string; onConfirm: () => void; onCancel: () => void; danger?: boolean
+}) {
+    return (
+        <div style={{
+            position: 'fixed', inset: 0, zIndex: 9998,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+        }} onClick={onCancel}>
+            <div onClick={e => e.stopPropagation()} style={{
+                background: 'var(--bg-primary, #0d0d12)', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '16px', padding: '24px', maxWidth: '420px', width: '90vw',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            }}>
+                {danger && (
+                    <div style={{
+                        width: '48px', height: '48px', borderRadius: '50%',
+                        background: 'rgba(239,68,68,0.12)', border: '2px solid rgba(239,68,68,0.3)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '1.3rem', margin: '0 auto 16px',
+                    }}>⚠️</div>
+                )}
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: '0 0 8px', textAlign: 'center' }}>{title}</h3>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center', lineHeight: 1.6, margin: '0 0 6px' }}>{message}</p>
+                {detail && (
+                    <p style={{
+                        fontSize: '0.72rem', color: 'var(--text-tertiary)', textAlign: 'center',
+                        lineHeight: 1.5, margin: '0 0 20px', padding: '8px 12px',
+                        background: 'rgba(255,255,255,0.03)', borderRadius: '8px',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                    }}>{detail}</p>
+                )}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                    <button onClick={onCancel} style={{
+                        flex: 1, padding: '10px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700,
+                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'var(--text-secondary)', cursor: 'pointer',
+                    }}>Cancel</button>
+                    <button onClick={onConfirm} style={{
+                        flex: 1, padding: '10px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700,
+                        background: `${confirmColor}18`, border: `1px solid ${confirmColor}40`,
+                        color: confirmColor, cursor: 'pointer',
+                    }}>{confirmLabel}</button>
+                </div>
+            </div>
+        </div>
+    )
 }
 
 export default function ProjectRequestsPage() {
@@ -46,6 +133,11 @@ export default function ProjectRequestsPage() {
     const [selectedId, setSelectedId] = useState<string | null>(null)
     const [editNotes, setEditNotes] = useState('')
     const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
+
+    // ── Safety: Confirmation & Toast state ──
+    const [pendingStatus, setPendingStatus] = useState<{ id: string; from: string; to: string } | null>(null)
+    const [pendingDelete, setPendingDelete] = useState<{ id: string; title: string; client: string } | null>(null)
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warn' } | null>(null)
 
     const fetchRequests = useCallback(async () => {
         setLoading(true)
@@ -77,9 +169,36 @@ export default function ProjectRequestsPage() {
         fetchRequests()
     }
 
-    const deleteRequest = async (id: string) => {
-        if (!confirm('Delete this request permanently?')) return
-        await fetch(`/api/project-requests/${id}`, { method: 'DELETE' })
+    // ── Safe status change: requires confirmation ──
+    const requestStatusChange = (id: string, fromStatus: string, toStatus: string) => {
+        if (fromStatus === toStatus) return
+        const allowed = ALLOWED_TRANSITIONS[fromStatus] || []
+        if (!allowed.includes(toStatus)) {
+            setToast({ message: `Cannot change from "${STATUS_STYLES[fromStatus]?.label}" to "${STATUS_STYLES[toStatus]?.label}". Not a valid transition.`, type: 'error' })
+            return
+        }
+        setPendingStatus({ id, from: fromStatus, to: toStatus })
+    }
+
+    const confirmStatusChange = async () => {
+        if (!pendingStatus) return
+        await updateRequest(pendingStatus.id, { status: pendingStatus.to })
+        const fromLabel = STATUS_STYLES[pendingStatus.from]?.label || pendingStatus.from
+        const toLabel = STATUS_STYLES[pendingStatus.to]?.label || pendingStatus.to
+        setToast({ message: `Status changed: ${fromLabel} → ${toLabel}`, type: 'success' })
+        setPendingStatus(null)
+    }
+
+    // ── Safe delete: requires confirmation with details ──
+    const requestDelete = (id: string, title: string, client: string) => {
+        setPendingDelete({ id, title, client })
+    }
+
+    const confirmDelete = async () => {
+        if (!pendingDelete) return
+        await fetch(`/api/project-requests/${pendingDelete.id}`, { method: 'DELETE' })
+        setToast({ message: `Deleted: "${pendingDelete.title}"`, type: 'warn' })
+        setPendingDelete(null)
         setSelectedId(null)
         fetchRequests()
     }
@@ -258,26 +377,69 @@ export default function ProjectRequestsPage() {
                                 </div>
                             )}
 
-                            {/* ── Status selector ── */}
+                            {/* ── Status selector (with transition rules) ── */}
                             <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Status</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Status</span>
+                                    <span style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                        Only valid transitions are clickable
+                                    </span>
+                                </div>
                                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                                     {STATUSES.map(s => {
                                         const st = STATUS_STYLES[s]
+                                        const isCurrent = selected.status === s
+                                        const allowed = ALLOWED_TRANSITIONS[selected.status] || []
+                                        const isAllowed = allowed.includes(s)
+                                        const isDestructive = DESTRUCTIVE_STATUSES.has(s)
+                                        const isDisabled = !isCurrent && !isAllowed
+
                                         return (
-                                            <button key={s} type="button" onClick={() => updateRequest(selected.id, { status: s })}
+                                            <button key={s} type="button"
+                                                onClick={() => {
+                                                    if (!isCurrent && isAllowed) {
+                                                        requestStatusChange(selected.id, selected.status, s)
+                                                    }
+                                                }}
+                                                disabled={isDisabled}
+                                                title={
+                                                    isCurrent ? 'Current status'
+                                                    : isAllowed ? `Change to ${st.label}`
+                                                    : `Cannot transition from ${STATUS_STYLES[selected.status]?.label} to ${st.label}`
+                                                }
                                                 style={{
-                                                    padding: '4px 10px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700, cursor: 'pointer',
-                                                    background: selected.status === s ? st.bg : 'rgba(255,255,255,0.03)',
-                                                    border: `1px solid ${selected.status === s ? st.color + '44' : 'rgba(255,255,255,0.06)'}`,
-                                                    color: selected.status === s ? st.color : 'var(--text-tertiary)',
+                                                    padding: '4px 10px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
+                                                    cursor: isDisabled ? 'not-allowed' : isCurrent ? 'default' : 'pointer',
+                                                    background: isCurrent ? st.bg : isAllowed && isDestructive ? 'rgba(239,68,68,0.04)' : isAllowed ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)',
+                                                    border: `1px solid ${isCurrent ? st.color + '44' : isAllowed ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)'}`,
+                                                    color: isCurrent ? st.color : isAllowed ? (isDestructive ? '#f87171' : 'var(--text-secondary)') : 'rgba(255,255,255,0.15)',
+                                                    opacity: isDisabled ? 0.4 : 1,
                                                     transition: 'all 0.15s',
+                                                    position: 'relative',
                                                 }}>
+                                                {isCurrent && <span style={{ marginRight: '4px' }}>●</span>}
                                                 {st.label}
+                                                {isAllowed && !isCurrent && <span style={{ marginLeft: '4px', fontSize: '0.55rem' }}>→</span>}
                                             </button>
                                         )
                                     })}
                                 </div>
+                                {/* Flow hint */}
+                                {(ALLOWED_TRANSITIONS[selected.status] || []).length > 0 && (
+                                    <div style={{ marginTop: '6px', fontSize: '0.62rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <span>Next steps:</span>
+                                        {(ALLOWED_TRANSITIONS[selected.status] || []).map(s => (
+                                            <span key={s} style={{ padding: '1px 6px', borderRadius: '3px', background: STATUS_STYLES[s]?.bg, color: STATUS_STYLES[s]?.color, fontWeight: 600 }}>
+                                                {STATUS_STYLES[s]?.label}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                {(ALLOWED_TRANSITIONS[selected.status] || []).length === 0 && (
+                                    <div style={{ marginTop: '6px', fontSize: '0.62rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                        This is a terminal status. No further transitions allowed.
+                                    </div>
+                                )}
                             </div>
 
                             {/* Urgent toggle */}
@@ -295,7 +457,7 @@ export default function ProjectRequestsPage() {
                                 <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)}
                                     placeholder="Internal notes about this project request..."
                                     style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-primary)', fontSize: '0.8rem', fontFamily: 'inherit', resize: 'vertical', colorScheme: 'dark', boxSizing: 'border-box' }} />
-                                <button onClick={() => updateRequest(selected.id, { adminNotes: editNotes })}
+                                <button onClick={() => { updateRequest(selected.id, { adminNotes: editNotes }); setToast({ message: 'Notes saved', type: 'success' }) }}
                                     style={{ marginTop: '6px', padding: '6px 14px', borderRadius: '6px', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
                                     Save Notes
                                 </button>
@@ -319,16 +481,65 @@ export default function ProjectRequestsPage() {
                                 </div>
                             )}
 
-                            {/* Delete */}
-                            <div style={{ marginTop: '18px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                <button onClick={() => deleteRequest(selected.id)}
-                                    style={{ padding: '7px 16px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}>
+                            {/* ── Danger Zone ── */}
+                            <div style={{
+                                marginTop: '24px', paddingTop: '16px',
+                                borderTop: '1px solid rgba(239,68,68,0.15)',
+                            }}>
+                                <div style={{ fontSize: '0.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#f87171', marginBottom: '8px' }}>
+                                    ⚠ Danger Zone
+                                </div>
+                                <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '10px', lineHeight: 1.5 }}>
+                                    Deleting a request is permanent. The client will lose access to their progress tracker.
+                                </p>
+                                <button onClick={() => requestDelete(selected.id, selected.projectTitle, selected.clientName)}
+                                    style={{
+                                        padding: '8px 18px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                                        background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171',
+                                    }}>
                                     🗑️ Delete Request
                                 </button>
                             </div>
                         </div>
                     </div>
                 )}
+
+                {/* ── Status Change Confirmation Modal ── */}
+                {pendingStatus && (() => {
+                    const fromSt = STATUS_STYLES[pendingStatus.from]
+                    const toSt = STATUS_STYLES[pendingStatus.to]
+                    const isDanger = DESTRUCTIVE_STATUSES.has(pendingStatus.to)
+                    const proj = requests.find(r => r.id === pendingStatus.id)
+                    return (
+                        <ConfirmModal
+                            danger={isDanger}
+                            title={isDanger ? `${toSt.label} this project?` : 'Confirm Status Change'}
+                            message={`Change status from "${fromSt.label}" to "${toSt.label}"?`}
+                            detail={proj ? `Project: "${proj.projectTitle}" by ${proj.clientName}` : undefined}
+                            confirmLabel={`Yes, ${toSt.label}`}
+                            confirmColor={toSt.color}
+                            onConfirm={confirmStatusChange}
+                            onCancel={() => setPendingStatus(null)}
+                        />
+                    )
+                })()}
+
+                {/* ── Delete Confirmation Modal ── */}
+                {pendingDelete && (
+                    <ConfirmModal
+                        danger
+                        title="Delete Project Request?"
+                        message="This action cannot be undone. The request and all associated data will be permanently removed."
+                        detail={`"${pendingDelete.title}" by ${pendingDelete.client}`}
+                        confirmLabel="Delete Permanently"
+                        confirmColor="#ef4444"
+                        onConfirm={confirmDelete}
+                        onCancel={() => setPendingDelete(null)}
+                    />
+                )}
+
+                {/* ── Toast ── */}
+                {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
             </main>
         </div>
     )
