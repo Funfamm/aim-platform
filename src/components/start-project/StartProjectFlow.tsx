@@ -120,6 +120,9 @@ function validateStep(step: StepKey, form: StartProjectFormData): string[] {
             if (!form.projectTitle.trim()) errors.push('projectTitle')
             if (form.description.trim().length < 10) errors.push('description')
             break
+        case 'delivery':
+            if (!form.budgetRange) errors.push('budgetRange')
+            break
         case 'review':
             if (!form.consentContact) errors.push('consentContact')
             break

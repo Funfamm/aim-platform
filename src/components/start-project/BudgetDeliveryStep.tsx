@@ -13,8 +13,10 @@ interface Props {
     fieldErrors: string[]
 }
 
-export default function BudgetDeliveryStep({ form, updateField }: Props) {
+export default function BudgetDeliveryStep({ form, updateField, fieldErrors }: Props) {
     const t = useTranslations('startProject')
+
+    const hasError = (field: string) => fieldErrors.includes(field)
 
     const toggleAddon = (addon: string) => {
         const current = form.addOns
@@ -33,7 +35,8 @@ export default function BudgetDeliveryStep({ form, updateField }: Props) {
             <div className="sp-form-stack">
                 {/* Budget */}
                 <div>
-                    <label className="sp-label" htmlFor="sp-budget">{t('fields.budgetRange')}</label>
+                    <label className="sp-label" htmlFor="sp-budget">{t('fields.budgetRange')} *</label>
+                    {hasError('budgetRange') && <p className="sp-error" style={{ marginBottom: '6px' }}>{t('validation.required')}</p>}
                     <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
@@ -52,7 +55,7 @@ export default function BudgetDeliveryStep({ form, updateField }: Props) {
                                         borderRadius: '20px',
                                         fontSize: '0.8rem',
                                         fontWeight: 600,
-                                        border: `1px solid ${active ? 'rgba(212,168,83,0.5)' : 'var(--border-subtle)'}`,
+                                        border: `1px solid ${active ? 'rgba(212,168,83,0.5)' : hasError('budgetRange') ? 'rgba(239,68,68,0.3)' : 'var(--border-subtle)'}`,
                                         background: active ? 'rgba(212,168,83,0.12)' : 'rgba(255,255,255,0.04)',
                                         color: active ? 'var(--accent-gold)' : 'var(--text-secondary)',
                                         cursor: 'pointer',

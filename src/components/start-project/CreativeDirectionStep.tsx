@@ -7,6 +7,7 @@ const TONE_OPTIONS = [
     'cinematic', 'emotional', 'fun', 'luxury', 'kidsFriendly',
     'bold', 'inspirational', 'cleanMinimal', 'dramatic', 'professional',
 ]
+const MAX_TONES = 3
 
 interface Props {
     form: StartProjectFormData
@@ -19,13 +20,15 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
 
     const toggleTone = (tone: string) => {
         const current = form.tone
-        updateField(
-            'tone',
-            current.includes(tone)
-                ? current.filter(t => t !== tone)
-                : [...current, tone]
-        )
+        if (current.includes(tone)) {
+            // Always allow deselect
+            updateField('tone', current.filter(t => t !== tone))
+        } else if (current.length < MAX_TONES) {
+            updateField('tone', [...current, tone])
+        }
     }
+
+    const atLimit = form.tone.length >= MAX_TONES
 
     return (
         <section>
@@ -34,7 +37,15 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
             <div className="sp-form-stack">
                 {/* Tone pills */}
                 <div>
-                    <label className="sp-label">{t('fields.tone')}</label>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                        <label className="sp-label" style={{ marginBottom: 0 }}>{t('fields.tone')}</label>
+                        <span style={{
+                            fontSize: '0.65rem', fontWeight: 600,
+                            color: atLimit ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                        }}>
+                            {form.tone.length} / {MAX_TONES}
+                        </span>
+                    </div>
                     <div style={{
                         display: 'flex',
                         flexWrap: 'wrap',
@@ -43,11 +54,13 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
                     }}>
                         {TONE_OPTIONS.map(tone => {
                             const active = form.tone.includes(tone)
+                            const disabled = !active && atLimit
                             return (
                                 <button
                                     key={tone}
                                     type="button"
                                     onClick={() => toggleTone(tone)}
+                                    disabled={disabled}
                                     className="sp-tone-pill"
                                     data-active={active || undefined}
                                     style={{
@@ -57,8 +70,9 @@ export default function CreativeDirectionStep({ form, updateField }: Props) {
                                         fontWeight: 600,
                                         border: `1px solid ${active ? 'rgba(212,168,83,0.5)' : 'var(--border-subtle)'}`,
                                         background: active ? 'rgba(212,168,83,0.12)' : 'rgba(255,255,255,0.04)',
-                                        color: active ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                                        cursor: 'pointer',
+                                        color: active ? 'var(--accent-gold)' : disabled ? 'rgba(255,255,255,0.2)' : 'var(--text-secondary)',
+                                        cursor: disabled ? 'not-allowed' : 'pointer',
+                                        opacity: disabled ? 0.5 : 1,
                                         transition: 'all 0.15s',
                                     }}
                                 >
