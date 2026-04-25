@@ -417,6 +417,66 @@ export default function AdminSponsorsPage() {
                     ))}
                 </div>
 
+                {/* ── Expired / Expiring Action Banner ── */}
+                {(filter === 'expired' || filter === 'expiring') && filtered.length > 0 && (
+                    <div style={{
+                        padding: '16px 20px', marginBottom: '14px', borderRadius: '14px',
+                        background: filter === 'expired'
+                            ? 'linear-gradient(135deg, rgba(239,68,68,0.06), rgba(239,68,68,0.02))'
+                            : 'linear-gradient(135deg, rgba(249,115,22,0.06), rgba(249,115,22,0.02))',
+                        border: `1px solid ${filter === 'expired' ? 'rgba(239,68,68,0.15)' : 'rgba(249,115,22,0.15)'}`,
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                            <div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: filter === 'expired' ? '#f87171' : '#fb923c', marginBottom: '4px' }}>
+                                    {filter === 'expired' ? '❌ Expired Sponsors' : '⏰ Expiring Soon (< 2 days)'}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.6 }}>
+                                    {filter === 'expired'
+                                        ? `${filtered.length} sponsor${filtered.length !== 1 ? 's have' : ' has'} expired. Send renewal notices or deactivate them.`
+                                        : `${filtered.length} sponsor${filtered.length !== 1 ? 's are' : ' is'} expiring within 2 days. Notify them to renew.`
+                                    }
+                                </div>
+                            </div>
+                            {(() => {
+                                const withEmail = filtered.filter(s => s.contactEmail)
+                                const withoutEmail = filtered.filter(s => !s.contactEmail)
+                                return (
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                        <button
+                                            disabled={withEmail.length === 0}
+                                            onClick={() => {
+                                                if (withEmail.length > 0) {
+                                                    setNotifyTarget(withEmail[0])
+                                                    setNotifySubject(filter === 'expired' ? 'Sponsorship Renewal — Your Partnership Has Expired' : 'Sponsorship Expiring Soon — Renew Your Partnership')
+                                                    setNotifyMessage(filter === 'expired'
+                                                        ? `Dear Partner,\n\nYour sponsorship with AIM Studio has expired. We truly value your support and would love to continue our partnership.\n\nPlease let us know if you'd like to renew — we're happy to discuss options.\n\nBest regards,\nAIM Studio Team`
+                                                        : `Dear Partner,\n\nYour sponsorship with AIM Studio is expiring very soon. We'd love to continue working together.\n\nPlease reach out if you'd like to renew your partnership.\n\nBest regards,\nAIM Studio Team`
+                                                    )
+                                                    setNotifyResult(null)
+                                                }
+                                            }}
+                                            style={{
+                                                padding: '8px 18px', fontSize: '0.75rem', fontWeight: 700, borderRadius: '10px', cursor: withEmail.length > 0 ? 'pointer' : 'not-allowed',
+                                                background: 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.06))',
+                                                border: '1px solid rgba(99,102,241,0.2)', color: '#818cf8',
+                                                opacity: withEmail.length > 0 ? 1 : 0.4,
+                                            }}
+                                        >
+                                            ✉️ Notify Sponsors ({withEmail.length})
+                                        </button>
+                                        {withoutEmail.length > 0 && (
+                                            <span style={{ fontSize: '0.58rem', color: '#f59e0b' }}>
+                                                ⚠ {withoutEmail.length} without contact email
+                                            </span>
+                                        )}
+                                    </div>
+                                )
+                            })()}
+                        </div>
+                    </div>
+                )}
+
                 {/* Create/Edit Form */}
                 {showForm && (
                     <form onSubmit={handleSave} style={{
@@ -769,18 +829,50 @@ export default function AdminSponsorsPage() {
 
                                     {/* Actions */}
                                     <div style={{ display: 'flex', gap: '5px', flexShrink: 0, alignItems: 'flex-start' }}>
-                                        {/* Send update button — only shown when sponsor has contactEmail */}
-                                        {s.contactEmail && (
+                                        {/* Send update button */}
+                                        {s.contactEmail ? (
                                             <button
-                                                onClick={() => { setNotifyTarget(s); setNotifySubject(''); setNotifyMessage(''); setNotifyResult(null) }}
+                                                onClick={() => {
+                                                    const isExpFilter = filter === 'expired' || filter === 'expiring'
+                                                    setNotifyTarget(s)
+                                                    setNotifySubject(isExpFilter && expired
+                                                        ? 'Sponsorship Renewal — Your Partnership Has Expired'
+                                                        : isExpFilter
+                                                        ? 'Sponsorship Expiring Soon — Renew Your Partnership'
+                                                        : '')
+                                                    setNotifyMessage(isExpFilter && expired
+                                                        ? `Dear ${s.name},\n\nYour sponsorship with AIM Studio has expired. We truly value your support and would love to continue our partnership.\n\nPlease let us know if you'd like to renew.\n\nBest regards,\nAIM Studio Team`
+                                                        : isExpFilter
+                                                        ? `Dear ${s.name},\n\nYour sponsorship with AIM Studio is expiring very soon. We'd love to continue working together.\n\nPlease reach out if you'd like to renew your partnership.\n\nBest regards,\nAIM Studio Team`
+                                                        : '')
+                                                    setNotifyResult(null)
+                                                }}
                                                 title={`Send update to ${s.contactEmail}`}
                                                 style={{
-                                                    padding: '5px 9px', fontSize: '0.72rem', borderRadius: '8px', cursor: 'pointer',
-                                                    background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.12)',
-                                                    color: '#818cf8', transition: 'all 0.2s',
+                                                    padding: (filter === 'expired' || filter === 'expiring') ? '5px 12px' : '5px 9px',
+                                                    fontSize: '0.72rem', borderRadius: '8px', cursor: 'pointer',
+                                                    background: (filter === 'expired' || filter === 'expiring')
+                                                        ? 'linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.06))'
+                                                        : 'rgba(99,102,241,0.06)',
+                                                    border: '1px solid rgba(99,102,241,0.18)',
+                                                    color: '#818cf8', transition: 'all 0.2s', fontWeight: 600,
                                                 }}
-                                            >✉️</button>
-                                        )}
+                                            >
+                                                ✉️{(filter === 'expired' || filter === 'expiring') ? ' Notify' : ''}
+                                            </button>
+                                        ) : (filter === 'expired' || filter === 'expiring') ? (
+                                            <button
+                                                onClick={() => startEdit(s)}
+                                                title="No contact email — click to edit and add one"
+                                                style={{
+                                                    padding: '5px 10px', fontSize: '0.62rem', borderRadius: '8px', cursor: 'pointer',
+                                                    background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)',
+                                                    color: '#f59e0b', transition: 'all 0.2s', fontWeight: 600,
+                                                }}
+                                            >
+                                                ⚠ No email
+                                            </button>
+                                        ) : null}
                                         <button onClick={() => toggleActive(s)} title={s.active ? 'Deactivate' : 'Activate'} style={{
                                             padding: '5px 9px', fontSize: '0.72rem', borderRadius: '8px', cursor: 'pointer',
                                             background: s.active ? 'rgba(34,197,94,0.06)' : 'rgba(255,255,255,0.02)',
