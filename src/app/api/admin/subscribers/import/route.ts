@@ -57,20 +57,55 @@ export async function POST(req: Request) {
     const seen = new Set<string>()
     const validRows: { email: string; name: string | null }[] = []
 
+    // Disposable domain blocklist + typo correction (shared with subscribe route)
+    const disposableDomains = new Set([
+        'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
+        'yopmail.com', 'trashmail.com', 'fakeinbox.com', 'sharklasers.com',
+        'guerrillamailblock.com', 'grr.la', 'dispostable.com', 'mailnesia.com',
+        'tempail.com', 'temp-mail.org', 'mohmal.com', 'emailondeck.com',
+        'getnada.com', '10minutemail.com', 'minutemail.com', 'maildrop.cc',
+        'mailcatch.com', 'discard.email', 'tempr.email', 'temp-mail.io',
+    ])
+    const typoMap: Record<string, string> = {
+        'gmial.com': 'gmail.com', 'gmaill.com': 'gmail.com', 'gnail.com': 'gmail.com',
+        'gmai.com': 'gmail.com', 'gamil.com': 'gmail.com', 'gmal.com': 'gmail.com',
+        'gmail.con': 'gmail.com', 'gmail.co': 'gmail.com',
+        'yaho.com': 'yahoo.com', 'yahooo.com': 'yahoo.com', 'yahoo.con': 'yahoo.com',
+        'hotmal.com': 'hotmail.com', 'hotmial.com': 'hotmail.com', 'hotmail.con': 'hotmail.com',
+        'outloo.com': 'outlook.com', 'outlok.com': 'outlook.com',
+        'iclou.com': 'icloud.com', 'icloud.con': 'icloud.com',
+    }
+
     for (let i = 0; i < dataLines.length; i++) {
         const line = dataLines[i].trim()
         if (!line) continue
 
         // Split by comma, handling quoted values
-        const parts = line.match(/(".*?"|[^,]+)(?=,|$)/g)?.map(p => p.replace(/^"|"$/g, '').trim()) || []
+        const parts = line.match(/".*?"|[^,]+(?=,|$)/g)?.map(p => p.replace(/^"|"$/g, '').trim()) || []
         
-        const email = (parts[0] || '').toLowerCase().trim()
+        let email = (parts[0] || '').toLowerCase().trim()
         const name = (parts[1] || '').trim() || null
 
         if (!email || !emailRegex.test(email)) {
             results.skippedInvalid++
             if (results.errors.length < 20) {
                 results.errors.push(`Row ${i + 1}: invalid email "${email}"`)
+            }
+            continue
+        }
+
+        // Auto-correct common domain typos
+        const [localPart, domain] = email.split('@')
+        if (domain && typoMap[domain]) {
+            email = `${localPart}@${typoMap[domain]}`
+        }
+
+        // Block disposable domains
+        const emailDomain = email.split('@')[1]
+        if (emailDomain && disposableDomains.has(emailDomain)) {
+            results.skippedInvalid++
+            if (results.errors.length < 20) {
+                results.errors.push(`Row ${i + 1}: disposable email domain blocked (${emailDomain})`)
             }
             continue
         }

@@ -131,14 +131,37 @@ export async function enqueueBroadcastCampaign(
         return true
     })
 
+    // ── Pre-broadcast hygiene: skip known-bounced emails ─────────────────
+    // Check EmailLog for emails with 3+ failures — don't waste sends on them
+    const BOUNCE_THRESHOLD = 3
+    let eligible = unique
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const bounced: { to: string }[] = await (prisma as any).$queryRawUnsafe(`
+            SELECT "to" FROM "EmailLog"
+            WHERE success = false
+            GROUP BY "to"
+            HAVING COUNT(*) >= ${BOUNCE_THRESHOLD}
+        `)
+        if (bounced.length > 0) {
+            const bouncedSet = new Set(bounced.map(b => b.to.toLowerCase().trim()))
+            eligible = unique.filter(r => !bouncedSet.has(r.email.toLowerCase().trim()))
+            if (unique.length !== eligible.length) {
+                logger.info('email-router', `Campaign hygiene: skipped ${unique.length - eligible.length} bounced emails`)
+            }
+        }
+    } catch {
+        // If bounce check fails, proceed with all unique — never block sends
+    }
+
     // ── Batch insert ──────────────────────────────────────────────────────
     const BATCH = 50  // Prisma createMany batch size
     let enqueued = 0
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const db = prisma as any
 
-    for (let i = 0; i < unique.length; i += BATCH) {
-        const batch = unique.slice(i, i + BATCH)
+    for (let i = 0; i < eligible.length; i += BATCH) {
+        const batch = eligible.slice(i, i + BATCH)
         const data = batch.map(r => {
             const email = buildEmail(r.email)
             return {
@@ -163,6 +186,6 @@ export async function enqueueBroadcastCampaign(
         }
     }
 
-    logger.info('email-router', `Campaign ${campaignId}: ${enqueued}/${unique.length} emails enqueued (type=${type})`)
+    logger.info('email-router', `Campaign ${campaignId}: ${enqueued}/${eligible.length} emails enqueued (type=${type}, ${unique.length - eligible.length} bounced skipped)`)
     return { campaignId, enqueued }
 }

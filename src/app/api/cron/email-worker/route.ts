@@ -180,4 +180,45 @@ async function handleJobFailure(
         })
         logger.warn('email-worker', `Job ${job.id} attempt ${newAttempts}/${job.maxAttempts} failed${isThrottle ? ' (429 throttled)' : ''}, retry at ${nextRunAt.toISOString()} (${delayMs}ms)`)
     }
+
+    // Track bounce for subscriber hygiene (non-throttle failures only)
+    if (!isThrottle) {
+        await trackBounce(db, job.to)
+    }
+}
+
+// ── Bounce Management ──────────────────────────────────────────────────────
+// Tracks delivery failures per subscriber email.
+// After 3+ bounces, auto-deactivates the subscriber to prevent wasted sends.
+
+const BOUNCE_THRESHOLD = 3
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function trackBounce(db: any, email: string): Promise<void> {
+    try {
+        const normalizedEmail = email.toLowerCase().trim()
+
+        // Count total failures for this email in EmailLog
+        const failCount = await db.emailLog.count({
+            where: { to: normalizedEmail, success: false },
+        })
+
+        if (failCount >= BOUNCE_THRESHOLD) {
+            // Check if they're an active subscriber
+            const subscriber = await db.subscriber.findUnique({
+                where: { email: normalizedEmail },
+                select: { id: true, active: true },
+            })
+
+            if (subscriber?.active) {
+                await db.subscriber.update({
+                    where: { email: normalizedEmail },
+                    data: { active: false },
+                })
+                logger.warn('email-worker', `Auto-deactivated subscriber ${normalizedEmail} — ${failCount} delivery failures (bounce threshold: ${BOUNCE_THRESHOLD})`)
+            }
+        }
+    } catch {
+        // Never let bounce tracking crash the worker
+    }
 }

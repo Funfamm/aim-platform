@@ -40,7 +40,37 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Please enter a valid email address' }, { status: 400 })
         }
 
-        const normalizedEmail = email.trim().toLowerCase().slice(0, 254)
+        // ── Auto-correct common domain typos ───────────────────────────────
+        let correctedEmail = email.trim().toLowerCase().slice(0, 254)
+        const typoMap: Record<string, string> = {
+            'gmial.com': 'gmail.com', 'gmaill.com': 'gmail.com', 'gnail.com': 'gmail.com',
+            'gmai.com': 'gmail.com', 'gamil.com': 'gmail.com', 'gmal.com': 'gmail.com',
+            'gmail.con': 'gmail.com', 'gmail.co': 'gmail.com',
+            'yaho.com': 'yahoo.com', 'yahooo.com': 'yahoo.com', 'yahoo.con': 'yahoo.com',
+            'hotmal.com': 'hotmail.com', 'hotmial.com': 'hotmail.com', 'hotmail.con': 'hotmail.com',
+            'outloo.com': 'outlook.com', 'outlok.com': 'outlook.com',
+            'iclou.com': 'icloud.com', 'icloud.con': 'icloud.com',
+        }
+        const [localPart, domain] = correctedEmail.split('@')
+        if (domain && typoMap[domain]) {
+            correctedEmail = `${localPart}@${typoMap[domain]}`
+        }
+
+        // ── Block disposable / temporary email domains ─────────────────────
+        const disposableDomains = new Set([
+            'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
+            'yopmail.com', 'trashmail.com', 'fakeinbox.com', 'sharklasers.com',
+            'guerrillamailblock.com', 'grr.la', 'dispostable.com', 'mailnesia.com',
+            'tempail.com', 'temp-mail.org', 'mohmal.com', 'emailondeck.com',
+            'getnada.com', '10minutemail.com', 'minutemail.com', 'maildrop.cc',
+            'mailcatch.com', 'discard.email', 'tempr.email', 'temp-mail.io',
+        ])
+        const emailDomain = correctedEmail.split('@')[1]
+        if (emailDomain && disposableDomains.has(emailDomain)) {
+            return NextResponse.json({ error: 'Please use a permanent email address' }, { status: 400 })
+        }
+
+        const normalizedEmail = correctedEmail
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
         const userLocale = locale || 'en'
 
