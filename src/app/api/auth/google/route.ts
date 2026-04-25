@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { cookies } from 'next/headers'
 import crypto from 'crypto'
 
 export async function GET(req: Request) {
@@ -14,26 +13,11 @@ export async function GET(req: Request) {
 
     // Generate a secure random CSRF state token
     const state = crypto.randomBytes(16).toString('hex')
-    const cookieStore = await cookies()
-    cookieStore.set('oauth_state', state, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 5 * 60, // 5 minutes — long enough to complete OAuth flow
-        path: '/',
-    })
 
     // Save the return-to URL so we can redirect there after OAuth completes.
     // Only allow same-origin paths (must start with /) to prevent open redirects.
     const rawReturnTo = new URL(req.url).searchParams.get('returnTo') || ''
     const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '/dashboard'
-    cookieStore.set('oauth_return_to', returnTo, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 5 * 60,
-        path: '/',
-    })
 
     const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || new URL(req.url).origin
     const redirectUri = `${origin}/api/auth/google/callback`
@@ -48,5 +32,29 @@ export async function GET(req: Request) {
         state, // CSRF protection
     })
 
-    return NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
+    // Build redirect response and attach cookies directly to it.
+    // Using cookies().set() before NextResponse.redirect() can cause
+    // mobile browsers (especially Safari/WebView) to drop cookies during
+    // the cross-origin redirect to Google. Setting them on the response
+    // object guarantees they are persisted.
+    const isProduction = process.env.NODE_ENV === 'production'
+    const response = NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
+
+    response.cookies.set('oauth_state', state, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 5 * 60, // 5 minutes — long enough to complete OAuth flow
+        path: '/',
+    })
+
+    response.cookies.set('oauth_return_to', returnTo, {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: 'lax',
+        maxAge: 5 * 60,
+        path: '/',
+    })
+
+    return response
 }
