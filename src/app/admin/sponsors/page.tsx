@@ -404,7 +404,26 @@ export default function AdminSponsorsPage() {
                         { id: 'silver',   label: `🥈 Silver`,   count: sponsors.filter(s => s.tier === 'silver').length },
                         { id: 'bronze',   label: `🥉 Bronze`,   count: sponsors.filter(s => s.tier === 'bronze').length },
                     ] as { id: string; label: string; count: number; accent?: string }[]).map(f => (
-                        <button key={f.id} onClick={() => setFilter(f.id)} style={{
+                        <button key={f.id} onClick={() => {
+                            setFilter(f.id)
+                            // Auto-open notify modal when clicking expired/expiring filters
+                            if (f.id === 'expired' || f.id === 'expiring') {
+                                const targetSponsors = f.id === 'expired'
+                                    ? sponsors.filter(s => isExpired(s))
+                                    : sponsors.filter(s => { const d = daysLeft(s); return d !== null && d > 0 && d <= 2 })
+                                const withEmail = targetSponsors.filter(s => s.contactEmail)
+                                if (withEmail.length > 0) {
+                                    setNotifyTarget(withEmail[0])
+                                    setNotifySubject(f.id === 'expired'
+                                        ? 'Sponsorship Renewal — Your Partnership Has Expired'
+                                        : 'Sponsorship Expiring Soon — Renew Your Partnership')
+                                    setNotifyMessage(f.id === 'expired'
+                                        ? `Dear ${withEmail[0].name},\n\nYour sponsorship with AIM Studio has expired. We truly value your support and would love to continue our partnership.\n\nPlease let us know if you'd like to renew — we're happy to discuss options.\n\nBest regards,\nAIM Studio Team`
+                                        : `Dear ${withEmail[0].name},\n\nYour sponsorship with AIM Studio is expiring very soon. We'd love to continue working together.\n\nPlease reach out if you'd like to renew your partnership.\n\nBest regards,\nAIM Studio Team`)
+                                    setNotifyResult(null)
+                                }
+                            }
+                        }} style={{
                             padding: '6px 12px', fontSize: '0.68rem', fontWeight: 600, borderRadius: '8px',
                             border: 'none', cursor: 'pointer',
                             background: filter === f.id ? 'linear-gradient(135deg, rgba(212,168,83,0.15), rgba(212,168,83,0.05))' : 'transparent',
