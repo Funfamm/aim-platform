@@ -77,8 +77,8 @@ export async function GET(req: NextRequest) {
             prisma.user.count({ where: { createdAt: { gte: month } } }),
             prisma.application.count(),
             prisma.application.count({ where: { createdAt: { gte: month } } }),
-            prisma.donation.count({ where: { status: 'completed' } }),
-            prisma.donation.count({ where: { status: 'completed', createdAt: { gte: month } } }),
+            prisma.donation.count({ where: { status: 'completed' } }).catch(() => 0),
+            prisma.donation.count({ where: { status: 'completed', createdAt: { gte: month } } }).catch(() => 0),
             // Subscribers = verified registered users (industry standard)
             prisma.user.count({ where: { emailVerified: true } }),
             // Mailing list = newsletter-only signups (footer form, no account required)

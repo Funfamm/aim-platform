@@ -107,6 +107,19 @@ export function invalidateMailerCache() {
     cacheTime = 0
 }
 
+/**
+ * Typed error for Microsoft Graph 429 throttle responses.
+ * Carries the server-specified retry delay so callers can wait correctly.
+ */
+class GraphThrottleError extends Error {
+    retryAfterMs: number
+    constructor(retryAfterMs: number, detail: string) {
+        super(`Graph 429 throttled (retry after ${retryAfterMs}ms): ${detail}`)
+        this.name = 'GraphThrottleError'
+        this.retryAfterMs = retryAfterMs
+    }
+}
+
 async function sendViaGraph(config: MailConfig, options: EmailOptions): Promise<void> {
     const token = await getGraphAccessToken()
     const response = await fetch(`https://graph.microsoft.com/v1.0/users/${config.fromEmail}/sendMail`, {
@@ -126,8 +139,29 @@ async function sendViaGraph(config: MailConfig, options: EmailOptions): Promise<
         }),
     })
     if (!response.ok) {
-        const err = await response.text()
-        throw new Error(`Graph send failed: ${response.status} ${err}`)
+        const body = await response.text()
+        // Detect Graph 429 throttle and throw typed error with Retry-After
+        if (response.status === 429) {
+            const retryHeader = response.headers.get('retry-after')
+            // Retry-After can be seconds (integer) or HTTP-date; Graph typically sends seconds
+            let retryAfterMs = 30_000  // safe default: 30s
+            if (retryHeader) {
+                const seconds = parseInt(retryHeader, 10)
+                if (!isNaN(seconds)) {
+                    retryAfterMs = seconds * 1000
+                } else {
+                    // Try parsing as HTTP-date (RFC 7231)
+                    const date = new Date(retryHeader).getTime()
+                    if (!isNaN(date)) {
+                        retryAfterMs = Math.max(date - Date.now(), 5_000)
+                    }
+                }
+            }
+            // Floor at 5s to prevent tight-looping on tiny values
+            retryAfterMs = Math.max(retryAfterMs, 5_000)
+            throw new GraphThrottleError(retryAfterMs, body)
+        }
+        throw new Error(`Graph send failed: ${response.status} ${body}`)
     }
 }
 
@@ -149,7 +183,9 @@ async function sendViaSMTP(config: MailConfig, options: EmailOptions): Promise<v
 }
 
 /**
- * Internal retry helper — 3 attempts with exponential back-off (1 s, 2 s, 4 s).
+ * Internal retry helper — 3 attempts.
+ *  - On GraphThrottleError: wait the server-specified Retry-After duration (not exponential)
+ *  - On other errors: exponential back-off (1 s, 2 s, 4 s)
  * Throws on exhaustion so callers can log/capture the error.
  */
 async function sendWithRetry(
@@ -165,8 +201,10 @@ async function sendWithRetry(
         } catch (err) {
             lastErr = err
             if (attempt < maxAttempts) {
-                const delay = 1_000 * 2 ** (attempt - 1)  // 1s, 2s, 4s
-                logger.warn('mailer', `Attempt ${attempt}/${maxAttempts} failed for "${label}", retrying in ${delay}ms`, { error: err as Error })
+                // Respect Graph's Retry-After on 429; use exponential backoff for everything else
+                const isThrottle = err instanceof GraphThrottleError
+                const delay = isThrottle ? err.retryAfterMs : 1_000 * 2 ** (attempt - 1)
+                logger.warn('mailer', `Attempt ${attempt}/${maxAttempts} failed for "${label}"${isThrottle ? ' (429 throttled)' : ''}, retrying in ${delay}ms`, { error: err as Error })
                 await new Promise(r => setTimeout(r, delay))
             }
         }

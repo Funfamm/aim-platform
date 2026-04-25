@@ -123,6 +123,9 @@ type TabType = 'overview' | 'traffic' | 'content' | 'ai' | 'system'
 export default function AdminAnalyticsPage() {
     const [data, setData] = useState<AnalyticsData | null>(null)
     const [loading, setLoading] = useState(true)
+    // Hydration guard — time-dependent UI must wait for client mount
+    const [mounted, setMounted] = useState(false)
+    useEffect(() => { setMounted(true) }, [])
     const [insights, setInsights] = useState<Insight[]>([])
     const [insightsLoading, setInsightsLoading] = useState(false)
     const [insightsError, setInsightsError] = useState('')
@@ -418,7 +421,7 @@ export default function AdminAnalyticsPage() {
                     <div className="aa-header-row" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
                         <div>
                             <div style={{ fontSize: '0.68rem', color: 'var(--accent-gold)', fontWeight: 600, letterSpacing: '0.08em', marginBottom: '4px', opacity: 0.9 }}>
-                                {getGreeting()}, Director
+                                {mounted ? getGreeting() : '🎬 Welcome'}, Director
                             </div>
                             <h1 style={{
                                 fontSize: '1.6rem', fontWeight: 900, margin: 0,
@@ -441,7 +444,7 @@ export default function AdminAnalyticsPage() {
                                     border: '1px solid var(--border-subtle)',
                                     fontSize: '0.68rem', color: 'var(--text-tertiary)', fontWeight: 500,
                                 }}>
-                                    ⏱ {new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
+                                    ⏱ {mounted ? new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' }) : '--:--'}
                                 </div>
                                 {/* Live logged-in users indicator */}
                                 <div ref={livePopoverRef} style={{ position: 'relative' }}>

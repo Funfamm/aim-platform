@@ -28,8 +28,8 @@ import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 
 // ── Configurable email rate limiting ────────────────────────────────────────
 // Safe defaults prevent SMTP/Graph provider rate-limit drops.
-const EMAIL_BATCH_SIZE  = Math.max(1, parseInt(process.env.EMAIL_BATCH_SIZE  || '10', 10))
-const EMAIL_BATCH_DELAY_MS = Math.max(0, parseInt(process.env.EMAIL_BATCH_DELAY_MS || '1000', 10))
+const EMAIL_BATCH_SIZE  = Math.max(1, parseInt(process.env.EMAIL_BATCH_SIZE  || '4', 10))
+const EMAIL_BATCH_DELAY_MS = Math.max(0, parseInt(process.env.EMAIL_BATCH_DELAY_MS || '2000', 10))
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
 
