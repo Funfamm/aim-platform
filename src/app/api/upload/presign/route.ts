@@ -43,7 +43,9 @@ const ALLOWED_PROJECT_ASSET_TYPES = [
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/zip',
 ]
-const MAX_PROJECT_ASSET_SIZE = 10 * 1024 * 1024 // 10 MB
+const MAX_PROJECT_ASSET_VIDEO = 500 * 1024 * 1024  // 500 MB for video
+const MAX_PROJECT_ASSET_AUDIO = 50 * 1024 * 1024   // 50 MB for audio
+const MAX_PROJECT_ASSET_OTHER = 10 * 1024 * 1024    // 10 MB for images/docs
 
 // Rate limiting for public project-asset uploads (audit fix #2)
 const uploadRateMap = new Map<string, { count: number; resetAt: number }>()
@@ -128,8 +130,12 @@ export async function POST(req: NextRequest) {
             if (isUploadRateLimited(ip)) {
                 return NextResponse.json({ error: 'Upload rate limit exceeded. Please try again later.' }, { status: 429 })
             }
-            if (body.fileSize && body.fileSize > MAX_PROJECT_ASSET_SIZE) {
-                return NextResponse.json({ error: 'File exceeds 10 MB limit' }, { status: 400 })
+            const isVideo = resolvedType?.startsWith('video/') || ['mp4','mov','webm','avi','mkv'].includes(fileName.split('.').pop()?.toLowerCase() ?? '')
+            const isAudio = resolvedType?.startsWith('audio/') || ['mp3','wav','m4a','aac','ogg','flac'].includes(fileName.split('.').pop()?.toLowerCase() ?? '')
+            const sizeLimit = isVideo ? MAX_PROJECT_ASSET_VIDEO : isAudio ? MAX_PROJECT_ASSET_AUDIO : MAX_PROJECT_ASSET_OTHER
+            const limitLabel = isVideo ? '500 MB' : isAudio ? '50 MB' : '10 MB'
+            if (body.fileSize && body.fileSize > sizeLimit) {
+                return NextResponse.json({ error: `File exceeds ${limitLabel} limit` }, { status: 400 })
             }
             // Block executable file extensions
             const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
