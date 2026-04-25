@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import StepProgress from './StepProgress'
 import ProjectTypeStep from './ProjectTypeStep'
@@ -166,6 +166,19 @@ export default function StartProjectFlow() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitError, setSubmitError] = useState('')
     const [animKey, setAnimKey] = useState(0) // forces re-mount for animation
+    const [isAdmin, setIsAdmin] = useState(false)
+
+    // Detect admin user to allow bypassing required fields for form review
+    useEffect(() => {
+        fetch('/api/auth/me')
+            .then(r => r.json())
+            .then(data => {
+                if (data.user && ['admin', 'superadmin'].includes(data.user.role)) {
+                    setIsAdmin(true)
+                }
+            })
+            .catch(() => {})
+    }, [])
 
     const currentStep = STEPS[stepIndex]
 
@@ -180,16 +193,18 @@ export default function StartProjectFlow() {
 
     // ── Step navigation ─────────────────────────────────────────────────────
     const goNext = useCallback(() => {
-        const errors = validateStep(currentStep, form)
-        if (errors.length > 0) {
-            setFieldErrors(errors)
-            return
+        if (!isAdmin) {
+            const errors = validateStep(currentStep, form)
+            if (errors.length > 0) {
+                setFieldErrors(errors)
+                return
+            }
         }
         setFieldErrors([])
         setStepIndex(i => Math.min(STEPS.length - 1, i + 1))
         setAnimKey(k => k + 1)
         window.scrollTo({ top: 0, behavior: 'smooth' })
-    }, [currentStep, form])
+    }, [currentStep, form, isAdmin])
 
     const goBack = useCallback(() => {
         setFieldErrors([])
@@ -199,13 +214,13 @@ export default function StartProjectFlow() {
     }, [])
 
     const goToStep = useCallback((idx: number) => {
-        if (idx < stepIndex) {
+        if (idx < stepIndex || isAdmin) {
             setFieldErrors([])
             setStepIndex(idx)
             setAnimKey(k => k + 1)
             window.scrollTo({ top: 0, behavior: 'smooth' })
         }
-    }, [stepIndex])
+    }, [stepIndex, isAdmin])
 
     // ── Submit ──────────────────────────────────────────────────────────────
     const handleSubmit = useCallback(async () => {
@@ -254,6 +269,26 @@ export default function StartProjectFlow() {
             padding: 'clamp(1rem, 3vw, 1.5rem)',
             backdropFilter: 'blur(8px)',
         }}>
+            {/* Admin Preview Banner */}
+            {isAdmin && (
+                <div style={{
+                    marginBottom: 'var(--space-md)',
+                    padding: '10px 16px',
+                    borderRadius: 'var(--radius-md)',
+                    background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(234,88,12,0.06))',
+                    border: '1px solid rgba(245,158,11,0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: '#f59e0b',
+                }}>
+                    <span style={{ fontSize: '1rem' }}>🛡️</span>
+                    Admin Preview — required fields are bypassed. You can navigate all steps freely.
+                </div>
+            )}
+
             <StepProgress
                 steps={STEPS as unknown as string[]}
                 currentIndex={stepIndex}
