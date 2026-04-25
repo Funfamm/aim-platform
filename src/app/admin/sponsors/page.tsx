@@ -377,12 +377,12 @@ export default function AdminSponsorsPage() {
                         { label: 'Active', value: sponsors.filter(s => s.active).length, icon: '✅', color: '#22c55e', bg: 'rgba(34,197,94,0.04)' },
                         { label: 'Featured', value: sponsors.filter(s => s.featured).length, icon: '⭐', color: '#f59e0b', bg: 'rgba(245,158,11,0.04)' },
                         { label: 'Expiring', value: sponsors.filter(s => { const d = daysLeft(s); return d !== null && d > 0 && d <= 30 }).length, icon: '⏰', color: '#f97316', bg: 'rgba(249,115,22,0.04)' },
-                        { label: 'Expired', value: sponsors.filter(s => isExpired(s)).length, icon: '❌', color: '#ef4444', bg: 'rgba(239,68,68,0.04)' },
+                        { label: 'Expired', value: sponsors.filter(s => isExpired(s)).length, icon: '❌', color: '#ef4444', bg: 'rgba(239,68,68,0.04)', filterId: 'expired' },
                     ].map(s => (
-                        <div key={s.label} style={{
+                        <div key={s.label} onClick={() => { if (s.filterId) setFilter(s.filterId) }} style={{
                             padding: '14px 10px', borderRadius: '12px', textAlign: 'center',
                             background: s.bg, border: '1px solid rgba(255,255,255,0.04)',
-                            transition: 'transform 0.2s',
+                            transition: 'transform 0.2s', cursor: s.filterId ? 'pointer' : 'default',
                         }}>
                             <div style={{ fontSize: '0.9rem' }}>{s.icon}</div>
                             <div style={{ fontSize: '1.3rem', fontWeight: 800, color: s.color, marginTop: '2px' }}>{s.value}</div>
