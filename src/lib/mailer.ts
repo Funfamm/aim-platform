@@ -218,9 +218,9 @@ async function sendWithRetry(
  */
 function detectEmailType(subject: string): string {
     const s = subject.toLowerCase()
+    if (s.includes('subscri')) return 'subscribe'
     if (s.includes('verify') || s.includes('confirm') || s.includes('reset') || s.includes('login') || s.includes('password') || s.includes('welcome')) return 'authentication'
     if (s.includes('application') || s.includes('casting') || s.includes('audition') || s.includes('role') || s.includes('shortlist') || s.includes('selected') || s.includes('rejected')) return 'application'
-    if (s.includes('subscri')) return 'subscribe'
     if (s.includes('notification') || s.includes('update') || s.includes('news') || s.includes('announcement')) return 'notification'
     return 'general'
 }
