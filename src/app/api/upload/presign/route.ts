@@ -124,6 +124,25 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // ── Infer MIME from extension when browser sends empty/generic type ──
+        // iOS Safari commonly sends '' or 'application/octet-stream' for HEIC
+        let resolvedType = fileType
+        if (!resolvedType || resolvedType === 'application/octet-stream') {
+            const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
+            const mimeMap: Record<string, string> = {
+                jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+                webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
+                mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav',
+                webm: kind === 'video' ? 'video/webm' : 'audio/webm',
+                ogg: kind === 'video' ? 'video/ogg' : 'audio/ogg',
+                flac: 'audio/flac', aac: 'audio/aac',
+                mp4: kind === 'video' ? 'video/mp4' : 'audio/mp4',
+                mov: 'video/quicktime', avi: 'video/x-msvideo',
+                mkv: 'video/x-matroska',
+            }
+            resolvedType = mimeMap[ext] || fileType
+        }
+
         // Project-asset uploads: public but rate-limited + size-gated (audit fix #2)
         if (kind === 'project-asset') {
             const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -143,25 +162,6 @@ export async function POST(req: NextRequest) {
             if (blocked.includes(ext)) {
                 return NextResponse.json({ error: 'Executable file types are not allowed' }, { status: 400 })
             }
-        }
-
-        // ── Infer MIME from extension when browser sends empty/generic type ──
-        // iOS Safari commonly sends '' or 'application/octet-stream' for HEIC
-        let resolvedType = fileType
-        if (!resolvedType || resolvedType === 'application/octet-stream') {
-            const ext = fileName.split('.').pop()?.toLowerCase() ?? ''
-            const mimeMap: Record<string, string> = {
-                jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
-                webp: 'image/webp', heic: 'image/heic', heif: 'image/heif',
-                mp3: 'audio/mpeg', m4a: 'audio/mp4', wav: 'audio/wav',
-                webm: kind === 'video' ? 'video/webm' : 'audio/webm',
-                ogg: kind === 'video' ? 'video/ogg' : 'audio/ogg',
-                flac: 'audio/flac', aac: 'audio/aac',
-                mp4: kind === 'video' ? 'video/mp4' : 'audio/mp4',
-                mov: 'video/quicktime', avi: 'video/x-msvideo',
-                mkv: 'video/x-matroska',
-            }
-            resolvedType = mimeMap[ext] || fileType
         }
 
         // ── Content-type allowlist ──────────────────────────────────────────
