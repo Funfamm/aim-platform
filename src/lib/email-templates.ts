@@ -143,23 +143,24 @@ function paragraph(text: string): string {
     return `<p style="margin: 0 0 16px; font-size: 15px; color: ${TEXT_PRIMARY}; line-height: 1.7;">${text}</p>`
 }
 
-/** Primary gold CTA button */
+/** Primary gold CTA button — uses table layout for bulletproof mobile tap targets */
 function button(text: string, url: string): string {
     return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
         <tr>
-            <td style="background: linear-gradient(135deg, ${BRAND_COLOR}, #c49b3a); border-radius: 8px;">
-                <a href="${url}" target="_blank" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #0f1115; text-decoration: none; letter-spacing: 0.3px;">${text}</a>
+            <td align="center" style="background-color: ${BRAND_COLOR}; border-radius: 8px;">
+                <a href="${url}" target="_blank" style="display: block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #0f1115; text-decoration: none; letter-spacing: 0.3px; mso-padding-alt: 14px 32px;">${text}</a>
             </td>
         </tr>
-    </table>`
+    </table>
+    <p style="margin: 0; font-size: 11px; color: #6b7280; word-break: break-all;">Or copy this link: <a href="${url}" style="color: ${BRAND_COLOR}; text-decoration: underline;">${url}</a></p>`
 }
 
-/** Secondary outline/ghost button */
+/** Secondary outline/ghost button — uses table layout for bulletproof mobile tap targets */
 function secondaryButton(text: string, url: string): string {
     return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin: 12px 0;">
         <tr>
-            <td style="border: 1px solid ${BORDER}; border-radius: 8px; background-color: ${BG_ELEVATED};">
-                <a href="${url}" target="_blank" style="display: inline-block; padding: 12px 28px; font-size: 13px; font-weight: 600; color: ${BRAND_COLOR}; text-decoration: none; letter-spacing: 0.3px;">${text}</a>
+            <td align="center" style="border: 1px solid ${BORDER}; border-radius: 8px; background-color: ${BG_ELEVATED};">
+                <a href="${url}" target="_blank" style="display: block; padding: 12px 28px; font-size: 13px; font-weight: 600; color: ${BRAND_COLOR}; text-decoration: none; letter-spacing: 0.3px; mso-padding-alt: 12px 28px;">${text}</a>
             </td>
         </tr>
     </table>`
@@ -1164,9 +1165,10 @@ export function courseEnrollmentEmail(
     parts.push('<h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:' + TP + ';line-height:1.3">' + h + '</h1>')
     parts.push('<p style="margin:0 0 16px;font-size:15px;color:' + TP + ';line-height:1.7">' + b + '</p>')
     parts.push('<table cellpadding="0" cellspacing="0" style="margin:24px 0"><tr>')
-    parts.push('<td style="background:linear-gradient(135deg,' + BC + ',#c49b3a);border-radius:8px">')
-    parts.push('<a href="' + courseUrl + '" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">' + btn + '</a>')
+    parts.push('<td align="center" style="background-color:' + BC + ';border-radius:8px">')
+    parts.push('<a href="' + courseUrl + '" style="display:block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none;mso-padding-alt:14px 32px">' + btn + '</a>')
     parts.push('</td></tr></table>')
+    parts.push('<p style="margin:0 0 16px;font-size:11px;color:#6b7280;word-break:break-all">Or copy this link: <a href="' + courseUrl + '" style="color:' + BC + ';text-decoration:underline">' + courseUrl + '</a></p>')
     parts.push('<p style="margin:0;font-size:12px;color:#6b7280">' + footer + '</p>')
     parts.push('</td></tr>')
     parts.push('<tr><td style="height:3px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:0 0 12px 12px"></td></tr>')
@@ -1205,9 +1207,10 @@ export function courseCompletionEmail(
     parts.push('<p style="margin:4px 0 4px;font-size:13px;font-weight:600;color:' + BC + '">' + courseTitle + (userName ? ' · ' + userName : '') + '</p>')
     parts.push('<p style="margin:12px 0 16px;font-size:15px;color:' + TP + ';line-height:1.7">' + b + '</p>')
     parts.push('<table cellpadding="0" cellspacing="0" style="margin:24px 0"><tr>')
-    parts.push('<td style="background:linear-gradient(135deg,' + BC + ',#c49b3a);border-radius:8px">')
-    parts.push('<a href="' + courseUrl + '" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">' + btn + '</a>')
+    parts.push('<td align="center" style="background-color:' + BC + ';border-radius:8px">')
+    parts.push('<a href="' + courseUrl + '" style="display:block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none;mso-padding-alt:14px 32px">' + btn + '</a>')
     parts.push('</td></tr></table>')
+    parts.push('<p style="margin:0 0 16px;font-size:11px;color:#6b7280;word-break:break-all">Or copy this link: <a href="' + courseUrl + '" style="color:' + BC + ';text-decoration:underline">' + courseUrl + '</a></p>')
     parts.push('<p style="margin:0;font-size:12px;color:#6b7280">' + footer + '</p>')
     parts.push('</td></tr>')
     parts.push('<tr><td style="height:3px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:0 0 12px 12px"></td></tr>')
@@ -1262,9 +1265,10 @@ export function badgeEarnedEmail(
     if (userName) parts.push('<p style="margin:4px 0 4px;font-size:13px;color:#9ca3af">' + userName + '</p>')
     parts.push('<p style="margin:12px 0 16px;font-size:15px;color:' + TP + ';line-height:1.7">' + b + '</p>')
     parts.push('<table cellpadding="0" cellspacing="0" style="margin:24px 0"><tr>')
-    parts.push('<td style="background:linear-gradient(135deg,' + BC + ',#c49b3a);border-radius:8px">')
-    parts.push('<a href="' + courseUrl + '" style="display:inline-block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">' + btn + '</a>')
+    parts.push('<td align="center" style="background-color:' + BC + ';border-radius:8px">')
+    parts.push('<a href="' + courseUrl + '" style="display:block;padding:14px 32px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none;mso-padding-alt:14px 32px">' + btn + '</a>')
     parts.push('</td></tr></table>')
+    parts.push('<p style="margin:0 0 16px;font-size:11px;color:#6b7280;word-break:break-all">Or copy this link: <a href="' + courseUrl + '" style="color:' + BC + ';text-decoration:underline">' + courseUrl + '</a></p>')
     parts.push('<p style="margin:0;font-size:12px;color:#6b7280">' + footer + '</p>')
     parts.push('</td></tr>')
     parts.push('<tr><td style="height:3px;background:linear-gradient(90deg,' + BC + ',' + BL + ',' + BC + ');border-radius:0 0 12px 12px"></td></tr>')

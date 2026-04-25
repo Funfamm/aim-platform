@@ -13,6 +13,7 @@ export default function AdminUsersPage() {
     const [users, setUsers] = useState<UserRow[]>([])
     const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 25, total: 0, totalPages: 0 })
     const [stats, setStats] = useState({ total: 0, members: 0, admins: 0, superadmins: 0, withApplications: 0 })
+    const [langStats, setLangStats] = useState<Record<string, number>>({})
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [role, setRole] = useState('all')
@@ -39,6 +40,7 @@ export default function AdminUsersPage() {
         if (res.ok) {
             const data = await res.json()
             setUsers(data.users); setPagination(data.pagination); setStats(data.stats)
+            if (data.langStats) setLangStats(data.langStats)
         }
         setLoading(false)
     }, [search, role, language, sort])
@@ -185,6 +187,40 @@ export default function AdminUsersPage() {
                         </div>
                     ))}
                 </div>
+
+                {/* Language Distribution */}
+                {Object.keys(langStats).length > 0 && (
+                    <div style={{ marginBottom: '16px' }}>
+                        <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>🌍 Language Distribution</div>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                            {Object.entries(langStats)
+                                .sort(([,a], [,b]) => b - a)
+                                .map(([lang, count]) => {
+                                    const flags: Record<string, string> = { en: '🇺🇸', es: '🇪🇸', fr: '🇫🇷', ar: '🇸🇦', zh: '🇨🇳', hi: '🇮🇳', pt: '🇧🇷', ru: '🇷🇺', ja: '🇯🇵', de: '🇩🇪', ko: '🇰🇷' }
+                                    const flag = flags[lang] || '🌐'
+                                    const name = localeNames[lang as keyof typeof localeNames] || lang.toUpperCase()
+                                    const isActive = language === lang
+                                    return (
+                                        <button key={lang} onClick={() => setLanguage(isActive ? 'all' : lang)} style={{
+                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                            padding: '6px 12px', borderRadius: '8px', cursor: 'pointer',
+                                            border: isActive ? '1px solid rgba(212,168,83,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                                            background: isActive ? 'rgba(212,168,83,0.1)' : 'rgba(255,255,255,0.02)',
+                                            transition: 'all 0.2s', fontFamily: 'inherit',
+                                        }}>
+                                            <span style={{ fontSize: '0.85rem' }}>{flag}</span>
+                                            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: isActive ? 'var(--accent-gold)' : 'var(--text-secondary)' }}>{name}</span>
+                                            <span style={{
+                                                fontSize: '0.62rem', fontWeight: 800, padding: '1px 6px', borderRadius: '10px',
+                                                background: isActive ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.06)',
+                                                color: isActive ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                            }}>{count}</span>
+                                        </button>
+                                    )
+                                })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Search + Filters */}
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap' }}>
@@ -370,7 +406,7 @@ export default function AdminUsersPage() {
                                             style={{ cursor: 'pointer', accentColor: 'var(--accent-gold)', width: '14px', height: '14px' }}
                                         />
                                     </th>
-                                    {['Name', 'Email', 'Role', 'Via', 'Status', 'Apps', 'Joined', 'Actions'].map(h => (
+                                    {['Name', 'Email', 'Role', 'Via', 'Lang', 'Status', 'Apps', 'Joined', 'Actions'].map(h => (
                                         <th key={h} style={{ padding: '8px 12px', fontWeight: 700, fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', textAlign: 'left' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -453,6 +489,24 @@ export default function AdminUsersPage() {
                                                         🔗 Multi
                                                     </span>
                                                 )}
+                                            </td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                {(() => {
+                                                    const lang = u.preferredLanguage || 'en'
+                                                    const flags: Record<string, string> = { en: '🇺🇸', es: '🇪🇸', fr: '🇫🇷', ar: '🇸🇦', zh: '🇨🇳', hi: '🇮🇳', pt: '🇧🇷', ru: '🇷🇺', ja: '🇯🇵', de: '🇩🇪', ko: '🇰🇷' }
+                                                    const flag = flags[lang] || '🌐'
+                                                    return (
+                                                        <span title={localeNames[lang as keyof typeof localeNames] || lang} style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                                            fontSize: '0.6rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 700,
+                                                            background: 'rgba(255,255,255,0.04)',
+                                                            border: '1px solid rgba(255,255,255,0.08)',
+                                                            color: 'var(--text-secondary)',
+                                                        }}>
+                                                            {flag} {lang.toUpperCase()}
+                                                        </span>
+                                                    )
+                                                })()}
                                             </td>
                                             <td style={{ padding: '8px 12px' }}>
                                                 {/* Lock / Suspend status badge */}

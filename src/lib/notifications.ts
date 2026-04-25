@@ -976,7 +976,7 @@ function buildPlainHtml(title: string, message: string, link?: string, locale: s
         <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:560px;margin:0 auto;padding:40px 24px;">
             <h2 style="color:#d4a853;margin-bottom:8px;">${title}</h2>
             <p style="color:#ccc;font-size:15px;line-height:1.6;">${message}</p>
-            ${link ? `<a href="${link}" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#d4a853;color:#000;border-radius:6px;text-decoration:none;font-weight:600;">${viewNow}</a>` : ''}
+            ${link ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;"><tr><td align="center" style="background-color:#d4a853;border-radius:6px;"><a href="${link}" style="display:block;padding:12px 24px;color:#000;text-decoration:none;font-weight:600;mso-padding-alt:12px 24px;">${viewNow}</a></td></tr></table><p style="margin:12px 0 0;font-size:11px;color:#6b7280;word-break:break-all;">Or copy this link: <a href="${link}" style="color:#d4a853;text-decoration:underline;">${link}</a></p>` : ''}
         </div>
     `.trim()
 }

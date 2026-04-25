@@ -308,14 +308,6 @@ export default function AdminSponsorsPage() {
         fetchSponsors()
     }
 
-    const filtered =
-        filter === 'all'       ? sponsors
-        : filter === 'active'  ? sponsors.filter(s => s.active)
-        : filter === 'featured'? sponsors.filter(s => s.featured)
-        : filter === 'expired' ? sponsors.filter(s => isExpired(s))
-        : filter === 'expiring'? sponsors.filter(s => { const d = daysLeft(s); return d !== null && d > 0 && d <= 2 })
-        : sponsors.filter(s => s.tier === filter)
-
     const isExpired = (s: Sponsor) => s.endDate && new Date(s.endDate) < new Date()
     // eslint-disable-next-line react-hooks/purity
     const now = Date.now()
@@ -323,6 +315,14 @@ export default function AdminSponsorsPage() {
         if (!s.endDate) return null
         return Math.ceil((new Date(s.endDate).getTime() - now) / 86400000)
     }
+
+    const filtered =
+        filter === 'all'       ? sponsors
+        : filter === 'active'  ? sponsors.filter(s => s.active)
+        : filter === 'featured'? sponsors.filter(s => s.featured)
+        : filter === 'expired' ? sponsors.filter(s => isExpired(s))
+        : filter === 'expiring'? sponsors.filter(s => { const d = daysLeft(s); return d !== null && d > 0 && d <= 2 })
+        : sponsors.filter(s => s.tier === filter)
 
     // Shared dark input style
     const inp: React.CSSProperties = {

@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         : sort === 'name' ? { name: 'asc' as const }
         : { createdAt: 'desc' as const }
 
-    const [usersRaw, total, totalMembers, totalAdmins, totalSuperadmins, totalWithApps] = await Promise.all([
+    const [usersRaw, total, totalMembers, totalAdmins, totalSuperadmins, totalWithApps, langGroupRaw] = await Promise.all([
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (prisma as any).user.findMany({
             where, orderBy,
@@ -46,10 +46,21 @@ export async function GET(request: NextRequest) {
         prisma.user.count({ where: { role: 'admin' } }),
         prisma.user.count({ where: { role: 'superadmin' } }),
         prisma.user.count({ where: { applications: { some: {} } } }),
+        // Group users by language for the language distribution card
+        (prisma as any).user.groupBy({
+            by: ['preferredLanguage'],
+            _count: { _all: true },
+        }),
     ])
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const users = usersRaw as any[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const langStats: Record<string, number> = {}
+    for (const row of (langGroupRaw as any[])) {
+        const lang = row.preferredLanguage || 'en'
+        langStats[lang] = (langStats[lang] || 0) + row._count._all
+    }
 
     return NextResponse.json({
         users: users.map(u => {
@@ -66,7 +77,7 @@ export async function GET(request: NextRequest) {
                 id: u.id, name: u.name, email: u.email, role: u.role,
                 applications: u._count.applications, donations: u._count.donations,
                 createdAt: u.createdAt.toISOString(),
-                preferredLanguage: u.preferredLanguage,
+                preferredLanguage: u.preferredLanguage || 'en',
                 authProvider,
                 suspended: u.suspended ?? false,
                 lockedUntil: u.lockedUntil ? u.lockedUntil.toISOString() : null,
@@ -75,6 +86,7 @@ export async function GET(request: NextRequest) {
         }),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
         stats: { total, members: totalMembers, admins: totalAdmins, superadmins: totalSuperadmins, withApplications: totalWithApps },
+        langStats,
     })
 }
 

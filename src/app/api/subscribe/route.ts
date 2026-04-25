@@ -51,7 +51,8 @@ function confirmationEmailHtml(name: string | undefined, confirmUrl: string, loc
   <div style="font-size:48px;margin-bottom:16px">📧</div>
   <h1 style="margin:0 0 12px;font-size:22px;font-weight:700;color:${TP}">${s.heading}${greet}</h1>
   <p style="margin:0 0 28px;font-size:15px;color:${SEC};line-height:1.7">${s.body}</p>
-  <a href="${confirmUrl}" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,${BC},#c49b3a);border-radius:8px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">${s.btn}</a>
+  <a href="${confirmUrl}" style="display:inline-block;padding:14px 32px;background:${BC};border-radius:8px;font-size:14px;font-weight:700;color:#0f1115;text-decoration:none">${s.btn}</a>
+  <p style="margin:16px 0 0;font-size:11px;color:#6b7280;word-break:break-all">Or copy this link: <a href="${confirmUrl}" style="color:${BC};text-decoration:underline">${confirmUrl}</a></p>
   <p style="margin:28px 0 0;font-size:12px;color:#6b7280">${s.footer}</p>
 </td></tr>
 <tr><td style="height:3px;background:linear-gradient(90deg,${BC},#e8c36a,${BC});border-radius:0 0 12px 12px"></td></tr>
