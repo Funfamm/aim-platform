@@ -199,7 +199,7 @@ export default function EmailAnalyticsPage() {
                                                     : 'linear-gradient(180deg, rgba(96,165,250,0.4), rgba(96,165,250,0.7))',
                                             }} />
                                             <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>
-                                                {new Date(d.date).toLocaleDateString('en', { month: 'short', day: 'numeric' })}
+                                                {(() => { const [,m,day] = d.date.split('-'); const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[parseInt(m)]} ${parseInt(day)}` })()}
                                             </div>
                                         </div>
                                     ))}
