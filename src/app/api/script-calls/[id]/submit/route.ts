@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { scriptSubmissionConfirmationWithOverrides } from '@/lib/email-templates'
 import { t as emailT } from '@/lib/email-i18n'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
@@ -70,7 +70,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     // Fire-and-forget: confirmation email to author + mirror to notification board
     const emailSubject = (emailT('scriptSubmission', authorLocale, 'subject') || 'Script "{title}" submitted successfully ✍️').replace('{title}', title)
-    sendEmail({
+    sendTransactionalEmail({
         to: authorEmail,
         subject: emailSubject,
         html: await scriptSubmissionConfirmationWithOverrides(authorName, title, undefined, authorLocale),

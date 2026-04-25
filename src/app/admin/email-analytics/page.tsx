@@ -21,14 +21,18 @@ export default function EmailAnalyticsPage() {
     const [csvText, setCsvText] = useState('')
     const [importing, setImporting] = useState(false)
     const [importResult, setImportResult] = useState<ImportResult | null>(null)
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
-    useEffect(() => {
+    const loadData = () => {
+        setLoading(true)
         fetch('/api/admin/email-analytics')
             .then(r => r.json())
-            .then(setData)
+            .then(d => { setData(d); setLastUpdated(new Date()) })
             .catch(() => {})
             .finally(() => setLoading(false))
-    }, [])
+    }
+
+    useEffect(() => { loadData() }, [])
 
     const maxDailySent = data ? Math.max(...data.dailyVolume.map(d => d.sent), 1) : 1
 
@@ -60,10 +64,34 @@ export default function EmailAnalyticsPage() {
         <div className="admin-layout">
             <AdminSidebar />
             <main className="admin-main" style={{ maxWidth: '1000px' }}>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px' }}>📧 Email Analytics</h1>
-                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.82rem', marginBottom: '24px' }}>
-                    Delivery metrics, open tracking, and subscriber management.
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+                    <div>
+                        <h1 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '4px' }}>📧 Email Analytics</h1>
+                        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.82rem', margin: 0 }}>
+                            Delivery metrics, open tracking, and subscriber management.
+                        </p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {lastUpdated && (
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                                Last updated: {lastUpdated.toLocaleTimeString()}
+                            </span>
+                        )}
+                        <button
+                            onClick={loadData}
+                            disabled={loading}
+                            style={{
+                                padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--border-subtle)',
+                                background: loading ? 'var(--bg-tertiary)' : 'rgba(96,165,250,0.08)',
+                                color: loading ? 'var(--text-tertiary)' : '#60a5fa',
+                                fontWeight: 600, fontSize: '0.78rem', cursor: loading ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            {loading ? '⏳ Loading…' : '🔄 Refresh'}
+                        </button>
+                    </div>
+                </div>
 
                 {/* Tabs */}
                 <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', background: 'var(--bg-secondary)', borderRadius: '10px', padding: '4px' }}>

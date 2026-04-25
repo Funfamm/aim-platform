@@ -317,7 +317,7 @@ export async function POST(req: Request) {
             }
         } else {
             // target === 'emails': external invites — plain email, English only
-            const { sendEmail } = await import('@/lib/mailer')
+            const { sendTransactionalEmail } = await import('@/lib/email-router')
             const rawEmails = (emails ?? [])
                 .map(e => e.trim())
                 .filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) // basic format check
@@ -325,7 +325,7 @@ export async function POST(req: Request) {
             targeted = rawEmails.length
             await Promise.allSettled(
                 rawEmails.map(email =>
-                    sendEmail({
+                    sendTransactionalEmail({
                         to:      email,
                         subject: enS.subject(event.title),
                         html:    emailHtml,

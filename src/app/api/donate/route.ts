@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { donationThankYouWithOverrides, donationAdminNotification } from '@/lib/email-templates'
 
 export async function POST(request: Request) {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
         })
 
         // Fire-and-forget: thank-you receipt to donor
-        sendEmail({
+        sendTransactionalEmail({
             to: email,
             subject: `Thank you for your $${parseFloat(amount).toFixed(2)} donation! 💛`,
             html: await donationThankYouWithOverrides(donorName, parseFloat(amount)),
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         if (settings?.notifyOnDonation) {
             const adminEmail = settings.notifyEmail || settings.contactEmail
             if (adminEmail) {
-                sendEmail({
+                sendTransactionalEmail({
                     to: adminEmail,
                     subject: `💰 New Donation: $${parseFloat(amount).toFixed(2)} from ${donorName}`,
                     html: donationAdminNotification(donorName, email, parseFloat(amount)),

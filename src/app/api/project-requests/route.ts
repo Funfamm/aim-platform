@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/db'
 import { generateProjectId } from '@/lib/projectRequestId'
 import { requireAdmin } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { projectRequestConfirmation, projectRequestAdminNotification } from '@/lib/project-request-emails'
 import { logger } from '@/lib/logger'
 
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
 
         // 1. Client confirmation
         emailPromises.push(
-            sendEmail({
+            sendTransactionalEmail({
                 to: saved.email,
                 subject: `🎬 Project Received: ${saved.projectTitle} — ID: ${saved.id}`,
                 html: projectRequestConfirmation(
@@ -150,7 +150,7 @@ export async function POST(req: NextRequest) {
             const adminEmail = settings?.notifyEmail || settings?.contactEmail
             if (adminEmail) {
                 emailPromises.push(
-                    sendEmail({
+                    sendTransactionalEmail({
                         to: adminEmail,
                         subject: `📋 New Project: ${saved.projectTitle} from ${saved.clientName}`,
                         html: projectRequestAdminNotification(

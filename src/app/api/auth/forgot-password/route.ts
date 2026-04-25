@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { hash, compare } from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { withDbRetry } from '@/lib/db-retry'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { forgotPasswordCodeLocalized, passwordChangedEmailLocalized } from '@/lib/email-templates'
 import { t as emailT } from '@/lib/email-i18n'
 import { authLimiter } from '@/lib/rate-limit'
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
                 const fpLocale = user.preferredLanguage || 'en'
                 const fpHtml = await forgotPasswordCodeLocalized(user.name || 'there', newCode, undefined, fpLocale)
-                await sendEmail({
+                await sendTransactionalEmail({
                     to: normalizedEmail,
                     subject: emailT('securityForgotPassword', fpLocale, 'subject') || 'Password Reset Code | AIM Studio',
                     html: fpHtml,
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
             const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || ''
             const pcLocale = (user as any).preferredLanguage || 'en'
             passwordChangedEmailLocalized(user.name || 'there', siteUrl, pcLocale)
-                .then(html => sendEmail({
+                .then(html => sendTransactionalEmail({
                     to: normalizedEmail,
                     subject: emailT('securityPasswordChanged', pcLocale, 'subject') || 'Your AIM Studio Password Was Changed',
                     html,

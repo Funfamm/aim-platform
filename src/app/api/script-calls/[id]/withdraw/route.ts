@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { t as emailT } from '@/lib/email-i18n'
 
@@ -70,7 +70,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
                 // Simple branded email (reuse the wrapper pattern)
                 const { scriptWithdrawalEmail } = await import('@/lib/email-templates')
-                await sendEmail({
+                await sendTransactionalEmail({
                     to: user.email!,
                     subject,
                     html: scriptWithdrawalEmail(user.name || '', scriptTitle, callTitle, siteUrl, locale),

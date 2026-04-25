@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { contactAcknowledgmentWithOverrides, contactAdminNotification } from '@/lib/email-templates'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { getSessionAndRefresh } from '@/lib/auth'
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
         const localizedSubject = (emailT('contactAcknowledgment', lang, 'subject') || 'We received your message: {subject}').replace('{subject}', safeSubject)
 
         // Fire-and-forget: auto-reply to sender
-        sendEmail({
+        sendTransactionalEmail({
             to: resolvedEmail,
             subject: localizedSubject,
             html: await contactAcknowledgmentWithOverrides(resolvedName, safeSubject, undefined, lang),
@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         })
         const adminEmail = settings?.notifyEmail || settings?.contactEmail
         if (adminEmail) {
-            sendEmail({
+            sendTransactionalEmail({
                 to: adminEmail,
                 subject: `\uD83D\uDCEC New Contact: ${safeSubject}`,
                 html: contactAdminNotification(resolvedName, resolvedEmail, safeSubject, safeMessage),

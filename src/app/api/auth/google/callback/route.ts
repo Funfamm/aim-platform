@@ -161,7 +161,7 @@ export async function GET(req: Request) {
                 try {
                     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
                     const { welcomeEmailWithOverrides } = await import('@/lib/email-templates')
-                    const { sendEmail } = await import('@/lib/mailer')
+                    const { sendTransactionalEmail } = await import('@/lib/email-router')
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     const db = prisma as any
 
@@ -172,7 +172,7 @@ export async function GET(req: Request) {
                         const welcomeSubject = emailT('welcome', detectedLocale, 'subject')
                             || emailT('welcome', detectedLocale, 'heading')
                             || `Welcome to AIM Studio, ${newUserName}! 🎬`
-                        await sendEmail({
+                        await sendTransactionalEmail({
                             to: newUserEmail,
                             subject: welcomeSubject,
                             html,

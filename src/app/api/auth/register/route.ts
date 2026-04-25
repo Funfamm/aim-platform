@@ -3,7 +3,7 @@ import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { withDbRetry } from '@/lib/db-retry'
 import { authLimiter } from '@/lib/rate-limit'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { verificationEmailLocalized, welcomeEmailWithOverrides } from '@/lib/email-templates'
 import { t as emailT } from '@/lib/email-i18n'
 import { validatePassword } from '@/lib/validation'
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
                         verificationExpiry: new Date(expiry),
                     } as any,
                 }), 'register_update_existing')
-                void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html => sendEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html })).catch(() => {})
+                void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html => sendTransactionalEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html })).catch(() => {})
                 if (process.env.NODE_ENV !== 'production') {
                     console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
                 }
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
         // Send verification email in the user's locale (fire-and-forget)
         void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html =>
-            sendEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html })
+            sendTransactionalEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html })
         ).catch(() => {})
 
         // Log verification code in development so it works without SMTP

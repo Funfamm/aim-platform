@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { translateContent } from '@/lib/translate'
 
 /**
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         </div>
     `.trim()
 
-    const sent = await sendEmail({
+    const sent = await sendTransactionalEmail({
         to: sponsor.contactEmail,
         subject: `[${siteName}] ${finalSubject}`,
         html,

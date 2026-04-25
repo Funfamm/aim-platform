@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { projectStatusUpdateEmail } from '@/lib/project-request-emails'
 
 export const dynamic = 'force-dynamic'
@@ -76,7 +76,7 @@ export async function PATCH(
         )
 
         // Fire-and-forget — don't block the admin response
-        sendEmail({
+        sendTransactionalEmail({
             to: current.email,
             subject: `Project Update: ${current.projectTitle} — ${(data.status as string).replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}`,
             html,

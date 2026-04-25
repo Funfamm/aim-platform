@@ -2,6 +2,7 @@ import Footer from '@/components/Footer'
 import { sanitizeBigInt } from '@/lib/serializer'
 import WorksPageClient from '@/components/WorksPageClient'
 import { prisma } from '@/lib/db'
+import { getUserSession } from '@/lib/auth'
 
 export const revalidate = 60
 
@@ -11,8 +12,8 @@ export const metadata = {
 }
 
 export default async function WorksPage() {
-    // Fetch projects + distinct genres + movie rolls in parallel
-    const [projects, genreRows, rawRolls] = await Promise.all([
+    // Fetch projects + distinct genres + movie rolls + trailer access in parallel
+    const [projects, genreRows, rawRolls, session, trailerSettings] = await Promise.all([
         prisma.project.findMany({
             where: { published: true },
             orderBy: { sortOrder: 'asc' },
@@ -33,10 +34,16 @@ export default async function WorksPage() {
             orderBy: { sortOrder: 'asc' },
             include: { projects: { orderBy: { sortOrder: 'asc' }, select: { projectId: true, sortOrder: true } } },
         }),
+        getUserSession(),
+        prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true } }).catch(() => null),
     ])
+
+    const isLoggedIn = !!session?.userId
+    const showTrailer = (trailerSettings?.allowPublicTrailers !== false) || isLoggedIn
 
     const projectsWithCounts = projects.map(p => ({
         ...sanitizeBigInt(p),
+        trailerUrl: showTrailer ? p.trailerUrl : null,
         episodeCount: p._count.episodes,
     }))
 

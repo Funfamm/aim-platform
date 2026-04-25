@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { hash } from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { getUserSession, createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { t as emailT } from '@/lib/email-i18n'
 
 /**
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
 
             const subject = emailT('securitySetPassword', locale, 'subject')
 
-            await sendEmail({ to: user.email, subject, html })
+            await sendTransactionalEmail({ to: user.email, subject, html })
 
             return NextResponse.json({ success: true, message: 'Verification code sent to your email.' })
         }

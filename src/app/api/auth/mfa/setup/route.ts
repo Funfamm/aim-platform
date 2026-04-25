@@ -10,7 +10,7 @@
  */
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { mfaOtpEmail, mfaOtpEmailLocalized } from '@/lib/email-templates'
 import { authLimiter } from '@/lib/rate-limit'
 import { logger } from '@/lib/logger'
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
         const { t: emailT } = await import('@/lib/email-i18n')
         const mfaSubject = emailT('securityVerification', mfaLocale, 'subject')
             || `🔐 Your AIM Studio sign-in code: ${code}`
-        await sendEmail({
+        await sendTransactionalEmail({
             to: user.email,
             subject: mfaSubject,
             html,

@@ -657,8 +657,31 @@ export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?
     `, 'Subscription confirmed! Welcome to AIM Studio')
 }
 
-
-/** Sent when a previously unsubscribed user re-subscribes — warm "welcome back" tone */
+/** Sent to brand-new subscribers on immediate confirmation — warm onboarding tone */
+export async function subscribeWelcomeWithOverrides(name?: string, siteUrl?: string, locale = 'en'): Promise<string> {
+    const f = await mergeFields('subscribeWelcome', {
+        heading:    emailT('subscribeWelcome', locale, 'heading')    || 'Welcome to AIM Studio! 🎬',
+        subtext:    emailT('subscribeWelcome', locale, 'subtext')    || "We're glad you're here.",
+        body:       emailT('subscribeWelcome', locale, 'body')       || "You're now part of our creative community. Here's what you can look forward to:",
+        highlights: emailT('subscribeWelcome', locale, 'highlights') || '🎥 Early access to new film releases\n🎭 Casting call announcements\n🎬 Behind-the-scenes exclusives\n📢 Platform updates & news',
+        noSpam:     emailT('subscribeWelcome', locale, 'noSpam')     || "We don't spam. Only meaningful updates when we have something worth sharing.",
+        buttonText: emailT('subscribeWelcome', locale, 'buttonText') || 'Explore AIM Studio →',
+        buttonUrl:  siteUrl || '',
+    })
+    const greetName = name ? `Hey ${name}, ` : ''
+    const highlightItems = f.highlights.split('\n').filter(Boolean).map(
+        item => `<tr><td style="padding: 4px 0; font-size: 14px; color: ${TEXT_PRIMARY}; line-height: 1.6;">${item}</td></tr>`
+    ).join('')
+    return emailWrapper(
+        heading(f.heading) +
+        subtext(`${greetName}${f.subtext}`) +
+        paragraph(f.body) +
+        `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 8px 0 24px; padding: 16px 20px; background-color: ${BG_DARK}; border-radius: 8px; border-left: 3px solid ${BRAND_COLOR};">${highlightItems}</table>` +
+        paragraph(f.noSpam) +
+        (f.buttonUrl ? divider() + button(f.buttonText, f.buttonUrl) : ''),
+        emailT('subscribeWelcome', locale, 'subject') || 'Welcome to AIM Studio! 🎬'
+    )
+}
 export async function subscribeWelcomeBackWithOverrides(name?: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('subscribe', {
         heading:    emailT('subscribeWelcomeBack', locale, 'heading')    || 'Welcome Back! 🎬',

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { verificationEmailLocalized, welcomeEmailWithOverrides } from '@/lib/email-templates'
 import { t as emailT } from '@/lib/email-i18n'
 import { notifyUser } from '@/lib/notifications'
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
         const welcomeSubject = emailT('welcome', locale, 'subject') || emailT('welcome', locale, 'heading') || 'Welcome to AIM Studio! 🎬'
         welcomeEmailWithOverrides(user.name, siteUrl, locale)
-            .then(html => sendEmail({
+            .then(html => sendTransactionalEmail({
                 to: user.email,
                 subject: welcomeSubject,
                 html,
@@ -129,7 +129,7 @@ export async function PUT(request: Request) {
 
         const resendLocale = userForResend.preferredLanguage || 'en'
         const html = await verificationEmailLocalized(userForResend.name, code, undefined, resendLocale)
-        await sendEmail({
+        await sendTransactionalEmail({
             to: email,
             subject: emailT('securityVerification', resendLocale, 'subject') || 'Verify your AIM Studio account',
             html,

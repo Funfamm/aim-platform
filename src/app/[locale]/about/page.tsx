@@ -22,14 +22,14 @@ const DEFAULT_STORY = `We're not a traditional studio behind closed doors. We cr
 This is cinema built together. Your talent, your creativity, powered by AI. Welcome to AIM Studio.`
 
 async function fetchAboutStats() {
-    const [productions, countryRows, memberCount] = await Promise.all([
+    const [productions, countryRows, memberCount, activeProjects] = await Promise.all([
         prisma.project.count({ where: { published: true, OR: [{ projectType: 'movie' }, { projectType: 'series' }] } }),
         prisma.project.findMany({ where: { country: { not: null }, published: true }, select: { country: true } }),
         prisma.user.count({ where: { emailVerified: true, role: 'member' } }),
+        prisma.project.count({ where: { published: true } }),
     ]);
     const distinctCountries = new Set(countryRows.map(r => r.country)).size;
-    const awards = 0; // placeholder until an Award model exists
-    return { productions, distinctCountries, distinctCreators: memberCount, awards };
+    return { productions, distinctCountries, distinctCreators: memberCount, activeProjects };
 }
 
 export default async function AboutPage() {
@@ -175,7 +175,7 @@ export default async function AboutPage() {
                                 <AnimatedCounter end={stats.productions} suffix="+" label={v('stat1Label', 'statsProductions')} />
                                 <AnimatedCounter end={stats.distinctCountries} suffix="+" label={v('stat2Label', 'statsCountries')} />
                                 <AnimatedCounter end={stats.distinctCreators} suffix="+" label={v('stat3Label', 'statsCreators')} />
-                                <AnimatedCounter end={stats.awards} label={v('stat4Label', 'statsAwards')} />
+                                <AnimatedCounter end={stats.activeProjects} label={v('stat4Label', 'statsActiveProjects')} />
                             </div>
                         </ScrollReveal3D>
                     </div>

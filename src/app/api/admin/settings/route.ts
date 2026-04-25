@@ -73,6 +73,10 @@ export async function PUT(req: Request) {
             requireLoginForDonate: body.requireLoginForDonate ?? false,
             requireLoginForSponsors: body.requireLoginForSponsors ?? false,
             allowPublicProjectPages: body.allowPublicProjectPages ?? true,
+            // Trailer preview gate
+            trailerPreviewEnabled: body.trailerPreviewEnabled ?? false,
+            trailerPreviewSeconds: body.trailerPreviewSeconds ?? 15,
+            trailerPreviewMessage: body.trailerPreviewMessage || null,
             // Donations
             donationsEnabled: body.donationsEnabled ?? true,
             donationMinAmount: body.donationMinAmount ?? 5.0,

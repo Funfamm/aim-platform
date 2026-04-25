@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { withDbRetry } from '@/lib/db-retry'
 import { getUserSession } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { applicationConfirmationWithOverrides, applicationAdminNotification } from '@/lib/email-templates'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { t as emailT } from '@/lib/email-i18n'
@@ -276,7 +276,7 @@ export async function POST(
             try {
                 const subject = (emailT('castingConfirmation', locale, 'subject') || 'Application received for {role} 🎭').replace('{role}', castingCall.roleName)
                 const html = await applicationConfirmationWithOverrides(fullName, castingCall.roleName, undefined, siteUrl, locale)
-                await sendEmail({ to: email, subject, html })
+                await sendTransactionalEmail({ to: email, subject, html })
                 // Mirror to notification board if user is logged in
                 if (userId) {
                     const notifTitle = (emailT('castingConfirmation', locale, 'notifTitle') || 'Application Received: {role} 🎭').replace('{role}', castingCall.roleName)
@@ -297,7 +297,7 @@ export async function POST(
                 if (siteSettings?.notifyOnApplication) {
                     const adminEmail = siteSettings.notifyEmail || siteSettings.contactEmail
                     if (adminEmail) {
-                        await sendEmail({
+                        await sendTransactionalEmail({
                             to: adminEmail,
                             subject: `📋 New Application: ${fullName} for ${castingCall.roleName}`,
                             html: applicationAdminNotification(fullName, email, castingCall.roleName),

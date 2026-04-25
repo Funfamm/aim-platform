@@ -9,7 +9,7 @@ import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
 import { generateCsrfToken } from '@/lib/csrf'
 import { recordAuthSuccess, recordAuthFailure } from '@/lib/metrics'
 import { readInviteCookie } from '@/lib/invite-cookie'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { accountLockedEmail } from '@/lib/email-templates'
 
 export async function POST(request: Request) {
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
                 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
                 const resetLink = `${siteUrl}/en/forgot-password`
                 const userLocale = (user as unknown as Record<string, string>).preferredLanguage || 'en'
-                sendEmail({
+                sendTransactionalEmail({
                     to: user.email,
                     subject: accountLockedEmail(user.name, user.email, LOCKOUT_MINUTES, userLocale, resetLink).subject,
                     html: accountLockedEmail(user.name, user.email, LOCKOUT_MINUTES, userLocale, resetLink).html,

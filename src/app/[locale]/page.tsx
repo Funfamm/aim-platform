@@ -8,6 +8,7 @@ const RollRow = dynamic(() => import('@/components/mobile/RollRow'))
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import SponsorBannerSection from '@/components/SponsorBannerSection'
 import { prisma } from '@/lib/db'
+import { getUserSession } from '@/lib/auth'
 import { sanitizeBigInt } from '@/lib/serializer'
 import { getTranslations } from 'next-intl/server'
 
@@ -62,7 +63,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           bannerDurationHours: true,
         },
       }),
-      prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true } }).catch(() => null),
+      prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true, allowPublicTrailers: true } }).catch(() => null),
       prisma.movieRoll.findMany({
         where: {
           visible: true,
@@ -73,6 +74,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       }),
     ])
   );
+
+  // Enforce trailer access control
+  const session = await getUserSession()
+  const isLoggedIn = !!session?.userId
+  const showTrailer = (siteSettings?.allowPublicTrailers !== false) || isLoggedIn
 
   // Resolve localized sponsor descriptions
   const localizedSponsors = homeSponsors.map((s: { id: string; name: string; logoUrl: string | null; bannerUrl: string | null; website: string | null; tier: string; description: string | null; descriptionI18n: unknown; bannerDurationHours: number }) => {
@@ -193,7 +199,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             tagline: p.tagline,
             genre: p.genre,
             coverImage: p.coverImage,
-            trailerUrl: p.trailerUrl,
+            trailerUrl: showTrailer ? p.trailerUrl : null,
             translations: p.translations,
           }))} />
 

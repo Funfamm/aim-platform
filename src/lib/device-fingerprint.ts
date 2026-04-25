@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db'
 import { newDeviceLoginEmailLocalized } from '@/lib/email-templates'
 import { t as emailT } from '@/lib/email-i18n'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import crypto from 'crypto'
 import { getCachedSettings } from '@/lib/cached-settings'
 
@@ -49,7 +49,7 @@ export async function handleDeviceFingerprint(
     const settings = await getCachedSettings()
     if (settings && (settings as any).notifyOnNewDevice) {
       void newDeviceLoginEmailLocalized(userName, { ip, ua }, process.env.NEXT_PUBLIC_SITE_URL, userLocale)
-        .then(html => sendEmail({
+        .then(html => sendTransactionalEmail({
             to: userEmail,
             subject: emailT('securityNewDevice', userLocale, 'subject') || 'New device login detected on your account',
             html,

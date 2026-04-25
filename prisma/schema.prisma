@@ -458,6 +458,9 @@ model SiteSettings {
   resultRevealDelayHours        Int            @default(6)
   auditDelayHours               Int            @default(2)  // hours after submission to run auto-audit (legacy)
   auditQueueBatchSize           Int            @default(10) // max apps scored per cron run
+  trailerPreviewEnabled         Boolean        @default(false) // gate: pause trailer after N seconds for logged-out users
+  trailerPreviewSeconds         Int            @default(15)    // how many seconds of trailer to show before gate
+  trailerPreviewMessage         String?                         // custom gate prompt (fallback: "Sign in to watch the full trailer")
 }
 
 model PasswordHistory {
@@ -562,6 +565,30 @@ model EmailLog {
   @@index([success])
   @@index([type])
   @@index([trackingId])
+}
+
+model EmailQueue {
+  id          String    @id @default(cuid())
+  to          String                          // recipient email
+  subject     String
+  html        String    @db.Text              // full HTML body
+  text        String?                         // optional plain text
+  replyTo     String?
+  type        String    @default("broadcast") // broadcast | announcement | content_publish | new_role | sponsor
+  priority    Int       @default(3)           // 0=critical, 1=high, 2=normal, 3=low
+  status      String    @default("pending")   // pending | processing | sent | failed | cancelled
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  error       String?                         // last error message
+  nextRunAt   DateTime  @default(now())       // when this job becomes eligible
+  sentAt      DateTime?
+  campaignId  String?                         // groups emails from same broadcast
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status, priority, nextRunAt])      // worker query: pending + priority sort
+  @@index([campaignId])                       // admin campaign view
+  @@index([createdAt])                        // cleanup
 }
 
 model Donation {

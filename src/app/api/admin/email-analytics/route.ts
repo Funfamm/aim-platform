@@ -50,11 +50,18 @@ export async function GET() {
         GROUP BY day
         ORDER BY day ASC
     `
-    const dailyVolume = dailyRaw.map(d => ({
-        date: d.day,
-        sent: Number(d.total),
-        failed: Number(d.failed),
-    }))
+    // Zero-pad: always return exactly 7 days so chart never has gaps
+    const dailyVolume: { date: string; sent: number; failed: number }[] = []
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+        const dayStr = d.toISOString().slice(0, 10)
+        const found = dailyRaw.find(r => r.day === dayStr)
+        dailyVolume.push({
+            date: dayStr,
+            sent: found ? Number(found.total) : 0,
+            failed: found ? Number(found.failed) : 0,
+        })
+    }
 
     // Recent failures (last 20)
     const recentFailures = await prisma.emailLog.findMany({

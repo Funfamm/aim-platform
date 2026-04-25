@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import {
     courseEnrollmentEmail,
     courseCompletionEmail,
@@ -113,7 +113,7 @@ async function sendEnrollmentNotification(userId: string, courseId: string) {
     const notifMessage = et('trainingEnrollment', locale, 'notifMessage').replace('{title}', localizedTitle)
 
     // Send localized email
-    await sendEmail({
+    await sendTransactionalEmail({
         to: user.email,
         subject,
         html: courseEnrollmentEmail(user.name || '', localizedTitle, courseUrl, locale),
@@ -297,7 +297,7 @@ async function sendCompletionNotification(
 
     // Send completion email
     if (userEmail) {
-        await sendEmail({
+        await sendTransactionalEmail({
             to: userEmail,
             subject,
             html: courseCompletionEmail(userName, courseTitle, courseUrl, locale),
@@ -336,7 +336,7 @@ async function sendBadgeNotification(
 
     // Send badge email
     if (userEmail) {
-        await sendEmail({
+        await sendTransactionalEmail({
             to: userEmail,
             subject,
             html: badgeEarnedEmail(userName, badgeType, trainingUrl, locale),

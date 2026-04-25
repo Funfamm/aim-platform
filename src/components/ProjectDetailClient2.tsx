@@ -58,7 +58,13 @@ const statusLabelKeys: Record<string, string> = {
     upcoming: 'comingSoon',
 }
 
-export default function ProjectDetailClient({ project }: { project: ProjectData }) {
+interface TrailerGate {
+    enabled: boolean
+    previewSeconds: number
+    message?: string | null
+}
+
+export default function ProjectDetailClient({ project, trailerGate }: { project: ProjectData; trailerGate?: TrailerGate }) {
     const t = useTranslations('projectDetail')
     const locale = useLocale()
     const trailerRef = useRef<HTMLDivElement>(null)
@@ -69,6 +75,7 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
     const [isSaved, setIsSaved] = useState(false)
     const [appliedCastingIds, setAppliedCastingIds] = useState<Set<string>>(new Set())
     const [lightboxImg, setLightboxImg] = useState<string | null>(null)
+    const [trailerGated, setTrailerGated] = useState(false)
     const router = useRouter()
     const colors = statusColors[project.status] || statusColors.upcoming
     const statusLabel = t(statusLabelKeys[project.status] || 'comingSoon')
@@ -452,12 +459,31 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                     controlsList="nodownload"
                                     onContextMenu={(e) => e.preventDefault()}
                                     poster={project.coverImage || undefined}
+                                    onTimeUpdate={() => {
+                                        if (!trailerGate?.enabled || user || trailerGated) return
+                                        const vid = videoRef.current
+                                        if (vid && vid.currentTime >= trailerGate.previewSeconds) {
+                                            vid.pause()
+                                            setTrailerGated(true)
+                                        }
+                                    }}
+                                    onSeeking={() => {
+                                        if (!trailerGate?.enabled || user) return
+                                        const vid = videoRef.current
+                                        if (vid && vid.currentTime >= trailerGate.previewSeconds) {
+                                            vid.currentTime = trailerGate.previewSeconds
+                                            vid.pause()
+                                            setTrailerGated(true)
+                                        }
+                                    }}
                                     style={{
                                         width: '100%',
                                         aspectRatio: '16/9',
                                         display: 'block',
                                         objectFit: 'contain',
                                         background: '#000',
+                                        filter: trailerGated ? 'blur(8px) brightness(0.4)' : 'none',
+                                        transition: 'filter 0.5s ease',
                                     }}
                                 />
                             ) : (
@@ -471,6 +497,64 @@ export default function ProjectDetailClient({ project }: { project: ProjectData 
                                     }}
                                     allowFullScreen
                                 />
+                            )}
+
+                            {/* ═══ TRAILER PREVIEW GATE OVERLAY ═══ */}
+                            {trailerGated && (
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: 0,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    zIndex: 10,
+                                    gap: '16px',
+                                    padding: '24px',
+                                    textAlign: 'center',
+                                }}>
+                                    <div style={{
+                                        fontSize: '48px',
+                                        marginBottom: '4px',
+                                        animation: 'fadeIn 0.5s ease',
+                                    }}>🔒</div>
+                                    <p style={{
+                                        fontSize: '1.15rem',
+                                        fontWeight: 700,
+                                        color: '#fff',
+                                        maxWidth: '400px',
+                                        lineHeight: 1.4,
+                                    }}>
+                                        {trailerGate?.message || 'Sign in to watch the full trailer'}
+                                    </p>
+                                    <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                                        <button
+                                            onClick={() => router.push(`/login?redirect=/works/${project.slug}#trailer`)}
+                                            className="btn btn-primary"
+                                            style={{
+                                                padding: '12px 28px',
+                                                fontWeight: 700,
+                                                fontSize: '0.9rem',
+                                            }}
+                                        >
+                                            Sign In
+                                        </button>
+                                        <button
+                                            onClick={() => router.push(`/signup?redirect=/works/${project.slug}#trailer`)}
+                                            className="btn"
+                                            style={{
+                                                padding: '12px 28px',
+                                                fontWeight: 600,
+                                                fontSize: '0.9rem',
+                                                background: 'rgba(255,255,255,0.08)',
+                                                border: '1px solid rgba(255,255,255,0.15)',
+                                                color: '#fff',
+                                            }}
+                                        >
+                                            Create Account
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
 

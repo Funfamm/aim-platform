@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { subscribeConfirmationWithOverrides } from '@/lib/email-templates'
 import { t as et } from '@/lib/email-i18n'
 
@@ -48,7 +48,7 @@ export async function POST() {
 
     // Only send confirmation email if this is their first time subscribing
     if (isNew) {
-        sendEmail({
+        sendTransactionalEmail({
             to: user.email,
             subject: et('subscribe', locale, 'subject'),
             html: await subscribeConfirmationWithOverrides(user.name || undefined, siteUrl, locale),

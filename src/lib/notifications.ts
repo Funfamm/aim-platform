@@ -12,7 +12,7 @@
  * If no preference record exists, safe defaults (email + in-app) are used.
  */
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail, enqueueBroadcastCampaign } from '@/lib/email-router'
 import { logger } from '@/lib/logger'
 import { translateContent } from '@/lib/translate'
 import { t } from '@/lib/email-i18n'
@@ -232,7 +232,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
             // Final safety net — ensure html is always a string
             if (!html) html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link, locale)
 
-            await sendEmail({ to: user.email, subject, html })
+            await sendTransactionalEmail({ to: user.email, subject, html, type: opts.type })
         }
     } catch (err) {
         logger.error('notifications', `notifyUser failed for ${opts.userId}`, { error: err })
@@ -418,7 +418,7 @@ export async function notifyApplicantStatusChange(opts: StatusChangeOptions): Pr
             locale,
         )
 
-        const sent = await sendEmail({ to: opts.recipientEmail, subject, html })
+        const sent = await sendTransactionalEmail({ to: opts.recipientEmail, subject, html, type: 'application' })
 
         // Persist email log
         await prisma.applicationNotification.create({
@@ -521,7 +521,7 @@ export async function notifyAuditResultRevealed(opts: {
         }
         const subject = subjectMap[locale] ?? subjectMap['en']
 
-        const sent = await sendEmail({ to: opts.recipientEmail, subject, html })
+        const sent = await sendTransactionalEmail({ to: opts.recipientEmail, subject, html, type: 'application' })
 
         // Log in ApplicationNotification table
         await prisma.applicationNotification.create({
@@ -691,7 +691,7 @@ export async function notifyAnnouncement(
         await broadcastNotification(broadcastOpts)
     }
 
-    // ── Newsletter subscribers ─────────────────────────────────────────────────
+    // ── Newsletter subscribers (queued via EmailQueue) ──────────────────────────
     if (notifyGroups.subscribers === true) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
@@ -703,21 +703,17 @@ export async function notifyAnnouncement(
             select: { email: true, name: true },
         })
 
+        // Deduplicate: exclude subscribers who are also registered users
         const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
-        logger.info('notifications', `Announcement to ${uniqueSubs.length} newsletter subscribers`)
+        logger.info('notifications', `Queuing announcement to ${uniqueSubs.length} newsletter subscribers`)
 
-        const BATCH = EMAIL_BATCH_SIZE
-        for (let i = 0; i < uniqueSubs.length; i += BATCH) {
-            if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)
-            const batch = uniqueSubs.slice(i, i + BATCH)
-            await Promise.allSettled(batch.map(async (sub: { email: string; name: string | null }) => {
-                const sent = await sendEmail({
-                    to: sub.email,
-                    subject: `📣 ${title} | AIM Studio`,
-                    html: announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml),
-                })
-                if (!sent) logger.warn('notifications', `Subscriber announcement email failed: ${sub.email}`)
-            }))
+        if (uniqueSubs.length > 0) {
+            const announcementHtml = announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml)
+            await enqueueBroadcastCampaign(
+                uniqueSubs.map((s: { email: string }) => ({ email: s.email })),
+                () => ({ subject: `📣 ${title} | AIM Studio`, html: announcementHtml }),
+                'announcement',
+            )
         }
     }
 
@@ -829,7 +825,7 @@ export async function notifyContentPublish(
         await broadcastNotification(broadcastOpts)
     }
 
-    // ── Newsletter subscribers (non-registered) ────────────────────────────────
+    // ── Newsletter subscribers (queued via EmailQueue) ────────────────────────────
     if (notifyGroups.subscribers === true) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
@@ -841,25 +837,20 @@ export async function notifyContentPublish(
             select: { email: true, name: true },
         })
 
+        // Deduplicate: exclude subscribers who are also registered users
         const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
-        logger.info('notifications', `Publishing to ${uniqueSubs.length} newsletter subscribers`)
+        logger.info('notifications', `Queuing content publish to ${uniqueSubs.length} newsletter subscribers`)
 
-        // Subscribers don't have locale profiles — send with translated titles
-        // where available, defaulting to English for unknown locales
-        const BATCH = EMAIL_BATCH_SIZE
-        for (let i = 0; i < uniqueSubs.length; i += BATCH) {
-            if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)
-            const batch = uniqueSubs.slice(i, i + BATCH)
-            await Promise.allSettled(batch.map(async (sub: { email: string; name: string | null }) => {
-                const unsubUrl = buildUnsubscribeUrl(link.split('/').slice(0, 3).join('/'), sub.email, 'subscriber')
-                const html = contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData, unsubUrl)
-                const sent = await sendEmail({
-                    to: sub.email,
-                    subject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`,
-                    html,
-                })
-                if (!sent) logger.warn('notifications', `Subscriber email failed: ${sub.email}`)
-            }))
+        if (uniqueSubs.length > 0) {
+            await enqueueBroadcastCampaign(
+                uniqueSubs.map((s: { email: string }) => ({ email: s.email })),
+                (email: string) => {
+                    const unsubUrl = buildUnsubscribeUrl(link.split('/').slice(0, 3).join('/'), email, 'subscriber')
+                    const html = contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData, unsubUrl)
+                    return { subject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`, html }
+                },
+                'content_publish',
+            )
         }
     }
 
@@ -1055,7 +1046,7 @@ export async function notifyScriptStatusChange(opts: ScriptStatusChangeOptions):
         )
 
         // Send email
-        const sent = await sendEmail({ to: opts.recipientEmail, subject, html })
+        const sent = await sendTransactionalEmail({ to: opts.recipientEmail, subject, html, type: 'application' })
 
         // In-app notification if user has an account
         if (userId) {

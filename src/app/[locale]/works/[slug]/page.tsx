@@ -3,6 +3,7 @@ import Footer from '@/components/Footer'
 import ProjectDetailClient from '@/components/ProjectDetailClient2'
 import CastShowcase from '@/components/CastShowcase'
 import { prisma } from '@/lib/db'
+import { getUserSession } from '@/lib/auth'
 import { cache } from 'react'
 
 export const revalidate = 60
@@ -44,9 +45,31 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     // Block direct access to unpublished projects
     if (!project.published) notFound()
 
+    // Enforce trailer access control — strip trailerUrl for logged-out users when disabled
+    const session = await getUserSession()
+    const isLoggedIn = !!session?.userId
+    let siteAllowTrailers = true
+    let trailerGateConfig: { enabled: boolean; previewSeconds: number; message?: string | null } | undefined
+    try {
+        const ss = await prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true, trailerPreviewEnabled: true, trailerPreviewSeconds: true, trailerPreviewMessage: true } })
+        if (ss) {
+            siteAllowTrailers = ss.allowPublicTrailers
+            // Only pass gate config when user is NOT logged in and gate is enabled
+            if (!isLoggedIn && ss.trailerPreviewEnabled) {
+                trailerGateConfig = {
+                    enabled: true,
+                    previewSeconds: ss.trailerPreviewSeconds,
+                    message: ss.trailerPreviewMessage,
+                }
+            }
+        }
+    } catch { /* schema drift safe */ }
+    const showTrailer = siteAllowTrailers || isLoggedIn
+
     // Serialize dates for client component
     const serializedProject = {
         ...project,
+        trailerUrl: showTrailer ? project.trailerUrl : null,
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
         castingCalls: project.castingCalls.map(c => ({
@@ -73,7 +96,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
     return (
         <>
-            <ProjectDetailClient project={serializedProject} />
+            <ProjectDetailClient project={serializedProject} trailerGate={trailerGateConfig} />
             {serializedProject.cast.length > 0 && (
                 <CastShowcase
                     cast={serializedProject.cast}

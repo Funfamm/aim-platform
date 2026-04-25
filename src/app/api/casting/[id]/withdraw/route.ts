@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { applicationWithdrawalEmail } from '@/lib/email-templates'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { t as emailT } from '@/lib/email-i18n'
@@ -58,7 +58,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         // Email
         if (user?.email) {
           const subject = emailT('castingWithdrawal', locale, 'subject').replace('{role}', roleName) || `Application Withdrawn: ${roleName}`
-          await sendEmail({
+          await sendTransactionalEmail({
             to: user.email,
             subject,
             html: applicationWithdrawalEmail(user.name || '', roleName, castingUrl, locale),
