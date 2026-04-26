@@ -9,7 +9,7 @@
  *
  * Callers NEVER touch sendEmail() directly anymore (except the cron worker).
  */
-import { sendEmail } from '@/lib/mailer'
+import { sendEmail, type EmailType } from '@/lib/mailer'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
 import crypto from 'crypto'
@@ -64,6 +64,7 @@ export async function sendTransactionalEmail(options: TransactionalEmailOptions)
         html: options.html,
         text: options.text,
         replyTo: options.replyTo,
+        type: options.type as EmailType,
     })
 }
 

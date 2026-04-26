@@ -264,6 +264,12 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
         ERR_CURRENT_INCORRECT: 'errCurrentIncorrect',
         ERR_SAME_PASSWORD: 'errSamePassword',
         ERR_REUSED_PASSWORD: 'errReusedPassword',
+        ERR_ALREADY_HAS_PASSWORD: 'errAlreadyHasPassword',
+        ERR_TOO_MANY_ATTEMPTS: 'errTooManyAttempts',
+        ERR_CODE_AND_PW_REQUIRED: 'errCodeAndPwRequired',
+        ERR_NO_CODE: 'errNoCode',
+        ERR_CODE_EXPIRED: 'errCodeExpired',
+        ERR_CODE_INVALID: 'errCodeInvalid',
     }
 
     const handleProfileUpdate = async (e: FormEvent) => {
@@ -478,7 +484,8 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
                                                             setSetPassStep('code-sent')
                                                             setSetPassMsg(t('codeSentToEmail'))
                                                         } else {
-                                                            setSetPassError(data.error || t('networkError'))
+                                                            const ek = errorCodeToI18n[data.error]
+                                                            setSetPassError(ek ? t(ek) : (data.error || t('networkError')))
                                                             setSetPassStep('idle')
                                                         }
                                                     } catch {
@@ -508,7 +515,8 @@ export default function ProfileTab({ user, refreshUser, hasCastingCalls }: Profi
                                                         setSetPassStep('done')
                                                         await refreshUser()
                                                     } else {
-                                                        setSetPassError(data.error || t('updateFailed'))
+                                                        const ek = errorCodeToI18n[data.error]
+                                                        setSetPassError(ek ? t(ek) : (data.error || t('updateFailed')))
                                                         setSetPassStep('code-sent')
                                                     }
                                                 } catch {

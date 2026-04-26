@@ -442,6 +442,98 @@ export const emailStrings: Record<string, TemplateStrings> = {
         },
     },
 
+    // ── Security: Set Password (OAuth users creating a password) ─────────────
+    securitySetPassword: {
+        en: {
+            subject:    'Set Password Verification | AIM Studio',
+            heading:    'Set Your Password',
+            subtext:    'Use this code to create a password for your AIM Studio account.',
+            expiry:     'This code expires in',
+            expiryTime: '10 minutes',
+            footer:     'If you did not request this, you can safely ignore this email.',
+        },
+        es: {
+            subject:    'Verificación para Crear Contraseña | AIM Studio',
+            heading:    'Establece Tu Contraseña',
+            subtext:    'Usa este código para crear una contraseña para tu cuenta de AIM Studio.',
+            expiry:     'Este código expira en',
+            expiryTime: '10 minutos',
+            footer:     'Si no solicitaste esto, puedes ignorar este correo de forma segura.',
+        },
+        fr: {
+            subject:    'Vérification de Création de Mot de Passe | AIM Studio',
+            heading:    'Définissez Votre Mot de Passe',
+            subtext:    'Utilisez ce code pour créer un mot de passe pour votre compte AIM Studio.',
+            expiry:     'Ce code expire dans',
+            expiryTime: '10 minutes',
+            footer:     'Si vous n\'avez pas fait cette demande, vous pouvez ignorer cet e-mail.',
+        },
+        ar: {
+            subject:    'رمز التحقق لإنشاء كلمة المرور | AIM Studio',
+            heading:    'أنشئ كلمة المرور الخاصة بك',
+            subtext:    'استخدم هذا الرمز لإنشاء كلمة مرور لحساب AIM Studio الخاص بك.',
+            expiry:     'ينتهي هذا الرمز خلال',
+            expiryTime: '10 دقائق',
+            footer:     'إذا لم تطلب ذلك، يمكنك تجاهل هذا البريد الإلكتروني.',
+        },
+        zh: {
+            subject:    '设置密码验证 | AIM Studio',
+            heading:    '设置您的密码',
+            subtext:    '使用此验证码为您的 AIM Studio 账户创建密码。',
+            expiry:     '此验证码将在',
+            expiryTime: '10 分钟后过期',
+            footer:     '如果您没有提出此请求，请忽略此邮件。',
+        },
+        hi: {
+            subject:    'पासवर्ड सेट करने का सत्यापन | AIM Studio',
+            heading:    'अपना पासवर्ड सेट करें',
+            subtext:    'अपने AIM Studio खाते के लिए पासवर्ड बनाने हेतु इस कोड का उपयोग करें।',
+            expiry:     'यह कोड',
+            expiryTime: '10 मिनट में समाप्त होगा',
+            footer:     'यदि आपने यह अनुरोध नहीं किया, तो आप इस ईमेल को अनदेखा कर सकते हैं।',
+        },
+        pt: {
+            subject:    'Verificação de Criação de Senha | AIM Studio',
+            heading:    'Defina Sua Senha',
+            subtext:    'Use este código para criar uma senha para sua conta AIM Studio.',
+            expiry:     'Este código expira em',
+            expiryTime: '10 minutos',
+            footer:     'Se você não solicitou isso, pode ignorar este e-mail com segurança.',
+        },
+        ru: {
+            subject:    'Подтверждение Создания Пароля | AIM Studio',
+            heading:    'Установите Ваш Пароль',
+            subtext:    'Используйте этот код для создания пароля для аккаунта AIM Studio.',
+            expiry:     'Код действителен',
+            expiryTime: '10 минут',
+            footer:     'Если вы не запрашивали это, просто проигнорируйте это письмо.',
+        },
+        ja: {
+            subject:    'パスワード設定の確認 | AIM Studio',
+            heading:    'パスワードを設定してください',
+            subtext:    'このコードを使用してAIM Studioアカウントのパスワードを作成してください。',
+            expiry:     'このコードの有効期限は',
+            expiryTime: '10分',
+            footer:     'リクエストしていない場合は、このメールを無視してください。',
+        },
+        de: {
+            subject:    'Passwort-Erstellung Bestätigen | AIM Studio',
+            heading:    'Legen Sie Ihr Passwort fest',
+            subtext:    'Verwenden Sie diesen Code, um ein Passwort für Ihr AIM Studio-Konto zu erstellen.',
+            expiry:     'Dieser Code läuft ab in',
+            expiryTime: '10 Minuten',
+            footer:     'Falls Sie dies nicht angefordert haben, können Sie diese E-Mail ignorieren.',
+        },
+        ko: {
+            subject:    '비밀번호 설정 인증 | AIM Studio',
+            heading:    '비밀번호를 설정하세요',
+            subtext:    'AIM Studio 계정의 비밀번호를 생성하려면 이 코드를 사용하세요.',
+            expiry:     '이 코드는',
+            expiryTime: '10분 후 만료됩니다',
+            footer:     '요청하지 않으셨다면 이 이메일을 무시하셔도 됩니다.',
+        },
+    },
+
     // ── Security: New Device Login Alert ─────────────────────────────────────
     securityNewDevice: {
         en: {

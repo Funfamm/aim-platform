@@ -39,9 +39,11 @@ const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 export default function WatchPlayer({
     project,
     userPreferredLang = 'en',
+    mediaType = 'movie',
 }: {
     project: WatchProject
     userPreferredLang?: string
+    mediaType?: string
 }) {
     const tPlayer = useTranslations('watchPlayer')
     const locale = useLocale()
@@ -290,7 +292,7 @@ export default function WatchPlayer({
         }
         reset()
         const epId = activeEpisode?.id || ''
-        const url = `/api/subtitles/${project.id}?lang=en${epId ? `&episodeId=${epId}` : ''}`
+        const url = `/api/subtitles/${project.id}?lang=en${epId ? `&episodeId=${epId}` : ''}&mediaType=${mediaType}`
         fetch(url)
             .then(r => r.json())
             .then(data => {
@@ -599,7 +601,7 @@ export default function WatchPlayer({
 
     const loadSubtitles = useCallback(async (lang: string) => {
         const epId = activeEpisode?.id || ''
-        const base = `/api/subtitles/${project.id}?lang=${lang}${epId ? `&episodeId=${epId}` : ''}`
+        const base = `/api/subtitles/${project.id}?lang=${lang}${epId ? `&episodeId=${epId}` : ''}&mediaType=${mediaType}`
         if (lang === 'en' && ccSegments.length > 0 && ccLang === 'en') {
             setCcEnabled(true); setShowLangMenu(false)
             try {

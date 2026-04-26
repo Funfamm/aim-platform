@@ -20,10 +20,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const projectId = searchParams.get('projectId')
     const episodeId = searchParams.get('episodeId') || null
+    const mediaType = searchParams.get('mediaType') || 'movie'
 
     if (!projectId) return NextResponse.json({ error: 'projectId required' }, { status: 400 })
 
-    const subtitle = await findSubtitle(projectId, episodeId)
+    const subtitle = await findSubtitle(projectId, episodeId, mediaType)
     if (!subtitle) return NextResponse.json({ revisions: [] })
 
     const revisions = await prisma.subtitleRevision.findMany({
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
         const body = await req.json() as {
             projectId: string
             episodeId?: string | null
+            mediaType?: string
             segments: Array<{ start: number; end: number; text: string }>
             changeSource: string
             placement?: {
@@ -67,12 +69,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const { projectId, episodeId, segments, changeSource, placement } = body
+        const { projectId, episodeId, segments, changeSource, placement, mediaType } = body
         if (!projectId || !segments || !changeSource) {
             return NextResponse.json({ error: 'projectId, segments, changeSource required' }, { status: 400 })
         }
 
-        const subtitle = await findSubtitle(projectId, episodeId || null)
+        const subtitle = await findSubtitle(projectId, episodeId || null, mediaType || 'movie')
         if (!subtitle) return NextResponse.json({ error: 'Subtitle record not found' }, { status: 404 })
 
         // Fetch editor email for display

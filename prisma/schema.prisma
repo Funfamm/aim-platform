@@ -206,6 +206,7 @@ model FilmSubtitle {
   id               String   @id @default(cuid())
   projectId        String
   episodeId        String?
+  mediaType        String   @default("movie")  // "movie" | "trailer"
   language         String   @default("en")
   originalLanguage String   @default("en")   // source language of the video content
   segments         String   // JSON: TranscriptSegment[] (source language)
@@ -254,7 +255,7 @@ model FilmSubtitle {
   revisions        SubtitleRevision[]
   historyClearLogs SubtitleHistoryClear[]
 
-  @@unique([projectId, episodeId])
+  @@unique([projectId, episodeId, mediaType])
   @@index([projectId])
 }
 

@@ -79,6 +79,7 @@ export async function POST(request: Request) {
                     to: normalizedEmail,
                     subject: emailT('securityForgotPassword', fpLocale, 'subject') || 'Password Reset Code | AIM Studio',
                     html: fpHtml,
+                    type: 'authentication',
                 })
             }
             // Whether user exists or not — always the same response
@@ -192,6 +193,7 @@ export async function POST(request: Request) {
                     to: normalizedEmail,
                     subject: emailT('securityPasswordChanged', pcLocale, 'subject') || 'Your AIM Studio Password Was Changed',
                     html,
+                    type: 'authentication',
                 }))
                 .catch(() => { /* silent — never block the response */ })
 

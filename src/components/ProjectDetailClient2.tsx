@@ -6,6 +6,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 
 import BackButton from '@/components/BackButton'
+import WatchPlayer from '@/components/WatchPlayer'
 
 interface CastingCall {
     id: string
@@ -452,37 +453,16 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
                             position: 'relative',
                         }}>
                             {project.trailerUrl ? (
-                                /* ── Logged-in: playable trailer ── */
-                                <>
-                                    {isVideoFile(project.trailerUrl) ? (
-                                        <video
-                                            ref={videoRef}
-                                            src={project.trailerUrl}
-                                            controls
-                                            controlsList="nodownload"
-                                            onContextMenu={(e) => e.preventDefault()}
-                                            poster={project.coverImage || undefined}
-                                            style={{
-                                                width: '100%',
-                                                aspectRatio: '16/9',
-                                                display: 'block',
-                                                objectFit: 'contain',
-                                                background: '#000',
-                                            }}
-                                        />
-                                    ) : (
-                                        <iframe
-                                            src={project.trailerUrl}
-                                            style={{
-                                                width: '100%',
-                                                aspectRatio: '16/9',
-                                                display: 'block',
-                                                border: 'none',
-                                            }}
-                                            allowFullScreen
-                                        />
-                                    )}
-                                </>
+                                /* ── Logged-in: playable trailer using WatchPlayer ── */
+                                <WatchPlayer
+                                    project={{
+                                        ...project,
+                                        filmUrl: project.trailerUrl,
+                                        episodes: [],
+                                        projectType: 'movie',
+                                    }}
+                                    mediaType="trailer"
+                                />
                             ) : (
                                 /* ── Locked: poster + sign-in overlay ── */
                                 <div style={{ position: 'relative', aspectRatio: '16/9' }}>

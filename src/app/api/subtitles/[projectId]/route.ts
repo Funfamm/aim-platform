@@ -11,10 +11,11 @@ export async function GET(
     const { searchParams } = new URL(req.url)
     const lang = searchParams.get('lang') || 'en'
     const episodeId = searchParams.get('episodeId') || null
+    const mediaType = searchParams.get('mediaType') || 'movie'
     const format = searchParams.get('format') || 'json'
 
     // ── Repository lookup — no direct Prisma dependency (DIP) ─────────────────
-    const subtitle = await findSubtitle(projectId, episodeId)
+    const subtitle = await findSubtitle(projectId, episodeId, mediaType)
 
     if (!subtitle) {
         return NextResponse.json({ segments: null, available: [] })

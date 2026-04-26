@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
     let projectId: string, videoUrl: string
     let episodeId: string | null = null
     let language = 'auto'
+    let mediaType = 'movie'
 
     try {
         const body = await req.json()
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
         videoUrl = body.videoUrl
         episodeId = body.episodeId ?? null
         language = body.language ?? 'auto'
+        mediaType = body.mediaType ?? 'movie'
     } catch {
         return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
@@ -94,7 +96,7 @@ export async function POST(req: NextRequest) {
         : rawSecret.length === 0 ? '(empty!)' : '(too short)'
     console.info(`[subtitles/generate] WORKER_URL=${workerUrl} | WORKER_SECRET fingerprint: ${secretFingerprint}`)
 
-    const payload = { jobId: job.id, projectId, episodeId, videoUrl, language }
+    const payload = { jobId: job.id, projectId, episodeId, videoUrl, language, mediaType }
     // Serialize once so the signed string is byte-identical to the body we send.
     const bodyStr = JSON.stringify(payload)
     const signature = signPayload(payload)

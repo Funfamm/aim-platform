@@ -3,12 +3,16 @@ import { prisma } from '@/lib/db'
 import { getGraphAccessToken } from '@/lib/graphClient'
 import { logger } from './logger'
 
-interface EmailOptions {
+export type EmailType = 'authentication' | 'application' | 'notification' | 'subscribe' | 'general'
+
+export interface EmailOptions {
     to: string
     subject: string
     html: string
     text?: string
     replyTo?: string
+    /** Explicit email type for classification. When set, bypasses subject-line heuristic. */
+    type?: EmailType
 }
 
 interface MailConfig {
@@ -242,19 +246,30 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         // Generate a unique tracking ID for open analytics
         const trackingId = crypto.randomUUID()
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-        const pixelUrl = `${siteUrl}/api/track/open/${trackingId}`
-        const trackingPixel = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />`
 
-        // Inject tracking pixel before </body> or at the end of the HTML
+        // Skip tracking pixel for authentication/security emails — it triggers
+        // Gmail/Outlook spam filters on transactional messages.  Only inject
+        // the pixel for marketing/notification/general emails where open-rate
+        // analytics are useful.
+        // Use explicit type when provided; fall back to subject-line heuristic
+        const emailType = options.type || detectEmailType(options.subject)
+        const isAuthEmail = emailType === 'authentication'
+
         let htmlWithPixel = options.html
-        if (htmlWithPixel.includes('</body>')) {
-            htmlWithPixel = htmlWithPixel.replace('</body>', `${trackingPixel}</body>`)
-        } else if (htmlWithPixel.includes('</div>')) {
-            // Append before last closing div
-            const lastIdx = htmlWithPixel.lastIndexOf('</div>')
-            htmlWithPixel = htmlWithPixel.slice(0, lastIdx) + trackingPixel + htmlWithPixel.slice(lastIdx)
-        } else {
-            htmlWithPixel += trackingPixel
+        if (!isAuthEmail) {
+            const pixelUrl = `${siteUrl}/api/track/open/${trackingId}`
+            const trackingPixel = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />`
+
+            // Inject tracking pixel before </body> or at the end of the HTML
+            if (htmlWithPixel.includes('</body>')) {
+                htmlWithPixel = htmlWithPixel.replace('</body>', `${trackingPixel}</body>`)
+            } else if (htmlWithPixel.includes('</div>')) {
+                // Append before last closing div
+                const lastIdx = htmlWithPixel.lastIndexOf('</div>')
+                htmlWithPixel = htmlWithPixel.slice(0, lastIdx) + trackingPixel + htmlWithPixel.slice(lastIdx)
+            } else {
+                htmlWithPixel += trackingPixel
+            }
         }
 
         // Use admin-configured reply-to unless caller explicitly set one
@@ -278,7 +293,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
                 trackingId,
                 to: options.to,
                 subject: options.subject,
-                type: detectEmailType(options.subject),
+                type: emailType,
                 transport: config.transport,
                 success: true,
             },
@@ -293,7 +308,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             data: {
                 to: options.to,
                 subject: options.subject,
-                type: detectEmailType(options.subject),
+                type: options.type || detectEmailType(options.subject),
                 transport: 'unknown',
                 success: false,
                 error: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),

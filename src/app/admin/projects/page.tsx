@@ -153,6 +153,9 @@ export default function AdminProjectsPage() {
     const [editorInitialMobilePlacement, setEditorInitialMobilePlacement] = useState<any>(null)
     const [editorInitialLandscapePlacement, setEditorInitialLandscapePlacement] = useState<any>(null)
     const [editorUseSeparateMobile, setEditorUseSeparateMobile] = useState(false)
+    const [editorMediaType, setEditorMediaType] = useState<string>('movie')
+    // Active subtitle tab per project (movie or trailer)
+    const [subtitleTab, setSubtitleTab] = useState<Record<string, 'movie' | 'trailer'>>({})
     // Track per-project approval state (refreshed after editor closes)
     const [subtitleApproval, setSubtitleApproval]     = useState<Record<string, string>>({})
 
@@ -634,9 +637,9 @@ export default function AdminProjectsPage() {
     }
 
     /** Open the subtitle editor for a project */
-    const openSubtitleEditor = async (projectId: string, filmUrl: string | null) => {
+    const openSubtitleEditor = async (projectId: string, filmUrl: string | null, mediaType: string = 'movie') => {
         try {
-            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}`)
+            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}`)
             const { subtitle } = await res.json()
             if (!subtitle) { alert('No subtitles found for this project. Generate them first.'); return }
             const segs: SubtitleCue[] = JSON.parse(subtitle.segments || '[]')
@@ -678,6 +681,7 @@ export default function AdminProjectsPage() {
             setEditorFilmUrl(filmUrl)
             setEditorStatus(subtitle.status || 'pending')
             setEditorProjectId(projectId)
+            setEditorMediaType(mediaType)
         } catch {
             alert('Could not load subtitles. Try again.')
         }
@@ -1470,7 +1474,17 @@ export default function AdminProjectsPage() {
                                     const pid = editingId
                                     const project = projects.find(p => p.id === pid)
                                     const filmUrl = project?.filmUrl || form.filmUrl
-                                    if (!filmUrl) return null
+                                    const trailerUrl = project?.trailerUrl || form.trailerUrl
+                                    if (!filmUrl && !trailerUrl) return null
+                                    const activeTab = subtitleTab[pid] ?? 'movie'
+                                    const isTrailerTab = activeTab === 'trailer'
+                                    const activeMediaUrl = isTrailerTab ? trailerUrl : filmUrl
+                                    if (!activeMediaUrl) {
+                                        // If the active tab has no URL, show the other tab's content
+                                        if (isTrailerTab && filmUrl) setSubtitleTab(s => ({ ...s, [pid]: 'movie' }))
+                                        else if (!isTrailerTab && trailerUrl && !filmUrl) setSubtitleTab(s => ({ ...s, [pid]: 'trailer' }))
+                                        if (!filmUrl && !trailerUrl) return null
+                                    }
                                     const count = translationCount[pid] ?? 0
                                     const isFull = count >= TOTAL_SUBTITLE_LANGS
                                     const isPartial = count > 0 && count < TOTAL_SUBTITLE_LANGS
@@ -1481,10 +1495,27 @@ export default function AdminProjectsPage() {
                                     return (
                                         <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
                                             <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 🌍 Subtitles & Translation
                                                 <span style={{ fontSize: '0.6rem', fontWeight: 700, padding: '1px 8px', borderRadius: '99px', textTransform: 'none', background: isFull ? 'rgba(52,211,153,0.1)' : isPartial ? 'rgba(245,158,11,0.1)' : 'rgba(255,255,255,0.05)', border: `1px solid ${isFull ? 'rgba(52,211,153,0.3)' : isPartial ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`, color: isFull ? '#34d399' : isPartial ? '#f59e0b' : 'var(--text-tertiary)' }}>
                                                     {isFull ? `✅ ${count}/${TOTAL_SUBTITLE_LANGS}` : `${count}/${TOTAL_SUBTITLE_LANGS} langs`}
                                                 </span>
+                                            </div>
+                                            {/* Movie / Trailer tab switcher */}
+                                            {(filmUrl && trailerUrl) && (
+                                                <div style={{ display: 'flex', gap: '4px' }}>
+                                                    {(['movie', 'trailer'] as const).map(tab => (
+                                                        <button key={tab} type="button" onClick={() => setSubtitleTab(s => ({ ...s, [pid]: tab }))}
+                                                            style={{
+                                                                fontSize: '0.6rem', fontWeight: 700, padding: '2px 10px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+                                                                background: activeTab === tab ? 'rgba(212,168,83,0.18)' : 'rgba(255,255,255,0.04)',
+                                                                color: activeTab === tab ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                                transition: 'all 0.15s', textTransform: 'capitalize',
+                                                            }}
+                                                        >{tab === 'movie' ? '🎬 Movie' : '🎥 Trailer'}</button>
+                                                    ))}
+                                                </div>
+                                            )}
                                             </div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>
                                                 {isFull ? 'All languages have been translated. You may regenerate if needed.'
@@ -1529,7 +1560,7 @@ export default function AdminProjectsPage() {
                                                 {/* Edit Subtitles — appears as soon as subtitles exist (server ready OR any lang translated) */}
                                                 {(serverJobStatus[pid] === 'ready' || count > 0 || translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial') && (
                                                     <button type="button"
-                                                        onClick={() => openSubtitleEditor(pid, filmUrl)}
+                                                        onClick={() => openSubtitleEditor(pid, activeMediaUrl || filmUrl, activeTab)}
                                                         className="btn btn-sm"
                                                         style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}
                                                     >
@@ -2107,6 +2138,7 @@ export default function AdminProjectsPage() {
                 <SubtitleEditor
                     projectId={editorProjectId}
                     episodeId={null}
+                    mediaType={editorMediaType}
                     initialSegments={editorSegments}
                     currentStatus={editorStatus}
                     filmUrl={editorFilmUrl}

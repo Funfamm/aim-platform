@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
 
-    const { jobId, workerRunId, vttUrl, srtUrl, segments, language, error } = payload as {
+    const { jobId, workerRunId, vttUrl, srtUrl, segments, language, error, mediaType } = payload as {
         jobId?: string
         workerRunId?: string
         vttUrl?: string
@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
         segments?: any[]
         language?: string
         error?: string
+        mediaType?: string
     }
 
     if (!jobId) {
@@ -122,6 +123,7 @@ export async function POST(req: NextRequest) {
             await upsertSubtitleRecord({
                 projectId: job.projectId,
                 episodeId: job.episodeId,
+                mediaType: mediaType || 'movie',
                 language: language ?? 'en',
                 originalLanguage: language ?? 'en', // write detected source language
                 segments: JSON.stringify(segments),

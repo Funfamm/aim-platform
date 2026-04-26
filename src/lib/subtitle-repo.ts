@@ -22,6 +22,7 @@ export type SubtitleSegment = { start: number; end: number; text: string }
 export type UpsertSubtitleData = {
     projectId: string
     episodeId?: string | null
+    mediaType?: string
     language?: string
     /** ISO 639-1 code of the source video language detected by Whisper. */
     originalLanguage?: string
@@ -47,12 +48,12 @@ export type SubtitleUpdateData = {
 // ── Read ──────────────────────────────────────────────────────────────────────
 
 /**
- * Find the subtitle record for a project (and optional episode).
+ * Find the subtitle record for a project (and optional episode + mediaType).
  * Returns null if no record exists yet.
  */
-export async function findSubtitle(projectId: string, episodeId?: string | null) {
+export async function findSubtitle(projectId: string, episodeId?: string | null, mediaType?: string) {
     return prisma.filmSubtitle.findFirst({
-        where: { projectId, episodeId: episodeId ?? null },
+        where: { projectId, episodeId: episodeId ?? null, mediaType: mediaType ?? 'movie' },
     })
 }
 
@@ -66,8 +67,9 @@ export async function findSubtitle(projectId: string, episodeId?: string | null)
  * Callers are responsible for passing a pre-computed translateStatus.
  */
 export async function upsertSubtitle(data: UpsertSubtitleData) {
-    const { projectId, episodeId, ...fields } = data
-    const existing = await findSubtitle(projectId, episodeId)
+    const { projectId, episodeId, mediaType, ...fields } = data
+    const mt = mediaType ?? 'movie'
+    const existing = await findSubtitle(projectId, episodeId, mt)
 
     // Use the explicitly provided translateStatus — no derivation here.
     const translateStatus = fields.translateStatus ?? 'pending'
@@ -92,6 +94,7 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
         data: {
             projectId,
             episodeId: episodeId ?? null,
+            mediaType: mt,
             language: fields.language ?? 'en',
             originalLanguage: fields.originalLanguage ?? fields.language ?? 'en',
             segments: fields.segments,

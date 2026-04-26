@@ -36,13 +36,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const { projectId, episodeId } = await req.json()
+    const { projectId, episodeId, mediaType } = await req.json()
     if (!projectId) {
         return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
     }
 
     // ── Load subtitle record via repository ────────────────────────────────
-    const subtitle = await findSubtitle(projectId, episodeId)
+    const subtitle = await findSubtitle(projectId, episodeId, mediaType || 'movie')
     if (!subtitle) {
         return NextResponse.json(
             { error: 'No transcription found for this project. Run transcription first.' },

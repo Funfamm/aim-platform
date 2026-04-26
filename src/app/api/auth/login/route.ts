@@ -96,6 +96,7 @@ export async function POST(request: Request) {
                     to: user.email,
                     subject: accountLockedEmail(user.name, user.email, LOCKOUT_MINUTES, userLocale, resetLink).subject,
                     html: accountLockedEmail(user.name, user.email, LOCKOUT_MINUTES, userLocale, resetLink).html,
+                    type: 'authentication',
                 }).catch(() => { /* non-critical — never block login response */ })
                 return NextResponse.json({
                     error: `Too many failed attempts. Your account is locked for ${LOCKOUT_MINUTES} minutes.`,

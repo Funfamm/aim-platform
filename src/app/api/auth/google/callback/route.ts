@@ -176,6 +176,7 @@ export async function GET(req: Request) {
                             to: newUserEmail,
                             subject: welcomeSubject,
                             html,
+                            type: 'authentication',
                         }).catch(() => {})
                     }
 

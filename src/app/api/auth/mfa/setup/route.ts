@@ -69,6 +69,7 @@ export async function POST(request: Request) {
             to: user.email,
             subject: mfaSubject,
             html,
+            type: 'authentication',
         })
 
         logger.info('auth/mfa/setup', `OTP sent to ${user.email}`)

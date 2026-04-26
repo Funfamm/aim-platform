@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 
         if (user.passwordHash) {
             return NextResponse.json(
-                { error: 'You already have a password. Use "Change Password" instead.' },
+                { error: 'ERR_ALREADY_HAS_PASSWORD' },
                 { status: 400 },
             )
         }
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         if (action === 'send-code') {
             const existing = pendingCodes.get(user.email)
             if (existing && existing.attempts >= 3 && existing.expiresAt > Date.now()) {
-                return NextResponse.json({ error: 'Too many attempts. Please try again later.' }, { status: 429 })
+                return NextResponse.json({ error: 'ERR_TOO_MANY_ATTEMPTS' }, { status: 429 })
             }
 
             const newCode = genCode()
@@ -111,30 +111,30 @@ export async function POST(request: Request) {
 
             const subject = emailT('securitySetPassword', locale, 'subject')
 
-            await sendTransactionalEmail({ to: user.email, subject, html })
+            await sendTransactionalEmail({ to: user.email, subject, html, type: 'authentication' })
 
-            return NextResponse.json({ success: true, message: 'Verification code sent to your email.' })
+            return NextResponse.json({ success: true, message: 'CODE_SENT' })
         }
 
         // ── Step 2: Set password ────────────────────────────────────────────
         if (action === 'set') {
             if (!code || !newPassword) {
-                return NextResponse.json({ error: 'Code and new password are required.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_AND_PW_REQUIRED' }, { status: 400 })
             }
             if (newPassword.length < 6) {
-                return NextResponse.json({ error: 'Password must be at least 6 characters.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_PW_TOO_SHORT' }, { status: 400 })
             }
 
             const stored = pendingCodes.get(user.email)
             if (!stored) {
-                return NextResponse.json({ error: 'No verification code found. Please request a new one.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_NO_CODE' }, { status: 400 })
             }
             if (stored.expiresAt < Date.now()) {
                 pendingCodes.delete(user.email)
-                return NextResponse.json({ error: 'Code expired. Please request a new one.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_EXPIRED' }, { status: 400 })
             }
             if (stored.code !== code) {
-                return NextResponse.json({ error: 'Invalid code. Please try again.' }, { status: 400 })
+                return NextResponse.json({ error: 'ERR_CODE_INVALID' }, { status: 400 })
             }
 
             // Set password + mark verified
@@ -154,7 +154,7 @@ export async function POST(request: Request) {
             const refresh = await createRefreshToken(payload)
             await setUserCookie(token, refresh)
 
-            return NextResponse.json({ success: true, message: 'Password created successfully. You can now log in with email and password.' })
+            return NextResponse.json({ success: true, message: 'PASSWORD_SET_SUCCESS' })
         }
 
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })

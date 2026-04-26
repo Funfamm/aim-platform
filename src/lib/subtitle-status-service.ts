@@ -60,7 +60,7 @@ export function computeTranslateStatus(
 export async function upsertSubtitleRecord(
     data: Omit<UpsertSubtitleData, 'translateStatus'>,
 ): Promise<ReturnType<typeof upsertSubtitle>> {
-    const existing = await findSubtitle(data.projectId, data.episodeId)
+    const existing = await findSubtitle(data.projectId, data.episodeId, data.mediaType)
     const translateStatus = computeTranslateStatus(
         !!data.translations,
         existing?.translateStatus ?? null,

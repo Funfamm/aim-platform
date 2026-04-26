@@ -74,6 +74,7 @@ const ANCHOR_PRESETS: { id: string; label: string; bottom: string }[] = [
 interface Props {
     projectId: string
     episodeId?: string | null
+    mediaType?: string
     initialSegments: SubtitleCue[]
     currentStatus: string
     filmUrl?: string | null
@@ -167,7 +168,7 @@ type Revision = { id: string; savedAt: string; savedByEmail: string; changeSourc
 const MAX_HISTORY = 50
 
 export default function SubtitleEditor({
-    projectId, episodeId, initialSegments, currentStatus, filmUrl,
+    projectId, episodeId, mediaType, initialSegments, currentStatus, filmUrl,
     onClose, onSaved, sourceSegments, initialPlacement,
     initialMobilePlacement, initialLandscapePlacement, 
     useSeparateMobilePlacement: initUseMobile = false,
@@ -350,7 +351,7 @@ export default function SubtitleEditor({
             const res = await fetch('/api/admin/subtitles/revisions/clear', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, episodeId, action: clearAction, reason: clearReason || undefined }),
+                body: JSON.stringify({ projectId, episodeId, mediaType, action: clearAction, reason: clearReason || undefined }),
             })
             const d = await res.json() as { ok: boolean; rowsDeleted: number; error?: string; archive?: Revision[] }
             if (!res.ok) throw new Error(d.error || 'Clear failed')
@@ -380,7 +381,8 @@ export default function SubtitleEditor({
         setLoadingRevisions(true)
         try {
             const ep = episodeId ? `&episodeId=${episodeId}` : ''
-            const r = await fetch(`/api/admin/subtitles/revisions?projectId=${projectId}${ep}`)
+            const mt = mediaType ? `&mediaType=${mediaType}` : ''
+            const r = await fetch(`/api/admin/subtitles/revisions?projectId=${projectId}${ep}${mt}`)
             const d = await r.json() as { revisions: Revision[] }
             setRevisions(d.revisions ?? [])
         } catch { /* non-critical */ }
@@ -537,7 +539,7 @@ export default function SubtitleEditor({
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    projectId, episodeId, segments: cues,
+                    projectId, episodeId, mediaType, segments: cues,
                     changeSource,
                     placement: {
                         verticalAnchor: placement.verticalAnchor,
@@ -611,7 +613,7 @@ export default function SubtitleEditor({
             const res = await fetch('/api/admin/subtitles', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, episodeId }),
+                body: JSON.stringify({ projectId, episodeId, mediaType }),
             })
             const d = await res.json() as { error?: string }
             if (!res.ok) throw new Error(d.error || 'Approval failed')

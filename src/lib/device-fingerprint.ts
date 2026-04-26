@@ -53,6 +53,7 @@ export async function handleDeviceFingerprint(
             to: userEmail,
             subject: emailT('securityNewDevice', userLocale, 'subject') || 'New device login detected on your account',
             html,
+            type: 'authentication',
         }))
         .catch(() => {})
     }

@@ -76,6 +76,7 @@ export async function POST(request: Request) {
                 to: user.email,
                 subject: welcomeSubject,
                 html,
+                type: 'authentication',
             }))
             .catch(() => { /* never block the login response */ })
 
@@ -133,6 +134,7 @@ export async function PUT(request: Request) {
             to: email,
             subject: emailT('securityVerification', resendLocale, 'subject') || 'Verify your AIM Studio account',
             html,
+            type: 'authentication',
         })
 
         console.log(`[DEV] Resent verification code for ${email}: ${code}`)

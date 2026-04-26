@@ -42,12 +42,13 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const projectId = searchParams.get('projectId')
     const episodeId = searchParams.get('episodeId') || null
+    const mediaType = searchParams.get('mediaType') || 'movie'
 
     if (!projectId) {
         return NextResponse.json({ error: 'projectId required' }, { status: 400 })
     }
 
-    const subtitle = await findSubtitle(projectId, episodeId)
+    const subtitle = await findSubtitle(projectId, episodeId, mediaType)
     return NextResponse.json({ subtitle })
 }
 
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json()
-        const { projectId, episodeId, language, segments, translations, status, transcribedWith, qcIssues } = body
+        const { projectId, episodeId, language, segments, translations, status, transcribedWith, qcIssues, mediaType } = body
 
         if (!projectId || !segments) {
             return NextResponse.json({ error: 'projectId and segments required' }, { status: 400 })
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
         const subtitle = await upsertSubtitleRecord({
             projectId,
             episodeId: episodeId || null,
+            mediaType: mediaType || 'movie',
             language,
             segments: segmentsStr,
             translations: translationsStr,
@@ -105,10 +107,11 @@ export async function PATCH(req: NextRequest) {
         const { 
             projectId, episodeId, segments, changeSource, 
             placement, useSeparateMobilePlacement, 
-            mobilePlacement, landscapePlacement 
+            mobilePlacement, landscapePlacement, mediaType 
         } = body as {
             projectId: string
             episodeId?: string | null
+            mediaType?: string
             segments: Array<{ start: number; end: number; text: string }> | string
             changeSource?: string
             placement?: PlacementPatch
@@ -121,7 +124,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: 'projectId and segments required' }, { status: 400 })
         }
 
-        const existing = await findSubtitle(projectId, episodeId || null)
+        const existing = await findSubtitle(projectId, episodeId || null, mediaType || 'movie')
         if (!existing) {
             return NextResponse.json({ error: 'No subtitle record found' }, { status: 404 })
         }
@@ -222,13 +225,13 @@ export async function PUT(req: NextRequest) {
 
     try {
         const body = await req.json()
-        const { projectId, episodeId } = body
+        const { projectId, episodeId, mediaType } = body
 
         if (!projectId) {
             return NextResponse.json({ error: 'projectId required' }, { status: 400 })
         }
 
-        const existing = await findSubtitle(projectId, episodeId || null)
+        const existing = await findSubtitle(projectId, episodeId || null, mediaType || 'movie')
         if (!existing) {
             return NextResponse.json({ error: 'No subtitle record found' }, { status: 404 })
         }
