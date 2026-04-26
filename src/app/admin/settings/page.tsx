@@ -2136,48 +2136,15 @@ export default function AdminSettingsPage() {
                                         <Toggle checked={settings.allowPublicTrailers} onChange={v => update('allowPublicTrailers', v)} label="Allow trailers to be publicly viewable" />
                                         <Toggle checked={settings.allowPublicProjectPages} onChange={v => update('allowPublicProjectPages', v)} label="Allow project detail pages without login" />
 
-                                        {/* Trailer Preview Gate — only relevant when trailers are public */}
-                                        {settings.allowPublicTrailers && (
-                                            <div style={{
-                                                marginTop: 'var(--space-md)', padding: 'var(--space-md)',
-                                                borderRadius: 'var(--radius-md)',
-                                                background: 'rgba(212,168,83,0.04)',
-                                                border: '1px solid rgba(212,168,83,0.12)',
-                                            }}>
-                                                <div style={{ fontSize: '0.55rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#d4a853', marginBottom: 'var(--space-sm)' }}>⏱ Trailer Preview Gate</div>
-                                                <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)', lineHeight: 1.5 }}>
-                                                    When enabled, logged-out viewers see a preview of the trailer before being prompted to sign in.
-                                                </p>
-                                                <Toggle checked={settings.trailerPreviewEnabled} onChange={v => update('trailerPreviewEnabled', v)} label="Enable trailer preview gate" />
-                                                {settings.trailerPreviewEnabled && (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                                            Preview duration (seconds)
-                                                            <input
-                                                                type="number"
-                                                                min={5}
-                                                                max={120}
-                                                                value={settings.trailerPreviewSeconds}
-                                                                onChange={e => update('trailerPreviewSeconds', parseInt(e.target.value) || 15)}
-                                                                className="admin-input"
-                                                                style={{ marginTop: '4px', width: '100px' }}
-                                                            />
-                                                        </label>
-                                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                                                            Custom gate message (optional)
-                                                            <input
-                                                                type="text"
-                                                                value={settings.trailerPreviewMessage}
-                                                                onChange={e => update('trailerPreviewMessage', e.target.value)}
-                                                                placeholder="Sign in to watch the full trailer"
-                                                                className="admin-input"
-                                                                style={{ marginTop: '4px' }}
-                                                            />
-                                                        </label>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
+                                        <div style={{
+                                            marginTop: 'var(--space-sm)', padding: '10px 12px',
+                                            borderRadius: 'var(--radius-md)',
+                                            background: 'rgba(212,168,83,0.04)',
+                                            border: '1px solid rgba(212,168,83,0.08)',
+                                            fontSize: '0.62rem', color: 'var(--text-tertiary)', lineHeight: 1.5,
+                                        }}>
+                                            🔒 When &quot;Allow trailers publicly&quot; is <strong>off</strong>, trailers are fully locked behind login — same as full films. No preview timer.
+                                        </div>
                                     </div>
 
                                     <div style={{

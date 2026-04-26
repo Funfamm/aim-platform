@@ -45,25 +45,15 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     // Block direct access to unpublished projects
     if (!project.published) notFound()
 
-    // Enforce trailer access control — strip trailerUrl for logged-out users when disabled
+    // Enforce trailer access — trailers are locked behind login (same as films)
     const session = await getUserSession()
     const isLoggedIn = !!session?.userId
     let siteAllowTrailers = true
-    let trailerGateConfig: { enabled: boolean; previewSeconds: number; message?: string | null } | undefined
     try {
-        const ss = await prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true, trailerPreviewEnabled: true, trailerPreviewSeconds: true, trailerPreviewMessage: true } })
-        if (ss) {
-            siteAllowTrailers = ss.allowPublicTrailers
-            // Only pass gate config when user is NOT logged in and gate is enabled
-            if (!isLoggedIn && ss.trailerPreviewEnabled) {
-                trailerGateConfig = {
-                    enabled: true,
-                    previewSeconds: ss.trailerPreviewSeconds,
-                    message: ss.trailerPreviewMessage,
-                }
-            }
-        }
+        const ss = await prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true } })
+        if (ss) siteAllowTrailers = ss.allowPublicTrailers
     } catch { /* schema drift safe */ }
+    // Logged-in users always see trailers; logged-out users only if public trailers are allowed
     const showTrailer = siteAllowTrailers || isLoggedIn
 
     // Serialize dates for client component
@@ -96,7 +86,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
     return (
         <>
-            <ProjectDetailClient project={serializedProject} trailerGate={trailerGateConfig} />
+            <ProjectDetailClient project={serializedProject} isLoggedIn={isLoggedIn} />
             {serializedProject.cast.length > 0 && (
                 <CastShowcase
                     cast={serializedProject.cast}
