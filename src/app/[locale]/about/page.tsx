@@ -175,7 +175,7 @@ export default async function AboutPage() {
                                 <AnimatedCounter end={stats.productions} suffix="+" label={v('stat1Label', 'statsProductions')} />
                                 <AnimatedCounter end={stats.distinctCountries} suffix="+" label={v('stat2Label', 'statsCountries')} />
                                 <AnimatedCounter end={stats.distinctCreators} suffix="+" label={v('stat3Label', 'statsCreators')} />
-                                <AnimatedCounter end={stats.activeProjects} label={v('stat4Label', 'statsActiveProjects')} />
+                                <AnimatedCounter end={stats.activeProjects} label={v('stat4Label', 'statsAwards')} />
                             </div>
                         </ScrollReveal3D>
                     </div>
