@@ -55,6 +55,7 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
     const bargedInRef = useRef(false)
     const bargeInListeningRef = useRef(false)
     const idleWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const speakStartedAtRef = useRef(0) // grace period — ignore mic for first 2s of playback
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -149,9 +150,12 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                 const vol = Math.min(sum / data.length / 30, 1)
                 setVolume(vol)
 
-                if (phaseRef.current === 'speaking' && vol > 0.35) {
+                // Barge-in: user speaks over the agent to interrupt
+                // Grace period: ignore mic for first 2s to avoid speaker echo triggering false barge-in
+                const elapsed = Date.now() - speakStartedAtRef.current
+                if (phaseRef.current === 'speaking' && elapsed > 2000 && vol > 0.45) {
                     bargeInCountRef.current += 1
-                    if (bargeInCountRef.current >= 2) {
+                    if (bargeInCountRef.current >= 6) {
                         bargeInCountRef.current = 0
                         bargedInRef.current = true
                         bargeInListeningRef.current = true
@@ -199,6 +203,7 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
             speakResolveRef.current = resolve
             setPhaseSync('speaking')
             bargeInCountRef.current = 0
+            speakStartedAtRef.current = Date.now()
             startVolumeMeter()
 
             const safetyTimer = setTimeout(() => {
