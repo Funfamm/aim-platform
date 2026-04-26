@@ -236,10 +236,12 @@ function detectEmailType(subject: string): string {
  * Errors are logged but never thrown — email sending is fire-and-forget.
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
-    // ⛔ KILL SWITCH — emails disabled while DNS DKIM is being configured.
-    // Remove this block to re-enable email sending.
-    logger.info('mailer', `Email BLOCKED (kill switch): ${options.to} — ${options.subject}`)
-    return false
+    // ⛔ KILL SWITCH — emails disabled while domain reputation recovers with Gmail.
+    // Set EMAILS_KILL_SWITCH=off in env to re-enable, or remove this block entirely.
+    if (process.env.EMAILS_KILL_SWITCH !== 'off') {
+        logger.info('mailer', `Email BLOCKED (kill switch): ${options.to} — ${options.subject}`)
+        return false
+    }
 
     try {
         const config = await getMailConfig()
