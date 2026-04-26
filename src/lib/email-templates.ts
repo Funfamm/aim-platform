@@ -372,7 +372,7 @@ export function applicationStatusUpdate(name: string, roleName: string, newStatu
         ${mainMessage}
         ${note ? divider() + paragraph(`<em style="color: ${TEXT_SECONDARY};">${note}</em>`) : ''}
         ${siteUrl ? button(localizedButton, `${siteUrl}/casting`) : ''}
-    `, localizedSubject)
+    `, localizedSubject, undefined, locale)
 }
 
 
@@ -729,7 +729,7 @@ export async function donationThankYouWithOverrides(name: string, amount: number
         ${paragraph(f.body)}
         ${paragraph(f.receipt)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
-    `, `Thank you for your $${amount.toFixed(2)} donation`)
+    `, `Thank you for your $${amount.toFixed(2)} donation`, undefined, locale)
 }
 
 export async function applicationConfirmationWithOverrides(name: string, roleName: string, projectTitle?: string, siteUrl?: string, locale = 'en'): Promise<string> {
@@ -760,7 +760,7 @@ export async function applicationConfirmationWithOverrides(name: string, roleNam
         ${paragraph(f.luck)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footer}</span>`)}
-    `, subject)
+    `, subject, undefined, locale)
 }
 
 /**
@@ -925,7 +925,7 @@ export async function scriptSubmissionConfirmationWithOverrides(name: string, ti
         ${paragraph(f.thanks)}
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footer}</span>`)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
-    `, subject)
+    `, subject, undefined, locale)
 }
 
 // ── Broadcast Notification Templates ─────────────────────────────────────────
@@ -963,7 +963,7 @@ export function newCastingRoleEmail(roleName: string, projectTitle: string, appl
         `, BRAND_COLOR)}
         ${button(btnTxt, applyUrl)}
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerTxt}</span>`)}
-    `, subject)
+    `, subject, undefined, locale)
 }
 
 /** Sent to applicant when they withdraw their application — fully localized */
@@ -984,7 +984,7 @@ export function applicationWithdrawalEmail(name: string, roleName: string, casti
         ${paragraph(bodyTxt)}
         ${castingUrl ? button(btnTxt, castingUrl) : ''}
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footer}</span>`)}
-    `, subject)
+    `, subject, undefined, locale)
 }
 
 
@@ -1002,6 +1002,7 @@ export function announcementEmail(
     },
     imageUrl?: string,
     bodyHtml?: string,
+    locale = 'en',
 ): string {
     const ctaUrl       = link
         ? (link.startsWith('http') ? link : `${siteUrl || 'https://impactaistudio.com'}${link}`)
@@ -1032,7 +1033,7 @@ export function announcementEmail(
         ${button(ctaText, ctaUrl)}
         ${divider()}
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerOptIn} <a href="${siteUrl || 'https://impactaistudio.com'}/notifications" style="color:#6b7280;text-decoration:underline;">${managePrefs}</a></span>`)}
-    `, title)
+    `, title, undefined, locale)
 }
 
 /** Security alert: account locked after repeated failed login attempts */
@@ -1161,7 +1162,7 @@ export function contentPublishEmail(
         ${divider()}
         <p style="margin:0 0 4px;font-size:12px;color:#6b7280;text-align:center;line-height:1.6;">${UNSUB_REASON[locale] ?? UNSUB_REASON['en']}</p>
         ${unsubscribeUrl ? `<p style="margin:6px 0 0;font-size:11px;text-align:center;"><a href="${unsubscribeUrl}" style="color:#9ca3af;text-decoration:underline;">${UNSUB_LABEL[locale] ?? UNSUB_LABEL['en']}</a></p>` : ''}
-    `, `New ${contentType}: ${contentTitle}`)
+    `, `New ${contentType}: ${contentTitle}`, undefined, locale)
 }
 
 export function courseEnrollmentEmail(
@@ -1373,7 +1374,7 @@ export function scriptStatusUpdateEmail(
         `, color)}
         ${note ? divider() + paragraph(`<em style="color: ${TEXT_SECONDARY};">${note}</em>`) : ''}
         ${siteUrl ? button(localizedButton, `${siteUrl}/scripts`) : ''}
-    `, emailT(i18nKey, locale, 'subject') || `Script Submission Update — ${scriptTitle}`)
+    `, emailT(i18nKey, locale, 'subject') || `Script Submission Update — ${scriptTitle}`, undefined, locale)
 }
 
 
@@ -1409,5 +1410,5 @@ export function scriptWithdrawalEmail(
         `, '#6b7280')}
         ${paragraph(`<em style="color: ${TEXT_SECONDARY};">${localizedFooter}</em>`)}
         ${button(localizedButton, `${siteUrl}/scripts`)}
-    `, emailT('scriptWithdrawal', locale, 'subject')?.replace('{title}', scriptTitle) || `Script Withdrawn: ${scriptTitle}`)
+    `, emailT('scriptWithdrawal', locale, 'subject')?.replace('{title}', scriptTitle) || `Script Withdrawn: ${scriptTitle}`, undefined, locale)
 }

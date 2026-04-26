@@ -68,6 +68,46 @@ export default function AnnouncementsAdminPage() {
     const [selectedUsers, setSelectedUsers] = useState<{ id: string; name: string | null; email: string }[]>([])
     const [searchingUsers, setSearchingUsers] = useState(false)
 
+    // Smart language detection — only translate what the audience actually needs
+    const [neededLocales, setNeededLocales] = useState<string[] | null>(null) // null = not yet fetched
+    const [loadingLocales, setLoadingLocales] = useState(false)
+
+    // Fetch needed languages whenever audience selection changes
+    useEffect(() => {
+        const groups: string[] = []
+        if (notifyGroups.members) groups.push('members')
+        if (notifyGroups.subscribers) groups.push('subscribers')
+        if (notifyGroups.cast) groups.push('cast')
+        const userIds = selectedUsers.map(u => u.id)
+
+        if (groups.length === 0 && userIds.length === 0) {
+            setNeededLocales(null)
+            return
+        }
+
+        setLoadingLocales(true)
+        const params = new URLSearchParams()
+        if (groups.length) params.set('groups', groups.join(','))
+        if (userIds.length) params.set('userIds', userIds.join(','))
+
+        fetch(`/api/admin/announcements/languages?${params}`)
+            .then(r => r.json())
+            .then(data => setNeededLocales(data.languages ?? []))
+            .catch(() => setNeededLocales(null))
+            .finally(() => setLoadingLocales(false))
+    }, [notifyGroups.members, notifyGroups.subscribers, notifyGroups.cast, selectedUsers])
+
+    // Announcement history
+    const [history, setHistory] = useState<{ id: string; title: string; sentAt: string; recipientCount: number; audienceGroups: string | null; status: string }[]>([])
+    const [showHistory, setShowHistory] = useState(false)
+
+    useEffect(() => {
+        fetch('/api/admin/announcements')
+            .then(r => r.ok ? r.json() : { announcements: [] })
+            .then(data => setHistory(data.announcements ?? []))
+            .catch(() => {})
+    }, [result])
+
     // ── Persist draft to localStorage whenever relevant state changes ──
     useEffect(() => {
         // Only save if there's something meaningful to preserve
@@ -83,10 +123,15 @@ export default function AnnouncementsAdminPage() {
     }, [title, message, bodyHtml, imageUrl, link, translations, missingLocales, hasTranslated])
 
     // ── Derived ──
-    const allTranslated = hasTranslated && missingLocales.length === 0
+    // Which locales to show in the grid — only those the audience actually speaks
+    const displayLocales = neededLocales !== null
+        ? LOCALES.filter(l => neededLocales.includes(l.code))
+        : LOCALES
+    const noTranslationNeeded = neededLocales !== null && neededLocales.length === 0
+    const allNeededTranslated = noTranslationNeeded || (hasTranslated && displayLocales.every(l => translations[l.code] && !missingLocales.includes(l.code)))
     const someAudienceSelected = notifyGroups.members || notifyGroups.subscribers || notifyGroups.cast || selectedUsers.length > 0
     const onlySpecificUsers = selectedUsers.length > 0 && !notifyGroups.members && !notifyGroups.subscribers && !notifyGroups.cast
-    const canBroadcast  = (allTranslated || onlySpecificUsers) && title.trim() && message.trim() && !sending && someAudienceSelected
+    const canBroadcast  = allNeededTranslated && title.trim() && message.trim() && !sending && someAudienceSelected
     const someRetrying  = retryingLocales.length > 0
 
     // ── User search with debounce ──
@@ -139,27 +184,28 @@ export default function AnnouncementsAdminPage() {
         return data as { translations?: Translations; missing?: string[]; error?: string }
     }
 
-    // Full translate (all locales from scratch)
+    // Full translate (only needed locales)
     async function handleTranslate() {
         if (!title.trim() || !message.trim()) return
+        const targetLocales = neededLocales && neededLocales.length > 0 ? neededLocales : undefined
         setTranslating(true)
         setTranslateError(null)
         setHasTranslated(false)
         setTranslations({})
         setMissingLocales([])
         try {
-            const data = await callTranslate()
+            const data = await callTranslate(targetLocales)
             if (data.translations && Object.keys(data.translations).length > 0) {
                 setTranslations(data.translations)
                 setMissingLocales(data.missing ?? [])
                 setHasTranslated(true)
             } else {
                 setTranslateError(data.error || 'Translation failed — please try again')
-                setMissingLocales(LOCALES.map(l => l.code))
+                setMissingLocales(targetLocales ?? LOCALES.map(l => l.code))
             }
         } catch {
             setTranslateError('Network error — please try again')
-            setMissingLocales(LOCALES.map(l => l.code))
+            setMissingLocales(targetLocales ?? LOCALES.map(l => l.code))
         } finally {
             setTranslating(false)
         }
@@ -288,7 +334,7 @@ export default function AnnouncementsAdminPage() {
                         📣 Send Announcement
                     </h1>
                     <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem', lineHeight: 1.6 }}>
-                        Write in English → translate all 10 languages → review → broadcast.
+                        Write in English → select audience → translate only the languages they speak → broadcast.
                         Every user receives emails and notifications in <strong>their own language</strong>.
                     </p>
                 </div>
@@ -370,7 +416,7 @@ export default function AnnouncementsAdminPage() {
                     {/* ── STEP 2: Translate ── */}
                     <div style={{
                         ...card,
-                        borderColor: allTranslated
+                        borderColor: allNeededTranslated
                             ? 'rgba(52,211,153,0.25)'
                             : missingLocales.length > 0 && hasTranslated
                             ? 'rgba(239,68,68,0.2)'
@@ -380,55 +426,63 @@ export default function AnnouncementsAdminPage() {
                         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
                             <div>
                                 <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: '4px',
-                                    color: allTranslated ? '#34d399' : missingLocales.length > 0 && hasTranslated ? '#ef4444' : 'var(--accent-gold)',
+                                    color: allNeededTranslated ? '#34d399' : missingLocales.length > 0 && hasTranslated ? '#ef4444' : 'var(--accent-gold)',
                                 }}>
-                                    Step 2 — Translate All Languages
+                                    Step 2 — {noTranslationNeeded ? 'No Translation Needed' : `Translate ${displayLocales.length} Language${displayLocales.length !== 1 ? 's' : ''}`}
                                 </div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                    {allTranslated
-                                        ? `✅ All ${LOCALES.length} languages ready — click any to review or edit`
+                                    {loadingLocales
+                                        ? '⏳ Detecting audience languages…'
+                                        : noTranslationNeeded
+                                        ? '✅ All recipients speak English — broadcast is ready'
+                                        : allNeededTranslated
+                                        ? `✅ All ${displayLocales.length} needed language${displayLocales.length !== 1 ? 's' : ''} ready — click any to review or edit`
                                         : missingLocales.length > 0 && hasTranslated
                                         ? `⚠️ ${missingLocales.length} language${missingLocales.length !== 1 ? 's' : ''} failed — retry them below`
-                                        : 'AI-translates into all 10 supported languages at once'}
+                                        : neededLocales !== null
+                                        ? `Only ${displayLocales.length} language${displayLocales.length !== 1 ? 's are' : ' is'} needed for your audience`
+                                        : 'Select an audience below to detect needed languages'}
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                                {/* Retry all failed — shown when some locales are still missing */}
-                                {missingLocales.length > 0 && hasTranslated && (
+                            {!noTranslationNeeded && displayLocales.length > 0 && (
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    {/* Retry all failed — shown when some locales are still missing */}
+                                    {missingLocales.length > 0 && hasTranslated && (
+                                        <button
+                                            type="button"
+                                            onClick={retryAllFailed}
+                                            disabled={someRetrying}
+                                            style={{
+                                                padding: '9px 18px', fontSize: '0.78rem', fontWeight: 700,
+                                                borderRadius: '10px', border: '1px solid rgba(239,68,68,0.35)',
+                                                background: 'rgba(239,68,68,0.08)', color: '#ef4444',
+                                                cursor: someRetrying ? 'wait' : 'pointer',
+                                            }}
+                                        >
+                                            {someRetrying ? '⏳ Retrying…' : `🔄 Retry ${missingLocales.length} Failed`}
+                                        </button>
+                                    )}
+                                    {/* Main translate / re-translate button */}
                                     <button
                                         type="button"
-                                        onClick={retryAllFailed}
-                                        disabled={someRetrying}
+                                        onClick={handleTranslate}
+                                        disabled={translating || !title.trim() || !message.trim()}
                                         style={{
                                             padding: '9px 18px', fontSize: '0.78rem', fontWeight: 700,
-                                            borderRadius: '10px', border: '1px solid rgba(239,68,68,0.35)',
-                                            background: 'rgba(239,68,68,0.08)', color: '#ef4444',
-                                            cursor: someRetrying ? 'wait' : 'pointer',
+                                            borderRadius: '10px', border: '1px solid rgba(212,168,83,0.35)',
+                                            background: translating || !title.trim() || !message.trim()
+                                                ? 'rgba(212,168,83,0.08)'
+                                                : 'linear-gradient(135deg, rgba(212,168,83,0.22), rgba(212,168,83,0.08))',
+                                            color: 'var(--accent-gold)',
+                                            cursor: translating ? 'wait' : !title.trim() || !message.trim() ? 'not-allowed' : 'pointer',
+                                            opacity: !title.trim() || !message.trim() ? 0.5 : 1,
+                                            whiteSpace: 'nowrap',
                                         }}
                                     >
-                                        {someRetrying ? '⏳ Retrying…' : `🔄 Retry ${missingLocales.length} Failed`}
+                                        {translating ? '⏳ Translating…' : hasTranslated ? `🔄 Re-Translate ${displayLocales.length}` : `🌐 Translate ${displayLocales.length} Language${displayLocales.length !== 1 ? 's' : ''}`}
                                     </button>
-                                )}
-                                {/* Main translate / re-translate button */}
-                                <button
-                                    type="button"
-                                    onClick={handleTranslate}
-                                    disabled={translating || !title.trim() || !message.trim()}
-                                    style={{
-                                        padding: '9px 18px', fontSize: '0.78rem', fontWeight: 700,
-                                        borderRadius: '10px', border: '1px solid rgba(212,168,83,0.35)',
-                                        background: translating || !title.trim() || !message.trim()
-                                            ? 'rgba(212,168,83,0.08)'
-                                            : 'linear-gradient(135deg, rgba(212,168,83,0.22), rgba(212,168,83,0.08))',
-                                        color: 'var(--accent-gold)',
-                                        cursor: translating ? 'wait' : !title.trim() || !message.trim() ? 'not-allowed' : 'pointer',
-                                        opacity: !title.trim() || !message.trim() ? 0.5 : 1,
-                                        whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    {translating ? '⏳ Translating…' : hasTranslated ? '🔄 Re-Translate All' : '🌐 Translate All Languages'}
-                                </button>
-                            </div>
+                                </div>
+                            )}
                         </div>
 
                         {translateError && (
@@ -437,98 +491,95 @@ export default function AnnouncementsAdminPage() {
                             </div>
                         )}
 
-                        {/* Language grid */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '8px' }}>
-                            {LOCALES.map(loc => {
-                                const t = translations[loc.code]
-                                const isMissing = missingLocales.includes(loc.code)
-                                const isRetrying = retryingLocales.includes(loc.code)
-                                const done = !!t && !isMissing
-                                const isOpen = expandedLocale === loc.code
+                        {/* Language grid — only show languages the audience actually speaks */}
+                        {displayLocales.length > 0 && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: '8px' }}>
+                                {displayLocales.map(loc => {
+                                    const t = translations[loc.code]
+                                    const isMissing = missingLocales.includes(loc.code)
+                                    const isRetrying = retryingLocales.includes(loc.code)
+                                    const done = !!t && !isMissing
+                                    const isOpen = expandedLocale === loc.code
 
-                                let statusIcon = '○'
-                                let statusColor = 'rgba(255,255,255,0.2)'
-                                if (translating || isRetrying) { statusIcon = '⏳'; statusColor = 'rgba(212,168,83,0.6)' }
-                                else if (done) { statusIcon = '✅'; statusColor = '#34d399' }
-                                else if (isMissing && hasTranslated) { statusIcon = '🔴'; statusColor = '#ef4444' }
+                                    let statusIcon = '○'
+                                    let statusColor = 'rgba(255,255,255,0.2)'
+                                    if (translating || isRetrying) { statusIcon = '⏳'; statusColor = 'rgba(212,168,83,0.6)' }
+                                    else if (done) { statusIcon = '✅'; statusColor = '#34d399' }
+                                    else if (isMissing && hasTranslated) { statusIcon = '🔴'; statusColor = '#ef4444' }
 
-                                return (
-                                    <div key={loc.code} style={{
-                                        borderRadius: '10px', overflow: 'hidden',
-                                        border: `1px solid ${done ? 'rgba(52,211,153,0.2)' : isMissing && hasTranslated ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.06)'}`,
-                                        background: done ? 'rgba(52,211,153,0.04)' : isMissing && hasTranslated ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.02)',
-                                        transition: 'all 0.2s',
-                                    }}>
-                                        {/* Locale header */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px' }}>
-                                            <span style={{ fontSize: '1.1rem' }}>{loc.flag}</span>
-                                            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>{loc.name}</span>
-                                            <span style={{ fontSize: '0.65rem', color: statusColor }}>{statusIcon}</span>
-                                            {/* Per-locale retry button for failed locales */}
-                                            {isMissing && hasTranslated && !isRetrying && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => retryLocale(loc.code)}
-                                                    style={{
-                                                        padding: '2px 8px', fontSize: '0.6rem', fontWeight: 700,
-                                                        borderRadius: '5px', border: '1px solid rgba(239,68,68,0.3)',
-                                                        background: 'rgba(239,68,68,0.08)', color: '#ef4444',
-                                                        cursor: 'pointer',
-                                                    }}
-                                                >Retry</button>
-                                            )}
-                                            {/* Expand/collapse for translated locales */}
-                                            {done && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setExpandedLocale(isOpen ? null : loc.code)}
-                                                    style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '0.62rem', padding: '0' }}
-                                                >{isOpen ? '▲' : '▼'}</button>
+                                    return (
+                                        <div key={loc.code} style={{
+                                            borderRadius: '10px', overflow: 'hidden',
+                                            border: `1px solid ${done ? 'rgba(52,211,153,0.2)' : isMissing && hasTranslated ? 'rgba(239,68,68,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                                            background: done ? 'rgba(52,211,153,0.04)' : isMissing && hasTranslated ? 'rgba(239,68,68,0.04)' : 'rgba(255,255,255,0.02)',
+                                            transition: 'all 0.2s',
+                                        }}>
+                                            {/* Locale header */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px' }}>
+                                                <span style={{ fontSize: '1.1rem' }}>{loc.flag}</span>
+                                                <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', flex: 1 }}>{loc.name}</span>
+                                                <span style={{ fontSize: '0.65rem', color: statusColor }}>{statusIcon}</span>
+                                                {/* Per-locale retry button for failed locales */}
+                                                {isMissing && hasTranslated && !isRetrying && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => retryLocale(loc.code)}
+                                                        style={{
+                                                            padding: '2px 8px', fontSize: '0.6rem', fontWeight: 700,
+                                                            borderRadius: '5px', border: '1px solid rgba(239,68,68,0.3)',
+                                                            background: 'rgba(239,68,68,0.08)', color: '#ef4444',
+                                                            cursor: 'pointer',
+                                                        }}
+                                                    >Retry</button>
+                                                )}
+                                                {/* Expand/collapse for translated locales */}
+                                                {done && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setExpandedLocale(isOpen ? null : loc.code)}
+                                                        style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', fontSize: '0.62rem', padding: '0' }}
+                                                    >{isOpen ? '▲' : '▼'}</button>
+                                                )}
+                                            </div>
+
+                                            {/* Editable translation fields */}
+                                            {isOpen && done && t && (
+                                                <div style={{ padding: '0 12px 12px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <div style={{ paddingTop: '10px' }}>
+                                                        <label style={{ ...lbl, marginBottom: '4px' }}>Title</label>
+                                                        <input
+                                                            type="text"
+                                                            value={t.title || ''}
+                                                            onChange={e => updateTranslation(loc.code, 'title', e.target.value)}
+                                                            style={{ ...inp, fontSize: '0.8rem', padding: '8px 10px' }}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label style={{ ...lbl, marginBottom: '4px' }}>Message</label>
+                                                        <textarea
+                                                            value={t.message || ''}
+                                                            onChange={e => updateTranslation(loc.code, 'message', e.target.value)}
+                                                            rows={3}
+                                                            style={{ ...inp, fontSize: '0.8rem', padding: '8px 10px', resize: 'vertical', lineHeight: 1.5 }}
+                                                        />
+                                                    </div>
+                                                </div>
                                             )}
                                         </div>
+                                    )
+                                })}
+                            </div>
+                        )}
 
-                                        {/* Editable translation fields */}
-                                        {isOpen && done && t && (
-                                            <div style={{ padding: '0 12px 12px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                <div style={{ paddingTop: '10px' }}>
-                                                    <label style={{ ...lbl, marginBottom: '4px' }}>Title</label>
-                                                    <input
-                                                        type="text"
-                                                        value={t.title || ''}
-                                                        onChange={e => updateTranslation(loc.code, 'title', e.target.value)}
-                                                        style={{ ...inp, fontSize: '0.8rem', padding: '8px 10px' }}
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <label style={{ ...lbl, marginBottom: '4px' }}>Message</label>
-                                                    <textarea
-                                                        value={t.message || ''}
-                                                        onChange={e => updateTranslation(loc.code, 'message', e.target.value)}
-                                                        rows={3}
-                                                        style={{ ...inp, fontSize: '0.8rem', padding: '8px 10px', resize: 'vertical', lineHeight: 1.5 }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-
-                        {/* Lock notice */}
-                        {!allTranslated && !onlySpecificUsers && (
+                        {/* Lock / status notices */}
+                        {!allNeededTranslated && displayLocales.length > 0 && (
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                🔒 Broadcast is locked until all {LOCALES.length} languages are confirmed
+                                🔒 Broadcast locked — translate {displayLocales.length} language{displayLocales.length !== 1 ? 's' : ''} first
                                 {missingLocales.length > 0 && hasTranslated && (
                                     <span style={{ color: '#ef4444', fontWeight: 600 }}>
                                         — {missingLocales.length} still missing
                                     </span>
                                 )}
-                            </div>
-                        )}
-                        {onlySpecificUsers && !allTranslated && (
-                            <div style={{ fontSize: '0.72rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                ✅ Sending to specific users only — their language will be auto-detected
                             </div>
                         )}
                     </div>
@@ -569,7 +620,7 @@ export default function AnnouncementsAdminPage() {
                             {[
                                 { label: 'Title written',    done: !!title.trim() },
                                 { label: 'Message written',  done: !!message.trim() },
-                                { label: `All ${LOCALES.length} languages`, done: allTranslated || onlySpecificUsers },
+                                { label: noTranslationNeeded ? 'No translation needed' : `${displayLocales.length} language${displayLocales.length !== 1 ? 's' : ''} translated`, done: allNeededTranslated },
                             ].map(item => (
                                 <span key={item.label} style={{ color: item.done ? '#34d399' : 'rgba(255,255,255,0.25)' }}>
                                     {item.done ? '✅' : '○'} {item.label}
@@ -732,15 +783,61 @@ export default function AnnouncementsAdminPage() {
                             }}
                         >
                             {sending ? '⏳ Broadcasting…'
-                                : allTranslated ? '📣 Broadcast to All Users'
+                                : allNeededTranslated ? '📣 Broadcast Announcement'
                                 : missingLocales.length > 0 && hasTranslated
                                 ? `🔴 Retry ${missingLocales.length} Failed Language${missingLocales.length !== 1 ? 's' : ''} First`
-                                : onlySpecificUsers ? '📣 Send to Selected Users'
-                                : '🔒 Translate All Languages First'}
+                                : noTranslationNeeded ? '📣 Broadcast Announcement'
+                                : `🔒 Translate ${displayLocales.length} Language${displayLocales.length !== 1 ? 's' : ''} First`}
                         </button>
 
                     </div>
                 </form>
+
+                {/* ── ANNOUNCEMENT HISTORY ── */}
+                <div style={{ marginTop: '32px' }}>
+                    <button
+                        type="button"
+                        onClick={() => setShowHistory(!showHistory)}
+                        style={{
+                            background: 'none', border: 'none', color: 'var(--text-secondary)',
+                            cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700,
+                            display: 'flex', alignItems: 'center', gap: '6px', padding: 0,
+                        }}
+                    >
+                        📋 {showHistory ? 'Hide' : 'Show'} History ({history.length})
+                    </button>
+                    {showHistory && (
+                        <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {history.length === 0 && (
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', padding: '16px', textAlign: 'center' }}>No announcements sent yet.</div>
+                            )}
+                            {history.map(a => {
+                                let groups: { members?: boolean; subscribers?: boolean; cast?: boolean } = {}
+                                try { groups = a.audienceGroups ? JSON.parse(a.audienceGroups) : {} } catch {}
+                                return (
+                                    <div key={a.id} style={{
+                                        padding: '12px 16px', borderRadius: '10px',
+                                        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
+                                        display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
+                                    }}>
+                                        <div style={{ flex: 1, minWidth: '200px' }}>
+                                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{a.title}</div>
+                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                                {new Date(a.sentAt).toLocaleDateString()} · {a.recipientCount} recipients
+                                                {groups.members && <span style={{ marginLeft: '6px', color: '#c084fc' }}>👥</span>}
+                                                {groups.subscribers && <span style={{ marginLeft: '4px', color: '#c084fc' }}>📬</span>}
+                                                {groups.cast && <span style={{ marginLeft: '4px', color: '#c084fc' }}>🎭</span>}
+                                            </div>
+                                        </div>
+                                        <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: a.status === 'sent' ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)', color: a.status === 'sent' ? '#34d399' : '#ef4444' }}>
+                                            {a.status}
+                                        </span>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
             </main>
         </div>
     )

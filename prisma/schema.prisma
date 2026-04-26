@@ -515,6 +515,26 @@ model UserNotification {
   @@index([userId, createdAt])
 }
 
+model Announcement {
+  id              String   @id @default(cuid())
+  title           String
+  message         String   @db.Text
+  bodyHtml        String?  @db.Text
+  imageUrl        String?
+  link            String?
+  translations    String?  @db.Text     // JSON: Record<locale, {title, message, ...}>
+  audienceGroups  String?               // JSON: {members, subscribers, cast}
+  specificUserIds String?  @db.Text     // JSON: string[]
+  recipientCount  Int      @default(0)
+  status          String   @default("sent") // sent | failed
+  sentById        String?
+  sentAt          DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  @@index([sentAt])
+  @@index([sentById])
+}
+
 model SearchAnalytics {
   id           String   @id @default(cuid())
   userId       String?

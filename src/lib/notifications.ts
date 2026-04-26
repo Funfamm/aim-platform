@@ -204,7 +204,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                         managePrefs: lt?.managePrefs || undefined,
                     // Use the translated body if the admin form stored one for this locale,
                     // otherwise fall back to the English rich HTML
-                    }, opts.imageUrl, lt?.bodyHtml || opts.bodyHtml)
+                    }, opts.imageUrl, lt?.bodyHtml || opts.bodyHtml, locale)
                 } else if (opts.type === 'new_role') {
                     // Rebuild the email using the localized CTA link for this user's locale.
                     // opts.roleName carries the raw role name — no need to strip the composed

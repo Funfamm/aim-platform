@@ -1,6 +1,40 @@
 import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { notifyAnnouncement } from '@/lib/notifications'
+import { prisma } from '@/lib/db'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = prisma as any
+
+/**
+ * GET /api/admin/announcements
+ * Returns paginated announcement history (newest first).
+ */
+export async function GET() {
+    try { await requireAdmin() } catch {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const announcements = await db.announcement.findMany({
+        orderBy: { sentAt: 'desc' },
+        take: 50,
+        select: {
+            id: true,
+            title: true,
+            message: true,
+            bodyHtml: true,
+            imageUrl: true,
+            link: true,
+            audienceGroups: true,
+            specificUserIds: true,
+            recipientCount: true,
+            status: true,
+            sentAt: true,
+        },
+    })
+
+    return NextResponse.json({ announcements })
+}
 
 /**
  * POST /api/admin/announcements
@@ -13,7 +47,8 @@ import { notifyAnnouncement } from '@/lib/notifications'
  * bodyHtml and imageUrl are optional rich-content fields that appear in the email.
  */
 export async function POST(req: Request) {
-    try { await requireAdmin() } catch {
+    let adminSession;
+    try { adminSession = await requireAdmin() } catch {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -50,6 +85,29 @@ export async function POST(req: Request) {
     // Read audience selection — default to nobody if omitted (admin must opt-in each group)
     const groups: { subscribers?: boolean; members?: boolean; cast?: boolean } = notifyGroups ?? {
         subscribers: false, members: false, cast: false,
+    }
+
+    const sentById = adminSession?.userId ?? null
+
+    // Save announcement record
+    try {
+        await db.announcement.create({
+            data: {
+                title: title.trim(),
+                message: message.trim(),
+                bodyHtml: bodyHtml || null,
+                imageUrl: imageUrl || null,
+                link: link?.trim() || null,
+                translations: translations ? JSON.stringify(translations) : null,
+                audienceGroups: JSON.stringify(groups),
+                specificUserIds: specificUserIds?.length ? JSON.stringify(specificUserIds) : null,
+                recipientCount: 0, // updated async
+                status: 'sent',
+                sentById,
+            },
+        })
+    } catch (err) {
+        console.error('[announcements] failed to save history record:', err)
     }
 
     // Fire-and-forget — returns immediately; delivery is async
