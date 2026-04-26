@@ -16,7 +16,7 @@ export default async function LoginLayout({ children, params }: { children: Reac
     const session = await getSession()
     if (session) {
         const p = await params
-        redirect(`/${p.locale}/dashboard`)
+        redirect(`/${p.locale}/`)
     }
     return children
 }

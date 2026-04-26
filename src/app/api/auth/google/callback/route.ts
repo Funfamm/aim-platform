@@ -233,11 +233,11 @@ export async function GET(req: Request) {
 
         // Redirect to where the user was trying to go, or dashboard
         // Build a locale-aware path so the user lands in their preferred language.
-        const returnTo = cookieStore.get('oauth_return_to')?.value || '/dashboard'
+        const returnTo = cookieStore.get('oauth_return_to')?.value || '/'
         cookieStore.set('oauth_return_to', '', { maxAge: 0, path: '/' })
 
         // Ensure returnTo is a relative path to prevent open redirect attacks
-        const safePath = returnTo.startsWith('/') ? returnTo : '/dashboard'
+        const safePath = returnTo.startsWith('/') ? returnTo : '/'
 
         // Prepend preferred locale prefix (skip for English — it's the default)
         const localePath =

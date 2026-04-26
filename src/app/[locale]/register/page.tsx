@@ -41,7 +41,7 @@ export default function RegisterPage() {
                 router.push(`/verify-email?email=${encodeURIComponent(email)}`)
             } else if (res.ok && data.user) {
                 // Fallback: already verified (e.g. OAuth)
-                router.push('/dashboard')
+                router.push('/')
             } else {
                 let err = data.error || t('registrationFailed')
                 if (data.error === 'Name, email, and password are required') err = t('allFieldsRequired')

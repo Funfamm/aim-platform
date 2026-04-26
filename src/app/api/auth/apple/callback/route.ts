@@ -95,7 +95,7 @@ export async function POST(req: Request) {
         const refresh = await createRefreshToken(tokenPayload)
         await setUserCookie(token, refresh)
 
-        return NextResponse.redirect(new URL('/dashboard', req.url))
+        return NextResponse.redirect(new URL('/', req.url))
     } catch {
         return NextResponse.redirect(new URL('/login?error=apple_failed', req.url))
     }

@@ -64,7 +64,7 @@ function VerifyEmailContent() {
             if (res.ok) {
                 setSuccess(true)
                 // Hard redirect so AuthProvider re-initializes with the new cookie
-                setTimeout(() => { window.location.href = '/dashboard' }, 1500)
+                setTimeout(() => { window.location.href = '/' }, 1500)
             } else {
                 setError(data.error || t('errorFailed'))
             }

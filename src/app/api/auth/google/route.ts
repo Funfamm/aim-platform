@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     // Save the return-to URL so we can redirect there after OAuth completes.
     // Only allow same-origin paths (must start with /) to prevent open redirects.
     const rawReturnTo = new URL(req.url).searchParams.get('returnTo') || ''
-    const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '/dashboard'
+    const returnTo = rawReturnTo.startsWith('/') ? rawReturnTo : '/'
 
     const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || new URL(req.url).origin
     const redirectUri = `${origin}/api/auth/google/callback`

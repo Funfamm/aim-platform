@@ -75,7 +75,7 @@ export async function POST(request: Request) {
 
         logger.info('auth/mfa/verify', `MFA verified for ${user.email}`)
 
-        const redirectTo = ['admin', 'superadmin'].includes(user.role) ? '/admin' : '/dashboard'
+        const redirectTo = ['admin', 'superadmin'].includes(user.role) ? '/admin' : '/'
 
         return NextResponse.json({
             user: {

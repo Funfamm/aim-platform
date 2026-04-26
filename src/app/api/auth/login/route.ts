@@ -167,7 +167,7 @@ export async function POST(request: Request) {
 
         recordAuthSuccess(user.role)
 
-        const redirectTo = (['admin', 'superadmin'].includes(user.role)) ? '/admin' : '/dashboard'
+        const redirectTo = (['admin', 'superadmin'].includes(user.role)) ? '/admin' : '/'
 
         // If the user logged in from a non-English locale page and their
         // stored preferredLanguage differs, update it automatically.
