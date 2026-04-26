@@ -36,7 +36,7 @@ export default function FeaturedProjects3D({ projects }: { projects: ProjectData
                         scrollSnapType: 'x proximity',
                         touchAction: 'pan-x pan-y',
                         scrollbarWidth: 'none' as const,
-                        padding: '0 16px 8px',
+                        padding: '12px 16px 20px',
                     }}
                 >
                     {projects.map(project => (

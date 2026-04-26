@@ -69,20 +69,24 @@ const ACCENT_BLUE = '#3b82f6'
 function emailWrapper(content: string, preheader?: string, footerText?: string, locale = 'en'): string {
     const tagline    = emailT('emailWrapper', locale, 'tagline') || 'AI-Powered Filmmaking'
     const autoFooter = footerText ?? (emailT('emailWrapper', locale, 'autoFooter') || 'This email was sent automatically. Please do not reply directly.')
+    const RTL_LOCALES = ['ar', 'he', 'fa', 'ur']
+    const isRtl = RTL_LOCALES.includes(locale)
+    const dir = isRtl ? 'rtl' : 'ltr'
+    const textAlign = isRtl ? 'right' : 'left'
     return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${locale}" dir="${dir}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AIM Studio</title>
     <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: ${BG_DARK}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+<body style="margin: 0; padding: 0; background-color: ${BG_DARK}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; direction: ${dir};">
     ${preheader ? `<div style="display:none;font-size:1px;color:${BG_DARK};line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">${preheader}</div>` : ''}
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: ${BG_DARK};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: ${BG_DARK};" dir="${dir}">
         <tr>
             <td align="center" style="padding: 40px 16px;">
-                <table role="presentation" width="580" cellpadding="0" cellspacing="0" style="max-width: 580px; width: 100%;">
+                <table role="presentation" width="580" cellpadding="0" cellspacing="0" style="max-width: 580px; width: 100%;" dir="${dir}">
                     <!-- Gold accent bar -->
                     <tr>
                         <td style="height: 4px; background: linear-gradient(90deg, ${BRAND_COLOR}, ${BRAND_LIGHT}, ${BRAND_COLOR}); border-radius: 12px 12px 0 0;"></td>
@@ -104,7 +108,7 @@ function emailWrapper(content: string, preheader?: string, footerText?: string, 
                     </tr>
                     <!-- Content Card -->
                     <tr>
-                        <td style="background-color: ${BG_CARD}; border-left: 1px solid ${BORDER}; border-right: 1px solid ${BORDER}; padding: 36px 36px 40px;">
+                        <td style="background-color: ${BG_CARD}; border-left: 1px solid ${BORDER}; border-right: 1px solid ${BORDER}; padding: 36px 36px 40px; text-align: ${textAlign}; direction: ${dir};">
                             ${content}
                         </td>
                     </tr>
