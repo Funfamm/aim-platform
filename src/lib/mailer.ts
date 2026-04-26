@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer'
 import { prisma } from '@/lib/db'
 import { getGraphAccessToken } from '@/lib/graphClient'
+import { decrypt } from '@/lib/secure'
 import { logger } from './logger'
 
 export type EmailType = 'authentication' | 'application' | 'notification' | 'subscribe' | 'general'
@@ -105,6 +106,10 @@ async function getMailConfig(): Promise<MailConfig | null> {
                 }
             }
 
+            const smtpPassword = settings.smtpPass.startsWith('ey') || settings.smtpPass.length > 50
+                ? decrypt(settings.smtpPass)  // Encrypted in DB — decrypt before use
+                : settings.smtpPass            // Plaintext fallback (legacy/env-based)
+
             cachedConfig = {
                 fromName,
                 fromEmail: settings.smtpFromEmail || settings.smtpUser,
@@ -113,7 +118,7 @@ async function getMailConfig(): Promise<MailConfig | null> {
                 smtpHost: settings.smtpHost,
                 smtpPort: settings.smtpPort || 587,
                 smtpUser: settings.smtpUser,
-                smtpPass: settings.smtpPass,
+                smtpPass: smtpPassword,
                 smtpSecure: settings.smtpSecure || false,
             }
         } else {
