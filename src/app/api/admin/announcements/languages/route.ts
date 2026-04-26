@@ -53,12 +53,16 @@ export async function GET(req: NextRequest) {
 
     if (allUserIds.size === 0) {
         // Subscribers only — no language data available (they aren't logged-in users)
-        const hasSubscribers = groups.includes('subscribers')
+        let subscriberCount = 0
+        if (groups.includes('subscribers')) {
+            subscriberCount = await db.subscriber.count({ where: { active: true } })
+        }
         return NextResponse.json({
             languages: [],
             counts: {},
             total: 0,
-            subscribersOnly: hasSubscribers,
+            subscriberCount,
+            subscribersOnly: groups.includes('subscribers'),
         })
     }
 
@@ -81,5 +85,17 @@ export async function GET(req: NextRequest) {
 
     const languages = Object.keys(counts).sort()
 
-    return NextResponse.json({ languages, counts, total })
+    // Also count subscribers if selected (deduplicated against registered users)
+    let subscriberCount = 0
+    if (groups.includes('subscribers')) {
+        const registeredEmails = await db.user.findMany({ select: { email: true } })
+            .then((rows: { email: string }[]) => new Set(rows.map((r: { email: string }) => r.email.toLowerCase())))
+        const activeSubs = await db.subscriber.findMany({
+            where: { active: true },
+            select: { email: true },
+        })
+        subscriberCount = activeSubs.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase())).length
+    }
+
+    return NextResponse.json({ languages, counts, total, subscriberCount })
 }

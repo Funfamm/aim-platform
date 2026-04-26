@@ -71,6 +71,8 @@ export default function AnnouncementsAdminPage() {
     // Smart language detection — only translate what the audience actually needs
     const [neededLocales, setNeededLocales] = useState<string[] | null>(null) // null = not yet fetched
     const [loadingLocales, setLoadingLocales] = useState(false)
+    // Recipient estimate from the languages endpoint
+    const [recipientEstimate, setRecipientEstimate] = useState<{ members: number; subscribers: number; total: number } | null>(null)
 
     // Fetch needed languages whenever audience selection changes
     useEffect(() => {
@@ -82,6 +84,7 @@ export default function AnnouncementsAdminPage() {
 
         if (groups.length === 0 && userIds.length === 0) {
             setNeededLocales(null)
+            setRecipientEstimate(null)
             return
         }
 
@@ -92,8 +95,13 @@ export default function AnnouncementsAdminPage() {
 
         fetch(`/api/admin/announcements/languages?${params}`)
             .then(r => r.json())
-            .then(data => setNeededLocales(data.languages ?? []))
-            .catch(() => setNeededLocales(null))
+            .then(data => {
+                setNeededLocales(data.languages ?? [])
+                const members = (data.total ?? 0) + userIds.length
+                const subscribers = data.subscriberCount ?? 0
+                setRecipientEstimate({ members, subscribers, total: members + subscribers })
+            })
+            .catch(() => { setNeededLocales(null); setRecipientEstimate(null) })
             .finally(() => setLoadingLocales(false))
     }, [notifyGroups.members, notifyGroups.subscribers, notifyGroups.cast, selectedUsers])
 
@@ -683,6 +691,49 @@ export default function AnnouncementsAdminPage() {
                             </div>
                             {!someAudienceSelected && (
                                 <p style={{ margin: '8px 0 0', fontSize: '0.7rem', color: '#ef4444' }}>⚠️ Select at least one audience group or specific user to broadcast.</p>
+                            )}
+
+                            {/* Recipient estimate + delivery time */}
+                            {recipientEstimate && recipientEstimate.total > 0 && someAudienceSelected && (
+                                <div style={{
+                                    marginTop: '10px', padding: '10px 14px', borderRadius: '8px',
+                                    background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.15)',
+                                    display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '1rem' }}>👥</span>
+                                        <div>
+                                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#34d399' }}>
+                                                {recipientEstimate.total.toLocaleString()} recipient{recipientEstimate.total !== 1 ? 's' : ''}
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                                                {recipientEstimate.members > 0 && `${recipientEstimate.members} user${recipientEstimate.members !== 1 ? 's' : ''}`}
+                                                {recipientEstimate.members > 0 && recipientEstimate.subscribers > 0 && ' + '}
+                                                {recipientEstimate.subscribers > 0 && `${recipientEstimate.subscribers} subscriber${recipientEstimate.subscribers !== 1 ? 's' : ''}`}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{ fontSize: '1rem' }}>⏱️</span>
+                                        <div>
+                                            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                                {(() => {
+                                                    const batches = Math.ceil(recipientEstimate.total / 4)
+                                                    const totalSec = batches * 2
+                                                    if (totalSec < 60) return `~${totalSec}s`
+                                                    const mins = Math.ceil(totalSec / 60)
+                                                    return `~${mins} min${mins !== 1 ? 's' : ''}`
+                                                })()}
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                                                estimated delivery
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            {loadingLocales && someAudienceSelected && (
+                                <div style={{ marginTop: '8px', fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>⏳ Counting recipients…</div>
                             )}
                         </div>
 
