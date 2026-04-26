@@ -136,6 +136,13 @@ body {
   .mobile-only  { display: block !important; }
   .desktop-only { display: none  !important; }
 }
+/* Phone in landscape — short side (height) < 768px, width exceeds 768px.
+   Without this, landscape hides .mobile-only and shows desktop layout,
+   then rotating back to portrait breaks the page. */
+@media (orientation: landscape) and (max-height: 768px) {
+  .mobile-only  { display: block !important; }
+  .desktop-only { display: none  !important; }
+}
 
 /* Ultra-fine grain texture overlay â€” desktop only (SVG filter is GPU-expensive on mobile) */
 body::before {
