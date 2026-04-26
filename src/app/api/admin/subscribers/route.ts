@@ -30,11 +30,33 @@ export async function GET(req: Request) {
                   : sort === 'name'   ? { email: 'asc' }
                   : { subscribedAt: 'desc' }
 
+    // Count failed sends per subscriber email (from EmailLog)
+    const failedEmailCounts = await db.emailLog.groupBy({
+        by: ['to'],
+        where: { success: false },
+        _count: { id: true },
+    }) as { to: string; _count: { id: number } }[]
+    const failedMap = new Map(failedEmailCounts.map((f: { to: string; _count: { id: number } }) => [f.to, f._count.id]))
+
+    // Collect emails with failures for the 'failed' filter
+    const failedEmails = failedEmailCounts.map((f: { to: string }) => f.to)
+
+    // Apply 'failed' status filter — subscribers whose email appears in failed EmailLog entries
+    if (status === 'failed' && failedEmails.length > 0) {
+        where.email = { in: failedEmails }
+    } else if (status === 'failed') {
+        // No failed emails at all — return empty
+        where.email = { in: [] }
+    }
+
     const [total, active, inactive] = await Promise.all([
         db.subscriber.count(),
         db.subscriber.count({ where: { active: true } }),
         db.subscriber.count({ where: { active: false } }),
     ])
+    const failedCount = await db.subscriber.count({
+        where: { email: { in: failedEmails.length > 0 ? failedEmails : ['__none__'] } },
+    })
 
     // CSV export — return all matching rows, no pagination
     if (format === 'csv') {
@@ -43,9 +65,9 @@ export async function GET(req: Request) {
             orderBy,
             select: { email: true, name: true, active: true, subscribedAt: true },
         })
-        const header = 'Email,Name,Status,Subscribed At'
+        const header = 'Email,Name,Status,Failed Sends,Subscribed At'
         const rows = all.map((s: { email: string; name: string | null; active: boolean; subscribedAt: Date }) =>
-            `"${s.email}","${s.name || ''}","${s.active ? 'active' : 'inactive'}","${new Date(s.subscribedAt).toISOString()}"`
+            `"${s.email}","${s.name || ''}","${s.active ? 'active' : 'inactive'}","${failedMap.get(s.email) || 0}","${new Date(s.subscribedAt).toISOString()}"`
         )
         const csv = [header, ...rows].join('\n')
         return new Response(csv, {
@@ -64,9 +86,15 @@ export async function GET(req: Request) {
         select: { id: true, email: true, name: true, active: true, subscribedAt: true },
     })
 
+    // Enrich each subscriber with their failed send count
+    const enriched = subscribers.map((s: { id: string; email: string; name: string | null; active: boolean; subscribedAt: Date }) => ({
+        ...s,
+        failedSends: failedMap.get(s.email) || 0,
+    }))
+
     return NextResponse.json({
-        subscribers,
-        stats: { total, active, inactive },
+        subscribers: enriched,
+        stats: { total, active, inactive, failed: failedCount },
         pagination: {
             page, limit, total: (await db.subscriber.count({ where })),
             totalPages: Math.ceil((await db.subscriber.count({ where })) / limit),

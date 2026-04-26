@@ -9,14 +9,15 @@ interface Subscriber {
     name: string | null
     active: boolean
     subscribedAt: string
+    failedSends: number
 }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
-interface Stats { total: number; active: number; inactive: number }
+interface Stats { total: number; active: number; inactive: number; failed: number }
 
 export default function AdminSubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([])
     const [pagination, setPagination]   = useState<Pagination>({ page: 1, limit: 50, total: 0, totalPages: 0 })
-    const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0 })
+    const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0, failed: 0 })
     const [loading, setLoading]         = useState(true)
     const [search, setSearch]           = useState('')
     const [status, setStatus]           = useState('all')
@@ -149,13 +150,16 @@ export default function AdminSubscribersPage() {
                 )}
 
                 {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
                     {[
                         { label: 'Total', value: stats.total, color: '#d4a853' },
                         { label: 'Active',   value: stats.active,   color: '#10b981' },
                         { label: 'Inactive', value: stats.inactive, color: '#6b7280' },
+                        { label: 'Failed Sends', value: stats.failed, color: '#ef4444' },
                     ].map(s => (
-                        <div key={s.label} className="admin-card" style={{ padding: 'var(--space-lg)', textAlign: 'center' }}>
+                        <div key={s.label} className="admin-card" style={{ padding: 'var(--space-lg)', textAlign: 'center', cursor: s.label === 'Failed Sends' && s.value > 0 ? 'pointer' : 'default' }}
+                            onClick={() => s.label === 'Failed Sends' && s.value > 0 && setStatus('failed')}
+                        >
                             <div style={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value.toLocaleString()}</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
                         </div>
@@ -180,6 +184,7 @@ export default function AdminSubscribersPage() {
                                 <option value="all">All</option>
                                 <option value="active">Active</option>
                                 <option value="inactive">Inactive</option>
+                                <option value="failed">⚠️ Has Failures</option>
                             </select>
                         </div>
                         <div>
@@ -246,7 +251,7 @@ export default function AdminSubscribersPage() {
                                             style={{ accentColor: 'var(--accent-gold)', cursor: 'pointer' }}
                                         />
                                     </th>
-                                    {['Email', 'Name', 'Status', 'Subscribed'].map(h => (
+                                    {['Email', 'Name', 'Status', 'Fails', 'Subscribed'].map(h => (
                                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -289,6 +294,21 @@ export default function AdminSubscribersPage() {
                                             <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
                                                 {new Date(sub.subscribedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                             </span>
+                                        </td>
+                                        <td style={{ padding: '10px 14px' }}>
+                                            {sub.failedSends > 0 ? (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    padding: '2px 7px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    background: sub.failedSends >= 3 ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.1)',
+                                                    color: sub.failedSends >= 3 ? '#ef4444' : '#f59e0b',
+                                                    border: `1px solid ${sub.failedSends >= 3 ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.2)'}`,
+                                                }}>
+                                                    ⚠️ {sub.failedSends}
+                                                </span>
+                                            ) : (
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>—</span>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

@@ -300,6 +300,28 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             },
         }).catch(() => { /* non-critical */ })
 
+        // Auto-deactivate subscriber after 3+ consecutive failures
+        // Fire-and-forget — never blocks the main flow
+        try {
+            const recentLogs = await prisma.emailLog.findMany({
+                where: { to: options.to },
+                orderBy: { sentAt: 'desc' },
+                take: 3,
+                select: { success: true },
+            })
+            const allFailed = recentLogs.length >= 3 && recentLogs.every(l => !l.success)
+            if (allFailed) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (prisma as any).subscriber.updateMany({
+                    where: { email: options.to, active: true },
+                    data: { active: false },
+                })
+                if (result.count > 0) {
+                    logger.warn('mailer', `Auto-deactivated subscriber ${options.to} after 3 consecutive send failures`)
+                }
+            }
+        } catch { /* non-critical — don't break email flow */ }
+
         // Surface in Sentry if available
         try {
             const { captureException } = await import('@sentry/nextjs')
