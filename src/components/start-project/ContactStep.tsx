@@ -68,9 +68,9 @@ export default function ContactStep({ form, updateField, fieldErrors }: Props) {
                             style={{ appearance: 'auto' }}
                         >
                             <option value="">—</option>
-                            <option value="email">Email</option>
-                            <option value="phone">Phone</option>
-                            <option value="whatsapp">WhatsApp</option>
+                            <option value="email">{t('contactMethods.email')}</option>
+                            <option value="phone">{t('contactMethods.phone')}</option>
+                            <option value="whatsapp">{t('contactMethods.whatsapp')}</option>
                         </select>
                     </div>
                 </div>

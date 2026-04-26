@@ -64,7 +64,7 @@ export default function UploadStep({ form, updateField }: Props) {
             for (const file of files) {
                 const { maxBytes, label } = getMaxSizeForFile(file)
                 if (file.size > maxBytes) {
-                    setUploadError(`${file.name}: File exceeds ${label} limit`)
+                    setUploadError(t('errors.fileExceedsLimit', { name: file.name, limit: label }))
                     continue
                 }
 
@@ -88,7 +88,7 @@ export default function UploadStep({ form, updateField }: Props) {
 
                 const signed = await presign.json()
                 if (!presign.ok) {
-                    setUploadError(signed.error || 'Upload failed')
+                    setUploadError(signed.error || t('errors.uploadFailed'))
                     setUploadProgress(prev => { const n = { ...prev }; delete n[fileId]; return n })
                     continue
                 }
@@ -127,7 +127,7 @@ export default function UploadStep({ form, updateField }: Props) {
 
             updateField('uploads', newUploads)
         } catch {
-            setUploadError('Upload failed. Please try again.')
+            setUploadError(t('errors.uploadFailedRetry'))
         } finally {
             setUploading(false)
             setUploadProgress({})
@@ -159,9 +159,9 @@ export default function UploadStep({ form, updateField }: Props) {
                 display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '12px',
             }}>
                 {[
-                    { icon: '🎬', label: `Video: up to ${MAX_VIDEO_MB} MB`, color: '#818cf8' },
-                    { icon: '🎵', label: `Audio: up to ${MAX_AUDIO_MB} MB`, color: '#22c55e' },
-                    { icon: '🖼️', label: `Images/Docs: up to ${MAX_OTHER_MB} MB`, color: '#f59e0b' },
+                    { icon: '🎬', label: t('helpers.videoLimit'), color: '#818cf8' },
+                    { icon: '🎵', label: t('helpers.audioLimit'), color: '#22c55e' },
+                    { icon: '🖼️', label: t('helpers.docLimit'), color: '#f59e0b' },
                 ].map(b => (
                     <span key={b.label} style={{
                         fontSize: '0.65rem', padding: '4px 10px', borderRadius: '20px',
@@ -204,7 +204,7 @@ export default function UploadStep({ form, updateField }: Props) {
                             background: 'rgba(99,102,241,0.04)', border: '1px solid rgba(99,102,241,0.1)',
                         }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                <span>Uploading…</span>
+                                <span>{t('helpers.uploading')}</span>
                                 <span style={{ fontWeight: 700, color: '#818cf8' }}>{pct}%</span>
                             </div>
                             <div style={{ height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>

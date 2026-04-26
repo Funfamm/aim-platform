@@ -503,6 +503,10 @@
     "saved": "Guardado",
     "officialTrailer": "Tráiler Oficial",
     "fullscreenTip": "Usa los controles del reproductor",
+    "trailerLockTitle": "Inicia sesión para ver el tráiler",
+    "trailerLockDesc": "Crea una cuenta gratuita para desbloquear tráilers y contenido exclusivo",
+    "signIn": "Iniciar sesión",
+    "createAccount": "Crear cuenta",
     "synopsis": "Sinopsis",
     "episodes": "Episodios",
     "episode": "Episodio",
@@ -1374,19 +1378,19 @@
   },
   "startProject": {
     "hero": {
-      "title": "Creemos Algo Inolvidable",
+      "title": "Creemos algo inolvidable",
       "subtitle": "Cuéntanos qué quieres crear — desde videos de cumpleaños hasta comerciales, branding y producciones personalizadas.",
-      "cta": "Iniciar Tu Proyecto"
+      "cta": "Inicia tu proyecto"
     },
     "steps": {
-      "projectType": "Tipo de Proyecto",
-      "contact": "Tus Datos",
-      "overview": "Resumen",
-      "creative": "Dirección Creativa",
-      "dynamic": "Detalles",
-      "uploads": "Archivos",
-      "delivery": "Presupuesto",
-      "review": "Revisar"
+      "projectType": "Elige proyecto",
+      "contact": "Tus datos",
+      "overview": "Resumen del proyecto",
+      "creative": "Dirección creativa",
+      "dynamic": "Detalles del proyecto",
+      "uploads": "Agregar archivos",
+      "delivery": "Presupuesto y entrega",
+      "review": "Revisar y enviar"
     },
     "projectTypes": {
       "birthday": {
@@ -1402,57 +1406,70 @@
         "description": "Contenido listo para campañas, promociones y lanzamientos."
       },
       "music": {
-        "title": "Música / Visual Creativo",
-        "description": "Narrativa visual para canciones, letras y actuaciones."
+        "title": "Música / Visual creativo",
+        "description": "Narrativa visual para canciones, letras y presentaciones creativas."
       },
       "film": {
         "title": "Cortometraje / Historia",
-        "description": "Conceptos de video narrativos, escenas e ideas cinematográficas."
+        "description": "Conceptos de video basados en historias, escenas e ideas cinematográficas."
       },
       "event": {
         "title": "Evento / Promo",
-        "description": "Contenido promocional para eventos y anuncios."
+        "description": "Contenido promocional para eventos y anuncios próximos."
       },
       "custom": {
-        "title": "Proyecto Personalizado",
-        "description": "Cuéntanos lo que necesitas y diseñaremos el enfoque creativo."
+        "title": "Proyecto personalizado",
+        "description": "Cuéntanos qué necesitas y diseñaremos el enfoque creativo adecuado."
       }
     },
     "fields": {
-      "projectType": "Tipo de Proyecto",
-      "clientName": "Nombre Completo",
-      "email": "Correo Electrónico",
+      "projectType": "Tipo de proyecto",
+      "clientName": "Nombre completo",
+      "email": "Correo electrónico",
       "phone": "Teléfono / WhatsApp",
-      "contactMethod": "Método de Contacto",
-      "companyName": "Empresa",
-      "projectTitle": "Título del Proyecto",
+      "contactMethod": "Método de contacto preferido",
+      "companyName": "Nombre de la empresa",
+      "projectTitle": "Título del proyecto",
       "description": "Describe tu proyecto",
-      "deadline": "Fecha Límite",
-      "audience": "Público Objetivo",
-      "projectGoal": "Objetivo",
+      "deadline": "Fecha límite o del evento",
+      "audience": "Público objetivo",
+      "projectGoal": "Objetivo del proyecto",
       "tone": "Tono / Estilo",
-      "visualStyle": "Estilo Visual",
-      "inspirationLinks": "Enlaces de Inspiración",
+      "visualStyle": "Estilo visual",
+      "inspirationLinks": "Enlaces de inspiración",
       "avoidNotes": "¿Algo que evitar?",
-      "emotionalFeeling": "Sentimiento deseado",
-      "budgetRange": "Rango de Presupuesto",
-      "duration": "Duración Deseada",
-      "aspectRatio": "Relación de Aspecto",
-      "deliveryPlatform": "Plataforma de Entrega",
+      "emotionalFeeling": "Sensación emocional deseada",
+      "budgetRange": "Rango de presupuesto",
+      "duration": "Duración deseada",
+      "aspectRatio": "Relación de aspecto",
+      "deliveryPlatform": "Plataforma de entrega",
       "addOns": "Complementos",
-      "uploads": "Subir Archivos"
+      "uploads": "Subir archivos",
+      "other": "Otro",
+      "describeStyle": "Describe tu estilo preferido..."
     },
     "tones": {
       "cinematic": "Cinematográfico",
-      "emotional": "Emocional",
+      "emotional": "Emotivo",
       "fun": "Divertido",
-      "luxury": "Lujo",
-      "kidsFriendly": "Para niños",
+      "luxury": "Lujoso",
+      "kidsFriendly": "Apto para niños",
       "bold": "Audaz",
       "inspirational": "Inspirador",
       "cleanMinimal": "Limpio / Minimalista",
       "dramatic": "Dramático",
       "professional": "Profesional"
+    },
+    "visualStyles": {
+      "realistic": "Realista / Acción real",
+      "animated": "Animado / Cartoon",
+      "motionGraphics": "Motion Graphics",
+      "documentary": "Estilo documental",
+      "vintage": "Vintage / Retro",
+      "neon": "Neón / Futurista",
+      "blackAndWhite": "Blanco y negro",
+      "abstract": "Abstracto / Artístico",
+      "corporate": "Corporativo / Limpio"
     },
     "budgetOptions": {
       "30-50": "$30–$50",
@@ -1480,106 +1497,139 @@
     "buttons": {
       "back": "Atrás",
       "continue": "Continuar",
-      "review": "Revisar",
-      "submit": "Enviar Solicitud",
-      "submitAnother": "Enviar Otro Proyecto",
-      "returnHome": "Volver al Inicio",
-      "edit": "Editar"
+      "review": "Revisar solicitud",
+      "submit": "Enviar solicitud de proyecto",
+      "submitting": "Enviando...",
+      "submitAnother": "Enviar otro proyecto",
+      "returnHome": "Volver al inicio",
+      "edit": "Editar",
+      "trackProject": "Seguir tu proyecto"
     },
     "confirmation": {
-      "title": "Tu Proyecto Ha Sido Recibido",
-      "subtitle": "Recibimos tu solicitud y la revisaremos pronto.",
-      "projectId": "ID del Proyecto",
-      "nextSteps": "¿Qué sigue?",
-      "step1": "Revisamos tu solicitud",
-      "step2": "Confirmamos alcance y plazos",
+      "title": "Tu proyecto ha sido recibido",
+      "subtitle": "Recibimos tu brief y revisaremos tu solicitud.",
+      "projectId": "ID del proyecto",
+      "date": "Fecha",
+      "nextSteps": "Próximos pasos",
+      "step1": "Revisamos tu envío",
+      "step2": "Confirmamos alcance y cronograma",
       "step3": "Comienza la producción"
+    },
+    "helpers2": {
+      "reviewHint": "Revisa los detalles de tu proyecto antes de enviar."
     },
     "statuses": {
       "received": "Recibido",
-      "reviewing": "En Revisión",
-      "scope_confirmed": "Alcance Confirmado",
-      "in_production": "En Producción",
-      "awaiting_client": "Esperando Cliente",
+      "reviewing": "En revisión",
+      "scope_confirmed": "Alcance confirmado",
+      "in_production": "En producción",
+      "awaiting_client": "Esperando al cliente",
       "delivered": "Entregado",
       "completed": "Completado",
       "cancelled": "Cancelado"
     },
     "validation": {
       "required": "Este campo es obligatorio",
-      "email": "Ingresa un correo válido",
-      "fileTooLarge": "Este archivo es muy grande",
-      "unsupportedFile": "Tipo de archivo no soportado",
-      "descriptionMin": "Describe tu proyecto (mín. 10 caracteres)",
+      "email": "Por favor ingresa un correo electrónico válido",
+      "fileTooLarge": "Este archivo es demasiado grande",
+      "unsupportedFile": "Este tipo de archivo no es compatible",
+      "descriptionMin": "Por favor describe tu proyecto (mín. 10 caracteres)",
       "consentRequired": "Debes aceptar ser contactado",
-      "maxFiles": "Máximo 10 archivos permitidos"
+      "maxFiles": "Máximo 10 archivos permitidos",
+      "toneRequired": "Selecciona al menos 1 tono"
     },
     "consent": {
       "uploadPermission": "Confirmo que tengo permiso para compartir el contenido subido.",
       "contactAgreement": "Acepto ser contactado sobre esta solicitud de proyecto."
     },
     "helpers": {
-      "overviewHint": "Cuéntanos lo que quieres crear. Mantenlo simple — lo perfeccionaremos contigo.",
-      "uploadHint": "Agrega fotos, videos, logos, música o archivos de referencia.",
+      "overviewHint": "Cuéntanos qué quieres crear. Mantenlo simple — lo perfeccionaremos contigo.",
+      "reviewHint": "Revisa los detalles de tu proyecto antes de enviar.",
+      "uploadHint": "Agrega fotos, videos, logos, música o archivos de referencia que nos ayuden a entender tu visión.",
       "uploading": "Subiendo...",
       "uploadTypes": "Imágenes, videos, audio, PDF, ZIP",
       "remaining": "restantes",
-      "filesUploaded": "archivos subidos"
+      "filesUploaded": "archivos subidos",
+      "adminPreview": "Vista previa de administrador — los campos obligatorios se omiten. Puedes navegar libremente.",
+      "videoLimit": "Video: hasta 500 MB",
+      "audioLimit": "Audio: hasta 50 MB",
+      "docLimit": "Imágenes/Docs: hasta 10 MB",
+      "platformPlaceholder": "YouTube, TikTok, Instagram...",
+      "durationPlaceholder": "ej. 30 seg, 1 min, 5 min"
+    },
+    "contactMethods": {
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "whatsapp": "WhatsApp"
+    },
+    "fileCategories": {
+      "video": "Video",
+      "audio": "Audio",
+      "image": "Imagen",
+      "pdf": "PDF",
+      "file": "Archivo"
+    },
+    "errors": {
+      "submitFailed": "Error al enviar",
+      "somethingWrong": "Algo salió mal",
+      "uploadFailed": "Error al subir",
+      "uploadFailedRetry": "Error al subir. Por favor intenta de nuevo.",
+      "fileExceedsLimit": "{name}: El archivo excede el límite de {limit}"
     },
     "dynamicFields": {
-      "celebrantName": "Nombre del festejado",
+      "celebrantName": "Nombre del homenajeado",
       "ageTurning": "Edad que cumple",
-      "relationship": "Relación",
+      "relationship": "Relación con el homenajeado",
       "eventDate": "Fecha del evento",
       "favoriteColors": "Colores favoritos",
-      "favoriteCharacters": "Personajes / hobbies favoritos",
+      "favoriteCharacters": "Personajes favoritos / pasatiempos",
       "messageToInclude": "Mensaje a incluir",
-      "preferredMood": "Ambiente preferido",
-      "brandName": "Nombre de marca",
+      "preferredMood": "Estado de ánimo preferido",
+      "brandName": "Nombre de la marca",
       "industry": "Industria",
       "website": "Sitio web",
-      "socialLinks": "Redes sociales",
-      "brandColors": "Colores de marca",
+      "socialLinks": "Enlaces de redes sociales",
+      "brandColors": "Colores de la marca",
       "mainMessage": "Mensaje principal",
       "targetAudience": "Público objetivo",
       "desiredCTA": "CTA deseado",
-      "productName": "Nombre del producto",
-      "campaignGoal": "Objetivo de campaña",
+      "productName": "Nombre del producto o servicio",
+      "campaignGoal": "Objetivo de la campaña",
       "platform": "Plataforma",
       "videoDuration": "Duración del video",
       "offer": "Oferta / promoción",
       "cta": "Llamada a la acción",
-      "scriptReady": "¿Guión listo?",
-      "competitorLinks": "Enlaces de competencia",
+      "scriptReady": "¿Guion listo?",
+      "competitorLinks": "Enlaces de competidores/referencias",
       "songName": "Nombre de la canción",
       "artistName": "Nombre del artista",
-      "mood": "Ambiente",
-      "lyricsSyncRequired": "¿Sincronización de letras?",
+      "mood": "Estado de ánimo",
+      "lyricsSyncRequired": "¿Sincronización de letra requerida?",
       "storyline": "Argumento",
-      "performanceOrCinematic": "¿Actuación o cinemático?",
+      "performanceOrCinematic": "¿Actuación o cinematográfico?",
       "storyTitle": "Título de la historia",
       "genre": "Género",
       "synopsis": "Sinopsis",
       "mainCharacters": "Personajes principales",
       "runtimeTarget": "Duración objetivo",
-      "dialogueRequired": "¿Diálogos requeridos?",
+      "dialogueRequired": "¿Diálogo requerido?",
       "mustHaveScenes": "Escenas imprescindibles",
       "visualTone": "Tono visual",
       "eventName": "Nombre del evento",
-      "venue": "Lugar/ubicación",
+      "venue": "Lugar",
       "promoGoal": "Propósito del promo",
-      "speakers": "Ponentes/conductores",
-      "importantDetails": "Detalles importantes",
+      "speakers": "Ponentes/presentadores",
+      "importantDetails": "Detalles importantes del evento",
       "requestDescription": "Describe tu solicitud",
       "whatIsThisFor": "¿Para qué es esto?",
-      "desiredResult": "¿Qué resultado esperas?",
+      "desiredResult": "¿Qué resultado debería lograr?",
       "requiredDeliverables": "Entregables requeridos",
       "specialNotes": "Notas especiales"
     },
     "trustBadges": {
       "fast": "Entrega rápida",
-      "quality": "Calidad Premium",
-      "global": "Servicio Global"
+      "quality": "Calidad premium",
+      "global": "Servicio global"
     }
   }
 }

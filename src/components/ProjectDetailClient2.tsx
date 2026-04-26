@@ -514,13 +514,13 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
                                             fontSize: '1.15rem', fontWeight: 700, color: '#fff',
                                             maxWidth: '400px', lineHeight: 1.4,
                                         }}>
-                                            Sign in to watch the trailer
+                                            {t('trailerLockTitle')}
                                         </p>
                                         <p style={{
                                             fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)',
                                             maxWidth: '320px', lineHeight: 1.5,
                                         }}>
-                                            Create a free account to unlock trailers and exclusive content
+                                            {t('trailerLockDesc')}
                                         </p>
                                         <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
                                             <button
@@ -530,7 +530,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
                                                     padding: '12px 28px', fontWeight: 700, fontSize: '0.9rem',
                                                 }}
                                             >
-                                                Sign In
+                                                {t('signIn')}
                                             </button>
                                             <button
                                                 onClick={() => router.push(`/signup?redirect=/works/${project.slug}#trailer`)}
@@ -542,7 +542,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
                                                     color: '#fff',
                                                 }}
                                             >
-                                                Create Account
+                                                {t('createAccount')}
                                             </button>
                                         </div>
                                     </div>

@@ -90,7 +90,7 @@ export default function ConfirmationView({ project }: Props) {
                 color: 'var(--text-secondary)',
             }}>
                 <span><strong>{t('fields.projectTitle')}:</strong> {project.projectTitle}</span>
-                <span><strong>Date:</strong> {new Date(project.createdAt).toLocaleDateString()}</span>
+                <span><strong>{t('confirmation.date')}:</strong> {new Date(project.createdAt).toLocaleDateString()}</span>
             </div>
 
             {/* Status flow */}

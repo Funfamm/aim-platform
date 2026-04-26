@@ -503,6 +503,10 @@
     "saved": "Sauvegardé",
     "officialTrailer": "Bande-Annonce Officielle",
     "fullscreenTip": "Utilisez les contrôles ou cliquez sur plein écran",
+    "trailerLockTitle": "Connectez-vous pour regarder la bande-annonce",
+    "trailerLockDesc": "Créez un compte gratuit pour débloquer les bandes-annonces et le contenu exclusif",
+    "signIn": "Se connecter",
+    "createAccount": "Créer un compte",
     "synopsis": "Synopsis",
     "episodes": "Épisodes",
     "episode": "Épisode",
@@ -1374,92 +1378,105 @@
   },
   "startProject": {
     "hero": {
-      "title": "Créons Quelque Chose d'Inoubliable",
-      "subtitle": "Dites-nous ce que vous souhaitez créer — des vidéos d'anniversaire aux publicités, branding et productions personnalisées.",
-      "cta": "Démarrer Votre Projet"
+      "title": "Créons quelque chose d'inoubliable",
+      "subtitle": "Dites-nous ce que vous souhaitez créer — des vidéos d'anniversaire aux publicités, branding et productions sur mesure.",
+      "cta": "Démarrer votre projet"
     },
     "steps": {
-      "projectType": "Type de Projet",
-      "contact": "Vos Coordonnées",
-      "overview": "Aperçu",
-      "creative": "Direction Créative",
-      "dynamic": "Détails",
-      "uploads": "Fichiers",
-      "delivery": "Budget",
-      "review": "Vérifier"
+      "projectType": "Choisir le projet",
+      "contact": "Vos coordonnées",
+      "overview": "Aperçu du projet",
+      "creative": "Direction créative",
+      "dynamic": "Détails du projet",
+      "uploads": "Ajouter des fichiers",
+      "delivery": "Budget et livraison",
+      "review": "Vérifier et soumettre"
     },
     "projectTypes": {
       "birthday": {
         "title": "Anniversaire / Célébration",
-        "description": "Vidéos personnalisées pour anniversaires et moments familiaux."
+        "description": "Vidéos personnalisées pour anniversaires, jalons et moments en famille."
       },
       "brand": {
         "title": "Marque / Entreprise",
-        "description": "Visuels professionnels pour votre entreprise."
+        "description": "Visuels professionnels pour votre entreprise, produit ou service."
       },
       "commercial": {
         "title": "Publicité / Annonce",
-        "description": "Contenu prêt pour les campagnes et lancements."
+        "description": "Contenu prêt pour les campagnes, promotions et lancements."
       },
       "music": {
-        "title": "Musique / Visuel Créatif",
-        "description": "Narration visuelle pour chansons et performances."
+        "title": "Musique / Visuel créatif",
+        "description": "Narration visuelle pour chansons, paroles et performances créatives."
       },
       "film": {
-        "title": "Court Métrage / Histoire",
-        "description": "Concepts vidéo narratifs et idées cinématiques."
+        "title": "Court-métrage / Histoire",
+        "description": "Concepts vidéo basés sur des histoires, scènes et idées cinématographiques."
       },
       "event": {
         "title": "Événement / Promo",
-        "description": "Contenu promotionnel pour événements."
+        "description": "Contenu promotionnel pour événements et annonces à venir."
       },
       "custom": {
-        "title": "Projet Sur Mesure",
-        "description": "Dites-nous ce dont vous avez besoin."
+        "title": "Projet sur mesure",
+        "description": "Dites-nous ce dont vous avez besoin et nous concevrons l'approche créative adaptée."
       }
     },
     "fields": {
-      "projectType": "Type de Projet",
-      "clientName": "Nom Complet",
+      "projectType": "Type de projet",
+      "clientName": "Nom complet",
       "email": "E-mail",
       "phone": "Téléphone / WhatsApp",
-      "contactMethod": "Méthode de Contact",
-      "companyName": "Entreprise",
-      "projectTitle": "Titre du Projet",
+      "contactMethod": "Méthode de contact préférée",
+      "companyName": "Nom de l'entreprise",
+      "projectTitle": "Titre du projet",
       "description": "Décrivez votre projet",
-      "deadline": "Date Limite",
-      "audience": "Public Cible",
-      "projectGoal": "Objectif",
+      "deadline": "Date limite ou d'événement",
+      "audience": "Public cible",
+      "projectGoal": "Objectif du projet",
       "tone": "Ton / Style",
-      "visualStyle": "Style Visuel",
-      "inspirationLinks": "Liens d'Inspiration",
-      "avoidNotes": "Choses à éviter?",
-      "emotionalFeeling": "Émotion souhaitée",
-      "budgetRange": "Budget",
-      "duration": "Durée Souhaitée",
-      "aspectRatio": "Format",
-      "deliveryPlatform": "Plateforme",
-      "addOns": "Options",
-      "uploads": "Téléverser"
+      "visualStyle": "Style visuel",
+      "inspirationLinks": "Liens d'inspiration",
+      "avoidNotes": "Quelque chose à éviter ?",
+      "emotionalFeeling": "Sensation émotionnelle souhaitée",
+      "budgetRange": "Fourchette budgétaire",
+      "duration": "Durée souhaitée",
+      "aspectRatio": "Format d'image",
+      "deliveryPlatform": "Plateforme de livraison",
+      "addOns": "Extras",
+      "uploads": "Télécharger des fichiers",
+      "other": "Autre",
+      "describeStyle": "Décrivez votre style préféré..."
     },
     "tones": {
-      "cinematic": "Cinématique",
+      "cinematic": "Cinématographique",
       "emotional": "Émotionnel",
       "fun": "Amusant",
-      "luxury": "Luxe",
-      "kidsFriendly": "Pour enfants",
+      "luxury": "Luxueux",
+      "kidsFriendly": "Adapté aux enfants",
       "bold": "Audacieux",
       "inspirational": "Inspirant",
       "cleanMinimal": "Épuré / Minimal",
       "dramatic": "Dramatique",
       "professional": "Professionnel"
     },
+    "visualStyles": {
+      "realistic": "Réaliste / Prise de vue réelle",
+      "animated": "Animé / Dessin animé",
+      "motionGraphics": "Motion Graphics",
+      "documentary": "Style documentaire",
+      "vintage": "Vintage / Rétro",
+      "neon": "Néon / Futuriste",
+      "blackAndWhite": "Noir et blanc",
+      "abstract": "Abstrait / Artistique",
+      "corporate": "Corporate / Épuré"
+    },
     "budgetOptions": {
-      "30-50": "30–50 $",
-      "50-100": "50–100 $",
-      "100-250": "100–250 $",
-      "250-500": "250–500 $",
-      "500+": "500+ $",
+      "30-50": "$30–$50",
+      "50-100": "$50–$100",
+      "100-250": "$100–$250",
+      "250-500": "$250–$500",
+      "500+": "$500+",
       "not-sure": "Pas encore sûr"
     },
     "aspectOptions": {
@@ -1475,111 +1492,144 @@
       "translation": "Traduction",
       "multipleVersions": "Versions multiples",
       "thumbnail": "Miniature/Affiche",
-      "rushDelivery": "Livraison urgente"
+      "rushDelivery": "Livraison express"
     },
     "buttons": {
       "back": "Retour",
       "continue": "Continuer",
-      "review": "Vérifier",
-      "submit": "Soumettre la Demande",
-      "submitAnother": "Soumettre un Autre",
-      "returnHome": "Retour à l'Accueil",
-      "edit": "Modifier"
+      "review": "Vérifier la demande",
+      "submit": "Soumettre la demande de projet",
+      "submitting": "Envoi en cours...",
+      "submitAnother": "Soumettre un autre projet",
+      "returnHome": "Retour à l'accueil",
+      "edit": "Modifier",
+      "trackProject": "Suivre votre projet"
     },
     "confirmation": {
-      "title": "Votre Projet a Été Reçu",
+      "title": "Votre projet a été reçu",
       "subtitle": "Nous avons reçu votre brief et examinerons votre demande.",
-      "projectId": "ID du Projet",
+      "projectId": "ID du projet",
+      "date": "Date",
       "nextSteps": "Prochaines étapes",
-      "step1": "Nous examinons votre demande",
-      "step2": "Nous confirmons la portée",
+      "step1": "Nous examinons votre soumission",
+      "step2": "Nous confirmons la portée et le calendrier",
       "step3": "La production commence"
+    },
+    "helpers2": {
+      "reviewHint": "Vérifiez les détails de votre projet avant de soumettre."
     },
     "statuses": {
       "received": "Reçu",
-      "reviewing": "En Examen",
-      "scope_confirmed": "Portée Confirmée",
-      "in_production": "En Production",
-      "awaiting_client": "En Attente",
+      "reviewing": "En cours de vérification",
+      "scope_confirmed": "Portée confirmée",
+      "in_production": "En production",
+      "awaiting_client": "En attente du client",
       "delivered": "Livré",
       "completed": "Terminé",
       "cancelled": "Annulé"
     },
     "validation": {
       "required": "Ce champ est requis",
-      "email": "Entrez un e-mail valide",
-      "fileTooLarge": "Fichier trop volumineux",
-      "unsupportedFile": "Type de fichier non supporté",
-      "descriptionMin": "Décrivez votre projet (min 10 caractères)",
+      "email": "Veuillez entrer une adresse e-mail valide",
+      "fileTooLarge": "Ce fichier est trop volumineux",
+      "unsupportedFile": "Ce type de fichier n'est pas pris en charge",
+      "descriptionMin": "Veuillez décrire votre projet (min. 10 caractères)",
       "consentRequired": "Vous devez accepter d'être contacté",
-      "maxFiles": "Maximum 10 fichiers"
+      "maxFiles": "Maximum 10 fichiers autorisés",
+      "toneRequired": "Sélectionnez au moins 1 ton"
     },
     "consent": {
-      "uploadPermission": "Je confirme avoir le droit de partager le contenu.",
-      "contactAgreement": "J'accepte d'être contacté concernant ce projet."
+      "uploadPermission": "Je confirme avoir l'autorisation de partager le contenu téléchargé.",
+      "contactAgreement": "J'accepte d'être contacté au sujet de cette demande de projet."
     },
     "helpers": {
-      "overviewHint": "Dites-nous ce que vous souhaitez créer.",
-      "uploadHint": "Ajoutez des photos, vidéos, logos ou fichiers de référence.",
-      "uploading": "Téléversement...",
+      "overviewHint": "Dites-nous ce que vous voulez créer. Restez simple — nous affinerons ensemble.",
+      "reviewHint": "Vérifiez les détails de votre projet avant de soumettre.",
+      "uploadHint": "Ajoutez des photos, vidéos, logos, musiques ou fichiers de référence pour nous aider à comprendre votre vision.",
+      "uploading": "Téléchargement...",
       "uploadTypes": "Images, vidéos, audio, PDF, ZIP",
       "remaining": "restants",
-      "filesUploaded": "fichiers téléversés"
+      "filesUploaded": "fichiers téléchargés",
+      "adminPreview": "Aperçu admin — les champs obligatoires sont ignorés. Vous pouvez naviguer librement.",
+      "videoLimit": "Vidéo : jusqu'à 500 Mo",
+      "audioLimit": "Audio : jusqu'à 50 Mo",
+      "docLimit": "Images/Docs : jusqu'à 10 Mo",
+      "platformPlaceholder": "YouTube, TikTok, Instagram...",
+      "durationPlaceholder": "ex. 30 sec, 1 min, 5 min"
+    },
+    "contactMethods": {
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "whatsapp": "WhatsApp"
+    },
+    "fileCategories": {
+      "video": "Vidéo",
+      "audio": "Audio",
+      "image": "Image",
+      "pdf": "PDF",
+      "file": "Fichier"
+    },
+    "errors": {
+      "submitFailed": "Échec de l'envoi",
+      "somethingWrong": "Une erreur s'est produite",
+      "uploadFailed": "Échec du téléchargement",
+      "uploadFailedRetry": "Échec du téléchargement. Veuillez réessayer.",
+      "fileExceedsLimit": "{name} : Le fichier dépasse la limite de {limit}"
     },
     "dynamicFields": {
-      "celebrantName": "Nom du célébré",
-      "ageTurning": "Âge",
-      "relationship": "Relation",
-      "eventDate": "Date",
+      "celebrantName": "Nom de la personne fêtée",
+      "ageTurning": "Âge atteint",
+      "relationship": "Relation avec la personne fêtée",
+      "eventDate": "Date de l'événement",
       "favoriteColors": "Couleurs préférées",
-      "favoriteCharacters": "Personnages / hobbies",
+      "favoriteCharacters": "Personnages préférés / loisirs",
       "messageToInclude": "Message à inclure",
-      "preferredMood": "Ambiance",
-      "brandName": "Nom de marque",
-      "industry": "Industrie",
+      "preferredMood": "Ambiance préférée",
+      "brandName": "Nom de la marque",
+      "industry": "Secteur d'activité",
       "website": "Site web",
-      "socialLinks": "Réseaux sociaux",
-      "brandColors": "Couleurs de marque",
+      "socialLinks": "Liens réseaux sociaux",
+      "brandColors": "Couleurs de la marque",
       "mainMessage": "Message principal",
       "targetAudience": "Public cible",
       "desiredCTA": "CTA souhaité",
-      "productName": "Nom du produit",
-      "campaignGoal": "Objectif de campagne",
+      "productName": "Nom du produit ou service",
+      "campaignGoal": "Objectif de la campagne",
       "platform": "Plateforme",
-      "videoDuration": "Durée vidéo",
+      "videoDuration": "Durée de la vidéo",
       "offer": "Offre / promotion",
       "cta": "Appel à l'action",
-      "scriptReady": "Script prêt?",
-      "competitorLinks": "Liens concurrents",
+      "scriptReady": "Script prêt ?",
+      "competitorLinks": "Liens concurrents/références",
       "songName": "Nom de la chanson",
       "artistName": "Nom de l'artiste",
       "mood": "Ambiance",
-      "lyricsSyncRequired": "Sync des paroles?",
+      "lyricsSyncRequired": "Synchronisation des paroles requise ?",
       "storyline": "Scénario",
-      "performanceOrCinematic": "Performance ou ciné?",
-      "storyTitle": "Titre",
+      "performanceOrCinematic": "Performance ou cinématographique ?",
+      "storyTitle": "Titre de l'histoire",
       "genre": "Genre",
       "synopsis": "Synopsis",
-      "mainCharacters": "Personnages",
+      "mainCharacters": "Personnages principaux",
       "runtimeTarget": "Durée cible",
-      "dialogueRequired": "Dialogues requis?",
-      "mustHaveScenes": "Scènes indispensables",
+      "dialogueRequired": "Dialogue requis ?",
+      "mustHaveScenes": "Scènes incontournables",
       "visualTone": "Ton visuel",
       "eventName": "Nom de l'événement",
       "venue": "Lieu",
-      "promoGoal": "But du promo",
-      "speakers": "Intervenants",
-      "importantDetails": "Détails importants",
+      "promoGoal": "Objectif de la promo",
+      "speakers": "Intervenants/animateurs",
+      "importantDetails": "Détails importants de l'événement",
       "requestDescription": "Décrivez votre demande",
-      "whatIsThisFor": "À quoi sert-ce?",
-      "desiredResult": "Résultat souhaité?",
+      "whatIsThisFor": "À quoi cela sert-il ?",
+      "desiredResult": "Quel résultat doit-il atteindre ?",
       "requiredDeliverables": "Livrables requis",
       "specialNotes": "Notes spéciales"
     },
     "trustBadges": {
       "fast": "Livraison rapide",
-      "quality": "Qualité Premium",
-      "global": "Service Mondial"
+      "quality": "Qualité premium",
+      "global": "Service mondial"
     }
   }
 }

@@ -110,7 +110,7 @@ export default function BudgetDeliveryStep({ form, updateField, fieldErrors }: P
                         <input
                             id="sp-deliveryPlatform"
                             className="sp-input"
-                            placeholder="YouTube, TikTok, Instagram..."
+                            placeholder={t('helpers.platformPlaceholder')}
                             value={form.deliveryPlatform}
                             onChange={e => updateField('deliveryPlatform', e.target.value)}
                         />
@@ -120,7 +120,7 @@ export default function BudgetDeliveryStep({ form, updateField, fieldErrors }: P
                         <input
                             id="sp-duration"
                             className="sp-input"
-                            placeholder="e.g. 30 sec, 1 min, 5 min"
+                            placeholder={t('helpers.durationPlaceholder')}
                             value={form.duration}
                             onChange={e => updateField('duration', e.target.value)}
                         />

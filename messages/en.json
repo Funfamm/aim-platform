@@ -505,6 +505,10 @@
     "saved": "Saved",
     "officialTrailer": "Official Trailer",
     "fullscreenTip": "Use the player controls or click Fullscreen for an immersive experience",
+    "trailerLockTitle": "Sign in to watch the trailer",
+    "trailerLockDesc": "Create a free account to unlock trailers and exclusive content",
+    "signIn": "Sign In",
+    "createAccount": "Create Account",
     "synopsis": "Synopsis",
     "episodes": "Episodes",
     "episode": "Episode",
@@ -1495,6 +1499,7 @@
       "continue": "Continue",
       "review": "Review Request",
       "submit": "Submit Project Request",
+      "submitting": "Submitting...",
       "submitAnother": "Submit Another Project",
       "returnHome": "Return Home",
       "edit": "Edit",
@@ -1504,6 +1509,7 @@
       "title": "Your Project Has Been Received",
       "subtitle": "We received your brief and will review your request.",
       "projectId": "Project ID",
+      "date": "Date",
       "nextSteps": "What happens next",
       "step1": "We review your submission",
       "step2": "We confirm scope and timeline",
@@ -1544,7 +1550,32 @@
       "uploading": "Uploading...",
       "uploadTypes": "Images, videos, audio, PDF, ZIP",
       "remaining": "remaining",
-      "filesUploaded": "files uploaded"
+      "filesUploaded": "files uploaded",
+      "adminPreview": "Admin Preview — required fields are bypassed. You can navigate all steps freely.",
+      "videoLimit": "Video: up to 500 MB",
+      "audioLimit": "Audio: up to 50 MB",
+      "docLimit": "Images/Docs: up to 10 MB",
+      "platformPlaceholder": "YouTube, TikTok, Instagram...",
+      "durationPlaceholder": "e.g. 30 sec, 1 min, 5 min"
+    },
+    "contactMethods": {
+      "email": "Email",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp"
+    },
+    "fileCategories": {
+      "video": "Video",
+      "audio": "Audio",
+      "image": "Image",
+      "pdf": "PDF",
+      "file": "File"
+    },
+    "errors": {
+      "submitFailed": "Failed to submit",
+      "somethingWrong": "Something went wrong",
+      "uploadFailed": "Upload failed",
+      "uploadFailedRetry": "Upload failed. Please try again.",
+      "fileExceedsLimit": "{name}: File exceeds {limit} limit"
     },
     "dynamicFields": {
       "celebrantName": "Celebrant name",

@@ -242,12 +242,12 @@ export default function StartProjectFlow() {
             const data = await res.json()
 
             if (!res.ok) {
-                throw new Error(data.error || 'Failed to submit')
+                throw new Error(data.error || t('errors.submitFailed'))
             }
 
             setSubmittedProject(data.project)
         } catch (err) {
-            setSubmitError(err instanceof Error ? err.message : 'Something went wrong')
+            setSubmitError(err instanceof Error ? err.message : t('errors.somethingWrong'))
         } finally {
             setIsSubmitting(false)
         }
@@ -285,7 +285,7 @@ export default function StartProjectFlow() {
                     color: '#f59e0b',
                 }}>
                     <span style={{ fontSize: '1rem' }}>🛡️</span>
-                    Admin Preview — required fields are bypassed. You can navigate all steps freely.
+                    {t('helpers.adminPreview')}
                 </div>
             )}
 
@@ -376,7 +376,7 @@ export default function StartProjectFlow() {
                             minWidth: '180px',
                         }}
                     >
-                        {isSubmitting ? '⏳ Submitting...' : `🚀 ${t('buttons.submit')}`}
+                        {isSubmitting ? `⏳ ${t('buttons.submitting')}` : `🚀 ${t('buttons.submit')}`}
                     </button>
                 )}
             </div>
