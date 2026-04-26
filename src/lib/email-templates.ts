@@ -1015,9 +1015,9 @@ export function announcementEmail(
     const bannerBlock  = (imageUrl && imageUrl.startsWith('https://'))
         ? `<div style="margin:0 0 24px;border-radius:10px;overflow:hidden;"><img src="${imageUrl}" alt="" width="100%" style="display:block;width:100%;max-height:300px;object-fit:cover;border-radius:10px;" /></div>`
         : ''
-    // Rich body — strip to safe subset (p,strong,em,h2,h3,ul,ol,li,a,br)
-    const allowedTags  = /(<\/?(?:p|strong|em|h2|h3|ul|ol|li|a|br)[^>]*>)/gi
-    const safeBody     = bodyHtml ? bodyHtml.replace(/<[^>]+>/g, (t) => allowedTags.test(t) ? t : '') : ''
+    // Rich body — keep safe subset (p,strong,em,h2,h3,ul,ol,li,a,br) and strip everything else
+    const isAllowedTag = (tag: string) => /^<\/?(?:p|strong|em|b|i|h2|h3|ul|ol|li|a|br)\b[^>]*>$/i.test(tag)
+    const safeBody     = bodyHtml ? bodyHtml.replace(/<[^>]+>/g, (t) => isAllowedTag(t) ? t : '') : ''
     const bodyBlock    = safeBody ? `<div style="margin:16px 0;font-size:15px;color:#c9c7c4;line-height:1.75;">${safeBody}</div>` : ''
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
