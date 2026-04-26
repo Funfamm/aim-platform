@@ -134,9 +134,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         {/* Dark overlay behind cards — full-bleed, ensures readability over hero video */}
         <div style={{
           position: 'absolute',
-          top: 0, left: '50%', right: 0, bottom: 0,
+          top: 0, bottom: 0,
+          left: '50%',
+          right: 'auto',
           width: '100vw',
-          transform: 'translateX(-50%)',
+          marginLeft: '-50vw',
           background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
           pointerEvents: 'none',
           zIndex: 0,
