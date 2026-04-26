@@ -56,6 +56,7 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
     const bargeInListeningRef = useRef(false)
     const idleWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const speakStartedAtRef = useRef(0) // grace period — ignore mic for first 2s of playback
+    const replayLastRef = useRef<string>('') // last AI response text for replay
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -150,28 +151,9 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                 const vol = Math.min(sum / data.length / 30, 1)
                 setVolume(vol)
 
-                // Barge-in: user speaks over the agent to interrupt
-                // Grace period: ignore mic for first 2s to avoid speaker echo triggering false barge-in
-                const elapsed = Date.now() - speakStartedAtRef.current
-                if (phaseRef.current === 'speaking' && elapsed > 2000 && vol > 0.45) {
-                    bargeInCountRef.current += 1
-                    if (bargeInCountRef.current >= 6) {
-                        bargeInCountRef.current = 0
-                        bargedInRef.current = true
-                        bargeInListeningRef.current = true
-                        currentAudioRef.current?.pause()
-                        currentAudioRef.current = null
-                        if (window.speechSynthesis) window.speechSynthesis.cancel()
-                        speakResolveRef.current?.()
-                        speakResolveRef.current = null
-                        setPhaseSync('idle')
-                        autoListenTimeoutRef.current = setTimeout(() => startListening(), 150)
-                        resetIdleWatchdog()
-                        return
-                    }
-                } else {
-                    bargeInCountRef.current = 0
-                }
+                // Barge-in disabled — mic is stopped during agent speech.
+                // Volume meter only runs during listening phase for visual feedback.
+                bargeInCountRef.current = 0
 
                 animFrameRef.current = requestAnimationFrame(tick)
             }
@@ -200,6 +182,9 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                 speakResolveRef.current()
                 speakResolveRef.current = null
             }
+
+            // Stop mic/volume meter during agent speech — prevents speaker echo from triggering false barge-in
+            stopVolumeMeter()
 
             speakResolveRef.current = resolve
             setPhaseSync('speaking')
@@ -263,8 +248,6 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                                 audio.play()
                                     .then(() => {
                                         console.log('[Voice] audio.play() resolved ✓')
-                                        // Start volume meter AFTER audio is actually playing
-                                        startVolumeMeter()
                                         settle(true)
                                     })
                                     .catch((err) => {
@@ -318,7 +301,6 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
             // ── Fallback: Browser speechSynthesis ──
             console.log('[Voice] falling back to browser speechSynthesis')
             setTtsProvider('browser')
-            startVolumeMeter()
 
             if (typeof window !== 'undefined' && window.speechSynthesis) {
                 window.speechSynthesis.cancel()
@@ -354,20 +336,29 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
             })
             const result = await res.json()
             const answer = result.answer || 'Sorry, I couldn\'t get a response. Try again?'
+            replayLastRef.current = answer
             setMessages(prev => [...prev, { role: 'ai', text: answer }])
             await speakResponse(answer)
         } catch {
             const errMsg = 'I hit a snag. Can you try asking again?'
+            replayLastRef.current = errMsg
             setMessages(prev => [...prev, { role: 'ai', text: errMsg }])
             await speakResponse(errMsg)
         }
 
-        if (!bargedInRef.current) {
-            setPhaseSync('idle')
-            autoListenTimeoutRef.current = setTimeout(() => startListening(), 600)
-            resetIdleWatchdog()
-        }
-        bargedInRef.current = false
+        // Speech finished — return to listening
+        setPhaseSync('idle')
+        autoListenTimeoutRef.current = setTimeout(() => startListening(), 600)
+        resetIdleWatchdog()
+    }
+
+    const handleReplay = async () => {
+        const text = replayLastRef.current
+        if (!text) return
+        await speakResponse(text)
+        setPhaseSync('idle')
+        autoListenTimeoutRef.current = setTimeout(() => startListening(), 600)
+        resetIdleWatchdog()
     }
 
     const startListening = () => {
@@ -448,7 +439,10 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
         if (phase === 'listening') { stopListening(); return }
         if (phase === 'speaking') {
             currentAudioRef.current?.pause()
+            currentAudioRef.current = null
             window.speechSynthesis?.cancel()
+            speakResolveRef.current?.()
+            speakResolveRef.current = null
         }
         startListening()
     }
@@ -600,8 +594,21 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                         {phase === 'idle' ? 'Tap orb or button to start' : ''}
                         {phase === 'listening' ? 'Tap again to stop & send' : ''}
                         {phase === 'thinking' ? 'Analyzing your data…' : ''}
-                        {phase === 'speaking' ? 'Tap to interrupt & speak' : ''}
+                        {phase === 'speaking' ? 'Agent is speaking…' : ''}
                     </div>
+
+                    {/* Replay button — shown when idle and there's a previous AI response */}
+                    {phase === 'idle' && replayLastRef.current && (
+                        <button
+                            onClick={handleReplay}
+                            style={{
+                                padding: '6px 16px', borderRadius: '8px', fontSize: '0.72rem', fontWeight: 600,
+                                background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)',
+                                color: 'var(--accent-gold)', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: '5px',
+                            }}
+                        >🔄 Replay last response</button>
+                    )}
                 </div>
 
                 {/* Right: Conversation transcript */}
