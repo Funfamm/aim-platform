@@ -190,6 +190,7 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
 
     const speakResponse = async (text: string): Promise<void> => {
         return new Promise(async (resolve) => {
+            // ── Clean up any previous audio/speech ──
             if (currentAudioRef.current) {
                 currentAudioRef.current.pause()
                 currentAudioRef.current = null
@@ -204,19 +205,27 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
             setPhaseSync('speaking')
             bargeInCountRef.current = 0
             speakStartedAtRef.current = Date.now()
-            startVolumeMeter()
 
+            // Safety: if nothing resolves within 30s, force-resolve
             const safetyTimer = setTimeout(() => {
-                if (speakResolveRef.current === resolve) {
-                    currentAudioRef.current?.pause()
-                    currentAudioRef.current = null
-                    if (window.speechSynthesis) window.speechSynthesis.cancel()
-                    speakResolveRef.current?.()
-                    speakResolveRef.current = null
-                }
-            }, 15000)
+                console.warn('[Voice] safety timer fired — force-resolving speakResponse')
+                currentAudioRef.current?.pause()
+                currentAudioRef.current = null
+                if (window.speechSynthesis) window.speechSynthesis.cancel()
+                speakResolveRef.current?.()
+                speakResolveRef.current = null
+            }, 30000)
 
+            const done = () => {
+                clearTimeout(safetyTimer)
+                speakResolveRef.current?.()
+                speakResolveRef.current = null
+            }
+
+            // ── Try TTS API (ElevenLabs / OpenAI) ──
+            let ttsAudioPlayed = false
             try {
+                console.log('[Voice] fetching TTS audio...')
                 const res = await fetch('/api/admin/analytics/tts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -224,23 +233,97 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                 })
 
                 const contentType = res.headers.get('content-type') || ''
+                console.log('[Voice] TTS response content-type:', contentType, 'status:', res.status)
+
                 if (contentType.includes('audio')) {
                     const provider = res.headers.get('x-tts-provider') || 'openai'
                     setTtsProvider(provider === 'elevenlabs' ? 'elevenlabs' : 'openai')
                     const blob = await res.blob()
-                    const url = URL.createObjectURL(blob)
-                    const audio = new Audio(url)
-                    currentAudioRef.current = audio
-                    audio.onended = () => { clearTimeout(safetyTimer); URL.revokeObjectURL(url); speakResolveRef.current?.(); speakResolveRef.current = null }
-                    audio.onerror = () => { clearTimeout(safetyTimer); speakResolveRef.current?.(); speakResolveRef.current = null }
-                    audio.play().catch(() => { clearTimeout(safetyTimer); speakResolveRef.current?.(); speakResolveRef.current = null })
-                    return
-                }
-            } catch { /* fall through to browser TTS */ }
+                    console.log('[Voice] audio blob size:', blob.size, 'bytes')
 
+                    if (blob.size > 0) {
+                        const url = URL.createObjectURL(blob)
+                        const audio = new Audio()
+                        audio.volume = 1
+                        audio.preload = 'auto'
+                        audio.src = url
+                        currentAudioRef.current = audio
+
+                        // Wait for audio to be ready, then play
+                        ttsAudioPlayed = await new Promise<boolean>((playResolve) => {
+                            let settled = false
+                            const settle = (ok: boolean) => {
+                                if (settled) return
+                                settled = true
+                                playResolve(ok)
+                            }
+
+                            audio.oncanplaythrough = () => {
+                                console.log('[Voice] audio canplaythrough — calling play()')
+                                audio.play()
+                                    .then(() => {
+                                        console.log('[Voice] audio.play() resolved ✓')
+                                        // Start volume meter AFTER audio is actually playing
+                                        startVolumeMeter()
+                                        settle(true)
+                                    })
+                                    .catch((err) => {
+                                        console.warn('[Voice] audio.play() rejected:', err)
+                                        URL.revokeObjectURL(url)
+                                        settle(false)
+                                    })
+                            }
+
+                            audio.onerror = (err) => {
+                                console.warn('[Voice] audio element error:', err)
+                                URL.revokeObjectURL(url)
+                                settle(false)
+                            }
+
+                            // Timeout: if canplaythrough never fires in 5s, give up
+                            setTimeout(() => {
+                                if (!settled) {
+                                    console.warn('[Voice] audio load timeout — falling through')
+                                    URL.revokeObjectURL(url)
+                                    settle(false)
+                                }
+                            }, 5000)
+
+                            audio.load()
+                        })
+
+                        if (ttsAudioPlayed) {
+                            // Audio is now playing — wait for it to finish
+                            audio.onended = () => {
+                                console.log('[Voice] audio ended naturally')
+                                URL.revokeObjectURL(url)
+                                done()
+                            }
+                            audio.onerror = () => {
+                                console.warn('[Voice] audio error during playback')
+                                URL.revokeObjectURL(url)
+                                done()
+                            }
+                            return // promise resolves when audio ends
+                        } else {
+                            // audio.play() failed — clean up and fall through
+                            currentAudioRef.current = null
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('[Voice] TTS fetch error:', err)
+            }
+
+            // ── Fallback: Browser speechSynthesis ──
+            console.log('[Voice] falling back to browser speechSynthesis')
             setTtsProvider('browser')
+            startVolumeMeter()
+
             if (typeof window !== 'undefined' && window.speechSynthesis) {
                 window.speechSynthesis.cancel()
+                // Small delay after cancel to avoid Chrome speechSynthesis bug
+                await new Promise(r => setTimeout(r, 100))
                 const utt = new SpeechSynthesisUtterance(text)
                 utt.rate = 0.95; utt.pitch = 1.05
                 const voices = window.speechSynthesis.getVoices()
@@ -248,12 +331,12 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                     v.name.includes('Google') && v.lang.startsWith('en')
                 ) || voices.find(v => v.lang === 'en-US') || voices[0]
                 if (best) utt.voice = best
-                utt.onend = () => { clearTimeout(safetyTimer); speakResolveRef.current?.(); speakResolveRef.current = null }
-                utt.onerror = () => { clearTimeout(safetyTimer); speakResolveRef.current?.(); speakResolveRef.current = null }
+                utt.onend = () => { console.log('[Voice] browser TTS ended'); done() }
+                utt.onerror = () => { console.warn('[Voice] browser TTS error'); done() }
                 window.speechSynthesis.speak(utt)
             } else {
-                speakResolveRef.current?.()
-                speakResolveRef.current = null
+                console.warn('[Voice] no speechSynthesis available')
+                done()
             }
         })
     }
