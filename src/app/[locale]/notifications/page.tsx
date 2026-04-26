@@ -67,6 +67,9 @@ export default function NotificationsPage() {
     const [selectMode, setSelectMode] = useState(false)
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
     const [deleting, setDeleting] = useState(false)
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+    const MSG_TRUNCATE_LEN = 120
 
     useEffect(() => {
         // Fetch independently — a preferences error must NOT blank the feed
@@ -450,10 +453,41 @@ export default function NotificationsPage() {
                                                     display: 'block', fontSize: '0.82rem',
                                                     color: 'var(--text-secondary)', marginBottom: '4px', lineHeight: 1.4,
                                                 }}>
-                                                    {n.message}
+                                                    {n.message.length > MSG_TRUNCATE_LEN && !expandedIds.has(n.id)
+                                                        ? <>{n.message.slice(0, MSG_TRUNCATE_LEN).trimEnd()}…{' '}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); setExpandedIds(prev => { const next = new Set(prev); next.add(n.id); return next }) }}
+                                                                style={{
+                                                                    background: 'none', border: 'none', padding: 0,
+                                                                    color: 'var(--accent-gold)', cursor: 'pointer',
+                                                                    fontSize: '0.78rem', fontWeight: 600,
+                                                                }}
+                                                            >Read more</button>
+                                                          </>
+                                                        : <>{n.message}
+                                                            {n.message.length > MSG_TRUNCATE_LEN && (
+                                                                <>{' '}<button
+                                                                    onClick={(e) => { e.stopPropagation(); setExpandedIds(prev => { const next = new Set(prev); next.delete(n.id); return next }) }}
+                                                                    style={{
+                                                                        background: 'none', border: 'none', padding: 0,
+                                                                        color: 'var(--text-tertiary)', cursor: 'pointer',
+                                                                        fontSize: '0.72rem', fontWeight: 600,
+                                                                    }}
+                                                                >Show less</button></>
+                                                            )}
+                                                          </>
+                                                    }
                                                 </span>
-                                                <span style={{ fontSize: '0.73rem', color: '#6b7280' }}>
-                                                    {timeAgo(n.createdAt)}
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                                                    <span style={{ fontSize: '0.73rem', color: '#6b7280' }}>
+                                                        {timeAgo(n.createdAt)}
+                                                    </span>
+                                                    {n.link && !selectMode && (
+                                                        <span style={{
+                                                            fontSize: '0.68rem', color: 'var(--accent-gold)',
+                                                            fontWeight: 600, opacity: 0.8,
+                                                        }}>View →</span>
+                                                    )}
                                                 </span>
                                             </span>
                                             {!n.read && !selectMode && (
@@ -461,12 +495,6 @@ export default function NotificationsPage() {
                                                     width: '8px', height: '8px', borderRadius: '50%',
                                                     background: 'var(--accent-gold)', flexShrink: 0, marginTop: '5px',
                                                 }} />
-                                            )}
-                                            {n.link && !selectMode && (
-                                                <span style={{
-                                                    fontSize: '0.75rem', color: 'var(--text-tertiary)',
-                                                    flexShrink: 0, marginTop: '3px', opacity: 0.6,
-                                                }}>→</span>
                                             )}
                                         </div>
                                     ))}
