@@ -1442,7 +1442,12 @@ export default function AdminAnalyticsPage() {
                                         </p>
                                     </div>
                                 ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <div style={{
+                                        background: 'var(--bg-secondary)',
+                                        border: '1px solid var(--border-subtle)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        overflow: 'hidden',
+                                    }}>
                                         {data.content.topFilms.map((film, i) => {
                                             const maxViews = data.content.topFilms[0]?.views || 1
                                             const pct = Math.round((film.views / maxViews) * 100)
@@ -1450,69 +1455,64 @@ export default function AdminAnalyticsPage() {
                                             const hasTrailer = !!film.project.trailerUrl
                                             return (
                                                 <div key={i} style={{
-                                                    display: 'flex', alignItems: 'center', gap: '10px',
-                                                    padding: '8px 12px',
-                                                    background: 'var(--bg-secondary)',
-                                                    border: `1px solid ${i === 0 ? 'rgba(212,168,83,0.15)' : 'var(--border-subtle)'}`,
-                                                    borderRadius: 'var(--radius-md)',
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    padding: '6px 12px',
+                                                    borderBottom: i < data.content.topFilms.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none',
                                                     position: 'relative', overflow: 'hidden',
+                                                    background: i === 0 ? 'rgba(212,168,83,0.03)' : 'transparent',
+                                                    transition: 'background 0.2s',
                                                 }}>
                                                     {/* Background fill bar */}
                                                     <div style={{
                                                         position: 'absolute', left: 0, top: 0, bottom: 0,
                                                         width: `${pct}%`,
-                                                        background: i === 0 ? 'rgba(212,168,83,0.04)' : 'rgba(255,255,255,0.01)',
+                                                        background: i === 0 ? 'rgba(212,168,83,0.03)' : 'rgba(255,255,255,0.008)',
                                                         transition: 'width 0.8s ease',
                                                     }} />
                                                     {/* Rank */}
                                                     <span style={{
-                                                        fontSize: i < 3 ? '1rem' : '0.75rem',
-                                                        fontWeight: 900, minWidth: '24px', textAlign: 'center',
+                                                        fontSize: i < 3 ? '0.85rem' : '0.68rem',
+                                                        fontWeight: 900, minWidth: '20px', textAlign: 'center',
                                                         color: i < 3 ? 'var(--accent-gold)' : 'var(--text-tertiary)',
                                                         position: 'relative', zIndex: 1,
                                                     }}>{i < 3 ? medals[i] : `#${i + 1}`}</span>
                                                     {/* Poster thumbnail */}
                                                     {film.project.coverImage && (
                                                         <div style={{
-                                                            width: '48px', height: '28px', borderRadius: '3px', overflow: 'hidden',
+                                                            width: '36px', height: '22px', borderRadius: '2px', overflow: 'hidden',
                                                             background: '#0a0a0a', flexShrink: 0, position: 'relative', zIndex: 1,
-                                                            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
                                                         }}>
-                                                            <img src={film.project.coverImage} alt={film.project.title || 'Film cover'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            <img src={film.project.coverImage} alt={film.project.title || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                         </div>
                                                     )}
-                                                    {/* Title + bar + trailer badge */}
-                                                    <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{film.project.title}</span>
-                                                            {hasTrailer && (
-                                                                <span style={{
-                                                                    fontSize: '0.48rem', fontWeight: 700, padding: '1px 5px',
-                                                                    borderRadius: 'var(--radius-full)', flexShrink: 0,
-                                                                    background: 'rgba(212,168,83,0.12)', color: 'var(--accent-gold)',
-                                                                    border: '1px solid rgba(212,168,83,0.2)',
-                                                                    textTransform: 'uppercase', letterSpacing: '0.06em',
-                                                                }}>🎥 Trailer</span>
-                                                            )}
-                                                        </div>
-                                                        <div style={{ height: '2px', background: 'rgba(255,255,255,0.04)', borderRadius: '1px', marginTop: '3px' }}>
-                                                            <div style={{
-                                                                height: '100%', borderRadius: '1px',
-                                                                width: `${pct}%`,
-                                                                background: i === 0 ? 'var(--accent-gold)' : 'rgba(59,130,246,0.5)',
-                                                                transition: 'width 0.8s ease',
-                                                            }} />
-                                                        </div>
+                                                    {/* Title + trailer badge */}
+                                                    <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.78rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{film.project.title}</span>
+                                                        {hasTrailer && (
+                                                            <span style={{
+                                                                fontSize: '0.45rem', fontWeight: 700, padding: '1px 4px',
+                                                                borderRadius: 'var(--radius-full)', flexShrink: 0,
+                                                                background: 'rgba(212,168,83,0.1)', color: 'var(--accent-gold)',
+                                                                textTransform: 'uppercase', letterSpacing: '0.04em',
+                                                            }}>🎥 Trailer</span>
+                                                        )}
+                                                    </div>
+                                                    {/* Progress bar (inline) */}
+                                                    <div style={{ width: '60px', height: '3px', background: 'rgba(255,255,255,0.04)', borderRadius: '2px', flexShrink: 0, position: 'relative', zIndex: 1 }}>
+                                                        <div style={{
+                                                            height: '100%', borderRadius: '2px',
+                                                            width: `${pct}%`,
+                                                            background: i === 0 ? 'var(--accent-gold)' : `rgba(59,130,246,${0.3 + (1 - i / Math.max(data.content.topFilms.length, 1)) * 0.5})`,
+                                                            transition: 'width 0.8s ease',
+                                                        }} />
                                                     </div>
                                                     {/* Views + weekly trend */}
-                                                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'right' }}>
-                                                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: i === 0 ? 'var(--accent-gold)' : 'var(--text-primary)' }}>{film.views}</span>
-                                                        <div style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>views</div>
+                                                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'right', minWidth: '42px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end', gap: '3px' }}>
+                                                            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: i === 0 ? 'var(--accent-gold)' : 'var(--text-primary)' }}>{film.views}</span>
+                                                        </div>
                                                         {film.weekViews > 0 && (
-                                                            <div style={{
-                                                                fontSize: '0.5rem', fontWeight: 700, color: '#22c55e',
-                                                                marginTop: '2px',
-                                                            }}>+{film.weekViews} this week</div>
+                                                            <div style={{ fontSize: '0.48rem', fontWeight: 700, color: '#22c55e' }}>+{film.weekViews} this wk</div>
                                                         )}
                                                     </div>
                                                 </div>
