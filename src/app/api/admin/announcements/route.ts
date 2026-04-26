@@ -25,6 +25,7 @@ export async function GET() {
             bodyHtml: true,
             imageUrl: true,
             link: true,
+            translations: true,
             audienceGroups: true,
             specificUserIds: true,
             recipientCount: true,

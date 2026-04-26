@@ -98,8 +98,16 @@ export default function AnnouncementsAdminPage() {
     }, [notifyGroups.members, notifyGroups.subscribers, notifyGroups.cast, selectedUsers])
 
     // Announcement history
-    const [history, setHistory] = useState<{ id: string; title: string; sentAt: string; recipientCount: number; audienceGroups: string | null; status: string }[]>([])
+    const [history, setHistory] = useState<{ id: string; title: string; message: string; bodyHtml?: string | null; imageUrl?: string | null; link?: string | null; translations?: string | null; sentAt: string; recipientCount: number; audienceGroups: string | null; status: string }[]>([])
     const [showHistory, setShowHistory] = useState(false)
+
+    // Resend state
+    const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
+    const [resendingId, setResendingId] = useState<string | null>(null)
+    const [resendSuccessId, setResendSuccessId] = useState<string | null>(null)
+    const [resendGroups, setResendGroups] = useState<{ subscribers: boolean; members: boolean; cast: boolean }>({
+        members: true, subscribers: false, cast: false,
+    })
 
     useEffect(() => {
         fetch('/api/admin/announcements')
@@ -814,24 +822,167 @@ export default function AnnouncementsAdminPage() {
                             {history.map(a => {
                                 let groups: { members?: boolean; subscribers?: boolean; cast?: boolean } = {}
                                 try { groups = a.audienceGroups ? JSON.parse(a.audienceGroups) : {} } catch {}
+                                const isExpanded = expandedHistoryId === a.id
+                                const isResending = resendingId === a.id
+                                const isResendSuccess = resendSuccessId === a.id
                                 return (
                                     <div key={a.id} style={{
-                                        padding: '12px 16px', borderRadius: '10px',
-                                        background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)',
-                                        display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
+                                        borderRadius: '10px', overflow: 'hidden',
+                                        background: 'rgba(255,255,255,0.02)', border: `1px solid ${isExpanded ? 'rgba(212,168,83,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                                        transition: 'all 0.2s',
                                     }}>
-                                        <div style={{ flex: 1, minWidth: '200px' }}>
-                                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{a.title}</div>
-                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                                {new Date(a.sentAt).toLocaleDateString()} · {a.recipientCount} recipients
-                                                {groups.members && <span style={{ marginLeft: '6px', color: '#c084fc' }}>👥</span>}
-                                                {groups.subscribers && <span style={{ marginLeft: '4px', color: '#c084fc' }}>📬</span>}
-                                                {groups.cast && <span style={{ marginLeft: '4px', color: '#c084fc' }}>🎭</span>}
+                                        {/* Header row */}
+                                        <div
+                                            style={{
+                                                padding: '12px 16px', display: 'flex', alignItems: 'center',
+                                                gap: '12px', flexWrap: 'wrap', cursor: 'pointer',
+                                            }}
+                                            onClick={() => setExpandedHistoryId(isExpanded ? null : a.id)}
+                                        >
+                                            <div style={{ flex: 1, minWidth: '200px' }}>
+                                                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>{a.title}</div>
+                                                <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                                    {new Date(a.sentAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} · {a.recipientCount} recipients
+                                                    {groups.members && <span style={{ marginLeft: '6px', color: '#c084fc' }}>👥</span>}
+                                                    {groups.subscribers && <span style={{ marginLeft: '4px', color: '#c084fc' }}>📬</span>}
+                                                    {groups.cast && <span style={{ marginLeft: '4px', color: '#c084fc' }}>🎭</span>}
+                                                </div>
                                             </div>
+                                            <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: a.status === 'sent' ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)', color: a.status === 'sent' ? '#34d399' : '#ef4444' }}>
+                                                {a.status}
+                                            </span>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
                                         </div>
-                                        <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: a.status === 'sent' ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)', color: a.status === 'sent' ? '#34d399' : '#ef4444' }}>
-                                            {a.status}
-                                        </span>
+
+                                        {/* Expanded detail + resend panel */}
+                                        {isExpanded && (
+                                            <div style={{
+                                                padding: '0 16px 16px', borderTop: '1px solid rgba(255,255,255,0.05)',
+                                                display: 'flex', flexDirection: 'column', gap: '12px',
+                                            }}>
+                                                {/* Message preview */}
+                                                <div style={{ paddingTop: '12px' }}>
+                                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '6px', letterSpacing: '0.06em' }}>Message</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{a.message || '—'}</div>
+                                                </div>
+
+                                                {/* Link */}
+                                                {a.link && (
+                                                    <div>
+                                                        <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: '4px', letterSpacing: '0.06em' }}>Link</div>
+                                                        <div style={{ fontSize: '0.78rem', color: 'var(--accent-gold)' }}>→ {a.link}</div>
+                                                    </div>
+                                                )}
+
+                                                {/* Rich body indicator */}
+                                                {a.bodyHtml && (
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        📝 Includes rich body content
+                                                    </div>
+                                                )}
+
+                                                {/* Banner image indicator */}
+                                                {a.imageUrl && (
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        🖼️ Banner image attached
+                                                    </div>
+                                                )}
+
+                                                {/* Translations indicator */}
+                                                {a.translations && (() => {
+                                                    try {
+                                                        const t = JSON.parse(a.translations)
+                                                        const count = Object.keys(t).length
+                                                        return count > 0 ? (
+                                                            <div style={{ fontSize: '0.72rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                🌐 {count} translation{count !== 1 ? 's' : ''} saved — will be reused on resend
+                                                            </div>
+                                                        ) : null
+                                                    } catch { return null }
+                                                })()}
+
+                                                {/* Resend controls */}
+                                                <div style={{
+                                                    padding: '12px 14px', borderRadius: '10px',
+                                                    background: 'rgba(212,168,83,0.04)', border: '1px solid rgba(212,168,83,0.12)',
+                                                }}>
+                                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--accent-gold)', marginBottom: '8px', letterSpacing: '0.06em' }}>
+                                                        🔄 Resend to Audience
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginBottom: '10px' }}>
+                                                        Select which groups to resend to. Saved translations will be reused.
+                                                    </div>
+
+                                                    {/* Audience checkboxes (pre-checked from original) */}
+                                                    <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                                                        {([
+                                                            { key: 'members' as const, icon: '👥', label: 'Members' },
+                                                            { key: 'subscribers' as const, icon: '📬', label: 'Subscribers' },
+                                                            { key: 'cast' as const, icon: '🎭', label: 'Cast' },
+                                                        ] as const).map(g => (
+                                                            <label key={g.key} style={{
+                                                                display: 'flex', alignItems: 'center', gap: '5px',
+                                                                fontSize: '0.78rem', cursor: 'pointer', color: 'var(--text-secondary)',
+                                                            }}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={resendGroups[g.key]}
+                                                                    onChange={e => setResendGroups(prev => ({ ...prev, [g.key]: e.target.checked }))}
+                                                                    style={{ accentColor: '#d4a853' }}
+                                                                />
+                                                                {g.icon} {g.label}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Resend button */}
+                                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                        <button
+                                                            type="button"
+                                                            disabled={isResending || (!resendGroups.members && !resendGroups.subscribers && !resendGroups.cast)}
+                                                            onClick={async () => {
+                                                                if (!confirm(`Resend "${a.title}" to selected audience? This will create a new broadcast.`)) return
+                                                                setResendingId(a.id)
+                                                                setResendSuccessId(null)
+                                                                try {
+                                                                    const res = await fetch(`/api/admin/announcements/${a.id}/resend`, {
+                                                                        method: 'POST',
+                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify({ notifyGroups: resendGroups }),
+                                                                    })
+                                                                    if (res.ok) {
+                                                                        setResendSuccessId(a.id)
+                                                                        // Refresh history to show the new audit record
+                                                                        fetch('/api/admin/announcements')
+                                                                            .then(r => r.ok ? r.json() : { announcements: [] })
+                                                                            .then(data => setHistory(data.announcements ?? []))
+                                                                            .catch(() => {})
+                                                                    }
+                                                                } catch { /* network error */ }
+                                                                finally { setResendingId(null) }
+                                                            }}
+                                                            style={{
+                                                                padding: '8px 18px', fontSize: '0.78rem', fontWeight: 700,
+                                                                borderRadius: '8px', border: '1px solid rgba(212,168,83,0.3)',
+                                                                background: isResending || (!resendGroups.members && !resendGroups.subscribers && !resendGroups.cast)
+                                                                    ? 'rgba(212,168,83,0.06)'
+                                                                    : 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
+                                                                color: 'var(--accent-gold)',
+                                                                cursor: isResending || (!resendGroups.members && !resendGroups.subscribers && !resendGroups.cast) ? 'not-allowed' : 'pointer',
+                                                                opacity: (!resendGroups.members && !resendGroups.subscribers && !resendGroups.cast) ? 0.5 : 1,
+                                                            }}
+                                                        >
+                                                            {isResending ? '⏳ Resending…' : '🔄 Resend Announcement'}
+                                                        </button>
+                                                        {isResendSuccess && (
+                                                            <span style={{ fontSize: '0.78rem', color: '#34d399', fontWeight: 600 }}>
+                                                                ✅ Queued successfully
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )
                             })}
