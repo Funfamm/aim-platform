@@ -72,6 +72,39 @@ async function getMailConfig(): Promise<MailConfig | null> {
                 cacheTime = now
                 return null
             }
+
+            // ── SMTP Domain-Alignment Safety Check ──────────────────────
+            // Prevent unsafe mismatches like From: impactaistudio.com + SMTP: gmail.com
+            // which cause SPF, DKIM, and DMARC failures (guaranteed spam/reject).
+            // Known relay services (SendGrid, Postmark, etc.) authenticate via
+            // domain-level DKIM and use a generic SMTP username, so they are exempt.
+            const TRUSTED_RELAY_HOSTS = [
+                'smtp.sendgrid.net',
+                'smtp.postmarkapp.com',
+                'smtp.mailgun.org',
+                'email-smtp.us-east-1.amazonaws.com',  // Amazon SES
+                'email-smtp.eu-west-1.amazonaws.com',
+            ]
+            const smtpHostLower = settings.smtpHost.toLowerCase()
+            const isTrustedRelay = TRUSTED_RELAY_HOSTS.some(h => smtpHostLower.includes(h))
+
+            if (!isTrustedRelay) {
+                const smtpFromEmail = settings.smtpFromEmail || settings.smtpUser
+                const fromDomain = smtpFromEmail.split('@')[1]?.toLowerCase()
+                const userDomain = settings.smtpUser.split('@')[1]?.toLowerCase()
+
+                if (fromDomain && userDomain && fromDomain !== userDomain) {
+                    logger.error('mailer',
+                        `⛔ SMTP domain mismatch BLOCKED: From="${smtpFromEmail}" but SMTP user="${settings.smtpUser}". ` +
+                        `This will fail SPF/DKIM/DMARC alignment. Use a trusted relay (SendGrid, Postmark) ` +
+                        `or ensure the From domain matches the SMTP credential domain.`
+                    )
+                    cachedConfig = null
+                    cacheTime = now
+                    return null
+                }
+            }
+
             cachedConfig = {
                 fromName,
                 fromEmail: settings.smtpFromEmail || settings.smtpUser,
