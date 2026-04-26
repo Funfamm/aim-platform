@@ -62,6 +62,18 @@ export async function GET(request: NextRequest) {
         langStats[lang] = (langStats[lang] || 0) + row._count._all
     }
 
+    // Look up subscriber data for each user by email
+    const userEmails = users.map((u: { email: string }) => u.email)
+    const matchedSubs = userEmails.length > 0
+        ? await (prisma as any).subscriber.findMany({
+            where: { email: { in: userEmails, mode: 'insensitive' } },
+            select: { email: true, active: true, subscribedAt: true },
+        }) as { email: string; active: boolean; subscribedAt: Date }[]
+        : []
+    const subMap = new Map(matchedSubs.map((s: { email: string; active: boolean; subscribedAt: Date }) =>
+        [s.email.toLowerCase(), s]
+    ))
+
     return NextResponse.json({
         users: users.map(u => {
             // Derive auth provider from which identifiers are set
@@ -73,6 +85,7 @@ export async function GET(request: NextRequest) {
                 : hasGoogle ? 'google'
                 : hasApple ? 'apple'
                 : 'email'
+            const sub = subMap.get((u.email as string).toLowerCase()) || null
             return {
                 id: u.id, name: u.name, email: u.email, role: u.role,
                 applications: u._count.applications, donations: u._count.donations,
@@ -82,6 +95,10 @@ export async function GET(request: NextRequest) {
                 suspended: u.suspended ?? false,
                 lockedUntil: u.lockedUntil ? u.lockedUntil.toISOString() : null,
                 failedLoginAttempts: u.failedLoginAttempts ?? 0,
+                // Subscriber data
+                subscribed: !!sub,
+                subscriberActive: sub?.active ?? null,
+                subscribedAt: sub?.subscribedAt ? sub.subscribedAt.toISOString() : null,
             }
         }),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },

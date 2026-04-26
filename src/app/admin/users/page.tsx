@@ -6,7 +6,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import { locales, localeNames } from '@/i18n/routing'
 
 
-interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; preferredLanguage: string; authProvider: 'email' | 'google' | 'apple' | 'multiple'; suspended: boolean; lockedUntil: string | null; failedLoginAttempts: number }
+interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; preferredLanguage: string; authProvider: 'email' | 'google' | 'apple' | 'multiple'; suspended: boolean; lockedUntil: string | null; failedLoginAttempts: number; subscribed: boolean; subscriberActive: boolean | null; subscribedAt: string | null }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
 
 export default function AdminUsersPage() {
@@ -406,7 +406,7 @@ export default function AdminUsersPage() {
                                             style={{ cursor: 'pointer', accentColor: 'var(--accent-gold)', width: '14px', height: '14px' }}
                                         />
                                     </th>
-                                    {['Name', 'Email', 'Role', 'Via', 'Lang', 'Status', 'Apps', 'Joined', 'Actions'].map(h => (
+                                    {['Name', 'Email', 'Role', 'Via', 'Lang', 'Status', 'Sub', 'Apps', 'Joined', 'Actions'].map(h => (
                                         <th key={h} style={{ padding: '8px 12px', fontWeight: 700, fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', textAlign: 'left' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -520,6 +520,29 @@ export default function AdminUsersPage() {
                                                     <span style={{ fontSize: '0.6rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 700, background: 'rgba(251,191,36,0.06)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.15)' }}>⚠️ {u.failedLoginAttempts} fail{u.failedLoginAttempts !== 1 ? 's' : ''}</span>
                                                 ) : (
                                                     <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>✓ OK</span>
+                                                )}
+                                            </td>
+                                            {/* Subscriber status */}
+                                            <td style={{ padding: '8px 12px' }}>
+                                                {u.subscribed ? (
+                                                    <div>
+                                                        <span style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                            fontSize: '0.58rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 700,
+                                                            background: u.subscriberActive ? 'rgba(16,185,129,0.1)' : 'rgba(107,114,128,0.1)',
+                                                            color: u.subscriberActive ? '#10b981' : '#9ca3af',
+                                                            border: `1px solid ${u.subscriberActive ? 'rgba(16,185,129,0.25)' : 'rgba(107,114,128,0.2)'}`,
+                                                        }}>
+                                                            {u.subscriberActive ? '📬 Active' : '📭 Inactive'}
+                                                        </span>
+                                                        {u.subscribedAt && (
+                                                            <div style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', marginTop: '1px' }}>
+                                                                {new Date(u.subscribedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>—</span>
                                                 )}
                                             </td>
                                             <td style={{ padding: '8px 12px' }}>{u.applications}</td>

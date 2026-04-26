@@ -86,15 +86,64 @@ export async function GET(req: Request) {
         select: { id: true, email: true, name: true, active: true, subscribedAt: true },
     })
 
-    // Enrich each subscriber with their failed send count
-    const enriched = subscribers.map((s: { id: string; email: string; name: string | null; active: boolean; subscribedAt: Date }) => ({
-        ...s,
-        failedSends: failedMap.get(s.email) || 0,
-    }))
+    // Look up matching Users by email for conversion tracking
+    const subEmails = subscribers.map((s: { email: string }) => s.email)
+    const matchedUsers = subEmails.length > 0
+        ? await db.user.findMany({
+            where: { email: { in: subEmails, mode: 'insensitive' } },
+            select: { id: true, email: true, preferredLanguage: true, emailVerified: true, createdAt: true },
+        }) as { id: string; email: string; preferredLanguage: string | null; emailVerified: boolean; createdAt: Date }[]
+        : []
+    const userMap = new Map(matchedUsers.map((u: { id: string; email: string; preferredLanguage: string | null; emailVerified: boolean; createdAt: Date }) =>
+        [u.email.toLowerCase(), u]
+    ))
+
+    // Enrich each subscriber with conversion data
+    const enriched = subscribers.map((s: { id: string; email: string; name: string | null; active: boolean; subscribedAt: Date }) => {
+        const matchedUser = userMap.get(s.email.toLowerCase()) || null
+        return {
+            ...s,
+            failedSends: failedMap.get(s.email) || 0,
+            // Conversion fields
+            converted: !!matchedUser,
+            userId: matchedUser?.id || null,
+            convertedAt: matchedUser?.createdAt || null,
+            emailVerified: matchedUser?.emailVerified ?? null,
+            language: matchedUser?.preferredLanguage || (matchedUser ? 'en' : null),
+        }
+    })
+
+    // ── Conversion reporting stats ────────────────────────────────────────
+    const totalUsers = await db.user.count()
+    const allSubEmails = await db.subscriber.findMany({ select: { email: true } }) as { email: string }[]
+    const allUserEmails = await db.user.findMany({ select: { email: true } }) as { email: string }[]
+    const subEmailSet = new Set(allSubEmails.map((s: { email: string }) => s.email.toLowerCase()))
+    const userEmailSet = new Set(allUserEmails.map((u: { email: string }) => u.email.toLowerCase()))
+    const overlap = [...subEmailSet].filter(e => userEmailSet.has(e)).length
+    const subscriberOnly = subEmailSet.size - overlap
+    const userOnly = userEmailSet.size - overlap
+    // New conversions this month: users created this month whose email is also a subscriber
+    const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
+    const recentUsers = await db.user.findMany({
+        where: { createdAt: { gte: monthStart } },
+        select: { email: true },
+    }) as { email: string }[]
+    const newConversions = recentUsers.filter((u: { email: string }) => subEmailSet.has(u.email.toLowerCase())).length
+    const conversionRate = subEmailSet.size > 0 ? Math.round((overlap / subEmailSet.size) * 100) : 0
 
     return NextResponse.json({
         subscribers: enriched,
         stats: { total, active, inactive, failed: failedCount },
+        conversion: {
+            totalSubscribers: total,
+            totalUsers,
+            converted: overlap,
+            conversionRate,
+            subscriberOnly,
+            userOnly,
+            overlap,
+            newConversionsThisMonth: newConversions,
+        },
         pagination: {
             page, limit, total: (await db.subscriber.count({ where })),
             totalPages: Math.ceil((await db.subscriber.count({ where })) / limit),

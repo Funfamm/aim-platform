@@ -10,14 +10,26 @@ interface Subscriber {
     active: boolean
     subscribedAt: string
     failedSends: number
+    // Conversion fields
+    converted: boolean
+    userId: string | null
+    convertedAt: string | null
+    emailVerified: boolean | null
+    language: string | null
 }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
 interface Stats { total: number; active: number; inactive: number; failed: number }
+interface Conversion {
+    totalSubscribers: number; totalUsers: number; converted: number
+    conversionRate: number; subscriberOnly: number; userOnly: number
+    overlap: number; newConversionsThisMonth: number
+}
 
 export default function AdminSubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([])
     const [pagination, setPagination]   = useState<Pagination>({ page: 1, limit: 50, total: 0, totalPages: 0 })
     const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0, failed: 0 })
+    const [conversion, setConversion]   = useState<Conversion>({ totalSubscribers: 0, totalUsers: 0, converted: 0, conversionRate: 0, subscriberOnly: 0, userOnly: 0, overlap: 0, newConversionsThisMonth: 0 })
     const [loading, setLoading]         = useState(true)
     const [search, setSearch]           = useState('')
     const [status, setStatus]           = useState('all')
@@ -42,6 +54,7 @@ export default function AdminSubscribersPage() {
             setSubscribers(data.subscribers)
             setPagination(data.pagination)
             setStats(data.stats)
+            if (data.conversion) setConversion(data.conversion)
         }
         setLoading(false)
     }, [search, status, sort])
@@ -150,7 +163,8 @@ export default function AdminSubscribersPage() {
                 )}
 
                 {/* Stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+                {/* Subscriber stats */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
                     {[
                         { label: 'Total', value: stats.total, color: '#d4a853' },
                         { label: 'Active',   value: stats.active,   color: '#10b981' },
@@ -161,6 +175,21 @@ export default function AdminSubscribersPage() {
                             onClick={() => s.label === 'Failed Sends' && s.value > 0 && setStatus('failed')}
                         >
                             <div style={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value.toLocaleString()}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Conversion reporting */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
+                    {[
+                        { label: 'Converted', value: conversion.converted, color: '#8b5cf6', suffix: '' },
+                        { label: 'Conversion Rate', value: conversion.conversionRate, color: '#06b6d4', suffix: '%' },
+                        { label: 'Sub Only', value: conversion.subscriberOnly, color: '#f59e0b', suffix: '' },
+                        { label: 'New This Month', value: conversion.newConversionsThisMonth, color: '#10b981', suffix: '' },
+                    ].map(s => (
+                        <div key={s.label} className="admin-card" style={{ padding: 'var(--space-lg)', textAlign: 'center' }}>
+                            <div style={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value.toLocaleString()}{s.suffix}</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
                         </div>
                     ))}
@@ -251,7 +280,7 @@ export default function AdminSubscribersPage() {
                                             style={{ accentColor: 'var(--accent-gold)', cursor: 'pointer' }}
                                         />
                                     </th>
-                                    {['Email', 'Name', 'Status', 'Fails', 'Subscribed'].map(h => (
+                                    {['Email', 'Name', 'Status', 'Converted', 'Subscribed', 'Lang', 'Verified', 'Fails'].map(h => (
                                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -290,11 +319,59 @@ export default function AdminSubscribersPage() {
                                                 {sub.active ? '● Active' : '○ Inactive'}
                                             </span>
                                         </td>
+                                        {/* Converted */}
+                                        <td style={{ padding: '10px 14px' }}>
+                                            {sub.converted ? (
+                                                <div>
+                                                    <span style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                        padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                        background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)',
+                                                        color: '#a78bfa',
+                                                    }}>
+                                                        🔗 Registered
+                                                    </span>
+                                                    {sub.convertedAt && (
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                                            {new Date(sub.convertedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Subscriber only</span>
+                                            )}
+                                        </td>
+                                        {/* Subscribed */}
                                         <td style={{ padding: '10px 14px' }}>
                                             <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
                                                 {new Date(sub.subscribedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                             </span>
                                         </td>
+                                        {/* Language */}
+                                        <td style={{ padding: '10px 14px' }}>
+                                            {sub.language ? (
+                                                <span style={{
+                                                    padding: '2px 7px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 600,
+                                                    background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)',
+                                                    color: '#818cf8', textTransform: 'uppercase',
+                                                }}>
+                                                    {sub.language}
+                                                </span>
+                                            ) : (
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>—</span>
+                                            )}
+                                        </td>
+                                        {/* Verified */}
+                                        <td style={{ padding: '10px 14px' }}>
+                                            {sub.emailVerified === true ? (
+                                                <span style={{ fontSize: '0.72rem', color: '#10b981' }}>✓</span>
+                                            ) : sub.emailVerified === false ? (
+                                                <span style={{ fontSize: '0.72rem', color: '#f59e0b' }}>✕</span>
+                                            ) : (
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>—</span>
+                                            )}
+                                        </td>
+                                        {/* Fails */}
                                         <td style={{ padding: '10px 14px' }}>
                                             {sub.failedSends > 0 ? (
                                                 <span style={{

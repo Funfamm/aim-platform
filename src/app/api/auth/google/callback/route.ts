@@ -197,7 +197,7 @@ export async function GET(req: Request) {
                             type: 'system',
                             title: welcomeTitle,
                             message: welcomeMsg,
-                            link: '/casting',
+                            link: '/',
                         },
                     }).catch(() => {})
                 } catch { /* never crash the login */ }

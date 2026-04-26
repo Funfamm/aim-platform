@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     if (blocked) return blocked
 
     try {
-        const { name, email, password, locale } = await request.json()
+        const { name, email: rawEmail, password, locale } = await request.json()
+        const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : rawEmail
 
         if (!name || !email || !password) {
             return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
