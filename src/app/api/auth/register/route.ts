@@ -43,7 +43,12 @@ export async function POST(request: Request) {
                         verificationExpiry: new Date(expiry),
                     } as any,
                 }), 'register_update_existing')
-                void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html => sendTransactionalEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html, type: 'authentication' })).catch(() => {})
+                try {
+                    const html = await verificationEmailLocalized(name, code, undefined, locale || 'en')
+                    await sendTransactionalEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html, type: 'authentication' })
+                } catch (emailErr) {
+                    console.error('[Register] re-send verification email failed:', emailErr)
+                }
                 if (process.env.NODE_ENV !== 'production') {
                     console.log(`[DEV] Re-sent verification code for ${email}: ${code}`)
                 }
@@ -72,10 +77,19 @@ export async function POST(request: Request) {
             },
         }), 'register_create_user')
 
-        // Send verification email in the user's locale (fire-and-forget)
-        void verificationEmailLocalized(name, code, undefined, locale || 'en').then(html =>
-            sendTransactionalEmail({ to: email, subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account', html, type: 'authentication' })
-        ).catch(() => {})
+        // Send verification email — MUST await on serverless (Vercel kills the
+        // function after the response is sent, so fire-and-forget won't deliver)
+        try {
+            const html = await verificationEmailLocalized(name, code, undefined, locale || 'en')
+            await sendTransactionalEmail({
+                to: email,
+                subject: emailT('securityVerification', locale || 'en', 'subject') || 'Verify your AIM Studio account',
+                html,
+                type: 'authentication',
+            })
+        } catch (emailErr) {
+            console.error('[Register] verification email failed:', emailErr)
+        }
 
         // Log verification code in development so it works without SMTP
         if (process.env.NODE_ENV !== 'production') {
