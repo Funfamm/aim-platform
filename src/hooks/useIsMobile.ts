@@ -3,17 +3,22 @@
 import { useState, useEffect } from 'react'
 
 /**
- * Detect mobile viewport (< 768px).
- * Uses matchMedia for efficient, debounce-free resize listening.
+ * Detect mobile viewport.
+ * Uses the SHORTER dimension (min of width/height) so landscape on a phone
+ * still counts as mobile — prevents desktop effects from mounting in landscape
+ * and breaking when the user rotates back to portrait.
  */
 export function useIsMobile() {
     const [isMobile, setIsMobile] = useState(false)
     useEffect(() => {
-        const check = () => setIsMobile(window.innerWidth < 768)
+        const check = () => {
+            const short = Math.min(window.innerWidth, window.innerHeight)
+            setIsMobile(short < 768)
+        }
         check()
-        const mq = window.matchMedia('(max-width: 767px)')
-        mq.addEventListener('change', check)
-        return () => mq.removeEventListener('change', check)
+        // Listen for both resize and orientation change
+        window.addEventListener('resize', check)
+        return () => window.removeEventListener('resize', check)
     }, [])
     return isMobile
 }
