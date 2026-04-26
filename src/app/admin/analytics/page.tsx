@@ -77,7 +77,13 @@ interface AnalyticsData {
     }
     content: {
         totalFilmViews: number
-        topFilms: { views: number; project: { title: string; slug: string; coverImage: string | null } }[]
+        topFilms: { views: number; weekViews: number; project: { title: string; slug: string; coverImage: string | null; trailerUrl?: string | null } }[]
+        viewsByPeriod?: { today: number; week: number; month: number; allTime: number }
+        trailerStats?: {
+            totalTrailers: number
+            views: { today: number; week: number; month: number; allTime: number }
+            topTrailers: { title: string; views: number }[]
+        }
     }
     engagement: {
         totalUsers: number; newUsersMonth: number
@@ -1256,30 +1262,169 @@ export default function AdminAnalyticsPage() {
                         {/* ═══════ CONTENT TAB ═══════ */}
                         {activeTab === 'content' && (
                             <>
-                                {/* Content Performance Strip */}
+                                {/* ── Section A: Time-Based View Stats ── */}
+                                <div style={{
+                                    fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.12em',
+                                    color: 'var(--text-tertiary)', fontWeight: 700, marginBottom: '8px',
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                }}>🎬 Film View Analytics</div>
                                 <div className="aa-content-strip" style={{
-                                    display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2px',
+                                    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '2px',
                                     background: 'var(--border-subtle)', borderRadius: 'var(--radius-lg)',
                                     overflow: 'hidden', marginBottom: 'var(--space-lg)',
                                 }}>
-                                    <div style={{ background: 'var(--bg-secondary)', padding: '12px 16px', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--accent-gold)', lineHeight: 1 }}>{data.content.totalFilmViews}</div>
-                                        <div style={{ fontSize: '0.52rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '3px' }}>Total Views</div>
-                                    </div>
-                                    <div style={{ background: 'var(--bg-secondary)', padding: '12px 16px', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#3b82f6', lineHeight: 1 }}>{data.content.topFilms.length}</div>
-                                        <div style={{ fontSize: '0.52rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '3px' }}>Films Tracked</div>
-                                    </div>
-                                    <div style={{ background: 'var(--bg-secondary)', padding: '12px 16px', textAlign: 'center' }}>
-                                        <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#22c55e', lineHeight: 1 }}>
-                                            {data.content.topFilms.length > 0 ? Math.round(data.content.totalFilmViews / data.content.topFilms.length) : 0}
+                                    {[
+                                        { label: 'Today', value: data.content.viewsByPeriod?.today ?? 0, color: '#22c55e', icon: '📅' },
+                                        { label: 'This Week', value: data.content.viewsByPeriod?.week ?? 0, color: '#3b82f6', icon: '📊' },
+                                        { label: 'This Month', value: data.content.viewsByPeriod?.month ?? 0, color: '#a855f7', icon: '📈' },
+                                        { label: 'All Time', value: data.content.viewsByPeriod?.allTime ?? data.content.totalFilmViews, color: 'var(--accent-gold)', icon: '🏆' },
+                                    ].map((stat) => (
+                                        <div key={stat.label} style={{
+                                            background: 'var(--bg-secondary)', padding: '16px',
+                                            textAlign: 'center', position: 'relative', overflow: 'hidden',
+                                        }}>
+                                            <div style={{
+                                                position: 'absolute', top: '-8px', right: '-8px',
+                                                width: '40px', height: '40px', borderRadius: '50%',
+                                                background: `radial-gradient(circle, ${stat.color}08, transparent)`,
+                                                pointerEvents: 'none',
+                                            }} />
+                                            <div style={{ fontSize: '0.7rem', marginBottom: '4px' }}>{stat.icon}</div>
+                                            <div style={{ fontSize: '1.6rem', fontWeight: 900, color: stat.color, lineHeight: 1 }}>
+                                                <AnimatedNumber value={stat.value} />
+                                            </div>
+                                            <div style={{
+                                                fontSize: '0.52rem', textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '5px',
+                                            }}>{stat.label}</div>
                                         </div>
-                                        <div style={{ fontSize: '0.52rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '3px' }}>Avg Views/Film</div>
-                                    </div>
+                                    ))}
                                 </div>
 
-                                {/* Film Leaderboard */}
-                                <div style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', fontWeight: 700, marginBottom: '8px' }}>Film Leaderboard</div>
+                                {/* ── Section B: Trailer Performance (Prominent Gold Card) ── */}
+                                {data.content.trailerStats && (
+                                    <div style={{
+                                        background: 'linear-gradient(135deg, rgba(212,168,83,0.06) 0%, rgba(212,168,83,0.02) 50%, rgba(139,92,246,0.03) 100%)',
+                                        border: '1px solid rgba(212,168,83,0.2)',
+                                        borderRadius: 'var(--radius-lg)',
+                                        padding: '20px',
+                                        marginBottom: 'var(--space-lg)',
+                                        position: 'relative', overflow: 'hidden',
+                                    }}>
+                                        {/* Gold accent line */}
+                                        <div style={{
+                                            position: 'absolute', top: 0, left: 0, right: 0, height: '2px',
+                                            background: 'linear-gradient(90deg, transparent, var(--accent-gold), rgba(139,92,246,0.5), var(--accent-gold), transparent)',
+                                        }} />
+                                        {/* Decorative orb */}
+                                        <div style={{
+                                            position: 'absolute', top: '-30px', right: '-20px',
+                                            width: '120px', height: '120px', borderRadius: '50%',
+                                            background: 'radial-gradient(circle, rgba(212,168,83,0.08), transparent 70%)',
+                                            pointerEvents: 'none',
+                                        }} />
+
+                                        {/* Header */}
+                                        <div style={{
+                                            display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px',
+                                            position: 'relative', zIndex: 1,
+                                        }}>
+                                            <div style={{
+                                                width: '38px', height: '38px', borderRadius: '10px',
+                                                background: 'linear-gradient(135deg, rgba(212,168,83,0.2), rgba(212,168,83,0.08))',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '1.1rem', flexShrink: 0,
+                                                border: '1px solid rgba(212,168,83,0.15)',
+                                            }}>🎥</div>
+                                            <div>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                                                    Trailer Performance
+                                                </div>
+                                                <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
+                                                    {data.content.trailerStats.totalTrailers} trailer{data.content.trailerStats.totalTrailers !== 1 ? 's' : ''} published
+                                                </div>
+                                            </div>
+                                            <div style={{
+                                                marginLeft: 'auto', textAlign: 'right', position: 'relative', zIndex: 1,
+                                            }}>
+                                                <div style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--accent-gold)', lineHeight: 1 }}>
+                                                    <AnimatedNumber value={data.content.trailerStats.views.allTime} />
+                                                </div>
+                                                <div style={{ fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', fontWeight: 600 }}>
+                                                    total trailer views
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Period breakdown */}
+                                        <div style={{
+                                            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px',
+                                            marginBottom: data.content.trailerStats.topTrailers.length > 0 ? '16px' : '0',
+                                            position: 'relative', zIndex: 1,
+                                        }}>
+                                            {[
+                                                { label: 'Today', value: data.content.trailerStats.views.today, color: '#22c55e' },
+                                                { label: 'This Week', value: data.content.trailerStats.views.week, color: '#3b82f6' },
+                                                { label: 'This Month', value: data.content.trailerStats.views.month, color: '#a855f7' },
+                                            ].map(p => (
+                                                <div key={p.label} style={{
+                                                    background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)',
+                                                    padding: '10px', textAlign: 'center',
+                                                    border: '1px solid rgba(255,255,255,0.04)',
+                                                }}>
+                                                    <div style={{ fontSize: '1.2rem', fontWeight: 800, color: p.color, lineHeight: 1 }}>
+                                                        {p.value}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.08em',
+                                                        color: 'var(--text-tertiary)', fontWeight: 600, marginTop: '3px',
+                                                    }}>{p.label}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Top trailers mini-leaderboard */}
+                                        {data.content.trailerStats.topTrailers.length > 0 && (
+                                            <div style={{ position: 'relative', zIndex: 1 }}>
+                                                <div style={{
+                                                    fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                    color: 'rgba(212,168,83,0.7)', fontWeight: 700, marginBottom: '6px',
+                                                }}>Top Trailers</div>
+                                                {data.content.trailerStats.topTrailers.map((t, i) => (
+                                                    <div key={i} style={{
+                                                        display: 'flex', alignItems: 'center', gap: '8px',
+                                                        padding: '5px 8px', borderRadius: 'var(--radius-sm)',
+                                                        background: i === 0 ? 'rgba(212,168,83,0.05)' : 'transparent',
+                                                    }}>
+                                                        <span style={{
+                                                            fontSize: '0.65rem', fontWeight: 800, color: 'var(--accent-gold)',
+                                                            minWidth: '16px',
+                                                        }}>{i + 1}.</span>
+                                                        <span style={{
+                                                            fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)',
+                                                            flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                                        }}>{t.title}</span>
+                                                        <span style={{
+                                                            fontSize: '0.72rem', fontWeight: 800, color: 'var(--accent-gold)',
+                                                        }}>{t.views}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* ── Section C: Film Leaderboard (Enhanced) ── */}
+                                <div style={{
+                                    fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.1em',
+                                    color: 'var(--accent-gold)', fontWeight: 700, marginBottom: '8px',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                }}>
+                                    <span>🎬 Film Leaderboard</span>
+                                    <span style={{ color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.55rem' }}>
+                                        {data.content.topFilms.length} film{data.content.topFilms.length !== 1 ? 's' : ''} tracked
+                                    </span>
+                                </div>
                                 {data.content.topFilms.length === 0 ? (
                                     <div style={{
                                         ...cardStyle, padding: 'var(--space-3xl)', textAlign: 'center',
@@ -1302,6 +1447,7 @@ export default function AdminAnalyticsPage() {
                                             const maxViews = data.content.topFilms[0]?.views || 1
                                             const pct = Math.round((film.views / maxViews) * 100)
                                             const medals = ['🥇', '🥈', '🥉']
+                                            const hasTrailer = !!film.project.trailerUrl
                                             return (
                                                 <div key={i} style={{
                                                     display: 'flex', alignItems: 'center', gap: '10px',
@@ -1335,9 +1481,20 @@ export default function AdminAnalyticsPage() {
                                                             <img src={film.project.coverImage} alt={film.project.title || 'Film cover'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                         </div>
                                                     )}
-                                                    {/* Title + bar */}
+                                                    {/* Title + bar + trailer badge */}
                                                     <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
-                                                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{film.project.title}</div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.82rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{film.project.title}</span>
+                                                            {hasTrailer && (
+                                                                <span style={{
+                                                                    fontSize: '0.48rem', fontWeight: 700, padding: '1px 5px',
+                                                                    borderRadius: 'var(--radius-full)', flexShrink: 0,
+                                                                    background: 'rgba(212,168,83,0.12)', color: 'var(--accent-gold)',
+                                                                    border: '1px solid rgba(212,168,83,0.2)',
+                                                                    textTransform: 'uppercase', letterSpacing: '0.06em',
+                                                                }}>🎥 Trailer</span>
+                                                            )}
+                                                        </div>
                                                         <div style={{ height: '2px', background: 'rgba(255,255,255,0.04)', borderRadius: '1px', marginTop: '3px' }}>
                                                             <div style={{
                                                                 height: '100%', borderRadius: '1px',
@@ -1347,10 +1504,16 @@ export default function AdminAnalyticsPage() {
                                                             }} />
                                                         </div>
                                                     </div>
-                                                    {/* Views badge */}
+                                                    {/* Views + weekly trend */}
                                                     <div style={{ position: 'relative', zIndex: 1, textAlign: 'right' }}>
                                                         <span style={{ fontSize: '0.82rem', fontWeight: 800, color: i === 0 ? 'var(--accent-gold)' : 'var(--text-primary)' }}>{film.views}</span>
                                                         <div style={{ fontSize: '0.5rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>views</div>
+                                                        {film.weekViews > 0 && (
+                                                            <div style={{
+                                                                fontSize: '0.5rem', fontWeight: 700, color: '#22c55e',
+                                                                marginTop: '2px',
+                                                            }}>+{film.weekViews} this week</div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )

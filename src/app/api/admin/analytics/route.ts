@@ -335,30 +335,84 @@ export async function GET(req: NextRequest) {
         }))
     }
 
-    // ─── CONTENT section (top films) ───
+    // ─── CONTENT section (top films + time-based views + trailer analytics) ───
     if (section === 'all' || section === 'content') {
-        const topFilms = await prisma.filmView.groupBy({
-            by: ['projectId'],
-            _count: { projectId: true },
-            orderBy: { _count: { projectId: 'desc' } },
-            take: 10,
-        })
+        const [
+            topFilms,
+            filmViewsToday, filmViewsWeek, filmViewsMonth, filmViewsAllTime,
+            trailerProjectCount,
+            trailerViewsToday, trailerViewsWeek, trailerViewsMonth, trailerViewsAllTime,
+        ] = await Promise.all([
+            prisma.filmView.groupBy({
+                by: ['projectId'],
+                _count: { projectId: true },
+                orderBy: { _count: { projectId: 'desc' } },
+                take: 10,
+            }),
+            // Film views by period
+            prisma.filmView.count({ where: { createdAt: { gte: today } } }),
+            prisma.filmView.count({ where: { createdAt: { gte: week } } }),
+            prisma.filmView.count({ where: { createdAt: { gte: month } } }),
+            prisma.filmView.count(),
+            // Trailer stats
+            prisma.project.count({ where: { trailerUrl: { not: null } } }),
+            prisma.pageView.count({ where: { createdAt: { gte: today }, path: { contains: 'trailer' } } }),
+            prisma.pageView.count({ where: { createdAt: { gte: week }, path: { contains: 'trailer' } } }),
+            prisma.pageView.count({ where: { createdAt: { gte: month }, path: { contains: 'trailer' } } }),
+            prisma.pageView.count({ where: { path: { contains: 'trailer' } } }),
+        ])
 
         const projectIds = topFilms.map(f => f.projectId)
-        const projects = projectIds.length > 0
-            ? await prisma.project.findMany({
-                where: { id: { in: projectIds } },
-                select: { id: true, title: true, slug: true, coverImage: true },
-            })
-            : []
+        const [projects, weeklyFilmViews] = await Promise.all([
+            projectIds.length > 0
+                ? prisma.project.findMany({
+                    where: { id: { in: projectIds } },
+                    select: { id: true, title: true, slug: true, coverImage: true, trailerUrl: true },
+                })
+                : [],
+            // Per-film weekly views for trend badges
+            projectIds.length > 0
+                ? prisma.filmView.groupBy({
+                    by: ['projectId'],
+                    where: { createdAt: { gte: week }, projectId: { in: projectIds } },
+                    _count: { projectId: true },
+                })
+                : [],
+        ])
+
+        const weeklyMap = new Map(weeklyFilmViews.map(f => [f.projectId, f._count.projectId]))
+
+        // Top trailers (projects with trailerUrl that have views)
+        const trailerProjects = projects.filter(p => p.trailerUrl)
+        const topTrailers = trailerProjects.map(p => {
+            const filmData = topFilms.find(f => f.projectId === p.id)
+            return { title: p.title, views: filmData?._count.projectId || 0 }
+        }).sort((a, b) => b.views - a.views).slice(0, 5)
 
         const existingContent = (result.content || {}) as Record<string, unknown>
         result.content = {
             ...existingContent,
             topFilms: topFilms.map(f => ({
                 views: f._count.projectId,
-                project: projects.find(p => p.id === f.projectId) || { title: 'Unknown', slug: '', coverImage: null },
+                weekViews: weeklyMap.get(f.projectId) || 0,
+                project: projects.find(p => p.id === f.projectId) || { title: 'Unknown', slug: '', coverImage: null, trailerUrl: null },
             })),
+            viewsByPeriod: {
+                today: filmViewsToday,
+                week: filmViewsWeek,
+                month: filmViewsMonth,
+                allTime: filmViewsAllTime,
+            },
+            trailerStats: {
+                totalTrailers: trailerProjectCount,
+                views: {
+                    today: trailerViewsToday,
+                    week: trailerViewsWeek,
+                    month: trailerViewsMonth,
+                    allTime: trailerViewsAllTime,
+                },
+                topTrailers,
+            },
         }
     }
 
