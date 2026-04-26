@@ -47,6 +47,7 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
         >
         <div className="press-feedback" style={{
             width: '200px',
+            maxWidth: '48vw',
             flexShrink: 0,
             borderRadius: '12px',
             overflow: 'hidden',

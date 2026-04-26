@@ -25,7 +25,7 @@ export default function EmailAnalyticsPage() {
 
     const loadData = () => {
         setLoading(true)
-        fetch('/api/admin/email-analytics')
+        fetch(`/api/admin/email-analytics?tz=${new Date().getTimezoneOffset()}`)
             .then(r => r.json())
             .then(d => { setData(d); setLastUpdated(new Date()) })
             .catch(() => {})

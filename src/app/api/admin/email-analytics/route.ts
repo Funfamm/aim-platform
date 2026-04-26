@@ -6,7 +6,7 @@ import { prisma } from '@/lib/db'
  * GET /api/admin/email-analytics
  * Returns email delivery analytics aggregated from EmailLog.
  */
-export async function GET() {
+export async function GET(request: Request) {
     try { await requireAdmin() } catch {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
@@ -51,9 +51,12 @@ export async function GET() {
         ORDER BY day ASC
     `
     // Zero-pad: always return exactly 7 days so chart never has gaps
+    // Use client's timezone offset (minutes) if provided, otherwise default to UTC
+    const url = new URL(request.url)
+    const tzOffsetMin = parseInt(url.searchParams.get('tz') || '0', 10) || 0
     const dailyVolume: { date: string; sent: number; failed: number }[] = []
     for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000)
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000 - tzOffsetMin * 60 * 1000)
         const dayStr = d.toISOString().slice(0, 10)
         const found = dailyRaw.find(r => r.day === dayStr)
         dailyVolume.push({
