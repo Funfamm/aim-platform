@@ -57,6 +57,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     const showTrailer = siteAllowTrailers || isLoggedIn
 
     // Serialize dates for client component
+    const hasTrailer = !!project.trailerUrl
     const serializedProject = {
         ...project,
         trailerUrl: showTrailer ? project.trailerUrl : null,
@@ -86,7 +87,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
     return (
         <>
-            <ProjectDetailClient project={serializedProject} isLoggedIn={isLoggedIn} />
+            <ProjectDetailClient project={serializedProject} isLoggedIn={isLoggedIn} hasTrailer={hasTrailer} />
             {serializedProject.cast.length > 0 && (
                 <CastShowcase
                     cast={serializedProject.cast}

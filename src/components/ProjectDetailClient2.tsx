@@ -58,7 +58,7 @@ const statusLabelKeys: Record<string, string> = {
     upcoming: 'comingSoon',
 }
 
-export default function ProjectDetailClient({ project, isLoggedIn }: { project: ProjectData; isLoggedIn?: boolean }) {
+export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }: { project: ProjectData; isLoggedIn?: boolean; hasTrailer?: boolean }) {
     const t = useTranslations('projectDetail')
     const locale = useLocale()
     const trailerRef = useRef<HTMLDivElement>(null)
@@ -319,9 +319,9 @@ export default function ProjectDetailClient({ project, isLoggedIn }: { project: 
                         <div className="animate-fade-in-up delay-3" style={{
                             display: 'flex', flexWrap: 'wrap', gap: 'var(--space-md)',
                         }}>
-                            {project.trailerUrl && (
+                            {(project.trailerUrl || hasTrailer) && (
                                 <button
-                                    onClick={scrollToTrailer}
+                                    onClick={project.trailerUrl ? scrollToTrailer : () => router.push(`/login?redirect=/works/${project.slug}#trailer`)}
                                     className="btn btn-primary btn-lg"
                                     style={{
                                         display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -332,6 +332,12 @@ export default function ProjectDetailClient({ project, isLoggedIn }: { project: 
                                         <polygon points="5,3 19,12 5,21" />
                                     </svg>
                                     {t('watchTrailer')}
+                                    {!project.trailerUrl && hasTrailer && (
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                                            <path d="M7 11V7a5 5 0 0110 0v4" />
+                                        </svg>
+                                    )}
                                 </button>
                             )}
                             {project.filmUrl && (
@@ -412,7 +418,7 @@ export default function ProjectDetailClient({ project, isLoggedIn }: { project: 
             </section>
 
             {/* ═══ TRAILER SECTION ═══ */}
-            {project.trailerUrl && (
+            {(project.trailerUrl || hasTrailer) && (
                 <section
                     ref={trailerRef}
                     id="trailer"
@@ -445,44 +451,113 @@ export default function ProjectDetailClient({ project, isLoggedIn }: { project: 
                             background: '#000',
                             position: 'relative',
                         }}>
-                            {isVideoFile(project.trailerUrl) ? (
-                                <video
-                                    ref={videoRef}
-                                    src={project.trailerUrl}
-                                    controls
-                                    controlsList="nodownload"
-                                    onContextMenu={(e) => e.preventDefault()}
-                                    poster={project.coverImage || undefined}
-                                    style={{
-                                        width: '100%',
-                                        aspectRatio: '16/9',
-                                        display: 'block',
-                                        objectFit: 'contain',
-                                        background: '#000',
-                                    }}
-                                />
+                            {project.trailerUrl ? (
+                                /* ── Logged-in: playable trailer ── */
+                                <>
+                                    {isVideoFile(project.trailerUrl) ? (
+                                        <video
+                                            ref={videoRef}
+                                            src={project.trailerUrl}
+                                            controls
+                                            controlsList="nodownload"
+                                            onContextMenu={(e) => e.preventDefault()}
+                                            poster={project.coverImage || undefined}
+                                            style={{
+                                                width: '100%',
+                                                aspectRatio: '16/9',
+                                                display: 'block',
+                                                objectFit: 'contain',
+                                                background: '#000',
+                                            }}
+                                        />
+                                    ) : (
+                                        <iframe
+                                            src={project.trailerUrl}
+                                            style={{
+                                                width: '100%',
+                                                aspectRatio: '16/9',
+                                                display: 'block',
+                                                border: 'none',
+                                            }}
+                                            allowFullScreen
+                                        />
+                                    )}
+                                </>
                             ) : (
-                                <iframe
-                                    src={project.trailerUrl}
-                                    style={{
-                                        width: '100%',
-                                        aspectRatio: '16/9',
-                                        display: 'block',
-                                        border: 'none',
-                                    }}
-                                    allowFullScreen
-                                />
+                                /* ── Locked: poster + sign-in overlay ── */
+                                <div style={{ position: 'relative', aspectRatio: '16/9' }}>
+                                    {/* Blurred poster background */}
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        backgroundImage: project.coverImage ? `url(${project.coverImage})` : undefined,
+                                        backgroundSize: 'cover', backgroundPosition: 'center',
+                                        filter: 'blur(12px) brightness(0.3)',
+                                        transform: 'scale(1.1)',
+                                    }} />
+                                    {/* Lock overlay */}
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        display: 'flex', flexDirection: 'column',
+                                        alignItems: 'center', justifyContent: 'center',
+                                        zIndex: 2, gap: '16px', padding: '24px',
+                                        textAlign: 'center',
+                                        background: 'rgba(0,0,0,0.4)',
+                                    }}>
+                                        <div style={{
+                                            width: '64px', height: '64px', borderRadius: '50%',
+                                            background: 'rgba(212,168,83,0.15)',
+                                            border: '2px solid rgba(212,168,83,0.3)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '28px',
+                                        }}>🔒</div>
+                                        <p style={{
+                                            fontSize: '1.15rem', fontWeight: 700, color: '#fff',
+                                            maxWidth: '400px', lineHeight: 1.4,
+                                        }}>
+                                            Sign in to watch the trailer
+                                        </p>
+                                        <p style={{
+                                            fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)',
+                                            maxWidth: '320px', lineHeight: 1.5,
+                                        }}>
+                                            Create a free account to unlock trailers and exclusive content
+                                        </p>
+                                        <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+                                            <button
+                                                onClick={() => router.push(`/login?redirect=/works/${project.slug}#trailer`)}
+                                                className="btn btn-primary"
+                                                style={{
+                                                    padding: '12px 28px', fontWeight: 700, fontSize: '0.9rem',
+                                                }}
+                                            >
+                                                Sign In
+                                            </button>
+                                            <button
+                                                onClick={() => router.push(`/signup?redirect=/works/${project.slug}#trailer`)}
+                                                className="btn"
+                                                style={{
+                                                    padding: '12px 28px', fontWeight: 600, fontSize: '0.9rem',
+                                                    background: 'rgba(255,255,255,0.08)',
+                                                    border: '1px solid rgba(255,255,255,0.15)',
+                                                    color: '#fff',
+                                                }}
+                                            >
+                                                Create Account
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
-
-
                         </div>
 
-                        <div style={{
-                            textAlign: 'center', marginTop: 'var(--space-lg)',
-                            fontSize: '0.75rem', color: 'var(--text-tertiary)',
-                        }}>
-                            {t('fullscreenTip')}
-                        </div>
+                        {project.trailerUrl && (
+                            <div style={{
+                                textAlign: 'center', marginTop: 'var(--space-lg)',
+                                fontSize: '0.75rem', color: 'var(--text-tertiary)',
+                            }}>
+                                {t('fullscreenTip')}
+                            </div>
+                        )}
                     </div>
                 </section>
             )}
