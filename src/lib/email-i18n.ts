@@ -2076,6 +2076,124 @@ export const emailStrings: Record<string, TemplateStrings> = {
         ru: { viewNow: 'Смотреть сейчас' },
         zh: { viewNow: '立即查看' },
     },
+
+    // ── Email Wrapper (shared header/footer) ──────────────────────────────────
+    emailWrapper: {
+        en: { tagline: 'AI-Powered Filmmaking', autoFooter: 'This email was sent automatically. Please do not reply directly.' },
+        es: { tagline: 'Cine Impulsado por IA', autoFooter: 'Este correo fue enviado automáticamente. Por favor, no respondas directamente.' },
+        fr: { tagline: 'Cinéma propulsé par l\'IA', autoFooter: 'Cet e-mail a été envoyé automatiquement. Veuillez ne pas répondre directement.' },
+        ar: { tagline: 'صناعة أفلام بالذكاء الاصطناعي', autoFooter: 'تم إرسال هذا البريد تلقائياً. يرجى عدم الرد مباشرة.' },
+        zh: { tagline: 'AI驱动的电影制作', autoFooter: '此邮件由系统自动发送,请勿直接回复。' },
+        hi: { tagline: 'AI-संचालित फिल्म निर्माण', autoFooter: 'यह ईमेल स्वचालित रूप से भेजा गया है। कृपया सीधे उत्तर न दें।' },
+        pt: { tagline: 'Cinema com Inteligência Artificial', autoFooter: 'Este e-mail foi enviado automaticamente. Por favor, não responda diretamente.' },
+        ru: { tagline: 'Кинопроизводство на основе ИИ', autoFooter: 'Это письмо отправлено автоматически. Пожалуйста, не отвечайте на него.' },
+        ja: { tagline: 'AI搭載の映画制作', autoFooter: 'このメールは自動送信されています。直接返信しないでください。' },
+        de: { tagline: 'KI-gestützte Filmproduktion', autoFooter: 'Diese E-Mail wurde automatisch gesendet. Bitte antworten Sie nicht direkt.' },
+        ko: { tagline: 'AI 기반 영화 제작', autoFooter: '이 이메일은 자동으로 발송되었습니다. 직접 회신하지 마세요.' },
+    },
+
+    // ── Subscribe Welcome (new subscriber) ────────────────────────────────────
+    subscribeWelcome: {
+        en: {
+            subject: 'Welcome to AIM Studio! 🎬',
+            heading: 'Welcome to AIM Studio! 🎬',
+            subtext: "We're glad you're here.",
+            body: "You're now part of our creative community. Here's what you can look forward to:",
+            highlights: '🎥 Early access to new film releases\n🎭 Casting call announcements\n🎬 Behind-the-scenes exclusives\n📢 Platform updates & news',
+            noSpam: "We don't spam. Only meaningful updates when we have something worth sharing.",
+            buttonText: 'Explore AIM Studio →',
+        },
+        es: {
+            subject: '¡Bienvenido a AIM Studio! 🎬',
+            heading: '¡Bienvenido a AIM Studio! 🎬',
+            subtext: 'Nos alegra que estés aquí.',
+            body: 'Ahora eres parte de nuestra comunidad creativa. Esto es lo que puedes esperar:',
+            highlights: '🎥 Acceso anticipado a nuevos estrenos\n🎭 Anuncios de castings\n🎬 Exclusivas detrás de cámaras\n📢 Actualizaciones y noticias',
+            noSpam: 'No enviamos spam. Solo actualizaciones significativas cuando tenemos algo que vale la pena compartir.',
+            buttonText: 'Explorar AIM Studio →',
+        },
+        fr: {
+            subject: 'Bienvenue sur AIM Studio ! 🎬',
+            heading: 'Bienvenue sur AIM Studio ! 🎬',
+            subtext: 'Nous sommes ravis de vous accueillir.',
+            body: 'Vous faites désormais partie de notre communauté créative. Voici ce qui vous attend :',
+            highlights: '🎥 Accès anticipé aux nouvelles sorties\n🎭 Annonces de castings\n🎬 Exclusivités des coulisses\n📢 Mises à jour et actualités',
+            noSpam: 'Pas de spam. Uniquement des mises à jour pertinentes quand nous avons quelque chose qui mérite d\'être partagé.',
+            buttonText: 'Explorer AIM Studio →',
+        },
+        ar: {
+            subject: 'مرحباً بك في AIM Studio! 🎬',
+            heading: 'مرحباً بك في AIM Studio! 🎬',
+            subtext: 'يسعدنا انضمامك إلينا.',
+            body: 'أنت الآن جزء من مجتمعنا الإبداعي. إليك ما يمكنك التطلع إليه:',
+            highlights: '🎥 وصول مبكر لإصدارات الأفلام الجديدة\n🎭 إعلانات الكاستينج\n🎬 محتوى حصري من الكواليس\n📢 تحديثات وأخبار المنصة',
+            noSpam: 'لا نرسل رسائل مزعجة. فقط تحديثات مهمة عندما يكون لدينا ما يستحق المشاركة.',
+            buttonText: 'استكشف AIM Studio →',
+        },
+        zh: {
+            subject: '欢迎加入 AIM Studio!🎬',
+            heading: '欢迎加入 AIM Studio!🎬',
+            subtext: '很高兴您的加入。',
+            body: '您现在是我们创意社区的一员。以下是您可以期待的内容:',
+            highlights: '🎥 新片抢先看\n🎭 选角公告\n🎬 幕后独家内容\n📢 平台更新与资讯',
+            noSpam: '我们不发送垃圾邮件。只在有值得分享的内容时才发送更新。',
+            buttonText: '探索 AIM Studio →',
+        },
+        hi: {
+            subject: 'AIM Studio में आपका स्वागत है! 🎬',
+            heading: 'AIM Studio में आपका स्वागत है! 🎬',
+            subtext: 'हम खुश हैं कि आप यहां हैं।',
+            body: 'अब आप हमारे क्रिएटिव समुदाय का हिस्सा हैं। यहां बताया गया है कि आप किसकी उम्मीद कर सकते हैं:',
+            highlights: '🎥 नई फिल्म रिलीज़ तक जल्दी पहुंच\n🎭 कास्टिंग कॉल की घोषणाएं\n🎬 बिहाइंड-द-सीन्स एक्सक्लूसिव\n📢 प्लेटफ़ॉर्म अपडेट और समाचार',
+            noSpam: 'हम स्पैम नहीं करते। केवल सार्थक अपडेट जब हमारे पास साझा करने योग्य कुछ हो।',
+            buttonText: 'AIM Studio एक्सप्लोर करें →',
+        },
+        pt: {
+            subject: 'Bem-vindo ao AIM Studio! 🎬',
+            heading: 'Bem-vindo ao AIM Studio! 🎬',
+            subtext: 'Estamos felizes por você estar aqui.',
+            body: 'Agora você faz parte da nossa comunidade criativa. Veja o que você pode esperar:',
+            highlights: '🎥 Acesso antecipado a novos lançamentos\n🎭 Anúncios de elenco\n🎬 Exclusivos dos bastidores\n📢 Atualizações e novidades da plataforma',
+            noSpam: 'Não enviamos spam. Apenas atualizações significativas quando temos algo que vale a pena compartilhar.',
+            buttonText: 'Explorar AIM Studio →',
+        },
+        ru: {
+            subject: 'Добро пожаловать в AIM Studio! 🎬',
+            heading: 'Добро пожаловать в AIM Studio! 🎬',
+            subtext: 'Мы рады, что вы с нами.',
+            body: 'Теперь вы часть нашего творческого сообщества. Вот что вас ждёт:',
+            highlights: '🎥 Ранний доступ к новым фильмам\n🎭 Объявления о кастингах\n🎬 Эксклюзивы со съёмочной площадки\n📢 Обновления и новости платформы',
+            noSpam: 'Мы не рассылаем спам. Только важные обновления, когда есть чем поделиться.',
+            buttonText: 'Исследовать AIM Studio →',
+        },
+        ja: {
+            subject: 'AIM Studioへようこそ!🎬',
+            heading: 'AIM Studioへようこそ!🎬',
+            subtext: 'ご参加いただきありがとうございます。',
+            body: 'クリエイティブコミュニティの一員になりました。今後お届けする内容:',
+            highlights: '🎥 新作映画への先行アクセス\n🎭 キャスティング募集のお知らせ\n🎬 舞台裏の限定コンテンツ\n📢 プラットフォームの更新情報',
+            noSpam: 'スパムは送りません。共有する価値のある情報がある時だけお届けします。',
+            buttonText: 'AIM Studioを探索する →',
+        },
+        de: {
+            subject: 'Willkommen bei AIM Studio! 🎬',
+            heading: 'Willkommen bei AIM Studio! 🎬',
+            subtext: 'Wir freuen uns, dass Sie hier sind.',
+            body: 'Sie sind jetzt Teil unserer kreativen Community. Das erwartet Sie:',
+            highlights: '🎥 Frühzeitiger Zugang zu neuen Filmveröffentlichungen\n🎭 Casting-Ankündigungen\n🎬 Exklusive Einblicke hinter die Kulissen\n📢 Plattform-Updates und Neuigkeiten',
+            noSpam: 'Kein Spam. Nur relevante Updates, wenn wir etwas Teilenswertes haben.',
+            buttonText: 'AIM Studio erkunden →',
+        },
+        ko: {
+            subject: 'AIM Studio에 오신 것을 환영합니다! 🎬',
+            heading: 'AIM Studio에 오신 것을 환영합니다! 🎬',
+            subtext: '함께해 주셔서 기쁩니다.',
+            body: '이제 우리 크리에이티브 커뮤니티의 일원입니다. 기대할 수 있는 내용:',
+            highlights: '🎥 신작 영화 조기 액세스\n🎭 캐스팅 모집 공지\n🎬 비하인드 스토리 독점 콘텐츠\n📢 플랫폼 업데이트 및 뉴스',
+            noSpam: '스팸을 보내지 않습니다. 공유할 가치가 있는 내용이 있을 때만 업데이트합니다.',
+            buttonText: 'AIM Studio 탐색하기 →',
+        },
+    },
 }
 
 /**
@@ -2089,3 +2207,4 @@ export function t(template: string, locale: string, key: string): string {
         ''
     )
 }
+

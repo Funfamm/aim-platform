@@ -633,7 +633,7 @@ export async function welcomeEmailWithOverrides(name: string, siteUrl?: string, 
         ${paragraph(f.body)}
         ${f.buttonUrl ? button(f.buttonText, f.buttonUrl) : ''}
         ${paragraph(f.footer)}
-    `, `Welcome to AIM Studio, ${name}!`)
+    `, `Welcome to AIM Studio, ${name}!`, undefined, locale)
 }
 
 export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?: string, locale = 'en'): Promise<string> {
@@ -654,7 +654,7 @@ export async function subscribeConfirmationWithOverrides(name?: string, siteUrl?
         ${paragraph(f.body)}
         ${paragraph(f.noSpam)}
         ${f.buttonUrl ? `${divider()}${button(f.buttonText, f.buttonUrl)}` : ''}
-    `, 'Subscription confirmed! Welcome to AIM Studio')
+    `, 'Subscription confirmed! Welcome to AIM Studio', undefined, locale)
 }
 
 /** Sent to brand-new subscribers on immediate confirmation — warm onboarding tone */
@@ -679,7 +679,9 @@ export async function subscribeWelcomeWithOverrides(name?: string, siteUrl?: str
         `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 8px 0 24px; padding: 16px 20px; background-color: ${BG_DARK}; border-radius: 8px; border-left: 3px solid ${BRAND_COLOR};">${highlightItems}</table>` +
         paragraph(f.noSpam) +
         (f.buttonUrl ? divider() + button(f.buttonText, f.buttonUrl) : ''),
-        emailT('subscribeWelcome', locale, 'subject') || 'Welcome to AIM Studio! 🎬'
+        emailT('subscribeWelcome', locale, 'subject') || 'Welcome to AIM Studio! 🎬',
+        undefined,
+        locale
     )
 }
 export async function subscribeWelcomeBackWithOverrides(name?: string, siteUrl?: string, locale = 'en'): Promise<string> {
@@ -699,7 +701,9 @@ export async function subscribeWelcomeBackWithOverrides(name?: string, siteUrl?:
         paragraph(f.body) +
         paragraph(f.noSpam) +
         (f.buttonUrl ? divider() + button(f.buttonText, f.buttonUrl) : ''),
-        emailT('subscribeWelcomeBack', locale, 'subject') || 'Welcome back to AIM Studio! 🎬'
+        emailT('subscribeWelcomeBack', locale, 'subject') || 'Welcome back to AIM Studio! 🎬',
+        undefined,
+        locale
     )
 }
 
