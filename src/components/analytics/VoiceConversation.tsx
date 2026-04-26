@@ -89,6 +89,8 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                 let listeningStarted = false
                 const beginListening = () => {
                     if (listeningStarted || cancelled) return
+                    // Don't interrupt if audio is still playing
+                    if (currentAudioRef.current && !currentAudioRef.current.paused && !currentAudioRef.current.ended) return
                     listeningStarted = true
                     currentAudioRef.current?.pause()
                     currentAudioRef.current = null
@@ -99,7 +101,8 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                     startListening()
                 }
                 speakResponse(greeting).then(beginListening)
-                setTimeout(beginListening, 3000)
+                // Safety fallback — only if TTS silently fails (30s is plenty for any greeting)
+                setTimeout(beginListening, 30000)
             }
         }
 
