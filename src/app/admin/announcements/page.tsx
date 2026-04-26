@@ -85,7 +85,8 @@ export default function AnnouncementsAdminPage() {
     // ── Derived ──
     const allTranslated = hasTranslated && missingLocales.length === 0
     const someAudienceSelected = notifyGroups.members || notifyGroups.subscribers || notifyGroups.cast || selectedUsers.length > 0
-    const canBroadcast  = allTranslated && title.trim() && message.trim() && !sending && someAudienceSelected
+    const onlySpecificUsers = selectedUsers.length > 0 && !notifyGroups.members && !notifyGroups.subscribers && !notifyGroups.cast
+    const canBroadcast  = (allTranslated || onlySpecificUsers) && title.trim() && message.trim() && !sending && someAudienceSelected
     const someRetrying  = retryingLocales.length > 0
 
     // ── User search with debounce ──
@@ -515,7 +516,7 @@ export default function AnnouncementsAdminPage() {
                         </div>
 
                         {/* Lock notice */}
-                        {!allTranslated && (
+                        {!allTranslated && !onlySpecificUsers && (
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 🔒 Broadcast is locked until all {LOCALES.length} languages are confirmed
                                 {missingLocales.length > 0 && hasTranslated && (
@@ -523,6 +524,11 @@ export default function AnnouncementsAdminPage() {
                                         — {missingLocales.length} still missing
                                     </span>
                                 )}
+                            </div>
+                        )}
+                        {onlySpecificUsers && !allTranslated && (
+                            <div style={{ fontSize: '0.72rem', color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                ✅ Sending to specific users only — their language will be auto-detected
                             </div>
                         )}
                     </div>
@@ -563,7 +569,7 @@ export default function AnnouncementsAdminPage() {
                             {[
                                 { label: 'Title written',    done: !!title.trim() },
                                 { label: 'Message written',  done: !!message.trim() },
-                                { label: `All ${LOCALES.length} languages`, done: allTranslated },
+                                { label: `All ${LOCALES.length} languages`, done: allTranslated || onlySpecificUsers },
                             ].map(item => (
                                 <span key={item.label} style={{ color: item.done ? '#34d399' : 'rgba(255,255,255,0.25)' }}>
                                     {item.done ? '✅' : '○'} {item.label}
@@ -729,6 +735,7 @@ export default function AnnouncementsAdminPage() {
                                 : allTranslated ? '📣 Broadcast to All Users'
                                 : missingLocales.length > 0 && hasTranslated
                                 ? `🔴 Retry ${missingLocales.length} Failed Language${missingLocales.length !== 1 ? 's' : ''} First`
+                                : onlySpecificUsers ? '📣 Send to Selected Users'
                                 : '🔒 Translate All Languages First'}
                         </button>
 
