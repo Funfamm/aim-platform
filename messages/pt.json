@@ -1085,7 +1085,14 @@
     "emailLangDesc": "Escolha se deseja receber e-mails no seu idioma salvo.",
     "emailLangToggleLabel": "Receber e-mails no meu idioma",
     "emailLangOn": "Os e-mails serão enviados no seu idioma selecionado.",
-    "emailLangOff": "Todos os e-mails serão enviados em inglês."
+    "emailLangOff": "Todos os e-mails serão enviados em inglês.",
+    "readMore": "Ler mais",
+    "showLess": "Menos",
+    "view": "Ver",
+    "justNow": "agora",
+    "minutesAgo": "há {count}m",
+    "hoursAgo": "há {count}h",
+    "daysAgo": "há {count}d"
   },
   "scripts": {
     "metaTitle": "Chamadas de Roteiros | AIM Studio",

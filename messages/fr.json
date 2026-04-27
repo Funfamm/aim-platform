@@ -1085,7 +1085,14 @@
     "emailLangDesc": "Choisissez si vous souhaitez recevoir vos e-mails dans votre langue enregistrée.",
     "emailLangToggleLabel": "Recevoir les e-mails dans ma langue",
     "emailLangOn": "Les e-mails seront envoyés dans votre langue sélectionnée.",
-    "emailLangOff": "Tous les e-mails seront envoyés en anglais."
+    "emailLangOff": "Tous les e-mails seront envoyés en anglais.",
+    "readMore": "Lire la suite",
+    "showLess": "Moins",
+    "view": "Voir",
+    "justNow": "à l'instant",
+    "minutesAgo": "il y a {count}m",
+    "hoursAgo": "il y a {count}h",
+    "daysAgo": "il y a {count}j"
   },
   "scripts": {
     "metaTitle": "Appels à scénarios | AIM Studio",

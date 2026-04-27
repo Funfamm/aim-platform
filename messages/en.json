@@ -1085,7 +1085,14 @@
     "emailLangDesc": "Choose whether you receive emails in your saved language.",
     "emailLangToggleLabel": "Receive emails in my language",
     "emailLangOn": "Emails will be sent in your selected language.",
-    "emailLangOff": "All emails will be sent in English."
+    "emailLangOff": "All emails will be sent in English.",
+    "readMore": "Read more",
+    "showLess": "Show less",
+    "view": "View",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
   },
   "scripts": {
     "metaTitle": "Script Calls | AIM Studio",

@@ -1086,7 +1086,14 @@
     "emailLangDesc": "設定した言語でメールを受信するかどうかを選択してください。",
     "emailLangToggleLabel": "自分の言語でメールを受信する",
     "emailLangOn": "メールは選択した言語で送信されます。",
-    "emailLangOff": "すべてのメールは英語で送信されます。"
+    "emailLangOff": "すべてのメールは英語で送信されます。",
+    "readMore": "続きを読む",
+    "showLess": "閉じる",
+    "view": "表示",
+    "justNow": "たった今",
+    "minutesAgo": "{count}分前",
+    "hoursAgo": "{count}時間前",
+    "daysAgo": "{count}日前"
   },
   "scripts": {
     "metaTitle": "スクリプト募集 | AIM Studio",

@@ -1085,7 +1085,14 @@
     "emailLangDesc": "Elige si deseas recibir correos en tu idioma guardado.",
     "emailLangToggleLabel": "Recibir correos en mi idioma",
     "emailLangOn": "Los correos se enviarán en tu idioma seleccionado.",
-    "emailLangOff": "Todos los correos se enviarán en inglés."
+    "emailLangOff": "Todos los correos se enviarán en inglés.",
+    "readMore": "Leer más",
+    "showLess": "Menos",
+    "view": "Ver",
+    "justNow": "ahora",
+    "minutesAgo": "hace {count}m",
+    "hoursAgo": "hace {count}h",
+    "daysAgo": "hace {count}d"
   },
   "scripts": {
     "metaTitle": "Convocatorias de guiones | AIM Studio",

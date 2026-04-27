@@ -1085,7 +1085,14 @@
     "emailLangDesc": "चुनें कि क्या आप अपनी सहेजी गई भाषा में ईमेल प्राप्त करना चाहते हैं।",
     "emailLangToggleLabel": "मेरी भाषा में ईमेल प्राप्त करें",
     "emailLangOn": "ईमेल आपकी चुनी गई भाषा में भेजे जाएंगे।",
-    "emailLangOff": "सभी ईमेल अंग्रेजी में भेजे जाएंगे।"
+    "emailLangOff": "सभी ईमेल अंग्रेजी में भेजे जाएंगे।",
+    "readMore": "और पढ़ें",
+    "showLess": "कम दिखाएं",
+    "view": "देखें",
+    "justNow": "अभी",
+    "minutesAgo": "{count} मि॰ पहले",
+    "hoursAgo": "{count} घं॰ पहले",
+    "daysAgo": "{count} दिन पहले"
   },
   "scripts": {
     "metaTitle": "स्क्रिप्ट कॉल्स | AIM Studio",

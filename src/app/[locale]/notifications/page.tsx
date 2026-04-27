@@ -28,14 +28,14 @@ interface Notification {
 }
 
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, tFn: (key: string, vals?: Record<string, string | number>) => string): string {
     const diff = Date.now() - new Date(dateStr).getTime()
     const m = Math.floor(diff / 60000)
-    if (m < 1)  return 'just now'
-    if (m < 60) return `${m}m ago`
+    if (m < 1)  return tFn('justNow')
+    if (m < 60) return tFn('minutesAgo', { count: m })
     const h = Math.floor(m / 60)
-    if (h < 24) return `${h}h ago`
-    return `${Math.floor(h / 24)}d ago`
+    if (h < 24) return tFn('hoursAgo', { count: h })
+    return tFn('daysAgo', { count: Math.floor(h / 24) })
 }
 
 function groupNotifications(list: Notification[]): Record<string, Notification[]> {
@@ -462,7 +462,7 @@ export default function NotificationsPage() {
                                                                     color: 'var(--accent-gold)', cursor: 'pointer',
                                                                     fontSize: '0.78rem', fontWeight: 600,
                                                                 }}
-                                                            >Read more</button>
+                                                            >{t('readMore')}</button>
                                                           </>
                                                         : <>{n.message}
                                                             {n.message.length > MSG_TRUNCATE_LEN && (
@@ -473,20 +473,20 @@ export default function NotificationsPage() {
                                                                         color: 'var(--text-tertiary)', cursor: 'pointer',
                                                                         fontSize: '0.72rem', fontWeight: 600,
                                                                     }}
-                                                                >Show less</button></>
+                                                                >{t('showLess')}</button></>
                                                             )}
                                                           </>
                                                     }
                                                 </span>
                                                 <span style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                                                     <span style={{ fontSize: '0.73rem', color: '#6b7280' }}>
-                                                        {timeAgo(n.createdAt)}
+                                                        {timeAgo(n.createdAt, t)}
                                                     </span>
                                                     {n.link && !selectMode && (
                                                         <span style={{
                                                             fontSize: '0.68rem', color: 'var(--accent-gold)',
                                                             fontWeight: 600, opacity: 0.8,
-                                                        }}>View →</span>
+                                                        }}>→ {t('view')}</span>
                                                     )}
                                                 </span>
                                             </span>

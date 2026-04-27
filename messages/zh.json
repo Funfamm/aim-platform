@@ -1086,7 +1086,14 @@
     "emailLangDesc": "选择是否以您保存的语言接收电子邮件。",
     "emailLangToggleLabel": "以我的语言接收电子邮件",
     "emailLangOn": "电子邮件将以您选择的语言发送。",
-    "emailLangOff": "所有电子邮件将以英语发送。"
+    "emailLangOff": "所有电子邮件将以英语发送。",
+    "readMore": "阅读更多",
+    "showLess": "收起",
+    "view": "查看",
+    "justNow": "刚刚",
+    "minutesAgo": "{count}分钟前",
+    "hoursAgo": "{count}小时前",
+    "daysAgo": "{count}天前"
   },
   "scripts": {
     "metaTitle": "剧本征集 | AIM Studio",
