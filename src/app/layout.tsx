@@ -7,7 +7,7 @@ import { CsrfProvider } from "@/components/CsrfProvider";
 
 export async function generateMetadata(): Promise<Metadata> {
   let siteName = "AIM Studio";
-  let tagline = "AI-Powered Filmmaking";
+  let tagline = "Creating Cinema with AI";
   try {
     const s = await getCachedSettings();
     if (s?.siteName) siteName = s.siteName;

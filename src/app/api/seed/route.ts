@@ -19,7 +19,7 @@ export async function POST() {
             create: {
                 id: 'default',
                 siteName: 'AIM Studio',
-                tagline: 'AI-Powered Filmmaking',
+                tagline: 'Creating Cinema with AI',
                 aboutText: 'AIM Studio is at the forefront of AI-driven cinema.',
                 contactEmail: 'contact@aimstudio.ai',
                 socialLinks: JSON.stringify({ youtube: 'https://youtube.com', instagram: 'https://instagram.com', tiktok: 'https://tiktok.com', x: 'https://x.com' }),

@@ -54,7 +54,7 @@ function emailWrapper(content: string, preheader?: string): string {
                     <tr>
                         <td style="padding-top: 28px; text-align: center;">
                             <p style="margin: 0; font-size: 12px; color: ${TEXT_SECONDARY}; line-height: 1.6;">
-                                &copy; ${new Date().getFullYear()} AIM Studio &bull; AI-Powered Filmmaking
+                                &copy; ${new Date().getFullYear()} AIM Studio &bull; Creating Cinema with AI
                             </p>
                             <p style="margin: 8px 0 0; font-size: 11px; color: #6b7280;">
                                 This email was sent automatically. Please do not reply directly.

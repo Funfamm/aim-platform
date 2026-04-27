@@ -26,7 +26,7 @@ async function seed() {
         create: {
             id: 'default',
             siteName: 'AIM Studio',
-            tagline: 'AI-Powered Filmmaking',
+            tagline: 'Creating Cinema with AI',
             aboutText: 'AIM Studio is at the forefront of AI-driven cinema, blending cutting-edge artificial intelligence with timeless storytelling. We create compelling visual narratives that push the boundaries of what is possible in modern filmmaking.',
             contactEmail: 'contact@aimstudio.ai',
             socialLinks: JSON.stringify({

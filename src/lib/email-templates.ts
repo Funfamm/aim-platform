@@ -67,7 +67,7 @@ const ACCENT_BLUE = '#3b82f6'
 
 /** Shared email wrapper with premium branded header/footer */
 function emailWrapper(content: string, preheader?: string, footerText?: string, locale = 'en'): string {
-    const tagline    = emailT('emailWrapper', locale, 'tagline') || 'AI-Powered Filmmaking'
+    const tagline    = emailT('emailWrapper', locale, 'tagline') || 'Creating Cinema with AI'
     const autoFooter = footerText ?? (emailT('emailWrapper', locale, 'autoFooter') || 'This email was sent automatically. Please do not reply directly.')
     const RTL_LOCALES = ['ar', 'he', 'fa', 'ur']
     const isRtl = RTL_LOCALES.includes(locale)

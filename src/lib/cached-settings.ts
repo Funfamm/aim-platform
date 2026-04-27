@@ -16,7 +16,7 @@ import { cache, CACHE_KEYS, CACHE_TTL } from '@/lib/cache'
 const SETTINGS_DEFAULTS = {
     id: 'default',
     siteName: 'AIM Studio',
-    tagline: 'AI-Powered Filmmaking',
+    tagline: 'Creating Cinema with AI',
     aboutText: '',
     studioStory: '',
     mission: '',

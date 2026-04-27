@@ -2171,17 +2171,17 @@ export const emailStrings: Record<string, TemplateStrings> = {
 
     // ── Email Wrapper (shared header/footer) ──────────────────────────────────
     emailWrapper: {
-        en: { tagline: 'AI-Powered Filmmaking', autoFooter: 'This email was sent automatically. Please do not reply directly.' },
-        es: { tagline: 'Cine Impulsado por IA', autoFooter: 'Este correo fue enviado automáticamente. Por favor, no respondas directamente.' },
-        fr: { tagline: 'Cinéma propulsé par l\'IA', autoFooter: 'Cet e-mail a été envoyé automatiquement. Veuillez ne pas répondre directement.' },
-        ar: { tagline: 'صناعة أفلام بالذكاء الاصطناعي', autoFooter: 'تم إرسال هذا البريد تلقائياً. يرجى عدم الرد مباشرة.' },
-        zh: { tagline: 'AI驱动的电影制作', autoFooter: '此邮件由系统自动发送,请勿直接回复。' },
-        hi: { tagline: 'AI-संचालित फिल्म निर्माण', autoFooter: 'यह ईमेल स्वचालित रूप से भेजा गया है। कृपया सीधे उत्तर न दें।' },
-        pt: { tagline: 'Cinema com Inteligência Artificial', autoFooter: 'Este e-mail foi enviado automaticamente. Por favor, não responda diretamente.' },
-        ru: { tagline: 'Кинопроизводство на основе ИИ', autoFooter: 'Это письмо отправлено автоматически. Пожалуйста, не отвечайте на него.' },
-        ja: { tagline: 'AI搭載の映画制作', autoFooter: 'このメールは自動送信されています。直接返信しないでください。' },
-        de: { tagline: 'KI-gestützte Filmproduktion', autoFooter: 'Diese E-Mail wurde automatisch gesendet. Bitte antworten Sie nicht direkt.' },
-        ko: { tagline: 'AI 기반 영화 제작', autoFooter: '이 이메일은 자동으로 발송되었습니다. 직접 회신하지 마세요.' },
+        en: { tagline: 'Creating Cinema with AI', autoFooter: 'This email was sent automatically. Please do not reply directly.' },
+        es: { tagline: 'Creando Cine con IA', autoFooter: 'Este correo fue enviado automáticamente. Por favor, no respondas directamente.' },
+        fr: { tagline: 'Créer le cinéma avec l\'IA', autoFooter: 'Cet e-mail a été envoyé automatiquement. Veuillez ne pas répondre directement.' },
+        ar: { tagline: 'صناعة السينما بالذكاء الاصطناعي', autoFooter: 'تم إرسال هذا البريد تلقائياً. يرجى عدم الرد مباشرة.' },
+        zh: { tagline: '用AI创造电影', autoFooter: '此邮件由系统自动发送,请勿直接回复。' },
+        hi: { tagline: 'AI के साथ सिनेमा बनाना', autoFooter: 'यह ईमेल स्वचालित रूप से भेजा गया है। कृपया सीधे उत्तर न दें।' },
+        pt: { tagline: 'Criando Cinema com IA', autoFooter: 'Este e-mail foi enviado automaticamente. Por favor, não responda diretamente.' },
+        ru: { tagline: 'Создаём кино с помощью ИИ', autoFooter: 'Это письмо отправлено автоматически. Пожалуйста, не отвечайте на него.' },
+        ja: { tagline: 'AIと共に映画を創る', autoFooter: 'このメールは自動送信されています。直接返信しないでください。' },
+        de: { tagline: 'Kino schaffen mit KI', autoFooter: 'Diese E-Mail wurde automatisch gesendet. Bitte antworten Sie nicht direkt.' },
+        ko: { tagline: 'AI로 영화를 만들다', autoFooter: '이 이메일은 자동으로 발송되었습니다. 직접 회신하지 마세요.' },
     },
 
     // ── Subscribe Welcome (new subscriber) ────────────────────────────────────

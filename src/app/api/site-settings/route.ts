@@ -31,9 +31,9 @@ export async function GET() {
 
         return NextResponse.json(settings || {
             siteName: 'AIM Studio',
-            tagline: 'AI-Powered Filmmaking',
+            tagline: 'Creating Cinema with AI',
         })
     } catch {
-        return NextResponse.json({ siteName: 'AIM Studio', tagline: 'AI-Powered Filmmaking' })
+        return NextResponse.json({ siteName: 'AIM Studio', tagline: 'Creating Cinema with AI' })
     }
 }

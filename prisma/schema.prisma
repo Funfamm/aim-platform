@@ -396,7 +396,7 @@ model HeroVideo {
 model SiteSettings {
   id                            String         @id @default("default")
   siteName                      String         @default("AIM Studio")
-  tagline                       String         @default("AI-Powered Filmmaking")
+  tagline                       String         @default("Creating Cinema with AI")
   aboutText                     String         @default("")
   studioStory                   String         @default("")
   mission                       String         @default("")
