@@ -1010,8 +1010,8 @@ export function announcementEmail(
 ): string {
     const ctaUrl       = link
         ? (link.startsWith('http') ? link : `${siteUrl || 'https://impactaistudio.com'}${link}`)
-        : `${siteUrl || 'https://impactaistudio.com'}/announcements`
-    const ctaText      = i18n?.buttonText  ?? (link ? 'View Announcement \u2192' : 'View Announcements \u2192')
+        : `${siteUrl || 'https://impactaistudio.com'}/notifications`
+    const ctaText      = i18n?.buttonText  ?? (link ? 'View Announcement \u2192' : 'View in Notifications \u2192')
     const badge        = i18n?.badgeText   ?? 'Platform Announcement'
     const footerOptIn  = i18n?.footerOptIn ?? "You're receiving this because you opted in to platform announcements."
     const managePrefs  = i18n?.managePrefs ?? 'Manage preferences'
