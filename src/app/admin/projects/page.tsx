@@ -156,6 +156,25 @@ export default function AdminProjectsPage() {
     const [editorMediaType, setEditorMediaType] = useState<string>('movie')
     // Active subtitle tab per project (movie or trailer)
     const [subtitleTab, setSubtitleTab] = useState<Record<string, 'movie' | 'trailer'>>({})
+
+    // Auto-select the correct subtitle tab based on available media URLs.
+    // This replaces the broken setState-during-render pattern.
+    useEffect(() => {
+        if (!editingId) return
+        const project = projects.find(p => p.id === editingId)
+        const hasMovie = Boolean(project?.filmUrl || form.filmUrl)
+        const hasTrailer = Boolean(project?.trailerUrl || form.trailerUrl)
+        const current = subtitleTab[editingId]
+        if (!hasMovie && hasTrailer && current !== 'trailer') {
+            setSubtitleTab(s => ({ ...s, [editingId]: 'trailer' }))
+        } else if (hasMovie && !hasTrailer && current !== 'movie') {
+            setSubtitleTab(s => ({ ...s, [editingId]: 'movie' }))
+        } else if (!current && hasMovie) {
+            setSubtitleTab(s => ({ ...s, [editingId]: 'movie' }))
+        } else if (!current && hasTrailer) {
+            setSubtitleTab(s => ({ ...s, [editingId]: 'trailer' }))
+        }
+    }, [editingId, form.filmUrl, form.trailerUrl, projects])
     // Track per-project approval state (refreshed after editor closes)
     const [subtitleApproval, setSubtitleApproval]     = useState<Record<string, string>>({})
 
@@ -1473,18 +1492,17 @@ export default function AdminProjectsPage() {
                                 {editingId && (() => {
                                     const pid = editingId
                                     const project = projects.find(p => p.id === pid)
-                                    const filmUrl = project?.filmUrl || form.filmUrl
-                                    const trailerUrl = project?.trailerUrl || form.trailerUrl
-                                    if (!filmUrl && !trailerUrl) return null
-                                    const activeTab = subtitleTab[pid] ?? 'movie'
-                                    const isTrailerTab = activeTab === 'trailer'
-                                    const activeMediaUrl = isTrailerTab ? trailerUrl : filmUrl
-                                    if (!activeMediaUrl) {
-                                        // If the active tab has no URL, show the other tab's content
-                                        if (isTrailerTab && filmUrl) setSubtitleTab(s => ({ ...s, [pid]: 'movie' }))
-                                        else if (!isTrailerTab && trailerUrl && !filmUrl) setSubtitleTab(s => ({ ...s, [pid]: 'trailer' }))
-                                        if (!filmUrl && !trailerUrl) return null
-                                    }
+                                    const movieUrl = project?.filmUrl || form.filmUrl || ''
+                                    const trailerUrl = project?.trailerUrl || form.trailerUrl || ''
+                                    const hasMovie = Boolean(movieUrl)
+                                    const hasTrailer = Boolean(trailerUrl)
+                                    if (!hasMovie && !hasTrailer) return (
+                                        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                            📎 Upload a movie or trailer video above before generating subtitles.
+                                        </div>
+                                    )
+                                    const activeTab = subtitleTab[pid] ?? (hasMovie ? 'movie' : 'trailer')
+                                    const activeMediaUrl = activeTab === 'trailer' ? trailerUrl : movieUrl
                                     const count = translationCount[pid] ?? 0
                                     const isFull = count >= TOTAL_SUBTITLE_LANGS
                                     const isPartial = count > 0 && count < TOTAL_SUBTITLE_LANGS
@@ -1501,8 +1519,8 @@ export default function AdminProjectsPage() {
                                                     {isFull ? `✅ ${count}/${TOTAL_SUBTITLE_LANGS}` : `${count}/${TOTAL_SUBTITLE_LANGS} langs`}
                                                 </span>
                                             </div>
-                                            {/* Movie / Trailer tab switcher */}
-                                            {(filmUrl && trailerUrl) && (
+                                            {/* Movie / Trailer tab switcher — only when both media types exist */}
+                                            {(hasMovie && hasTrailer) && (
                                                 <div style={{ display: 'flex', gap: '4px' }}>
                                                     {(['movie', 'trailer'] as const).map(tab => (
                                                         <button key={tab} type="button" onClick={() => setSubtitleTab(s => ({ ...s, [pid]: tab }))}
@@ -1540,7 +1558,7 @@ export default function AdminProjectsPage() {
                                                                 {sMsg}
                                                             </div>
                                                         )}
-                                                        <button type="button" onClick={() => handleServerGenerate(pid, filmUrl)} disabled={isActive} className="btn btn-sm"
+                                                        <button type="button" onClick={() => handleServerGenerate(pid, activeMediaUrl)} disabled={isActive} className="btn btn-sm"
                                                             title="Runs faster-whisper on your local worker. Fires automatically when video is saved."
                                                             style={{ fontSize: '0.72rem', fontWeight: 700, background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.12)', border: `1px solid ${isActive ? 'rgba(255,255,255,0.08)' : 'rgba(129,140,248,0.3)'}`, color: isActive ? 'var(--text-tertiary)' : c, cursor: isActive ? 'not-allowed' : 'pointer' }}>
                                                             {btnLabel}
@@ -1550,7 +1568,7 @@ export default function AdminProjectsPage() {
                                                 <div style={{ width: '100%', fontSize: '0.6rem', color: 'var(--text-tertiary)', opacity: 0.55, marginBottom: '-2px' }}>
                                                     ⬆ Server worker — fires automatically on video save &nbsp;·&nbsp; ⬇ Browser fallback — manual only
                                                 </div>
-                                                <button type="button" onClick={() => handleGenerateSubtitles(pid, filmUrl)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
+                                                <button type="button" onClick={() => handleGenerateSubtitles(pid, activeMediaUrl)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
                                                     {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[pid] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
                                                 </button>
                                                 <label title="Upload an existing SRT or VTT transcript" className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
@@ -1560,7 +1578,7 @@ export default function AdminProjectsPage() {
                                                 {/* Edit Subtitles — appears as soon as subtitles exist (server ready OR any lang translated) */}
                                                 {(serverJobStatus[pid] === 'ready' || count > 0 || translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial') && (
                                                     <button type="button"
-                                                        onClick={() => openSubtitleEditor(pid, activeMediaUrl || filmUrl, activeTab)}
+                                                        onClick={() => openSubtitleEditor(pid, activeMediaUrl, activeTab)}
                                                         className="btn btn-sm"
                                                         style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}
                                                     >
@@ -1578,7 +1596,7 @@ export default function AdminProjectsPage() {
                                                             type="button"
                                                             disabled={!isApproved || isRunning}
                                                             title={!isApproved ? 'Edit subtitles and click "Approve Source" before translating' : 'Translate to all languages'}
-                                                            onClick={() => isApproved && handleGenerateSubtitles(pid, filmUrl)}
+                                                            onClick={() => isApproved && handleGenerateSubtitles(pid, activeMediaUrl)}
                                                             className="btn btn-sm"
                                                             style={{
                                                                 fontSize: '0.72rem', fontWeight: 700,
