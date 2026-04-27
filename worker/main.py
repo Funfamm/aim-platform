@@ -192,7 +192,7 @@ async def send_callback(payload: dict, max_retries: int = 3) -> None:
 
 
 # ── Core transcription task ───────────────────────────────────────────────────
-async def run_transcription(job_id: str, project_id: str, video_url: str, language: str) -> None:
+async def run_transcription(job_id: str, project_id: str, video_url: str, language: str, media_type: str = "movie") -> None:
     start_time = time.monotonic()
     tmp_dir = tempfile.mkdtemp(prefix="aim_subtitle_")
     video_path = Path(tmp_dir) / "video.mp4"
@@ -280,12 +280,13 @@ async def run_transcription(job_id: str, project_id: str, video_url: str, langua
             "srtUrl": srt_url,
             "segments": segments,
             "language": detected_lang,
+            "mediaType": media_type,
             "durationSeconds": elapsed,
         })
 
     except Exception as exc:
         log.error(f'"Transcription failed for job {job_id}: {exc}"')
-        await send_callback({"jobId": job_id, "error": str(exc)[:500]})
+        await send_callback({"jobId": job_id, "error": str(exc)[:500], "mediaType": media_type})
 
     finally:
         # 8. Clean up temp files
@@ -320,6 +321,7 @@ async def generate(request: Request, background_tasks: BackgroundTasks):
     project_id = payload.get("projectId")
     video_url = payload.get("videoUrl")
     language = payload.get("language", "auto")
+    media_type = payload.get("mediaType", "movie")
 
     if not job_id or not video_url:
         raise HTTPException(status_code=400, detail="jobId and videoUrl are required")
@@ -328,6 +330,6 @@ async def generate(request: Request, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=503, detail="VERCEL_CALLBACK_URL not configured")
 
     log.info(f'"Accepted job {job_id} for project {project_id}"')
-    background_tasks.add_task(run_transcription, job_id, project_id, video_url, language)
+    background_tasks.add_task(run_transcription, job_id, project_id, video_url, language, media_type)
 
     return JSONResponse({"accepted": True, "jobId": job_id})

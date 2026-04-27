@@ -44,9 +44,11 @@ export default function LangStatusGrid({
     retryingLang,
     onRetry,
 }: LangStatusGridProps) {
-    // Only count languages that actually have translated segments
-    const translatedLangCount = Object.values(translations).filter(segs => segs && segs.length > 0).length
-    const completedCount = translatedLangCount + (sourceSegmentCount > 0 ? 1 : 0) // +1 for source if it exists
+    // Only count languages confirmed complete via langStatus (not stale translation data)
+    const confirmedTranslations = langStatus
+        ? Object.values(langStatus).filter(s => s === 'completed' || s === 'reviewed').length
+        : 0
+    const completedCount = confirmedTranslations + (sourceSegmentCount > 0 ? 1 : 0) // +1 for source if it exists
 
     const languages = [
         { code: 'en', label: 'English', isSource: true },
@@ -76,9 +78,14 @@ export default function LangStatusGrid({
 
                     const isRetrying  = retryingLang === code
                     const rawStatus   = langStatus?.[code]
+                    // For non-source languages, only show 'completed' if langStatus explicitly
+                    // tracks it. When langStatus is null (translation never run), show 'pending'
+                    // even if stale translation data exists from a prior generation cycle.
                     const statusKey: LangStatusValue = isRetrying
                         ? 'processing'
-                        : ((rawStatus as LangStatusValue | undefined) ?? (hasSubs ? 'completed' : 'pending'))
+                        : isSource
+                            ? (hasSubs ? 'completed' : 'pending')
+                            : ((rawStatus as LangStatusValue | undefined) ?? 'pending')
 
                     const sc       = STATUS_STYLES[statusKey] ?? STATUS_STYLES.pending
                     const canRetry = !isSource && (statusKey === 'failed' || statusKey === 'pending') && !retryingLang
