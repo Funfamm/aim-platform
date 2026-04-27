@@ -41,6 +41,7 @@ model User {
   accentColor            String                      @default("gold")
   themeMode              String                      @default("dark")
   mediaProfile           Json?                       // { front_headshot, side_profile, full_body, expression, optional_1, optional_2, voiceRecording }
+  country                String?                     // ISO 3166-1 alpha-2 (e.g. "NG", "US") — auto-detected on registration
   applications           Application[]
   donations              Donation[]
   enrollments            Enrollment[]
@@ -564,6 +565,7 @@ model Subscriber {
   email        String    @unique
   name         String?
   source       String?                       // "organic" | "admin_csv_import" | "api" — traceability
+  country      String?                       // ISO 3166-1 alpha-2 — auto-detected on subscribe
   subscribedAt DateTime  @default(now())
   active       Boolean   @default(false)   // false until double opt-in confirmed
   confirmToken String?                      // null once confirmed

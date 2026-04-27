@@ -76,6 +76,7 @@ export async function POST(req: Request) {
                     email: email || `apple_${appleUserId}@private.appleid.com`,
                     appleId: appleUserId,
                     role: 'member',
+                    ...(req.headers.get('x-vercel-ip-country') ? { country: req.headers.get('x-vercel-ip-country') } : {}),
                 },
             })
         }

@@ -15,6 +15,7 @@ export async function POST(request: Request) {
     try {
         const { name, email: rawEmail, password, locale } = await request.json()
         const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : rawEmail
+        const country = request.headers.get('x-vercel-ip-country') || undefined
 
         if (!name || !email || !password) {
             return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
                         passwordHash,                      // ← update to the new password
                         verificationCode: code,
                         verificationExpiry: new Date(expiry),
+                        ...(country ? { country } : {}),
                     } as any,
                 }), 'register_update_existing')
                 try {
@@ -74,6 +76,7 @@ export async function POST(request: Request) {
                 verificationCode: code,
                 verificationExpiry: expiry,
                 ...(locale && locale !== 'en' ? { preferredLanguage: locale } : {}),
+                ...(country ? { country } : {}),
             },
         }), 'register_create_user')
 

@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
         const normalizedEmail = correctedEmail
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
         const userLocale = locale || 'en'
+        const country = request.headers.get('x-vercel-ip-country') || undefined
 
         // ── Check existing subscription state ─────────────────────────────────
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
         if (existing && existing.confirmedAt) {
             await db.subscriber.update({
                 where: { email: normalizedEmail },
-                data: { active: true, ...(name ? { name } : {}), confirmToken: null },
+                data: { active: true, ...(name ? { name } : {}), ...(country ? { country } : {}), confirmToken: null },
             })
             sendTransactionalEmail({
                 to: normalizedEmail,
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
         } else {
             // Brand new subscriber — create as active immediately (no double opt-in)
             await db.subscriber.create({
-                data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date() },
+                data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date(), ...(country ? { country } : {}) },
             })
         }
 

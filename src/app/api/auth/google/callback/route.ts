@@ -145,6 +145,7 @@ export async function GET(req: Request) {
                     role: 'member',
                     tokenVersion: 0,
                     ...(detectedLocale !== 'en' ? { preferredLanguage: detectedLocale } : {}),
+                    ...(req.headers.get('x-vercel-ip-country') ? { country: req.headers.get('x-vercel-ip-country') } : {}),
                 },
                 select: {
                     id: true, name: true, email: true, role: true,

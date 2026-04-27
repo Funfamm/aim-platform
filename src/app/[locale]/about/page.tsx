@@ -22,14 +22,20 @@ const DEFAULT_STORY = `We're not a traditional studio behind closed doors. We cr
 This is cinema built together. Your talent, your creativity, powered by AI. Welcome to AIM Studio.`
 
 async function fetchAboutStats() {
-    const [productions, countryRows, memberCount, activeProjects] = await Promise.all([
+    const [productions, userCountryRows, subCountryRows, projectCountryRows, memberCount, activeProjects] = await Promise.all([
         prisma.project.count({ where: { published: true, OR: [{ projectType: 'movie' }, { projectType: 'series' }] } }),
+        (prisma as any).user.findMany({ where: { country: { not: null } }, select: { country: true }, distinct: ['country'] }),
+        (prisma as any).subscriber.findMany({ where: { country: { not: null }, active: true }, select: { country: true }, distinct: ['country'] }),
         prisma.project.findMany({ where: { country: { not: null }, published: true }, select: { country: true } }),
         prisma.user.count({ where: { emailVerified: true, role: 'member' } }),
         prisma.project.count({ where: { published: true } }),
     ]);
-    const distinctCountries = new Set(countryRows.map(r => r.country)).size;
-    return { productions, distinctCountries, distinctCreators: memberCount, activeProjects };
+    const allCountries = new Set([
+        ...userCountryRows.map((r: { country: string }) => r.country),
+        ...subCountryRows.map((r: { country: string }) => r.country),
+        ...projectCountryRows.map((r: { country: string | null }) => r.country),
+    ]);
+    return { productions, distinctCountries: allCountries.size, distinctCreators: memberCount, activeProjects };
 }
 
 export default async function AboutPage() {
