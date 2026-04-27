@@ -6,6 +6,7 @@ import { requireAdmin } from '@/lib/auth'
 import { sendTransactionalEmail } from '@/lib/email-router'
 import { projectRequestConfirmation, projectRequestAdminNotification } from '@/lib/project-request-emails'
 import { logger } from '@/lib/logger'
+import { verifyCsrfToken } from '@/lib/csrf'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,6 +42,16 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json()
 
+        // ── Honeypot: bots fill this hidden field; humans never see it ───
+        if (body.website || body.faxNumber) {
+            // Return success to not reveal the trap
+            return NextResponse.json({ success: true, project: { id: 'PR-0000', projectTitle: '', projectType: '', status: 'received', createdAt: new Date().toISOString(), accessToken: '' } })
+        }
+
+        // ── CSRF verification ───────────────────────────────────────────
+        const csrfResp = verifyCsrfToken(req as any)
+        if (csrfResp) return csrfResp
+
         // ── Server-side validation ──────────────────────────────────────────
         const errors: string[] = []
 
@@ -62,6 +73,16 @@ export async function POST(req: NextRequest) {
         if (!body.consentContact) {
             errors.push('You must agree to be contacted about your project')
         }
+
+        // ── Length caps (prevent payload abuse) ─────────────────────────
+        if (typeof body.clientName === 'string' && body.clientName.length > 200) errors.push('Name is too long')
+        if (typeof body.email === 'string' && body.email.length > 254) errors.push('Email is too long')
+        if (typeof body.projectTitle === 'string' && body.projectTitle.length > 300) errors.push('Project title is too long')
+        if (typeof body.description === 'string' && body.description.length > 5000) errors.push('Description is too long (max 5000 characters)')
+        if (typeof body.avoidNotes === 'string' && body.avoidNotes.length > 2000) errors.push('Notes too long')
+        if (typeof body.visualStyle === 'string' && body.visualStyle.length > 500) errors.push('Visual style too long')
+        if (typeof body.audience === 'string' && body.audience.length > 500) errors.push('Audience too long')
+        if (typeof body.projectGoal === 'string' && body.projectGoal.length > 1000) errors.push('Project goal too long')
 
         if (errors.length > 0) {
             return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 })
