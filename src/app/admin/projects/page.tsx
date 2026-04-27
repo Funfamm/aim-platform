@@ -90,6 +90,9 @@ type ReviewSubtitle = {
     langStatus: Record<string, string> | null  // per-language status from new schema field
 }
 
+/** Composite state key: ensures subtitle state is always scoped by projectId + mediaType */
+const sk = (pid: string, mt: string) => `${pid}:${mt}`
+
 export default function AdminProjectsPage() {
     const router = useRouter()
     const [projects, setProjects] = useState<Project[]>([])
@@ -195,25 +198,17 @@ export default function AdminProjectsPage() {
                 setProjects(data)
                 // Check which projects already have subtitles — check BOTH movie + trailer independently
                 data.forEach((p: Project) => {
-                    // Helper to fetch subtitle status for a specific mediaType
                     const checkSubtitle = (mediaType: 'movie' | 'trailer') => {
+                        const key = sk(p.id, mediaType)
                         fetch(`/api/subtitles/${p.id}?lang=en&mediaType=${mediaType}`)
                             .then(r => r.json())
                             .then(sub => {
                                 const count = sub.available?.length ?? 0
-                                // Use composite key: projectId:mediaType for per-media-type tracking
-                                const key = `${p.id}:${mediaType}`
                                 setTranslationCount(s => ({ ...s, [key]: count }))
                                 setTranslateStatus(s => ({ ...s, [key]: sub.translateStatus ?? 'pending' }))
-                                // Also update the legacy per-project key with the "active" media type
-                                // (the media type that the default tab would show)
-                                const isDefaultMedia = (p.filmUrl && mediaType === 'movie') ||
-                                    (!p.filmUrl && p.trailerUrl && mediaType === 'trailer')
-                                if (isDefaultMedia && count > 0) {
-                                    setTranslationCount(s => ({ ...s, [p.id]: count }))
-                                    setTranslateStatus(s => ({ ...s, [p.id]: sub.translateStatus ?? 'pending' }))
-                                    setSubtitleStatus(s => ({ ...s, [p.id]: count >= TOTAL_SUBTITLE_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
-                                    setSubtitlePhase(s => ({ ...s, [p.id]: 'done' }))
+                                if (count > 0) {
+                                    setSubtitleStatus(s => ({ ...s, [key]: count >= TOTAL_SUBTITLE_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
+                                    setSubtitlePhase(s => ({ ...s, [key]: 'done' }))
                                 }
                             })
                             .catch(() => {})
@@ -281,7 +276,7 @@ export default function AdminProjectsPage() {
                     .then(r => r.ok ? r.json() : {})
                     .then((res: { subtitle?: { status?: string } }) => {
                         if (res.subtitle?.status) {
-                            setSubtitleApproval(prev => ({ ...prev, [`${p.id}:movie`]: res.subtitle!.status!, ...(p.filmUrl ? { [p.id]: res.subtitle!.status! } : {}) }))
+                            setSubtitleApproval(prev => ({ ...prev, [sk(p.id, 'movie')]: res.subtitle!.status! }))
                         }
                     })
                     .catch(() => {})
@@ -291,7 +286,7 @@ export default function AdminProjectsPage() {
                     .then(r => r.ok ? r.json() : {})
                     .then((res: { subtitle?: { status?: string } }) => {
                         if (res.subtitle?.status) {
-                            setSubtitleApproval(prev => ({ ...prev, [`${p.id}:trailer`]: res.subtitle!.status!, ...(!p.filmUrl ? { [p.id]: res.subtitle!.status! } : {}) }))
+                            setSubtitleApproval(prev => ({ ...prev, [sk(p.id, 'trailer')]: res.subtitle!.status! }))
                         }
                     })
                     .catch(() => {})
@@ -368,15 +363,16 @@ export default function AdminProjectsPage() {
             }
             // Re-check subtitle status if this project has media URLs (new or updated)
             if (saved.filmUrl) {
+                const key = sk(saved.id, 'movie')
                 fetch(`/api/subtitles/${saved.id}?lang=en&mediaType=movie`)
                     .then(r => r.json())
                     .then(sub => {
                         const count = sub.available?.length ?? 0
-                        setTranslationCount(s => ({ ...s, [saved.id]: count }))
-                        setTranslateStatus(s => ({ ...s, [saved.id]: sub.translateStatus ?? 'pending' }))
+                        setTranslationCount(s => ({ ...s, [key]: count }))
+                        setTranslateStatus(s => ({ ...s, [key]: sub.translateStatus ?? 'pending' }))
                         if (count > 0) {
-                            setSubtitleStatus(s => ({ ...s, [saved.id]: count >= TOTAL_SUBTITLE_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
-                            setSubtitlePhase(s => ({ ...s, [saved.id]: 'done' }))
+                            setSubtitleStatus(s => ({ ...s, [key]: count >= TOTAL_SUBTITLE_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
+                            setSubtitlePhase(s => ({ ...s, [key]: 'done' }))
                         }
                     })
                     .catch(() => {})
@@ -387,8 +383,9 @@ export default function AdminProjectsPage() {
                 const prevUrl = editingId ? (projects.find(p => p.id === editingId)?.filmUrl ?? null) : null
                 if (saved.filmUrl !== prevUrl) {
                     const pid = saved.id
-                    setServerJobStatus(s => ({ ...s, [pid]: 'queued' }))
-                    setServerJobMsg(s => ({ ...s, [pid]: '⚡ Auto-submitting to subtitle worker…' }))
+                    const key = sk(pid, 'movie')
+                    setServerJobStatus(s => ({ ...s, [key]: 'queued' }))
+                    setServerJobMsg(s => ({ ...s, [key]: '⚡ Auto-submitting to subtitle worker…' }))
                     fetch('/api/subtitles/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -396,20 +393,20 @@ export default function AdminProjectsPage() {
                     }).then(async r => {
                         const d = await r.json().catch(() => ({}))
                         if (r.ok && d.jobId) {
-                            setServerJobId(s => ({ ...s, [pid]: d.jobId }))
-                            setServerJobMsg(s => ({ ...s, [pid]: '🤖 Subtitle job queued — worker is transcribing in the background.' }))
+                            setServerJobId(s => ({ ...s, [key]: d.jobId }))
+                            setServerJobMsg(s => ({ ...s, [key]: '🤖 Subtitle job queued — worker is transcribing in the background.' }))
                             pollServerJob(pid, d.jobId, 'movie')
                         } else if (r.status === 409) {
-                            setServerJobStatus(s => ({ ...s, [pid]: d.status ?? 'processing' }))
-                            setServerJobMsg(s => ({ ...s, [pid]: '♻️ A subtitle job is already active for this project.' }))
+                            setServerJobStatus(s => ({ ...s, [key]: d.status ?? 'processing' }))
+                            setServerJobMsg(s => ({ ...s, [key]: '♻️ A subtitle job is already active for this project.' }))
                             if (d.jobId) pollServerJob(pid, d.jobId, 'movie')
                         } else {
-                            setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
-                            setServerJobMsg(s => ({ ...s, [pid]: '⚠️ Worker not reachable. Set WORKER_URL in Vercel env, or use the manual button.' }))
+                            setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                            setServerJobMsg(s => ({ ...s, [key]: '⚠️ Worker not reachable. Set WORKER_URL in Vercel env, or use the manual button.' }))
                         }
                     }).catch(() => {
-                        setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
-                        setServerJobMsg(s => ({ ...s, [pid]: '⚠️ Could not reach worker. Use the manual button to retry.' }))
+                        setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                        setServerJobMsg(s => ({ ...s, [key]: '⚠️ Could not reach worker. Use the manual button to retry.' }))
                     })
                 }
             }
@@ -434,32 +431,33 @@ export default function AdminProjectsPage() {
 
     /** Poll the server job status every 5s until terminal state */
     const pollServerJob = (pid: string, jobId: string, mediaType: string = 'movie') => {
+        const key = sk(pid, mediaType)
         let attempts = 0
         const iv = setInterval(async () => {
             attempts++
             if (attempts > 120) {
                 clearInterval(iv)
-                setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
-                setServerJobMsg(s => ({ ...s, [pid]: '⏱ Polling timed out (10 min). Check worker logs.' }))
+                setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                setServerJobMsg(s => ({ ...s, [key]: '⏱ Polling timed out (10 min). Check worker logs.' }))
                 return
             }
             try {
                 const r = await fetch(`/api/subtitles/status/${jobId}`)
                 if (!r.ok) return
                 const d = await r.json()
-                setServerJobStatus(s => ({ ...s, [pid]: d.status }))
+                setServerJobStatus(s => ({ ...s, [key]: d.status }))
                 if (d.status === 'ready') {
                     clearInterval(iv)
-                    setServerJobMsg(s => ({ ...s, [pid]: '✅ Subtitles ready! You can now run translation.' }))
+                    setServerJobMsg(s => ({ ...s, [key]: '✅ Subtitles ready! You can now run translation.' }))
                     fetch(`/api/subtitles/${pid}?lang=en&mediaType=${mediaType}`).then(r2 => r2.json()).then(sub => {
-                        setTranslationCount(s => ({ ...s, [pid]: sub.available?.length ?? 0 }))
-                        setTranslateStatus(s => ({ ...s, [pid]: sub.translateStatus ?? 'pending' }))
+                        setTranslationCount(s => ({ ...s, [key]: sub.available?.length ?? 0 }))
+                        setTranslateStatus(s => ({ ...s, [key]: sub.translateStatus ?? 'pending' }))
                     }).catch(() => {})
                 } else if (d.status === 'failed') {
                     clearInterval(iv)
-                    setServerJobMsg(s => ({ ...s, [pid]: `❌ Worker failed: ${d.errorMessage || 'unknown'}` }))
+                    setServerJobMsg(s => ({ ...s, [key]: `❌ Worker failed: ${d.errorMessage || 'unknown'}` }))
                 } else if (d.status === 'processing') {
-                    setServerJobMsg(s => ({ ...s, [pid]: '🔄 Worker is transcribing… (may take several minutes)' }))
+                    setServerJobMsg(s => ({ ...s, [key]: '🔄 Worker is transcribing… (may take several minutes)' }))
                 }
             } catch { /* ignore transient errors */ }
         }, 5000)
@@ -467,10 +465,11 @@ export default function AdminProjectsPage() {
 
     /** Manually trigger server-side subtitle generation */
     const handleServerGenerate = async (pid: string, filmUrl: string, mediaType: string = 'movie') => {
-        const cur = serverJobStatus[pid]
+        const key = sk(pid, mediaType)
+        const cur = serverJobStatus[key]
         if (cur === 'queued' || cur === 'processing') return
-        setServerJobStatus(s => ({ ...s, [pid]: 'queued' }))
-        setServerJobMsg(s => ({ ...s, [pid]: '⚡ Sending to worker…' }))
+        setServerJobStatus(s => ({ ...s, [key]: 'queued' }))
+        setServerJobMsg(s => ({ ...s, [key]: '⚡ Sending to worker…' }))
         try {
             const r = await fetch('/api/subtitles/generate', {
                 method: 'POST',
@@ -479,20 +478,20 @@ export default function AdminProjectsPage() {
             })
             const d = await r.json().catch(() => ({}))
             if (r.ok && d.jobId) {
-                setServerJobId(s => ({ ...s, [pid]: d.jobId }))
-                setServerJobMsg(s => ({ ...s, [pid]: '🤖 Job queued — worker is processing in background.' }))
+                setServerJobId(s => ({ ...s, [key]: d.jobId }))
+                setServerJobMsg(s => ({ ...s, [key]: '🤖 Job queued — worker is processing in background.' }))
                 pollServerJob(pid, d.jobId, mediaType)
             } else if (r.status === 409) {
-                setServerJobStatus(s => ({ ...s, [pid]: d.status ?? 'processing' }))
-                setServerJobMsg(s => ({ ...s, [pid]: '♻️ A subtitle job is already active.' }))
+                setServerJobStatus(s => ({ ...s, [key]: d.status ?? 'processing' }))
+                setServerJobMsg(s => ({ ...s, [key]: '♻️ A subtitle job is already active.' }))
                 if (d.jobId) pollServerJob(pid, d.jobId, mediaType)
             } else {
-                setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
-                setServerJobMsg(s => ({ ...s, [pid]: `⚠️ ${d.error || "Worker not reachable. Is it running?"}` }))
+                setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                setServerJobMsg(s => ({ ...s, [key]: `⚠️ ${d.error || "Worker not reachable. Is it running?"}` }))
             }
         } catch {
-            setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
-            setServerJobMsg(s => ({ ...s, [pid]: '⚠️ Network error reaching worker.' }))
+            setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+            setServerJobMsg(s => ({ ...s, [key]: '⚠️ Network error reaching worker.' }))
         }
     }
 
@@ -503,13 +502,14 @@ export default function AdminProjectsPage() {
      */
     const handleSrtUpload = async (projectId: string, file: File, mediaType: string = 'movie') => {
         const pid = projectId
+        const key = sk(pid, mediaType)
         await uploadSubtitleFile(pid, file, {
-            onPhase:    (phase) => setSubtitlePhase(s    => ({ ...s, [pid]: phase })),
-            onStatus:   (msg)   => setSubtitleStatus(s   => ({ ...s, [pid]: msg })),
-            onProgress: (pct)   => setSubtitleProgress(s => ({ ...s, [pid]: pct })),
+            onPhase:    (phase) => setSubtitlePhase(s    => ({ ...s, [key]: phase })),
+            onStatus:   (msg)   => setSubtitleStatus(s   => ({ ...s, [key]: msg })),
+            onProgress: (pct)   => setSubtitleProgress(s => ({ ...s, [key]: pct })),
             onCountReady: () => {
-                setTranslationCount(s => ({ ...s, [pid]: 1 })) // English only at this point
-                setTranslateStatus(s  => ({ ...s, [pid]: 'pending' }))
+                setTranslationCount(s => ({ ...s, [key]: 1 })) // English only at this point
+                setTranslateStatus(s  => ({ ...s, [key]: 'pending' }))
             },
             onError: setError,
         }, mediaType)
@@ -521,24 +521,20 @@ export default function AdminProjectsPage() {
      * Extracted from inline card handler so it can be called from the edit modal.
      */
     const handleGenerateSubtitles = async (pid: string, filmUrl: string, mediaType: string = 'movie') => {
-        const isRunning = subtitlePhase[pid] === 'transcribing' || subtitlePhase[pid] === 'translating'
+        const key = sk(pid, mediaType)
+        const isRunning = subtitlePhase[key] === 'transcribing' || subtitlePhase[key] === 'translating'
         if (isRunning) return
 
         // Clear any previous error so stale messages don't persist on retry
         setError('')
-        setSubtitleStatus(s => ({ ...s, [pid]: '' }))
-        setSubtitlePhase(s => ({ ...s, [pid]: null }))
-        setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
+        setSubtitleStatus(s => ({ ...s, [key]: '' }))
+        setSubtitlePhase(s => ({ ...s, [key]: null }))
+        setSubtitleProgress(s => ({ ...s, [key]: 0 }))
 
-        const isResume = translateStatus[pid] === 'partial'
-        // Skip browser transcription if the server worker already produced an English
-        // transcript, or if any translation already exists (meaning transcript is in DB).
-        const hasWorkerTranscript = serverJobStatus[pid] === 'ready'
-        const hasExistingTranscript = (translationCount[pid] ?? 0) > 0
+        const isResume = translateStatus[key] === 'partial'
+        const hasWorkerTranscript = serverJobStatus[key] === 'ready'
+        const hasExistingTranscript = (translationCount[key] ?? 0) > 0
 
-        // Fast DB check: if a transcript row exists (even with 0 translations yet),
-        // skip the browser Whisper path entirely. This prevents the HuggingFace
-        // model-load error when the server worker has already transcribed the video.
         let hasDbTranscript = hasExistingTranscript || hasWorkerTranscript
         if (!hasDbTranscript && !isResume) {
             try {
@@ -549,28 +545,25 @@ export default function AdminProjectsPage() {
         }
 
         if (!isResume && !hasDbTranscript) {
-            // Note: we no longer block streaming URLs here — transcribeVideo will
-            // try a direct fetch first then fall back to the server-side proxy,
-            // so CORS-restricted hosts can still be transcribed.
             const { hostname: filmHost } = isBlockedStreamingUrl(filmUrl)
             if (filmHost) {
-                setSubtitleStatus(s => ({ ...s, [pid]: `⏳ Routing via server proxy for ${filmHost}...` }))
+                setSubtitleStatus(s => ({ ...s, [key]: `⏳ Routing via server proxy for ${filmHost}...` }))
             }
-            setSubtitlePhase(s => ({ ...s, [pid]: 'transcribing' }))
-            setSubtitleStatus(s => ({ ...s, [pid]: '⏳ Loading audio engine...' }))
-            setSubtitleProgress(s => ({ ...s, [pid]: 2 }))
+            setSubtitlePhase(s => ({ ...s, [key]: 'transcribing' }))
+            setSubtitleStatus(s => ({ ...s, [key]: '⏳ Loading audio engine...' }))
+            setSubtitleProgress(s => ({ ...s, [key]: 2 }))
             try {
                 const result = await transcribeVideo(filmUrl, (status, detail) => {
-                    setSubtitleStatus(s => ({ ...s, [pid]: `⏳ ${detail || status}` }))
+                    setSubtitleStatus(s => ({ ...s, [key]: `⏳ ${detail || status}` }))
                     const phaseProgress: Record<string, number> = {
                         'loading-ffmpeg': 5, 'extracting-audio': 15,
                         'loading-model': 25, 'transcribing': 42,
                     }
-                    setSubtitleProgress(s => ({ ...s, [pid]: phaseProgress[status] || s[pid] || 0 }))
+                    setSubtitleProgress(s => ({ ...s, [key]: phaseProgress[status] || s[key] || 0 }))
                 })
                 const qcSummary = runQC(result.segments)
-                setSubtitleStatus(s => ({ ...s, [pid]: '💾 Saving transcript...' }))
-                setSubtitleProgress(s => ({ ...s, [pid]: 48 }))
+                setSubtitleStatus(s => ({ ...s, [key]: '💾 Saving transcript...' }))
+                setSubtitleProgress(s => ({ ...s, [key]: 48 }))
                 await fetch('/api/admin/subtitles', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -580,23 +573,23 @@ export default function AdminProjectsPage() {
                         mediaType,
                     }),
                 })
-                setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
-                setSubtitleStatus(s => ({ ...s, [pid]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
-                setError('') // clear any prior error after success
+                setSubtitleProgress(s => ({ ...s, [key]: 50 }))
+                setSubtitleStatus(s => ({ ...s, [key]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
+                setError('')
             } catch (err) {
                 const msg = err instanceof Error ? err.message : 'error'
-                setSubtitleStatus(s => ({ ...s, [pid]: `❌ Transcription failed: ${msg}` }))
+                setSubtitleStatus(s => ({ ...s, [key]: `❌ Transcription failed: ${msg}` }))
                 setError(`Transcription failed: ${msg}`)
-                setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
-                setSubtitleProgress(s => ({ ...s, [pid]: 0 }))
+                setSubtitlePhase(s => ({ ...s, [key]: 'error' }))
+                setSubtitleProgress(s => ({ ...s, [key]: 0 }))
                 return
             }
         } else {
-            setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
+            setSubtitleProgress(s => ({ ...s, [key]: 50 }))
         }
 
-        setSubtitlePhase(s => ({ ...s, [pid]: 'translating' }))
-        setSubtitleStatus(s => ({ ...s, [pid]: '🌍 Starting server translation...' }))
+        setSubtitlePhase(s => ({ ...s, [key]: 'translating' }))
+        setSubtitleStatus(s => ({ ...s, [key]: '🌍 Starting server translation...' }))
         try {
             const res = await fetch('/api/admin/subtitles/translate', {
                 method: 'POST',
@@ -614,26 +607,26 @@ export default function AdminProjectsPage() {
                 allDone?: boolean; error?: string;
             }>(res.body.getReader(), (data) => {
                 if (data.phase === 'translating' && data.langName) {
-                    setSubtitleStatus(s => ({ ...s, [pid]: `🌍 Translating ${data.langName}...` }))
-                    setSubtitleProgress(s => ({ ...s, [pid]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
+                    setSubtitleStatus(s => ({ ...s, [key]: `🌍 Translating ${data.langName}...` }))
+                    setSubtitleProgress(s => ({ ...s, [key]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
                 } else if (data.phase === 'done') {
                     completed++
-                    setTranslationCount(s => ({ ...s, [pid]: completed + 1 }))
+                    setTranslationCount(s => ({ ...s, [key]: completed + 1 }))
                 } else if (data.phase === 'complete') {
                     const allDone = data.allDone ?? false
-                    setSubtitleProgress(s => ({ ...s, [pid]: 100 }))
-                    setSubtitleStatus(s => ({ ...s, [pid]: allDone ? `✓ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `✓ ${completed + 1} languages ready` }))
-                    setSubtitlePhase(s => ({ ...s, [pid]: 'done' }))
-                    setTranslateStatus(s => ({ ...s, [pid]: allDone ? 'complete' : 'partial' }))
-                    setTranslationCount(s => ({ ...s, [pid]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
+                    setSubtitleProgress(s => ({ ...s, [key]: 100 }))
+                    setSubtitleStatus(s => ({ ...s, [key]: allDone ? `✓ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `✓ ${completed + 1} languages ready` }))
+                    setSubtitlePhase(s => ({ ...s, [key]: 'done' }))
+                    setTranslateStatus(s => ({ ...s, [key]: allDone ? 'complete' : 'partial' }))
+                    setTranslationCount(s => ({ ...s, [key]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
                 } else if (data.phase === 'error' && data.lang) {
-                    setSubtitleStatus(s => ({ ...s, [pid]: `⚠️ ${data.lang} failed — continuing...` }))
+                    setSubtitleStatus(s => ({ ...s, [key]: `⚠️ ${data.lang} failed — continuing...` }))
                 }
             })
         } catch (err) {
-            setSubtitleStatus(s => ({ ...s, [pid]: `❌ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
-            setSubtitlePhase(s => ({ ...s, [pid]: 'error' }))
-            setTranslateStatus(s => ({ ...s, [pid]: 'partial' }))
+            setSubtitleStatus(s => ({ ...s, [key]: `❌ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
+            setSubtitlePhase(s => ({ ...s, [key]: 'error' }))
+            setTranslateStatus(s => ({ ...s, [key]: 'partial' }))
         }
     }
 
@@ -808,11 +801,12 @@ export default function AdminProjectsPage() {
 
             if (deleteType === 'source') {
                 // Entire record deleted — close review and reset status
-                setTranslationCount(s => ({ ...s, [reviewProjectId]: 0 }))
-                setTranslateStatus(s => ({ ...s, [reviewProjectId]: 'pending' }))
-                setSubtitlePhase(s => ({ ...s, [reviewProjectId]: null }))
-                setSubtitleStatus(s => { const n = { ...s }; delete n[reviewProjectId]; return n })
-                setServerJobStatus(s => ({ ...s, [reviewProjectId]: 'idle' }))
+                const key = sk(reviewProjectId, reviewMediaType)
+                setTranslationCount(s => ({ ...s, [key]: 0 }))
+                setTranslateStatus(s => ({ ...s, [key]: 'pending' }))
+                setSubtitlePhase(s => ({ ...s, [key]: null }))
+                setSubtitleStatus(s => { const n = { ...s }; delete n[key]; return n })
+                setServerJobStatus(s => ({ ...s, [key]: 'idle' }))
                 closeReview()
             } else {
                 // Single language removed — refresh review data
@@ -1584,13 +1578,14 @@ export default function AdminProjectsPage() {
                                     )
                                     const activeTab = subtitleTab[pid] ?? (hasMovie ? 'movie' : 'trailer')
                                     const activeMediaUrl = activeTab === 'trailer' ? trailerUrl : movieUrl
-                                    const count = translationCount[pid] ?? 0
+                                    const stateKey = sk(pid, activeTab)
+                                    const count = translationCount[stateKey] ?? 0
                                     const isFull = count >= TOTAL_SUBTITLE_LANGS
                                     const isPartial = count > 0 && count < TOTAL_SUBTITLE_LANGS
-                                    const phase = subtitlePhase[pid]
+                                    const phase = subtitlePhase[stateKey]
                                     const isRunning = phase === 'transcribing' || phase === 'translating'
-                                    const progress = subtitleProgress[pid] ?? 0
-                                    const statusMsg = subtitleStatus[pid] || ''
+                                    const progress = subtitleProgress[stateKey] ?? 0
+                                    const statusMsg = subtitleStatus[stateKey] || ''
                                     return (
                                         <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
                                             <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1624,8 +1619,8 @@ export default function AdminProjectsPage() {
                                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 'var(--space-md)' }}>
                                                 {/* ── Server Worker Button (recommended) ── */}
                                                 {(() => {
-                                                    const sS = serverJobStatus[pid] as string | undefined
-                                                    const sMsg = serverJobMsg[pid] || ''
+                                                    const sS = serverJobStatus[stateKey] as string | undefined
+                                                    const sMsg = serverJobMsg[stateKey] || ''
                                                     const isActive = sS === 'queued' || sS === 'processing'
                                                     const btnLabel = isActive ? (sS === 'processing' ? '🔄 Transcribing…' : '⏳ Queued…') : sS === 'ready' ? '🤖 Re-generate (Server)' : sS === 'failed' ? '🔁 Retry (Server)' : '🤖 Generate (Server Worker)'
                                                     const c = sS === 'ready' ? '#34d399' : sS === 'failed' ? '#f87171' : '#818cf8'
@@ -1650,14 +1645,14 @@ export default function AdminProjectsPage() {
                                                     ⬆ Server worker — fires automatically on video save &nbsp;·&nbsp; ⬇ Browser fallback — manual only
                                                 </div>
                                                 <button type="button" onClick={() => handleGenerateSubtitles(pid, activeMediaUrl, activeTab)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
-                                                    {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[pid] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
+                                                    {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[stateKey] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
                                                 </button>
                                                 <label title="Upload an existing SRT or VTT transcript" className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
                                                     📄 Upload SRT / VTT
                                                     <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file, activeTab) }} />
                                                 </label>
                                                 {/* Edit Subtitles — appears as soon as subtitles exist (server ready OR any lang translated) */}
-                                                {(serverJobStatus[pid] === 'ready' || count > 0 || translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial') && (
+                                                {(serverJobStatus[stateKey] === 'ready' || count > 0 || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial') && (
                                                     <button type="button"
                                                         onClick={() => openSubtitleEditor(pid, activeMediaUrl, activeTab)}
                                                         className="btn btn-sm"
@@ -1668,9 +1663,9 @@ export default function AdminProjectsPage() {
                                                 )}
                                                 {/* Translate — gated on approval */}
                                                 {(() => {
-                                                    const approval = subtitleApproval[`${pid}:${activeTab}`] || subtitleApproval[pid] || translateStatus[pid]
+                                                    const approval = subtitleApproval[stateKey] || translateStatus[stateKey]
                                                     const isApproved = approval === 'approved_source'
-                                                    const hasSubtitles = (serverJobStatus[pid] === 'ready') || (count > 0)
+                                                    const hasSubtitles = (serverJobStatus[stateKey] === 'ready') || (count > 0)
                                                     if (!hasSubtitles) return null
                                                     return (
                                                         <button
@@ -1692,7 +1687,7 @@ export default function AdminProjectsPage() {
                                                         </button>
                                                     )
                                                 })()}
-                                                {(serverJobStatus[pid] === 'ready' || translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial' || count > 0) && (
+                                                {(serverJobStatus[stateKey] === 'ready' || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial' || count > 0) && (
                                                     <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title, activeTab)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
                                                         🔍 Review Subtitles
                                                     </button>
@@ -2275,11 +2270,9 @@ export default function AdminProjectsPage() {
                     onClose={() => setEditorProjectId(null)}
                     onSaved={(newStatus) => {
                         // Update the approval lookup so the translate gate re-renders
-                        // Write both the composite key and the legacy key
                         setSubtitleApproval(prev => ({
                             ...prev,
-                            [editorProjectId]: newStatus,
-                            [`${editorProjectId}:${editorMediaType}`]: newStatus,
+                            [sk(editorProjectId, editorMediaType)]: newStatus,
                         }))
                     }}
                 />
