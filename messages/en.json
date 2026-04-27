@@ -1392,7 +1392,7 @@
   "startProject": {
     "hero": {
       "title": "Let's Create Something Unforgettable",
-      "subtitle": "Tell us what you want to create — from birthday videos to commercials, branding, and custom productions.",
+      "subtitle": "Tell us what you want to create, from birthday videos to commercials, branding, and custom productions.",
       "cta": "Start Your Project"
     },
     "steps": {
@@ -1557,14 +1557,14 @@
       "contactAgreement": "I agree to be contacted about this project request."
     },
     "helpers": {
-      "overviewHint": "Tell us what you want to create. Keep it simple — we will refine it with you.",
+      "overviewHint": "Tell us what you want to create. Keep it simple, we will refine it with you.",
       "reviewHint": "Review your project details before submitting.",
       "uploadHint": "Add photos, videos, logos, music, or reference files that help us understand your vision.",
       "uploading": "Uploading...",
       "uploadTypes": "Images, videos, audio, PDF, ZIP",
       "remaining": "remaining",
       "filesUploaded": "files uploaded",
-      "adminPreview": "Admin Preview — required fields are bypassed. You can navigate all steps freely.",
+      "adminPreview": "Admin Preview: required fields are bypassed. You can navigate all steps freely.",
       "videoLimit": "Video: up to 500 MB",
       "audioLimit": "Audio: up to 50 MB",
       "docLimit": "Images/Docs: up to 10 MB",
