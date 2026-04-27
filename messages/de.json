@@ -1403,7 +1403,8 @@
       "dynamic": "Projektdetails",
       "uploads": "Dateien hinzufügen",
       "delivery": "Budget & Lieferung",
-      "review": "Prüfen & Absenden"
+      "review": "Prüfen & Absenden",
+      "deposit": "Projekt sichern"
     },
     "projectTypes": {
       "birthday": {
@@ -1459,7 +1460,8 @@
       "addOns": "Extras",
       "uploads": "Dateien hochladen",
       "other": "Sonstiges",
-      "describeStyle": "Beschreiben Sie Ihren bevorzugten Stil..."
+      "describeStyle": "Beschreiben Sie Ihren bevorzugten Stil...",
+      "agreedProjectTotal": "Vereinbarter Projektgesamtbetrag (USD)"
     },
     "tones": {
       "cinematic": "Filmisch",
@@ -1516,7 +1518,8 @@
       "submitAnother": "Weiteres Projekt einreichen",
       "returnHome": "Zur Startseite",
       "edit": "Bearbeiten",
-      "trackProject": "Projekt verfolgen"
+      "trackProject": "Projekt verfolgen",
+      "proceedToPayment": "💳 Weiter zur Zahlung"
     },
     "confirmation": {
       "title": "Ihr Projekt wurde empfangen",
@@ -1549,7 +1552,8 @@
       "descriptionMin": "Bitte beschreiben Sie Ihr Projekt (mind. 10 Zeichen)",
       "consentRequired": "Sie müssen der Kontaktaufnahme zustimmen",
       "maxFiles": "Maximal 10 Dateien erlaubt",
-      "toneRequired": "Wählen Sie mindestens 1 Ton"
+      "toneRequired": "Wählen Sie mindestens 1 Ton",
+      "agreedTotalRequired": "Vereinbarter Projektgesamtbetrag erforderlich (Minimum 50 $)"
     },
     "consent": {
       "uploadPermission": "Ich bestätige, dass ich berechtigt bin, die hochgeladenen Inhalte zu teilen.",
@@ -1568,7 +1572,9 @@
       "audioLimit": "Audio: bis zu 50 MB",
       "docLimit": "Bilder/Dokumente: bis zu 10 MB",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
-      "durationPlaceholder": "z.B. 30 Sek., 1 Min., 5 Min."
+      "durationPlaceholder": "z.B. 30 Sek., 1 Min., 5 Min.",
+      "agreedTotalHint": "Geben Sie den genauen vereinbarten Preis für dieses Projekt ein. Eine Anzahlung von 40% wird beim Checkout erhoben.",
+      "depositPreview": "40% Anzahlung fällig beim Checkout"
     },
     "contactMethods": {
       "email": "E-Mail",
@@ -1643,6 +1649,24 @@
       "fast": "Schnelle Lieferung",
       "quality": "Premium-Qualität",
       "global": "Globaler Service"
+    },
+    "deposit": {
+      "subtitle": "Zahlen Sie eine Anzahlung von 40%, um Ihre Projektbuchung zu bestätigen. Der Restbetrag wird bei Produktionsmeilensteinen in Rechnung gestellt.",
+      "scheduleTitle": "Zahlungsplan",
+      "milestoneDeposit": "Anzahlung — Jetzt fällig",
+      "milestoneMidpoint": "Zwischenzahlung — Nach dem Rohschnitt",
+      "milestoneFinal": "Abschlusszahlung — Vor der Lieferung",
+      "projectTotal": "Projektgesamtbetrag",
+      "dueNow": "Jetzt fällig",
+      "ofTotal": "von",
+      "dueAtCheckout": "40% Anzahlung — Fällig beim Checkout",
+      "remainderNote": "Verbleibende 60% werden bei Produktionsmeilensteinen in Rechnung gestellt",
+      "paymentReceived": "Anzahlung erhalten",
+      "readyToSubmit": "Ihre Anzahlung ist gesichert. Reichen Sie Ihr Projekt ein, um loszulegen!",
+      "loadingPaypal": "PayPal wird geladen...",
+      "processing": "Zahlung wird verarbeitet...",
+      "securityNote": "Zahlungen werden sicher über PayPal abgewickelt. Ihre Finanzdaten werden niemals auf unseren Servern gespeichert.",
+      "securedNote": "Ihre Zahlung ist durch den PayPal-Käuferschutz geschützt."
     }
   }
 }

@@ -4,30 +4,7 @@ import { sendTransactionalEmail } from '@/lib/email-router'
 import { donationThankYouWithOverrides, donationAdminNotification } from '@/lib/email-templates'
 import { mirrorToNotificationBoard } from '@/lib/notifications'
 import { t as emailT } from '@/lib/email-i18n'
-
-const isSandbox = process.env.PAYPAL_MODE === 'sandbox' || process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
-const PAYPAL_API = isSandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
-const PAYPAL_CLIENT_ID = isSandbox
-    ? process.env.NEXT_PUBLIC_PAYPAL_SANDBOX_CLIENT_ID!
-    : (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID)!
-const PAYPAL_SECRET = isSandbox ? process.env.PAYPAL_SANDBOX_SECRET! : process.env.PAYPAL_SECRET!
-
-async function getAccessToken(): Promise<string> {
-    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64')
-    const res = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
-        method: 'POST',
-        headers: {
-            Authorization: `Basic ${auth}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'grant_type=client_credentials',
-    })
-    const data = await res.json()
-    if (!data.access_token) {
-        throw new Error('Failed to get PayPal access token')
-    }
-    return data.access_token
-}
+import { getPayPalAccessToken, PAYPAL_API } from '@/lib/paypal'
 
 export async function POST(request: Request) {
     try {
@@ -38,7 +15,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing orderID' }, { status: 400 })
         }
 
-        const accessToken = await getAccessToken()
+        const accessToken = await getPayPalAccessToken()
 
         // Capture the PayPal order
         const captureRes = await fetch(`${PAYPAL_API}/v2/checkout/orders/${orderID}/capture`, {

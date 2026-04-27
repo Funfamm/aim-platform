@@ -1404,7 +1404,8 @@
       "dynamic": "プロジェクト詳細",
       "uploads": "ファイル追加",
       "delivery": "予算と納品",
-      "review": "確認と送信"
+      "review": "確認と送信",
+      "deposit": "プロジェクトを確保"
     },
     "projectTypes": {
       "birthday": {
@@ -1460,7 +1461,8 @@
       "addOns": "オプション",
       "uploads": "ファイルアップロード",
       "other": "その他",
-      "describeStyle": "お好みのスタイルを説明してください..."
+      "describeStyle": "お好みのスタイルを説明してください...",
+      "agreedProjectTotal": "合意済みプロジェクト総額（USD）"
     },
     "tones": {
       "cinematic": "シネマティック",
@@ -1517,7 +1519,8 @@
       "submitAnother": "別のプロジェクトを送信",
       "returnHome": "ホームに戻る",
       "edit": "編集",
-      "trackProject": "プロジェクトを追跡"
+      "trackProject": "プロジェクトを追跡",
+      "proceedToPayment": "💳 お支払いに進む"
     },
     "confirmation": {
       "title": "プロジェクトを受け付けました",
@@ -1550,7 +1553,8 @@
       "descriptionMin": "プロジェクトを説明してください（10文字以上）",
       "consentRequired": "連絡への同意が必要です",
       "maxFiles": "最大10ファイルまで",
-      "toneRequired": "少なくとも1つのトーンを選択してください"
+      "toneRequired": "少なくとも1つのトーンを選択してください",
+      "agreedTotalRequired": "合意済みプロジェクト総額が必要です（最低$50）"
     },
     "consent": {
       "uploadPermission": "アップロードしたコンテンツを共有する許可があることを確認します。",
@@ -1569,7 +1573,9 @@
       "audioLimit": "音声：最大50 MB",
       "docLimit": "画像/文書：最大10 MB",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
-      "durationPlaceholder": "例：30秒、1分、5分"
+      "durationPlaceholder": "例：30秒、1分、5分",
+      "agreedTotalHint": "このプロジェクトの正確な合意価格を入力してください。チェックアウト時に40%のデポジットが徴収されます。",
+      "depositPreview": "チェックアウト時に40%デポジット支払い"
     },
     "contactMethods": {
       "email": "メール",
@@ -1644,6 +1650,24 @@
       "fast": "スピーディーな納品",
       "quality": "プレミアム品質",
       "global": "グローバルサービス"
+    },
+    "deposit": {
+      "subtitle": "プロジェクトの予約を確定するために40%のデポジットをお支払いください。残額は制作マイルストーンで請求されます。",
+      "scheduleTitle": "お支払いスケジュール",
+      "milestoneDeposit": "デポジット — 今すぐ支払い",
+      "milestoneMidpoint": "中間支払い — ラフカット後",
+      "milestoneFinal": "最終支払い — 納品前",
+      "projectTotal": "プロジェクト総額",
+      "dueNow": "今すぐ支払い",
+      "ofTotal": "の",
+      "dueAtCheckout": "40%デポジット — チェックアウト時に支払い",
+      "remainderNote": "残り60%は制作マイルストーンで請求されます",
+      "paymentReceived": "デポジット支払いを受領しました",
+      "readyToSubmit": "デポジットが確保されました。プロジェクトを送信して開始しましょう！",
+      "loadingPaypal": "PayPalを読み込み中...",
+      "processing": "お支払いを処理中...",
+      "securityNote": "お支払いはPayPalにより安全に処理されます。お客様の金融情報が当社のサーバーに保存されることはありません。",
+      "securedNote": "お支払いはPayPal購入保護により保護されています。"
     }
   }
 }

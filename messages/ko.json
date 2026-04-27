@@ -1403,7 +1403,8 @@
       "dynamic": "프로젝트 상세",
       "uploads": "파일 추가",
       "delivery": "예산 및 납품",
-      "review": "검토 및 제출"
+      "review": "검토 및 제출",
+      "deposit": "프로젝트 확보"
     },
     "projectTypes": {
       "birthday": {
@@ -1459,7 +1460,8 @@
       "addOns": "추가 옵션",
       "uploads": "파일 업로드",
       "other": "기타",
-      "describeStyle": "선호하는 스타일을 설명해주세요..."
+      "describeStyle": "선호하는 스타일을 설명해주세요...",
+      "agreedProjectTotal": "합의된 프로젝트 총액 (USD)"
     },
     "tones": {
       "cinematic": "시네마틱",
@@ -1516,7 +1518,8 @@
       "submitAnother": "다른 프로젝트 제출",
       "returnHome": "홈으로 돌아가기",
       "edit": "수정",
-      "trackProject": "프로젝트 추적"
+      "trackProject": "프로젝트 추적",
+      "proceedToPayment": "💳 결제로 진행"
     },
     "confirmation": {
       "title": "프로젝트가 접수되었습니다",
@@ -1549,7 +1552,8 @@
       "descriptionMin": "프로젝트를 설명해주세요 (최소 10자)",
       "consentRequired": "연락에 동의해야 합니다",
       "maxFiles": "최대 10개 파일 허용",
-      "toneRequired": "최소 1개의 톤을 선택하세요"
+      "toneRequired": "최소 1개의 톤을 선택하세요",
+      "agreedTotalRequired": "합의된 프로젝트 총액이 필요합니다 (최소 $50)"
     },
     "consent": {
       "uploadPermission": "업로드된 콘텐츠를 공유할 권한이 있음을 확인합니다.",
@@ -1568,7 +1572,9 @@
       "audioLimit": "오디오: 최대 50 MB",
       "docLimit": "이미지/문서: 최대 10 MB",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
-      "durationPlaceholder": "예: 30초, 1분, 5분"
+      "durationPlaceholder": "예: 30초, 1분, 5분",
+      "agreedTotalHint": "이 프로젝트에 대해 합의된 정확한 가격을 입력하세요. 결제 시 40% 보증금이 청구됩니다.",
+      "depositPreview": "결제 시 40% 보증금 납부"
     },
     "contactMethods": {
       "email": "이메일",
@@ -1643,6 +1649,24 @@
       "fast": "빠른 납품",
       "quality": "프리미엄 품질",
       "global": "글로벌 서비스"
+    },
+    "deposit": {
+      "subtitle": "프로젝트 예약을 확정하려면 40% 보증금을 결제하세요. 나머지 잔액은 제작 마일스톤에서 청구됩니다.",
+      "scheduleTitle": "결제 일정",
+      "milestoneDeposit": "보증금 — 지금 납부",
+      "milestoneMidpoint": "중간 결제 — 러프컷 이후",
+      "milestoneFinal": "최종 결제 — 납품 전",
+      "projectTotal": "프로젝트 총액",
+      "dueNow": "지금 납부",
+      "ofTotal": "중",
+      "dueAtCheckout": "40% 보증금 — 결제 시 납부",
+      "remainderNote": "나머지 60%는 제작 마일스톤에서 청구됩니다",
+      "paymentReceived": "보증금 결제 완료",
+      "readyToSubmit": "보증금이 확보되었습니다. 프로젝트를 제출하여 시작하세요!",
+      "loadingPaypal": "PayPal 로딩 중...",
+      "processing": "결제 처리 중...",
+      "securityNote": "결제는 PayPal을 통해 안전하게 처리됩니다. 귀하의 금융 정보는 당사 서버에 저장되지 않습니다.",
+      "securedNote": "결제는 PayPal 구매 보호로 보호됩니다."
     }
   }
 }

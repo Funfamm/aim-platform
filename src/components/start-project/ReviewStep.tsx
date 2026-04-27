@@ -79,7 +79,36 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
                 {form.deliveryPlatform && renderRow(t('fields.deliveryPlatform'), form.deliveryPlatform, 6)}
                 {form.addOns.length > 0 && renderRow(t('fields.addOns'), form.addOns.map(a => t(`addonOptions.${a}`)), 6)}
                 {form.uploads.length > 0 && renderRow(t('fields.uploads'), `${form.uploads.length} ${t('helpers.filesUploaded')}`, 5)}
+                {form.agreedProjectTotal && renderRow(
+                    t('fields.agreedProjectTotal') || 'Agreed Project Total',
+                    `$${form.agreedProjectTotal.toFixed(2)}`,
+                    6
+                )}
             </div>
+
+            {/* ── Deposit Preview ── */}
+            {form.agreedProjectTotal && form.agreedProjectTotal >= 50 && (
+                <div style={{
+                    marginTop: 'var(--space-md)',
+                    padding: '14px 18px',
+                    background: 'linear-gradient(135deg, rgba(212,168,83,0.06), rgba(212,168,83,0.02))',
+                    border: '1px solid rgba(212,168,83,0.2)',
+                    borderRadius: 'var(--radius-lg)',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                }}>
+                    <div>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '3px' }}>
+                            💳 {t('deposit.dueAtCheckout') || '40% Deposit — Due at Checkout'}
+                        </div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                            {t('deposit.remainderNote') || 'Remaining 60% invoiced at production milestones'}
+                        </div>
+                    </div>
+                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
+                        ${(Math.round(form.agreedProjectTotal * 0.4 * 100) / 100).toFixed(2)}
+                    </span>
+                </div>
+            )}
 
             {/* ── Consent checkboxes ── */}
             <div style={{

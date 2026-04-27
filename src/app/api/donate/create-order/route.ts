@@ -1,30 +1,8 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
+import { getPayPalAccessToken, PAYPAL_API } from '@/lib/paypal'
 
-const isSandbox = process.env.PAYPAL_MODE === 'sandbox' || process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
-const PAYPAL_API = isSandbox ? 'https://api-m.sandbox.paypal.com' : 'https://api-m.paypal.com'
-const PAYPAL_CLIENT_ID = isSandbox
-    ? process.env.NEXT_PUBLIC_PAYPAL_SANDBOX_CLIENT_ID!
-    : (process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID)!
-const PAYPAL_SECRET = isSandbox ? process.env.PAYPAL_SANDBOX_SECRET! : process.env.PAYPAL_SECRET!
-
-async function getAccessToken(): Promise<string> {
-    const auth = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_SECRET}`).toString('base64')
-    const res = await fetch(`${PAYPAL_API}/v1/oauth2/token`, {
-        method: 'POST',
-        headers: {
-            Authorization: `Basic ${auth}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: 'grant_type=client_credentials',
-    })
-    const data = await res.json()
-    if (!data.access_token) {
-        throw new Error('Failed to get PayPal access token')
-    }
-    return data.access_token
-}
 
 export async function POST(request: Request) {
     try {
@@ -78,7 +56,7 @@ export async function POST(request: Request) {
         // (We pass it through the frontend capture call body instead.)
 
         // Create PayPal order — donor details in custom_id
-        const accessToken = await getAccessToken()
+        const accessToken = await getPayPalAccessToken()
         const orderRes = await fetch(`${PAYPAL_API}/v2/checkout/orders`, {
             method: 'POST',
             headers: {

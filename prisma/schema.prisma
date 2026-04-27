@@ -1316,6 +1316,10 @@ model ProjectRequest {
   consentUpload    Boolean  @default(false)
   consentContact   Boolean  @default(false)
 
+  // Payment (milestone billing: 40/30/30)
+  agreedProjectTotal Float?                            // exact total agreed by client (USD)
+  paymentStatus    String   @default("unpaid")         // unpaid|deposit_paid|midpoint_paid|fully_paid|refunded|cancelled
+
   // Meta
   language         String   @default("en")
   adminNotes       String?  @db.Text
@@ -1326,9 +1330,37 @@ model ProjectRequest {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
+  payments         ProjectPayment[]
+
   @@index([status])
   @@index([projectType])
   @@index([email])
   @@index([createdAt])
   @@index([urgent, status])
+  @@index([paymentStatus])
+}
+
+// ── Milestone payment tracking for project requests ──────────────────────────
+// Each project has up to 3 payments: deposit (40%), midpoint (30%), final (30%).
+// Deposit is collected in the Start a Project flow via PayPal JS SDK.
+// Midpoint and final are admin-triggered invoices sent via email.
+model ProjectPayment {
+  id               String   @id @default(cuid())
+  projectRequestId String
+  milestone        String                             // deposit|midpoint|final
+  amount           Float
+  currency         String   @default("USD")
+  status           String   @default("pending")       // pending|completed|refunded
+  paypalOrderId    String?  @unique
+  paypalCaptureId  String?
+  paidAt           DateTime?
+  invoiceSentAt    DateTime?                           // when admin sent the pay link
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+
+  @@index([projectRequestId, milestone])
+  @@index([paypalOrderId])
+  @@index([status])
 }

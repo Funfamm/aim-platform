@@ -1403,16 +1403,38 @@
       "dynamic": "प्रोजेक्ट विवरण",
       "uploads": "फ़ाइलें जोड़ें",
       "delivery": "बजट और डिलीवरी",
-      "review": "समीक्षा और सबमिट"
+      "review": "समीक्षा और सबमिट",
+      "deposit": "अपना प्रोजेक्ट सुरक्षित करें"
     },
     "projectTypes": {
-      "birthday": { "title": "जन्मदिन / उत्सव", "description": "जन्मदिन, माइलस्टोन और परिवारिक पलों के लिए व्यक्तिगत वीडियो।" },
-      "brand": { "title": "ब्रांड / व्यवसाय", "description": "आपके व्यवसाय, उत्पाद या सेवा के लिए पेशेवर विज़ुअल।" },
-      "commercial": { "title": "कमर्शियल / विज्ञापन", "description": "अभियानों, प्रचार और लॉन्च के लिए विज्ञापन-तैयार सामग्री।" },
-      "music": { "title": "संगीत / क्रिएटिव विज़ुअल", "description": "गानों, बोल और क्रिएटिव प्रदर्शन के लिए विज़ुअल स्टोरीटेलिंग।" },
-      "film": { "title": "लघु फ़िल्म / कहानी", "description": "कहानी-आधारित वीडियो अवधारणाएं, दृश्य और सिनेमाई विचार।" },
-      "event": { "title": "इवेंट / प्रोमो", "description": "आगामी कार्यक्रमों और घोषणाओं के लिए प्रचार सामग्री।" },
-      "custom": { "title": "कस्टम प्रोजेक्ट", "description": "बताएं कि आपको क्या चाहिए और हम सही क्रिएटिव दृष्टिकोण तैयार करेंगे।" }
+      "birthday": {
+        "title": "जन्मदिन / उत्सव",
+        "description": "जन्मदिन, माइलस्टोन और परिवारिक पलों के लिए व्यक्तिगत वीडियो।"
+      },
+      "brand": {
+        "title": "ब्रांड / व्यवसाय",
+        "description": "आपके व्यवसाय, उत्पाद या सेवा के लिए पेशेवर विज़ुअल।"
+      },
+      "commercial": {
+        "title": "कमर्शियल / विज्ञापन",
+        "description": "अभियानों, प्रचार और लॉन्च के लिए विज्ञापन-तैयार सामग्री।"
+      },
+      "music": {
+        "title": "संगीत / क्रिएटिव विज़ुअल",
+        "description": "गानों, बोल और क्रिएटिव प्रदर्शन के लिए विज़ुअल स्टोरीटेलिंग।"
+      },
+      "film": {
+        "title": "लघु फ़िल्म / कहानी",
+        "description": "कहानी-आधारित वीडियो अवधारणाएं, दृश्य और सिनेमाई विचार।"
+      },
+      "event": {
+        "title": "इवेंट / प्रोमो",
+        "description": "आगामी कार्यक्रमों और घोषणाओं के लिए प्रचार सामग्री।"
+      },
+      "custom": {
+        "title": "कस्टम प्रोजेक्ट",
+        "description": "बताएं कि आपको क्या चाहिए और हम सही क्रिएटिव दृष्टिकोण तैयार करेंगे।"
+      }
     },
     "fields": {
       "projectType": "प्रोजेक्ट प्रकार",
@@ -1438,43 +1460,100 @@
       "addOns": "ऐड-ऑन",
       "uploads": "फ़ाइलें अपलोड करें",
       "other": "अन्य",
-      "describeStyle": "अपनी पसंदीदा शैली का वर्णन करें..."
+      "describeStyle": "अपनी पसंदीदा शैली का वर्णन करें...",
+      "agreedProjectTotal": "सहमत प्रोजेक्ट कुल (USD)"
     },
     "tones": {
-      "cinematic": "सिनेमाई", "emotional": "भावनात्मक", "fun": "मज़ेदार", "luxury": "शानदार",
-      "kidsFriendly": "बच्चों के अनुकूल", "bold": "बोल्ड", "inspirational": "प्रेरणादायक",
-      "cleanMinimal": "साफ़ / न्यूनतम", "dramatic": "नाटकीय", "professional": "पेशेवर"
+      "cinematic": "सिनेमाई",
+      "emotional": "भावनात्मक",
+      "fun": "मज़ेदार",
+      "luxury": "शानदार",
+      "kidsFriendly": "बच्चों के अनुकूल",
+      "bold": "बोल्ड",
+      "inspirational": "प्रेरणादायक",
+      "cleanMinimal": "साफ़ / न्यूनतम",
+      "dramatic": "नाटकीय",
+      "professional": "पेशेवर"
     },
     "visualStyles": {
-      "realistic": "यथार्थवादी / लाइव एक्शन", "animated": "एनिमेटेड / कार्टून", "motionGraphics": "मोशन ग्राफ़िक्स",
-      "documentary": "डॉक्यूमेंट्री शैली", "vintage": "विंटेज / रेट्रो", "neon": "नियॉन / भविष्यवादी",
-      "blackAndWhite": "ब्लैक एंड व्हाइट", "abstract": "अमूर्त / कलात्मक", "corporate": "कॉर्पोरेट / स्वच्छ"
+      "realistic": "यथार्थवादी / लाइव एक्शन",
+      "animated": "एनिमेटेड / कार्टून",
+      "motionGraphics": "मोशन ग्राफ़िक्स",
+      "documentary": "डॉक्यूमेंट्री शैली",
+      "vintage": "विंटेज / रेट्रो",
+      "neon": "नियॉन / भविष्यवादी",
+      "blackAndWhite": "ब्लैक एंड व्हाइट",
+      "abstract": "अमूर्त / कलात्मक",
+      "corporate": "कॉर्पोरेट / स्वच्छ"
     },
-    "budgetOptions": { "30-50": "$30–$50", "50-100": "$50–$100", "100-250": "$100–$250", "250-500": "$250–$500", "500+": "$500+", "not-sure": "अभी तय नहीं" },
-    "aspectOptions": { "16:9": "16:9 YouTube", "9:16": "9:16 TikTok/Reels", "1:1": "1:1 वर्ग", "multiple": "अनेक प्रारूप", "not-sure": "तय नहीं" },
-    "addonOptions": { "voiceover": "वॉइस-ओवर", "subtitles": "उपशीर्षक", "translation": "अनुवाद", "multipleVersions": "अनेक संस्करण", "thumbnail": "थंबनेल/पोस्टर", "rushDelivery": "तेज़ डिलीवरी" },
+    "budgetOptions": {
+      "30-50": "$30–$50",
+      "50-100": "$50–$100",
+      "100-250": "$100–$250",
+      "250-500": "$250–$500",
+      "500+": "$500+",
+      "not-sure": "अभी तय नहीं"
+    },
+    "aspectOptions": {
+      "16:9": "16:9 YouTube",
+      "9:16": "9:16 TikTok/Reels",
+      "1:1": "1:1 वर्ग",
+      "multiple": "अनेक प्रारूप",
+      "not-sure": "तय नहीं"
+    },
+    "addonOptions": {
+      "voiceover": "वॉइस-ओवर",
+      "subtitles": "उपशीर्षक",
+      "translation": "अनुवाद",
+      "multipleVersions": "अनेक संस्करण",
+      "thumbnail": "थंबनेल/पोस्टर",
+      "rushDelivery": "तेज़ डिलीवरी"
+    },
     "buttons": {
-      "back": "वापस", "continue": "जारी रखें", "review": "अनुरोध की समीक्षा करें",
-      "submit": "प्रोजेक्ट अनुरोध सबमिट करें", "submitting": "सबमिट हो रहा है...",
-      "submitAnother": "एक और प्रोजेक्ट सबमिट करें", "returnHome": "होम पर लौटें",
-      "edit": "संपादित करें", "trackProject": "अपना प्रोजेक्ट ट्रैक करें"
+      "back": "वापस",
+      "continue": "जारी रखें",
+      "review": "अनुरोध की समीक्षा करें",
+      "submit": "प्रोजेक्ट अनुरोध सबमिट करें",
+      "submitting": "सबमिट हो रहा है...",
+      "submitAnother": "एक और प्रोजेक्ट सबमिट करें",
+      "returnHome": "होम पर लौटें",
+      "edit": "संपादित करें",
+      "trackProject": "अपना प्रोजेक्ट ट्रैक करें",
+      "proceedToPayment": "💳 भुगतान पर जाएं"
     },
     "confirmation": {
-      "title": "आपका प्रोजेक्ट प्राप्त हो गया", "subtitle": "हमें आपका ब्रीफ मिल गया है और हम आपके अनुरोध की समीक्षा करेंगे।",
-      "projectId": "प्रोजेक्ट आईडी", "date": "तारीख", "nextSteps": "आगे क्या होगा",
-      "step1": "हम आपके सबमिशन की समीक्षा करते हैं", "step2": "हम दायरा और समयसीमा की पुष्टि करते हैं", "step3": "प्रोडक्शन शुरू होता है"
+      "title": "आपका प्रोजेक्ट प्राप्त हो गया",
+      "subtitle": "हमें आपका ब्रीफ मिल गया है और हम आपके अनुरोध की समीक्षा करेंगे।",
+      "projectId": "प्रोजेक्ट आईडी",
+      "date": "तारीख",
+      "nextSteps": "आगे क्या होगा",
+      "step1": "हम आपके सबमिशन की समीक्षा करते हैं",
+      "step2": "हम दायरा और समयसीमा की पुष्टि करते हैं",
+      "step3": "प्रोडक्शन शुरू होता है"
     },
-    "helpers2": { "reviewHint": "सबमिट करने से पहले अपने प्रोजेक्ट विवरण की समीक्षा करें।" },
+    "helpers2": {
+      "reviewHint": "सबमिट करने से पहले अपने प्रोजेक्ट विवरण की समीक्षा करें।"
+    },
     "statuses": {
-      "received": "प्राप्त", "reviewing": "समीक्षा में", "scope_confirmed": "दायरा पुष्ट", "in_production": "प्रोडक्शन में",
-      "awaiting_client": "क्लाइंट की प्रतीक्षा", "delivered": "डिलीवर किया गया", "completed": "पूर्ण", "cancelled": "रद्द"
+      "received": "प्राप्त",
+      "reviewing": "समीक्षा में",
+      "scope_confirmed": "दायरा पुष्ट",
+      "in_production": "प्रोडक्शन में",
+      "awaiting_client": "क्लाइंट की प्रतीक्षा",
+      "delivered": "डिलीवर किया गया",
+      "completed": "पूर्ण",
+      "cancelled": "रद्द"
     },
     "validation": {
-      "required": "यह फ़ील्ड आवश्यक है", "email": "कृपया एक वैध ईमेल पता दर्ज करें",
-      "fileTooLarge": "यह फ़ाइल बहुत बड़ी है", "unsupportedFile": "यह फ़ाइल प्रकार समर्थित नहीं है",
+      "required": "यह फ़ील्ड आवश्यक है",
+      "email": "कृपया एक वैध ईमेल पता दर्ज करें",
+      "fileTooLarge": "यह फ़ाइल बहुत बड़ी है",
+      "unsupportedFile": "यह फ़ाइल प्रकार समर्थित नहीं है",
       "descriptionMin": "कृपया अपने प्रोजेक्ट का वर्णन करें (न्यूनतम 10 अक्षर)",
-      "consentRequired": "आपको संपर्क के लिए सहमत होना होगा", "maxFiles": "अधिकतम 10 फ़ाइलें अनुमत हैं",
-      "toneRequired": "कम से कम 1 टोन चुनें"
+      "consentRequired": "आपको संपर्क के लिए सहमत होना होगा",
+      "maxFiles": "अधिकतम 10 फ़ाइलें अनुमत हैं",
+      "toneRequired": "कम से कम 1 टोन चुनें",
+      "agreedTotalRequired": "सहमत प्रोजेक्ट कुल आवश्यक है (न्यूनतम $50)"
     },
     "consent": {
       "uploadPermission": "मैं पुष्टि करता/करती हूँ कि मेरे पास अपलोड की गई सामग्री साझा करने की अनुमति है।",
@@ -1484,37 +1563,110 @@
       "overviewHint": "बताएं कि आप क्या बनाना चाहते हैं। सरल रखें — हम आपके साथ इसे बेहतर बनाएंगे।",
       "reviewHint": "सबमिट करने से पहले अपने प्रोजेक्ट विवरण की समीक्षा करें।",
       "uploadHint": "फ़ोटो, वीडियो, लोगो, संगीत या संदर्भ फ़ाइलें जोड़ें जो हमें आपकी दृष्टि समझने में मदद करें।",
-      "uploading": "अपलोड हो रहा है...", "uploadTypes": "इमेज, वीडियो, ऑडियो, PDF, ZIP",
-      "remaining": "शेष", "filesUploaded": "फ़ाइलें अपलोड हुईं",
+      "uploading": "अपलोड हो रहा है...",
+      "uploadTypes": "इमेज, वीडियो, ऑडियो, PDF, ZIP",
+      "remaining": "शेष",
+      "filesUploaded": "फ़ाइलें अपलोड हुईं",
       "adminPreview": "एडमिन प्रीव्यू — आवश्यक फ़ील्ड बायपास हैं। आप सभी चरणों में स्वतंत्र रूप से नेविगेट कर सकते हैं।",
-      "videoLimit": "वीडियो: 500 MB तक", "audioLimit": "ऑडियो: 50 MB तक", "docLimit": "इमेज/दस्तावेज़: 10 MB तक",
-      "platformPlaceholder": "YouTube, TikTok, Instagram...", "durationPlaceholder": "जैसे 30 सेकंड, 1 मिनट, 5 मिनट"
+      "videoLimit": "वीडियो: 500 MB तक",
+      "audioLimit": "ऑडियो: 50 MB तक",
+      "docLimit": "इमेज/दस्तावेज़: 10 MB तक",
+      "platformPlaceholder": "YouTube, TikTok, Instagram...",
+      "durationPlaceholder": "जैसे 30 सेकंड, 1 मिनट, 5 मिनट",
+      "agreedTotalHint": "इस प्रोजेक्ट के लिए सहमत कुल राशि दर्ज करें। चेकआउट पर 40% जमा राशि ली जाएगी।",
+      "depositPreview": "चेकआउट पर 40% जमा देय"
     },
-    "contactMethods": { "email": "ईमेल", "phone": "फ़ोन", "whatsapp": "WhatsApp" },
-    "fileCategories": { "video": "वीडियो", "audio": "ऑडियो", "image": "इमेज", "pdf": "PDF", "file": "फ़ाइल" },
+    "contactMethods": {
+      "email": "ईमेल",
+      "phone": "फ़ोन",
+      "whatsapp": "WhatsApp"
+    },
+    "fileCategories": {
+      "video": "वीडियो",
+      "audio": "ऑडियो",
+      "image": "इमेज",
+      "pdf": "PDF",
+      "file": "फ़ाइल"
+    },
     "errors": {
-      "submitFailed": "सबमिट करने में विफल", "somethingWrong": "कुछ गलत हो गया",
-      "uploadFailed": "अपलोड विफल", "uploadFailedRetry": "अपलोड विफल। कृपया पुनः प्रयास करें।",
+      "submitFailed": "सबमिट करने में विफल",
+      "somethingWrong": "कुछ गलत हो गया",
+      "uploadFailed": "अपलोड विफल",
+      "uploadFailedRetry": "अपलोड विफल। कृपया पुनः प्रयास करें।",
       "fileExceedsLimit": "{name}: फ़ाइल {limit} सीमा से अधिक है"
     },
     "dynamicFields": {
-      "celebrantName": "जन्मदिन वाले का नाम", "ageTurning": "कितने साल के हो रहे हैं", "relationship": "जन्मदिन वाले से संबंध",
-      "eventDate": "कार्यक्रम तिथि", "favoriteColors": "पसंदीदा रंग", "favoriteCharacters": "पसंदीदा पात्र / शौक",
-      "messageToInclude": "शामिल करने का संदेश", "preferredMood": "पसंदीदा मूड",
-      "brandName": "ब्रांड का नाम", "industry": "उद्योग", "website": "वेबसाइट", "socialLinks": "सोशल मीडिया लिंक",
-      "brandColors": "ब्रांड के रंग", "mainMessage": "मुख्य संदेश", "targetAudience": "लक्षित दर्शक", "desiredCTA": "वांछित CTA",
-      "productName": "उत्पाद या सेवा का नाम", "campaignGoal": "अभियान का लक्ष्य", "platform": "प्लेटफ़ॉर्म",
-      "videoDuration": "वीडियो अवधि", "offer": "ऑफ़र / प्रचार", "cta": "कॉल टू एक्शन",
-      "scriptReady": "स्क्रिप्ट तैयार है?", "competitorLinks": "प्रतिस्पर्धी/संदर्भ लिंक",
-      "songName": "गाने का नाम", "artistName": "कलाकार का नाम", "mood": "मूड",
-      "lyricsSyncRequired": "बोल सिंक आवश्यक?", "storyline": "कहानी", "performanceOrCinematic": "प्रदर्शन या सिनेमाई?",
-      "storyTitle": "कहानी का शीर्षक", "genre": "शैली", "synopsis": "सारांश", "mainCharacters": "मुख्य पात्र",
-      "runtimeTarget": "रनटाइम लक्ष्य", "dialogueRequired": "संवाद आवश्यक?", "mustHaveScenes": "आवश्यक दृश्य", "visualTone": "विज़ुअल टोन",
-      "eventName": "कार्यक्रम का नाम", "venue": "स्थान", "promoGoal": "प्रोमो का उद्देश्य", "speakers": "वक्ता/होस्ट",
-      "importantDetails": "महत्वपूर्ण कार्यक्रम विवरण", "requestDescription": "अपने अनुरोध का वर्णन करें",
-      "whatIsThisFor": "यह किसलिए है?", "desiredResult": "इससे क्या परिणाम मिलना चाहिए?",
-      "requiredDeliverables": "आवश्यक डिलीवरेबल", "specialNotes": "विशेष नोट्स"
+      "celebrantName": "जन्मदिन वाले का नाम",
+      "ageTurning": "कितने साल के हो रहे हैं",
+      "relationship": "जन्मदिन वाले से संबंध",
+      "eventDate": "कार्यक्रम तिथि",
+      "favoriteColors": "पसंदीदा रंग",
+      "favoriteCharacters": "पसंदीदा पात्र / शौक",
+      "messageToInclude": "शामिल करने का संदेश",
+      "preferredMood": "पसंदीदा मूड",
+      "brandName": "ब्रांड का नाम",
+      "industry": "उद्योग",
+      "website": "वेबसाइट",
+      "socialLinks": "सोशल मीडिया लिंक",
+      "brandColors": "ब्रांड के रंग",
+      "mainMessage": "मुख्य संदेश",
+      "targetAudience": "लक्षित दर्शक",
+      "desiredCTA": "वांछित CTA",
+      "productName": "उत्पाद या सेवा का नाम",
+      "campaignGoal": "अभियान का लक्ष्य",
+      "platform": "प्लेटफ़ॉर्म",
+      "videoDuration": "वीडियो अवधि",
+      "offer": "ऑफ़र / प्रचार",
+      "cta": "कॉल टू एक्शन",
+      "scriptReady": "स्क्रिप्ट तैयार है?",
+      "competitorLinks": "प्रतिस्पर्धी/संदर्भ लिंक",
+      "songName": "गाने का नाम",
+      "artistName": "कलाकार का नाम",
+      "mood": "मूड",
+      "lyricsSyncRequired": "बोल सिंक आवश्यक?",
+      "storyline": "कहानी",
+      "performanceOrCinematic": "प्रदर्शन या सिनेमाई?",
+      "storyTitle": "कहानी का शीर्षक",
+      "genre": "शैली",
+      "synopsis": "सारांश",
+      "mainCharacters": "मुख्य पात्र",
+      "runtimeTarget": "रनटाइम लक्ष्य",
+      "dialogueRequired": "संवाद आवश्यक?",
+      "mustHaveScenes": "आवश्यक दृश्य",
+      "visualTone": "विज़ुअल टोन",
+      "eventName": "कार्यक्रम का नाम",
+      "venue": "स्थान",
+      "promoGoal": "प्रोमो का उद्देश्य",
+      "speakers": "वक्ता/होस्ट",
+      "importantDetails": "महत्वपूर्ण कार्यक्रम विवरण",
+      "requestDescription": "अपने अनुरोध का वर्णन करें",
+      "whatIsThisFor": "यह किसलिए है?",
+      "desiredResult": "इससे क्या परिणाम मिलना चाहिए?",
+      "requiredDeliverables": "आवश्यक डिलीवरेबल",
+      "specialNotes": "विशेष नोट्स"
     },
-    "trustBadges": { "fast": "तेज़ डिलीवरी", "quality": "प्रीमियम गुणवत्ता", "global": "वैश्विक सेवा" }
+    "trustBadges": {
+      "fast": "तेज़ डिलीवरी",
+      "quality": "प्रीमियम गुणवत्ता",
+      "global": "वैश्विक सेवा"
+    },
+    "deposit": {
+      "subtitle": "अपनी प्रोजेक्ट बुकिंग की पुष्टि करने के लिए 40% जमा राशि का भुगतान करें। शेष राशि उत्पादन मील के पत्थर पर बिल की जाती है।",
+      "scheduleTitle": "भुगतान अनुसूची",
+      "milestoneDeposit": "जमा — अभी देय",
+      "milestoneMidpoint": "मध्य बिंदु — रफ कट के बाद",
+      "milestoneFinal": "अंतिम भुगतान — डिलीवरी से पहले",
+      "projectTotal": "प्रोजेक्ट कुल",
+      "dueNow": "अभी देय",
+      "ofTotal": "का",
+      "dueAtCheckout": "40% जमा — चेकआउट पर देय",
+      "remainderNote": "शेष 60% उत्पादन मील के पत्थर पर बिल किया जाता है",
+      "paymentReceived": "जमा भुगतान प्राप्त हुआ",
+      "readyToSubmit": "आपकी जमा राशि सुरक्षित है। शुरू करने के लिए अपना प्रोजेक्ट सबमिट करें!",
+      "loadingPaypal": "PayPal लोड हो रहा है...",
+      "processing": "भुगतान संसाधित हो रहा है...",
+      "securityNote": "भुगतान PayPal के माध्यम से सुरक्षित रूप से संसाधित किए जाते हैं। आपका वित्तीय विवरण कभी भी हमारे सर्वर पर संग्रहीत नहीं होता।",
+      "securedNote": "आपका भुगतान PayPal खरीद सुरक्षा द्वारा संरक्षित है।"
+    }
   }
 }

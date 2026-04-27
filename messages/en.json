@@ -227,7 +227,7 @@
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
-      "trackProject": "Track Your Project",
+    "trackProject": "Track Your Project",
     "close": "Close",
     "back": "Back",
     "next": "Next",
@@ -1071,7 +1071,7 @@
     "savePreferences": "Save Preferences",
     "preferencesSaved": "Preferences saved",
     "edit": "Edit",
-      "trackProject": "Track Your Project",
+    "trackProject": "Track Your Project",
     "cancel": "Cancel",
     "selectAll": "Select All",
     "deselectAll": "Deselect All",
@@ -1403,7 +1403,8 @@
       "dynamic": "Project Details",
       "uploads": "Add Files",
       "delivery": "Budget & Delivery",
-      "review": "Review & Submit"
+      "review": "Review & Submit",
+      "deposit": "Secure Your Project"
     },
     "projectTypes": {
       "birthday": {
@@ -1459,7 +1460,8 @@
       "addOns": "Add-ons",
       "uploads": "Upload Files",
       "other": "Other",
-      "describeStyle": "Describe your preferred style..."
+      "describeStyle": "Describe your preferred style...",
+      "agreedProjectTotal": "Agreed Project Total (USD)"
     },
     "tones": {
       "cinematic": "Cinematic",
@@ -1516,7 +1518,8 @@
       "submitAnother": "Submit Another Project",
       "returnHome": "Return Home",
       "edit": "Edit",
-      "trackProject": "Track Your Project"
+      "trackProject": "Track Your Project",
+      "proceedToPayment": "💳 Proceed to Payment"
     },
     "confirmation": {
       "title": "Your Project Has Been Received",
@@ -1530,7 +1533,6 @@
     },
     "helpers2": {
       "reviewHint": "Review your project details before submitting."
-    
     },
     "statuses": {
       "received": "Received",
@@ -1550,7 +1552,8 @@
       "descriptionMin": "Please describe your project (min 10 characters)",
       "consentRequired": "You must agree to be contacted",
       "maxFiles": "Maximum 10 files allowed",
-      "toneRequired": "Select at least 1 tone"
+      "toneRequired": "Select at least 1 tone",
+      "agreedTotalRequired": "Agreed project total is required (minimum )"
     },
     "consent": {
       "uploadPermission": "I confirm I have permission to share the uploaded content.",
@@ -1569,7 +1572,9 @@
       "audioLimit": "Audio: up to 50 MB",
       "docLimit": "Images/Docs: up to 10 MB",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
-      "durationPlaceholder": "e.g. 30 sec, 1 min, 5 min"
+      "durationPlaceholder": "e.g. 30 sec, 1 min, 5 min",
+      "agreedTotalHint": "Enter the exact agreed price for this project. A 40% deposit will be collected at checkout.",
+      "depositPreview": "40% deposit due at checkout"
     },
     "contactMethods": {
       "email": "Email",
@@ -1644,6 +1649,24 @@
       "fast": "Fast Turnaround",
       "quality": "Premium Quality",
       "global": "Global Service"
+    },
+    "deposit": {
+      "subtitle": "Pay a 40% deposit to confirm your project booking. The remaining balance is invoiced at production milestones.",
+      "scheduleTitle": "Payment Schedule",
+      "milestoneDeposit": "Deposit — Due Now",
+      "milestoneMidpoint": "Midpoint — After Rough Cut",
+      "milestoneFinal": "Final — Before Delivery",
+      "projectTotal": "Project Total",
+      "dueNow": "Due Now",
+      "ofTotal": "of",
+      "dueAtCheckout": "40% Deposit — Due at Checkout",
+      "remainderNote": "Remaining 60% invoiced at production milestones",
+      "paymentReceived": "Deposit Payment Received",
+      "readyToSubmit": "Your deposit is secured. Submit your project to get started!",
+      "loadingPaypal": "Loading PayPal...",
+      "processing": "Processing payment...",
+      "securityNote": "Payments are securely processed by PayPal. Your financial details are never stored on our servers.",
+      "securedNote": "Your payment is protected by PayPal Purchase Protection."
     }
   }
 }

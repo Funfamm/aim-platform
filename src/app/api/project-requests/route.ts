@@ -128,6 +128,9 @@ export async function POST(req: NextRequest) {
                 emotionalFeeling: body.emotionalFeeling?.trim() || null,
                 budgetRange: body.budgetRange || null,
                 budgetCurrency: body.budgetCurrency || 'USD',
+                agreedProjectTotal: typeof body.agreedProjectTotal === 'number' && body.agreedProjectTotal > 0
+                    ? body.agreedProjectTotal : null,
+                paymentStatus: body.depositPayment ? 'deposit_paid' : 'unpaid',
                 duration: body.duration?.trim() || null,
                 aspectRatio: body.aspectRatio || null,
                 deliveryPlatform: body.deliveryPlatform?.trim() || null,
@@ -141,6 +144,28 @@ export async function POST(req: NextRequest) {
                 userId: body.userId || null,
             },
         })
+
+        // ── Link the deposit payment to the now-created project ─────────────
+        if (body.depositPayment && body.depositPayment.paypalOrderId) {
+            await prisma.projectPayment.create({
+                data: {
+                    projectRequestId: saved.id,
+                    milestone: 'deposit',
+                    amount: body.depositPayment.amount || 0,
+                    status: 'completed',
+                    paypalOrderId: body.depositPayment.paypalOrderId,
+                    paypalCaptureId: body.depositPayment.paypalCaptureId || null,
+                    paidAt: new Date(),
+                },
+            }).catch(err => {
+                // If order ID already exists (from pre-creation), update it
+                logger.warn('project-requests', 'Deposit payment link failed, attempting update', { error: err as Error })
+                return prisma.projectPayment.updateMany({
+                    where: { paypalOrderId: body.depositPayment.paypalOrderId },
+                    data: { projectRequestId: saved.id },
+                })
+            })
+        }
 
         // ── Send emails (Promise.allSettled — never blocks response) ─────
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'

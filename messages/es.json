@@ -1403,7 +1403,8 @@
       "dynamic": "Detalles del proyecto",
       "uploads": "Agregar archivos",
       "delivery": "Presupuesto y entrega",
-      "review": "Revisar y enviar"
+      "review": "Revisar y enviar",
+      "deposit": "Asegura tu proyecto"
     },
     "projectTypes": {
       "birthday": {
@@ -1459,7 +1460,8 @@
       "addOns": "Complementos",
       "uploads": "Subir archivos",
       "other": "Otro",
-      "describeStyle": "Describe tu estilo preferido..."
+      "describeStyle": "Describe tu estilo preferido...",
+      "agreedProjectTotal": "Total acordado del proyecto (USD)"
     },
     "tones": {
       "cinematic": "Cinematográfico",
@@ -1516,7 +1518,8 @@
       "submitAnother": "Enviar otro proyecto",
       "returnHome": "Volver al inicio",
       "edit": "Editar",
-      "trackProject": "Seguir tu proyecto"
+      "trackProject": "Seguir tu proyecto",
+      "proceedToPayment": "💳 Proceder al pago"
     },
     "confirmation": {
       "title": "Tu proyecto ha sido recibido",
@@ -1549,7 +1552,8 @@
       "descriptionMin": "Por favor describe tu proyecto (mín. 10 caracteres)",
       "consentRequired": "Debes aceptar ser contactado",
       "maxFiles": "Máximo 10 archivos permitidos",
-      "toneRequired": "Selecciona al menos 1 tono"
+      "toneRequired": "Selecciona al menos 1 tono",
+      "agreedTotalRequired": "El total acordado del proyecto es obligatorio (mínimo $50)"
     },
     "consent": {
       "uploadPermission": "Confirmo que tengo permiso para compartir el contenido subido.",
@@ -1568,7 +1572,9 @@
       "audioLimit": "Audio: hasta 50 MB",
       "docLimit": "Imágenes/Docs: hasta 10 MB",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
-      "durationPlaceholder": "ej. 30 seg, 1 min, 5 min"
+      "durationPlaceholder": "ej. 30 seg, 1 min, 5 min",
+      "agreedTotalHint": "Ingresa el precio total acordado para este proyecto. Se cobrará un depósito del 40% al momento del pago.",
+      "depositPreview": "Depósito del 40% a pagar al checkout"
     },
     "contactMethods": {
       "email": "Correo electrónico",
@@ -1643,6 +1649,24 @@
       "fast": "Entrega rápida",
       "quality": "Calidad premium",
       "global": "Servicio global"
+    },
+    "deposit": {
+      "subtitle": "Paga un depósito del 40% para confirmar la reserva de tu proyecto. El saldo restante se factura en los hitos de producción.",
+      "scheduleTitle": "Calendario de pagos",
+      "milestoneDeposit": "Depósito — A pagar ahora",
+      "milestoneMidpoint": "Pago intermedio — Después del corte preliminar",
+      "milestoneFinal": "Pago final — Antes de la entrega",
+      "projectTotal": "Total del proyecto",
+      "dueNow": "A pagar ahora",
+      "ofTotal": "de",
+      "dueAtCheckout": "Depósito del 40% — A pagar al checkout",
+      "remainderNote": "El 60% restante se factura en los hitos de producción",
+      "paymentReceived": "Pago del depósito recibido",
+      "readyToSubmit": "¡Tu depósito está asegurado. Envía tu proyecto para comenzar!",
+      "loadingPaypal": "Cargando PayPal...",
+      "processing": "Procesando pago...",
+      "securityNote": "Los pagos se procesan de forma segura a través de PayPal. Tus datos financieros nunca se almacenan en nuestros servidores.",
+      "securedNote": "Tu pago está protegido por la Protección de Compras de PayPal."
     }
   }
 }

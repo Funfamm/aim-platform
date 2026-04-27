@@ -11,6 +11,7 @@ import DynamicFieldsStep from './DynamicFieldsStep'
 import UploadStep from './UploadStep'
 import BudgetDeliveryStep from './BudgetDeliveryStep'
 import ReviewStep from './ReviewStep'
+import DepositStep from './DepositStep'
 import ConfirmationView from './ConfirmationView'
 
 // ── Step definitions ────────────────────────────────────────────────────────
@@ -23,6 +24,7 @@ const STEPS = [
     'uploads',
     'delivery',
     'review',
+    'deposit',
 ] as const
 
 type StepKey = (typeof STEPS)[number]
@@ -51,6 +53,7 @@ export interface StartProjectFormData {
     // Budget & delivery
     budgetRange: string
     budgetCurrency: string
+    agreedProjectTotal: number | null
     duration: string
     aspectRatio: string
     deliveryPlatform: string
@@ -63,6 +66,12 @@ export interface StartProjectFormData {
     // Consent
     consentUpload: boolean
     consentContact: boolean
+    // Payment (deposit captured in-flow)
+    depositPayment: {
+        paypalOrderId: string
+        paypalCaptureId: string | null
+        amount: number
+    } | null
     // Meta
     language: string
 }
@@ -86,6 +95,7 @@ const INITIAL: StartProjectFormData = {
     emotionalFeeling: '',
     budgetRange: '',
     budgetCurrency: 'USD',
+    agreedProjectTotal: null,
     duration: '',
     aspectRatio: '',
     deliveryPlatform: '',
@@ -95,6 +105,7 @@ const INITIAL: StartProjectFormData = {
     uploads: [],
     consentUpload: false,
     consentContact: false,
+    depositPayment: null,
     language: 'en',
 }
 
@@ -147,9 +158,13 @@ function validateStep(step: StepKey, form: StartProjectFormData): string[] {
         }
         case 'delivery':
             if (!form.budgetRange) errors.push('budgetRange')
+            if (!form.agreedProjectTotal || form.agreedProjectTotal < 50) errors.push('agreedProjectTotal')
             break
         case 'review':
             if (!form.consentContact) errors.push('consentContact')
+            break
+        case 'deposit':
+            if (!form.depositPayment) errors.push('depositPayment')
             break
     }
     return errors
@@ -222,11 +237,10 @@ export default function StartProjectFlow() {
         }
     }, [stepIndex, isAdmin])
 
-    // ── Submit ──────────────────────────────────────────────────────────────
+    // ── Submit (fires after deposit is paid) ────────────────────────────────
     const handleSubmit = useCallback(async () => {
-        const errors = validateStep('review', form)
-        if (errors.length > 0) {
-            setFieldErrors(errors)
+        if (!form.depositPayment) {
+            setSubmitError('Deposit payment is required before submission.')
             return
         }
 
@@ -237,7 +251,10 @@ export default function StartProjectFlow() {
             const res = await fetch('/api/project-requests', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify({
+                    ...form,
+                    agreedProjectTotal: form.agreedProjectTotal,
+                }),
             })
             const data = await res.json()
 
@@ -317,6 +334,7 @@ export default function StartProjectFlow() {
                 {currentStep === 'uploads' && <UploadStep {...stepProps} />}
                 {currentStep === 'delivery' && <BudgetDeliveryStep {...stepProps} />}
                 {currentStep === 'review' && <ReviewStep {...stepProps} onGoToStep={goToStep} />}
+                {currentStep === 'deposit' && <DepositStep form={form} updateField={updateField} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
             </div>
 
             {/* ── Submit error ── */}
@@ -357,7 +375,10 @@ export default function StartProjectFlow() {
                     {t('buttons.back')}
                 </button>
 
-                {currentStep !== 'review' ? (
+                {currentStep === 'deposit' ? (
+                    /* Deposit step has its own PayPal + Submit button */
+                    null
+                ) : currentStep !== 'review' ? (
                     <button
                         type="button"
                         onClick={goNext}
@@ -368,15 +389,11 @@ export default function StartProjectFlow() {
                 ) : (
                     <button
                         type="button"
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
+                        onClick={goNext}
                         className="sp-btn sp-btn-primary"
-                        style={{
-                            opacity: isSubmitting ? 0.6 : 1,
-                            minWidth: '180px',
-                        }}
+                        style={{ minWidth: '180px' }}
                     >
-                        {isSubmitting ? `⏳ ${t('buttons.submitting')}` : `🚀 ${t('buttons.submit')}`}
+                        {t('buttons.proceedToPayment') || '💳 Proceed to Payment'}
                     </button>
                 )}
             </div>

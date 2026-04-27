@@ -1405,7 +1405,8 @@
       "dynamic": "تفاصيل المشروع",
       "uploads": "إضافة ملفات",
       "delivery": "الميزانية والتسليم",
-      "review": "مراجعة وإرسال"
+      "review": "مراجعة وإرسال",
+      "deposit": "تأمين مشروعك"
     },
     "projectTypes": {
       "birthday": {
@@ -1461,7 +1462,8 @@
       "addOns": "إضافات",
       "uploads": "رفع الملفات",
       "other": "أخرى",
-      "describeStyle": "صف أسلوبك المفضل..."
+      "describeStyle": "صف أسلوبك المفضل...",
+      "agreedProjectTotal": "إجمالي المشروع المتفق عليه (دولار أمريكي)"
     },
     "tones": {
       "cinematic": "سينمائي",
@@ -1518,7 +1520,8 @@
       "submitAnother": "إرسال مشروع آخر",
       "returnHome": "العودة للرئيسية",
       "edit": "تعديل",
-      "trackProject": "تتبع مشروعك"
+      "trackProject": "تتبع مشروعك",
+      "proceedToPayment": "💳 المتابعة إلى الدفع"
     },
     "confirmation": {
       "title": "تم استلام مشروعك",
@@ -1551,7 +1554,8 @@
       "descriptionMin": "يرجى وصف مشروعك (10 أحرف على الأقل)",
       "consentRequired": "يجب الموافقة على التواصل",
       "maxFiles": "الحد الأقصى 10 ملفات",
-      "toneRequired": "اختر نبرة واحدة على الأقل"
+      "toneRequired": "اختر نبرة واحدة على الأقل",
+      "agreedTotalRequired": "إجمالي المشروع المتفق عليه مطلوب (الحد الأدنى 50 دولار)"
     },
     "consent": {
       "uploadPermission": "أؤكد أن لدي إذنًا لمشاركة المحتوى المرفوع.",
@@ -1570,7 +1574,9 @@
       "audioLimit": "صوت: حتى 50 ميجا",
       "docLimit": "صور/مستندات: حتى 10 ميجا",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
-      "durationPlaceholder": "مثلاً 30 ثانية، 1 دقيقة، 5 دقائق"
+      "durationPlaceholder": "مثلاً 30 ثانية، 1 دقيقة، 5 دقائق",
+      "agreedTotalHint": "أدخل السعر الإجمالي المتفق عليه لهذا المشروع. سيتم تحصيل عربون بنسبة 40% عند الدفع.",
+      "depositPreview": "عربون 40% مستحق عند الدفع"
     },
     "contactMethods": {
       "email": "بريد إلكتروني",
@@ -1645,6 +1651,24 @@
       "fast": "تسليم سريع",
       "quality": "جودة ممتازة",
       "global": "خدمة عالمية"
+    },
+    "deposit": {
+      "subtitle": "ادفع عربون بنسبة 40% لتأكيد حجز مشروعك. يتم فوترة الرصيد المتبقي عند مراحل الإنتاج.",
+      "scheduleTitle": "جدول الدفع",
+      "milestoneDeposit": "العربون — مستحق الآن",
+      "milestoneMidpoint": "منتصف المسار — بعد المسودة الأولى",
+      "milestoneFinal": "الدفعة النهائية — قبل التسليم",
+      "projectTotal": "إجمالي المشروع",
+      "dueNow": "مستحق الآن",
+      "ofTotal": "من",
+      "dueAtCheckout": "عربون 40% — مستحق عند الدفع",
+      "remainderNote": "يتم فوترة النسبة المتبقية 60% عند مراحل الإنتاج",
+      "paymentReceived": "تم استلام دفعة العربون",
+      "readyToSubmit": "تم تأمين العربون الخاص بك. أرسل مشروعك للبدء!",
+      "loadingPaypal": "جاري تحميل PayPal...",
+      "processing": "جاري معالجة الدفع...",
+      "securityNote": "يتم معالجة المدفوعات بشكل آمن عبر PayPal. لا يتم تخزين بياناتك المالية على خوادمنا أبداً.",
+      "securedNote": "دفعتك محمية بواسطة حماية مشتريات PayPal."
     }
   }
 }

@@ -69,6 +69,58 @@ export default function BudgetDeliveryStep({ form, updateField, fieldErrors }: P
                     </div>
                 </div>
 
+                {/* Agreed Project Total */}
+                <div>
+                    <label className="sp-label" htmlFor="sp-agreedTotal">
+                        {t('fields.agreedProjectTotal') || 'Agreed Project Total (USD)'} *
+                    </label>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '8px', lineHeight: 1.5 }}>
+                        {t('helpers.agreedTotalHint') || 'Enter the exact agreed price for this project. A 40% deposit will be collected at checkout.'}
+                    </p>
+                    {hasError('agreedProjectTotal') && (
+                        <p className="sp-error" style={{ marginBottom: '6px' }}>
+                            {t('validation.agreedTotalRequired') || 'Agreed project total is required (minimum $50)'}
+                        </p>
+                    )}
+                    <div style={{ position: 'relative' }}>
+                        <span style={{
+                            position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)',
+                            fontSize: '1rem', fontWeight: 700, color: 'var(--accent-gold)',
+                        }}>$</span>
+                        <input
+                            id="sp-agreedTotal"
+                            type="number"
+                            min="50"
+                            step="0.01"
+                            className="sp-input"
+                            style={{ paddingLeft: '32px', fontSize: '1.05rem', fontWeight: 700 }}
+                            placeholder="e.g. 2500.00"
+                            value={form.agreedProjectTotal ?? ''}
+                            onChange={e => {
+                                const val = e.target.value ? parseFloat(e.target.value) : null
+                                updateField('agreedProjectTotal', val)
+                            }}
+                        />
+                    </div>
+                    {form.agreedProjectTotal && form.agreedProjectTotal >= 50 && (
+                        <div style={{
+                            marginTop: '10px', padding: '10px 14px',
+                            background: 'rgba(212,168,83,0.06)',
+                            border: '1px solid rgba(212,168,83,0.12)',
+                            borderRadius: 'var(--radius-md)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                            fontSize: '0.78rem',
+                        }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>
+                                💳 {t('helpers.depositPreview') || '40% deposit due at checkout'}:
+                            </span>
+                            <span style={{ color: 'var(--accent-gold)', fontWeight: 700, fontSize: '0.9rem' }}>
+                                ${(Math.round(form.agreedProjectTotal * 0.4 * 100) / 100).toFixed(2)}
+                            </span>
+                        </div>
+                    )}
+                </div>
+
                 {/* Aspect ratio */}
                 <div>
                     <label className="sp-label">{t('fields.aspectRatio')}</label>

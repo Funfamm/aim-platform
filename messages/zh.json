@@ -1404,7 +1404,8 @@
       "dynamic": "项目详情",
       "uploads": "添加文件",
       "delivery": "预算与交付",
-      "review": "审核与提交"
+      "review": "审核与提交",
+      "deposit": "确保您的项目"
     },
     "projectTypes": {
       "birthday": {
@@ -1460,7 +1461,8 @@
       "addOns": "附加项",
       "uploads": "上传文件",
       "other": "其他",
-      "describeStyle": "描述您偏好的风格..."
+      "describeStyle": "描述您偏好的风格...",
+      "agreedProjectTotal": "约定项目总金额（美元）"
     },
     "tones": {
       "cinematic": "电影感",
@@ -1517,7 +1519,8 @@
       "submitAnother": "提交另一个项目",
       "returnHome": "返回首页",
       "edit": "编辑",
-      "trackProject": "跟踪您的项目"
+      "trackProject": "跟踪您的项目",
+      "proceedToPayment": "💳 继续付款"
     },
     "confirmation": {
       "title": "您的项目已收到",
@@ -1550,7 +1553,8 @@
       "descriptionMin": "请描述您的项目（至少10个字符）",
       "consentRequired": "您必须同意被联系",
       "maxFiles": "最多允许10个文件",
-      "toneRequired": "至少选择1种基调"
+      "toneRequired": "至少选择1种基调",
+      "agreedTotalRequired": "约定项目总金额为必填项（最低$50）"
     },
     "consent": {
       "uploadPermission": "我确认有权分享上传的内容。",
@@ -1569,7 +1573,9 @@
       "audioLimit": "音频：最大 50 MB",
       "docLimit": "图片/文档：最大 10 MB",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
-      "durationPlaceholder": "例如 30秒、1分钟、5分钟"
+      "durationPlaceholder": "例如 30秒、1分钟、5分钟",
+      "agreedTotalHint": "输入本项目的确切约定价格。结账时将收取40%的定金。",
+      "depositPreview": "结账时支付40%定金"
     },
     "contactMethods": {
       "email": "电子邮件",
@@ -1644,6 +1650,24 @@
       "fast": "快速交付",
       "quality": "优质品质",
       "global": "全球服务"
+    },
+    "deposit": {
+      "subtitle": "支付40%定金以确认您的项目预订。余额将在制作里程碑时开具发票。",
+      "scheduleTitle": "付款时间表",
+      "milestoneDeposit": "定金 — 立即支付",
+      "milestoneMidpoint": "中期付款 — 粗剪完成后",
+      "milestoneFinal": "尾款 — 交付前",
+      "projectTotal": "项目总额",
+      "dueNow": "立即支付",
+      "ofTotal": "的",
+      "dueAtCheckout": "40%定金 — 结账时支付",
+      "remainderNote": "剩余60%在制作里程碑时开具发票",
+      "paymentReceived": "定金已收到",
+      "readyToSubmit": "您的定金已确保。提交您的项目以开始！",
+      "loadingPaypal": "正在加载PayPal...",
+      "processing": "正在处理付款...",
+      "securityNote": "付款通过PayPal安全处理。您的财务信息永远不会存储在我们的服务器上。",
+      "securedNote": "您的付款受PayPal购买保护计划保护。"
     }
   }
 }
