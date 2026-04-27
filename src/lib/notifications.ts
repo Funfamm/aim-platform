@@ -644,7 +644,7 @@ export async function notifyAnnouncement(
     specificUserIds?: string[],
 ): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
-    const inAppLink = link || '/notifications'
+    const inAppLink = link || '/announcements'
 
     let translations: Record<string, Record<string, string>> | null = prebuiltTranslations ?? null
 
