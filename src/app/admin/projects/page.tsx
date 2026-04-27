@@ -441,7 +441,7 @@ export default function AdminProjectsPage() {
     }
 
     /** Manually trigger server-side subtitle generation */
-    const handleServerGenerate = async (pid: string, filmUrl: string) => {
+    const handleServerGenerate = async (pid: string, filmUrl: string, mediaType: string = 'movie') => {
         const cur = serverJobStatus[pid]
         if (cur === 'queued' || cur === 'processing') return
         setServerJobStatus(s => ({ ...s, [pid]: 'queued' }))
@@ -450,7 +450,7 @@ export default function AdminProjectsPage() {
             const r = await fetch('/api/subtitles/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: pid, videoUrl: filmUrl }),
+                body: JSON.stringify({ projectId: pid, videoUrl: filmUrl, mediaType }),
             })
             const d = await r.json().catch(() => ({}))
             if (r.ok && d.jobId) {
@@ -476,7 +476,7 @@ export default function AdminProjectsPage() {
      * Delegates all parsing and API logic to subtitle-file-parser.ts (SRP fix).
      * This function only wires React state setters to the upload callbacks.
      */
-    const handleSrtUpload = async (projectId: string, file: File) => {
+    const handleSrtUpload = async (projectId: string, file: File, mediaType: string = 'movie') => {
         const pid = projectId
         await uploadSubtitleFile(pid, file, {
             onPhase:    (phase) => setSubtitlePhase(s    => ({ ...s, [pid]: phase })),
@@ -487,7 +487,7 @@ export default function AdminProjectsPage() {
                 setTranslateStatus(s  => ({ ...s, [pid]: 'pending' }))
             },
             onError: setError,
-        })
+        }, mediaType)
     }
 
 
@@ -495,7 +495,7 @@ export default function AdminProjectsPage() {
      * Generate or resume multi-language subtitles for a project.
      * Extracted from inline card handler so it can be called from the edit modal.
      */
-    const handleGenerateSubtitles = async (pid: string, filmUrl: string) => {
+    const handleGenerateSubtitles = async (pid: string, filmUrl: string, mediaType: string = 'movie') => {
         const isRunning = subtitlePhase[pid] === 'transcribing' || subtitlePhase[pid] === 'translating'
         if (isRunning) return
 
@@ -552,6 +552,7 @@ export default function AdminProjectsPage() {
                     body: JSON.stringify({
                         projectId: pid, language: 'en', segments: result.segments,
                         transcribedWith: 'whisper-medium', qcIssues: qcSummary.results, status: 'pending',
+                        mediaType,
                     }),
                 })
                 setSubtitleProgress(s => ({ ...s, [pid]: 50 }))
@@ -575,7 +576,7 @@ export default function AdminProjectsPage() {
             const res = await fetch('/api/admin/subtitles/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: pid }),
+                body: JSON.stringify({ projectId: pid, mediaType }),
             })
             if (!res.ok || !res.body) {
                 const err = await res.json().catch(() => ({}))
@@ -628,7 +629,7 @@ export default function AdminProjectsPage() {
     const updateField = (field: keyof FormData, value: string | boolean) =>
         setForm(f => ({ ...f, [field]: value }))
 
-    const openReview = async (projectId: string, title: string) => {
+    const openReview = async (projectId: string, title: string, mediaType: string = 'movie') => {
         const requestId = ++reviewRequestRef.current
         setReviewProjectId(projectId)
         setReviewProjectTitle(title)
@@ -637,7 +638,7 @@ export default function AdminProjectsPage() {
         setReviewLoading(true)
         setRetryingLang(null)
         try {
-            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}`)
+            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}`)
             const { subtitle } = await res.json()
             if (requestId !== reviewRequestRef.current) return
             if (subtitle) {
@@ -1558,7 +1559,7 @@ export default function AdminProjectsPage() {
                                                                 {sMsg}
                                                             </div>
                                                         )}
-                                                        <button type="button" onClick={() => handleServerGenerate(pid, activeMediaUrl)} disabled={isActive} className="btn btn-sm"
+                                                        <button type="button" onClick={() => handleServerGenerate(pid, activeMediaUrl, activeTab)} disabled={isActive} className="btn btn-sm"
                                                             title="Runs faster-whisper on your local worker. Fires automatically when video is saved."
                                                             style={{ fontSize: '0.72rem', fontWeight: 700, background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.12)', border: `1px solid ${isActive ? 'rgba(255,255,255,0.08)' : 'rgba(129,140,248,0.3)'}`, color: isActive ? 'var(--text-tertiary)' : c, cursor: isActive ? 'not-allowed' : 'pointer' }}>
                                                             {btnLabel}
@@ -1568,12 +1569,12 @@ export default function AdminProjectsPage() {
                                                 <div style={{ width: '100%', fontSize: '0.6rem', color: 'var(--text-tertiary)', opacity: 0.55, marginBottom: '-2px' }}>
                                                     ⬆ Server worker — fires automatically on video save &nbsp;·&nbsp; ⬇ Browser fallback — manual only
                                                 </div>
-                                                <button type="button" onClick={() => handleGenerateSubtitles(pid, activeMediaUrl)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
+                                                <button type="button" onClick={() => handleGenerateSubtitles(pid, activeMediaUrl, activeTab)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
                                                     {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[pid] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
                                                 </button>
                                                 <label title="Upload an existing SRT or VTT transcript" className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
                                                     📄 Upload SRT / VTT
-                                                    <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file) }} />
+                                                    <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file, activeTab) }} />
                                                 </label>
                                                 {/* Edit Subtitles — appears as soon as subtitles exist (server ready OR any lang translated) */}
                                                 {(serverJobStatus[pid] === 'ready' || count > 0 || translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial') && (
@@ -1596,7 +1597,7 @@ export default function AdminProjectsPage() {
                                                             type="button"
                                                             disabled={!isApproved || isRunning}
                                                             title={!isApproved ? 'Edit subtitles and click "Approve Source" before translating' : 'Translate to all languages'}
-                                                            onClick={() => isApproved && handleGenerateSubtitles(pid, activeMediaUrl)}
+                                                            onClick={() => isApproved && handleGenerateSubtitles(pid, activeMediaUrl, activeTab)}
                                                             className="btn btn-sm"
                                                             style={{
                                                                 fontSize: '0.72rem', fontWeight: 700,
@@ -1611,8 +1612,8 @@ export default function AdminProjectsPage() {
                                                         </button>
                                                     )
                                                 })()}
-                                                {(translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial' || count > 0) && (
-                                                    <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
+                                                {(serverJobStatus[pid] === 'ready' || translateStatus[pid] === 'complete' || translateStatus[pid] === 'partial' || count > 0) && (
+                                                    <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title, activeTab)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
                                                         🔍 Review Subtitles
                                                     </button>
                                                 )}
@@ -2125,7 +2126,9 @@ export default function AdminProjectsPage() {
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                                     }}>
                                         <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                                            {reviewData.translateStatus === 'complete' ? '✅ All languages complete' : '⚠️ Translation partially complete'}
+                                            {reviewData.translateStatus === 'complete' ? '✅ All languages complete'
+                                                : Object.keys(reviewData.translations).length > 0 ? `⚠️ ${Object.keys(reviewData.translations).length} of ${TOTAL_SUBTITLE_LANGS - 1} translations complete`
+                                                : '📝 Source only — translations not yet generated'}
                                             {reviewData.generatedWith && ` · AI: ${reviewData.generatedWith}`}
                                         </span>
                                         <button onClick={closeReview} className="btn btn-ghost btn-sm">Close</button>

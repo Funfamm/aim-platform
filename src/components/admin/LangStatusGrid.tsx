@@ -44,7 +44,9 @@ export default function LangStatusGrid({
     retryingLang,
     onRetry,
 }: LangStatusGridProps) {
-    const completedCount = Object.keys(translations).length + 1 // +1 for English source
+    // Only count languages that actually have translated segments
+    const translatedLangCount = Object.values(translations).filter(segs => segs && segs.length > 0).length
+    const completedCount = translatedLangCount + (sourceSegmentCount > 0 ? 1 : 0) // +1 for source if it exists
 
     const languages = [
         { code: 'en', label: 'English', isSource: true },

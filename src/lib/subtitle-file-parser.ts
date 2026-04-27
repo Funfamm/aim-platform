@@ -114,6 +114,7 @@ export async function uploadSubtitleFile(
     projectId: string,
     file: File,
     handlers: SubtitleUploadHandlers,
+    mediaType: string = 'movie',
 ): Promise<void> {
     const { onPhase, onStatus, onProgress, onCountReady, onError } = handlers
 
@@ -139,6 +140,7 @@ export async function uploadSubtitleFile(
                 segments,
                 transcribedWith: 'manual-upload',
                 status: 'pending',
+                mediaType,
             }),
         })
 
