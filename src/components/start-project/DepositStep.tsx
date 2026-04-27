@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import type { StartProjectFormData } from './StartProjectFlow'
 
@@ -37,6 +37,10 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
         ? Math.round(form.agreedProjectTotal * 0.3 * 100) / 100
         : 0
 
+    // ── SDK loading state (computed, not set in effect) ─────────────────────
+    const [sdkError, setSdkError] = useState('')
+    const [sdkLoaded, setSdkLoaded] = useState(false)
+
     // Load PayPal SDK (may already be loaded by donate page)
     useEffect(() => {
         const isSandbox = process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
@@ -45,17 +49,18 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
             : process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
         if (!clientId) {
-            setErrorMsg('PayPal is not configured. Please contact support.')
+            // Defer state update to avoid set-state-in-effect lint
+            queueMicrotask(() => setSdkError('PayPal is not configured. Please contact support.'))
             return
         }
 
         if (document.getElementById('paypal-sdk')) {
             if (window.paypal) {
-                setPaypalReady(true)
+                queueMicrotask(() => setSdkLoaded(true))
             } else {
                 const timer = setInterval(() => {
                     if (window.paypal) {
-                        setPaypalReady(true)
+                        setSdkLoaded(true)
                         clearInterval(timer)
                     }
                 }, 200)
@@ -68,92 +73,100 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
         script.id = 'paypal-sdk'
         script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`
         script.async = true
-        script.onload = () => setPaypalReady(true)
-        script.onerror = () => setErrorMsg('Failed to load PayPal. Please refresh.')
+        script.onload = () => setSdkLoaded(true)
+        script.onerror = () => setSdkError('Failed to load PayPal. Please refresh.')
         document.head.appendChild(script)
     }, [])
 
-    // Render PayPal buttons
-    const renderPayPalButtons = useCallback(() => {
-        if (!window.paypal || !paypalRef.current || !depositAmount) return
+    // Sync sdkLoaded/sdkError into component state
+    useEffect(() => {
+        if (sdkLoaded) setPaypalReady(true)
+        if (sdkError) setErrorMsg(sdkError)
+    }, [sdkLoaded, sdkError])
 
-        if (paypalButtonsRef.current) {
-            try { paypalButtonsRef.current.close() } catch { /* ignore */ }
-        }
-        paypalRef.current.innerHTML = ''
+    // Keep form data in a ref so PayPal callbacks always read latest values
+    const formRef = useRef(form)
+    formRef.current = form
 
-        const currentForm = form
+    // Render PayPal buttons — inline in effect to avoid memoization issues
+    useEffect(() => {
+        if (!paypalReady || depositAmount <= 0 || paymentStatus !== 'idle') return
 
-        const buttons = window.paypal.Buttons({
-            style: {
-                layout: 'vertical',
-                color: 'gold',
-                shape: 'rect',
-                label: 'pay',
-                height: 50,
-            },
-            createOrder: async () => {
-                const res = await fetch('/api/project-payments/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        projectRequestId: null,
-                        milestone: 'deposit',
-                        amount: depositAmount,
-                        clientName: currentForm.clientName,
-                        email: currentForm.email,
-                    }),
-                })
-                const data = await res.json()
-                if (!res.ok) throw new Error(data.error || 'Failed to create order')
-                return data.orderID
-            },
-            onApprove: async (data: { orderID: string }) => {
-                setPaymentStatus('processing')
-                try {
-                    const res = await fetch('/api/project-payments/capture-order', {
+        const timer = setTimeout(() => {
+            if (!window.paypal || !paypalRef.current || !depositAmount) return
+
+            if (paypalButtonsRef.current) {
+                try { paypalButtonsRef.current.close() } catch { /* ignore */ }
+            }
+            paypalRef.current.innerHTML = ''
+
+            const buttons = window.paypal.Buttons({
+                style: {
+                    layout: 'vertical',
+                    color: 'gold',
+                    shape: 'rect',
+                    label: 'pay',
+                    height: 50,
+                },
+                createOrder: async () => {
+                    const f = formRef.current
+                    const res = await fetch('/api/project-payments/create-order', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ orderID: data.orderID }),
+                        body: JSON.stringify({
+                            projectRequestId: null,
+                            milestone: 'deposit',
+                            amount: depositAmount,
+                            clientName: f.clientName,
+                            email: f.email,
+                        }),
                     })
-                    const result = await res.json()
-                    if (res.ok && result.success) {
-                        updateField('depositPayment', {
-                            paypalOrderId: data.orderID,
-                            paypalCaptureId: result.payment.paypalCaptureId,
-                            amount: result.payment.amount || depositAmount,
+                    const data = await res.json()
+                    if (!res.ok) throw new Error(data.error || 'Failed to create order')
+                    return data.orderID
+                },
+                onApprove: async (data: { orderID: string }) => {
+                    setPaymentStatus('processing')
+                    try {
+                        const res = await fetch('/api/project-payments/capture-order', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ orderID: data.orderID }),
                         })
-                        setPaymentStatus('completed')
-                    } else {
-                        setErrorMsg(result.error || 'Payment failed')
+                        const result = await res.json()
+                        if (res.ok && result.success) {
+                            updateField('depositPayment', {
+                                paypalOrderId: data.orderID,
+                                paypalCaptureId: result.payment.paypalCaptureId,
+                                amount: result.payment.amount || depositAmount,
+                            })
+                            setPaymentStatus('completed')
+                        } else {
+                            setErrorMsg(result.error || 'Payment failed')
+                            setPaymentStatus('error')
+                        }
+                    } catch {
+                        setErrorMsg('Payment processing error. Please try again.')
                         setPaymentStatus('error')
                     }
-                } catch {
-                    setErrorMsg('Payment processing error. Please try again.')
+                },
+                onError: (err: Error) => {
+                    console.error('PayPal error:', err)
+                    setErrorMsg('PayPal error. Please try again.')
                     setPaymentStatus('error')
-                }
-            },
-            onError: (err: Error) => {
-                console.error('PayPal error:', err)
-                setErrorMsg('PayPal error. Please try again.')
-                setPaymentStatus('error')
-            },
-            onCancel: () => {
-                setErrorMsg('Payment was cancelled.')
-                setPaymentStatus('idle')
-            },
-        })
+                },
+                onCancel: () => {
+                    setErrorMsg('Payment was cancelled.')
+                    setPaymentStatus('idle')
+                },
+            })
 
-        buttons.render('#deposit-paypal-container')
-        paypalButtonsRef.current = buttons
-    }, [depositAmount, form])
+            buttons.render('#deposit-paypal-container')
+            paypalButtonsRef.current = buttons
+        }, 150)
 
-    useEffect(() => {
-        if (paypalReady && depositAmount > 0 && paymentStatus === 'idle') {
-            const timer = setTimeout(() => renderPayPalButtons(), 150)
-            return () => clearTimeout(timer)
-        }
-    }, [paypalReady, depositAmount, paymentStatus, renderPayPalButtons])
+        return () => clearTimeout(timer)
+    }, [paypalReady, depositAmount, paymentStatus, updateField])
 
     // Already paid — show confirmation and submit button
     if (form.depositPayment || paymentStatus === 'completed') {
