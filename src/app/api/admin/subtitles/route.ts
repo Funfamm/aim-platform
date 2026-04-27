@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
-import { findSubtitle, updateSubtitleById, upsertSubtitle } from '@/lib/subtitle-repo'
+import { findSubtitle, updateSubtitleById, upsertSubtitle, deleteSubtitleById, removeTranslationLang } from '@/lib/subtitle-repo'
 import { upsertSubtitleRecord } from '@/lib/subtitle-status-service'
 import { prisma } from '@/lib/db'
 
@@ -255,5 +255,74 @@ export async function PUT(req: NextRequest) {
     } catch (error) {
         console.error('[subtitles/PUT] error:', error)
         return NextResponse.json({ error: 'Failed to approve' }, { status: 500 })
+    }
+}
+
+/**
+ * DELETE — Admin deletes subtitle content scoped by projectId + mediaType.
+ *
+ * Body: {
+ *   projectId: string
+ *   mediaType: 'movie' | 'trailer'
+ *   deleteType: 'source' | 'translation' | 'all'
+ *   language?: string  // required when deleteType === 'translation'
+ *   episodeId?: string
+ * }
+ *
+ * deleteType meanings:
+ *   'source' — Delete the entire subtitle record (source + all translations + revisions)
+ *   'translation' — Remove a single translated language track from the record
+ *   'all' — Same as 'source' (alias for clarity)
+ *
+ * Safety: movie deletion never touches trailer records and vice versa.
+ */
+export async function DELETE(req: NextRequest) {
+    const denied = await requireAdmin()
+    if (denied) return NextResponse.json({ error: denied.error }, { status: denied.status })
+
+    try {
+        const body = await req.json()
+        const { projectId, episodeId, mediaType, deleteType, language } = body as {
+            projectId: string
+            episodeId?: string | null
+            mediaType?: string
+            deleteType: 'source' | 'translation' | 'all'
+            language?: string
+        }
+
+        if (!projectId) {
+            return NextResponse.json({ error: 'projectId required' }, { status: 400 })
+        }
+        if (!deleteType) {
+            return NextResponse.json({ error: 'deleteType required (source | translation | all)' }, { status: 400 })
+        }
+
+        const mt = mediaType || 'movie'
+        const existing = await findSubtitle(projectId, episodeId || null, mt)
+        if (!existing) {
+            return NextResponse.json({ error: `No subtitle record found for mediaType=${mt}` }, { status: 404 })
+        }
+
+        if (deleteType === 'translation') {
+            // Delete a single translated language track
+            if (!language) {
+                return NextResponse.json({ error: 'language required for deleteType=translation' }, { status: 400 })
+            }
+            const result = await removeTranslationLang(existing.id, language)
+            if (result === null) {
+                return NextResponse.json({ error: `Language '${language}' not found in translations` }, { status: 404 })
+            }
+            console.info(`[subtitles/DELETE] Removed ${language} translation from ${mt} record for project ${projectId}`)
+            return NextResponse.json({ ok: true, deletedLang: language, remainingLangs: Object.keys(result) })
+        }
+
+        // deleteType === 'source' or 'all' — delete entire record
+        await deleteSubtitleById(existing.id)
+        console.info(`[subtitles/DELETE] Deleted entire ${mt} subtitle record for project ${projectId}`)
+        return NextResponse.json({ ok: true, deleted: 'all' })
+
+    } catch (error) {
+        console.error('[subtitles/DELETE] error:', error)
+        return NextResponse.json({ error: 'Failed to delete' }, { status: 500 })
     }
 }

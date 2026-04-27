@@ -126,3 +126,49 @@ export async function updateSubtitleById(
 
     await prisma.filmSubtitle.update({ where: { id }, data: payload })
 }
+
+// ── Delete ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Delete a subtitle record and all its revisions by internal ID.
+ * Cascades to SubtitleRevision to maintain referential integrity.
+ */
+export async function deleteSubtitleById(id: string): Promise<void> {
+    // Delete revisions first (FK constraint)
+    await prisma.subtitleRevision.deleteMany({ where: { subtitleId: id } })
+    await prisma.filmSubtitle.delete({ where: { id } })
+}
+
+/**
+ * Remove a single translated language from a subtitle record.
+ * Returns the updated translations map, or null if the lang didn't exist.
+ */
+export async function removeTranslationLang(
+    id: string,
+    lang: string,
+): Promise<Record<string, unknown> | null> {
+    const record = await prisma.filmSubtitle.findUnique({ where: { id } })
+    if (!record || !record.translations) return null
+
+    const translations: Record<string, unknown> = JSON.parse(record.translations)
+    if (!(lang in translations)) return null
+
+    delete translations[lang]
+
+    // Also clean langStatus and vttPaths
+    const langStatus = (record.langStatus as Record<string, string> | null) ?? {}
+    const vttPaths = (record.vttPaths as Record<string, string> | null) ?? {}
+    delete langStatus[lang]
+    delete vttPaths[lang]
+
+    await prisma.filmSubtitle.update({
+        where: { id },
+        data: {
+            translations: JSON.stringify(translations),
+            langStatus: toJson(langStatus),
+            vttPaths: toJson(vttPaths),
+        },
+    })
+
+    return translations
+}

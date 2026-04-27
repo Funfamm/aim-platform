@@ -905,7 +905,12 @@ export default function SubtitleEditor({
             {/* ── Header ── */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', padding: '12px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,15,20,0.98)', flexShrink: 0 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>✏️ Subtitle Editor</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        ✏️ Subtitle Editor
+                        <span style={{ padding: '1px 7px', fontSize: '0.58rem', fontWeight: 700, borderRadius: '4px', background: mediaType === 'trailer' ? 'rgba(168,85,247,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${mediaType === 'trailer' ? 'rgba(168,85,247,0.3)' : 'rgba(59,130,246,0.3)'}`, color: mediaType === 'trailer' ? '#c084fc' : '#60a5fa' }}>
+                            {mediaType === 'trailer' ? '🎬 Trailer' : '🎥 Movie'}
+                        </span>
+                    </div>
                     <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '1px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         <span>{cues.length} cues</span>
                         {warningCount > 0 && <span style={{ color: '#f59e0b' }}>· {warningCount} warning{warningCount !== 1 ? 's' : ''}</span>}

@@ -114,6 +114,7 @@ export default function AdminProjectsPage() {
     // Review modal
     const [reviewProjectId, setReviewProjectId] = useState<string | null>(null)
     const [reviewProjectTitle, setReviewProjectTitle] = useState('')
+    const [reviewMediaType, setReviewMediaType] = useState<string>('movie')
     const [reviewData, setReviewData] = useState<ReviewSubtitle | null>(null)
     const [reviewLang, setReviewLang] = useState('en')
     const [reviewLoading, setReviewLoading] = useState(false)
@@ -192,22 +193,33 @@ export default function AdminProjectsPage() {
             .then(r => { if (r.status === 401) { window.location.href = '/admin/login'; return [] } return r.json() })
             .then((data: Project[]) => {
                 setProjects(data)
-                // Check which projects already have subtitles
+                // Check which projects already have subtitles — check BOTH movie + trailer independently
                 data.forEach((p: Project) => {
-                    if (p.filmUrl) {
-                        fetch(`/api/subtitles/${p.id}?lang=en`)
+                    // Helper to fetch subtitle status for a specific mediaType
+                    const checkSubtitle = (mediaType: 'movie' | 'trailer') => {
+                        fetch(`/api/subtitles/${p.id}?lang=en&mediaType=${mediaType}`)
                             .then(r => r.json())
                             .then(sub => {
                                 const count = sub.available?.length ?? 0
-                                setTranslationCount(s => ({ ...s, [p.id]: count }))
-                                setTranslateStatus(s => ({ ...s, [p.id]: sub.translateStatus ?? 'pending' }))
-                                if (count > 0) {
+                                // Use composite key: projectId:mediaType for per-media-type tracking
+                                const key = `${p.id}:${mediaType}`
+                                setTranslationCount(s => ({ ...s, [key]: count }))
+                                setTranslateStatus(s => ({ ...s, [key]: sub.translateStatus ?? 'pending' }))
+                                // Also update the legacy per-project key with the "active" media type
+                                // (the media type that the default tab would show)
+                                const isDefaultMedia = (p.filmUrl && mediaType === 'movie') ||
+                                    (!p.filmUrl && p.trailerUrl && mediaType === 'trailer')
+                                if (isDefaultMedia && count > 0) {
+                                    setTranslationCount(s => ({ ...s, [p.id]: count }))
+                                    setTranslateStatus(s => ({ ...s, [p.id]: sub.translateStatus ?? 'pending' }))
                                     setSubtitleStatus(s => ({ ...s, [p.id]: count >= TOTAL_SUBTITLE_LANGS ? '✓ All languages ready' : `✓ ${count} lang` }))
                                     setSubtitlePhase(s => ({ ...s, [p.id]: 'done' }))
                                 }
                             })
                             .catch(() => {})
                     }
+                    if (p.filmUrl)    checkSubtitle('movie')
+                    if (p.trailerUrl) checkSubtitle('trailer')
                 })
             })
             .catch(() => setError('Failed to load projects'))
@@ -263,14 +275,27 @@ export default function AdminProjectsPage() {
             fetch('/api/admin/movie-rolls').then(r => r.ok ? r.json() : []),
             fetch(`/api/admin/projects/${p.id}/rolls`).then(r => r.ok ? r.json() : []),
             // Load the subtitle approval gate status so Translate button renders correctly
-            fetch(`/api/admin/subtitles?projectId=${p.id}`)
-                .then(r => r.ok ? r.json() : {})
-                .then((res: { subtitle?: { status?: string } }) => {
-                    if (res.subtitle?.status) {
-                        setSubtitleApproval(prev => ({ ...prev, [p.id]: res.subtitle!.status! }))
-                    }
-                })
-                .catch(() => {}),
+            // Check both movie and trailer records independently
+            ...(p.filmUrl ? [
+                fetch(`/api/admin/subtitles?projectId=${p.id}&mediaType=movie`)
+                    .then(r => r.ok ? r.json() : {})
+                    .then((res: { subtitle?: { status?: string } }) => {
+                        if (res.subtitle?.status) {
+                            setSubtitleApproval(prev => ({ ...prev, [`${p.id}:movie`]: res.subtitle!.status!, ...(p.filmUrl ? { [p.id]: res.subtitle!.status! } : {}) }))
+                        }
+                    })
+                    .catch(() => {})
+            ] : []),
+            ...(p.trailerUrl ? [
+                fetch(`/api/admin/subtitles?projectId=${p.id}&mediaType=trailer`)
+                    .then(r => r.ok ? r.json() : {})
+                    .then((res: { subtitle?: { status?: string } }) => {
+                        if (res.subtitle?.status) {
+                            setSubtitleApproval(prev => ({ ...prev, [`${p.id}:trailer`]: res.subtitle!.status!, ...(!p.filmUrl ? { [p.id]: res.subtitle!.status! } : {}) }))
+                        }
+                    })
+                    .catch(() => {})
+            ] : []),
         ]).then(([rolls, assignedIds]) => {
             setAllRolls(rolls)
             setSelectedRollIds(assignedIds)
@@ -341,9 +366,9 @@ export default function AdminProjectsPage() {
             } else {
                 setProjects(prev => [...prev, saved])
             }
-            // Re-check subtitle status if this project has a film URL (new or updated)
+            // Re-check subtitle status if this project has media URLs (new or updated)
             if (saved.filmUrl) {
-                fetch(`/api/subtitles/${saved.id}?lang=en`)
+                fetch(`/api/subtitles/${saved.id}?lang=en&mediaType=movie`)
                     .then(r => r.json())
                     .then(sub => {
                         const count = sub.available?.length ?? 0
@@ -367,17 +392,17 @@ export default function AdminProjectsPage() {
                     fetch('/api/subtitles/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ projectId: pid, videoUrl: saved.filmUrl }),
+                        body: JSON.stringify({ projectId: pid, videoUrl: saved.filmUrl, mediaType: 'movie' }),
                     }).then(async r => {
                         const d = await r.json().catch(() => ({}))
                         if (r.ok && d.jobId) {
                             setServerJobId(s => ({ ...s, [pid]: d.jobId }))
                             setServerJobMsg(s => ({ ...s, [pid]: '🤖 Subtitle job queued — worker is transcribing in the background.' }))
-                            pollServerJob(pid, d.jobId)
+                            pollServerJob(pid, d.jobId, 'movie')
                         } else if (r.status === 409) {
                             setServerJobStatus(s => ({ ...s, [pid]: d.status ?? 'processing' }))
                             setServerJobMsg(s => ({ ...s, [pid]: '♻️ A subtitle job is already active for this project.' }))
-                            if (d.jobId) pollServerJob(pid, d.jobId)
+                            if (d.jobId) pollServerJob(pid, d.jobId, 'movie')
                         } else {
                             setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
                             setServerJobMsg(s => ({ ...s, [pid]: '⚠️ Worker not reachable. Set WORKER_URL in Vercel env, or use the manual button.' }))
@@ -408,7 +433,7 @@ export default function AdminProjectsPage() {
     }
 
     /** Poll the server job status every 5s until terminal state */
-    const pollServerJob = (pid: string, jobId: string) => {
+    const pollServerJob = (pid: string, jobId: string, mediaType: string = 'movie') => {
         let attempts = 0
         const iv = setInterval(async () => {
             attempts++
@@ -426,7 +451,7 @@ export default function AdminProjectsPage() {
                 if (d.status === 'ready') {
                     clearInterval(iv)
                     setServerJobMsg(s => ({ ...s, [pid]: '✅ Subtitles ready! You can now run translation.' }))
-                    fetch(`/api/subtitles/${pid}?lang=en`).then(r2 => r2.json()).then(sub => {
+                    fetch(`/api/subtitles/${pid}?lang=en&mediaType=${mediaType}`).then(r2 => r2.json()).then(sub => {
                         setTranslationCount(s => ({ ...s, [pid]: sub.available?.length ?? 0 }))
                         setTranslateStatus(s => ({ ...s, [pid]: sub.translateStatus ?? 'pending' }))
                     }).catch(() => {})
@@ -456,11 +481,11 @@ export default function AdminProjectsPage() {
             if (r.ok && d.jobId) {
                 setServerJobId(s => ({ ...s, [pid]: d.jobId }))
                 setServerJobMsg(s => ({ ...s, [pid]: '🤖 Job queued — worker is processing in background.' }))
-                pollServerJob(pid, d.jobId)
+                pollServerJob(pid, d.jobId, mediaType)
             } else if (r.status === 409) {
                 setServerJobStatus(s => ({ ...s, [pid]: d.status ?? 'processing' }))
                 setServerJobMsg(s => ({ ...s, [pid]: '♻️ A subtitle job is already active.' }))
-                if (d.jobId) pollServerJob(pid, d.jobId)
+                if (d.jobId) pollServerJob(pid, d.jobId, mediaType)
             } else {
                 setServerJobStatus(s => ({ ...s, [pid]: 'failed' }))
                 setServerJobMsg(s => ({ ...s, [pid]: `⚠️ ${d.error || "Worker not reachable. Is it running?"}` }))
@@ -517,7 +542,7 @@ export default function AdminProjectsPage() {
         let hasDbTranscript = hasExistingTranscript || hasWorkerTranscript
         if (!hasDbTranscript && !isResume) {
             try {
-                const chk = await fetch(`/api/admin/subtitles?projectId=${pid}`)
+                const chk = await fetch(`/api/admin/subtitles?projectId=${pid}&mediaType=${mediaType}`)
                 const { subtitle } = await chk.json()
                 if (subtitle?.segments) hasDbTranscript = true
             } catch { /* ignore — fall through to browser path */ }
@@ -633,6 +658,7 @@ export default function AdminProjectsPage() {
         const requestId = ++reviewRequestRef.current
         setReviewProjectId(projectId)
         setReviewProjectTitle(title)
+        setReviewMediaType(mediaType)
         setReviewLang('en')
         setReviewData(null)
         setReviewLoading(true)
@@ -715,7 +741,7 @@ export default function AdminProjectsPage() {
             const res = await fetch('/api/admin/subtitles/retry-lang', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: reviewProjectId, lang }),
+                body: JSON.stringify({ projectId: reviewProjectId, lang, mediaType: reviewMediaType }),
             })
             if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
             // Optimistically mark as processing in the UI
@@ -725,8 +751,8 @@ export default function AdminProjectsPage() {
             } : prev)
             await readSSEStream<{ phase?: string; lang?: string }>(res.body.getReader(), async (data) => {
                 if (data.phase === 'done') {
-                    // Refresh subtitle data from server
-                    const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}`)
+                    // Refresh subtitle data from server (scoped by mediaType)
+                    const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}&mediaType=${reviewMediaType}`)
                     const { subtitle } = await freshRes.json()
                     if (subtitle) {
                         setReviewData({
@@ -756,9 +782,63 @@ export default function AdminProjectsPage() {
         setRetryingLang(null)
     }
 
+    /** Delete subtitle content from the review modal — scoped by mediaType */
+    const handleDeleteSubtitle = async (deleteType: 'source' | 'translation', language?: string) => {
+        if (!reviewProjectId) return
+
+        const mediaLabel = reviewMediaType === 'trailer' ? 'Trailer' : 'Movie'
+        const confirmMsg = deleteType === 'translation' && language
+            ? `Are you sure you want to delete ${mediaLabel} ${language.toUpperCase()} translation?\n\nThis cannot be undone.`
+            : `Are you sure you want to delete all ${mediaLabel} subtitles (source + translations)?\n\nThis cannot be undone.`
+        if (!confirm(confirmMsg)) return
+
+        try {
+            const res = await fetch('/api/admin/subtitles', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    projectId: reviewProjectId,
+                    mediaType: reviewMediaType,
+                    deleteType,
+                    language,
+                }),
+            })
+            const d = await res.json()
+            if (!res.ok) throw new Error(d.error || 'Delete failed')
+
+            if (deleteType === 'source') {
+                // Entire record deleted — close review and reset status
+                setTranslationCount(s => ({ ...s, [reviewProjectId]: 0 }))
+                setTranslateStatus(s => ({ ...s, [reviewProjectId]: 'pending' }))
+                setSubtitlePhase(s => ({ ...s, [reviewProjectId]: null }))
+                setSubtitleStatus(s => { const n = { ...s }; delete n[reviewProjectId]; return n })
+                setServerJobStatus(s => ({ ...s, [reviewProjectId]: 'idle' }))
+                closeReview()
+            } else {
+                // Single language removed — refresh review data
+                const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}&mediaType=${reviewMediaType}`)
+                const { subtitle } = await freshRes.json()
+                if (subtitle) {
+                    setReviewData({
+                        segments: JSON.parse(subtitle.segments || '[]'),
+                        translations: subtitle.translations ? JSON.parse(subtitle.translations) : {},
+                        qcIssues: subtitle.qcIssues ? JSON.parse(subtitle.qcIssues) : [],
+                        translateStatus: subtitle.translateStatus || 'pending',
+                        transcribedWith: subtitle.transcribedWith || null,
+                        generatedWith: subtitle.generatedWith || null,
+                        langStatus: subtitle.langStatus ?? null,
+                    })
+                }
+            }
+        } catch (err) {
+            alert(`Delete failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        }
+    }
+
     const closeReview = () => {
         setReviewProjectId(null)
         setReviewData(null)
+        setReviewMediaType('movie')
     }
 
     const openCastModal = async (projectId: string, title: string) => {
@@ -1588,7 +1668,7 @@ export default function AdminProjectsPage() {
                                                 )}
                                                 {/* Translate — gated on approval */}
                                                 {(() => {
-                                                    const approval = subtitleApproval[pid] || translateStatus[pid]
+                                                    const approval = subtitleApproval[`${pid}:${activeTab}`] || subtitleApproval[pid] || translateStatus[pid]
                                                     const isApproved = approval === 'approved_source'
                                                     const hasSubtitles = (serverJobStatus[pid] === 'ready') || (count > 0)
                                                     if (!hasSubtitles) return null
@@ -1973,10 +2053,13 @@ export default function AdminProjectsPage() {
                         }}>
                             <div>
                                 <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '2px' }}>
-                                    🔍 Subtitle Review
+                                    🔍 {reviewMediaType === 'trailer' ? 'Trailer' : 'Movie'} Subtitle Review
                                 </h2>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                     {reviewProjectTitle}
+                                    <span style={{ padding: '1px 6px', marginLeft: '6px', fontSize: '0.6rem', fontWeight: 700, borderRadius: '4px', background: reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.3)' : 'rgba(59,130,246,0.3)'}`, color: reviewMediaType === 'trailer' ? '#c084fc' : '#60a5fa' }}>
+                                        {reviewMediaType === 'trailer' ? '🎬 Trailer' : '🎥 Movie'}
+                                    </span>
                                     {reviewData && ` · ${reviewData.segments.length} segments`}
                                     {reviewData?.transcribedWith && ` · ${reviewData.transcribedWith}`}
                                 </p>
@@ -2123,15 +2206,37 @@ export default function AdminProjectsPage() {
                                     <div style={{
                                         padding: 'var(--space-md) var(--space-xl)',
                                         borderTop: '1px solid var(--border-subtle)',
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
                                     }}>
-                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', flex: 1, minWidth: 0 }}>
                                             {reviewData.translateStatus === 'complete' ? '✅ All languages complete'
                                                 : Object.keys(reviewData.translations).length > 0 ? `⚠️ ${Object.keys(reviewData.translations).length} of ${TOTAL_SUBTITLE_LANGS - 1} translations complete`
                                                 : '📝 Source only — translations not yet generated'}
                                             {reviewData.generatedWith && ` · AI: ${reviewData.generatedWith}`}
                                         </span>
-                                        <button onClick={closeReview} className="btn btn-ghost btn-sm">Close</button>
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                                            {/* Delete single translation track */}
+                                            {reviewLang !== 'en' && reviewData.translations[reviewLang] && (
+                                                <button
+                                                    onClick={() => handleDeleteSubtitle('translation', reviewLang)}
+                                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 8px', borderRadius: '5px', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', transition: 'all 0.15s' }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)' }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
+                                                >
+                                                    🗑 Delete {reviewLang.toUpperCase()} Track
+                                                </button>
+                                            )}
+                                            {/* Delete entire subtitle record */}
+                                            <button
+                                                onClick={() => handleDeleteSubtitle('source')}
+                                                style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 8px', borderRadius: '5px', cursor: 'pointer', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', transition: 'all 0.15s' }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)' }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
+                                            >
+                                                🗑 Delete All
+                                            </button>
+                                            <button onClick={closeReview} className="btn btn-ghost btn-sm">Close</button>
+                                        </div>
                                     </div>
                                 </div>
                             )
@@ -2170,7 +2275,12 @@ export default function AdminProjectsPage() {
                     onClose={() => setEditorProjectId(null)}
                     onSaved={(newStatus) => {
                         // Update the approval lookup so the translate gate re-renders
-                        setSubtitleApproval(prev => ({ ...prev, [editorProjectId]: newStatus }))
+                        // Write both the composite key and the legacy key
+                        setSubtitleApproval(prev => ({
+                            ...prev,
+                            [editorProjectId]: newStatus,
+                            [`${editorProjectId}:${editorMediaType}`]: newStatus,
+                        }))
                     }}
                 />
             )}
