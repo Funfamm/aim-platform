@@ -37,10 +37,6 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
         ? Math.round(form.agreedProjectTotal * 0.3 * 100) / 100
         : 0
 
-    // ── SDK loading state (computed, not set in effect) ─────────────────────
-    const [sdkError, setSdkError] = useState('')
-    const [sdkLoaded, setSdkLoaded] = useState(false)
-
     // Load PayPal SDK (may already be loaded by donate page)
     useEffect(() => {
         const isSandbox = process.env.NEXT_PUBLIC_PAYPAL_MODE === 'sandbox'
@@ -49,18 +45,19 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
             : process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID
 
         if (!clientId) {
-            // Defer state update to avoid set-state-in-effect lint
-            queueMicrotask(() => setSdkError('PayPal is not configured. Please contact support.'))
+            queueMicrotask(() => setErrorMsg('PayPal is not configured. Please contact support.'))
             return
         }
 
+        const markReady = () => queueMicrotask(() => setPaypalReady(true))
+
         if (document.getElementById('paypal-sdk')) {
             if (window.paypal) {
-                queueMicrotask(() => setSdkLoaded(true))
+                markReady()
             } else {
                 const timer = setInterval(() => {
                     if (window.paypal) {
-                        setSdkLoaded(true)
+                        markReady()
                         clearInterval(timer)
                     }
                 }, 200)
@@ -73,17 +70,10 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
         script.id = 'paypal-sdk'
         script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD&intent=capture`
         script.async = true
-        script.onload = () => setSdkLoaded(true)
-        script.onerror = () => setSdkError('Failed to load PayPal. Please refresh.')
+        script.onload = () => setPaypalReady(true)
+        script.onerror = () => setErrorMsg('Failed to load PayPal. Please refresh.')
         document.head.appendChild(script)
     }, [])
-
-    // Sync sdkLoaded/sdkError into component state
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    useEffect(() => {
-        if (sdkLoaded) setPaypalReady(true)
-        if (sdkError) setErrorMsg(sdkError)
-    }, [sdkLoaded, sdkError])
 
     // Keep form data in a ref so PayPal callbacks always read latest values
     const formRef = useRef(form)
