@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
 export async function GET() {
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst({ select: { appleClientId: true } })
     const clientId = (settings as Record<string, string> | null)?.appleClientId || ''
 
     if (!clientId) {

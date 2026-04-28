@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Admin-configurable reveal delay (default 6 hours)
-    const settings = await prisma.siteSettings.findFirst().catch(() => null)
+    const settings = await prisma.siteSettings.findFirst({ select: { resultRevealDelayHours: true } }).catch(() => null)
     const REVEAL_DELAY_HOURS = (settings as any)?.resultRevealDelayHours ?? 6
     const encoder = new TextEncoder()
 

@@ -260,7 +260,7 @@ export async function POST(
         // score it when a free-tier API key still has quota available.
         let siteSettings: Awaited<ReturnType<typeof prisma.siteSettings.findFirst>> = null
         try {
-            siteSettings = await prisma.siteSettings.findFirst()
+            siteSettings = await prisma.siteSettings.findFirst({ select: { aiAutoAudit: true, notifyOnApplication: true, notifyEmail: true, contactEmail: true } })
         } catch (settingsErr) {
             console.error('Failed to load SiteSettings (schema drift?):', settingsErr)
         }

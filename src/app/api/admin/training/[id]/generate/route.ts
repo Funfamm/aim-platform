@@ -25,7 +25,7 @@ function is429(msg: string): boolean {
 
 // Fetch all API keys for the training agent — respects cooledDownUntil
 async function getTrainingKey() {
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst({ select: { geminiApiKey: true, aiModel: true } })
     const now = new Date()
 
     // Try training-scoped keys first, exclude keys still on cooldown

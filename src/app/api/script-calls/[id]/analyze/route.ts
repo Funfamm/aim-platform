@@ -23,7 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     if (!submission) return NextResponse.json({ error: 'Submission not found' }, { status: 404 })
 
     // Get settings for model preference
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst({ select: { geminiApiKey: true, aiModel: true } })
 
     // Get API keys scoped to "scripts" agent with rotation
     let keys = await prisma.apiKey.findMany({

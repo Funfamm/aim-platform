@@ -887,7 +887,7 @@ export async function getAutoAdvanceStatus(
     currentStatus: string,
     aiScore: number
 ): Promise<'shortlisted' | 'not_selected' | 'under_review' | null> {
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst({ select: { pipelineAutoAdvance: true, autoShortlistThreshold: true, autoRejectThreshold: true } })
     if (!settings?.pipelineAutoAdvance) return null
 
     const shortlistThreshold = settings.autoShortlistThreshold ?? 75

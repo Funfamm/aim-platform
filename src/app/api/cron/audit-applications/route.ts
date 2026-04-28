@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const settings = await prisma.siteSettings.findFirst().catch(() => null)
+    const settings = await prisma.siteSettings.findFirst({ select: { resultRevealDelayHours: true, auditQueueBatchSize: true } }).catch(() => null)
     const REVEAL_DELAY_HOURS = (settings as any)?.resultRevealDelayHours ?? 6
     const BATCH_SIZE: number = (settings as any)?.auditQueueBatchSize ?? 10
 

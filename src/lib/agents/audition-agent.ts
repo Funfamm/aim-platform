@@ -147,7 +147,7 @@ function detectProvider(model: string): 'groq' | 'gemini' | 'openai' | null {
  */
 async function getAIConfig() {
     try {
-        const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
+        const settings = await prisma.siteSettings.findUnique({ where: { id: 'default' }, select: { aiModel: true, aiCustomPrompt: true, geminiApiKey: true } })
 
         // Determine model and provider from settings
         const model = settings?.aiModel || ''
@@ -418,7 +418,7 @@ async function runPreChecks(input: AuditInput, warnings: string[]): Promise<PreC
     }
 
     // Load site settings once for voice requirement
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst({ select: { requireVoice: true } })
     const requireVoice = settings?.requireVoice ?? false
 
     // ── Age range check ──

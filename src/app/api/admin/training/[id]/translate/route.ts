@@ -34,7 +34,7 @@ function isDailyQuotaError(msg: string): boolean {
 
 async function callAI(prompt: string): Promise<string> {
     checkDailyReset()
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst({ select: { geminiApiKey: true, aiModel: true } })
     let keys = await prisma.apiKey.findMany({
         where: { isActive: true, assignedAgent: { in: ['training', 'all'] } },
         orderBy: [{ lastUsed: 'asc' }, { usageCount: 'asc' }],

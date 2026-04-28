@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 
 export async function GET() {
     try {
-        const settings = await prisma.siteSettings.findFirst()
+        const settings = await prisma.siteSettings.findFirst({ select: { googleClientId: true, appleClientId: true } })
         const s = settings as Record<string, string> | null
 
         return NextResponse.json({

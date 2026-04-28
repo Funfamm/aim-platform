@@ -115,7 +115,7 @@ export async function POST(request: Request) {
             }).catch(err => console.error('[project-payments] Email error:', err))
 
             // Notify admin
-            const settings = await prisma.siteSettings.findFirst()
+            const settings = await prisma.siteSettings.findFirst({ select: { notifyEmail: true, contactEmail: true } })
             const adminEmail = settings?.notifyEmail || settings?.contactEmail
             if (adminEmail) {
                 sendTransactionalEmail({

@@ -154,7 +154,7 @@ export async function POST(
             newStatus = 'under_review' as import('@prisma/client').ApplicationStatus
         }
 
-        const settings = await prisma.siteSettings.findFirst().catch(() => null)
+        const settings = await prisma.siteSettings.findFirst({ select: { resultRevealDelayHours: true } }).catch(() => null)
         const REVEAL_DELAY_HOURS = (settings as any)?.resultRevealDelayHours ?? 6
 
         // Store result — admin-triggered audits are also subject to reveal delay

@@ -28,7 +28,7 @@ export async function PUT(req: Request) {
         }
 
         // Read current settings row
-        const settings = await (prisma as any).siteSettings.findFirst()
+        const settings = await (prisma as any).siteSettings.findFirst({ select: { id: true, emailTemplateOverrides: true } })
 
         const overrides: Record<string, Record<string, string>> = (settings?.emailTemplateOverrides)
             ? JSON.parse(settings.emailTemplateOverrides as string)
@@ -70,7 +70,7 @@ export async function DELETE(req: Request) {
             return NextResponse.json({ error: 'templateKey is required' }, { status: 400 })
         }
 
-        const settings = await (prisma as any).siteSettings.findFirst()
+        const settings = await (prisma as any).siteSettings.findFirst({ select: { id: true, emailTemplateOverrides: true } })
         if (!settings?.id) return NextResponse.json({ success: true, templateKey })
 
         const overrides: Record<string, Record<string, string>> = settings.emailTemplateOverrides

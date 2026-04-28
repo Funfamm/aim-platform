@@ -118,7 +118,7 @@ export async function POST(request: Request) {
         }
 
         // Notify admin
-        const settings = await prisma.siteSettings.findFirst()
+        const settings = await prisma.siteSettings.findFirst({ select: { notifyOnDonation: true, notifyEmail: true, contactEmail: true } })
         if (settings?.notifyOnDonation) {
             const adminEmail = settings.notifyEmail || settings.contactEmail
             if (adminEmail) {

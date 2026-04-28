@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     }
 
     try {
-        const settings = await prisma.siteSettings.findFirst()
+        const settings = await prisma.siteSettings.findFirst({ select: { appleClientId: true, appleTeamId: true, appleKeyId: true, applePrivateKey: true } })
         const s = settings as Record<string, string> | null
         const clientId = s?.appleClientId || ''
         const teamId = s?.appleTeamId || ''

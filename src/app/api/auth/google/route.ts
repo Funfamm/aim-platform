@@ -4,7 +4,7 @@ import crypto from 'crypto'
 
 export async function GET(req: Request) {
     // Get Google OAuth credentials from env or DB settings
-    const settings = await prisma.siteSettings.findFirst()
+    const settings = await prisma.siteSettings.findFirst({ select: { googleClientId: true } })
     const clientId = process.env.GOOGLE_CLIENT_ID || (settings as Record<string, string> | null)?.googleClientId || ''
 
     if (!clientId) {

@@ -84,7 +84,7 @@ export async function GET(req: Request) {
     // Fetch saved field overrides for this template
     let overrides: Record<string, string> | null = null
     try {
-        const settings = await prisma.siteSettings.findFirst() as any
+        const settings = await prisma.siteSettings.findFirst({ select: { emailTemplateOverrides: true } }) as any
         if (settings?.emailTemplateOverrides) {
             const all = JSON.parse(settings.emailTemplateOverrides)
             if (all[template]) overrides = all[template]

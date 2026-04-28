@@ -7,7 +7,7 @@ import { donationThankYouWithOverrides, donationAdminNotification } from '@/lib/
 export async function POST(request: Request) {
     try {
         // Check if donations are enabled
-        const settings = await prisma.siteSettings.findFirst()
+        const settings = await prisma.siteSettings.findFirst({ select: { donationsEnabled: true, donationMinAmount: true, notifyOnDonation: true, notifyEmail: true, contactEmail: true } })
         if (settings && !settings.donationsEnabled) {
             return NextResponse.json({ error: 'Donations are currently disabled' }, { status: 403 })
         }
