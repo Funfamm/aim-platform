@@ -139,12 +139,12 @@ export default function EmailAnalyticsPage() {
                         {/* Stat Cards */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
                             {[
-                                { label: 'Total Sent', value: data.allTime.totalSent, icon: '📤', color: '#60a5fa' },
-                                { label: 'Delivered', value: data.allTime.totalSuccess, icon: '✅', color: '#34d399' },
-                                { label: 'Failed', value: data.allTime.totalFailed, icon: '❌', color: '#ef4444' },
-                                { label: 'Opened', value: data.allTime.totalOpened, icon: '👁', color: '#c084fc' },
-                                { label: 'Success Rate', value: `${data.allTime.successRate}%`, icon: '📈', color: '#34d399' },
-                                { label: 'Open Rate ~', value: `${data.allTime.openRate}%`, icon: '📬', color: '#f59e0b' },
+                                { label: 'Total Sent', value: data.periodStats.sent, icon: '📤', color: '#60a5fa' },
+                                { label: 'Delivered', value: data.periodStats.success, icon: '✅', color: '#34d399' },
+                                { label: 'Failed', value: data.periodStats.failed, icon: '❌', color: '#ef4444' },
+                                { label: 'Opened', value: data.periodStats.opened, icon: '👁', color: '#c084fc' },
+                                { label: 'Success Rate', value: `${data.periodStats.successRate}%`, icon: '📈', color: '#34d399' },
+                                { label: 'Open Rate ~', value: `${data.periodStats.openRate}%`, icon: '📬', color: '#f59e0b' },
                             ].map(s => (
                                 <div key={s.label} style={{
                                     padding: '16px', borderRadius: '12px',
@@ -186,7 +186,7 @@ export default function EmailAnalyticsPage() {
                         {/* Period summary */}
                         <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                             <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '12px' }}>
-                                Last {data.periodStats.days} Days
+                                {period === 'daily' ? 'Last 7 Days' : period === 'weekly' ? 'Last 4 Weeks' : 'Last 3 Months'}
                             </div>
                             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '0.85rem' }}>
                                 <span><strong style={{ color: '#60a5fa' }}>{data.periodStats.sent}</strong> sent</span>
@@ -202,7 +202,7 @@ export default function EmailAnalyticsPage() {
                         {data.typeBreakdown.length > 0 && (
                             <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                                 <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#c084fc', marginBottom: '12px' }}>
-                                    By Type (30d)
+                                    By Type ({period === 'daily' ? '7d' : period === 'weekly' ? '30d' : '90d'})
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                     {data.typeBreakdown.map(t => (
