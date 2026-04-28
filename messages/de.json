@@ -1404,7 +1404,22 @@
       "uploads": "Dateien hinzufügen",
       "delivery": "Budget & Lieferung",
       "review": "Prüfen & Absenden",
-      "deposit": "Projekt sichern"
+      "deposit": "Projekt sichern",
+      "basics": "Ihr Projekt"
+    },
+    "stepLabels": {
+      "basics": "Ihr Projekt",
+      "creative": "Kreativ & Budget",
+      "review": "Überprüfung"
+    },
+    "sections": {
+      "projectType": "Welche Art von Projekt?",
+      "yourInfo": "Ihre Daten",
+      "projectDetails": "Projektdetails",
+      "typeSpecific": "Erzählen Sie uns mehr",
+      "creativeDirection": "Kreative Richtung",
+      "budgetDelivery": "Budget & Lieferung",
+      "attachments": "Anhänge"
     },
     "projectTypes": {
       "birthday": {

@@ -1404,7 +1404,22 @@
       "uploads": "파일 추가",
       "delivery": "예산 및 납품",
       "review": "검토 및 제출",
-      "deposit": "프로젝트 확보"
+      "deposit": "프로젝트 확보",
+      "basics": "내 프로젝트"
+    },
+    "stepLabels": {
+      "basics": "내 프로젝트",
+      "creative": "크리에이티브 & 예산",
+      "review": "검토"
+    },
+    "sections": {
+      "projectType": "어떤 프로젝트인가요?",
+      "yourInfo": "고객 정보",
+      "projectDetails": "프로젝트 상세",
+      "typeSpecific": "좀 더 알려주세요",
+      "creativeDirection": "크리에이티브 방향",
+      "budgetDelivery": "예산 & 납품",
+      "attachments": "첨부파일"
     },
     "projectTypes": {
       "birthday": {

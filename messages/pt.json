@@ -1404,7 +1404,22 @@
       "uploads": "Adicionar arquivos",
       "delivery": "Orçamento e entrega",
       "review": "Revisar e enviar",
-      "deposit": "Garanta seu projeto"
+      "deposit": "Garanta seu projeto",
+      "basics": "Seu projeto"
+    },
+    "stepLabels": {
+      "basics": "Seu projeto",
+      "creative": "Criativo & Orçamento",
+      "review": "Revisão"
+    },
+    "sections": {
+      "projectType": "Que tipo de projeto?",
+      "yourInfo": "Suas informações",
+      "projectDetails": "Detalhes do projeto",
+      "typeSpecific": "Conte-nos mais",
+      "creativeDirection": "Direção criativa",
+      "budgetDelivery": "Orçamento & Entrega",
+      "attachments": "Anexos"
     },
     "projectTypes": {
       "birthday": {

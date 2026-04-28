@@ -1404,7 +1404,22 @@
       "uploads": "Добавить файлы",
       "delivery": "Бюджет и доставка",
       "review": "Проверка и отправка",
-      "deposit": "Обеспечьте свой проект"
+      "deposit": "Обеспечьте свой проект",
+      "basics": "Ваш проект"
+    },
+    "stepLabels": {
+      "basics": "Ваш проект",
+      "creative": "Креатив & Бюджет",
+      "review": "Проверка"
+    },
+    "sections": {
+      "projectType": "Какой тип проекта?",
+      "yourInfo": "Ваши данные",
+      "projectDetails": "Детали проекта",
+      "typeSpecific": "Расскажите подробнее",
+      "creativeDirection": "Креативное направление",
+      "budgetDelivery": "Бюджет & Доставка",
+      "attachments": "Вложения"
     },
     "projectTypes": {
       "birthday": {

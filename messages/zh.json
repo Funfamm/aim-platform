@@ -1405,7 +1405,22 @@
       "uploads": "添加文件",
       "delivery": "预算与交付",
       "review": "审核与提交",
-      "deposit": "确保您的项目"
+      "deposit": "确保您的项目",
+      "basics": "您的项目"
+    },
+    "stepLabels": {
+      "basics": "您的项目",
+      "creative": "创意与预算",
+      "review": "审核"
+    },
+    "sections": {
+      "projectType": "什么类型的项目？",
+      "yourInfo": "您的信息",
+      "projectDetails": "项目详情",
+      "typeSpecific": "告诉我们更多",
+      "creativeDirection": "创意方向",
+      "budgetDelivery": "预算与交付",
+      "attachments": "附件"
     },
     "projectTypes": {
       "birthday": {

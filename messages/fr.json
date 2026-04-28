@@ -1404,7 +1404,22 @@
       "uploads": "Ajouter des fichiers",
       "delivery": "Budget et livraison",
       "review": "Vérifier et soumettre",
-      "deposit": "Sécurisez votre projet"
+      "deposit": "Sécurisez votre projet",
+      "basics": "Votre projet"
+    },
+    "stepLabels": {
+      "basics": "Votre projet",
+      "creative": "Créatif & Budget",
+      "review": "Vérification"
+    },
+    "sections": {
+      "projectType": "Quel type de projet ?",
+      "yourInfo": "Vos infos",
+      "projectDetails": "Détails du projet",
+      "typeSpecific": "Dites-nous en plus",
+      "creativeDirection": "Direction créative",
+      "budgetDelivery": "Budget & Livraison",
+      "attachments": "Pièces jointes"
     },
     "projectTypes": {
       "birthday": {

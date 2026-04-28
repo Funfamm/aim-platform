@@ -1405,7 +1405,22 @@
       "uploads": "ファイル追加",
       "delivery": "予算と納品",
       "review": "確認と送信",
-      "deposit": "プロジェクトを確保"
+      "deposit": "プロジェクトを確保",
+      "basics": "あなたのプロジェクト"
+    },
+    "stepLabels": {
+      "basics": "あなたのプロジェクト",
+      "creative": "クリエイティブ＆予算",
+      "review": "確認"
+    },
+    "sections": {
+      "projectType": "どんなプロジェクト？",
+      "yourInfo": "お客様情報",
+      "projectDetails": "プロジェクト詳細",
+      "typeSpecific": "もう少し教えてください",
+      "creativeDirection": "クリエイティブ方針",
+      "budgetDelivery": "予算と納品",
+      "attachments": "添付ファイル"
     },
     "projectTypes": {
       "birthday": {

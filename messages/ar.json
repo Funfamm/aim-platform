@@ -1406,7 +1406,22 @@
       "uploads": "إضافة ملفات",
       "delivery": "الميزانية والتسليم",
       "review": "مراجعة وإرسال",
-      "deposit": "تأمين مشروعك"
+      "deposit": "تأمين مشروعك",
+      "basics": "مشروعك"
+    },
+    "stepLabels": {
+      "basics": "مشروعك",
+      "creative": "الإبداع والميزانية",
+      "review": "مراجعة"
+    },
+    "sections": {
+      "projectType": "ما نوع المشروع؟",
+      "yourInfo": "معلوماتك",
+      "projectDetails": "تفاصيل المشروع",
+      "typeSpecific": "أخبرنا المزيد",
+      "creativeDirection": "التوجه الإبداعي",
+      "budgetDelivery": "الميزانية والتسليم",
+      "attachments": "المرفقات"
     },
     "projectTypes": {
       "birthday": {

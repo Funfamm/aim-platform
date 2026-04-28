@@ -1404,7 +1404,22 @@
       "uploads": "फ़ाइलें जोड़ें",
       "delivery": "बजट और डिलीवरी",
       "review": "समीक्षा और सबमिट",
-      "deposit": "अपना प्रोजेक्ट सुरक्षित करें"
+      "deposit": "अपना प्रोजेक्ट सुरक्षित करें",
+      "basics": "आपका प्रोजेक्ट"
+    },
+    "stepLabels": {
+      "basics": "आपका प्रोजेक्ट",
+      "creative": "क्रिएटिव और बजट",
+      "review": "समीक्षा"
+    },
+    "sections": {
+      "projectType": "किस प्रकार का प्रोजेक्ट?",
+      "yourInfo": "आपकी जानकारी",
+      "projectDetails": "प्रोजेक्ट विवरण",
+      "typeSpecific": "हमें और बताएं",
+      "creativeDirection": "क्रिएटिव दिशा",
+      "budgetDelivery": "बजट और डिलीवरी",
+      "attachments": "अटैचमेंट"
     },
     "projectTypes": {
       "birthday": {
