@@ -9,8 +9,8 @@ export async function GET(req: Request) {
     const page    = Math.max(1, parseInt(searchParams.get('page')  || '1'))
     const limit   = Math.min(100, parseInt(searchParams.get('limit') || '50'))
     const search  = searchParams.get('search')?.trim() || ''
-    const status  = searchParams.get('status') || 'all'   // 'all' | 'active' | 'inactive'
-    const sort    = searchParams.get('sort')   || 'newest' // 'newest' | 'oldest' | 'name'
+    const status  = searchParams.get('status') || 'all'   // 'all' | 'active' | 'inactive' | 'failed' | 'converted' | 'subscriber_only' | 'verified' | 'unverified' | 'new_month'
+    const sort    = searchParams.get('sort')   || 'newest' // 'newest' | 'oldest' | 'name' | 'fails'
     const format  = searchParams.get('format') || 'json'  // 'json' | 'csv'
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,6 +28,7 @@ export async function GET(req: Request) {
 
     const orderBy = sort === 'oldest' ? { subscribedAt: 'asc' }
                   : sort === 'name'   ? { email: 'asc' }
+                  : sort === 'fails'  ? { subscribedAt: 'desc' }  // sort by newest (fail count is enriched, not in DB)
                   : { subscribedAt: 'desc' }
 
     // Count failed sends per subscriber email (from EmailLog)
@@ -47,6 +48,52 @@ export async function GET(req: Request) {
     } else if (status === 'failed') {
         // No failed emails at all — return empty
         where.email = { in: [] }
+    }
+
+    // Converted filter: subscribers whose email matches a registered User
+    // subscriber_only: subscribers whose email does NOT match any User
+    if (status === 'converted' || status === 'subscriber_only' || status === 'verified' || status === 'unverified') {
+        const allUsers = await db.user.findMany({
+            select: { email: true, emailVerified: true },
+        }) as { email: string; emailVerified: boolean }[]
+        const userEmailMap = new Map(allUsers.map((u: { email: string; emailVerified: boolean }) => [u.email.toLowerCase(), u]))
+
+        // Get all subscriber emails to cross-reference
+        const allSubs = await db.subscriber.findMany({ select: { email: true } }) as { email: string }[]
+
+        if (status === 'converted') {
+            const convertedEmails = allSubs
+                .filter((s: { email: string }) => userEmailMap.has(s.email.toLowerCase()))
+                .map((s: { email: string }) => s.email)
+            where.email = { in: convertedEmails.length > 0 ? convertedEmails : ['__none__'] }
+        } else if (status === 'subscriber_only') {
+            const subOnlyEmails = allSubs
+                .filter((s: { email: string }) => !userEmailMap.has(s.email.toLowerCase()))
+                .map((s: { email: string }) => s.email)
+            where.email = { in: subOnlyEmails.length > 0 ? subOnlyEmails : ['__none__'] }
+        } else if (status === 'verified') {
+            const verifiedEmails = allSubs
+                .filter((s: { email: string }) => {
+                    const u = userEmailMap.get(s.email.toLowerCase())
+                    return u && u.emailVerified === true
+                })
+                .map((s: { email: string }) => s.email)
+            where.email = { in: verifiedEmails.length > 0 ? verifiedEmails : ['__none__'] }
+        } else if (status === 'unverified') {
+            const unverifiedEmails = allSubs
+                .filter((s: { email: string }) => {
+                    const u = userEmailMap.get(s.email.toLowerCase())
+                    return !u || u.emailVerified !== true
+                })
+                .map((s: { email: string }) => s.email)
+            where.email = { in: unverifiedEmails.length > 0 ? unverifiedEmails : ['__none__'] }
+        }
+    }
+
+    // New this month: subscribed in the current calendar month
+    if (status === 'new_month') {
+        const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
+        where.subscribedAt = { gte: monthStart }
     }
 
     const [total, active, inactive] = await Promise.all([

@@ -459,10 +459,11 @@ export default function WatchPlayer({
             captionsOn: ccEnabled,
             completePct: td > 0 ? Math.min(1, ct / td) : 0,
             watchDurationSec: Math.round(watchedSecsRef.current),
+            mediaType,
         })
         navigator.sendBeacon('/api/watch/session-end', new Blob([payload], { type: 'application/json' }))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [project.id, activeEpisode, ccEnabled, ccLang, currentVideoUrl])
+    }, [project.id, activeEpisode, ccEnabled, ccLang, currentVideoUrl, mediaType])
 
     // Unmount beacon — final save on navigate away
     useEffect(() => { return () => { sendSessionEnd() } }, []) // eslint-disable-line react-hooks/exhaustive-deps

@@ -89,8 +89,8 @@ export async function GET(req: NextRequest) {
             }),
             // Trailer analytics
             prisma.project.count({ where: { trailerUrl: { not: null } } }),
-            prisma.pageView.count({
-                where: { createdAt: { gte: month }, path: { contains: 'trailer' } },
+            prisma.filmView.count({
+                where: { createdAt: { gte: month }, mediaType: 'trailer' },
             }),
             // Dashboard counts
             prisma.project.count(),
@@ -342,31 +342,44 @@ export async function GET(req: NextRequest) {
             filmViewsToday, filmViewsWeek, filmViewsMonth, filmViewsAllTime,
             trailerProjectCount,
             trailerViewsToday, trailerViewsWeek, trailerViewsMonth, trailerViewsAllTime,
+            topTrailersRaw,
         ] = await Promise.all([
             prisma.filmView.groupBy({
                 by: ['projectId'],
+                where: { mediaType: 'film' },
                 _count: { projectId: true },
                 orderBy: { _count: { projectId: 'desc' } },
                 take: 10,
             }),
-            // Film views by period
-            prisma.filmView.count({ where: { createdAt: { gte: today } } }),
-            prisma.filmView.count({ where: { createdAt: { gte: week } } }),
-            prisma.filmView.count({ where: { createdAt: { gte: month } } }),
-            prisma.filmView.count(),
-            // Trailer stats
+            // Film views by period (films only, not trailers)
+            prisma.filmView.count({ where: { createdAt: { gte: today }, mediaType: 'film' } }),
+            prisma.filmView.count({ where: { createdAt: { gte: week }, mediaType: 'film' } }),
+            prisma.filmView.count({ where: { createdAt: { gte: month }, mediaType: 'film' } }),
+            prisma.filmView.count({ where: { mediaType: 'film' } }),
+            // Trailer stats — proper FilmView queries
             prisma.project.count({ where: { trailerUrl: { not: null } } }),
-            prisma.pageView.count({ where: { createdAt: { gte: today }, path: { contains: 'trailer' } } }),
-            prisma.pageView.count({ where: { createdAt: { gte: week }, path: { contains: 'trailer' } } }),
-            prisma.pageView.count({ where: { createdAt: { gte: month }, path: { contains: 'trailer' } } }),
-            prisma.pageView.count({ where: { path: { contains: 'trailer' } } }),
+            prisma.filmView.count({ where: { createdAt: { gte: today }, mediaType: 'trailer' } }),
+            prisma.filmView.count({ where: { createdAt: { gte: week }, mediaType: 'trailer' } }),
+            prisma.filmView.count({ where: { createdAt: { gte: month }, mediaType: 'trailer' } }),
+            prisma.filmView.count({ where: { mediaType: 'trailer' } }),
+            // Top trailers grouped by project
+            prisma.filmView.groupBy({
+                by: ['projectId'],
+                where: { mediaType: 'trailer' },
+                _count: { projectId: true },
+                orderBy: { _count: { projectId: 'desc' } },
+                take: 5,
+            }),
         ])
 
         const projectIds = topFilms.map(f => f.projectId)
+        // Also include projects from top trailers for name resolution
+        const trailerProjectIds = topTrailersRaw.map(f => f.projectId)
+        const allProjectIds = [...new Set([...projectIds, ...trailerProjectIds])]
         const [projects, weeklyFilmViews] = await Promise.all([
-            projectIds.length > 0
+            allProjectIds.length > 0
                 ? prisma.project.findMany({
-                    where: { id: { in: projectIds } },
+                    where: { id: { in: allProjectIds } },
                     select: { id: true, title: true, slug: true, coverImage: true, trailerUrl: true },
                 })
                 : [],
@@ -374,7 +387,7 @@ export async function GET(req: NextRequest) {
             projectIds.length > 0
                 ? prisma.filmView.groupBy({
                     by: ['projectId'],
-                    where: { createdAt: { gte: week }, projectId: { in: projectIds } },
+                    where: { createdAt: { gte: week }, projectId: { in: projectIds }, mediaType: 'film' },
                     _count: { projectId: true },
                 })
                 : [],
@@ -382,12 +395,11 @@ export async function GET(req: NextRequest) {
 
         const weeklyMap = new Map(weeklyFilmViews.map(f => [f.projectId, f._count.projectId]))
 
-        // Top trailers (projects with trailerUrl that have views)
-        const trailerProjects = projects.filter(p => p.trailerUrl)
-        const topTrailers = trailerProjects.map(p => {
-            const filmData = topFilms.find(f => f.projectId === p.id)
-            return { title: p.title, views: filmData?._count.projectId || 0 }
-        }).sort((a, b) => b.views - a.views).slice(0, 5)
+        // Top trailers — use actual trailer play data
+        const topTrailers = topTrailersRaw.map(f => {
+            const p = projects.find(p => p.id === f.projectId)
+            return { title: p?.title || 'Unknown', views: f._count.projectId }
+        })
 
         const existingContent = (result.content || {}) as Record<string, unknown>
         result.content = {

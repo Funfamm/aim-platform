@@ -835,12 +835,15 @@ model FilmView {
   id            String   @id @default(cuid())
   projectId     String
   userId        String?
+  mediaType     String   @default("film")  // "film" | "trailer"
   watchDuration Int      @default(0)
   completed     Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   @@index([projectId])
   @@index([createdAt])
+  @@index([mediaType])
+  @@index([mediaType, createdAt])  // trailer analytics: today/week/month counts
 }
 
 model ApiKey {

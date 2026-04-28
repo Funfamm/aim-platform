@@ -51,7 +51,12 @@ export default function AdminSubscribersPage() {
         const res = await fetch(`/api/admin/subscribers?${params}`)
         if (res.ok) {
             const data = await res.json()
-            setSubscribers(data.subscribers)
+            let subs = data.subscribers as Subscriber[]
+            // Client-side sort for enriched fields not available in DB
+            if (sort === 'fails') {
+                subs = [...subs].sort((a, b) => b.failedSends - a.failedSends)
+            }
+            setSubscribers(subs)
             setPagination(data.pagination)
             setStats(data.stats)
             if (data.conversion) setConversion(data.conversion)
@@ -166,13 +171,18 @@ export default function AdminSubscribersPage() {
                 {/* Subscriber stats */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
                     {[
-                        { label: 'Total', value: stats.total, color: '#d4a853' },
-                        { label: 'Active',   value: stats.active,   color: '#10b981' },
-                        { label: 'Inactive', value: stats.inactive, color: '#6b7280' },
-                        { label: 'Failed Sends', value: stats.failed, color: '#ef4444' },
+                        { label: 'Total', value: stats.total, color: '#d4a853', filter: 'all' },
+                        { label: 'Active',   value: stats.active,   color: '#10b981', filter: 'active' },
+                        { label: 'Inactive', value: stats.inactive, color: '#6b7280', filter: 'inactive' },
+                        { label: 'Failed Sends', value: stats.failed, color: '#ef4444', filter: 'failed' },
                     ].map(s => (
-                        <div key={s.label} className="admin-card" style={{ padding: 'var(--space-lg)', textAlign: 'center', cursor: s.label === 'Failed Sends' && s.value > 0 ? 'pointer' : 'default' }}
-                            onClick={() => s.label === 'Failed Sends' && s.value > 0 && setStatus('failed')}
+                        <div key={s.label} className="admin-card" style={{
+                            padding: 'var(--space-lg)', textAlign: 'center', cursor: 'pointer',
+                            border: status === s.filter ? `1px solid ${s.color}44` : undefined,
+                            background: status === s.filter ? `${s.color}08` : undefined,
+                            transition: 'all 0.15s',
+                        }}
+                            onClick={() => setStatus(s.filter)}
                         >
                             <div style={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value.toLocaleString()}</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
@@ -183,12 +193,20 @@ export default function AdminSubscribersPage() {
                 {/* Conversion reporting */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
                     {[
-                        { label: 'Converted', value: conversion.converted, color: '#8b5cf6', suffix: '' },
-                        { label: 'Conversion Rate', value: conversion.conversionRate, color: '#06b6d4', suffix: '%' },
-                        { label: 'Sub Only', value: conversion.subscriberOnly, color: '#f59e0b', suffix: '' },
-                        { label: 'New This Month', value: conversion.newConversionsThisMonth, color: '#10b981', suffix: '' },
+                        { label: 'Converted', value: conversion.converted, color: '#8b5cf6', suffix: '', filter: 'converted' },
+                        { label: 'Conversion Rate', value: conversion.conversionRate, color: '#06b6d4', suffix: '%', filter: '' },
+                        { label: 'Sub Only', value: conversion.subscriberOnly, color: '#f59e0b', suffix: '', filter: 'subscriber_only' },
+                        { label: 'New This Month', value: conversion.newConversionsThisMonth, color: '#10b981', suffix: '', filter: 'new_month' },
                     ].map(s => (
-                        <div key={s.label} className="admin-card" style={{ padding: 'var(--space-lg)', textAlign: 'center' }}>
+                        <div key={s.label} className="admin-card" style={{
+                            padding: 'var(--space-lg)', textAlign: 'center',
+                            cursor: s.filter ? 'pointer' : 'default',
+                            border: s.filter && status === s.filter ? `1px solid ${s.color}44` : undefined,
+                            background: s.filter && status === s.filter ? `${s.color}08` : undefined,
+                            transition: 'all 0.15s',
+                        }}
+                            onClick={() => s.filter && setStatus(s.filter)}
+                        >
                             <div style={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value.toLocaleString()}{s.suffix}</div>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
                         </div>
@@ -211,9 +229,22 @@ export default function AdminSubscribersPage() {
                             <label style={labelStyle}>Status</label>
                             <select style={selectStyle} value={status} onChange={e => setStatus(e.target.value)}>
                                 <option value="all">All</option>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                                <option value="failed">⚠️ Has Failures</option>
+                                <optgroup label="Subscription">
+                                    <option value="active">● Active</option>
+                                    <option value="inactive">○ Inactive</option>
+                                    <option value="new_month">🆕 New This Month</option>
+                                </optgroup>
+                                <optgroup label="Conversion">
+                                    <option value="converted">🔗 Converted (Registered)</option>
+                                    <option value="subscriber_only">📩 Subscriber Only</option>
+                                </optgroup>
+                                <optgroup label="Verification">
+                                    <option value="verified">✓ Email Verified</option>
+                                    <option value="unverified">✕ Not Verified</option>
+                                </optgroup>
+                                <optgroup label="Health">
+                                    <option value="failed">⚠️ Has Failures</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div>
@@ -222,8 +253,23 @@ export default function AdminSubscribersPage() {
                                 <option value="newest">Newest first</option>
                                 <option value="oldest">Oldest first</option>
                                 <option value="name">By email</option>
+                                <option value="fails">Most failures</option>
                             </select>
                         </div>
+                        {status !== 'all' && (
+                            <button
+                                type="button"
+                                onClick={() => setStatus('all')}
+                                style={{
+                                    padding: '8px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.75rem',
+                                    fontWeight: 600, cursor: 'pointer', background: 'rgba(239,68,68,0.08)',
+                                    border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                ✕ Clear filter
+                            </button>
+                        )}
                     </div>
                 </div>
 

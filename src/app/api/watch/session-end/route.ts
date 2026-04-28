@@ -37,9 +37,11 @@ export async function POST(req: NextRequest) {
             captionsOn?: boolean
             completePct?: number
             watchDurationSec?: number
+            mediaType?: string
         }
 
-        const { projectId, subtitleLang, audioLang, captionsOn = false, completePct, watchDurationSec } = body
+        const { projectId, subtitleLang, audioLang, captionsOn = false, completePct, watchDurationSec, mediaType } = body
+        const safeMediaType = mediaType === 'trailer' ? 'trailer' : 'film'
 
         if (!projectId) {
             return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
             const existingView = await prisma.filmView.findFirst({
                 where: {
                     projectId,
+                    mediaType: safeMediaType,
                     ...(userId ? { userId } : { userId: null }),
                     createdAt: { gte: startOfDay },
                 },
@@ -79,6 +82,7 @@ export async function POST(req: NextRequest) {
                     data: {
                         projectId,
                         userId,
+                        mediaType: safeMediaType,
                         watchDuration: Math.round(durationSec),
                         completed: safePct != null && safePct >= 0.9,
                     },

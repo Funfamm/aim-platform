@@ -169,9 +169,17 @@ class GraphThrottleError extends Error {
 async function sendViaGraph(config: MailConfig, options: EmailOptions, extraHeaders?: Record<string, string>): Promise<void> {
     const token = await getGraphAccessToken()
 
-    // Convert headers to Graph's internetMessageHeaders format
+    // Graph API only allows custom headers prefixed with 'X-' or 'x-'.
+    // Standard RFC headers (List-Unsubscribe, Precedence, etc.) are rejected
+    // with InvalidInternetMessageHeader.  Remap them to X- prefixed variants
+    // which most mail clients still honour, and drop any that can't be mapped.
     const internetMessageHeaders = extraHeaders
-        ? Object.entries(extraHeaders).map(([name, value]) => ({ name, value }))
+        ? Object.entries(extraHeaders)
+            .map(([name, value]) => {
+                if (name.toLowerCase().startsWith('x-')) return { name, value }
+                // Remap standard headers to X- prefixed equivalents
+                return { name: `X-${name}`, value }
+            })
         : undefined
 
     const response = await fetch(`https://graph.microsoft.com/v1.0/users/${config.fromEmail}/sendMail`, {
