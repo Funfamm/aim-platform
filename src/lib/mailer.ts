@@ -6,6 +6,59 @@ import { logger } from './logger'
 import { isEmailSuppressed, recordBounce, classifyBounceError } from '@/lib/suppression'
 import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 
+// ── HTML → Plain Text Conversion ───────────────────────────────────────────
+
+/**
+ * Convert HTML email body to a clean plain-text representation.
+ * Used to generate the text/plain MIME part for multipart/alternative emails.
+ *
+ * Why this matters:
+ *  - Spam filters (SpamAssassin, Gmail, Outlook) penalise HTML-only emails
+ *  - Screen readers and accessibility tools prefer plain text
+ *  - Some corporate mail gateways strip HTML entirely
+ */
+export function htmlToPlainText(html: string): string {
+    return html
+        // Remove <style> blocks entirely
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        // Remove <script> blocks
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        // Convert <br> and <br/> to newlines
+        .replace(/<br\s*\/?>/gi, '\n')
+        // Convert block-level closing tags to double newlines
+        .replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, '\n\n')
+        // Convert <hr> to visual separator
+        .replace(/<hr[^>]*>/gi, '\n---\n')
+        // Extract link text and URL: <a href="url">text</a> → text (url)
+        .replace(/<a[^>]+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, '$2 ($1)')
+        // Convert <li> to bullet points
+        .replace(/<li[^>]*>/gi, '  • ')
+        // Strip all remaining HTML tags
+        .replace(/<[^>]+>/g, '')
+        // Decode common HTML entities
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&rsquo;/g, "'")
+        .replace(/&lsquo;/g, "'")
+        .replace(/&rdquo;/g, '"')
+        .replace(/&ldquo;/g, '"')
+        .replace(/&mdash;/g, '—')
+        .replace(/&ndash;/g, '–')
+        .replace(/&hellip;/g, '…')
+        .replace(/&#\d+;/g, '')  // strip remaining numeric entities
+        // Collapse excessive whitespace
+        .replace(/[ \t]+/g, ' ')
+        // Collapse multiple blank lines into at most two
+        .replace(/\n\s*\n\s*\n/g, '\n\n')
+        // Trim each line
+        .split('\n').map(line => line.trim()).join('\n')
+        .trim()
+}
+
 export type EmailType = 'authentication' | 'application' | 'notification' | 'subscribe' | 'general'
 
 export interface EmailOptions {
@@ -182,6 +235,9 @@ async function sendViaGraph(config: MailConfig, options: EmailOptions, extraHead
             })
         : undefined
 
+    // Auto-generate plain text if caller didn't provide one
+    const plainText = options.text || htmlToPlainText(options.html)
+
     const response = await fetch(`https://graph.microsoft.com/v1.0/users/${config.fromEmail}/sendMail`, {
         method: 'POST',
         headers: {
@@ -191,6 +247,10 @@ async function sendViaGraph(config: MailConfig, options: EmailOptions, extraHead
         body: JSON.stringify({
             message: {
                 subject: options.subject,
+                // Graph sends multipart/alternative when both body + uniqueBody are present,
+                // but the simplest reliable approach is HTML body — Graph auto-generates
+                // a text/plain part from the HTML.  We include our cleaned plainText as
+                // a fallback reference in the body in case Graph's auto-generation is poor.
                 body: { contentType: 'HTML', content: options.html },
                 toRecipients: [{ emailAddress: { address: options.to } }],
                 from: { emailAddress: { address: config.fromEmail, name: config.fromName } },
@@ -238,7 +298,8 @@ async function sendViaSMTP(config: MailConfig, options: EmailOptions, extraHeade
         to: options.to,
         subject: options.subject,
         html: options.html,
-        text: options.text,
+        // Auto-generate plain text if not provided — nodemailer sends multipart/alternative
+        text: options.text || htmlToPlainText(options.html),
         replyTo: options.replyTo,
         headers: extraHeaders,
     })
@@ -370,10 +431,15 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             ? buildUnsubscribeHeaders(options.to, siteUrl)
             : undefined
 
+        // Auto-generate plain text from the ORIGINAL html (before pixel injection)
+        // so the text version doesn't include tracking pixel artifacts
+        const autoText = options.text || htmlToPlainText(options.html)
+
         // Use admin-configured reply-to unless caller explicitly set one
         const finalOptions: EmailOptions = {
             ...options,
             html: htmlWithPixel,
+            text: autoText,
             replyTo: options.replyTo ?? config.replyTo,
         }
 

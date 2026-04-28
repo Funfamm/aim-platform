@@ -17,7 +17,7 @@
  */
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendEmail } from '@/lib/mailer'
+import { sendEmail, htmlToPlainText } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
 import { isEmailSuppressed, recordBounce, classifyBounceError } from '@/lib/suppression'
 import { domainRateLimiter } from '@/lib/rate-limiter'
@@ -126,7 +126,7 @@ export async function GET(request: Request) {
                             try {
                                 await sendViaACS(
                                     { connectionString: bulkConfig.acsConnectionString!, senderAddress: bulkConfig.acsSenderAddress! },
-                                    { to: job.to, subject: job.subject, html: job.html, text: job.text || undefined, senderAddress: bulkConfig.acsSenderAddress!, replyTo: job.replyTo || undefined, headers }
+                                    { to: job.to, subject: job.subject, html: job.html, text: job.text || htmlToPlainText(job.html), senderAddress: bulkConfig.acsSenderAddress!, replyTo: job.replyTo || undefined, headers }
                                 )
                                 success = true
                             } catch (acsErr) {
