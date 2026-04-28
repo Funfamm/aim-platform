@@ -125,8 +125,11 @@ export async function GET(request: Request) {
                                     { to: job.to, subject: job.subject, html: job.html, text: job.text || undefined, senderAddress: bulkConfig.acsSenderAddress, replyTo: job.replyTo || undefined, headers }
                                 )
                                 success = true
-                            } catch {
-                                success = false
+                            } catch (acsErr) {
+                                // Preserve ACS error detail for handleJobFailure
+                                const acsMsg = acsErr instanceof Error ? acsErr.message : String(acsErr)
+                                logger.error('email-worker', `ACS send failed for job ${job.id}: ${acsMsg}`)
+                                throw new Error(`ACS: ${acsMsg}`)
                             }
                         } else {
                             // Graph/SMTP path — sendEmail() handles List-Unsubscribe internally

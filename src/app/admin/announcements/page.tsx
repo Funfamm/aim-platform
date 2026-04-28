@@ -719,9 +719,15 @@ export default function AnnouncementsAdminPage() {
                                         <div>
                                             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                                                 {(() => {
-                                                    const batches = Math.ceil(recipientEstimate.total / 4)
-                                                    const totalSec = batches * 2
-                                                    if (totalSec < 60) return `~${totalSec}s`
+                                                    // Members: Graph sends ~1s/email in batches of 4 with 2s inter-batch delay
+                                                    const memberBatches = Math.ceil(recipientEstimate.members / 4)
+                                                    const memberSec = memberBatches > 0
+                                                        ? memberBatches * 4 + (memberBatches - 1) * 2  // ~4s per batch + 2s delay between
+                                                        : 0
+                                                    // Subscribers: queued, processed by cron worker (~60s cycle)
+                                                    const subSec = recipientEstimate.subscribers > 0 ? 60 : 0
+                                                    const totalSec = Math.max(memberSec, subSec)
+                                                    if (totalSec < 60) return `~${Math.max(totalSec, 1)}s`
                                                     const mins = Math.ceil(totalSec / 60)
                                                     return `~${mins} min${mins !== 1 ? 's' : ''}`
                                                 })()}
@@ -927,6 +933,25 @@ export default function AnnouncementsAdminPage() {
                                             <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: a.status === 'sent' ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)', color: a.status === 'sent' ? '#34d399' : '#ef4444' }}>
                                                 {a.status}
                                             </span>
+                                            <button
+                                                type="button"
+                                                title="Delete this announcement"
+                                                onClick={async (e) => {
+                                                    e.stopPropagation()
+                                                    if (!confirm(`Delete "${a.title}"? This cannot be undone.`)) return
+                                                    try {
+                                                        const res = await fetch(`/api/admin/announcements/${a.id}`, { method: 'DELETE' })
+                                                        if (res.ok) setHistory(prev => prev.filter(h => h.id !== a.id))
+                                                    } catch { /* network error */ }
+                                                }}
+                                                style={{
+                                                    background: 'none', border: 'none', cursor: 'pointer',
+                                                    fontSize: '0.72rem', color: 'var(--text-tertiary)', padding: '2px 4px',
+                                                    borderRadius: '4px', transition: 'color 0.15s',
+                                                }}
+                                                onMouseOver={e => (e.currentTarget.style.color = '#ef4444')}
+                                                onMouseOut={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                                            >🗑️</button>
                                             <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
                                         </div>
 
