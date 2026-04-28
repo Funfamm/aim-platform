@@ -172,7 +172,8 @@ export async function POST(request: Request) {
         })
     } catch (error) {
         console.error('[project-payments/capture-order] Error:', error)
-        return NextResponse.json({ error: 'Failed to capture payment' }, { status: 500 })
+        const message = error instanceof Error ? error.message : 'Failed to capture payment'
+        return NextResponse.json({ error: message }, { status: 500 })
     }
 }
 

@@ -118,7 +118,7 @@ export default function PayPage() {
                     if (result.success) {
                         setState('complete')
                     } else {
-                        setError('Payment capture failed. Please contact support.')
+                        setError(result.error || 'Payment capture failed. Please contact support.')
                         setState('ready')
                     }
                 } catch {

@@ -107,6 +107,7 @@ export async function capturePayPalOrder(orderId: string): Promise<{
     captureId: string | null
     customId: string | null
     amount: number | null
+    declineReason: string | null
 }> {
     const accessToken = await getPayPalAccessToken()
     const res = await fetch(`${PAYPAL_API}/v2/checkout/orders/${orderId}/capture`, {
@@ -118,9 +119,37 @@ export async function capturePayPalOrder(orderId: string): Promise<{
     })
 
     const data = await res.json()
+
+    // Extract decline/error details from PayPal response
     if (!res.ok || data.status !== 'COMPLETED') {
-        console.error('[paypal] Capture failed:', data)
-        throw new Error('Payment capture failed')
+        console.error('[paypal] Capture failed:', JSON.stringify(data, null, 2))
+
+        // PayPal returns structured error details
+        const issue = data.details?.[0]?.issue || data.name || ''
+        const description = data.details?.[0]?.description || data.message || ''
+
+        // Also check capture-level status for processor declines
+        const captureStatus = data.purchase_units?.[0]?.payments?.captures?.[0]?.status
+        const processorResponse = data.purchase_units?.[0]?.payments?.captures?.[0]?.processor_response
+
+        let reason = 'Payment could not be processed'
+        if (issue === 'INSTRUMENT_DECLINED' || description.includes('insufficient')) {
+            reason = 'Your payment method was declined. Please check your balance or try a different payment method.'
+        } else if (issue === 'PAYER_ACTION_REQUIRED') {
+            reason = 'Additional verification is required by your bank. Please try again.'
+        } else if (issue === 'ORDER_NOT_APPROVED') {
+            reason = 'The payment was not approved. Please try again.'
+        } else if (issue === 'DUPLICATE_INVOICE_ID') {
+            reason = 'This payment has already been processed.'
+        } else if (processorResponse?.response_code === '5400') {
+            reason = 'Insufficient funds. Please try a different payment method.'
+        } else if (description) {
+            reason = description
+        }
+
+        const err = new Error(reason)
+        ;(err as Error & { paypalIssue?: string }).paypalIssue = issue
+        throw err
     }
 
     const pu = data.purchase_units?.[0]
@@ -131,6 +160,7 @@ export async function capturePayPalOrder(orderId: string): Promise<{
         captureId: capture?.id || null,
         customId: pu?.custom_id || null,
         amount: capture?.amount?.value ? parseFloat(capture.amount.value) : null,
+        declineReason: null,
     }
 }
 

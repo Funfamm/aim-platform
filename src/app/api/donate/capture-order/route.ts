@@ -29,8 +29,24 @@ export async function POST(request: Request) {
         const captureData = await captureRes.json()
 
         if (!captureRes.ok || captureData.status !== 'COMPLETED') {
-            console.error('PayPal capture failed:', captureData)
-            return NextResponse.json({ error: 'Payment capture failed' }, { status: 500 })
+            console.error('PayPal capture failed:', JSON.stringify(captureData, null, 2))
+
+            // Extract specific decline reason from PayPal
+            const issue = captureData.details?.[0]?.issue || captureData.name || ''
+            const description = captureData.details?.[0]?.description || captureData.message || ''
+
+            let reason = 'Payment could not be processed'
+            if (issue === 'INSTRUMENT_DECLINED' || description.includes('insufficient')) {
+                reason = 'Your payment method was declined. Please check your balance or try a different payment method.'
+            } else if (issue === 'PAYER_ACTION_REQUIRED') {
+                reason = 'Additional verification is required by your bank. Please try again.'
+            } else if (issue === 'ORDER_NOT_APPROVED') {
+                reason = 'The payment was not approved. Please try again.'
+            } else if (description) {
+                reason = description
+            }
+
+            return NextResponse.json({ error: reason }, { status: 500 })
         }
 
         // Extract donor metadata from PayPal's custom_id
