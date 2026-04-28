@@ -66,21 +66,21 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep,
                 border: '1px solid rgba(255,255,255,0.06)',
             }}>
                 {renderRow(t('fields.projectType'), t(`projectTypes.${form.projectType}.title`), 0)}
-                {renderRow(t('fields.clientName'), form.clientName, 1)}
-                {renderRow(t('fields.email'), form.email, 1)}
-                {form.phone && renderRow(t('fields.phone'), form.phone, 1)}
-                {form.companyName && renderRow(t('fields.companyName'), form.companyName, 1)}
-                {renderRow(t('fields.projectTitle'), form.projectTitle, 2)}
-                {renderRow(t('fields.description'), form.description, 2)}
-                {form.deadline && renderRow(t('fields.deadline'), form.deadline, 2)}
-                {form.tone.length > 0 && renderRow(t('fields.tone'), form.tone.map(tone => t(`tones.${tone}`)), 3)}
-                {form.visualStyle && renderRow(t('fields.visualStyle'), form.visualStyle, 3)}
-                {form.budgetRange && renderRow(t('fields.budgetRange'), t(`budgetOptions.${form.budgetRange}`), 6)}
-                {form.aspectRatio && renderRow(t('fields.aspectRatio'), t(`aspectOptions.${form.aspectRatio}`), 6)}
-                {form.duration && renderRow(t('fields.duration'), form.duration, 6)}
-                {form.deliveryPlatform && renderRow(t('fields.deliveryPlatform'), form.deliveryPlatform, 6)}
-                {form.addOns.length > 0 && renderRow(t('fields.addOns'), form.addOns.map(a => t(`addonOptions.${a}`)), 6)}
-                {form.uploads.length > 0 && renderRow(t('fields.uploads'), `${form.uploads.length} ${t('helpers.filesUploaded')}`, 5)}
+                {renderRow(t('fields.clientName'), form.clientName, 0)}
+                {renderRow(t('fields.email'), form.email, 0)}
+                {form.phone && renderRow(t('fields.phone'), form.phone, 0)}
+                {form.companyName && renderRow(t('fields.companyName'), form.companyName, 0)}
+                {renderRow(t('fields.projectTitle'), form.projectTitle, 0)}
+                {renderRow(t('fields.description'), form.description, 0)}
+                {form.deadline && renderRow(t('fields.deadline'), form.deadline, 0)}
+                {form.tone.length > 0 && renderRow(t('fields.tone'), form.tone.map(tone => t(`tones.${tone}`)), 1)}
+                {form.visualStyle && renderRow(t('fields.visualStyle'), form.visualStyle, 1)}
+                {form.budgetRange && renderRow(t('fields.budgetRange'), t(`budgetOptions.${form.budgetRange}`), 1)}
+                {form.aspectRatio && renderRow(t('fields.aspectRatio'), t(`aspectOptions.${form.aspectRatio}`), 1)}
+                {form.duration && renderRow(t('fields.duration'), form.duration, 1)}
+                {form.deliveryPlatform && renderRow(t('fields.deliveryPlatform'), form.deliveryPlatform, 1)}
+                {form.addOns.length > 0 && renderRow(t('fields.addOns'), form.addOns.map(a => t(`addonOptions.${a}`)), 1)}
+                {form.uploads.length > 0 && renderRow(t('fields.uploads'), `${form.uploads.length} ${t('helpers.filesUploaded')}`, 1)}
             </div>
 
             {/* ── Consent checkboxes ── */}

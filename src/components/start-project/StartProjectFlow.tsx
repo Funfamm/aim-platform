@@ -3,29 +3,21 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import StepProgress from './StepProgress'
-import ProjectTypeStep from './ProjectTypeStep'
-import ContactStep from './ContactStep'
-import OverviewStep from './OverviewStep'
-import CreativeDirectionStep from './CreativeDirectionStep'
-import DynamicFieldsStep from './DynamicFieldsStep'
-import UploadStep from './UploadStep'
-import BudgetDeliveryStep from './BudgetDeliveryStep'
+import BasicsStep from './BasicsStep'
+import CreativeBudgetStep from './CreativeBudgetStep'
 import ReviewStep from './ReviewStep'
 import ConfirmationView from './ConfirmationView'
+import { REQUIRED_DYNAMIC } from './constants'
 
-// ── Step definitions ────────────────────────────────────────────────────────
-const STEPS = [
-    'projectType',
-    'contact',
-    'overview',
-    'creative',
-    'dynamic',
-    'uploads',
-    'delivery',
-    'review',
-] as const
+// ── Step definitions (3-step flow) ──────────────────────────────────────────
+const STEPS = ['basics', 'creative', 'review'] as const
 
 type StepKey = (typeof STEPS)[number]
+
+// ── Versioned sessionStorage keys ───────────────────────────────────────────
+const STORAGE_VERSION = 'v2'
+const DRAFT_KEY = `sp_form_draft_${STORAGE_VERSION}`
+const STEP_KEY = `sp_form_step_${STORAGE_VERSION}`
 
 // ── Form state shape ────────────────────────────────────────────────────────
 export interface StartProjectFormData {
@@ -108,49 +100,30 @@ interface SubmittedProject {
     accessToken: string
 }
 
-// ── Required dynamic fields per project type (first 2 are always mandatory) ──
-const REQUIRED_DYNAMIC: Record<string, string[]> = {
-    birthday: ['celebrantName', 'ageTurning'],
-    brand:    ['brandName', 'industry'],
-    commercial: ['productName', 'campaignGoal'],
-    music:    ['songName', 'artistName'],
-    film:     ['storyTitle', 'genre'],
-    event:    ['eventName', 'eventDate'],
-    custom:   ['requestDescription', 'whatIsThisFor'],
-}
-
-// ── Validation per step ─────────────────────────────────────────────────────
+// ── Validation per step (3-step flow) ───────────────────────────────────────
 function validateStep(step: StepKey, form: StartProjectFormData): string[] {
     const errors: string[] = []
     switch (step) {
-        case 'projectType':
+        case 'basics': {
             if (!form.projectType) errors.push('projectType')
-            break
-        case 'contact':
             if (!form.clientName.trim()) errors.push('clientName')
             if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errors.push('email')
-            break
-        case 'overview':
             if (!form.projectTitle.trim()) errors.push('projectTitle')
             if (form.description.trim().length < 10) errors.push('description')
-            break
-        case 'creative':
-            if (form.tone.length === 0) errors.push('tone')
-            if (!form.visualStyle.trim()) errors.push('visualStyle')
-            break
-        case 'dynamic': {
             const required = REQUIRED_DYNAMIC[form.projectType] || REQUIRED_DYNAMIC.custom
             for (const field of required) {
                 if (!form.customFields[field]?.trim()) errors.push(field)
             }
             break
         }
-        case 'delivery':
+        case 'creative': {
             if (!form.budgetRange) errors.push('budgetRange')
             break
-        case 'review':
+        }
+        case 'review': {
             if (!form.consentContact) errors.push('consentContact')
             break
+        }
     }
     return errors
 }
@@ -164,8 +137,8 @@ export default function StartProjectFlow() {
         // Restore from sessionStorage if available
         if (typeof window !== 'undefined') {
             try {
-                const saved = sessionStorage.getItem('sp_form_draft')
-                const savedStep = sessionStorage.getItem('sp_form_step')
+                const saved = sessionStorage.getItem(DRAFT_KEY)
+                const savedStep = sessionStorage.getItem(STEP_KEY)
                 if (saved) {
                     const parsed = JSON.parse(saved)
                     // Restore step index too
@@ -210,8 +183,8 @@ export default function StartProjectFlow() {
             formSaveTimer.current = setTimeout(() => {
                 try {
                     const { uploads, ...saveable } = next
-                    sessionStorage.setItem('sp_form_draft', JSON.stringify(saveable))
-                    sessionStorage.setItem('sp_form_step', String(stepIndex))
+                    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(saveable))
+                    sessionStorage.setItem(STEP_KEY, String(stepIndex))
                 } catch { /* storage full or unavailable */ }
             }, 300)
             return next
@@ -279,8 +252,8 @@ export default function StartProjectFlow() {
 
             // Clear saved draft on successful submission
             try {
-                sessionStorage.removeItem('sp_form_draft')
-                sessionStorage.removeItem('sp_form_step')
+                sessionStorage.removeItem(DRAFT_KEY)
+                sessionStorage.removeItem(STEP_KEY)
             } catch { /* ignore */ }
             setSubmittedProject(data.project)
         } catch (err) {
@@ -346,13 +319,8 @@ export default function StartProjectFlow() {
 
             {/* Animated step body */}
             <div key={animKey} className="sp-step-body" style={{ marginTop: 'var(--space-lg)', minHeight: '280px' }}>
-                {currentStep === 'projectType' && <ProjectTypeStep {...stepProps} />}
-                {currentStep === 'contact' && <ContactStep {...stepProps} />}
-                {currentStep === 'overview' && <OverviewStep {...stepProps} />}
-                {currentStep === 'creative' && <CreativeDirectionStep {...stepProps} />}
-                {currentStep === 'dynamic' && <DynamicFieldsStep {...stepProps} />}
-                {currentStep === 'uploads' && <UploadStep {...stepProps} />}
-                {currentStep === 'delivery' && <BudgetDeliveryStep {...stepProps} />}
+                {currentStep === 'basics' && <BasicsStep {...stepProps} />}
+                {currentStep === 'creative' && <CreativeBudgetStep {...stepProps} />}
                 {currentStep === 'review' && <ReviewStep {...stepProps} onGoToStep={goToStep} onSubmit={handleSubmit} isSubmitting={isSubmitting} />}
             </div>
 

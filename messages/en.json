@@ -1404,7 +1404,22 @@
       "uploads": "Add Files",
       "delivery": "Budget & Delivery",
       "review": "Review & Submit",
-      "deposit": "Secure Your Project"
+      "deposit": "Secure Your Project",
+      "basics": "Your Project"
+    },
+    "stepLabels": {
+      "basics": "Your Project",
+      "creative": "Creative & Budget",
+      "review": "Review"
+    },
+    "sections": {
+      "projectType": "What type of project?",
+      "yourInfo": "Your Info",
+      "projectDetails": "Project Details",
+      "typeSpecific": "Tell Us More",
+      "creativeDirection": "Creative Direction",
+      "budgetDelivery": "Budget & Delivery",
+      "attachments": "Attachments"
     },
     "projectTypes": {
       "birthday": {

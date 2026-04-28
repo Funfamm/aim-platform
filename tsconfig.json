@@ -46,6 +46,7 @@
     "vitest.config.ts",
     "scripts",
     "tests",
-    "workers"
+    "workers",
+    "src/components/start-project/_deprecated"
   ]
 }
