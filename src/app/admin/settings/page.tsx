@@ -73,6 +73,8 @@ type Settings = {
     emailsEnabled: boolean; emailTransport: string; emailReplyTo: string
     // Bulk / ACS
     bulkTransport: string; acsConnectionString: string; acsSenderAddress: string
+    // Log retention
+    logRetentionDays: number
 }
 
 const TABS = [
@@ -452,6 +454,30 @@ function EmailSmtpTab({ settings, update, Toggle }: {
 
             {/* Email Template Preview Gallery */}
             <EmailPreviewGallery />
+
+            {/* ─── Log Retention ─── */}
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: 'var(--space-lg) 0' }} />
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                🗑️ Email Log Retention
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
+                Automatically purge old email logs, queue records, and bounce events. Suppression records are never purged.
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <input
+                    className="admin-input"
+                    type="number"
+                    min={0}
+                    max={365}
+                    value={(settings as any).logRetentionDays ?? 90}
+                    onChange={e => update('logRetentionDays' as keyof Settings, Math.max(0, Math.min(365, parseInt(e.target.value) || 0)))}
+                    style={{ width: '100px' }}
+                />
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>days</span>
+                <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                    {(settings as any).logRetentionDays === 0 ? '⚠️ Auto-purge disabled — logs grow indefinitely' : `Records older than ${(settings as any).logRetentionDays ?? 90} days are deleted automatically`}
+                </span>
+            </div>
         </section>
     )
 }
@@ -812,6 +838,8 @@ export default function AdminSettingsPage() {
         notifyOnNewRole: true, notifyOnAnnouncement: true, notifyOnContentPublish: true,
         // Bulk / ACS
         bulkTransport: 'graph', acsConnectionString: '', acsSenderAddress: '',
+        // Log retention
+        logRetentionDays: 90,
     })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)

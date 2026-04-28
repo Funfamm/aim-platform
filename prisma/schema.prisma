@@ -467,6 +467,8 @@ model SiteSettings {
   trailerPreviewEnabled         Boolean        @default(false) // gate: pause trailer after N seconds for logged-out users
   trailerPreviewSeconds         Int            @default(15)    // how many seconds of trailer to show before gate
   trailerPreviewMessage         String?                         // custom gate prompt (fallback: "Sign in to watch the full trailer")
+  // Log retention
+  logRetentionDays              Int            @default(90)    // auto-purge EmailLog, EmailQueue, EmailBounceEvent older than N days (0 = never)
 }
 
 model PasswordHistory {

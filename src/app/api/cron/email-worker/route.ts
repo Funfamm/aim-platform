@@ -175,8 +175,40 @@ export async function GET(request: Request) {
             }
         }
 
+        // ── AUTO-PURGE: clean up old logs/queue records ───────────────────
+        let purged = 0
+        try {
+            const settings = await db.siteSettings.findFirst({ select: { logRetentionDays: true } })
+            const retentionDays = settings?.logRetentionDays ?? 90
+            if (retentionDays > 0) {
+                const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000)
+
+                const [logResult, queueResult, bounceResult] = await Promise.all([
+                    // Purge old email logs
+                    db.emailLog.deleteMany({ where: { sentAt: { lt: cutoff } } }),
+                    // Purge completed/failed/cancelled queue entries (never delete pending/processing)
+                    db.emailQueue.deleteMany({
+                        where: {
+                            createdAt: { lt: cutoff },
+                            status: { in: ['sent', 'failed', 'cancelled'] },
+                        },
+                    }),
+                    // Purge old bounce events
+                    db.emailBounceEvent.deleteMany({ where: { occurredAt: { lt: cutoff } } }),
+                ])
+
+                purged = (logResult?.count ?? 0) + (queueResult?.count ?? 0) + (bounceResult?.count ?? 0)
+                if (purged > 0) {
+                    logger.info('email-worker', `Auto-purge: removed ${purged} records older than ${retentionDays} days (logs=${logResult?.count}, queue=${queueResult?.count}, bounces=${bounceResult?.count})`)
+                }
+            }
+        } catch (purgeErr) {
+            // Non-critical — log but never fail the cron run
+            logger.warn('email-worker', 'Auto-purge failed', { error: purgeErr as Error })
+        }
+
         const elapsed = Date.now() - startTime
-        logger.info('email-worker', `Cron run: ${processed} processed, ${sent} sent, ${failed} failed, ${retried} retried (${elapsed}ms)`)
+        logger.info('email-worker', `Cron run: ${processed} processed, ${sent} sent, ${failed} failed, ${retried} retried, ${purged} purged (${elapsed}ms)`)
 
         return NextResponse.json({
             ok: true,
@@ -184,6 +216,7 @@ export async function GET(request: Request) {
             sent,
             failed,
             retried,
+            purged,
             elapsed: `${elapsed}ms`,
         })
     } catch (err) {

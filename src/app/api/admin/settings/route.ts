@@ -119,6 +119,8 @@ export async function PUT(req: Request) {
             notifyOnNewRole: body.notifyOnNewRole ?? true,
             notifyOnAnnouncement: body.notifyOnAnnouncement ?? true,
             notifyOnContentPublish: body.notifyOnContentPublish ?? false,
+            // Log retention
+            logRetentionDays: body.logRetentionDays ?? 90,
         }
 
         // Only update API key if user provided a new one (not masked)
