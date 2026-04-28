@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import StepProgress from './StepProgress'
 import ProjectTypeStep from './ProjectTypeStep'
@@ -160,7 +160,23 @@ export default function StartProjectFlow() {
     const t = useTranslations('startProject')
     const locale = useLocale()
     const [stepIndex, setStepIndex] = useState(0)
-    const [form, setForm] = useState<StartProjectFormData>({ ...INITIAL, language: locale })
+    const [form, setForm] = useState<StartProjectFormData>(() => {
+        // Restore from sessionStorage if available
+        if (typeof window !== 'undefined') {
+            try {
+                const saved = sessionStorage.getItem('sp_form_draft')
+                const savedStep = sessionStorage.getItem('sp_form_step')
+                if (saved) {
+                    const parsed = JSON.parse(saved)
+                    // Restore step index too
+                    if (savedStep) setTimeout(() => setStepIndex(Number(savedStep)), 0)
+                    return { ...INITIAL, language: locale, ...parsed, uploads: [] }
+                }
+            } catch { /* ignore corrupt data */ }
+        }
+        return { ...INITIAL, language: locale }
+    })
+    const formSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
     const [fieldErrors, setFieldErrors] = useState<string[]>([])
     const [submittedProject, setSubmittedProject] = useState<SubmittedProject | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -187,9 +203,21 @@ export default function StartProjectFlow() {
         field: K,
         value: StartProjectFormData[K]
     ) => {
-        setForm(prev => ({ ...prev, [field]: value }))
+        setForm(prev => {
+            const next = { ...prev, [field]: value }
+            // Debounced save to sessionStorage (exclude uploads)
+            if (formSaveTimer.current) clearTimeout(formSaveTimer.current)
+            formSaveTimer.current = setTimeout(() => {
+                try {
+                    const { uploads, ...saveable } = next
+                    sessionStorage.setItem('sp_form_draft', JSON.stringify(saveable))
+                    sessionStorage.setItem('sp_form_step', String(stepIndex))
+                } catch { /* storage full or unavailable */ }
+            }, 300)
+            return next
+        })
         setFieldErrors(prev => prev.filter(f => f !== field))
-    }, [])
+    }, [stepIndex])
 
     // ── Step navigation ─────────────────────────────────────────────────────
     const goNext = useCallback(() => {
@@ -249,6 +277,11 @@ export default function StartProjectFlow() {
                 throw new Error(details || data.error || t('errors.submitFailed'))
             }
 
+            // Clear saved draft on successful submission
+            try {
+                sessionStorage.removeItem('sp_form_draft')
+                sessionStorage.removeItem('sp_form_step')
+            } catch { /* ignore */ }
             setSubmittedProject(data.project)
         } catch (err) {
             setSubmitError(err instanceof Error ? err.message : t('errors.somethingWrong'))
