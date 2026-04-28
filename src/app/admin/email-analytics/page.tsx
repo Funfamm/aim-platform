@@ -147,75 +147,96 @@ export default function EmailAnalyticsPage() {
                                 { label: 'Open Rate ~', value: `${data.periodStats.openRate}%`, icon: '📬', color: '#f59e0b' },
                             ].map(s => (
                                 <div key={s.label} style={{
-                                    padding: '16px', borderRadius: '12px',
+                                    padding: '18px 16px', borderRadius: '12px', minHeight: '88px',
                                     background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
+                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
                                 }}>
-                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                         {s.icon} {s.label}
                                     </div>
-                                    <div style={{ fontSize: '1.4rem', fontWeight: 800, color: s.color }}>
-                                        {s.value}
+                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color, marginTop: '8px' }}>
+                                        {typeof s.value === 'number' ? s.value.toLocaleString() : s.value}
                                     </div>
                                 </div>
                             ))}
                         </div>
 
                         {/* Open rate disclaimer */}
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', padding: '8px 14px', borderRadius: '8px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.12)' }}>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', padding: '10px 14px', borderRadius: '8px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.12)', lineHeight: 1.5 }}>
                             ⚠️ Open rates are approximate — some email clients block tracking images or proxy them. Treat as a useful signal, not absolute truth.
                         </div>
 
                         {/* Health Score */}
-                        <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: `1px solid ${hColor}33` }}>
+                        <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--bg-secondary)', border: `1px solid ${hColor}33`, minHeight: '88px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: hColor, marginBottom: '4px' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: hColor, marginBottom: '6px' }}>
                                         Reputation Health
                                     </div>
-                                    <div style={{ fontSize: '2rem', fontWeight: 900, color: hColor }}>{data.healthScore.score}<span style={{ fontSize: '0.8rem' }}>/100</span></div>
-                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>{data.healthScore.grade}</div>
+                                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+                                        <span style={{ fontSize: '2.2rem', fontWeight: 900, color: hColor, lineHeight: 1 }}>{data.healthScore.score}</span>
+                                        <span style={{ fontSize: '0.85rem', fontWeight: 600, color: hColor, opacity: 0.7 }}>/100</span>
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textTransform: 'capitalize', marginTop: '4px' }}>{data.healthScore.grade}</div>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', textAlign: 'right' }}>
-                                    <span>Bounce: <strong style={{ color: data.healthScore.hardBounceRate > 2 ? '#ef4444' : '#34d399' }}>{data.healthScore.hardBounceRate}%</strong></span>
-                                    <span>Complaint: <strong style={{ color: data.healthScore.complaintRate > 0.1 ? '#ef4444' : '#34d399' }}>{data.healthScore.complaintRate}%</strong></span>
-                                    <span>Suppressed: <strong style={{ color: '#f59e0b' }}>{data.healthScore.suppressedCount}</strong></span>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.75rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                                        <span style={{ color: 'var(--text-tertiary)' }}>Bounce</span>
+                                        <strong style={{ color: data.healthScore.hardBounceRate > 2 ? '#ef4444' : '#34d399', minWidth: '36px', textAlign: 'right' }}>{data.healthScore.hardBounceRate}%</strong>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                                        <span style={{ color: 'var(--text-tertiary)' }}>Complaint</span>
+                                        <strong style={{ color: data.healthScore.complaintRate > 0.1 ? '#ef4444' : '#34d399', minWidth: '36px', textAlign: 'right' }}>{data.healthScore.complaintRate}%</strong>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
+                                        <span style={{ color: 'var(--text-tertiary)' }}>Suppressed</span>
+                                        <strong style={{ color: '#f59e0b', minWidth: '36px', textAlign: 'right' }}>{data.healthScore.suppressedCount}</strong>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Period summary */}
-                        <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
-                            <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '12px' }}>
+                        <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+                            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '14px' }}>
                                 {period === 'daily' ? 'Last 7 Days' : period === 'weekly' ? 'Last 4 Weeks' : 'Last 3 Months'}
                             </div>
-                            <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '0.85rem' }}>
-                                <span><strong style={{ color: '#60a5fa' }}>{data.periodStats.sent}</strong> sent</span>
-                                <span><strong style={{ color: '#34d399' }}>{data.periodStats.success}</strong> delivered</span>
-                                <span><strong style={{ color: '#ef4444' }}>{data.periodStats.failed}</strong> failed</span>
-                                <span><strong style={{ color: '#c084fc' }}>{data.periodStats.opened}</strong> opened</span>
-                                <span>Success <strong style={{ color: '#34d399' }}>{data.periodStats.successRate}%</strong></span>
-                                <span>Open ~<strong style={{ color: '#f59e0b' }}>{data.periodStats.openRate}%</strong></span>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
+                                {[
+                                    { label: 'Sent', value: data.periodStats.sent, color: '#60a5fa' },
+                                    { label: 'Delivered', value: data.periodStats.success, color: '#34d399' },
+                                    { label: 'Failed', value: data.periodStats.failed, color: '#ef4444' },
+                                    { label: 'Opened', value: data.periodStats.opened, color: '#c084fc' },
+                                    { label: 'Success', value: `${data.periodStats.successRate}%`, color: '#34d399' },
+                                    { label: 'Open Rate', value: `~${data.periodStats.openRate}%`, color: '#f59e0b' },
+                                ].map(s => (
+                                    <div key={s.label} style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 800, color: s.color }}>{typeof s.value === 'number' ? s.value.toLocaleString() : s.value}</span>
+                                        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{s.label.toLowerCase()}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
                         {/* Type breakdown */}
                         {data.typeBreakdown.length > 0 && (
-                            <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
-                                <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#c084fc', marginBottom: '12px' }}>
+                            <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#c084fc', marginBottom: '14px' }}>
                                     By Type ({period === 'daily' ? '7d' : period === 'weekly' ? '30d' : '90d'})
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                     {data.typeBreakdown.map(t => (
-                                        <div key={t.type} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <span style={{ width: '100px', fontSize: '0.78rem', fontWeight: 600, textTransform: 'capitalize' }}>{t.type}</span>
-                                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: '4px', height: '18px', overflow: 'hidden' }}>
+                                        <div key={t.type} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <span style={{ width: '110px', fontSize: '0.78rem', fontWeight: 600, textTransform: 'capitalize', flexShrink: 0 }}>{t.type}</span>
+                                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: '4px', height: '20px', overflow: 'hidden' }}>
                                                 <div style={{
                                                     width: `${Math.max(2, (t.count / Math.max(...data.typeBreakdown.map(x => x.count))) * 100)}%`,
                                                     height: '100%', borderRadius: '4px',
                                                     background: 'linear-gradient(90deg, rgba(192,132,252,0.3), rgba(192,132,252,0.6))',
+                                                    transition: 'width 0.3s ease',
                                                 }} />
                                             </div>
-                                            <span style={{ fontSize: '0.78rem', fontWeight: 700, minWidth: '30px', textAlign: 'right' }}>{t.count}</span>
+                                            <span style={{ fontSize: '0.78rem', fontWeight: 700, minWidth: '40px', textAlign: 'right' }}>{t.count.toLocaleString()}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -224,21 +245,22 @@ export default function EmailAnalyticsPage() {
 
                         {/* Volume Chart */}
                         {data.chartVolume.length > 0 && (
-                            <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
-                                <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '12px' }}>
+                            <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
+                                <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '14px' }}>
                                     Volume ({period})
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '120px' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '130px' }}>
                                     {data.chartVolume.map(d => (
                                         <div key={d.period} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-                                            <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{d.sent}</div>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{d.sent.toLocaleString()}</div>
                                             <div style={{
-                                                width: '100%', maxWidth: '40px',
-                                                height: `${Math.max(4, (d.sent / maxChartSent) * 100)}px`,
+                                                width: '100%', maxWidth: '44px',
+                                                height: `${Math.max(4, (d.sent / maxChartSent) * 110)}px`,
                                                 borderRadius: '4px 4px 0 0',
                                                 background: d.failed > 0
                                                     ? 'linear-gradient(180deg, rgba(239,68,68,0.5), rgba(96,165,250,0.5))'
                                                     : 'linear-gradient(180deg, rgba(96,165,250,0.4), rgba(96,165,250,0.7))',
+                                                transition: 'height 0.3s ease',
                                             }} />
                                             <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>
                                                 {d.period.length > 7 ? d.period.slice(5) : d.period}
