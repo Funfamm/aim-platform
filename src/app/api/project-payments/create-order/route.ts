@@ -68,14 +68,17 @@ export async function POST(request: Request) {
         ].join('|')
 
         const milestoneLabels: Record<string, string> = {
-            deposit: 'Project Deposit (40%)',
-            midpoint: 'Midpoint Payment (30%)',
-            final: 'Final Payment (30%)',
+            deposit: 'Project Deposit',
+            midpoint: 'Midpoint Payment',
+            final: 'Final Payment',
         }
 
+        const safeAmount = parseFloat(Number(amount).toFixed(2))
+        const safeClientName = (clientName || 'Client').replace(/[^\w\s.-]/g, '').slice(0, 50)
+
         const { orderId } = await createPayPalOrder({
-            amount: parseFloat(amount.toFixed(2)),
-            description: `${milestoneLabels[milestone]} — ${clientName || 'Client'}`,
+            amount: safeAmount,
+            description: `${milestoneLabels[milestone] || 'Payment'} - ${safeClientName}`,
             customId,
         })
 
