@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { getGraphAccessToken } from '@/lib/graphClient'
 import { decrypt } from '@/lib/secure'
 import { logger } from './logger'
+import { isEmailSuppressed, recordBounce, classifyBounceError } from '@/lib/suppression'
+import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 
 export type EmailType = 'authentication' | 'application' | 'notification' | 'subscribe' | 'general'
 
@@ -14,6 +16,8 @@ export interface EmailOptions {
     replyTo?: string
     /** Explicit email type for classification. When set, bypasses subject-line heuristic. */
     type?: EmailType
+    /** When true, bypasses marketing suppression — for auth/security emails only. */
+    isTransactional?: boolean
 }
 
 interface MailConfig {
@@ -162,8 +166,14 @@ class GraphThrottleError extends Error {
     }
 }
 
-async function sendViaGraph(config: MailConfig, options: EmailOptions): Promise<void> {
+async function sendViaGraph(config: MailConfig, options: EmailOptions, extraHeaders?: Record<string, string>): Promise<void> {
     const token = await getGraphAccessToken()
+
+    // Convert headers to Graph's internetMessageHeaders format
+    const internetMessageHeaders = extraHeaders
+        ? Object.entries(extraHeaders).map(([name, value]) => ({ name, value }))
+        : undefined
+
     const response = await fetch(`https://graph.microsoft.com/v1.0/users/${config.fromEmail}/sendMail`, {
         method: 'POST',
         headers: {
@@ -177,6 +187,7 @@ async function sendViaGraph(config: MailConfig, options: EmailOptions): Promise<
                 toRecipients: [{ emailAddress: { address: options.to } }],
                 from: { emailAddress: { address: config.fromEmail, name: config.fromName } },
                 replyTo: options.replyTo ? [{ emailAddress: { address: options.replyTo } }] : undefined,
+                ...(internetMessageHeaders?.length ? { internetMessageHeaders } : {}),
             },
         }),
     })
@@ -207,7 +218,7 @@ async function sendViaGraph(config: MailConfig, options: EmailOptions): Promise<
     }
 }
 
-async function sendViaSMTP(config: MailConfig, options: EmailOptions): Promise<void> {
+async function sendViaSMTP(config: MailConfig, options: EmailOptions, extraHeaders?: Record<string, string>): Promise<void> {
     const transporter = nodemailer.createTransport({
         host: config.smtpHost,
         port: config.smtpPort,
@@ -221,6 +232,7 @@ async function sendViaSMTP(config: MailConfig, options: EmailOptions): Promise<v
         html: options.html,
         text: options.text,
         replyTo: options.replyTo,
+        headers: extraHeaders,
     })
 }
 
@@ -254,6 +266,24 @@ async function sendWithRetry(
     throw lastErr  // all attempts exhausted
 }
 
+// ── List-Unsubscribe Headers (RFC 8058) ────────────────────────────────────
+
+/**
+ * Build RFC 8058 compliant List-Unsubscribe headers.
+ * Gmail and Yahoo REQUIRE these for bulk senders (>5000/day).
+ *
+ * Returns headers as a flat Record for injection into both SMTP (nodemailer)
+ * and Graph (internetMessageHeaders) transports.
+ */
+function buildUnsubscribeHeaders(recipientEmail: string, siteUrl: string): Record<string, string> {
+    const unsubUrl = buildUnsubscribeUrl(siteUrl, recipientEmail, 'subscriber')
+    return {
+        'List-Unsubscribe': `<${unsubUrl}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        'Precedence': 'bulk',
+    }
+}
+
 /**
  * Classify an outgoing email into a category based on its subject line.
  * Used for email analytics breakdowns.
@@ -274,11 +304,19 @@ function detectEmailType(subject: string): string {
  * Errors are logged but never thrown — email sending is fire-and-forget.
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
-    // ⛔ KILL SWITCH — emails disabled while domain reputation recovers with Gmail.
-    // Set EMAILS_KILL_SWITCH=off in env to re-enable, or remove this block entirely.
-    if (process.env.EMAILS_KILL_SWITCH !== 'off') {
-        logger.info('mailer', `Email BLOCKED (kill switch): ${options.to} — ${options.subject}`)
-        return false
+    // ── Suppression check — transactional emails bypass, marketing emails are blocked ──
+    if (options.isTransactional) {
+        const suppressed = await isEmailSuppressed(options.to)
+        if (suppressed) {
+            logger.warn('mailer', `Sending transactional to suppressed address (${suppressed}): ${options.to} — allowed by bypass`)
+        }
+        // Continue sending regardless — auth/security emails MUST be delivered
+    } else {
+        const suppressReason = await isEmailSuppressed(options.to)
+        if (suppressReason) {
+            logger.info('mailer', `Email SUPPRESSED (${suppressReason}): ${options.to} — ${options.subject}`)
+            return false
+        }
     }
 
     try {
@@ -301,7 +339,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         const isAuthEmail = emailType === 'authentication'
 
         let htmlWithPixel = options.html
-        if (!isAuthEmail) {
+        if (!isAuthEmail && !options.isTransactional) {
             const pixelUrl = `${siteUrl}/api/track/open/${trackingId}`
             const trackingPixel = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />`
 
@@ -317,6 +355,13 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
             }
         }
 
+        // ── List-Unsubscribe headers (RFC 8058) ─────────────────────────────
+        // Only for non-auth, non-transactional emails — marketing/bulk emails
+        // Gmail and Yahoo REQUIRE these headers for bulk senders
+        const unsubHeaders = (!isAuthEmail && !options.isTransactional)
+            ? buildUnsubscribeHeaders(options.to, siteUrl)
+            : undefined
+
         // Use admin-configured reply-to unless caller explicitly set one
         const finalOptions: EmailOptions = {
             ...options,
@@ -325,9 +370,9 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
         }
 
         if (config.transport === 'smtp') {
-            await sendWithRetry(() => sendViaSMTP(config, finalOptions), options.subject)
+            await sendWithRetry(() => sendViaSMTP(config, finalOptions, unsubHeaders), options.subject)
         } else {
-            await sendWithRetry(() => sendViaGraph(config, finalOptions), options.subject)
+            await sendWithRetry(() => sendViaGraph(config, finalOptions, unsubHeaders), options.subject)
         }
 
         logger.info('mailer', `Email sent to ${options.to}: ${options.subject}`)
@@ -341,14 +386,17 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
                 type: emailType,
                 transport: config.transport,
                 success: true,
+                bounceCategory: null,
             },
         }).catch(() => { /* non-critical log failure */ })
 
         return true
     } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err)
+        const bounceCategory = classifyBounceError(errorMsg)
         logger.error('mailer', `Email to ${options.to} failed after all retries: ${options.subject}`, { error: err as Error })
 
-        // Log failure too
+        // Log failure with bounce classification
         prisma.emailLog.create({
             data: {
                 to: options.to,
@@ -356,31 +404,13 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
                 type: options.type || detectEmailType(options.subject),
                 transport: 'unknown',
                 success: false,
-                error: err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500),
+                error: errorMsg.slice(0, 2000),
+                bounceCategory,
             },
         }).catch(() => { /* non-critical */ })
 
-        // Auto-deactivate subscriber after 3+ consecutive failures
-        // Fire-and-forget — never blocks the main flow
-        try {
-            const recentLogs = await prisma.emailLog.findMany({
-                where: { to: options.to },
-                orderBy: { sentAt: 'desc' },
-                take: 3,
-                select: { success: true },
-            })
-            const allFailed = recentLogs.length >= 3 && recentLogs.every(l => !l.success)
-            if (allFailed) {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const result = await (prisma as any).subscriber.updateMany({
-                    where: { email: options.to, active: true },
-                    data: { active: false },
-                })
-                if (result.count > 0) {
-                    logger.warn('mailer', `Auto-deactivated subscriber ${options.to} after 3 consecutive send failures`)
-                }
-            }
-        } catch { /* non-critical — don't break email flow */ }
+        // Record bounce in suppression engine (handles auto-suppress + subscriber deactivation)
+        recordBounce(options.to, bounceCategory, errorMsg).catch(() => { /* non-critical */ })
 
         // Surface in Sentry if available
         try {

@@ -71,6 +71,8 @@ type Settings = {
     smtpHost: string; smtpPort: number; smtpUser: string; smtpPass: string
     smtpFromName: string; smtpFromEmail: string; smtpSecure: boolean
     emailsEnabled: boolean; emailTransport: string; emailReplyTo: string
+    // Bulk / ACS
+    bulkTransport: string; acsConnectionString: string; acsSenderAddress: string
 }
 
 const TABS = [
@@ -317,6 +319,74 @@ function EmailSmtpTab({ settings, update, Toggle }: {
                         <Toggle checked={settings.smtpSecure} onChange={v => update('smtpSecure', v)} label="Use SSL (port 465)" />
                         <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
                             Off = STARTTLS on port 587 (recommended). On = SSL on port 465.
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* ─── Bulk Transport (ACS) ─── */}
+            <hr style={{ border: 'none', borderTop: '1px solid var(--border-subtle)', margin: 'var(--space-lg) 0' }} />
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', marginBottom: '10px' }}>
+                📦 Bulk Email Transport
+            </div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
+                Choose which transport handles newsletter broadcasts and campaign emails. Transactional emails always use the primary transport above.
+            </div>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+                {[
+                    { value: 'graph', label: '🔵 Graph', desc: 'Same as primary' },
+                    { value: 'smtp', label: '📮 SMTP', desc: 'Same as primary' },
+                    { value: 'acs', label: '☁️ ACS', desc: 'Azure Communication Services' },
+                ].map(opt => (
+                    <button key={opt.value} type="button"
+                        onClick={() => update('bulkTransport' as keyof Settings, opt.value)}
+                        style={{
+                            padding: '8px 16px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                            background: (settings as any).bulkTransport === opt.value ? 'rgba(59,130,246,0.08)' : 'var(--bg-secondary)',
+                            border: (settings as any).bulkTransport === opt.value ? '1px solid rgba(59,130,246,0.4)' : '1px solid var(--border-subtle)',
+                            color: (settings as any).bulkTransport === opt.value ? '#3b82f6' : 'var(--text-secondary)',
+                            fontSize: '0.78rem', fontWeight: 600, transition: 'all 0.15s',
+                        }}
+                    >
+                        {opt.label}
+                        <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>{opt.desc}</div>
+                    </button>
+                ))}
+            </div>
+
+            {/* ACS warning + credentials */}
+            {(settings as any).bulkTransport === 'acs' && (
+                <>
+                    {(!(settings as any).acsConnectionString || !(settings as any).acsSenderAddress) && (
+                        <div style={{
+                            padding: '12px 16px', marginBottom: 'var(--space-md)',
+                            background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)',
+                            borderRadius: 'var(--radius-md)', fontSize: '0.78rem', color: '#eab308',
+                        }}>
+                            ⚠️ ACS is selected as bulk transport but is not fully configured.
+                            Bulk emails will fail until you provide a connection string and sender address.
+                        </div>
+                    )}
+                    <div className="admin-form-grid" style={{ marginBottom: 'var(--space-md)' }}>
+                        <div>
+                            <label className="admin-label">ACS Connection String</label>
+                            <input className="admin-input" type="password"
+                                value={(settings as any).acsConnectionString || ''}
+                                onChange={e => update('acsConnectionString' as keyof Settings, e.target.value)}
+                                placeholder="endpoint=https://...." />
+                            <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                From Azure Portal → Communication Services → Keys
+                            </div>
+                        </div>
+                        <div>
+                            <label className="admin-label">ACS Sender Address</label>
+                            <input className="admin-input" type="email"
+                                value={(settings as any).acsSenderAddress || ''}
+                                onChange={e => update('acsSenderAddress' as keyof Settings, e.target.value)}
+                                placeholder="DoNotReply@your-acs-domain.azurecomm.net" />
+                            <div style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                Verified sender address from ACS Email Domains
+                            </div>
                         </div>
                     </div>
                 </>
@@ -740,6 +810,8 @@ export default function AdminSettingsPage() {
         smtpFromName: '', smtpFromEmail: '', smtpSecure: false,
         emailsEnabled: false, emailTransport: 'graph', emailReplyTo: '',
         notifyOnNewRole: true, notifyOnAnnouncement: true, notifyOnContentPublish: true,
+        // Bulk / ACS
+        bulkTransport: 'graph', acsConnectionString: '', acsSenderAddress: '',
     })
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)

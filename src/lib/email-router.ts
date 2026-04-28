@@ -12,6 +12,7 @@
 import { sendEmail, type EmailType } from '@/lib/mailer'
 import { prisma } from '@/lib/db'
 import { logger } from '@/lib/logger'
+import { isEmailSuppressed } from '@/lib/suppression'
 import crypto from 'crypto'
 
 // ── Priority levels ────────────────────────────────────────────────────────
@@ -65,6 +66,7 @@ export async function sendTransactionalEmail(options: TransactionalEmailOptions)
         text: options.text,
         replyTo: options.replyTo,
         type: options.type as EmailType,
+        isTransactional: true,   // Bypasses marketing suppression — auth/security emails MUST be delivered
     })
 }
 
@@ -77,6 +79,13 @@ export async function sendTransactionalEmail(options: TransactionalEmailOptions)
  * Use for: broadcasts, announcements, content publish, subscriber newsletters.
  */
 export async function sendBulkEmail(options: BulkEmailOptions): Promise<string> {
+    // Suppression gate — never enqueue emails for suppressed addresses
+    const suppressReason = await isEmailSuppressed(options.to)
+    if (suppressReason) {
+        logger.info('email-router', `Bulk email SUPPRESSED (${suppressReason}): ${options.to}`)
+        return 'suppressed'
+    }
+
     try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const record = await (prisma as any).emailQueue.create({
@@ -132,27 +141,24 @@ export async function enqueueBroadcastCampaign(
         return true
     })
 
-    // ── Pre-broadcast hygiene: skip known-bounced emails ─────────────────
-    // Check EmailLog for emails with 3+ failures — don't waste sends on them
-    const BOUNCE_THRESHOLD = 3
+    // ── Pre-broadcast hygiene: skip suppressed emails ─────────────────────
+    // Use the EmailSuppression table — the single source of truth for blocked addresses
     let eligible = unique
     try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const bounced: { to: string }[] = await (prisma as any).$queryRawUnsafe(`
-            SELECT "to" FROM "EmailLog"
-            WHERE success = false
-            GROUP BY "to"
-            HAVING COUNT(*) >= ${BOUNCE_THRESHOLD}
-        `)
-        if (bounced.length > 0) {
-            const bouncedSet = new Set(bounced.map(b => b.to.toLowerCase().trim()))
-            eligible = unique.filter(r => !bouncedSet.has(r.email.toLowerCase().trim()))
-            if (unique.length !== eligible.length) {
-                logger.info('email-router', `Campaign hygiene: skipped ${unique.length - eligible.length} bounced emails`)
+        const suppressed = await prisma.emailSuppression.findMany({
+            where: { removedAt: null },
+            select: { email: true },
+        })
+        if (suppressed.length > 0) {
+            const suppressedSet = new Set(suppressed.map(s => s.email.toLowerCase().trim()))
+            eligible = unique.filter(r => !suppressedSet.has(r.email.toLowerCase().trim()))
+            const skipped = unique.length - eligible.length
+            if (skipped > 0) {
+                logger.info('email-router', `Campaign hygiene: skipped ${skipped} suppressed emails`)
             }
         }
     } catch {
-        // If bounce check fails, proceed with all unique — never block sends
+        // If suppression check fails, proceed with all unique — never block sends
     }
 
     // ── Batch insert ──────────────────────────────────────────────────────

@@ -14,7 +14,7 @@
  * If REDIS_URL is not set, all queue operations are silently skipped.
  */
 import { Queue, Worker, Job } from 'bullmq'
-import { sendEmail } from '@/lib/mailer'
+import { sendTransactionalEmail } from '@/lib/email-router'
 import { logger } from '@/lib/logger'
 import { recordNotificationJob } from '@/lib/metrics'
 import { Redis as UpstashRedis } from '@upstash/redis'
@@ -133,7 +133,7 @@ export function startNotificationWorker() {
 
             // ── Email leg ─────────────────────────────────────────────────
             if ((type === 'email' || type === 'both') && email && subject && html) {
-                const sent = await sendEmail({ to: email, subject, html })
+                const sent = await sendTransactionalEmail({ to: email, subject, html })
                 if (!sent) throw new Error(`Email delivery failed for job ${job.id}`)
             }
 

@@ -19,6 +19,11 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendEmail } from '@/lib/mailer'
 import { logger } from '@/lib/logger'
+import { isEmailSuppressed, recordBounce, classifyBounceError } from '@/lib/suppression'
+import { domainRateLimiter } from '@/lib/rate-limiter'
+import { getBulkTransportConfig } from '@/lib/transport-resolver'
+import { sendViaACS } from '@/lib/acs-email'
+import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 
 // ── Configuration ──────────────────────────────────────────────────────────
 const BATCH_SIZE = 4           // emails per batch (matches Graph concurrency limit)
@@ -73,13 +78,66 @@ export async function GET(request: Request) {
             const results = await Promise.allSettled(
                 claimed.map(async (job) => {
                     try {
-                        const success = await sendEmail({
-                            to: job.to,
-                            subject: job.subject,
-                            html: job.html,
-                            text: job.text || undefined,
-                            replyTo: job.replyTo || undefined,
-                        })
+                        // Suppression gate — skip if address was suppressed after enqueue
+                        const suppressReason = await isEmailSuppressed(job.to)
+                        if (suppressReason) {
+                            await db.emailQueue.update({
+                                where: { id: job.id },
+                                data: { status: 'cancelled', error: `Suppressed: ${suppressReason}` },
+                            })
+                            logger.info('email-worker', `Job ${job.id} SUPPRESSED (${suppressReason}): ${job.to}`)
+                            return
+                        }
+
+                        // Rate limiter gate — prevent domain/global send flooding
+                        const rateCheck = domainRateLimiter.canSend(job.to)
+                        if (!rateCheck.allowed) {
+                            await db.emailQueue.update({
+                                where: { id: job.id },
+                                data: {
+                                    status: 'pending',
+                                    nextRunAt: new Date(Date.now() + rateCheck.retryAfterMs),
+                                },
+                            })
+                            logger.info('email-worker', `Job ${job.id} rate-limited, re-queued for ${rateCheck.retryAfterMs}ms`)
+                            retried++
+                            return
+                        }
+
+                        // ── Route via configured transport ─────────────────────────
+                        let success = false
+                        const bulkConfig = await getBulkTransportConfig()
+
+                        if (bulkConfig.transport === 'acs' && bulkConfig.acsConnectionString && bulkConfig.acsSenderAddress) {
+                            // ACS bulk path — must inject List-Unsubscribe headers manually
+                            // (sendEmail() does this for Graph/SMTP, ACS needs explicit injection)
+                            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+                            const unsubUrl = buildUnsubscribeUrl(siteUrl, job.to, 'subscriber')
+                            const headers: Record<string, string> = {
+                                'List-Unsubscribe': `<${unsubUrl}>`,
+                                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                                'Precedence': 'bulk',
+                            }
+
+                            try {
+                                await sendViaACS(
+                                    { connectionString: bulkConfig.acsConnectionString, senderAddress: bulkConfig.acsSenderAddress },
+                                    { to: job.to, subject: job.subject, html: job.html, text: job.text || undefined, senderAddress: bulkConfig.acsSenderAddress, replyTo: job.replyTo || undefined, headers }
+                                )
+                                success = true
+                            } catch {
+                                success = false
+                            }
+                        } else {
+                            // Graph/SMTP path — sendEmail() handles List-Unsubscribe internally
+                            success = await sendEmail({
+                                to: job.to,
+                                subject: job.subject,
+                                html: job.html,
+                                text: job.text || undefined,
+                                replyTo: job.replyTo || undefined,
+                            })
+                        }
 
                         if (success) {
                             // Mark as sent
@@ -181,44 +239,9 @@ async function handleJobFailure(
         logger.warn('email-worker', `Job ${job.id} attempt ${newAttempts}/${job.maxAttempts} failed${isThrottle ? ' (429 throttled)' : ''}, retry at ${nextRunAt.toISOString()} (${delayMs}ms)`)
     }
 
-    // Track bounce for subscriber hygiene (non-throttle failures only)
+    // Track bounce via suppression engine (replaces old manual subscriber deactivation)
     if (!isThrottle) {
-        await trackBounce(db, job.to)
-    }
-}
-
-// ── Bounce Management ──────────────────────────────────────────────────────
-// Tracks delivery failures per subscriber email.
-// After 3+ bounces, auto-deactivates the subscriber to prevent wasted sends.
-
-const BOUNCE_THRESHOLD = 3
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function trackBounce(db: any, email: string): Promise<void> {
-    try {
-        const normalizedEmail = email.toLowerCase().trim()
-
-        // Count total failures for this email in EmailLog
-        const failCount = await db.emailLog.count({
-            where: { to: normalizedEmail, success: false },
-        })
-
-        if (failCount >= BOUNCE_THRESHOLD) {
-            // Check if they're an active subscriber
-            const subscriber = await db.subscriber.findUnique({
-                where: { email: normalizedEmail },
-                select: { id: true, active: true },
-            })
-
-            if (subscriber?.active) {
-                await db.subscriber.update({
-                    where: { email: normalizedEmail },
-                    data: { active: false },
-                })
-                logger.warn('email-worker', `Auto-deactivated subscriber ${normalizedEmail} — ${failCount} delivery failures (bounce threshold: ${BOUNCE_THRESHOLD})`)
-            }
-        }
-    } catch {
-        // Never let bounce tracking crash the worker
+        const bounceCategory = classifyBounceError(errorMsg)
+        await recordBounce(job.to, bounceCategory, errorMsg, 'worker').catch(() => { /* non-critical */ })
     }
 }

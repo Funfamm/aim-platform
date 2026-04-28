@@ -13,6 +13,10 @@ export type AuditAction =
     | 'DELETE_COURSE'
     | 'PREFERENCE_UPDATE'
     | 'TOKEN_ROTATE'
+    | 'SUPPRESS_EMAIL'
+    | 'LIFT_SUPPRESSION'
+    | 'DELETE_SUPPRESSION'
+    | 'PURGE_SUPPRESSED_SUBSCRIBERS'
 
 interface AuditEntry {
     actor: string       // userId of the admin performing the action

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { invalidateSettings } from '@/lib/cached-settings'
 import { encrypt } from '@/lib/secure'
 import { invalidateMailerCache } from '@/lib/mailer'
+import { invalidateAcsClient } from '@/lib/acs-email'
 import { logger } from '@/lib/logger'
 
 import { logAdminAction } from '@/lib/audit-log'
@@ -31,6 +32,9 @@ export async function GET() {
             : null,
         smtpPass: settings.smtpPass
             ? '••••••••' + settings.smtpPass.slice(-4)
+            : null,
+        acsConnectionString: settings.acsConnectionString
+            ? '••••••••' + settings.acsConnectionString.slice(-4)
             : null,
     }
 
@@ -106,6 +110,9 @@ export async function PUT(req: Request) {
             emailsEnabled: body.emailsEnabled ?? false,
             emailTransport: body.emailTransport || 'graph',
             emailReplyTo: body.emailReplyTo || null,
+            // Bulk / ACS transport
+            bulkTransport: body.bulkTransport || 'graph',
+            acsSenderAddress: body.acsSenderAddress || null,
             // Audio upload
             audioUploadEnabled: body.audioUploadEnabled ?? true,
             // In-app notification preferences
@@ -126,6 +133,12 @@ export async function PUT(req: Request) {
             updateData.smtpPass = encrypt(body.smtpPass)
         }
 
+        // Only update ACS connection string if user provided a new one (not masked)
+        const isAcsMasked = body.acsConnectionString?.startsWith('••')
+        if (body.acsConnectionString && !isAcsMasked) {
+            updateData.acsConnectionString = encrypt(body.acsConnectionString)
+        }
+
         // Try update first, create if doesn't exist
         let settings
         const existing = await prisma.siteSettings.findUnique({ where: { id: 'default' } })
@@ -143,6 +156,7 @@ export async function PUT(req: Request) {
         // Invalidate caches so changes take effect immediately
         invalidateSettings()
         invalidateMailerCache()
+        invalidateAcsClient()
 
         logAdminAction({
             actor: session.userId,
@@ -158,6 +172,9 @@ export async function PUT(req: Request) {
                 : null,
             smtpPass: settings.smtpPass
                 ? '••••••••' + settings.smtpPass.slice(-4)
+                : null,
+            acsConnectionString: settings.acsConnectionString
+                ? '••••••••' + settings.acsConnectionString.slice(-4)
                 : null,
         }
 

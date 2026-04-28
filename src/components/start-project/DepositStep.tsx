@@ -86,7 +86,7 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
 
     // Keep form data in a ref so PayPal callbacks always read latest values
     const formRef = useRef(form)
-    formRef.current = form
+    useEffect(() => { formRef.current = form }, [form])
 
     // Render PayPal buttons — inline in effect to avoid memoization issues
     useEffect(() => {

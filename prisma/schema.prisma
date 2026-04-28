@@ -457,6 +457,10 @@ model SiteSettings {
   notifyOnAnnouncement          Boolean        @default(true)
   notifyOnContentPublish        Boolean        @default(true)
   emailReplyTo                  String?
+  // Bulk / ACS transport
+  bulkTransport                 String         @default("graph")  // graph | acs — transport for queued/bulk emails
+  acsConnectionString           String?                           // Azure Communication Services connection string (encrypted)
+  acsSenderAddress              String?                           // ACS verified sender e.g. DoNotReply@mail.impactaistudio.com
   resultRevealDelayHours        Int            @default(6)
   auditDelayHours               Int            @default(2)  // hours after submission to run auto-audit (legacy)
   auditQueueBatchSize           Int            @default(10) // max apps scored per cron run
@@ -561,32 +565,44 @@ model ApplicationNotification {
 }
 
 model Subscriber {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String?
-  source       String?                       // "organic" | "admin_csv_import" | "api" — traceability
-  country      String?                       // ISO 3166-1 alpha-2 — auto-detected on subscribe
-  subscribedAt DateTime  @default(now())
-  active       Boolean   @default(false)   // false until double opt-in confirmed
-  confirmToken String?                      // null once confirmed
-  confirmedAt  DateTime?                    // set when subscriber clicks confirmation link
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  source          String?                       // "organic" | "admin_csv_import" | "api" — traceability
+  country         String?                       // ISO 3166-1 alpha-2 — auto-detected on subscribe
+  subscribedAt    DateTime  @default(now())
+  active          Boolean   @default(false)   // false until double opt-in confirmed
+  confirmToken    String?                      // null once confirmed
+  confirmedAt     DateTime?                    // set when subscriber clicks confirmation link
+  // Bounce tracking
+  bounceCount     Int       @default(0)       // total delivery failures
+  lastBounceAt    DateTime?                    // when the last bounce occurred
+  suppressedAt    DateTime?                    // when auto-suppressed
+  suppressReason  String?                      // hard_bounce | soft_bounce | complaint | manual
+
+  @@index([active])
+  @@index([suppressedAt])
 }
 
 model EmailLog {
-  id         String    @id @default(cuid())
-  trackingId String?   @unique            // UUID for open-tracking pixel
-  to         String
-  subject    String
-  type       String    @default("general")
-  transport  String    @default("unknown")
-  success    Boolean
-  error      String?
-  sentAt     DateTime  @default(now())
-  openedAt   DateTime?                     // set when tracking pixel is loaded
+  id              String    @id @default(cuid())
+  trackingId      String?   @unique            // UUID for open-tracking pixel
+  to              String
+  subject         String
+  type            String    @default("general")
+  transport       String    @default("unknown")
+  success         Boolean
+  error           String?   @db.Text
+  bounceCategory  String?                       // hard_bounce | soft_bounce | complaint | throttle | null
+  sentAt          DateTime  @default(now())
+  openedAt        DateTime?                     // set when tracking pixel is loaded
 
+  @@index([to])
   @@index([sentAt])
   @@index([success])
   @@index([type])
+  @@index([transport])
+  @@index([bounceCategory])
   @@index([trackingId])
 }
 
@@ -612,6 +628,41 @@ model EmailQueue {
   @@index([status, priority, nextRunAt])      // worker query: pending + priority sort
   @@index([campaignId])                       // admin campaign view
   @@index([createdAt])                        // cleanup
+}
+
+/// Master suppression list — emails that must NOT receive any email.
+/// Populated automatically by the bounce engine and manually by admins.
+model EmailSuppression {
+  id         String    @id @default(cuid())
+  email      String    @unique              // normalized lowercase
+  reason     String                          // hard_bounce | soft_bounce | complaint | manual | unsubscribe
+  bounceType String?                         // permanent | transient | undetermined
+  source     String    @default("system")    // system | admin | user | acs_webhook
+  detail     String?   @db.Text              // raw error message / NDR code
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime?                       // soft bounces expire (retry after 7 days)
+  removedAt  DateTime?                       // admin can lift suppression
+  removedBy  String?                          // admin user ID who lifted it
+
+  @@index([email])
+  @@index([reason])
+  @@index([createdAt])
+  @@index([expiresAt])
+}
+
+/// Individual bounce event log — one row per observed bounce.
+/// Used by the suppression engine for soft-bounce threshold counting
+/// and by webhook dedup to prevent duplicate processing.
+model EmailBounceEvent {
+  id          String   @id @default(cuid())
+  email       String                          // normalized lowercase
+  bounceType  String                          // hard_bounce | soft_bounce | complaint
+  source      String   @default("mailer")     // mailer | webhook | worker
+  detail      String?  @db.Text              // raw error message / NDR code
+  occurredAt  DateTime @default(now())
+
+  @@index([email, bounceType, occurredAt])
+  @@index([occurredAt])
 }
 
 model Donation {
@@ -1023,6 +1074,7 @@ model ReviewActivity {
 enum EmailTransport {
   graph
   smtp
+  acs
 }
 
 enum ApplicationStatus {

@@ -2,22 +2,32 @@
 
 import { useState, useEffect } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
+import SuppressionTab from './SuppressionTab'
+import EmailLogTab from './EmailLogTab'
+import ImportTab from './ImportTab'
 
 interface Analytics {
+    period: string
     allTime: { totalSent: number; totalSuccess: number; totalFailed: number; totalOpened: number; successRate: number; openRate: number }
-    last30Days: { sent: number; success: number; failed: number; opened: number; successRate: number; openRate: number }
+    periodStats: { days: number; sent: number; success: number; failed: number; opened: number; successRate: number; openRate: number }
+    bounceStats: Record<string, number>
     typeBreakdown: { type: string; count: number }[]
-    dailyVolume: { date: string; sent: number; failed: number }[]
-    recentFailures: { id: string; to: string; subject: string; type: string; error: string | null; sentAt: string }[]
+    transportBreakdown: { transport: string; count: number }[]
+    chartVolume: { period: string; sent: number; failed: number; opened: number }[]
+    healthScore: { score: number; successRate: number; hardBounceRate: number; complaintRate: number; suppressedCount: number; grade: string }
+    suppression: { totalActive: number; addedLast30Days: number }
+    topFailing: { email: string; failures: number }[]
 }
 
-// CSV import state
 interface ImportResult { success: boolean; total: number; imported: number; skippedDuplicate: number; skippedInvalid: number; errors: string[] }
+
+type TabType = 'overview' | 'suppression' | 'log' | 'import'
 
 export default function EmailAnalyticsPage() {
     const [data, setData] = useState<Analytics | null>(null)
     const [loading, setLoading] = useState(true)
-    const [tab, setTab] = useState<'overview' | 'failures' | 'import'>('overview')
+    const [tab, setTab] = useState<TabType>('overview')
+    const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily')
     const [csvText, setCsvText] = useState('')
     const [importing, setImporting] = useState(false)
     const [importResult, setImportResult] = useState<ImportResult | null>(null)
@@ -25,16 +35,18 @@ export default function EmailAnalyticsPage() {
 
     const loadData = () => {
         setLoading(true)
-        fetch(`/api/admin/email-analytics?tz=${new Date().getTimezoneOffset()}`)
+        fetch(`/api/admin/email-analytics?tz=${new Date().getTimezoneOffset()}&period=${period}`)
             .then(r => r.json())
             .then(d => { setData(d); setLastUpdated(new Date()) })
             .catch(() => {})
             .finally(() => setLoading(false))
     }
 
-    useEffect(() => { loadData() }, [])
+    useEffect(() => { loadData() }, [period])
 
-    const maxDailySent = data ? Math.max(...data.dailyVolume.map(d => d.sent), 1) : 1
+    const maxChartSent = data ? Math.max(...data.chartVolume.map(d => d.sent), 1) : 1
+    const hGrade = data?.healthScore?.grade
+    const hColor = hGrade === 'excellent' ? '#34d399' : hGrade === 'good' ? '#60a5fa' : hGrade === 'warning' ? '#f59e0b' : '#ef4444'
 
     async function handleImport() {
         if (!csvText.trim()) return
@@ -94,19 +106,31 @@ export default function EmailAnalyticsPage() {
                 </div>
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', background: 'var(--bg-secondary)', borderRadius: '10px', padding: '4px' }}>
-                    {(['overview', 'failures', 'import'] as const).map(t => (
-                        <button key={t} onClick={() => setTab(t)} style={{
-                            flex: 1, padding: '8px 16px', borderRadius: '8px', border: 'none',
-                            fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer',
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '16px', background: 'var(--bg-secondary)', borderRadius: '10px', padding: '4px' }}>
+                    {([['overview','📊 Overview'],['suppression','🛡️ Suppression'],['log','📋 Email Log'],['import','📥 Import']] as const).map(([t, label]) => (
+                        <button key={t} onClick={() => setTab(t as TabType)} style={{
+                            flex: 1, padding: '8px 12px', borderRadius: '8px', border: 'none',
+                            fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer',
                             background: tab === t ? 'var(--accent-gold)' : 'transparent',
                             color: tab === t ? '#0f1115' : 'var(--text-secondary)',
                             transition: 'all 0.15s',
-                        }}>
-                            {t === 'overview' ? '📊 Overview' : t === 'failures' ? '❌ Failures' : '📥 CSV Import'}
-                        </button>
+                        }}>{label}</button>
                     ))}
                 </div>
+
+                {/* Period selector (for overview) */}
+                {tab === 'overview' && (
+                    <div style={{ display: 'flex', gap: '4px', marginBottom: '20px' }}>
+                        {(['daily','weekly','monthly'] as const).map(p => (
+                            <button key={p} onClick={() => setPeriod(p)} style={{
+                                padding: '5px 14px', borderRadius: '6px', border: '1px solid var(--border-subtle)',
+                                background: period === p ? 'rgba(96,165,250,0.15)' : 'transparent',
+                                color: period === p ? '#60a5fa' : 'var(--text-tertiary)',
+                                fontWeight: 600, fontSize: '0.72rem', cursor: 'pointer', textTransform: 'capitalize',
+                            }}>{p}</button>
+                        ))}
+                    </div>
+                )}
 
                 {loading && <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-tertiary)' }}>Loading analytics…</div>}
 
@@ -141,18 +165,36 @@ export default function EmailAnalyticsPage() {
                             ⚠️ Open rates are approximate — some email clients block tracking images or proxy them. Treat as a useful signal, not absolute truth.
                         </div>
 
-                        {/* 30-day summary */}
+                        {/* Health Score */}
+                        <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: `1px solid ${hColor}33` }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: hColor, marginBottom: '4px' }}>
+                                        Reputation Health
+                                    </div>
+                                    <div style={{ fontSize: '2rem', fontWeight: 900, color: hColor }}>{data.healthScore.score}<span style={{ fontSize: '0.8rem' }}>/100</span></div>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'capitalize' }}>{data.healthScore.grade}</div>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '0.72rem', textAlign: 'right' }}>
+                                    <span>Bounce: <strong style={{ color: data.healthScore.hardBounceRate > 2 ? '#ef4444' : '#34d399' }}>{data.healthScore.hardBounceRate}%</strong></span>
+                                    <span>Complaint: <strong style={{ color: data.healthScore.complaintRate > 0.1 ? '#ef4444' : '#34d399' }}>{data.healthScore.complaintRate}%</strong></span>
+                                    <span>Suppressed: <strong style={{ color: '#f59e0b' }}>{data.healthScore.suppressedCount}</strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Period summary */}
                         <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                             <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '12px' }}>
-                                Last 30 Days
+                                Last {data.periodStats.days} Days
                             </div>
                             <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '0.85rem' }}>
-                                <span><strong style={{ color: '#60a5fa' }}>{data.last30Days.sent}</strong> sent</span>
-                                <span><strong style={{ color: '#34d399' }}>{data.last30Days.success}</strong> delivered</span>
-                                <span><strong style={{ color: '#ef4444' }}>{data.last30Days.failed}</strong> failed</span>
-                                <span><strong style={{ color: '#c084fc' }}>{data.last30Days.opened}</strong> opened</span>
-                                <span>Success <strong style={{ color: '#34d399' }}>{data.last30Days.successRate}%</strong></span>
-                                <span>Open ~<strong style={{ color: '#f59e0b' }}>{data.last30Days.openRate}%</strong></span>
+                                <span><strong style={{ color: '#60a5fa' }}>{data.periodStats.sent}</strong> sent</span>
+                                <span><strong style={{ color: '#34d399' }}>{data.periodStats.success}</strong> delivered</span>
+                                <span><strong style={{ color: '#ef4444' }}>{data.periodStats.failed}</strong> failed</span>
+                                <span><strong style={{ color: '#c084fc' }}>{data.periodStats.opened}</strong> opened</span>
+                                <span>Success <strong style={{ color: '#34d399' }}>{data.periodStats.successRate}%</strong></span>
+                                <span>Open ~<strong style={{ color: '#f59e0b' }}>{data.periodStats.openRate}%</strong></span>
                             </div>
                         </div>
 
@@ -180,26 +222,26 @@ export default function EmailAnalyticsPage() {
                             </div>
                         )}
 
-                        {/* Daily Volume Chart */}
-                        {data.dailyVolume.length > 0 && (
+                        {/* Volume Chart */}
+                        {data.chartVolume.length > 0 && (
                             <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                                 <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '12px' }}>
-                                    Daily Volume (7d)
+                                    Volume ({period})
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', height: '120px' }}>
-                                    {data.dailyVolume.map(d => (
-                                        <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                                    {data.chartVolume.map(d => (
+                                        <div key={d.period} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                                             <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-tertiary)' }}>{d.sent}</div>
                                             <div style={{
                                                 width: '100%', maxWidth: '40px',
-                                                height: `${Math.max(4, (d.sent / maxDailySent) * 100)}px`,
+                                                height: `${Math.max(4, (d.sent / maxChartSent) * 100)}px`,
                                                 borderRadius: '4px 4px 0 0',
                                                 background: d.failed > 0
                                                     ? 'linear-gradient(180deg, rgba(239,68,68,0.5), rgba(96,165,250,0.5))'
                                                     : 'linear-gradient(180deg, rgba(96,165,250,0.4), rgba(96,165,250,0.7))',
                                             }} />
-                                            <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>
-                                                {(() => { const [,m,day] = d.date.split('-'); const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return `${months[parseInt(m)]} ${parseInt(day)}` })()}
+                                            <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>
+                                                {d.period.length > 7 ? d.period.slice(5) : d.period}
                                             </div>
                                         </div>
                                     ))}
@@ -209,38 +251,22 @@ export default function EmailAnalyticsPage() {
                     </div>
                 )}
 
-                {!loading && data && tab === 'failures' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {data.recentFailures.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
-                                ✅ No recent failures — all emails delivered successfully.
-                            </div>
-                        ) : data.recentFailures.map(f => (
-                            <div key={f.id} style={{
-                                padding: '12px 16px', borderRadius: '10px',
-                                background: 'rgba(239,68,68,0.04)', border: '1px solid rgba(239,68,68,0.12)',
-                            }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                                    <span style={{ fontWeight: 600, fontSize: '0.82rem' }}>{f.to}</span>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
-                                        {new Date(f.sentAt).toLocaleString()}
-                                    </span>
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>{f.subject}</div>
-                                <div style={{ fontSize: '0.7rem', color: '#ef4444' }}>{f.error || 'Unknown error'}</div>
-                                <span style={{
-                                    display: 'inline-block', marginTop: '4px',
-                                    fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase',
-                                    padding: '1px 6px', borderRadius: '4px',
-                                    background: 'rgba(239,68,68,0.1)', color: '#ef4444',
-                                }}>{f.type}</span>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                {tab === 'suppression' && <SuppressionTab />}
+
+                {tab === 'log' && <EmailLogTab />}
+
 
                 {tab === 'import' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                        {/* Suppression Import */}
+                        <div style={{
+                            padding: '20px', borderRadius: '12px',
+                            background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
+                        }}>
+                            <ImportTab />
+                        </div>
+
+                        {/* Subscriber CSV Import (existing) */}
                         <div style={{
                             padding: '20px', borderRadius: '12px',
                             background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',

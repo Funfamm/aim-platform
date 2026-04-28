@@ -91,6 +91,33 @@ export async function POST(request: NextRequest) {
         // Case 2: Was previously unsubscribed (confirmed once, now inactive) — reactivate + welcome back
         // Returning subscribers skip double opt-in since they already confirmed once
         if (existing && existing.confirmedAt) {
+            // ── Suppression check: prevent re-subscribing addresses with permanent delivery issues ──
+            const suppression = await prisma.emailSuppression.findFirst({
+                where: {
+                    email: normalizedEmail,
+                    removedAt: null,
+                    OR: [
+                        { expiresAt: null },           // Permanent suppressions
+                        { expiresAt: { gt: new Date() } }, // Not-yet-expired temp suppressions
+                    ],
+                },
+            })
+
+            if (suppression) {
+                if (suppression.reason === 'hard_bounce' || suppression.reason === 'complaint') {
+                    // Permanent delivery issues — block re-subscription
+                    return NextResponse.json({
+                        error: 'This email address has delivery issues. Please use a different email or contact support.',
+                        blocked: true,
+                    }, { status: 400 })
+                }
+
+                // Unsubscribe or soft_bounce — lift suppression
+                // liftSuppression() handles BOTH suppression removal AND sets Subscriber.active = true
+                const { liftSuppression } = await import('@/lib/suppression')
+                await liftSuppression(normalizedEmail, 'system:resubscribe')
+            }
+
             await db.subscriber.update({
                 where: { email: normalizedEmail },
                 data: { active: true, ...(name ? { name } : {}), ...(country ? { country } : {}), confirmToken: null },
