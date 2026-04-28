@@ -245,7 +245,8 @@ export default function StartProjectFlow() {
             const data = await res.json()
 
             if (!res.ok) {
-                throw new Error(data.error || t('errors.submitFailed'))
+                const details = data.details?.join(', ') || ''
+                throw new Error(details || data.error || t('errors.submitFailed'))
             }
 
             setSubmittedProject(data.project)
