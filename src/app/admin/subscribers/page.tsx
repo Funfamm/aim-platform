@@ -37,6 +37,7 @@ export default function AdminSubscribersPage() {
     const [selected, setSelected]       = useState<Set<string>>(new Set())
     const [actionLoading, setActionLoading] = useState(false)
     const [toast, setToast]             = useState('')
+    const [purging, setPurging]         = useState(false)
 
     const showToast = (msg: string) => {
         setToast(msg)
@@ -119,6 +120,51 @@ export default function AdminSubscribersPage() {
         setActionLoading(false)
     }
 
+    const handlePurgeDead = async () => {
+        setPurging(true)
+        try {
+            // Step 1: Preview — how many will be deleted?
+            const previewRes = await fetch('/api/admin/subscribers/purge')
+            if (!previewRes.ok) {
+                showToast('❌ Failed to load purge preview')
+                setPurging(false)
+                return
+            }
+            const preview = await previewRes.json()
+            if (preview.purgeableCount === 0) {
+                showToast('✅ No dead addresses to purge')
+                setPurging(false)
+                return
+            }
+
+            // Step 2: Confirm
+            const reasons = Object.entries(preview.breakdown as Record<string, number>)
+                .map(([reason, count]) => `${reason}: ${count}`)
+                .join(', ')
+            if (!confirm(
+                `Permanently delete ${preview.purgeableCount} suppressed subscriber${preview.purgeableCount !== 1 ? 's' : ''}?\n\n` +
+                `Suppression reasons: ${reasons}\n\n` +
+                `These addresses are permanently blocked from receiving email. This cannot be undone.`
+            )) {
+                setPurging(false)
+                return
+            }
+
+            // Step 3: Execute
+            const purgeRes = await fetch('/api/admin/subscribers/purge', { method: 'POST' })
+            if (purgeRes.ok) {
+                const result = await purgeRes.json()
+                showToast(`🗑️ ${result.message}`)
+                await fetchData(1)
+            } else {
+                showToast('❌ Purge failed')
+            }
+        } catch {
+            showToast('❌ Purge failed — network error')
+        }
+        setPurging(false)
+    }
+
     const exportCsv = () => {
         const params = new URLSearchParams({ format: 'csv', sort, status })
         if (search) params.set('search', search)
@@ -144,14 +190,30 @@ export default function AdminSubscribersPage() {
                 {/* Header */}
                 <div className="admin-header">
                     <h1 className="admin-page-title">📬 Subscribers</h1>
-                    <button
-                        type="button"
-                        onClick={exportCsv}
-                        className="btn btn-ghost"
-                        style={{ fontSize: '0.8rem' }}
-                    >
-                        ⬇️ Export CSV
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <button
+                            type="button"
+                            onClick={handlePurgeDead}
+                            disabled={purging}
+                            style={{
+                                padding: '6px 14px', borderRadius: 'var(--radius-md)',
+                                fontSize: '0.78rem', fontWeight: 600, cursor: purging ? 'not-allowed' : 'pointer',
+                                background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.18)',
+                                color: '#ef4444', opacity: purging ? 0.5 : 1, transition: 'all 0.15s',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            {purging ? '⏳ Purging…' : '🗑️ Purge Dead'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={exportCsv}
+                            className="btn btn-ghost"
+                            style={{ fontSize: '0.8rem' }}
+                        >
+                            ⬇️ Export CSV
+                        </button>
+                    </div>
                 </div>
 
                 {/* Toast */}
