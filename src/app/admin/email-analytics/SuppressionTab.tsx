@@ -23,6 +23,9 @@ export default function SuppressionTab() {
     const [loading, setLoading] = useState(true)
     const [addEmail, setAddEmail] = useState('')
     const [actionLoading, setActionLoading] = useState<string | null>(null)
+    const [toast, setToast] = useState('')
+
+    const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 4000) }
 
     const load = useCallback(() => {
         setLoading(true)
@@ -40,11 +43,28 @@ export default function SuppressionTab() {
     useEffect(() => { load() }, [load])
 
     const doAction = async (action: string, email?: string) => {
+        if (action === 'purge_subscribers') {
+            if (!confirm('Permanently delete all subscribers whose emails are suppressed?\n\nThis removes them from your subscriber list entirely. Suppression records will remain.')) return
+        }
         setActionLoading(email || action)
-        await fetch('/api/admin/email-suppression', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, email }),
-        })
+        try {
+            const res = await fetch('/api/admin/email-suppression', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, email }),
+            })
+            const data = await res.json()
+            if (action === 'purge_subscribers') {
+                showToast(data.purged > 0 ? `🗑️ Purged ${data.purged} dead subscriber${data.purged !== 1 ? 's' : ''}` : '✅ No dead subscribers to purge')
+            } else if (action === 'remove') {
+                showToast(`✅ Lifted suppression for ${email}`)
+            } else if (action === 'add') {
+                showToast(`⛔ Suppressed ${email}`)
+            } else if (action === 'delete') {
+                showToast(`🗑️ Deleted suppression record for ${email}`)
+            }
+        } catch {
+            showToast('❌ Action failed')
+        }
         setActionLoading(null)
         load()
     }
@@ -53,6 +73,15 @@ export default function SuppressionTab() {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Toast */}
+            {toast && (
+                <div style={{
+                    padding: '10px 16px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
+                    background: toast.startsWith('❌') ? 'rgba(239,68,68,0.1)' : 'rgba(52,211,153,0.1)',
+                    border: `1px solid ${toast.startsWith('❌') ? 'rgba(239,68,68,0.2)' : 'rgba(52,211,153,0.2)'}`,
+                    color: toast.startsWith('❌') ? '#ef4444' : '#34d399',
+                }}>{toast}</div>
+            )}
             {/* Stats */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '10px' }}>
                 {[
