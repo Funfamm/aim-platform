@@ -36,6 +36,7 @@ export default function SuppressionTab() {
             .finally(() => setLoading(false))
     }, [page, search, reasonFilter])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { load() }, [load])
 
     const doAction = async (action: string, email?: string) => {

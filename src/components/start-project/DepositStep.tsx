@@ -79,6 +79,7 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
     }, [])
 
     // Sync sdkLoaded/sdkError into component state
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (sdkLoaded) setPaypalReady(true)
         if (sdkError) setErrorMsg(sdkError)

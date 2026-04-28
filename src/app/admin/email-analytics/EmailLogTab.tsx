@@ -48,6 +48,7 @@ export default function EmailLogTab() {
             .finally(() => setLoading(false))
     }, [page, search, statusF, typeF, transportF, bounceF])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { load() }, [load])
 
     const sel = { padding: '7px 10px', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.78rem' }
