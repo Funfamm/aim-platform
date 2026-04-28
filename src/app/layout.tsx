@@ -21,11 +21,11 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: "AI filmmaking, AI movies, AI filmmaker, casting calls, AI cinema, AIM Studio",
     icons: {
       icon: [
-        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-        { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+        { url: "/favicon-32x32.png?v=2", sizes: "32x32", type: "image/png" },
+        { url: "/favicon-16x16.png?v=2", sizes: "16x16", type: "image/png" },
       ],
       apple: [
-        { url: "/apple-touch-icon.png", sizes: "180x180" },
+        { url: "/apple-touch-icon.png?v=2", sizes: "180x180" },
       ],
     },
     openGraph: {
@@ -54,9 +54,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#0d0f14" />
         <meta name="msapplication-TileColor" content="#0d0f14" />
