@@ -718,7 +718,7 @@ export async function notifyAnnouncement(
             await enqueueBroadcastCampaign(
                 uniqueSubs.map((s: { email: string }) => ({ email: s.email })),
                 () => ({ subject: `📣 ${title} | AIM Studio`, html: announcementHtml }),
-                'announcement',
+                'subscriber_announcement',
             )
         }
     }
@@ -855,7 +855,7 @@ export async function notifyContentPublish(
                     const html = contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData, unsubUrl)
                     return { subject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`, html }
                 },
-                'content_publish',
+                'subscriber_content_publish',
             )
         }
     }
