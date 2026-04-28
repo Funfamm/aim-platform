@@ -8,9 +8,11 @@ interface Props {
     updateField: <K extends keyof StartProjectFormData>(field: K, value: StartProjectFormData[K]) => void
     fieldErrors: string[]
     onGoToStep: (idx: number) => void
+    onSubmit: () => void
+    isSubmitting: boolean
 }
 
-export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep }: Props) {
+export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep, onSubmit, isSubmitting }: Props) {
     const t = useTranslations('startProject')
 
     const hasError = (field: string) => fieldErrors.includes(field)
@@ -79,36 +81,7 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
                 {form.deliveryPlatform && renderRow(t('fields.deliveryPlatform'), form.deliveryPlatform, 6)}
                 {form.addOns.length > 0 && renderRow(t('fields.addOns'), form.addOns.map(a => t(`addonOptions.${a}`)), 6)}
                 {form.uploads.length > 0 && renderRow(t('fields.uploads'), `${form.uploads.length} ${t('helpers.filesUploaded')}`, 5)}
-                {form.agreedProjectTotal && renderRow(
-                    t('fields.agreedProjectTotal') || 'Agreed Project Total',
-                    `$${form.agreedProjectTotal.toFixed(2)}`,
-                    6
-                )}
             </div>
-
-            {/* ── Deposit Preview ── */}
-            {form.agreedProjectTotal && form.agreedProjectTotal >= 50 && (
-                <div style={{
-                    marginTop: 'var(--space-md)',
-                    padding: '14px 18px',
-                    background: 'linear-gradient(135deg, rgba(212,168,83,0.06), rgba(212,168,83,0.02))',
-                    border: '1px solid rgba(212,168,83,0.2)',
-                    borderRadius: 'var(--radius-lg)',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                }}>
-                    <div>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: '3px' }}>
-                            💳 {t('deposit.dueAtCheckout') || '40% Deposit — Due at Checkout'}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                            {t('deposit.remainderNote') || 'Remaining 60% invoiced at production milestones'}
-                        </div>
-                    </div>
-                    <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>
-                        ${(Math.round(form.agreedProjectTotal * 0.4 * 100) / 100).toFixed(2)}
-                    </span>
-                </div>
-            )}
 
             {/* ── Consent checkboxes ── */}
             <div style={{
@@ -167,6 +140,36 @@ export default function ReviewStep({ form, updateField, fieldErrors, onGoToStep 
                 {hasError('consentContact') && (
                     <p className="sp-error">{t('validation.consentRequired')}</p>
                 )}
+            </div>
+
+            {/* ── Submit Button ── */}
+            <div style={{ marginTop: 'var(--space-xl)' }}>
+                <button
+                    type="button"
+                    onClick={onSubmit}
+                    disabled={isSubmitting}
+                    className="sp-btn sp-btn-primary"
+                    style={{
+                        width: '100%',
+                        padding: '16px',
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        minHeight: '56px',
+                        opacity: isSubmitting ? 0.7 : 1,
+                        cursor: isSubmitting ? 'wait' : 'pointer',
+                    }}
+                >
+                    {isSubmitting ? (t('buttons.submitting') || '⏳ Submitting...') : (t('buttons.submit') || '🚀 Submit Project')}
+                </button>
+                <p style={{
+                    marginTop: 'var(--space-sm)',
+                    fontSize: '0.72rem',
+                    color: 'var(--text-tertiary)',
+                    textAlign: 'center',
+                    lineHeight: 1.6,
+                }}>
+                    {t('helpers.submitNote') || 'After submission, our team will review your project and send you a quote with a payment link.'}
+                </p>
             </div>
         </section>
     )

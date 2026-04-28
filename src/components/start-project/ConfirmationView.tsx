@@ -157,15 +157,19 @@ export default function ConfirmationView({ project }: Props) {
             }}>
                 <p style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
                     <span style={{ flexShrink: 0 }}>📧</span>
-                    <span>{t('confirmation.step1')}</span>
+                    <span>{t('confirmation.step1') || "We'll review your project brief (1-2 business days)"}</span>
                 </p>
                 <p style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '6px' }}>
                     <span style={{ flexShrink: 0 }}>📋</span>
-                    <span>{t('confirmation.step2')}</span>
+                    <span>{t('confirmation.step2') || "You'll receive a quote and payment link via email"}</span>
+                </p>
+                <p style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '6px' }}>
+                    <span style={{ flexShrink: 0 }}>💳</span>
+                    <span>{t('confirmation.step3') || 'Pay the deposit to start production'}</span>
                 </p>
                 <p style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginTop: '6px' }}>
                     <span style={{ flexShrink: 0 }}>🎬</span>
-                    <span>{t('confirmation.step3')}</span>
+                    <span>{t('confirmation.step4') || 'We bring your vision to life'}</span>
                 </p>
             </div>
 

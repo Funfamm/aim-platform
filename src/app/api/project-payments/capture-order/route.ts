@@ -2,12 +2,14 @@
  * POST /api/project-payments/capture-order
  *
  * Captures a PayPal order after client approval.
- * Creates/updates the ProjectPayment record and advances paymentStatus.
+ * Finds/creates/updates the ProjectPayment record and advances paymentStatus.
  *
- * Body: { orderID, projectRequestId? }
+ * Body: { orderID }
  *
- * For deposit payments during the Start a Project flow, projectRequestId
- * may be provided after capture (the project is created after deposit succeeds).
+ * 3-step record lookup:
+ *  1. By paypalOrderId (backward compat / idempotency)
+ *  2. By pending invoice record (admin-created via sendInvoice)
+ *  3. Fallback: create new record
  */
 
 import { NextResponse } from 'next/server'
@@ -42,9 +44,8 @@ export async function POST(request: Request) {
         const milestone = parts[0] as MilestoneType
         const projectRequestId = parts[1] !== 'PENDING' ? parts[1] : null
 
-        // For deposit during flow: return capture details so the frontend
-        // can include them in the project submission payload
         if (!projectRequestId) {
+            // Legacy: deposit during old flow — return details for client-side submission
             return NextResponse.json({
                 success: true,
                 payment: {
@@ -57,21 +58,53 @@ export async function POST(request: Request) {
             })
         }
 
-        // For existing projects: update the payment record and project status
-        const existingPayment = await prisma.projectPayment.findUnique({
+        // ── 3-step record lookup ────────────────────────────────────────
+
+        // Step 1: Find by paypalOrderId (idempotency — catches double-capture)
+        let payment = await prisma.projectPayment.findUnique({
             where: { paypalOrderId: orderID },
         })
 
-        if (existingPayment) {
+        // If already completed, this is a duplicate capture — return success
+        if (payment && payment.status === 'completed') {
+            return NextResponse.json({
+                success: true,
+                payment: {
+                    milestone,
+                    amount: capture.amount,
+                    paypalOrderId: orderID,
+                    paypalCaptureId: capture.captureId,
+                    status: 'completed',
+                },
+            })
+        }
+
+        // Step 2: Find pending invoice record (admin-created, no paypalOrderId yet)
+        if (!payment) {
+            payment = await prisma.projectPayment.findFirst({
+                where: {
+                    projectRequestId,
+                    milestone,
+                    status: 'pending',
+                    paypalOrderId: null,
+                },
+            })
+        }
+
+        // Step 3: Update existing or create new
+        if (payment) {
             await prisma.projectPayment.update({
-                where: { id: existingPayment.id },
+                where: { id: payment.id },
                 data: {
                     status: 'completed',
+                    paypalOrderId: orderID,
                     paypalCaptureId: capture.captureId,
+                    amount: capture.amount || payment.amount,
                     paidAt: new Date(),
                 },
             })
         } else {
+            // Fallback: create record (edge case — no admin invoice pre-created)
             await prisma.projectPayment.create({
                 data: {
                     projectRequestId,
@@ -85,14 +118,14 @@ export async function POST(request: Request) {
             })
         }
 
-        // Advance the project's payment status
+        // ── Advance project payment status (ALL paths) ──────────────────
         const newPaymentStatus = PAYMENT_STATUS_PROGRESSION[milestone] || 'deposit_paid'
         await prisma.projectRequest.update({
             where: { id: projectRequestId },
             data: { paymentStatus: newPaymentStatus },
         })
 
-        // Send confirmation email
+        // ── Send confirmation email ─────────────────────────────────────
         const project = await prisma.projectRequest.findUnique({
             where: { id: projectRequestId },
         })
@@ -104,7 +137,7 @@ export async function POST(request: Request) {
             }
             sendTransactionalEmail({
                 to: project.email,
-                subject: `✅ Payment Received — ${milestoneLabels[milestone]} for ${project.projectTitle}`,
+                subject: `Payment Received - ${milestoneLabels[milestone]} for ${project.projectTitle}`,
                 html: buildPaymentConfirmationEmail(
                     project.clientName,
                     project.id,
@@ -120,7 +153,7 @@ export async function POST(request: Request) {
             if (adminEmail) {
                 sendTransactionalEmail({
                     to: adminEmail,
-                    subject: `💰 ${milestoneLabels[milestone]} Payment: $${(capture.amount || 0).toFixed(2)} — ${project.projectTitle}`,
+                    subject: `Payment: $${(capture.amount || 0).toFixed(2)} - ${milestoneLabels[milestone]} - ${project.projectTitle}`,
                     html: `<p><strong>${project.clientName}</strong> paid <strong>$${(capture.amount || 0).toFixed(2)}</strong> (${milestoneLabels[milestone]}) for project <strong>${project.projectTitle}</strong> (${project.id}).</p>`,
                     replyTo: project.email,
                 }).catch(() => {})

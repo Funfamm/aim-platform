@@ -281,3 +281,64 @@ export function projectStatusUpdateEmail(
         ${paragraph(`<span style="font-size: 12px; color: #6b7280;">Your Project ID is <strong>${projectId}</strong>. Bookmark your tracking page for real-time updates.</span>`)}
     `, `Project "${projectTitle}" — Status: ${meta.label}`)
 }
+
+
+// ──────────────────────────────────────────────────────────────
+// Invoice Email — Sent when admin sets price and sends invoice
+// ──────────────────────────────────────────────────────────────
+
+export function projectInvoiceEmail(
+    clientName: string,
+    projectId: string,
+    projectTitle: string,
+    totalAmount: number,
+    depositAmount: number,
+    paymentUrl: string,
+): string {
+    return emailWrapper(`
+        ${heading('Your Project Quote is Ready')}
+        ${subtext(`Hi ${clientName}, we've reviewed your project and confirmed the scope.`)}
+
+        ${infoCard(`
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                ${infoRow('Project', projectTitle)}
+                ${infoRow('Project ID', `<span style="color: ${BRAND_COLOR}; font-family: monospace; letter-spacing: 0.5px;">${projectId}</span>`)}
+                ${infoRow('Project Total', `<strong>$${totalAmount.toFixed(2)}</strong>`)}
+                ${infoRow('Deposit Due (40%)', `<span style="color: ${ACCENT_GREEN}; font-weight: 700; font-size: 15px;">$${depositAmount.toFixed(2)}</span>`)}
+            </table>
+        `, BRAND_COLOR)}
+
+        ${paragraph('To begin production, please pay the 40% deposit using the secure link below.')}
+
+        ${button(`Pay Deposit - $${depositAmount.toFixed(2)}`, paymentUrl)}
+
+        ${divider()}
+
+        <div style="background-color: ${BG_DARK}; border-radius: 8px; padding: 18px 22px; margin-bottom: 24px;">
+            <p style="margin: 0 0 12px; font-size: 13px; font-weight: 700; color: ${BRAND_COLOR}; text-transform: uppercase; letter-spacing: 0.5px;">Payment Schedule</p>
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="padding: 6px 0; font-size: 13px; color: ${ACCENT_GREEN};">&#x25CF;</td>
+                    <td style="padding: 6px 0 6px 10px; font-size: 13px; color: ${TEXT_PRIMARY};">Deposit (40%) — <strong>$${depositAmount.toFixed(2)}</strong> — Due now</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; font-size: 13px; color: ${TEXT_SECONDARY};">&#x25CB;</td>
+                    <td style="padding: 6px 0 6px 10px; font-size: 13px; color: ${TEXT_SECONDARY};">Midpoint (30%) — $${(Math.round(totalAmount * 0.3 * 100) / 100).toFixed(2)} — After rough cut</td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px 0; font-size: 13px; color: ${TEXT_SECONDARY};">&#x25CB;</td>
+                    <td style="padding: 6px 0 6px 10px; font-size: 13px; color: ${TEXT_SECONDARY};">Final (30%) — $${(Math.round(totalAmount * 0.3 * 100) / 100).toFixed(2)} — Before delivery</td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="text-align: center; margin-top: 16px;">
+            <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                &#x1F512; Payments are secured by PayPal Purchase Protection
+            </p>
+        </div>
+
+        ${paragraph(`<span style="font-size: 12px; color: #6b7280;">Your Project ID is <strong>${projectId}</strong>. If you have questions about the quote, reply to this email.</span>`)}
+    `, `Your project "${projectTitle}" has been quoted at $${totalAmount.toFixed(2)} — pay deposit to start`)
+}
+

@@ -29,10 +29,8 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
         }
 
-        // For deposit during flow, projectRequestId may not exist yet (pre-submission).
-        // In that case we create a pending payment record after capture.
-        // For midpoint/final, project must exist.
-        if (milestone !== 'deposit' && projectRequestId) {
+        // Validate project and milestone for all requests with a projectRequestId
+        if (projectRequestId) {
             const project = await prisma.projectRequest.findUnique({
                 where: { id: projectRequestId },
                 include: { payments: true },
@@ -82,19 +80,35 @@ export async function POST(request: Request) {
             customId,
         })
 
-        // Create pending payment record if project already exists
+        // Link PayPal order to existing or new payment record
         if (projectRequestId && projectRequestId !== 'PENDING') {
-            await prisma.projectPayment.upsert({
-                where: { paypalOrderId: orderId },
-                create: {
+            // Check if admin already created a pending record (via sendInvoice)
+            const existingPending = await prisma.projectPayment.findFirst({
+                where: {
                     projectRequestId,
                     milestone,
-                    amount: parseFloat(amount.toFixed(2)),
                     status: 'pending',
-                    paypalOrderId: orderId,
                 },
-                update: {},
             })
+
+            if (existingPending) {
+                // Link the PayPal order to the existing admin-created record
+                await prisma.projectPayment.update({
+                    where: { id: existingPending.id },
+                    data: { paypalOrderId: orderId },
+                })
+            } else {
+                // No admin record exists — create a new pending record
+                await prisma.projectPayment.create({
+                    data: {
+                        projectRequestId,
+                        milestone,
+                        amount: parseFloat(amount.toFixed(2)),
+                        status: 'pending',
+                        paypalOrderId: orderId,
+                    },
+                })
+            }
         }
 
         return NextResponse.json({ orderID: orderId })

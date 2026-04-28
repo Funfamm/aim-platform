@@ -44,7 +44,7 @@ export default function SuppressionTab() {
 
     const doAction = async (action: string, email?: string) => {
         if (action === 'purge_subscribers') {
-            if (!confirm('Permanently delete all subscribers whose emails are suppressed?\n\nThis removes them from your subscriber list entirely. Suppression records will remain.')) return
+            if (!confirm('Delete all suppressed subscribers and clean up orphaned suppression records?\n\nThis permanently removes subscribers with suppressed emails and deletes suppression entries for emails that were never subscribers.')) return
         }
         setActionLoading(email || action)
         try {
@@ -54,7 +54,7 @@ export default function SuppressionTab() {
             })
             const data = await res.json()
             if (action === 'purge_subscribers') {
-                showToast(data.purged > 0 ? `🗑️ Purged ${data.purged} dead subscriber${data.purged !== 1 ? 's' : ''}` : '✅ No dead subscribers to purge')
+                showToast(data.purged > 0 ? `🗑️ Purged ${data.purged} record${data.purged !== 1 ? 's' : ''}` : '✅ Nothing to purge')
             } else if (action === 'remove') {
                 showToast(`✅ Lifted suppression for ${email}`)
             } else if (action === 'add') {

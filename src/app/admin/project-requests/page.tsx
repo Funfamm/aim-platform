@@ -3,6 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
 
+interface ProjectPayment {
+    id: string; milestone: string; amount: number; status: string
+    paypalOrderId: string | null; paidAt: string | null; invoiceSentAt: string | null
+}
+
 interface ProjectRequest {
     id: string; projectType: string; status: string; clientName: string; email: string; phone: string | null
     projectTitle: string; description: string; deadline: string | null; urgent: boolean; adminNotes: string | null
@@ -12,6 +17,8 @@ interface ProjectRequest {
     deliveryPlatform: string | null; duration: string | null; audience: string | null; projectGoal: string | null
     visualStyle: string | null; avoidNotes: string | null; emotionalFeeling: string | null
     inspirationLinks: string[] | null; rushDelivery: boolean
+    agreedProjectTotal: number | null; paymentStatus: string
+    payments: ProjectPayment[] | null
 }
 
 const STATUSES = ['received', 'reviewing', 'scope_confirmed', 'in_production', 'awaiting_client', 'delivered', 'completed', 'cancelled']
@@ -118,6 +125,223 @@ function ConfirmModal({ title, message, detail, confirmLabel, confirmColor, onCo
                         color: confirmColor, cursor: 'pointer',
                     }}>{confirmLabel}</button>
                 </div>
+            </div>
+        </div>
+    )
+}
+
+// ── Pricing & Invoice Panel ─────────────────────────────────────────────────
+function PricingPanel({ project, onUpdate, onToast }: {
+    project: ProjectRequest
+    onUpdate: () => void
+    onToast: (t: { message: string; type: 'success' | 'error' | 'warn' }) => void
+}) {
+    const [priceInput, setPriceInput] = useState(project.agreedProjectTotal?.toString() || '')
+    const [sending, setSending] = useState(false)
+
+    const total = parseFloat(priceInput) || 0
+    const deposit = Math.round(total * 0.4 * 100) / 100
+    const midpoint = Math.round(total * 0.3 * 100) / 100
+    const final_ = Math.round(total * 0.3 * 100) / 100
+
+    const depositPayment = (project.payments || []).find(p => p.milestone === 'deposit')
+    const isPriceLocked = depositPayment?.status === 'completed'
+    const invoiceSent = !!depositPayment?.invoiceSentAt
+    const depositPaid = depositPayment?.status === 'completed'
+
+    const handleSendInvoice = async () => {
+        if (total < 50) {
+            onToast({ message: 'Minimum project total is $50', type: 'error' })
+            return
+        }
+        setSending(true)
+        try {
+            const res = await fetch(`/api/project-requests/${project.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agreedProjectTotal: total, sendInvoice: true }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed')
+            onToast({ message: `Invoice sent to ${project.email}`, type: 'success' })
+            onUpdate()
+        } catch (err) {
+            onToast({ message: err instanceof Error ? err.message : 'Failed to send invoice', type: 'error' })
+        } finally {
+            setSending(false)
+        }
+    }
+
+    const handleResendInvoice = async () => {
+        setSending(true)
+        try {
+            const res = await fetch(`/api/project-requests/${project.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ resendInvoice: true }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed')
+            onToast({ message: `Invoice resent to ${project.email}`, type: 'success' })
+            onUpdate()
+        } catch (err) {
+            onToast({ message: err instanceof Error ? err.message : 'Failed to resend', type: 'error' })
+        } finally {
+            setSending(false)
+        }
+    }
+
+    const handleSavePrice = async () => {
+        if (total < 50) {
+            onToast({ message: 'Minimum project total is $50', type: 'error' })
+            return
+        }
+        try {
+            const res = await fetch(`/api/project-requests/${project.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ agreedProjectTotal: total }),
+            })
+            const data = await res.json()
+            if (!res.ok) throw new Error(data.error || 'Failed')
+            onToast({ message: 'Price saved', type: 'success' })
+            onUpdate()
+        } catch (err) {
+            onToast({ message: err instanceof Error ? err.message : 'Failed to save', type: 'error' })
+        }
+    }
+
+    return (
+        <div style={{
+            marginTop: '16px', paddingTop: '14px',
+            borderTop: '1px solid rgba(212,168,83,0.15)',
+        }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)', marginBottom: '10px' }}>
+                💰 Pricing & Invoice
+            </div>
+
+            {/* Price input */}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ position: 'relative', flex: 1 }}>
+                    <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-gold)' }}>$</span>
+                    <input
+                        type="number"
+                        min="50"
+                        step="0.01"
+                        placeholder="e.g. 700"
+                        value={priceInput}
+                        onChange={e => setPriceInput(e.target.value)}
+                        disabled={isPriceLocked}
+                        style={{
+                            paddingLeft: '26px',
+                            padding: '8px 10px 8px 26px',
+                            borderRadius: '6px',
+                            background: 'rgba(255,255,255,0.04)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            color: 'var(--text-primary)',
+                            fontWeight: 700,
+                            fontSize: '0.9rem',
+                            width: '100%',
+                            opacity: isPriceLocked ? 0.6 : 1,
+                            boxSizing: 'border-box' as const,
+                            colorScheme: 'dark',
+                        }}
+                    />
+                </div>
+                {!isPriceLocked && !invoiceSent && total >= 50 && (
+                    <button onClick={handleSavePrice} style={{
+                        padding: '7px 12px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
+                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                        color: 'var(--text-secondary)', cursor: 'pointer', whiteSpace: 'nowrap',
+                    }}>Save</button>
+                )}
+            </div>
+            {isPriceLocked && (
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    🔒 Price locked — payment received
+                </div>
+            )}
+
+            {/* Milestone breakdown */}
+            {total >= 50 && (
+                <div style={{
+                    padding: '10px 12px', borderRadius: '6px',
+                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                    marginBottom: '10px', fontSize: '0.72rem',
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: depositPaid ? '#34d399' : 'var(--text-secondary)' }}>
+                        <span>{depositPaid ? '✅' : '○'} Deposit (40%)</span>
+                        <span style={{ fontWeight: 600 }}>${deposit.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', color: 'var(--text-tertiary)' }}>
+                        <span>○ Midpoint (30%)</span>
+                        <span>${midpoint.toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-tertiary)' }}>
+                        <span>○ Final (30%)</span>
+                        <span>${final_.toFixed(2)}</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Invoice status */}
+            {depositPayment && (
+                <div style={{ fontSize: '0.72rem', marginBottom: '10px', lineHeight: 1.8 }}>
+                    {depositPayment.invoiceSentAt && (
+                        <div style={{ color: 'var(--text-secondary)' }}>
+                            ✉️ Invoice sent {new Date(depositPayment.invoiceSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                    )}
+                    {depositPaid && depositPayment.paidAt && (
+                        <div style={{ color: '#34d399', fontWeight: 600 }}>
+                            ✅ Deposit paid ${depositPayment.amount.toFixed(2)} — {new Date(depositPayment.paidAt).toLocaleDateString()}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Action buttons */}
+            {!depositPaid && total >= 50 && (
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {!invoiceSent ? (
+                        <button
+                            onClick={handleSendInvoice}
+                            disabled={sending}
+                            style={{
+                                padding: '8px 16px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700,
+                                background: sending ? 'rgba(212,168,83,0.05)' : 'rgba(212,168,83,0.1)',
+                                border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)',
+                                cursor: sending ? 'wait' : 'pointer', opacity: sending ? 0.6 : 1,
+                            }}
+                        >
+                            {sending ? '⏳ Sending...' : '💰 Send Invoice to Client'}
+                        </button>
+                    ) : (
+                        <button
+                            onClick={handleResendInvoice}
+                            disabled={sending}
+                            style={{
+                                padding: '8px 16px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700,
+                                background: sending ? 'rgba(255,255,255,0.02)' : 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-secondary)',
+                                cursor: sending ? 'wait' : 'pointer', opacity: sending ? 0.6 : 1,
+                            }}
+                        >
+                            {sending ? '⏳ Sending...' : '📨 Resend Invoice'}
+                        </button>
+                    )}
+                </div>
+            )}
+
+            {/* Payment status badge */}
+            <div style={{ marginTop: '8px', fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                Payment status: <span style={{
+                    padding: '1px 6px', borderRadius: '3px', fontWeight: 600,
+                    background: project.paymentStatus === 'deposit_paid' ? 'rgba(52,211,153,0.12)' :
+                        project.paymentStatus === 'unpaid' ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.12)',
+                    color: project.paymentStatus === 'deposit_paid' ? '#34d399' :
+                        project.paymentStatus === 'unpaid' ? '#f87171' : '#f59e0b',
+                }}>{project.paymentStatus?.replace(/_/g, ' ') || 'unpaid'}</span>
             </div>
         </div>
     )
@@ -451,6 +675,9 @@ export default function ProjectRequestsPage() {
                                     🔥 Mark as urgent
                                 </label>
                             </div>
+
+                            {/* ── Pricing & Invoice Panel ── */}
+                            <PricingPanel project={selected} onUpdate={fetchRequests} onToast={setToast} />
 
                             {/* Admin notes */}
                             <div style={{ marginTop: '14px' }}>

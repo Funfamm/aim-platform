@@ -1513,13 +1513,12 @@
       "back": "Back",
       "continue": "Continue",
       "review": "Review Request",
-      "submit": "Submit Project Request",
+      "submit": "Submit Project",
       "submitting": "Submitting...",
       "submitAnother": "Submit Another Project",
       "returnHome": "Return Home",
       "edit": "Edit",
-      "trackProject": "Track Your Project",
-      "proceedToPayment": "💳 Proceed to Payment"
+      "trackProject": "Track Your Project"
     },
     "confirmation": {
       "title": "Your Project Has Been Received",
@@ -1527,9 +1526,10 @@
       "projectId": "Project ID",
       "date": "Date",
       "nextSteps": "What happens next",
-      "step1": "We review your submission",
-      "step2": "We confirm scope and timeline",
-      "step3": "Production begins"
+      "step1": "We'll review your project brief (1-2 business days)",
+      "step2": "You'll receive a quote and payment link via email",
+      "step3": "Pay the deposit to start production",
+      "step4": "We bring your vision to life"
     },
     "helpers2": {
       "reviewHint": "Review your project details before submitting."
@@ -1573,8 +1573,7 @@
       "docLimit": "Images/Docs: up to 10 MB",
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
       "durationPlaceholder": "e.g. 30 sec, 1 min, 5 min",
-      "agreedTotalHint": "Enter the exact agreed price for this project. A 40% deposit will be collected at checkout.",
-      "depositPreview": "40% deposit due at checkout"
+      "submitNote": "After submission, our team will review your project and send you a quote with a payment link."
     },
     "contactMethods": {
       "email": "Email",
@@ -1668,5 +1667,27 @@
       "securityNote": "Payments are securely processed by PayPal. Your financial details are never stored on our servers.",
       "securedNote": "Your payment is protected by PayPal Purchase Protection."
     }
+  },
+  "pay": {
+    "pageTitle": "Pay Deposit",
+    "projectSummary": "Project Summary",
+    "projectLabel": "Project",
+    "totalLabel": "Project Total",
+    "depositLabel": "Deposit Due (40%)",
+    "milestoneDeposit": "Deposit - Due Now",
+    "milestoneMidpoint": "Midpoint - After Rough Cut",
+    "milestoneFinal": "Final - Before Delivery",
+    "payButton": "Pay with PayPal",
+    "processing": "Processing payment...",
+    "successTitle": "Payment Received!",
+    "successMessage": "Your deposit has been secured. Production will begin shortly.",
+    "alreadyPaidTitle": "Deposit Already Paid",
+    "alreadyPaidMessage": "Your deposit was already paid.",
+    "invalidLinkTitle": "Invalid Link",
+    "invalidLinkMessage": "This payment link is invalid or has expired. Please contact us.",
+    "trackProject": "Track Your Project",
+    "securedByPaypal": "Payments secured by PayPal Purchase Protection",
+    "loadingPaypal": "Loading PayPal...",
+    "paymentSchedule": "Payment Schedule"
   }
 }

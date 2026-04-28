@@ -383,19 +383,40 @@ export async function purgeAllSuppressedSubscribers(): Promise<number> {
         // Get all actively suppressed emails
         const suppressed = await prisma.emailSuppression.findMany({
             where: { removedAt: null },
-            select: { email: true },
+            select: { id: true, email: true },
         })
 
         if (suppressed.length === 0) return 0
 
         const emails = suppressed.map(s => s.email)
 
-        const result = await prisma.subscriber.deleteMany({
+        // 1. Delete subscriber records for suppressed emails
+        const subscriberResult = await prisma.subscriber.deleteMany({
             where: { email: { in: emails } },
         })
 
-        logger.info('suppression', `🗑️ Purged ${result.count} suppressed subscribers`)
-        return result.count
+        // 2. Also delete suppression records for emails that aren't actual subscribers
+        //    (e.g. retroactively classified from EmailLog failures — never subscribed)
+        const activeSubscribers = await prisma.subscriber.findMany({
+            where: { email: { in: emails } },
+            select: { email: true },
+        })
+        const activeEmails = new Set(activeSubscribers.map(s => s.email))
+        const orphanedIds = suppressed
+            .filter(s => !activeEmails.has(s.email))
+            .map(s => s.id)
+
+        let orphanedDeleted = 0
+        if (orphanedIds.length > 0) {
+            const orphanResult = await prisma.emailSuppression.deleteMany({
+                where: { id: { in: orphanedIds } },
+            })
+            orphanedDeleted = orphanResult.count
+        }
+
+        const total = subscriberResult.count + orphanedDeleted
+        logger.info('suppression', `🗑️ Purged ${subscriberResult.count} subscribers + ${orphanedDeleted} orphaned suppression records`)
+        return total
     } catch (err) {
         logger.error('suppression', 'Failed to purge suppressed subscribers', { error: err as Error })
         return 0
