@@ -336,7 +336,7 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)
             const batch = targeted.slice(i, i + EMAIL_BATCH_SIZE)
             await Promise.allSettled(
-                batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id }))
+                batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id, useQueue: true }))
             )
         }
 

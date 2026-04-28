@@ -105,12 +105,16 @@ export async function GET(request: Request) {
                         }
 
                         // ── Route via configured transport ─────────────────────────
+                        // ACS is only for subscriber/newsletter emails (different sender domain).
+                        // Member emails (announcement, content_publish, new_role, etc.) always
+                        // use Graph to maintain sender reputation and domain consistency.
                         let success = false
+                        const isSubscriberEmail = job.type === 'broadcast' || job.type === 'subscriber' || job.type === 'newsletter'
                         const bulkConfig = await getBulkTransportConfig()
+                        const useAcs = isSubscriberEmail && bulkConfig.transport === 'acs' && bulkConfig.acsConnectionString && bulkConfig.acsSenderAddress
 
-                        if (bulkConfig.transport === 'acs' && bulkConfig.acsConnectionString && bulkConfig.acsSenderAddress) {
-                            // ACS bulk path — must inject List-Unsubscribe headers manually
-                            // (sendEmail() does this for Graph/SMTP, ACS needs explicit injection)
+                        if (useAcs) {
+                            // ACS subscriber path — inject List-Unsubscribe headers
                             const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
                             const unsubUrl = buildUnsubscribeUrl(siteUrl, job.to, 'subscriber')
                             const headers: Record<string, string> = {
@@ -121,18 +125,17 @@ export async function GET(request: Request) {
 
                             try {
                                 await sendViaACS(
-                                    { connectionString: bulkConfig.acsConnectionString, senderAddress: bulkConfig.acsSenderAddress },
-                                    { to: job.to, subject: job.subject, html: job.html, text: job.text || undefined, senderAddress: bulkConfig.acsSenderAddress, replyTo: job.replyTo || undefined, headers }
+                                    { connectionString: bulkConfig.acsConnectionString!, senderAddress: bulkConfig.acsSenderAddress! },
+                                    { to: job.to, subject: job.subject, html: job.html, text: job.text || undefined, senderAddress: bulkConfig.acsSenderAddress!, replyTo: job.replyTo || undefined, headers }
                                 )
                                 success = true
                             } catch (acsErr) {
-                                // Preserve ACS error detail for handleJobFailure
                                 const acsMsg = acsErr instanceof Error ? acsErr.message : String(acsErr)
                                 logger.error('email-worker', `ACS send failed for job ${job.id}: ${acsMsg}`)
                                 throw new Error(`ACS: ${acsMsg}`)
                             }
                         } else {
-                            // Graph/SMTP path — sendEmail() handles List-Unsubscribe internally
+                            // Graph path — for member emails and fallback when ACS not configured
                             success = await sendEmail({
                                 to: job.to,
                                 subject: job.subject,

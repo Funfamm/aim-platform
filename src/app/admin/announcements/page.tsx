@@ -719,15 +719,12 @@ export default function AnnouncementsAdminPage() {
                                         <div>
                                             <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                                                 {(() => {
-                                                    // Members: Graph sends ~1s/email in batches of 4 with 2s inter-batch delay
-                                                    const memberBatches = Math.ceil(recipientEstimate.members / 4)
-                                                    const memberSec = memberBatches > 0
-                                                        ? memberBatches * 4 + (memberBatches - 1) * 2  // ~4s per batch + 2s delay between
-                                                        : 0
-                                                    // Subscribers: queued, processed by cron worker (~60s cycle)
-                                                    const subSec = recipientEstimate.subscribers > 0 ? 60 : 0
-                                                    const totalSec = Math.max(memberSec, subSec)
-                                                    if (totalSec < 60) return `~${Math.max(totalSec, 1)}s`
+                                                    // All emails go through the queue (cron runs every 60s, 20 emails/run, batches of 4)
+                                                    const total = recipientEstimate.total
+                                                    if (total === 0) return '—'
+                                                    const cronRuns = Math.ceil(total / 20)
+                                                    const totalSec = cronRuns * 60
+                                                    if (totalSec <= 60) return '~1 min'
                                                     const mins = Math.ceil(totalSec / 60)
                                                     return `~${mins} min${mins !== 1 ? 's' : ''}`
                                                 })()}
