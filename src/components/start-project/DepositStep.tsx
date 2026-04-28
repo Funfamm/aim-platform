@@ -101,6 +101,10 @@ export default function DepositStep({ form, updateField, onSubmit, isSubmitting 
                 },
                 createOrder: async () => {
                     const f = formRef.current
+                    if (!f.email) {
+                        setErrorMsg('Please go back to Step 2 and enter your email before paying.')
+                        throw new Error('Email is required')
+                    }
                     const res = await fetch('/api/project-payments/create-order', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
