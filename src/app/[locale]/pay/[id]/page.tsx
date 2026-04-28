@@ -1,4 +1,5 @@
 'use client'
+/* eslint-disable react-hooks/set-state-in-effect -- data-fetching and SDK loading effects intentionally set state */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
@@ -34,7 +35,6 @@ export default function PayPage() {
     const [error, setError] = useState('')
 
     // Fetch payment info
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- data-fetching on mount is intentional
     useEffect(() => {
         if (!projectId || !token) {
             setState('invalid')
@@ -53,7 +53,6 @@ export default function PayPage() {
     }, [projectId, token])
 
     // Load PayPal SDK
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- SDK loading is intentional
     useEffect(() => {
         if (state !== 'ready') return
 
