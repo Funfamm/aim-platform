@@ -258,7 +258,7 @@ export async function POST(
         // ═══ AUTO-AUDIT — enqueue for AI scoring ═══
         // Places the application in the priority queue; the daily cron will
         // score it when a free-tier API key still has quota available.
-        let siteSettings: Awaited<ReturnType<typeof prisma.siteSettings.findFirst>> = null
+        let siteSettings: { aiAutoAudit: boolean; notifyOnApplication: boolean; notifyEmail: string | null; contactEmail: string | null } | null = null
         try {
             siteSettings = await prisma.siteSettings.findFirst({ select: { aiAutoAudit: true, notifyOnApplication: true, notifyEmail: true, contactEmail: true } })
         } catch (settingsErr) {
