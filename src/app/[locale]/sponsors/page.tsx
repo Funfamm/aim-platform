@@ -13,7 +13,7 @@ import SponsorInquiryForm from '@/components/SponsorInquiryForm'
 
 export const metadata: Metadata = {
     title: 'Sponsors & Partners | AIM Studio',
-    description: 'Meet the sponsors and partners supporting AI-powered filmmaking at AIM Studio.',
+    description: 'Meet the sponsors and partners supporting AI cinema at AIM Studio.',
 }
 
 export const dynamic = 'force-dynamic'

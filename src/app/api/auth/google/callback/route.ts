@@ -184,7 +184,7 @@ export async function GET(req: Request) {
                     // Write welcome in-app notification (localized if non-English)
                     const locale = detectedLocale  // already known — no extra DB query needed
                     let welcomeTitle = `Welcome to AIM Studio, ${newUserName}! 🎬`
-                    let welcomeMsg = "You're now part of our AI-powered filmmaking community. Explore casting calls, track your applications, and more."
+                    let welcomeMsg = "You're now part of our cinema community. Explore casting calls, track your applications, and more."
                     if (locale !== 'en') {
                         const { translateContent } = await import('@/lib/translate')
                         const tx = await translateContent({ title: welcomeTitle, message: welcomeMsg }, 'all').catch(() => null)

@@ -197,7 +197,7 @@ export function welcomeEmail(name: string, siteUrl?: string): string {
     return emailWrapper(`
         ${heading(`Welcome to AIM Studio, ${name}! 🎬`)}
         ${subtext('Your account has been created successfully.')}
-        ${paragraph('You now have access to our exclusive AI-powered filmmaking platform. Explore our films, apply for casting calls, track your applications, and more.')}
+        ${paragraph('You now have access to our exclusive cinema platform. Explore our films, apply for casting calls, track your applications, and more.')}
         ${siteUrl ? button('Explore AIM Studio →', siteUrl) : ''}
         ${paragraph('If you have any questions, feel free to reach out through our contact page.')}
     `, `Welcome to AIM Studio, ${name}!`)
@@ -268,7 +268,7 @@ export function donationThankYou(name: string, amount: number, siteUrl?: string)
             </div>
         </div>
         ${divider()}
-        ${paragraph('Your contribution directly supports independent AI-powered filmmaking. Every dollar helps us push the boundaries of visual storytelling.')}
+        ${paragraph('Your contribution directly supports creating cinema with AI. Every dollar helps us push the boundaries of visual storytelling.')}
         ${paragraph('This email serves as your donation receipt for your records.')}
         ${siteUrl ? `${button('Visit AIM Studio', siteUrl)}` : ''}
     `, `Thank you for your $${amount.toFixed(2)} donation`)
@@ -626,7 +626,7 @@ export async function welcomeEmailWithOverrides(name: string, siteUrl?: string, 
     const f = await mergeFields('welcome', {
         heading:    emailT('welcome', locale, 'heading') || `Welcome to AIM Studio, ${name}! 🎬`,
         subtext:    emailT('welcome', locale, 'subtext') || 'Your account has been created successfully.',
-        body:       emailT('welcome', locale, 'body') || 'You now have access to our exclusive AI-powered filmmaking platform. Explore our films, apply for casting calls, track your applications, and more.',
+        body:       emailT('welcome', locale, 'body') || 'You now have access to our exclusive cinema platform. Explore our films, apply for casting calls, track your applications, and more.',
         buttonText: emailT('welcome', locale, 'buttonText') || 'Explore AIM Studio →',
         footer:     emailT('welcome', locale, 'footer') || 'If you have any questions, feel free to reach out through our contact page.',
         buttonUrl:  siteUrl || '',
@@ -715,7 +715,7 @@ export async function donationThankYouWithOverrides(name: string, amount: number
     const f = await mergeFields('donation', {
         heading:          emailT('donationThankYou', locale, 'heading') || 'Thank You for Your Generosity! 💛',
         donationReceived: emailT('donationThankYou', locale, 'donationReceived') || 'Donation received',
-        body:             emailT('donationThankYou', locale, 'body') || 'Your contribution directly supports independent AI-powered filmmaking. Every dollar helps us push the boundaries of visual storytelling.',
+        body:             emailT('donationThankYou', locale, 'body') || 'Your contribution directly supports creating cinema with AI. Every dollar helps us push the boundaries of visual storytelling.',
         receipt:          emailT('donationThankYou', locale, 'receipt') || 'This email serves as your donation receipt for your records.',
         buttonText:       emailT('donationThankYou', locale, 'buttonText') || 'Visit AIM Studio',
         buttonUrl:        siteUrl || '',

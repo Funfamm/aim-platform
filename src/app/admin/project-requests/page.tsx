@@ -510,7 +510,7 @@ export default function ProjectRequestsPage() {
                                     <span style={{ fontSize: '1.3rem', flexShrink: 0 }}>{TYPE_ICONS[r.projectType] || '✨'}</span>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{r.projectTitle}</span>
+                                            <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>{r.projectTitle}</span>
                                             {r.urgent && <span style={{ fontSize: '0.52rem', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, background: 'rgba(239,68,68,0.12)', color: '#f87171' }}>URGENT</span>}
                                             <span style={{ fontSize: '0.52rem', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, background: st.bg, color: st.color }}>{st.label}</span>
                                             {r.rushDelivery && <span style={{ fontSize: '0.52rem', padding: '1px 6px', borderRadius: '3px', fontWeight: 700, background: 'rgba(249,115,22,0.12)', color: '#f97316' }}>RUSH</span>}

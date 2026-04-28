@@ -84,7 +84,7 @@ export async function POST(request: Request) {
         const welcomeTitle = emailT('welcome', locale, 'heading')?.replace('{name}', user.name)
             || `Welcome to AIM Studio, ${user.name}! 🎬`
         const welcomeMsg = emailT('welcome', locale, 'body')
-            || "You're now part of our AI-powered filmmaking community. Explore casting calls, track your applications, and more."
+            || "You're now part of our cinema community. Explore casting calls, track your applications, and more."
         void notifyUser({
             userId: user.id,
             type: 'system',

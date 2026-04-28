@@ -2,10 +2,10 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
     title: 'Donate | AIM Studio',
-    description: 'Support AI-powered filmmaking. Every dollar brings a story to life. Fund innovation, empower artists, and help create cinema that matters.',
+    description: 'Support creating cinema with AI. Every dollar brings a story to life. Fund innovation, empower artists, and help create cinema that matters.',
     openGraph: {
         title: 'Donate | AIM Studio',
-        description: 'Support AI-powered filmmaking. Every dollar brings a story to life.',
+        description: 'Support creating cinema with AI. Every dollar brings a story to life.',
     },
 }
 

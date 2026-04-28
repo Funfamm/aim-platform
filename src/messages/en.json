@@ -145,7 +145,7 @@
         "receiptMethod": "Payment Method",
         "receiptStatus": "Status",
         "receiptMessage": "Message",
-        "receiptFooter": "AIM Studio — AI-Powered Independent Filmmaking",
+        "receiptFooter": "AIM Studio — Creating Cinema with AI",
         "receiptPrint": "Print Receipt"
     },
     "castingForm": {
@@ -276,7 +276,7 @@
         "label": "Support Independent Filmmaking",
         "title": "Fund",
         "titleAccent": "the Vision",
-        "description": "Every contribution directly supports independent AI-powered filmmaking.",
+        "description": "Every contribution directly supports creating cinema with AI.",
         "descSub": "Your generosity helps us bring bold stories to life.",
         "quote": "Cinema is a mirror by which we often see ourselves.",
         "chooseImpact": "Choose your impact",
@@ -666,7 +666,7 @@
     "register": {
         "joinStudio": "Join the Studio",
         "createAccount": "Create Your Account",
-        "registerDesc": "Join AIM Studio and be part of the future of AI-powered filmmaking.",
+        "registerDesc": "Join AIM Studio and be part of the future of AI cinema.",
         "fullName": "Full Name",
         "fullNamePlaceholder": "Your full name",
         "email": "Email",

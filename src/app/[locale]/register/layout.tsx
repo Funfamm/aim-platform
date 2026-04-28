@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
     title: 'Create Account | AIM Studio',
-    description: 'Join AIM Studio. Create your account to access exclusive content, track casting applications, and be part of AI-powered filmmaking.',
+    description: 'Join AIM Studio. Create your account to access exclusive content, track casting applications, and be part of creating cinema with AI.',
     openGraph: {
         title: 'Create Account | AIM Studio',
         description: 'Join AIM Studio. Create your account today.',
