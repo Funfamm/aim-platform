@@ -12,7 +12,7 @@
  * If no preference record exists, safe defaults (email + in-app) are used.
  */
 import { prisma } from '@/lib/db'
-import { sendTransactionalEmail, enqueueBroadcastCampaign } from '@/lib/email-router'
+import { sendTransactionalEmail, sendBulkEmail, enqueueBroadcastCampaign } from '@/lib/email-router'
 import { logger } from '@/lib/logger'
 import { translateContent } from '@/lib/translate'
 import { t } from '@/lib/email-i18n'
@@ -67,6 +67,8 @@ interface NotifyUserOptions {
     contentStatus?: string
     /** Project sponsor data — threaded to contentPublishEmail */
     sponsorData?: { name: string; logoUrl?: string; description?: string } | null
+    /** When true, queue the email for async bulk delivery (ACS) instead of immediate Graph send */
+    useQueue?: boolean
 }
 
 interface NotifyAllOptions {
@@ -232,7 +234,11 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
             // Final safety net — ensure html is always a string
             if (!html) html = buildPlainHtml(displayTitle, displayMessage, localizedLink ?? opts.link, locale)
 
-            await sendTransactionalEmail({ to: user.email, subject, html, type: opts.type })
+            if (opts.useQueue) {
+                await sendBulkEmail({ to: user.email, subject, html, type: opts.type })
+            } else {
+                await sendTransactionalEmail({ to: user.email, subject, html, type: opts.type })
+            }
         }
     } catch (err) {
         logger.error('notifications', `notifyUser failed for ${opts.userId}`, { error: err })
@@ -330,7 +336,7 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             if (i > 0) await sleep(EMAIL_BATCH_DELAY_MS)
             const batch = targeted.slice(i, i + EMAIL_BATCH_SIZE)
             await Promise.allSettled(
-                batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id }))
+                batch.map((u: { id: string }) => notifyUser({ ...opts, userId: u.id, useQueue: true }))
             )
         }
 

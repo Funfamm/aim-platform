@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
                 to: normalizedEmail,
                 subject: et('subscribeWelcomeBack', userLocale, 'subject') || 'Welcome back to AIM Studio! 🎬',
                 html: await subscribeWelcomeBackWithOverrides(name || undefined, siteUrl, userLocale),
+                type: 'subscribe',
             }).catch(err => console.error('[subscribe] Welcome-back email failed:', err))
             return NextResponse.json({ success: true, welcomed: true })
         }
@@ -148,6 +149,7 @@ export async function POST(request: NextRequest) {
             to: normalizedEmail,
             subject: et('subscribeWelcome', userLocale, 'subject') || 'Welcome to AIM Studio! 🎬',
             html: await subscribeWelcomeWithOverrides(name || undefined, siteUrl, userLocale),
+            type: 'subscribe',
         }).catch(err => console.error('[subscribe] Welcome email failed:', err))
 
         return NextResponse.json({ success: true, confirmed: true })
