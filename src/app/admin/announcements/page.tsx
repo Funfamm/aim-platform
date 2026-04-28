@@ -97,7 +97,7 @@ export default function AnnouncementsAdminPage() {
             .then(r => r.json())
             .then(data => {
                 setNeededLocales(data.languages ?? [])
-                const members = (data.total ?? 0) + userIds.length
+                const members = data.total ?? 0
                 const subscribers = data.subscriberCount ?? 0
                 setRecipientEstimate({ members, subscribers, total: members + subscribers })
             })
@@ -116,6 +116,7 @@ export default function AnnouncementsAdminPage() {
     const [resendGroups, setResendGroups] = useState<{ subscribers: boolean; members: boolean; cast: boolean }>({
         members: true, subscribers: false, cast: false,
     })
+    const [clearingHistory, setClearingHistory] = useState(false)
 
     useEffect(() => {
         fetch('/api/admin/announcements')
@@ -854,17 +855,41 @@ export default function AnnouncementsAdminPage() {
 
                 {/* ── ANNOUNCEMENT HISTORY ── */}
                 <div style={{ marginTop: '32px' }}>
-                    <button
-                        type="button"
-                        onClick={() => setShowHistory(!showHistory)}
-                        style={{
-                            background: 'none', border: 'none', color: 'var(--text-secondary)',
-                            cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700,
-                            display: 'flex', alignItems: 'center', gap: '6px', padding: 0,
-                        }}
-                    >
-                        📋 {showHistory ? 'Hide' : 'Show'} History ({history.length})
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <button
+                            type="button"
+                            onClick={() => setShowHistory(!showHistory)}
+                            style={{
+                                background: 'none', border: 'none', color: 'var(--text-secondary)',
+                                cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700,
+                                display: 'flex', alignItems: 'center', gap: '6px', padding: 0,
+                            }}
+                        >
+                            📋 {showHistory ? 'Hide' : 'Show'} History ({history.length})
+                        </button>
+                        {showHistory && history.length > 0 && (
+                            <button
+                                type="button"
+                                disabled={clearingHistory}
+                                onClick={async () => {
+                                    if (!confirm('Delete ALL announcement history? This cannot be undone.')) return
+                                    setClearingHistory(true)
+                                    try {
+                                        const res = await fetch('/api/admin/announcements', { method: 'DELETE' })
+                                        if (res.ok) setHistory([])
+                                    } catch { /* network error */ }
+                                    finally { setClearingHistory(false) }
+                                }}
+                                style={{
+                                    background: 'none', border: '1px solid rgba(239,68,68,0.25)',
+                                    borderRadius: '6px', color: '#ef4444', cursor: clearingHistory ? 'wait' : 'pointer',
+                                    fontSize: '0.68rem', fontWeight: 600, padding: '4px 10px',
+                                }}
+                            >
+                                {clearingHistory ? '⏳ Clearing…' : '🗑️ Clear History'}
+                            </button>
+                        )}
+                    </div>
                     {showHistory && (
                         <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {history.length === 0 && (

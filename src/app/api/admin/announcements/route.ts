@@ -118,3 +118,21 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, queued: true })
 }
+
+/**
+ * DELETE /api/admin/announcements
+ * Clears all announcement history records.
+ */
+export async function DELETE() {
+    try { await requireAdmin() } catch {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    try {
+        const result = await db.announcement.deleteMany({})
+        return NextResponse.json({ success: true, deleted: result.count })
+    } catch (err) {
+        console.error('[announcements] failed to clear history:', err)
+        return NextResponse.json({ error: 'Failed to clear history' }, { status: 500 })
+    }
+}
