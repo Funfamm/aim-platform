@@ -38,7 +38,7 @@ export default function AdminCommentsPage() {
         } catch { /* ignore */ }
     }, [page, filterProject, filterStatus])
 
-    useEffect(() => { fetchComments().finally(() => setLoading(false)) }, [fetchComments])
+    useEffect(() => { const t = setTimeout(() => fetchComments().finally(() => setLoading(false)), 0); return () => clearTimeout(t) }, [fetchComments])
 
     // Load project list for filter
     useEffect(() => {

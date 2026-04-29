@@ -39,7 +39,8 @@ export default function CommentSection({
     }, [projectId, episodeId])
 
     useEffect(() => {
-        fetchComments().finally(() => setLoading(false))
+        const t = setTimeout(() => fetchComments().finally(() => setLoading(false)), 0)
+        return () => clearTimeout(t)
     }, [fetchComments])
 
     // Deep link scroll — handle #comment-{id} hash
