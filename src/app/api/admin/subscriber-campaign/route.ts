@@ -24,6 +24,36 @@ export async function POST(req: Request) {
     try {
         const body = await req.json().catch(() => ({}))
         const dryRun = body.dryRun === true
+        const testEmail = body.testEmail as string | undefined
+
+        // ── Test mode: send one email to the admin ──
+        if (testEmail) {
+            const latestFilm = await prisma.project.findFirst({
+                where: { published: true },
+                orderBy: { publishAt: 'desc' },
+                select: { title: true },
+            })
+            const filmTitle = latestFilm?.title || 'our latest film'
+            const token = generateUnsubscribeToken(testEmail, 'subscriber')
+            const registerUrl = `${SITE_URL}/register?token=${encodeURIComponent(token)}&utm_source=conversion_campaign`
+            const html = buildConversionEmail('Test User', filmTitle, registerUrl)
+
+            await prisma.emailQueue.create({
+                data: {
+                    to: testEmail,
+                    subject: `[TEST] 🎬 Watch "${filmTitle}" free — your account is waiting`,
+                    html,
+                    type: 'conversion_campaign',
+                    priority: 1,
+                    status: 'pending',
+                },
+            })
+
+            return NextResponse.json({
+                message: `Test email queued to ${testEmail}`,
+                filmTitle,
+            })
+        }
 
         // Get all active subscribers
         const subscribers = await prisma.subscriber.findMany({

@@ -237,6 +237,35 @@ export default function AdminSubscribersPage() {
         setCampaignSending(false)
     }
 
+    const sendTestCampaign = async () => {
+        setCampaignSending(true)
+        try {
+            // Get admin's own email
+            const meRes = await fetch('/api/auth/me')
+            const me = await meRes.json()
+            const adminEmail = me?.user?.email
+            if (!adminEmail) {
+                showToast('❌ Could not determine your email')
+                setCampaignSending(false)
+                return
+            }
+            const res = await fetch('/api/admin/subscriber-campaign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ testEmail: adminEmail }),
+            })
+            const data = await res.json()
+            if (res.ok) {
+                showToast(`📧 Test email queued to ${adminEmail}`)
+            } else {
+                showToast(`❌ ${data.error || 'Test failed'}`)
+            }
+        } catch {
+            showToast('❌ Test failed — network error')
+        }
+        setCampaignSending(false)
+    }
+
     const labelStyle: React.CSSProperties = {
         fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase',
         letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '4px', display: 'block',
@@ -362,22 +391,40 @@ export default function AdminSubscribersPage() {
                                 </div>
                             ) : null}
                         </div>
-                        <button
-                            type="button"
-                            onClick={sendCampaign}
-                            disabled={campaignSending || (campaign?.cooldownActive ?? false) || (campaign?.eligible === 0)}
-                            style={{
-                                padding: '8px 20px', borderRadius: 'var(--radius-md)',
-                                fontSize: '0.82rem', fontWeight: 700, cursor: campaignSending ? 'not-allowed' : 'pointer',
-                                background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.08))',
-                                border: '1px solid rgba(139,92,246,0.3)',
-                                color: '#a78bfa',
-                                opacity: (campaignSending || campaign?.cooldownActive || campaign?.eligible === 0) ? 0.5 : 1,
-                                transition: 'all 0.15s',
-                            }}
-                        >
-                            {campaignSending ? '⏳ Sending...' : '🚀 Send Campaign'}
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                                type="button"
+                                onClick={sendTestCampaign}
+                                disabled={campaignSending}
+                                style={{
+                                    padding: '8px 16px', borderRadius: 'var(--radius-md)',
+                                    fontSize: '0.82rem', fontWeight: 600, cursor: campaignSending ? 'not-allowed' : 'pointer',
+                                    background: 'rgba(255,255,255,0.04)',
+                                    border: '1px solid rgba(255,255,255,0.12)',
+                                    color: 'var(--text-secondary)',
+                                    opacity: campaignSending ? 0.5 : 1,
+                                    transition: 'all 0.15s',
+                                }}
+                            >
+                                {campaignSending ? '⏳...' : '🧪 Send Test'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={sendCampaign}
+                                disabled={campaignSending || (campaign?.cooldownActive ?? false) || (campaign?.eligible === 0)}
+                                style={{
+                                    padding: '8px 20px', borderRadius: 'var(--radius-md)',
+                                    fontSize: '0.82rem', fontWeight: 700, cursor: campaignSending ? 'not-allowed' : 'pointer',
+                                    background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.08))',
+                                    border: '1px solid rgba(139,92,246,0.3)',
+                                    color: '#a78bfa',
+                                    opacity: (campaignSending || campaign?.cooldownActive || campaign?.eligible === 0) ? 0.5 : 1,
+                                    transition: 'all 0.15s',
+                                }}
+                            >
+                                {campaignSending ? '⏳ Sending...' : '🚀 Send Campaign'}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
