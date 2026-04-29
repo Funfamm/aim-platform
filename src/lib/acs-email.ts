@@ -13,6 +13,7 @@
  * ACS SDK: @azure/communication-email
  */
 import { logger } from '@/lib/logger'
+import { EmailClient } from '@azure/communication-email'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -33,29 +34,20 @@ interface AcsConfig {
 }
 
 // ── Lazy-loaded client cache ───────────────────────────────────────────────
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let cachedClient: any = null
+let cachedClient: EmailClient | null = null
 let cachedConnectionString = ''
 
 /**
  * Get or create an ACS EmailClient instance.
- * Lazy-loads the SDK to avoid import errors if not installed.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getAcsClient(connectionString: string): Promise<any> {
+function getAcsClient(connectionString: string): EmailClient {
     if (cachedClient && cachedConnectionString === connectionString) {
         return cachedClient
     }
 
-    try {
-        const { EmailClient } = await import('@azure/communication-email')
-        cachedClient = new EmailClient(connectionString)
-        cachedConnectionString = connectionString
-        return cachedClient
-    } catch (err) {
-        logger.error('acs-email', 'Failed to initialize ACS EmailClient. Is @azure/communication-email installed?', { error: err as Error })
-        throw new Error('ACS EmailClient unavailable — install @azure/communication-email')
-    }
+    cachedClient = new EmailClient(connectionString)
+    cachedConnectionString = connectionString
+    return cachedClient
 }
 
 /**
@@ -78,7 +70,7 @@ export function invalidateAcsClient(): void {
  * Timeout: 2 minutes (ACS usually delivers in <10s)
  */
 export async function sendViaACS(config: AcsConfig, options: AcsEmailOptions): Promise<void> {
-    const client = await getAcsClient(config.connectionString)
+    const client = getAcsClient(config.connectionString)
 
     const message = {
         senderAddress: options.senderAddress || config.senderAddress,
