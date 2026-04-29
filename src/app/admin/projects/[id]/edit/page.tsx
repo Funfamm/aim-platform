@@ -59,9 +59,18 @@ export default function ProjectEditPage() {
     // Publish gate
     const [showPublishWarning, setShowPublishWarning] = useState(false)
 
+    // Episodes
+    type EpisodeRow = {
+        id?: string; title: string; number: number; season: number
+        videoUrl: string; duration: string; description: string
+        thumbnail: string; published: boolean; _dirty?: boolean; _new?: boolean
+    }
+    const [episodes, setEpisodes] = useState<EpisodeRow[]>([])
+    const [episodeSaving, setEpisodeSaving] = useState<string | null>(null)
+
     // Section collapse state
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-        basic: true, status: true, media: true, sponsor: false,
+        basic: true, status: true, media: true, episodes: false, sponsor: false,
         gallery: false, subtitles: false, rolls: false,
     })
 
@@ -105,6 +114,18 @@ export default function ProjectEditPage() {
                     setTranslateStatus(sub.translateStatus ?? 'pending')
                 }).catch(() => {})
             }
+            // Load episodes for series
+            if (p.projectType === 'series') {
+                fetch(`/api/admin/episodes?projectId=${projectId}`)
+                    .then(r => r.ok ? r.json() : [])
+                    .then((eps: any[]) => setEpisodes(eps.map(e => ({
+                        id: e.id, title: e.title, number: e.number, season: e.season,
+                        videoUrl: e.videoUrl || '', duration: e.duration || '',
+                        description: e.description || '', thumbnail: e.thumbnail || '',
+                        published: e.published ?? false,
+                    }))))
+                    .catch(() => {})
+            }
         }).catch(() => setError('Failed to load project')).finally(() => setLoading(false))
     }, [projectId, isNew, router])
 
@@ -141,6 +162,133 @@ export default function ProjectEditPage() {
     }
 
     const handleSave = async (e: React.FormEvent) => { e.preventDefault(); await doSave(false) }
+
+    // ── Episode helpers ──
+    const updateEpisode = (idx: number, field: string, value: string | number | boolean) => {
+        setEpisodes(prev => prev.map((ep, i) => i === idx ? { ...ep, [field]: value, _dirty: true } : ep))
+    }
+
+    const addEpisode = () => {
+        const maxNum = episodes.filter(e => e.season === 1).reduce((max, e) => Math.max(max, e.number), 0)
+        setEpisodes(prev => [...prev, {
+            title: '', number: maxNum + 1, season: 1,
+            videoUrl: '', duration: '', description: '',
+            thumbnail: '', published: false, _new: true, _dirty: true,
+        }])
+    }
+
+    const saveEpisode = async (idx: number) => {
+        const ep = episodes[idx]
+        if (!ep.title) { setError('Episode title is required'); return }
+        const key = ep.id || `new-${idx}`
+        setEpisodeSaving(key)
+        try {
+            const payload = {
+                projectId: projectId,
+                title: ep.title, number: ep.number, season: ep.season,
+                videoUrl: ep.videoUrl || null, duration: ep.duration || null,
+                description: ep.description || null, thumbnail: ep.thumbnail || null,
+                published: ep.published,
+            }
+            const isCreate = !ep.id
+            const res = await fetch('/api/admin/episodes', {
+                method: isCreate ? 'POST' : 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(isCreate ? payload : { id: ep.id, ...payload }),
+            })
+            if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed') }
+            const saved = await res.json()
+            setEpisodes(prev => prev.map((e, i) => i === idx ? {
+                ...e, id: saved.id, _new: false, _dirty: false,
+            } : e))
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to save episode')
+        } finally { setEpisodeSaving(null) }
+    }
+
+    const deleteEpisode = async (idx: number) => {
+        const ep = episodes[idx]
+        if (ep._new) { setEpisodes(prev => prev.filter((_, i) => i !== idx)); return }
+        if (!confirm(`Delete episode S${ep.season}E${ep.number} "${ep.title}"?`)) return
+        try {
+            const res = await fetch(`/api/admin/episodes?id=${ep.id}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error('Failed to delete')
+            setEpisodes(prev => prev.filter((_, i) => i !== idx))
+        } catch { setError('Failed to delete episode') }
+    }
+
+    // ── Episode subtitle generation ──
+    const [episodeSubStatus, setEpisodeSubStatus] = useState<Record<string, 'idle' | 'generating' | 'done' | 'error'>>({})
+    const [episodeSubLangs, setEpisodeSubLangs] = useState<Record<string, string[]>>({})
+
+    // Check subtitle availability for each saved episode on mount
+    useEffect(() => {
+        episodes.forEach(ep => {
+            if (!ep.id || !ep.videoUrl) return
+            fetch(`/api/subtitles/${projectId}?lang=en&episodeId=${ep.id}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.available?.length) {
+                        setEpisodeSubLangs(prev => ({ ...prev, [ep.id!]: data.available }))
+                        setEpisodeSubStatus(prev => ({ ...prev, [ep.id!]: 'done' }))
+                    }
+                })
+                .catch(() => {})
+        })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [episodes.length])
+
+    const generateEpisodeSubtitles = async (epId: string, videoUrl: string) => {
+        if (!videoUrl) { setError('Episode needs a video URL first'); return }
+        setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'generating' }))
+        try {
+            const res = await fetch('/api/subtitles/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId, episodeId: epId, videoUrl }),
+            })
+            if (!res.ok) {
+                const d = await res.json()
+                if (res.status === 409) {
+                    // Already running
+                    setError('Subtitle job already in progress for this episode')
+                    return
+                }
+                throw new Error(d.error || 'Failed to start')
+            }
+            const { jobId } = await res.json()
+            // Poll job status
+            const poll = setInterval(async () => {
+                try {
+                    const jr = await fetch(`/api/subtitles/status/${jobId}`)
+                    const jd = await jr.json()
+                    if (jd.status === 'completed') {
+                        clearInterval(poll)
+                        setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'done' }))
+                        // Refresh available languages
+                        fetch(`/api/subtitles/${projectId}?lang=en&episodeId=${epId}`)
+                            .then(r => r.json())
+                            .then(data => { if (data.available) setEpisodeSubLangs(prev => ({ ...prev, [epId]: data.available })) })
+                            .catch(() => {})
+                    } else if (jd.status === 'failed') {
+                        clearInterval(poll)
+                        setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'error' }))
+                        setError(`Subtitle generation failed for episode`)
+                    }
+                } catch { /* keep polling */ }
+            }, 5000)
+            // Stop polling after 10 minutes
+            setTimeout(() => clearInterval(poll), 600_000)
+        } catch (err) {
+            setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'error' }))
+            setError(err instanceof Error ? err.message : 'Subtitle generation failed')
+        }
+    }
+
+    const epLabelStyle: React.CSSProperties = {
+        fontSize: '0.65rem', fontWeight: 600, color: 'var(--text-tertiary)',
+        textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px', display: 'block',
+    }
 
     if (loading) {
         return (
@@ -353,6 +501,140 @@ export default function ProjectEditPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* ══ EPISODES (series only) ══ */}
+                    {form.projectType === 'series' && !isNew && (
+                        <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+                            <SectionHeader id="episodes" emoji="📺" title={`Episodes (${episodes.length})`} />
+                            {openSections.episodes && (
+                                <div style={{ paddingTop: 'var(--space-sm)' }}>
+                                    {episodes.length === 0 && (
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>No episodes yet. Add the first one below.</p>
+                                    )}
+
+                                    {episodes.map((ep, idx) => (
+                                        <div key={ep.id || `new-${idx}`} style={{
+                                            border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                                            padding: 'var(--space-md)', marginBottom: 'var(--space-sm)',
+                                            background: ep._new ? 'rgba(52,211,153,0.04)' : 'rgba(255,255,255,0.02)',
+                                        }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '60px 60px 1fr', gap: '8px', marginBottom: '8px' }}>
+                                                <div>
+                                                    <label style={epLabelStyle}>S#</label>
+                                                    <input className="form-input" type="number" min={1} value={ep.season}
+                                                        onChange={e => updateEpisode(idx, 'season', Number(e.target.value))}
+                                                        style={{ fontSize: '0.82rem', padding: '6px 8px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={epLabelStyle}>E#</label>
+                                                    <input className="form-input" type="number" min={1} value={ep.number}
+                                                        onChange={e => updateEpisode(idx, 'number', Number(e.target.value))}
+                                                        style={{ fontSize: '0.82rem', padding: '6px 8px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={epLabelStyle}>Title *</label>
+                                                    <input className="form-input" value={ep.title}
+                                                        onChange={e => updateEpisode(idx, 'title', e.target.value)}
+                                                        placeholder="Episode title" style={{ fontSize: '0.82rem', padding: '6px 8px' }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '8px', marginBottom: '8px' }}>
+                                                <div>
+                                                    <label style={epLabelStyle}>Video URL</label>
+                                                    <input className="form-input" value={ep.videoUrl}
+                                                        onChange={e => updateEpisode(idx, 'videoUrl', e.target.value)}
+                                                        placeholder="CDN video URL" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={epLabelStyle}>Duration</label>
+                                                    <input className="form-input" value={ep.duration}
+                                                        onChange={e => updateEpisode(idx, 'duration', e.target.value)}
+                                                        placeholder="12 min" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                                                <div>
+                                                    <label style={epLabelStyle}>Thumbnail URL</label>
+                                                    <input className="form-input" value={ep.thumbnail}
+                                                        onChange={e => updateEpisode(idx, 'thumbnail', e.target.value)}
+                                                        placeholder="Episode thumbnail" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={epLabelStyle}>Description</label>
+                                                    <input className="form-input" value={ep.description}
+                                                        onChange={e => updateEpisode(idx, 'description', e.target.value)}
+                                                        placeholder="Short description" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.78rem' }}>
+                                                        <input type="checkbox" checked={ep.published}
+                                                            onChange={e => updateEpisode(idx, 'published', e.target.checked)} />
+                                                        Published
+                                                    </label>
+                                                    {/* Subtitle status & generate button */}
+                                                    {ep.id && ep.videoUrl && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            {episodeSubStatus[ep.id] === 'generating' ? (
+                                                                <span style={{ fontSize: '0.7rem', color: 'var(--accent-gold)', animation: 'pulse 1.5s infinite' }}>⏳ Generating subtitles…</span>
+                                                            ) : episodeSubStatus[ep.id] === 'done' ? (
+                                                                <span style={{ fontSize: '0.7rem', color: '#34d399' }}>
+                                                                    🗨️ {episodeSubLangs[ep.id]?.length || 0} lang{(episodeSubLangs[ep.id]?.length || 0) !== 1 ? 's' : ''}
+                                                                </span>
+                                                            ) : episodeSubStatus[ep.id] === 'error' ? (
+                                                                <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>❌ Failed</span>
+                                                            ) : null}
+                                                            {episodeSubStatus[ep.id] !== 'generating' && (
+                                                                <button type="button"
+                                                                    onClick={() => generateEpisodeSubtitles(ep.id!, ep.videoUrl)}
+                                                                    style={{
+                                                                        fontSize: '0.68rem', fontWeight: 600, padding: '3px 8px',
+                                                                        borderRadius: '4px', border: 'none', cursor: 'pointer',
+                                                                        background: 'rgba(99,102,241,0.12)', color: '#818cf8',
+                                                                    }}>
+                                                                    {episodeSubStatus[ep.id] === 'done' ? '🔄 Regen' : '🗨️ Subtitles'}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                                    <button type="button" onClick={() => saveEpisode(idx)} disabled={episodeSaving === (ep.id || `new-${idx}`)}
+                                                        style={{
+                                                            fontSize: '0.72rem', fontWeight: 600, padding: '4px 12px',
+                                                            borderRadius: '6px', border: 'none', cursor: 'pointer',
+                                                            background: 'rgba(52,211,153,0.15)', color: '#34d399',
+                                                        }}>
+                                                        {episodeSaving === (ep.id || `new-${idx}`) ? 'Saving…' : ep._new ? '➕ Create' : '💾 Save'}
+                                                    </button>
+                                                    {ep.id && (
+                                                        <button type="button" onClick={() => deleteEpisode(idx)}
+                                                            style={{
+                                                                fontSize: '0.72rem', fontWeight: 600, padding: '4px 12px',
+                                                                borderRadius: '6px', border: 'none', cursor: 'pointer',
+                                                                background: 'rgba(239,68,68,0.1)', color: '#ef4444',
+                                                            }}>
+                                                            🗑
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <button type="button" onClick={addEpisode} style={{
+                                        width: '100%', padding: '10px', fontSize: '0.82rem', fontWeight: 600,
+                                        borderRadius: 'var(--radius-md)', border: '1px dashed rgba(212,168,83,0.3)',
+                                        background: 'rgba(212,168,83,0.06)', color: 'var(--accent-gold)',
+                                        cursor: 'pointer', transition: 'all 0.15s', marginTop: 'var(--space-sm)',
+                                    }}>
+                                        + Add Episode
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* ══ MOVIE ROLLS ══ */}
                     <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }} id="roll-assignment-section">

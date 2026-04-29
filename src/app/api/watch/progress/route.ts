@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const projectId = searchParams.get('projectId')
+    const episodeId = searchParams.get('episodeId') || undefined
     if (!projectId) {
         return NextResponse.json({ error: 'projectId is required' }, { status: 400 })
     }
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
             where: {
                 userId: session.userId,
                 projectId,
+                ...(episodeId ? { episodeId } : {}),
                 completePct: { not: null },  // skip blank rows created on page load
             },
             orderBy: { watchedAt: 'desc' },

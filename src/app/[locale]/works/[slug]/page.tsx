@@ -30,9 +30,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     const { slug } = await params
     const project = await getProject(slug)
     if (!project) return { title: 'Not Found' }
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+    const desc = project.tagline || project.description.slice(0, 160)
     return {
         title: `${project.title} | AIM Studio`,
-        description: project.tagline || project.description.slice(0, 160),
+        description: desc,
+        openGraph: {
+            title: project.title,
+            description: desc,
+            images: project.coverImage ? [{ url: project.coverImage }] : [],
+            url: `${siteUrl}/works/${project.slug}`,
+            type: 'video.movie',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: project.title,
+            description: desc,
+            images: project.coverImage ? [project.coverImage] : [],
+        },
     }
 }
 
@@ -85,9 +100,35 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             ? `/casting`
             : undefined
 
+    // JSON-LD structured data
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': project.projectType === 'series' ? 'TVSeries' : 'Movie',
+        name: project.title,
+        description: project.description,
+        image: project.coverImage,
+        genre: project.genre,
+        datePublished: project.year,
+        url: `${siteUrl}/works/${project.slug}`,
+        ...(project.projectType === 'series' ? {
+            numberOfEpisodes: project.episodes.length,
+        } : {}),
+    }
+
     return (
         <>
-            <ProjectDetailClient project={serializedProject} isLoggedIn={isLoggedIn} hasTrailer={hasTrailer} />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            <ProjectDetailClient
+                project={serializedProject}
+                isLoggedIn={isLoggedIn}
+                hasTrailer={hasTrailer}
+                currentUserId={session?.userId || null}
+                currentUserRole={session?.role || null}
+            />
             {serializedProject.cast.length > 0 && (
                 <CastShowcase
                     cast={serializedProject.cast}

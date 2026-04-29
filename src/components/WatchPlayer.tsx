@@ -40,10 +40,12 @@ export default function WatchPlayer({
     project,
     userPreferredLang = 'en',
     mediaType = 'movie',
+    startEpisodeId,
 }: {
     project: WatchProject
     userPreferredLang?: string
     mediaType?: string
+    startEpisodeId?: string
 }) {
     const tPlayer = useTranslations('watchPlayer')
     const locale = useLocale()
@@ -75,7 +77,11 @@ export default function WatchPlayer({
 
     /* ── Playback state ── */
     const [activeEpisode, setActiveEpisode] = useState<Episode | null>(
-        isSeries ? project.episodes[0] : null
+        isSeries
+            ? (startEpisodeId
+                ? project.episodes.find(e => e.id === startEpisodeId) ?? project.episodes[0]
+                : project.episodes[0])
+            : null
     )
     const currentVideoUrl = activeEpisode?.videoUrl || project.filmUrl
 

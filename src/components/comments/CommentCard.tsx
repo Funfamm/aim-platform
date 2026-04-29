@@ -1,0 +1,368 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import CommentInput from './CommentInput'
+
+interface CommentUser {
+    id: string
+    name: string
+    avatar: string | null
+}
+
+export interface CommentData {
+    id: string
+    content: string
+    hidden: boolean
+    pinned: boolean
+    flagged: boolean
+    editedAt: string | null
+    createdAt: string
+    user: CommentUser
+    likedByMe: boolean
+    likesCount: number
+    parentId: string | null
+    replies: CommentData[]
+}
+
+interface CommentCardProps {
+    comment: CommentData
+    currentUserId: string | null
+    currentUserRole: string | null
+    projectSlug: string
+    episodeId?: string | null
+    projectId: string
+    onUpdate: (comment: CommentData) => void
+    onDelete: (id: string) => void
+    isReply?: boolean
+}
+
+function timeAgo(dateStr: string): string {
+    const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+    if (seconds < 60) return 'just now'
+    const mins = Math.floor(seconds / 60)
+    if (mins < 60) return `${mins}m ago`
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return `${hours}h ago`
+    const days = Math.floor(hours / 24)
+    if (days < 30) return `${days}d ago`
+    return new Date(dateStr).toLocaleDateString()
+}
+
+function Avatar({ user }: { user: CommentUser }) {
+    if (user.avatar) {
+        return (
+            <img
+                src={user.avatar}
+                alt=""
+                style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    objectFit: 'cover', flexShrink: 0,
+                }}
+            />
+        )
+    }
+    const initial = user.name?.charAt(0)?.toUpperCase() || '?'
+    return (
+        <div style={{
+            width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+            background: 'linear-gradient(135deg, rgba(212,168,83,0.3), rgba(212,168,83,0.1))',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-gold)',
+        }}>
+            {initial}
+        </div>
+    )
+}
+
+export default function CommentCard({
+    comment, currentUserId, currentUserRole, projectSlug,
+    episodeId, projectId, onUpdate, onDelete, isReply = false,
+}: CommentCardProps) {
+    const [showReplyInput, setShowReplyInput] = useState(false)
+    const [editing, setEditing] = useState(false)
+    const [editContent, setEditContent] = useState(comment.content)
+    const [editSubmitting, setEditSubmitting] = useState(false)
+    const [likedByMe, setLikedByMe] = useState(comment.likedByMe)
+    const [likesCount, setLikesCount] = useState(comment.likesCount)
+    const [liking, setLiking] = useState(false)
+
+    const isOwner = currentUserId === comment.user.id
+    const isAdmin = currentUserRole === 'admin' || currentUserRole === 'superadmin'
+
+    // Edit window — minutes remaining (re-renders every 60s via tick)
+    const [tick, setTick] = useState(0)
+    const editMinsLeft = (() => {
+        void tick // referenced to trigger recalc
+        const elapsed = Date.now() - new Date(comment.createdAt).getTime()
+        return Math.max(0, 15 - Math.floor(elapsed / 60000))
+    })()
+
+    // Re-render every 60s to update the countdown
+    useEffect(() => {
+        if (!isOwner || editMinsLeft <= 0) return
+        const timer = setInterval(() => setTick(t => t + 1), 60000)
+        return () => clearInterval(timer)
+    }, [isOwner, editMinsLeft])
+
+    const canEdit = isOwner && editMinsLeft > 0 && !comment.hidden
+
+    // Hidden / deleted comment
+    if (comment.hidden) {
+        return (
+            <div style={{
+                padding: '8px 12px', fontSize: '0.8rem', fontStyle: 'italic',
+                color: 'var(--text-tertiary)', opacity: 0.6,
+            }}>
+                {comment.content === '[deleted]'
+                    ? 'This comment has been deleted'
+                    : 'This comment has been removed by a moderator'}
+            </div>
+        )
+    }
+
+    const handleLike = async () => {
+        if (!currentUserId || liking) return
+        setLiking(true)
+        try {
+            const res = await fetch(`/api/comments/${comment.id}/like`, { method: 'POST' })
+            const data = await res.json()
+            if (res.ok) {
+                setLikedByMe(data.liked)
+                setLikesCount(data.likesCount)
+            }
+        } catch { /* ignore */ }
+        setLiking(false)
+    }
+
+    const handleEdit = async () => {
+        if (!editContent.trim() || editSubmitting) return
+        setEditSubmitting(true)
+        try {
+            const res = await fetch(`/api/comments/${comment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: editContent }),
+            })
+            const data = await res.json()
+            if (res.ok) {
+                onUpdate({ ...comment, content: data.comment.content, editedAt: data.comment.editedAt })
+                setEditing(false)
+            }
+        } catch { /* ignore */ }
+        setEditSubmitting(false)
+    }
+
+    const handleDelete = async () => {
+        if (!confirm('Delete this comment?')) return
+        try {
+            const res = await fetch(`/api/comments/${comment.id}`, { method: 'DELETE' })
+            if (res.ok) onDelete(comment.id)
+        } catch { /* ignore */ }
+    }
+
+    const handleModerate = async (action: string) => {
+        try {
+            const res = await fetch('/api/admin/comments', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: comment.id, action }),
+            })
+            if (res.ok) {
+                const data = await res.json()
+                onUpdate({ ...comment, hidden: data.comment.hidden, pinned: data.comment.pinned })
+            }
+        } catch { /* ignore */ }
+    }
+
+    const handleReplySubmit = (newReply: CommentData) => {
+        setShowReplyInput(false)
+        onUpdate({ ...comment, replies: [...(comment.replies || []), newReply] })
+    }
+
+    return (
+        <div
+            id={`comment-${comment.id}`}
+            style={{
+                display: 'flex', gap: '10px', padding: isReply ? '8px 0 8px 16px' : '12px 0',
+                borderLeft: isReply ? '2px solid rgba(255,255,255,0.06)' : undefined,
+                ...(comment.flagged && isAdmin ? { borderLeft: '3px solid rgba(234,179,8,0.5)' } : {}),
+            }}
+        >
+            <Avatar user={comment.user} />
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {comment.user.name}
+                    </span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                        {timeAgo(comment.createdAt)}
+                    </span>
+                    {comment.editedAt && (
+                        <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                            (edited)
+                        </span>
+                    )}
+                    {comment.pinned && (
+                        <span style={{ fontSize: '0.68rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
+                            📌 Pinned
+                        </span>
+                    )}
+                    {comment.flagged && isAdmin && (
+                        <span style={{ fontSize: '0.68rem', color: '#eab308', fontWeight: 600 }}>
+                            🚩 Flagged
+                        </span>
+                    )}
+                </div>
+
+                {/* Content */}
+                {editing ? (
+                    <div style={{ marginBottom: '8px' }}>
+                        <textarea
+                            value={editContent}
+                            onChange={e => setEditContent(e.target.value)}
+                            maxLength={2000}
+                            rows={3}
+                            style={{
+                                width: '100%', padding: '8px 10px', fontSize: '0.85rem',
+                                color: 'var(--text-primary)', background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(212,168,83,0.3)', borderRadius: '8px',
+                                resize: 'none', outline: 'none', fontFamily: 'inherit',
+                            }}
+                        />
+                        <div style={{ display: 'flex', gap: '6px', marginTop: '6px' }}>
+                            <button onClick={handleEdit} disabled={editSubmitting} style={{
+                                ...actionBtnStyle, background: 'var(--accent-gold)', color: '#000', fontWeight: 600,
+                            }}>
+                                {editSubmitting ? '...' : 'Save'}
+                            </button>
+                            <button onClick={() => { setEditing(false); setEditContent(comment.content) }} style={actionBtnStyle}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <p style={{
+                        fontSize: '0.85rem', lineHeight: 1.55, color: 'var(--text-secondary)',
+                        margin: '0 0 6px', wordBreak: 'break-word', whiteSpace: 'pre-wrap',
+                    }}>
+                        {comment.content}
+                    </p>
+                )}
+
+                {/* Actions */}
+                {!editing && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        {/* Like */}
+                        <button onClick={handleLike} disabled={!currentUserId} style={{
+                            ...actionBtnStyle,
+                            color: likedByMe ? '#ef4444' : 'var(--text-tertiary)',
+                        }}>
+                            {likedByMe ? '❤️' : '🤍'} {likesCount > 0 ? likesCount : ''}
+                        </button>
+
+                        {/* Reply (only on top-level) */}
+                        {!isReply && currentUserId && (
+                            <button onClick={() => setShowReplyInput(!showReplyInput)} style={actionBtnStyle}>
+                                Reply
+                            </button>
+                        )}
+
+                        {/* Edit (owner, within window) */}
+                        {canEdit && (
+                            <button onClick={() => { setEditing(true); setEditContent(comment.content) }} style={actionBtnStyle}>
+                                Edit ({editMinsLeft}m left)
+                            </button>
+                        )}
+                        {isOwner && editMinsLeft <= 0 && !comment.hidden && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                Edit window closed
+                            </span>
+                        )}
+
+                        {/* Delete (owner) */}
+                        {isOwner && (
+                            <button onClick={handleDelete} style={{ ...actionBtnStyle, color: 'var(--error)' }}>
+                                Delete
+                            </button>
+                        )}
+
+                        {/* Admin actions */}
+                        {isAdmin && !isOwner && (
+                            <>
+                                <button onClick={() => handleModerate(comment.hidden ? 'unhide' : 'hide')} style={actionBtnStyle}>
+                                    {comment.hidden ? 'Unhide' : 'Hide'}
+                                </button>
+                                <button onClick={() => handleModerate(comment.pinned ? 'unpin' : 'pin')} style={actionBtnStyle}>
+                                    {comment.pinned ? 'Unpin' : 'Pin'}
+                                </button>
+                                <button onClick={handleDelete} style={{ ...actionBtnStyle, color: 'var(--error)' }}>
+                                    Delete
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* Reply input */}
+                {showReplyInput && (
+                    <div style={{ marginTop: '8px' }}>
+                        <CommentInput
+                            projectId={projectId}
+                            episodeId={episodeId}
+                            parentId={comment.id}
+                            onSubmit={handleReplySubmit}
+                            onCancel={() => setShowReplyInput(false)}
+                            placeholder={`Reply to ${comment.user.name}...`}
+                            autoFocus
+                        />
+                    </div>
+                )}
+
+                {/* Replies */}
+                {comment.replies?.length > 0 && (
+                    <div style={{ marginTop: '8px' }}>
+                        {comment.replies.map(reply => (
+                            <CommentCard
+                                key={reply.id}
+                                comment={reply}
+                                currentUserId={currentUserId}
+                                currentUserRole={currentUserRole}
+                                projectSlug={projectSlug}
+                                episodeId={episodeId}
+                                projectId={projectId}
+                                onUpdate={(updated) => {
+                                    onUpdate({
+                                        ...comment,
+                                        replies: comment.replies.map(r => r.id === updated.id ? updated : r),
+                                    })
+                                }}
+                                onDelete={(id) => {
+                                    onUpdate({
+                                        ...comment,
+                                        replies: comment.replies.map(r =>
+                                            r.id === id ? { ...r, hidden: true, content: '[deleted]' } : r
+                                        ),
+                                    })
+                                }}
+                                isReply
+                            />
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+const actionBtnStyle: React.CSSProperties = {
+    background: 'none',
+    border: 'none',
+    color: 'var(--text-tertiary)',
+    fontSize: '0.76rem',
+    cursor: 'pointer',
+    padding: '2px 4px',
+    borderRadius: '4px',
+    transition: 'color 0.15s',
+}

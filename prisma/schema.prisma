@@ -56,6 +56,8 @@ model User {
   scriptCallNotifications    ScriptCallNotify[]
   watchHistory               WatchHistory[]
   watchlist                  Watchlist[]
+  comments                   Comment[]
+  commentLikes               CommentLike[]
 
   @@index([role])
   @@index([createdAt])
@@ -101,6 +103,7 @@ model Project {
   watchlist    Watchlist[]
   liveEvents   LiveEvent[]
   views        ProjectView[]
+  comments     Comment[]
 
   @@index([title, tagline])
   @@index([viewCount])           // trending sort
@@ -175,6 +178,7 @@ model WatchHistory {
   id           String   @id @default(cuid())
   userId       String
   projectId    String
+  episodeId    String?  // null = project-level, set = per-episode tracking
   watchedAt    DateTime @default(now())
   progress     Float    @default(0)
   subtitleLang String?  // ISO 639-1 code of subtitle used, null if captions off
@@ -183,21 +187,28 @@ model WatchHistory {
   completePct  Float?   // 0.0–1.0 fraction of video watched at session end
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  episode      Episode? @relation(fields: [episodeId], references: [id], onDelete: SetNull)
 
   @@index([userId, watchedAt])
   @@index([userId, projectId]) // for fast per-project lookup
+  @@index([episodeId])
 }
 
 model Episode {
-  id        String   @id @default(cuid())
-  projectId String
-  title     String
-  number    Int
-  season    Int      @default(1)
-  videoUrl  String?
-  duration  String?
-  createdAt DateTime @default(now())
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id          String         @id @default(cuid())
+  projectId   String
+  title       String
+  number      Int
+  season      Int            @default(1)
+  videoUrl    String?
+  duration    String?
+  published   Boolean        @default(false)
+  description String?
+  thumbnail   String?
+  createdAt   DateTime       @default(now())
+  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  watchHistory WatchHistory[]
 
   @@unique([projectId, season, number])
   @@index([projectId])
@@ -1420,4 +1431,47 @@ model ProjectPayment {
   @@index([projectRequestId, milestone])
   @@index([paypalOrderId])
   @@index([status])
+}
+
+// ── Community: Comments & Engagement ──────────────────────────────────────────
+
+model Comment {
+  id        String    @id @default(cuid())
+  projectId String
+  episodeId String?   // null = project-level comment
+  userId    String
+  parentId  String?   // null = top-level, set = reply (1 level only)
+  content   String    @db.Text
+  hidden    Boolean   @default(false)
+  hiddenAt  DateTime?
+  hiddenBy  String?   // admin userId who hid this comment
+  pinned    Boolean   @default(false)
+  flagged   Boolean   @default(false)  // auto-flagged by profanity filter
+  editedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  episode   Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   Comment[] @relation("CommentReplies")
+  likes     CommentLike[]
+
+  @@index([projectId, createdAt])
+  @@index([episodeId, createdAt])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model CommentLike {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
 }

@@ -7,6 +7,8 @@ import { useTranslations, useLocale } from 'next-intl'
 
 import BackButton from '@/components/BackButton'
 import WatchPlayer from '@/components/WatchPlayer'
+import ShareButtons from '@/components/share/ShareButtons'
+import CommentSection from '@/components/comments/CommentSection'
 
 interface CastingCall {
     id: string
@@ -24,6 +26,9 @@ interface Episode {
     season: number
     videoUrl: string | null
     duration: string | null
+    published?: boolean
+    description?: string | null
+    thumbnail?: string | null
 }
 
 interface ProjectData {
@@ -59,7 +64,7 @@ const statusLabelKeys: Record<string, string> = {
     upcoming: 'comingSoon',
 }
 
-export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }: { project: ProjectData; isLoggedIn?: boolean; hasTrailer?: boolean }) {
+export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, currentUserId, currentUserRole }: { project: ProjectData; isLoggedIn?: boolean; hasTrailer?: boolean; currentUserId?: string | null; currentUserRole?: string | null }) {
     const t = useTranslations('projectDetail')
     const locale = useLocale()
     const trailerRef = useRef<HTMLDivElement>(null)
@@ -70,6 +75,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
     const [isSaved, setIsSaved] = useState(false)
     const [appliedCastingIds, setAppliedCastingIds] = useState<Set<string>>(new Set())
     const [lightboxImg, setLightboxImg] = useState<string | null>(null)
+    const [activeSeason, setActiveSeason] = useState(1)
 
     const router = useRouter()
     const colors = statusColors[project.status] || statusColors.upcoming
@@ -404,8 +410,14 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill={isSaved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
                                 </svg>
-                                {isSaved ? t('saved') : t('save')}
+                            {isSaved ? t('saved') : t('save')}
                             </button>
+                            {/* Share */}
+                            <ShareButtons
+                                url={`${typeof window !== 'undefined' ? window.location.origin : ''}/${locale}/works/${project.slug}`}
+                                title={title}
+                                description={tagline}
+                            />
                         </div>
                     </div>
                 </div>
@@ -553,58 +565,115 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
                             <p style={{ fontSize: '1.05rem', lineHeight: 1.8, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{description}</p>
 
                             {/* Episodes list for series */}
-                            {project.projectType === 'series' && project.episodes.length > 0 && (
-                                <div id="episodes" style={{ marginTop: 'var(--space-3xl)', scrollMarginTop: '2rem' }}>
-                                    <h3 style={{ marginBottom: 'var(--space-lg)' }}>
-                                        {t('episodes')}
-                                        <span style={{
-                                            fontSize: '0.8rem', fontWeight: 400,
-                                            color: 'var(--text-tertiary)', marginLeft: '8px',
-                                        }}>
-                                            ({project.episodes.length})
-                                        </span>
-                                    </h3>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-                                        {project.episodes.map((ep) => (
-                                            <div key={ep.id} style={{
-                                                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                                                padding: 'var(--space-sm) var(--space-md)',
-                                                background: 'rgba(255,255,255,0.02)',
-                                                borderRadius: 'var(--radius-md)',
-                                                border: '1px solid var(--border-subtle)',
-                                                transition: 'all 0.2s',
+                            {project.projectType === 'series' && project.episodes.length > 0 && (() => {
+                                const publishedEps = project.episodes.filter(e => e.published !== false)
+                                const seasons = [...new Set(publishedEps.map(e => e.season))].sort((a, b) => a - b)
+                                const filteredEps = seasons.length > 1
+                                    ? publishedEps.filter(e => e.season === activeSeason)
+                                    : publishedEps
+
+                                if (publishedEps.length === 0) return null
+
+                                return (
+                                    <div id="episodes" style={{ marginTop: 'var(--space-3xl)', scrollMarginTop: '2rem' }}>
+                                        <h3 style={{ marginBottom: 'var(--space-lg)' }}>
+                                            {t('episodes')}
+                                            <span style={{
+                                                fontSize: '0.8rem', fontWeight: 400,
+                                                color: 'var(--text-tertiary)', marginLeft: '8px',
                                             }}>
-                                                <span style={{
-                                                    fontFamily: 'var(--font-display)',
-                                                    fontSize: '1.1rem', fontWeight: 700,
-                                                    color: 'var(--accent-gold)',
-                                                    minWidth: '28px',
-                                                }}>
-                                                    {ep.number}
-                                                </span>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ep.title}</div>
-                                                    {ep.duration && (
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                                                            S{ep.season} • {ep.duration}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {ep.videoUrl && (
-                                                    <span style={{
-                                                        fontSize: '0.6rem', fontWeight: 600,
-                                                        color: 'var(--color-success)',
-                                                        background: 'rgba(52,211,153,0.1)',
-                                                        padding: '3px 8px',
-                                                        borderRadius: 'var(--radius-full)',
-                                                        border: '1px solid rgba(52,211,153,0.2)',
-                                                    }}>▶ {t('watch')}</span>
-                                                )}
+                                                ({publishedEps.length})
+                                            </span>
+                                        </h3>
+
+                                        {/* Season tabs */}
+                                        {seasons.length > 1 && (
+                                            <div style={{ display: 'flex', gap: '6px', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+                                                {seasons.map(s => (
+                                                    <button
+                                                        key={s}
+                                                        onClick={() => setActiveSeason(s)}
+                                                        style={{
+                                                            padding: '6px 16px',
+                                                            fontSize: '0.78rem',
+                                                            fontWeight: activeSeason === s ? 700 : 500,
+                                                            borderRadius: 'var(--radius-full)',
+                                                            border: activeSeason === s
+                                                                ? '1px solid rgba(212,168,83,0.4)'
+                                                                : '1px solid rgba(255,255,255,0.1)',
+                                                            background: activeSeason === s
+                                                                ? 'rgba(212,168,83,0.12)'
+                                                                : 'rgba(255,255,255,0.03)',
+                                                            color: activeSeason === s ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                    >
+                                                        Season {s}
+                                                    </button>
+                                                ))}
                                             </div>
-                                        ))}
+                                        )}
+
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                                            {filteredEps.map((ep) => (
+                                                <Link
+                                                    key={ep.id}
+                                                    href={`/works/${project.slug}/s${ep.season}e${ep.number}`}
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                                                        padding: 'var(--space-sm) var(--space-md)',
+                                                        background: 'rgba(255,255,255,0.02)',
+                                                        borderRadius: 'var(--radius-md)',
+                                                        border: '1px solid var(--border-subtle)',
+                                                        transition: 'all 0.2s',
+                                                        textDecoration: 'none',
+                                                        color: 'inherit',
+                                                    }}
+                                                >
+                                                    {ep.thumbnail && (
+                                                        <img
+                                                            src={ep.thumbnail}
+                                                            alt=""
+                                                            style={{
+                                                                width: 80, height: 45, objectFit: 'cover',
+                                                                borderRadius: '6px', flexShrink: 0,
+                                                            }}
+                                                        />
+                                                    )}
+                                                    <span style={{
+                                                        fontFamily: 'var(--font-display)',
+                                                        fontSize: '1.1rem', fontWeight: 700,
+                                                        color: 'var(--accent-gold)',
+                                                        minWidth: '28px',
+                                                    }}>
+                                                        {ep.number}
+                                                    </span>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{ep.title}</div>
+                                                        {(ep.duration || ep.description) && (
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                                                S{ep.season} • {ep.duration || ''}
+                                                                {ep.description && ` — ${ep.description.slice(0, 60)}${ep.description.length > 60 ? '…' : ''}`}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {ep.videoUrl && (
+                                                        <span style={{
+                                                            fontSize: '0.6rem', fontWeight: 600,
+                                                            color: 'var(--color-success)',
+                                                            background: 'rgba(52,211,153,0.1)',
+                                                            padding: '3px 8px',
+                                                            borderRadius: 'var(--radius-full)',
+                                                            border: '1px solid rgba(52,211,153,0.2)',
+                                                        }}>▶ {t('watch')}</span>
+                                                    )}
+                                                </Link>
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )
+                            })()}
                         </div>
 
                         {/* Sidebar */}
@@ -909,6 +978,13 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer }:
                     </section>
                 )
             })()}
+            {/* Comment Section */}
+            <CommentSection
+                projectId={project.id}
+                projectSlug={project.slug}
+                currentUserId={currentUserId || null}
+                currentUserRole={currentUserRole || null}
+            />
         </>
     )
 }

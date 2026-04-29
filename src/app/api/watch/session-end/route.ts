@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
             mediaType?: string
         }
 
-        const { projectId, subtitleLang, audioLang, captionsOn = false, completePct, watchDurationSec, mediaType } = body
+        const { projectId, episodeId, subtitleLang, audioLang, captionsOn = false, completePct, watchDurationSec, mediaType } = body
         const safeMediaType = mediaType === 'trailer' ? 'trailer' : 'film'
 
         if (!projectId) {
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
         // ── 2. WatchHistory — resume positions (authenticated users only) ───────
         if (userId) {
             const existing = await prisma.watchHistory.findFirst({
-                where: { userId, projectId },
+                where: { userId, projectId, ...(episodeId ? { episodeId } : {}) },
                 orderBy: { watchedAt: 'desc' },
             })
 
@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
                     data: {
                         userId,
                         projectId,
+                        episodeId: episodeId || null,
                         subtitleLang: subtitleLang ?? null,
                         audioLang: audioLang ?? null,
                         captionsOn,
