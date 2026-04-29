@@ -85,11 +85,9 @@ export async function sendViaACS(config: AcsConfig, options: AcsEmailOptions): P
         replyTo: options.replyTo
             ? [{ address: options.replyTo }]
             : undefined,
-        // ACS SDK supports custom headers via the 'headers' property on EmailMessage
+        // ACS SDK expects headers as Record<string, string> (not array)
         // This enables RFC 8058 List-Unsubscribe compliance on the ACS bulk transport
-        headers: options.headers
-            ? Object.entries(options.headers).map(([name, value]) => ({ name, value }))
-            : undefined,
+        headers: options.headers || undefined,
     }
 
     try {

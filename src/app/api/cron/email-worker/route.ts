@@ -24,6 +24,7 @@ import { domainRateLimiter } from '@/lib/rate-limiter'
 import { getBulkTransportConfig } from '@/lib/transport-resolver'
 import { sendViaACS } from '@/lib/acs-email'
 import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
+import crypto from 'crypto'
 
 // ── Configuration ──────────────────────────────────────────────────────────
 const BATCH_SIZE = 4           // emails per batch (matches Graph concurrency limit)
@@ -124,14 +125,57 @@ export async function GET(request: Request) {
                             }
 
                             try {
+                                // Inject tracking pixel for open-rate analytics (same as Graph path in mailer.ts)
+                                const trackingId = crypto.randomUUID()
+                                let htmlWithPixel = job.html
+                                const pixelUrl = `${siteUrl}/api/track/open/${trackingId}`
+                                const trackingPixel = `<img src="${pixelUrl}" width="1" height="1" alt="" style="display:none;width:1px;height:1px;border:0;" />`
+                                if (htmlWithPixel.includes('</body>')) {
+                                    htmlWithPixel = htmlWithPixel.replace('</body>', `${trackingPixel}</body>`)
+                                } else {
+                                    const lastDiv = htmlWithPixel.lastIndexOf('</div>')
+                                    if (lastDiv !== -1) {
+                                        htmlWithPixel = htmlWithPixel.slice(0, lastDiv) + trackingPixel + htmlWithPixel.slice(lastDiv)
+                                    } else {
+                                        htmlWithPixel += trackingPixel
+                                    }
+                                }
+
                                 await sendViaACS(
                                     { connectionString: bulkConfig.acsConnectionString!, senderAddress: bulkConfig.acsSenderAddress! },
-                                    { to: job.to, subject: job.subject, html: job.html, text: job.text || htmlToPlainText(job.html), senderAddress: bulkConfig.acsSenderAddress!, replyTo: job.replyTo || undefined, headers }
+                                    { to: job.to, subject: job.subject, html: htmlWithPixel, text: job.text || htmlToPlainText(job.html), senderAddress: bulkConfig.acsSenderAddress!, replyTo: job.replyTo || undefined, headers }
                                 )
                                 success = true
+
+                                // Log to EmailLog so ACS sends appear in analytics dashboard
+                                prisma.emailLog.create({
+                                    data: {
+                                        trackingId,
+                                        to: job.to,
+                                        subject: job.subject,
+                                        type: job.type || 'broadcast',
+                                        transport: 'acs',
+                                        success: true,
+                                        bounceCategory: null,
+                                    },
+                                }).catch(() => { /* non-critical log failure */ })
                             } catch (acsErr) {
                                 const acsMsg = acsErr instanceof Error ? acsErr.message : String(acsErr)
                                 logger.error('email-worker', `ACS send failed for job ${job.id}: ${acsMsg}`)
+
+                                // Log ACS failure to EmailLog for analytics visibility
+                                prisma.emailLog.create({
+                                    data: {
+                                        to: job.to,
+                                        subject: job.subject,
+                                        type: job.type || 'broadcast',
+                                        transport: 'acs',
+                                        success: false,
+                                        error: acsMsg.slice(0, 2000),
+                                        bounceCategory: classifyBounceError(acsMsg),
+                                    },
+                                }).catch(() => { /* non-critical */ })
+
                                 throw new Error(`ACS: ${acsMsg}`)
                             }
                         } else {
