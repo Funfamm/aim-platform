@@ -130,17 +130,17 @@ function EmailSmtpTab({ settings, update, Toggle }: {
     const transport = settings.emailTransport || 'graph'
     const isGraph = transport === 'graph'
 
-    const handleTestEmail = async () => {
+    const handleTestEmail = async (transport?: string) => {
         const to = settings.notifyEmail || settings.contactEmail
         if (!to) { setTestResult({ ok: false, msg: 'Set a Notification Email (Donations tab) or Contact Email first.' }); return }
         setTestSending(true); setTestResult(null)
         try {
             const res = await fetch('/api/admin/test-email', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ to }),
+                body: JSON.stringify({ to, transport: transport || 'graph' }),
             })
             const data = await res.json()
-            if (res.ok) setTestResult({ ok: true, msg: `✅ Test email sent to ${to}` })
+            if (res.ok) setTestResult({ ok: true, msg: data.message || `✅ Test email sent to ${to}` })
             else setTestResult({ ok: false, msg: data.error || 'Send failed' })
         } catch { setTestResult({ ok: false, msg: 'Connection error' }) }
         finally { setTestSending(false) }
@@ -399,15 +399,26 @@ function EmailSmtpTab({ settings, update, Toggle }: {
                 <button type="button" onClick={handleSave} className="btn btn-primary" disabled={saving} style={{ minWidth: '160px' }}>
                     {saving ? 'Saving…' : saved ? '✓ Saved' : '💾 Save Email Settings'}
                 </button>
-                <button type="button" onClick={handleTestEmail} className="btn btn-primary btn-sm"
+                <button type="button" onClick={() => handleTestEmail()} className="btn btn-primary btn-sm"
                     disabled={testingSending || !settings.emailsEnabled}
                     style={{
                         opacity: settings.emailsEnabled ? 1 : 0.4,
                         background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)',
                         color: 'var(--success)', whiteSpace: 'nowrap',
                     }}>
-                    {testingSending ? '⏳ Sending…' : '📤 Send Test Email'}
+                    {testingSending ? '⏳ Sending…' : '📤 Test Graph'}
                 </button>
+                {(settings as any).bulkTransport === 'acs' && (
+                    <button type="button" onClick={() => handleTestEmail('acs')} className="btn btn-primary btn-sm"
+                        disabled={testingSending || !settings.emailsEnabled}
+                        style={{
+                            opacity: settings.emailsEnabled ? 1 : 0.4,
+                            background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)',
+                            color: '#3b82f6', whiteSpace: 'nowrap',
+                        }}>
+                        {testingSending ? '⏳ Sending…' : '☁️ Test ACS'}
+                    </button>
+                )}
                 {!settings.emailsEnabled && (
                     <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>Enable emails above to test</span>
                 )}
