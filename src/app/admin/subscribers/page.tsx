@@ -39,7 +39,7 @@ export default function AdminSubscribersPage() {
     const [toast, setToast]             = useState('')
     const [purging, setPurging]         = useState(false)
     const [campaign, setCampaign]       = useState<{ eligible: number; lastSentAt: string | null; cooldownActive: boolean } | null>(null)
-    const [campaignLoading, setCampaignLoading] = useState(false)
+    const [campaignLoading, setCampaignLoading] = useState(true)
     const [campaignSending, setCampaignSending] = useState(false)
 
     const showToast = (msg: string) => {
@@ -72,9 +72,7 @@ export default function AdminSubscribersPage() {
     useEffect(() => { fetchData(1) }, [fetchData])
 
     // Fetch campaign status
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
-        setCampaignLoading(true)
         fetch('/api/admin/subscriber-campaign')
             .then(r => r.ok ? r.json() : null)
             .then(data => { if (data) setCampaign(data) })
