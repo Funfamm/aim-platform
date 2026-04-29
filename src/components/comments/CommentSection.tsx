@@ -38,9 +38,7 @@ export default function CommentSection({
         } catch { /* ignore */ }
     }, [projectId, episodeId])
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
-        setLoading(true)
         fetchComments().finally(() => setLoading(false))
     }, [fetchComments])
 

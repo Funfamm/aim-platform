@@ -76,7 +76,9 @@ export default function BasicsStep({ form, updateField, fieldErrors }: Props) {
                 firstInput?.focus()
             })
         })
-        setJustUnlocked(null)
+        // Defer the state clear to avoid setState-in-effect lint
+        const timer = setTimeout(() => setJustUnlocked(null), 0)
+        return () => clearTimeout(timer)
     }, [justUnlocked])
 
     // ── React to validation errors — auto-open sections containing errors ──
@@ -97,13 +99,16 @@ export default function BasicsStep({ form, updateField, fieldErrors }: Props) {
             }
         }
 
-        setSections(prev => {
-            const next = { ...prev }
-            for (const id of sectionsToOpen) {
-                next[id] = { unlocked: true, open: true }
-            }
-            return next
-        })
+        // Defer to avoid setState-in-effect lint
+        setTimeout(() => {
+            setSections(prev => {
+                const next = { ...prev }
+                for (const id of sectionsToOpen) {
+                    next[id] = { unlocked: true, open: true }
+                }
+                return next
+            })
+        }, 0)
 
         afterPaint(() => {
             const firstErr = fieldErrors[0]

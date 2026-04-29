@@ -1463,7 +1463,7 @@ export default function AdminProjectsPage() {
                                             category="films"
                                             currentUrl={form.filmUrl}
                                             onUpload={url => updateField('filmUrl', url)}
-                                            maxSizeMB={500}
+                                            maxSizeMB={5000}
                                         />
                                         <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
                                             When set, a &quot;Watch Now&quot; button appears on the project page (login required).

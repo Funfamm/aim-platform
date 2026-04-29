@@ -89,20 +89,22 @@ export default function CommentCard({
     const isOwner = currentUserId === comment.user.id
     const isAdmin = currentUserRole === 'admin' || currentUserRole === 'superadmin'
 
-    // Edit window — minutes remaining (re-renders every 60s via tick)
-    const [tick, setTick] = useState(0)
-    const editMinsLeft = (() => {
-        void tick // referenced to trigger recalc
+    // Edit window — minutes remaining (updated every 60s)
+    const createdAtMs = new Date(comment.createdAt).getTime()
+    const [editMinsLeft, setEditMinsLeft] = useState(() => {
         const elapsed = Date.now() - new Date(comment.createdAt).getTime()
         return Math.max(0, 15 - Math.floor(elapsed / 60000))
-    })()
+    })
 
     // Re-render every 60s to update the countdown
     useEffect(() => {
         if (!isOwner || editMinsLeft <= 0) return
-        const timer = setInterval(() => setTick(t => t + 1), 60000)
+        const timer = setInterval(() => {
+            const elapsed = Date.now() - createdAtMs
+            setEditMinsLeft(Math.max(0, 15 - Math.floor(elapsed / 60000)))
+        }, 60000)
         return () => clearInterval(timer)
-    }, [isOwner, editMinsLeft])
+    }, [isOwner, editMinsLeft, createdAtMs])
 
     const canEdit = isOwner && editMinsLeft > 0 && !comment.hidden
 

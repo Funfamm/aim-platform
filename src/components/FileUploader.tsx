@@ -355,7 +355,7 @@ export default function FileUploader({
                             </div>
                             {!compact && (
                                 <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                    {accept.includes('video') ? 'Images & Videos' : accept.includes('audio') ? 'Audio files' : 'Images only'} • Max {maxSizeMB}MB
+                                    {accept.includes('video') ? 'Images & Videos' : accept.includes('audio') ? 'Audio files' : 'Images only'} • Max {maxSizeMB >= 1000 ? `${(maxSizeMB / 1000).toFixed(0)}GB` : `${maxSizeMB}MB`}
                                 </div>
                             )}
                         </>
