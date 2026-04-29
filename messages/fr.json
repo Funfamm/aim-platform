@@ -72,7 +72,8 @@
     "upcomingStat": "À Venir",
     "castingStat": "Casting",
     "limitlessDesc": "Aucune frontière, aucun obstacle. L'IA libère la narration à une échelle autrefois réservée aux grands studios.",
-    "cinematicDesc": "Chaque plan est intentionnel, chaque coupe est précise. Notre pipeline IA offre une qualité cinématographique à une vitesse inégalée."
+    "cinematicDesc": "Chaque plan est intentionnel, chaque coupe est précise. Notre pipeline IA offre une qualité cinématographique à une vitesse inégalée.",
+    "curatedCollections": "Collections Sélectionnées"
   },
   "casting": {
     "label": "Casting Ouvert",
@@ -234,7 +235,8 @@
     "noResults": "Aucun résultat trouvé",
     "learnMore": "En Savoir Plus",
     "viewAll": "Voir Tout",
-    "readMore": "Lire la Suite"
+    "readMore": "Lire la Suite",
+    "trackProject": "Suivre Votre Projet"
   },
   "about": {
     "label": "Qui Nous Sommes",
@@ -677,7 +679,7 @@
     "hub": "Centre de Formation",
     "label": "Centre de Formation",
     "heroLine1": "HAUSSEZ VOTRE",
-    "heroLine2": "",
+    "heroLine2": "votre",
     "heroTitle": "Perfectionnez votre",
     "heroAccent": "Art",
     "heroDesc": "Cours et ressources pour transformer les créatifs en cinéastes.",
@@ -1102,14 +1104,15 @@
     "justNow": "à l'instant",
     "minutesAgo": "il y a {count}m",
     "hoursAgo": "il y a {count}h",
-    "daysAgo": "il y a {count}j"
+    "daysAgo": "il y a {count}j",
+    "trackProject": "Suivre Votre Projet"
   },
   "scripts": {
     "metaTitle": "Appels à scénarios | AIM Studio",
     "metaDesc": "Soumettez votre scénario pour une chance d'être produit par AIM Studio.",
     "badge": "Appels ouverts",
     "heroLine1": "HAUSSEZ VOTRE",
-    "heroLine2": "",
+    "heroLine2": "votre",
     "heroTitle": "Soumissions de",
     "heroAccent": "Scénarios",
     "exploreCta": "Explorer les Appels Ouverts",
@@ -1725,5 +1728,27 @@
     "deletedComment": "Ce commentaire a été supprimé",
     "removedByMod": "Ce commentaire a été supprimé par un modérateur",
     "replyTo": "Répondre à {name}..."
+  },
+  "pay": {
+    "pageTitle": "Payer l'Acompte",
+    "projectSummary": "Résumé du Projet",
+    "projectLabel": "Projet",
+    "totalLabel": "Total du Projet",
+    "depositLabel": "Acompte Dû (40%)",
+    "milestoneDeposit": "Acompte - À Payer Maintenant",
+    "milestoneMidpoint": "Mi-parcours - Après le Premier Montage",
+    "milestoneFinal": "Final - Avant la Livraison",
+    "payButton": "Payer avec PayPal",
+    "processing": "Traitement du paiement...",
+    "successTitle": "Paiement Reçu !",
+    "successMessage": "Votre acompte a été sécurisé. La production commencera bientôt.",
+    "alreadyPaidTitle": "Acompte Déjà Payé",
+    "alreadyPaidMessage": "Votre acompte a déjà été payé.",
+    "invalidLinkTitle": "Lien Invalide",
+    "invalidLinkMessage": "Ce lien de paiement est invalide ou a expiré. Veuillez nous contacter.",
+    "trackProject": "Suivre Votre Projet",
+    "securedByPaypal": "Paiements sécurisés par la Protection des Achats PayPal",
+    "loadingPaypal": "Chargement de PayPal...",
+    "paymentSchedule": "Calendrier de Paiement"
   }
 }

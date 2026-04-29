@@ -235,7 +235,8 @@
     "noResults": "未找到结果",
     "learnMore": "了解更多",
     "viewAll": "查看全部",
-    "readMore": "阅读更多"
+    "readMore": "阅读更多",
+    "trackProject": "追踪您的项目"
   },
   "about": {
     "label": "关于我们",
@@ -678,7 +679,7 @@
     "hub": "培训中心",
     "label": "培训中心",
     "heroLine1": "提升你的",
-    "heroLine2": "",
+    "heroLine2": "你的",
     "heroTitle": "精进你的",
     "heroAccent": "艺术",
     "heroDesc": "将创作者转变为电影人的课程和资源。",
@@ -1103,14 +1104,15 @@
     "justNow": "刚刚",
     "minutesAgo": "{count}分钟前",
     "hoursAgo": "{count}小时前",
-    "daysAgo": "{count}天前"
+    "daysAgo": "{count}天前",
+    "trackProject": "追踪您的项目"
   },
   "scripts": {
     "metaTitle": "剧本征集 | AIM Studio",
     "metaDesc": "提交您的剧本，有机会由AIM Studio制作。",
     "badge": "公开征集",
     "heroLine1": "提升你的",
-    "heroLine2": "",
+    "heroLine2": "你的",
     "heroTitle": "剧本",
     "heroAccent": "征集",
     "exploreCta": "查看开放征稿",
@@ -1726,5 +1728,27 @@
     "deletedComment": "此评论已被删除",
     "removedByMod": "此评论已被管理员移除",
     "replyTo": "回复 {name}..."
+  },
+  "pay": {
+    "pageTitle": "支付定金",
+    "projectSummary": "项目摘要",
+    "projectLabel": "项目",
+    "totalLabel": "项目总额",
+    "depositLabel": "应付定金 (40%)",
+    "milestoneDeposit": "定金 - 立即支付",
+    "milestoneMidpoint": "中期 - 粗剪后",
+    "milestoneFinal": "尾款 - 交付前",
+    "payButton": "通过PayPal支付",
+    "processing": "正在处理付款...",
+    "successTitle": "已收到付款！",
+    "successMessage": "您的定金已确认。制作即将开始。",
+    "alreadyPaidTitle": "定金已支付",
+    "alreadyPaidMessage": "您的定金已支付。",
+    "invalidLinkTitle": "无效链接",
+    "invalidLinkMessage": "此支付链接无效或已过期。请联系我们。",
+    "trackProject": "追踪您的项目",
+    "securedByPaypal": "PayPal买家保护保障付款安全",
+    "loadingPaypal": "正在加载PayPal...",
+    "paymentSchedule": "付款计划"
   }
 }

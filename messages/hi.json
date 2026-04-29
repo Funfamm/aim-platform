@@ -72,7 +72,8 @@
     "upcomingStat": "आगामी",
     "castingStat": "कास्टिंग",
     "limitlessDesc": "कोई सीमा नहीं, कोई दरवान नहीं। AI कहानी कहने को उस पैमाने पर खोलता है जो केवल बड़े स्टूडियो के लिए था।",
-    "cinematicDesc": "हर फ्रेम जानबूझकर है, हर कट सटीक है। हमारी AI पाइपलाइन अभूतपूर्व गति से सिनेमाई गुणवत्ता प्रदान करती है।"
+    "cinematicDesc": "हर फ्रेम जानबूझकर है, हर कट सटीक है। हमारी AI पाइपलाइन अभूतपूर्व गति से सिनेमाई गुणवत्ता प्रदान करती है।",
+    "curatedCollections": "चयनित संग्रह"
   },
   "casting": {
     "label": "कास्टिंग खुला",
@@ -234,7 +235,8 @@
     "noResults": "कोई परिणाम नहीं",
     "learnMore": "और जानें",
     "viewAll": "सभी देखें",
-    "readMore": "और पढ़ें"
+    "readMore": "और पढ़ें",
+    "trackProject": "अपने प्रोजेक्ट को ट्रैक करें"
   },
   "about": {
     "label": "हम कौन हैं",
@@ -677,7 +679,7 @@
     "hub": "प्रशिक्षण केंद्र",
     "label": "प्रशिक्षण केंद्र",
     "heroLine1": "अपनी कला को",
-    "heroLine2": "",
+    "heroLine2": "आपकी",
     "heroTitle": "अपनी",
     "heroAccent": "कला निखारें",
     "heroDesc": "क्रिएटिव्स को फिल्ममेकर बनाने के कोर्स और संसाधन।",
@@ -1102,14 +1104,15 @@
     "justNow": "अभी",
     "minutesAgo": "{count} मि॰ पहले",
     "hoursAgo": "{count} घं॰ पहले",
-    "daysAgo": "{count} दिन पहले"
+    "daysAgo": "{count} दिन पहले",
+    "trackProject": "अपने प्रोजेक्ट को ट्रैक करें"
   },
   "scripts": {
     "metaTitle": "स्क्रिप्ट कॉल्स | AIM Studio",
     "metaDesc": "AIM Studio द्वारा निर्मित होने की संभावना के लिए अपनी पटकथा जमा करें।",
     "badge": "खुली आवेदन प्रक्रिया",
     "heroLine1": "अपनी कला को",
-    "heroLine2": "",
+    "heroLine2": "आपकी",
     "heroTitle": "स्क्रिप्ट",
     "heroAccent": "सबमिशन",
     "exploreCta": "खुली कॉल्स देखें",
@@ -1725,5 +1728,27 @@
     "deletedComment": "यह टिप्पणी हटा दी गई है",
     "removedByMod": "यह टिप्पणी एक मॉडरेटर द्वारा हटा दी गई है",
     "replyTo": "{name} को उत्तर दें..."
+  },
+  "pay": {
+    "pageTitle": "जमा राशि भुगतान करें",
+    "projectSummary": "प्रोजेक्ट सारांश",
+    "projectLabel": "प्रोजेक्ट",
+    "totalLabel": "प्रोजेक्ट कुल",
+    "depositLabel": "जमा राशि देय (40%)",
+    "milestoneDeposit": "जमा - अभी देय",
+    "milestoneMidpoint": "मध्य - रफ कट के बाद",
+    "milestoneFinal": "अंतिम - डिलीवरी से पहले",
+    "payButton": "PayPal से भुगतान करें",
+    "processing": "भुगतान प्रक्रिया हो रही है...",
+    "successTitle": "भुगतान प्राप्त हुआ!",
+    "successMessage": "आपकी जमा राशि सुरक्षित हो गई है। उत्पादन जल्द शुरू होगा।",
+    "alreadyPaidTitle": "जमा राशि पहले से भुगतान की गई",
+    "alreadyPaidMessage": "आपकी जमा राशि पहले ही भुगतान हो चुकी है।",
+    "invalidLinkTitle": "अमान्य लिंक",
+    "invalidLinkMessage": "यह भुगतान लिंक अमान्य है या समाप्त हो गया है। कृपया हमसे संपर्क करें।",
+    "trackProject": "अपने प्रोजेक्ट को ट्रैक करें",
+    "securedByPaypal": "PayPal खरीदार सुरक्षा द्वारा सुरक्षित भुगतान",
+    "loadingPaypal": "PayPal लोड हो रहा है...",
+    "paymentSchedule": "भुगतान अनुसूची"
   }
 }

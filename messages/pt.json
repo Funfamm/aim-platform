@@ -72,7 +72,8 @@
     "upcomingStat": "Em Breve",
     "castingStat": "Casting",
     "limitlessDesc": "Sem fronteiras, sem obstáculos. A IA libera a narrativa numa escala antes reservada para grandes estúdios.",
-    "cinematicDesc": "Cada quadro é intencional, cada corte é preciso. Nosso pipeline de IA entrega qualidade cinematográfica em velocidade sem precedentes."
+    "cinematicDesc": "Cada quadro é intencional, cada corte é preciso. Nosso pipeline de IA entrega qualidade cinematográfica em velocidade sem precedentes.",
+    "curatedCollections": "Coleções Selecionadas"
   },
   "casting": {
     "label": "Casting Aberto",
@@ -234,7 +235,8 @@
     "noResults": "Nenhum resultado",
     "learnMore": "Saiba Mais",
     "viewAll": "Ver Tudo",
-    "readMore": "Leia Mais"
+    "readMore": "Leia Mais",
+    "trackProject": "Acompanhar Seu Projeto"
   },
   "about": {
     "label": "Quem Somos",
@@ -677,7 +679,7 @@
     "hub": "Centro de Formação",
     "label": "Centro de Formação",
     "heroLine1": "ELEVE SUA",
-    "heroLine2": "",
+    "heroLine2": "sua",
     "heroTitle": "Aperfeiçoe sua",
     "heroAccent": "Arte",
     "heroDesc": "Cursos e recursos para transformar criativos em cineastas.",
@@ -1102,14 +1104,15 @@
     "justNow": "agora",
     "minutesAgo": "há {count}m",
     "hoursAgo": "há {count}h",
-    "daysAgo": "há {count}d"
+    "daysAgo": "há {count}d",
+    "trackProject": "Acompanhar Seu Projeto"
   },
   "scripts": {
     "metaTitle": "Chamadas de Roteiros | AIM Studio",
     "metaDesc": "Envie seu roteiro para ter a chance de ser produzido pela AIM Studio.",
     "badge": "Chamadas abertas",
     "heroLine1": "ELEVE SUA",
-    "heroLine2": "",
+    "heroLine2": "sua",
     "heroTitle": "Envio de",
     "heroAccent": "Roteiros",
     "exploreCta": "Explorar Chamadas Abertas",
@@ -1725,5 +1728,27 @@
     "deletedComment": "Este comentário foi excluído",
     "removedByMod": "Este comentário foi removido por um moderador",
     "replyTo": "Responder para {name}..."
+  },
+  "pay": {
+    "pageTitle": "Pagar Depósito",
+    "projectSummary": "Resumo do Projeto",
+    "projectLabel": "Projeto",
+    "totalLabel": "Total do Projeto",
+    "depositLabel": "Depósito (40%)",
+    "milestoneDeposit": "Depósito - Vence Agora",
+    "milestoneMidpoint": "Ponto Médio - Após o Primeiro Corte",
+    "milestoneFinal": "Final - Antes da Entrega",
+    "payButton": "Pagar com PayPal",
+    "processing": "Processando pagamento...",
+    "successTitle": "Pagamento Recebido!",
+    "successMessage": "Seu depósito foi garantido. A produção começará em breve.",
+    "alreadyPaidTitle": "Depósito Já Pago",
+    "alreadyPaidMessage": "Seu depósito já foi pago.",
+    "invalidLinkTitle": "Link Inválido",
+    "invalidLinkMessage": "Este link de pagamento é inválido ou expirou. Entre em contato conosco.",
+    "trackProject": "Acompanhar Seu Projeto",
+    "securedByPaypal": "Pagamentos protegidos pela Proteção ao Comprador do PayPal",
+    "loadingPaypal": "Carregando PayPal...",
+    "paymentSchedule": "Cronograma de Pagamento"
   }
 }

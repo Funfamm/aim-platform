@@ -72,7 +72,8 @@
     "upcomingStat": "Próximo",
     "castingStat": "Casting",
     "limitlessDesc": "Sin límites, sin barreras. La IA libera la narración a una escala reservada antes solo para grandes estudios.",
-    "cinematicDesc": "Cada fotograma es intencional, cada corte es preciso. Nuestro pipeline de IA entrega calidad cinematográfica a una velocidad sin precedentes."
+    "cinematicDesc": "Cada fotograma es intencional, cada corte es preciso. Nuestro pipeline de IA entrega calidad cinematográfica a una velocidad sin precedentes.",
+    "curatedCollections": "Colecciones Seleccionadas"
   },
   "casting": {
     "label": "Casting Abierto",
@@ -234,7 +235,8 @@
     "noResults": "Sin resultados",
     "learnMore": "Saber Más",
     "viewAll": "Ver Todo",
-    "readMore": "Leer Más"
+    "readMore": "Leer Más",
+    "trackProject": "Seguir Tu Proyecto"
   },
   "about": {
     "label": "Quiénes Somos",
@@ -677,7 +679,7 @@
     "hub": "Centro de Formación",
     "label": "Centro de Formación",
     "heroLine1": "ELEVA TU",
-    "heroLine2": "",
+    "heroLine2": "tu",
     "heroTitle": "Perfecciona tu",
     "heroAccent": "Arte",
     "heroDesc": "Cursos y recursos para transformar creativos en cineastas.",
@@ -1102,14 +1104,15 @@
     "justNow": "ahora",
     "minutesAgo": "hace {count}m",
     "hoursAgo": "hace {count}h",
-    "daysAgo": "hace {count}d"
+    "daysAgo": "hace {count}d",
+    "trackProject": "Seguir Tu Proyecto"
   },
   "scripts": {
     "metaTitle": "Convocatorias de guiones | AIM Studio",
     "metaDesc": "Envía tu guion para tener la oportunidad de que AIM Studio lo produzca.",
     "badge": "Convocatorias abiertas",
     "heroLine1": "ELEVA TU",
-    "heroLine2": "",
+    "heroLine2": "tu",
     "heroTitle": "Envío de",
     "heroAccent": "Guiones",
     "exploreCta": "Explorar Convocatorias",
@@ -1725,5 +1728,27 @@
     "deletedComment": "Este comentario ha sido eliminado",
     "removedByMod": "Este comentario ha sido eliminado por un moderador",
     "replyTo": "Responder a {name}..."
+  },
+  "pay": {
+    "pageTitle": "Pagar Depósito",
+    "projectSummary": "Resumen del Proyecto",
+    "projectLabel": "Proyecto",
+    "totalLabel": "Total del Proyecto",
+    "depositLabel": "Depósito (40%)",
+    "milestoneDeposit": "Depósito - Vence Ahora",
+    "milestoneMidpoint": "Punto Medio - Después del Primer Corte",
+    "milestoneFinal": "Final - Antes de la Entrega",
+    "payButton": "Pagar con PayPal",
+    "processing": "Procesando pago...",
+    "successTitle": "¡Pago Recibido!",
+    "successMessage": "Tu depósito ha sido asegurado. La producción comenzará pronto.",
+    "alreadyPaidTitle": "Depósito Ya Pagado",
+    "alreadyPaidMessage": "Tu depósito ya fue pagado.",
+    "invalidLinkTitle": "Enlace Inválido",
+    "invalidLinkMessage": "Este enlace de pago no es válido o ha expirado. Contáctanos.",
+    "trackProject": "Seguir Tu Proyecto",
+    "securedByPaypal": "Pagos protegidos por la Protección de Compras de PayPal",
+    "loadingPaypal": "Cargando PayPal...",
+    "paymentSchedule": "Calendario de Pagos"
   }
 }

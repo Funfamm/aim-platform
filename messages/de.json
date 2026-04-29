@@ -72,7 +72,8 @@
     "upcomingStat": "Demnächst",
     "castingStat": "Casting",
     "limitlessDesc": "Keine Grenzen, keine Hüter. KI entfesselt das Geschichtenerzählen in einem Umfang, der einst großen Studios vorbehalten war.",
-    "cinematicDesc": "Jedes Bild ist bewusst, jeder Schnitt präzise. Unsere KI-Pipeline liefert kinematografische Qualität in beispielloser Geschwindigkeit."
+    "cinematicDesc": "Jedes Bild ist bewusst, jeder Schnitt präzise. Unsere KI-Pipeline liefert kinematografische Qualität in beispielloser Geschwindigkeit.",
+    "curatedCollections": "Kuratierte Sammlungen"
   },
   "casting": {
     "label": "Offenes Casting",
@@ -234,7 +235,8 @@
     "noResults": "Keine Ergebnisse",
     "learnMore": "Mehr Erfahren",
     "viewAll": "Alle Ansehen",
-    "readMore": "Weiterlesen"
+    "readMore": "Weiterlesen",
+    "trackProject": "Projekt Verfolgen"
   },
   "about": {
     "label": "Wer Wir Sind",
@@ -677,7 +679,7 @@
     "hub": "Ausbildungszentrum",
     "label": "Ausbildungszentrum",
     "heroLine1": "PERFEKTIONIERE DEIN",
-    "heroLine2": "",
+    "heroLine2": "Ihre",
     "heroTitle": "Perfektionieren Sie Ihre",
     "heroAccent": "Kunst",
     "heroDesc": "Kurse und Ressourcen für angehende Filmemacher.",
@@ -1102,14 +1104,15 @@
     "justNow": "gerade eben",
     "minutesAgo": "vor {count}m",
     "hoursAgo": "vor {count}h",
-    "daysAgo": "vor {count}T"
+    "daysAgo": "vor {count}T",
+    "trackProject": "Projekt Verfolgen"
   },
   "scripts": {
     "metaTitle": "Drehbuch-Einreichungen | AIM Studio",
     "metaDesc": "Reiche dein Drehbuch ein für eine Chance, von AIM Studio produziert zu werden.",
     "badge": "Offene Ausschreibungen",
     "heroLine1": "PERFEKTIONIERE DEIN",
-    "heroLine2": "",
+    "heroLine2": "Ihre",
     "heroTitle": "Drehbuch-",
     "heroAccent": "Einreichungen",
     "exploreCta": "Offene Aufrufe Erkunden",
@@ -1725,5 +1728,27 @@
     "deletedComment": "Dieser Kommentar wurde gelöscht",
     "removedByMod": "Dieser Kommentar wurde von einem Moderator entfernt",
     "replyTo": "Antwort an {name}..."
+  },
+  "pay": {
+    "pageTitle": "Anzahlung Leisten",
+    "projectSummary": "Projektübersicht",
+    "projectLabel": "Projekt",
+    "totalLabel": "Projektgesamtbetrag",
+    "depositLabel": "Fällige Anzahlung (40%)",
+    "milestoneDeposit": "Anzahlung - Sofort Fällig",
+    "milestoneMidpoint": "Mitte - Nach dem Rohschnitt",
+    "milestoneFinal": "Abschluss - Vor der Lieferung",
+    "payButton": "Mit PayPal Bezahlen",
+    "processing": "Zahlung wird verarbeitet...",
+    "successTitle": "Zahlung Eingegangen!",
+    "successMessage": "Ihre Anzahlung wurde gesichert. Die Produktion beginnt in Kürze.",
+    "alreadyPaidTitle": "Anzahlung Bereits Bezahlt",
+    "alreadyPaidMessage": "Ihre Anzahlung wurde bereits bezahlt.",
+    "invalidLinkTitle": "Ungültiger Link",
+    "invalidLinkMessage": "Dieser Zahlungslink ist ungültig oder abgelaufen. Bitte kontaktieren Sie uns.",
+    "trackProject": "Projekt Verfolgen",
+    "securedByPaypal": "Zahlungen gesichert durch PayPal-Käuferschutz",
+    "loadingPaypal": "PayPal wird geladen...",
+    "paymentSchedule": "Zahlungsplan"
   }
 }

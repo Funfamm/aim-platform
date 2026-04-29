@@ -72,7 +72,8 @@
     "upcomingStat": "곧 공개",
     "castingStat": "캐스팅",
     "limitlessDesc": "경계도, 장벽도 없습니다. AI는 대형 스튜디오만이 가능하던 규모와 깊이로 스토리텔링을 해방합니다.",
-    "cinematicDesc": "모든 프레임은 의도적이고, 모든 컷은 정확합니다. AI 파이프라인이 전례 없는 속도로 영화적 품질을 제공합니다."
+    "cinematicDesc": "모든 프레임은 의도적이고, 모든 컷은 정확합니다. AI 파이프라인이 전례 없는 속도로 영화적 품질을 제공합니다.",
+    "curatedCollections": "큐레이션 컬렉션"
   },
   "casting": {
     "label": "캐스팅 오픈",
@@ -234,7 +235,8 @@
     "noResults": "결과 없음",
     "learnMore": "자세히 보기",
     "viewAll": "모두 보기",
-    "readMore": "더 읽기"
+    "readMore": "더 읽기",
+    "trackProject": "프로젝트 추적"
   },
   "about": {
     "label": "우리는 누구인가",
@@ -1102,7 +1104,8 @@
     "justNow": "방금",
     "minutesAgo": "{count}분 전",
     "hoursAgo": "{count}시간 전",
-    "daysAgo": "{count}일 전"
+    "daysAgo": "{count}일 전",
+    "trackProject": "프로젝트 추적"
   },
   "scripts": {
     "metaTitle": "스크립트 모집 | AIM Studio",
@@ -1725,5 +1728,27 @@
     "deletedComment": "이 댓글은 삭제되었습니다",
     "removedByMod": "이 댓글은 관리자에 의해 삭제되었습니다",
     "replyTo": "{name}에게 답글..."
+  },
+  "pay": {
+    "pageTitle": "보증금 결제",
+    "projectSummary": "프로젝트 요약",
+    "projectLabel": "프로젝트",
+    "totalLabel": "프로젝트 총액",
+    "depositLabel": "보증금 (40%)",
+    "milestoneDeposit": "보증금 - 즉시 결제",
+    "milestoneMidpoint": "중간 - 러프컷 후",
+    "milestoneFinal": "최종 - 납품 전",
+    "payButton": "PayPal로 결제",
+    "processing": "결제 처리 중...",
+    "successTitle": "결제 완료!",
+    "successMessage": "보증금이 확보되었습니다. 곧 제작이 시작됩니다.",
+    "alreadyPaidTitle": "보증금 이미 결제됨",
+    "alreadyPaidMessage": "보증금이 이미 결제되었습니다.",
+    "invalidLinkTitle": "유효하지 않은 링크",
+    "invalidLinkMessage": "이 결제 링크가 유효하지 않거나 만료되었습니다. 문의해 주세요.",
+    "trackProject": "프로젝트 추적",
+    "securedByPaypal": "PayPal 구매 보호로 안전한 결제",
+    "loadingPaypal": "PayPal 로딩 중...",
+    "paymentSchedule": "결제 일정"
   }
 }

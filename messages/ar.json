@@ -74,7 +74,8 @@
     "upcomingStat": "قادم",
     "castingStat": "كاستنج",
     "limitlessDesc": "لا حدود، لا بوابات. يفتح الذكاء الاصطناعي آفاق السرد بعمق ونطاق كان حكراً على الاستوديوهات الكبرى.",
-    "cinematicDesc": "كل إطار مقصود، وكل مقطع دقيق. يُقدّم خط الإنتاج المدعوم بالذكاء الاصطناعي جودة سينمائية بسرعة غير مسبوقة."
+    "cinematicDesc": "كل إطار مقصود، وكل مقطع دقيق. يُقدّم خط الإنتاج المدعوم بالذكاء الاصطناعي جودة سينمائية بسرعة غير مسبوقة.",
+    "curatedCollections": "مجموعات مختارة"
   },
   "casting": {
     "label": "كاستنج مفتوح",
@@ -236,7 +237,8 @@
     "noResults": "لا نتائج",
     "learnMore": "اقرأ المزيد",
     "viewAll": "عرض الكل",
-    "readMore": "اقرأ المزيد"
+    "readMore": "اقرأ المزيد",
+    "trackProject": "تتبع مشروعك"
   },
   "about": {
     "label": "من نحن",
@@ -679,7 +681,7 @@
     "hub": "مركز التدريب",
     "label": "مركز التدريب",
     "heroLine1": "ارفع مستوى",
-    "heroLine2": "",
+    "heroLine2": "قصتك",
     "heroTitle": "أتقن",
     "heroAccent": "فنّك",
     "heroDesc": "دورات وموارد لتحويل المبدعين إلى صناع أفلام.",
@@ -1104,14 +1106,15 @@
     "justNow": "الآن",
     "minutesAgo": "منذ {count} د",
     "hoursAgo": "منذ {count} س",
-    "daysAgo": "منذ {count} ي"
+    "daysAgo": "منذ {count} ي",
+    "trackProject": "تتبع مشروعك"
   },
   "scripts": {
     "metaTitle": "طلبات النصوص | AIM Studio",
     "metaDesc": "قدِّم سيناريوك للحصول على فرصة إنتاجه من قِبَل AIM Studio.",
     "badge": "الطلبات المفتوحة",
     "heroLine1": "ارفع مستوى",
-    "heroLine2": "",
+    "heroLine2": "قصتك",
     "heroTitle": "تقديم",
     "heroAccent": "السيناريوهات",
     "exploreCta": "استكشاف الطلبات المفتوحة",
@@ -1727,5 +1730,27 @@
     "deletedComment": "تم حذف هذا التعليق",
     "removedByMod": "تمت إزالة هذا التعليق من قبل مشرف",
     "replyTo": "الرد على {name}..."
+  },
+  "pay": {
+    "pageTitle": "دفع العربون",
+    "projectSummary": "ملخص المشروع",
+    "projectLabel": "المشروع",
+    "totalLabel": "إجمالي المشروع",
+    "depositLabel": "العربون المستحق (40%)",
+    "milestoneDeposit": "العربون - مستحق الآن",
+    "milestoneMidpoint": "المرحلة الوسطى - بعد القص الأولي",
+    "milestoneFinal": "النهائي - قبل التسليم",
+    "payButton": "الدفع عبر PayPal",
+    "processing": "جاري معالجة الدفع...",
+    "successTitle": "تم استلام الدفع!",
+    "successMessage": "تم تأمين عربونك. سيبدأ الإنتاج قريبًا.",
+    "alreadyPaidTitle": "تم دفع العربون بالفعل",
+    "alreadyPaidMessage": "تم دفع عربونك بالفعل.",
+    "invalidLinkTitle": "رابط غير صالح",
+    "invalidLinkMessage": "رابط الدفع هذا غير صالح أو منتهي الصلاحية. يرجى الاتصال بنا.",
+    "trackProject": "تتبع مشروعك",
+    "securedByPaypal": "المدفوعات محمية بحماية المشتري من PayPal",
+    "loadingPaypal": "جاري تحميل PayPal...",
+    "paymentSchedule": "جدول الدفع"
   }
 }

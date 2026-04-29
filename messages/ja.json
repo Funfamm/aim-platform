@@ -55,7 +55,8 @@
     "upcomingStat": "近日公開",
     "castingStat": "キャスティング",
     "limitlessDesc": "境界なし、門番なし。AIはかつて大手スタジオだけが持てた規模と深さでストーリーテリングを解放します。",
-    "cinematicDesc": "すべてのフレームは意図的で、すべてのカットは精密です。AIパイプラインが前例のない速度で映画品質を提供します。"
+    "cinematicDesc": "すべてのフレームは意図的で、すべてのカットは精密です。AIパイプラインが前例のない速度で映画品質を提供します。",
+    "curatedCollections": "キュレーションコレクション"
   },
   "casting": {
     "label": "キャスティング",
@@ -217,7 +218,8 @@
     "noResults": "結果なし",
     "learnMore": "詳細を見る",
     "viewAll": "すべて見る",
-    "readMore": "続きを読む"
+    "readMore": "続きを読む",
+    "trackProject": "プロジェクトを追跡"
   },
   "about": {
     "label": "私たちについて",
@@ -660,7 +662,7 @@
     "hub": "トレーニングハブ",
     "label": "トレーニングハブ",
     "heroLine1": "スキルを",
-    "heroLine2": "",
+    "heroLine2": "あなたの",
     "heroTitle": "あなたの",
     "heroAccent": "アートを磨く",
     "heroDesc": "クリエイターを映画制作者に変えるコースとリソース。",
@@ -1103,14 +1105,15 @@
     "justNow": "たった今",
     "minutesAgo": "{count}分前",
     "hoursAgo": "{count}時間前",
-    "daysAgo": "{count}日前"
+    "daysAgo": "{count}日前",
+    "trackProject": "プロジェクトを追跡"
   },
   "scripts": {
     "metaTitle": "スクリプト募集 | AIM Studio",
     "metaDesc": "AIM Studioによる制作のチャンスをつかむため、脚本を投稿してください。",
     "badge": "募集中",
     "heroLine1": "スキルを",
-    "heroLine2": "",
+    "heroLine2": "あなたの",
     "heroTitle": "脚本",
     "heroAccent": "募集",
     "exploreCta": "公募一覧を見る",
@@ -1726,5 +1729,27 @@
     "deletedComment": "このコメントは削除されました",
     "removedByMod": "このコメントはモデレーターによって削除されました",
     "replyTo": "{name}に返信..."
+  },
+  "pay": {
+    "pageTitle": "デポジットを支払う",
+    "projectSummary": "プロジェクト概要",
+    "projectLabel": "プロジェクト",
+    "totalLabel": "プロジェクト合計",
+    "depositLabel": "デポジット (40%)",
+    "milestoneDeposit": "デポジット - 今すぐ",
+    "milestoneMidpoint": "中間 - ラフカット後",
+    "milestoneFinal": "最終 - 納品前",
+    "payButton": "PayPalで支払う",
+    "processing": "お支払い処理中...",
+    "successTitle": "お支払いを受け取りました！",
+    "successMessage": "デポジットが確保されました。間もなく制作が始まります。",
+    "alreadyPaidTitle": "デポジット支払い済み",
+    "alreadyPaidMessage": "デポジットは既にお支払い済みです。",
+    "invalidLinkTitle": "無効なリンク",
+    "invalidLinkMessage": "このお支払いリンクは無効か期限切れです。お問い合わせください。",
+    "trackProject": "プロジェクトを追跡",
+    "securedByPaypal": "PayPal購入保護による安全な支払い",
+    "loadingPaypal": "PayPalを読み込み中...",
+    "paymentSchedule": "支払いスケジュール"
   }
 }
