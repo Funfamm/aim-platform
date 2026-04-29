@@ -35,7 +35,8 @@ export default function SubscribeForm() {
 
     if (status === 'sent') {
         return (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {/* Existing confirmation — unchanged */}
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -45,18 +46,37 @@ export default function SubscribeForm() {
                 }}>
                     <span>✓</span> {t('subscribed')}
                 </div>
-                <a
-                    href={`/${locale}/register?utm_source=subscribe_form`}
-                    style={{
-                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                        padding: '0.6rem 1.2rem', fontSize: '0.8rem', fontWeight: 600,
-                        background: 'rgba(212,168,83,0.12)', border: '1px solid rgba(212,168,83,0.25)',
-                        borderRadius: 'var(--radius-md)', color: 'var(--accent-gold)',
-                        textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer',
-                    }}
-                >
-                    🎬 {t('watchFreePrompt', { defaultMessage: 'Watch our films free — create your account' })}
-                </a>
+
+                {/* Registration prompt card */}
+                <div style={{
+                    padding: '12px 14px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 'var(--radius-md)',
+                }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                        🎬 Watch our films free
+                    </div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5, marginBottom: '10px' }}>
+                        Create a free account to watch full films{'\n'}and apply for casting roles.
+                    </div>
+                    <a
+                        href={`/${locale}/register?utm_source=subscribe_form`}
+                        style={{
+                            display: 'inline-block',
+                            padding: '6px 14px',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            background: 'var(--accent-gold)',
+                            color: '#000',
+                            borderRadius: 'var(--radius-md)',
+                            textDecoration: 'none',
+                            transition: 'opacity 0.2s',
+                        }}
+                    >
+                        Create Your Free Account →
+                    </a>
+                </div>
             </div>
         )
     }
