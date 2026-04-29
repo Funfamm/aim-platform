@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
             await db.subscriber.update({
                 where: { email: normalizedEmail },
-                data: { active: true, ...(name ? { name } : {}), ...(country ? { country } : {}), confirmToken: null },
+                data: { active: true, ...(name ? { name } : {}), ...(country ? { country } : {}), locale: userLocale, confirmToken: null },
             })
             sendTransactionalEmail({
                 to: normalizedEmail,
@@ -136,12 +136,12 @@ export async function POST(request: NextRequest) {
             // Pending confirmation — upgrade to active immediately
             await db.subscriber.update({
                 where: { email: normalizedEmail },
-                data: { active: true, confirmedAt: new Date(), confirmToken: null, ...(name ? { name } : {}) },
+                data: { active: true, confirmedAt: new Date(), confirmToken: null, locale: userLocale, ...(name ? { name } : {}) },
             })
         } else {
             // Brand new subscriber — create as active immediately (no double opt-in)
             await db.subscriber.create({
-                data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date(), ...(country ? { country } : {}) },
+                data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date(), locale: userLocale, ...(country ? { country } : {}) },
             })
         }
 

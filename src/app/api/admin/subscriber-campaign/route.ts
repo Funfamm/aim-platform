@@ -10,6 +10,26 @@ function isAdmin(role: string) {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://impactaistudio.com'
 
+/** Infer best locale from country code when saved locale is default 'en' */
+function inferLocaleFromCountry(country: string | null | undefined, savedLocale: string): string {
+    if (savedLocale && savedLocale !== 'en') return savedLocale
+    if (!country) return 'en'
+    const map: Record<string, string> = {
+        ES:'es',MX:'es',AR:'es',CO:'es',CL:'es',PE:'es',VE:'es',EC:'es',GT:'es',CU:'es',
+        BO:'es',DO:'es',HN:'es',PY:'es',SV:'es',NI:'es',CR:'es',PA:'es',UY:'es',
+        FR:'fr',BE:'fr',CH:'fr',CA:'fr',SN:'fr',CI:'fr',ML:'fr',BF:'fr',NE:'fr',GN:'fr',CD:'fr',MG:'fr',
+        DE:'de',AT:'de',LI:'de',
+        BR:'pt',PT:'pt',AO:'pt',MZ:'pt',
+        CN:'zh',TW:'zh',HK:'zh',SG:'zh',
+        JP:'ja',
+        KR:'ko',
+        RU:'ru',BY:'ru',KZ:'ru',
+        SA:'ar',AE:'ar',EG:'ar',IQ:'ar',SY:'ar',JO:'ar',LB:'ar',LY:'ar',
+        TN:'ar',MA:'ar',DZ:'ar',YE:'ar',SD:'ar',OM:'ar',KW:'ar',QA:'ar',BH:'ar',
+    }
+    return map[country.toUpperCase()] ?? 'en'
+}
+
 /**
  * POST /api/admin/subscriber-campaign
  * 
@@ -59,7 +79,7 @@ export async function POST(req: Request) {
         // Get all active subscribers
         const subscribers = await prisma.subscriber.findMany({
             where: { active: true, suppressedAt: null },
-            select: { id: true, email: true, name: true },
+            select: { id: true, email: true, name: true, locale: true, country: true },
         })
 
         // Get all user emails (case-insensitive comparison done in JS)
@@ -125,8 +145,9 @@ export async function POST(req: Request) {
                 const registerUrl = `${SITE_URL}/register?token=${encodeURIComponent(token)}&utm_source=conversion_campaign`
 
                 const name = sub.name || 'there'
-                const subject = et('conversionCampaign', 'en', 'subject').replace('{filmTitle}', filmTitle)
-                const html = buildConversionEmail(name, filmTitle, registerUrl, 'en')
+                const locale = inferLocaleFromCountry(sub.country, sub.locale)
+                const subject = et('conversionCampaign', locale, 'subject').replace('{filmTitle}', filmTitle)
+                const html = buildConversionEmail(name, filmTitle, registerUrl, locale)
 
                 return {
                     to: sub.email,

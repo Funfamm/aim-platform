@@ -584,6 +584,7 @@ model Subscriber {
   name            String?
   source          String?                       // "organic" | "admin_csv_import" | "api" — traceability
   country         String?                       // ISO 3166-1 alpha-2 — auto-detected on subscribe
+  locale          String    @default("en")      // UI locale at subscribe time — drives campaign email language
   subscribedAt    DateTime  @default(now())
   active          Boolean   @default(false)   // false until double opt-in confirmed
   confirmToken    String?                      // null once confirmed
