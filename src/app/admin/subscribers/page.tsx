@@ -72,6 +72,7 @@ export default function AdminSubscribersPage() {
     useEffect(() => { fetchData(1) }, [fetchData])
 
     // Fetch campaign status
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         setCampaignLoading(true)
         fetch('/api/admin/subscriber-campaign')
