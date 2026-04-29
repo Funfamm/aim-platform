@@ -1557,7 +1557,8 @@
       "nextSteps": "Nächste Schritte",
       "step1": "Wir prüfen Ihre Einreichung",
       "step2": "Wir bestätigen Umfang und Zeitplan",
-      "step3": "Produktion beginnt"
+      "step3": "Produktion beginnt",
+      "step4": "Wir erwecken Ihre Vision zum Leben"
     },
     "helpers2": {
       "reviewHint": "Überprüfen Sie Ihre Projektdetails vor dem Absenden."
@@ -1602,7 +1603,8 @@
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
       "durationPlaceholder": "z.B. 30 Sek., 1 Min., 5 Min.",
       "agreedTotalHint": "Geben Sie den genauen vereinbarten Preis für dieses Projekt ein. Eine Anzahlung von 40% wird beim Checkout erhoben.",
-      "depositPreview": "40% Anzahlung fällig beim Checkout"
+      "depositPreview": "40% Anzahlung fällig beim Checkout",
+      "submitNote": "Nach der Einreichung prüft unser Team Ihr Projekt und sendet Ihnen ein Angebot mit einem Zahlungslink."
     },
     "contactMethods": {
       "email": "E-Mail",

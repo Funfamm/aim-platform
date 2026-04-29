@@ -1558,7 +1558,8 @@
       "nextSteps": "次のステップ",
       "step1": "ご提出内容を確認します",
       "step2": "範囲とスケジュールを確認します",
-      "step3": "制作を開始します"
+      "step3": "制作を開始します",
+      "step4": "あなたのビジョンを実現します"
     },
     "helpers2": {
       "reviewHint": "送信前にプロジェクトの詳細をご確認ください。"
@@ -1603,7 +1604,8 @@
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
       "durationPlaceholder": "例：30秒、1分、5分",
       "agreedTotalHint": "このプロジェクトの正確な合意価格を入力してください。チェックアウト時に40%のデポジットが徴収されます。",
-      "depositPreview": "チェックアウト時に40%デポジット支払い"
+      "depositPreview": "チェックアウト時に40%デポジット支払い",
+      "submitNote": "送信後、チームがプロジェクトを確認し、お支払いリンク付きの見積もりをお送りします。"
     },
     "contactMethods": {
       "email": "メール",

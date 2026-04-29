@@ -1,8 +1,11 @@
 /**
- * i18n gap checker — verifies:
- * 1. All locale files have the same top-level sections as en.json
- * 2. Every key in en.json exists in every other locale
- * 3. No locale has empty string values
+ * i18n gap checker — DEEP version
+ * Recursively checks ALL nesting levels, not just top-level sections.
+ *
+ * Verifies:
+ * 1. Every key path in en.json exists in every other locale (at any depth)
+ * 2. No locale has empty string values for keys that have content in en
+ * 3. Reports extra keys in non-en locales
  */
 const fs = require('fs');
 const path = require('path');
@@ -17,68 +20,81 @@ for (const locale of locales) {
     messages[locale] = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
 }
 
-const en = messages.en;
-let totalGaps = 0;
+// Deep key extraction: returns flat array like ['pay.title', 'pay.deposit.amount']
+function flatKeys(obj, prefix) {
+    let keys = [];
+    for (const [k, v] of Object.entries(obj)) {
+        const full = prefix ? `${prefix}.${k}` : k;
+        if (typeof v === 'object' && v !== null && !Array.isArray(v)) {
+            keys = keys.concat(flatKeys(v, full));
+        } else {
+            keys.push(full);
+        }
+    }
+    return keys;
+}
+
+// Resolve a dot-path key in an object
+function getNestedValue(obj, keyPath) {
+    const parts = keyPath.split('.');
+    let val = obj;
+    for (const p of parts) {
+        if (val === undefined || val === null) return undefined;
+        val = val[p];
+    }
+    return val;
+}
+
+const enKeys = flatKeys(messages.en, '');
+let totalMissing = 0;
 let totalEmpty = 0;
 
-console.log('=== i18n Gap Analysis ===\n');
+console.log('=== i18n Deep Gap Analysis ===');
+console.log(`Reference: en.json — ${enKeys.length} keys (all nesting levels)\n`);
 
-// Check each section + key in en.json against all other locales
-for (const [section, keys] of Object.entries(en)) {
-    if (typeof keys !== 'object' || keys === null) continue;
+// Check every en key against all other locales
+for (const locale of locales) {
+    if (locale === 'en') continue;
+    const localeKeys = new Set(flatKeys(messages[locale], ''));
 
-    for (const locale of locales) {
-        if (locale === 'en') continue;
-
-        if (!messages[locale][section]) {
-            console.log(`❌ [MISSING SECTION] ${locale}: "${section}" — entire section missing`);
-            totalGaps += Object.keys(keys).length;
-            continue;
-        }
-
-        for (const key of Object.keys(keys)) {
-            if (typeof keys[key] !== 'string') continue; // skip nested objects
-            
-            if (!messages[locale][section][key]) {
-                console.log(`❌ [MISSING KEY] ${locale}: ${section}.${key}`);
-                totalGaps++;
-            } else if (messages[locale][section][key].trim() === '') {
-                console.log(`⚠️  [EMPTY VALUE] ${locale}: ${section}.${key}`);
+    for (const key of enKeys) {
+        if (!localeKeys.has(key)) {
+            console.log(`❌ [MISSING] ${locale}: ${key}`);
+            totalMissing++;
+        } else {
+            const val = getNestedValue(messages[locale], key);
+            if (typeof val === 'string' && val.trim() === '') {
+                console.log(`⚠️  [EMPTY]  ${locale}: ${key}`);
                 totalEmpty++;
             }
         }
     }
 }
 
-// Check for extra keys in non-en locales that don't exist in en
-console.log('\n--- Extra keys in non-en locales (not in en.json) ---');
+// Check for extra keys in non-en locales
+console.log('\n--- Extra keys (in locale but not in en.json) ---');
+const enKeySet = new Set(enKeys);
 let extraKeys = 0;
 for (const locale of locales) {
     if (locale === 'en') continue;
-    for (const [section, keys] of Object.entries(messages[locale])) {
-        if (typeof keys !== 'object' || keys === null) continue;
-        if (!en[section]) {
-            console.log(`⚠️  [EXTRA SECTION] ${locale}: "${section}" — not in en.json`);
-            continue;
-        }
-        for (const key of Object.keys(keys)) {
-            if (typeof keys[key] !== 'string') continue;
-            if (!en[section][key]) {
-                // Don't flag — just count
-                extraKeys++;
-            }
-        }
+    const localeKeys = flatKeys(messages[locale], '');
+    for (const key of localeKeys) {
+        if (!enKeySet.has(key)) extraKeys++;
     }
 }
-if (extraKeys === 0) console.log('   None found.');
+console.log(extraKeys > 0 ? `   ${extraKeys} extra keys (harmless, locale-specific)` : '   None found.');
 
+// Summary
 console.log('\n=== Summary ===');
-console.log(`Missing keys: ${totalGaps}`);
-console.log(`Empty values: ${totalEmpty}`);
-console.log(`Extra keys (non-en only): ${extraKeys}`);
+console.log(`Total en keys:   ${enKeys.length}`);
+console.log(`Total checked:   ${enKeys.length * (locales.length - 1)} (${enKeys.length} keys × ${locales.length - 1} locales)`);
+console.log(`Missing keys:    ${totalMissing}`);
+console.log(`Empty values:    ${totalEmpty}`);
+console.log(`Extra keys:      ${extraKeys}`);
 
-if (totalGaps === 0 && totalEmpty === 0) {
-    console.log('\n✅ All locales are in sync with en.json — no gaps!');
+if (totalMissing === 0 && totalEmpty === 0) {
+    console.log('\n✅ ZERO GAPS — 100% translation parity!');
 } else {
-    console.log(`\n⚠️  Found ${totalGaps} missing keys and ${totalEmpty} empty values.`);
+    console.log(`\n❌ Found ${totalMissing} missing keys and ${totalEmpty} empty values.`);
+    process.exit(1);
 }

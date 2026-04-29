@@ -1557,7 +1557,8 @@
       "nextSteps": "Prochaines étapes",
       "step1": "Nous examinons votre soumission",
       "step2": "Nous confirmons la portée et le calendrier",
-      "step3": "La production commence"
+      "step3": "La production commence",
+      "step4": "Nous donnons vie à votre vision"
     },
     "helpers2": {
       "reviewHint": "Vérifiez les détails de votre projet avant de soumettre."
@@ -1602,7 +1603,8 @@
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
       "durationPlaceholder": "ex. 30 sec, 1 min, 5 min",
       "agreedTotalHint": "Entrez le prix total convenu pour ce projet. Un acompte de 40% sera prélevé lors du paiement.",
-      "depositPreview": "Acompte de 40% dû au paiement"
+      "depositPreview": "Acompte de 40% dû au paiement",
+      "submitNote": "Après soumission, notre équipe examinera votre projet et vous enverra un devis avec un lien de paiement."
     },
     "contactMethods": {
       "email": "E-mail",

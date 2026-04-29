@@ -1557,7 +1557,8 @@
       "nextSteps": "接下来",
       "step1": "我们审核您的提交",
       "step2": "我们确认范围和时间表",
-      "step3": "开始制作"
+      "step3": "开始制作",
+      "step4": "我们将您的愿景变为现实"
     },
     "helpers2": {
       "reviewHint": "提交前请检查项目详情。"
@@ -1602,7 +1603,8 @@
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
       "durationPlaceholder": "例如 30秒、1分钟、5分钟",
       "agreedTotalHint": "输入本项目的确切约定价格。结账时将收取40%的定金。",
-      "depositPreview": "结账时支付40%定金"
+      "depositPreview": "结账时支付40%定金",
+      "submitNote": "提交后，我们的团队将审核您的项目并向您发送报价和付款链接。"
     },
     "contactMethods": {
       "email": "电子邮件",

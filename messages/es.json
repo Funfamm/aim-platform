@@ -1557,7 +1557,8 @@
       "nextSteps": "Próximos pasos",
       "step1": "Revisamos tu envío",
       "step2": "Confirmamos alcance y cronograma",
-      "step3": "Comienza la producción"
+      "step3": "Comienza la producción",
+      "step4": "Damos vida a tu visión"
     },
     "helpers2": {
       "reviewHint": "Revisa los detalles de tu proyecto antes de enviar."
@@ -1602,7 +1603,8 @@
       "platformPlaceholder": "YouTube, TikTok, Instagram...",
       "durationPlaceholder": "ej. 30 seg, 1 min, 5 min",
       "agreedTotalHint": "Ingresa el precio total acordado para este proyecto. Se cobrará un depósito del 40% al momento del pago.",
-      "depositPreview": "Depósito del 40% a pagar al checkout"
+      "depositPreview": "Depósito del 40% a pagar al checkout",
+      "submitNote": "Después de enviar, nuestro equipo revisará tu proyecto y te enviará un presupuesto con un enlace de pago."
     },
     "contactMethods": {
       "email": "Correo electrónico",
