@@ -79,13 +79,11 @@ export default function ShareButtons({ url, title, description }: ShareButtonsPr
 
                     {/* Instagram — copy link + open Instagram */}
                     <button
-                        onClick={async () => {
-                            try {
-                                await navigator.clipboard.writeText(`${title}\n${url}`)
-                                setCopied(true)
-                                setTimeout(() => setCopied(false), 2000)
-                            } catch { /* ignore */ }
+                        onClick={() => {
                             window.open('https://www.instagram.com/', '_blank')
+                            navigator.clipboard.writeText(`${title}\n${url}`)
+                                .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) })
+                                .catch(() => { /* ignore */ })
                         }}
                         style={shareBtnStyle}
                         title="Share on Instagram (link copied)"
