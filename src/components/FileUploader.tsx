@@ -42,6 +42,119 @@ export default function FileUploader({
         return trimmed.startsWith('https://') || trimmed.startsWith('http://') || trimmed.startsWith('/')
     }
 
+    const MULTIPART_THRESHOLD = 100 * 1024 * 1024 // 100 MB
+    const PART_SIZE = 100 * 1024 * 1024            // 100 MB per chunk
+    const PARALLEL_UPLOADS = 3                      // concurrent part uploads
+    const MAX_RETRIES = 3                           // retries per part
+
+    /** Upload a single chunk via XHR, returning the ETag from R2 */
+    const uploadPart = useCallback(async (
+        presignedUrl: string,
+        blob: Blob,
+        partNumber: number,
+        onPartProgress: (loaded: number) => void,
+        retries = MAX_RETRIES,
+    ): Promise<{ PartNumber: number; ETag: string }> => {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest()
+            xhr.open('PUT', presignedUrl)
+            xhr.upload.onprogress = (ev) => {
+                if (ev.lengthComputable) onPartProgress(ev.loaded)
+            }
+            xhr.onload = () => {
+                if (xhr.status < 300) {
+                    const etag = xhr.getResponseHeader('ETag') || ''
+                    resolve({ PartNumber: partNumber, ETag: etag })
+                } else if (retries > 0) {
+                    uploadPart(presignedUrl, blob, partNumber, onPartProgress, retries - 1)
+                        .then(resolve).catch(reject)
+                } else {
+                    reject(new Error(`Part ${partNumber} failed (${xhr.status})`))
+                }
+            }
+            xhr.onerror = () => {
+                if (retries > 0) {
+                    uploadPart(presignedUrl, blob, partNumber, onPartProgress, retries - 1)
+                        .then(resolve).catch(reject)
+                } else {
+                    reject(new Error(`Part ${partNumber} network error`))
+                }
+            }
+            xhr.send(blob)
+        })
+    }, [])
+
+    /** Multipart upload for large video files */
+    const uploadMultipart = useCallback(async (file: File) => {
+        // 1. Initiate multipart upload
+        const createRes = await fetch('/api/upload/multipart/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileName: file.name, fileType: file.type || 'video/mp4' }),
+        })
+        if (!createRes.ok) {
+            const err = await createRes.json().catch(() => ({ error: 'Failed' }))
+            throw new Error(err.error || `Create failed (${createRes.status})`)
+        }
+        const { uploadId, r2Key, finalUrl } = await createRes.json()
+
+        // 2. Slice file into parts
+        const totalParts = Math.ceil(file.size / PART_SIZE)
+        const partLoaded = new Array(totalParts).fill(0)
+
+        const updateProgress = () => {
+            const total = partLoaded.reduce((a: number, b: number) => a + b, 0)
+            // Scale 5→95 to leave room for create (0-5) and complete (95-100)
+            setProgress(5 + Math.round((total / file.size) * 90))
+        }
+
+        // 3. Pre-sign all parts
+        const signPromises = Array.from({ length: totalParts }, async (_, i) => {
+            const res = await fetch('/api/upload/multipart/sign-part', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ r2Key, uploadId, partNumber: i + 1 }),
+            })
+            if (!res.ok) throw new Error(`Failed to sign part ${i + 1}`)
+            const data = await res.json()
+            return { partNumber: i + 1, presignedUrl: data.presignedUrl }
+        })
+        const signedParts = await Promise.all(signPromises)
+
+        // 4. Upload parts in parallel batches
+        const completedParts: { PartNumber: number; ETag: string }[] = []
+
+        for (let batch = 0; batch < signedParts.length; batch += PARALLEL_UPLOADS) {
+            const batchSlice = signedParts.slice(batch, batch + PARALLEL_UPLOADS)
+            const batchResults = await Promise.all(
+                batchSlice.map(({ partNumber, presignedUrl }) => {
+                    const start = (partNumber - 1) * PART_SIZE
+                    const end = Math.min(start + PART_SIZE, file.size)
+                    const blob = file.slice(start, end)
+                    return uploadPart(presignedUrl, blob, partNumber, (loaded) => {
+                        partLoaded[partNumber - 1] = loaded
+                        updateProgress()
+                    })
+                })
+            )
+            completedParts.push(...batchResults)
+        }
+
+        // 5. Complete the upload
+        setProgress(95)
+        const completeRes = await fetch('/api/upload/multipart/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ r2Key, uploadId, parts: completedParts }),
+        })
+        if (!completeRes.ok) {
+            const err = await completeRes.json().catch(() => ({ error: 'Failed' }))
+            throw new Error(err.error || `Complete failed (${completeRes.status})`)
+        }
+
+        return finalUrl
+    }, [uploadPart])
+
     const uploadFile = useCallback(async (file: File) => {
         setError('')
 
@@ -61,7 +174,15 @@ export default function FileUploader({
         try {
             const isVideoFile = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
 
-            if (isVideoFile) {
+            if (isVideoFile && file.size > MULTIPART_THRESHOLD) {
+                // ── Multipart upload for large videos (>100MB) ──
+                clearInterval(progressTimer)
+                setProgress(2)
+                const finalUrl = await uploadMultipart(file)
+                setProgress(100)
+                setPreview(finalUrl)
+                onUpload(finalUrl)
+            } else if (isVideoFile) {
                 // ── Presigned direct-to-R2 upload (bypasses Vercel body limit) ──
                 const signRes = await fetch('/api/upload/presign', {
                     method: 'POST',
@@ -128,7 +249,7 @@ export default function FileUploader({
         } finally {
             setUploading(false)
         }
-    }, [category, maxSizeMB, onUpload])
+    }, [category, maxSizeMB, onUpload, uploadMultipart])
 
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault()
