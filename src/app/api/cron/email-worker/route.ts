@@ -109,7 +109,7 @@ export async function GET(request: Request) {
                         // Member emails (announcement, content_publish, new_role, etc.) always
                         // use Graph to maintain sender reputation and domain consistency.
                         let success = false
-                        const isSubscriberEmail = job.type === 'broadcast' || job.type === 'subscriber' || job.type === 'newsletter' || job.type.startsWith('subscriber_')
+                        const isSubscriberEmail = job.type === 'broadcast' || job.type === 'subscriber' || job.type === 'newsletter' || job.type === 'conversion_campaign' || job.type.startsWith('subscriber_')
                         const bulkConfig = await getBulkTransportConfig()
                         const useAcs = isSubscriberEmail && bulkConfig.transport === 'acs' && bulkConfig.acsConnectionString && bulkConfig.acsSenderAddress
 
