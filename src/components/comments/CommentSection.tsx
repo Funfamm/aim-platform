@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations, useLocale } from 'next-intl'
 import CommentInput from './CommentInput'
 import CommentCard, { type CommentData } from './CommentCard'
 
@@ -16,6 +17,8 @@ export default function CommentSection({
     projectId, projectSlug, episodeId,
     currentUserId = null, currentUserRole = null,
 }: CommentSectionProps) {
+    const t = useTranslations('comments')
+    const locale = useLocale()
     const [comments, setComments] = useState<CommentData[]>([])
     const [loading, setLoading] = useState(true)
     const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -39,8 +42,8 @@ export default function CommentSection({
     }, [projectId, episodeId])
 
     useEffect(() => {
-        const t = setTimeout(() => fetchComments().finally(() => setLoading(false)), 0)
-        return () => clearTimeout(t)
+        const timer = setTimeout(() => fetchComments().finally(() => setLoading(false)), 0)
+        return () => clearTimeout(timer)
     }, [fetchComments])
 
     // Deep link scroll — handle #comment-{id} hash
@@ -97,7 +100,7 @@ export default function CommentSection({
                     fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)',
                     margin: 0,
                 }}>
-                    💬 Comments
+                    💬 {t('title')}
                 </h2>
                 {!loading && (
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
@@ -129,10 +132,10 @@ export default function CommentSection({
                     gap: '12px',
                 }}>
                     <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-                        Create a free account to join the conversation
+                        {t('joinPrompt')}
                     </span>
                     <a
-                        href={`/register?redirect=/works/${projectSlug}&utm_source=comment_wall`}
+                        href={`/${locale}/register?redirect=/works/${projectSlug}&utm_source=comment_wall`}
                         style={{
                             padding: '8px 20px',
                             fontSize: '0.82rem',
@@ -144,7 +147,7 @@ export default function CommentSection({
                             transition: 'opacity 0.2s',
                         }}
                     >
-                        Create Account
+                        {t('createAccount')}
                     </a>
                 </div>
             )}
@@ -153,14 +156,14 @@ export default function CommentSection({
             {loading ? (
                 <div style={{ textAlign: 'center', padding: 'var(--space-xl)', color: 'var(--text-tertiary)' }}>
                     <div className="loading-spinner" style={{ margin: '0 auto 8px', width: 24, height: 24 }} />
-                    Loading comments...
+                    {t('loading')}
                 </div>
             ) : comments.length === 0 ? (
                 <div style={{
                     textAlign: 'center', padding: 'var(--space-2xl)',
                     color: 'var(--text-tertiary)', fontSize: '0.88rem',
                 }}>
-                    Be the first to comment ✨
+                    {t('beFirst')}
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -196,7 +199,7 @@ export default function CommentSection({
                                 transition: 'all 0.2s',
                             }}
                         >
-                            {loadingMore ? 'Loading...' : 'Load more comments'}
+                            {loadingMore ? t('loading') : t('loadMore')}
                         </button>
                     )}
                 </div>

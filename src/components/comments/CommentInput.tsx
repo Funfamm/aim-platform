@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface CommentInputProps {
     projectId: string
     episodeId?: string | null
     parentId?: string | null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onSubmit: (comment: any) => void
     onCancel?: () => void
     placeholder?: string
@@ -14,8 +16,10 @@ interface CommentInputProps {
 
 export default function CommentInput({
     projectId, episodeId, parentId, onSubmit, onCancel,
-    placeholder = 'Share your thoughts...', autoFocus = false,
+    placeholder, autoFocus = false,
 }: CommentInputProps) {
+    const t = useTranslations('comments')
+    const resolvedPlaceholder = placeholder || t('placeholder')
     const [content, setContent] = useState('')
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
@@ -53,15 +57,15 @@ export default function CommentInput({
                 }),
             })
             const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to post')
+            if (!res.ok) throw new Error(data.error || t('failedPost'))
             setContent('')
             onSubmit(data.comment)
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to post comment')
+            setError(err instanceof Error ? err.message : t('failedPost'))
         } finally {
             setSubmitting(false)
         }
-    }, [content, submitting, projectId, episodeId, parentId, onSubmit])
+    }, [content, submitting, projectId, episodeId, parentId, onSubmit, t])
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
@@ -80,7 +84,7 @@ export default function CommentInput({
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder={placeholder}
+                placeholder={resolvedPlaceholder}
                 maxLength={2000}
                 rows={parentId ? 2 : 3}
                 style={{
@@ -111,7 +115,7 @@ export default function CommentInput({
                             background: 'none', border: 'none', color: 'var(--text-tertiary)',
                             fontSize: '0.82rem', cursor: 'pointer', padding: '6px 12px',
                         }}>
-                            Cancel
+                            {t('cancel')}
                         </button>
                     )}
                     <button
@@ -131,7 +135,7 @@ export default function CommentInput({
                             opacity: submitting ? 0.6 : 1,
                         }}
                     >
-                        {submitting ? '...' : parentId ? 'Reply' : 'Post'}
+                        {submitting ? '...' : parentId ? t('reply') : t('post')}
                     </button>
                 </div>
             </div>

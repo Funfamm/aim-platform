@@ -1693,5 +1693,37 @@
       "securityNote": "결제는 PayPal을 통해 안전하게 처리됩니다. 귀하의 금융 정보는 당사 서버에 저장되지 않습니다.",
       "securedNote": "결제는 PayPal 구매 보호로 보호됩니다."
     }
+  },
+  "comments": {
+    "title": "댓글",
+    "joinPrompt": "무료 계정을 만들어 대화에 참여하세요",
+    "createAccount": "계정 만들기",
+    "loading": "댓글 불러오는 중...",
+    "beFirst": "첫 댓글을 남겨보세요 ✨",
+    "loadMore": "댓글 더 보기",
+    "placeholder": "생각을 공유하세요...",
+    "cancel": "취소",
+    "reply": "답글",
+    "post": "게시",
+    "failedPost": "댓글 게시 실패",
+    "justNow": "방금",
+    "mAgo": "{n}분 전",
+    "hAgo": "{n}시간 전",
+    "dAgo": "{n}일 전",
+    "edited": "(수정됨)",
+    "pinned": "고정됨",
+    "flagged": "신고됨",
+    "save": "저장",
+    "editMinsLeft": "수정 ({n}분 남음)",
+    "editWindowClosed": "수정 기간 종료",
+    "delete": "삭제",
+    "deleteConfirm": "이 댓글을 삭제하시겠습니까?",
+    "hide": "숨기기",
+    "unhide": "숨기기 취소",
+    "pin": "고정",
+    "unpin": "고정 해제",
+    "deletedComment": "이 댓글은 삭제되었습니다",
+    "removedByMod": "이 댓글은 관리자에 의해 삭제되었습니다",
+    "replyTo": "{name}에게 답글..."
   }
 }

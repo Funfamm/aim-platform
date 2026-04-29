@@ -1693,5 +1693,37 @@
       "securityNote": "Los pagos se procesan de forma segura a través de PayPal. Tus datos financieros nunca se almacenan en nuestros servidores.",
       "securedNote": "Tu pago está protegido por la Protección de Compras de PayPal."
     }
+  },
+  "comments": {
+    "title": "Comentarios",
+    "joinPrompt": "Crea una cuenta gratuita para unirte a la conversación",
+    "createAccount": "Crear Cuenta",
+    "loading": "Cargando comentarios...",
+    "beFirst": "Sé el primero en comentar ✨",
+    "loadMore": "Cargar más comentarios",
+    "placeholder": "Comparte tus pensamientos...",
+    "cancel": "Cancelar",
+    "reply": "Responder",
+    "post": "Publicar",
+    "failedPost": "Error al publicar el comentario",
+    "justNow": "justo ahora",
+    "mAgo": "hace {n}m",
+    "hAgo": "hace {n}h",
+    "dAgo": "hace {n}d",
+    "edited": "(editado)",
+    "pinned": "Fijado",
+    "flagged": "Marcado",
+    "save": "Guardar",
+    "editMinsLeft": "Editar ({n}m restantes)",
+    "editWindowClosed": "Período de edición cerrado",
+    "delete": "Eliminar",
+    "deleteConfirm": "¿Eliminar este comentario?",
+    "hide": "Ocultar",
+    "unhide": "Mostrar",
+    "pin": "Fijar",
+    "unpin": "Desfijar",
+    "deletedComment": "Este comentario ha sido eliminado",
+    "removedByMod": "Este comentario ha sido eliminado por un moderador",
+    "replyTo": "Responder a {name}..."
   }
 }

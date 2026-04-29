@@ -1694,5 +1694,37 @@
       "securityNote": "付款通过PayPal安全处理。您的财务信息永远不会存储在我们的服务器上。",
       "securedNote": "您的付款受PayPal购买保护计划保护。"
     }
+  },
+  "comments": {
+    "title": "评论",
+    "joinPrompt": "创建免费账户参与讨论",
+    "createAccount": "创建账户",
+    "loading": "加载评论中...",
+    "beFirst": "成为第一个评论者 ✨",
+    "loadMore": "加载更多评论",
+    "placeholder": "分享你的想法...",
+    "cancel": "取消",
+    "reply": "回复",
+    "post": "发布",
+    "failedPost": "发布评论失败",
+    "justNow": "刚刚",
+    "mAgo": "{n}分钟前",
+    "hAgo": "{n}小时前",
+    "dAgo": "{n}天前",
+    "edited": "(已编辑)",
+    "pinned": "置顶",
+    "flagged": "已标记",
+    "save": "保存",
+    "editMinsLeft": "编辑（剩余{n}分钟）",
+    "editWindowClosed": "编辑时间已过",
+    "delete": "删除",
+    "deleteConfirm": "删除此评论？",
+    "hide": "隐藏",
+    "unhide": "取消隐藏",
+    "pin": "置顶",
+    "unpin": "取消置顶",
+    "deletedComment": "此评论已被删除",
+    "removedByMod": "此评论已被管理员移除",
+    "replyTo": "回复 {name}..."
   }
 }

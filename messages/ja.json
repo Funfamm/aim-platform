@@ -1694,5 +1694,37 @@
       "securityNote": "お支払いはPayPalにより安全に処理されます。お客様の金融情報が当社のサーバーに保存されることはありません。",
       "securedNote": "お支払いはPayPal購入保護により保護されています。"
     }
+  },
+  "comments": {
+    "title": "コメント",
+    "joinPrompt": "無料アカウントを作成して会話に参加",
+    "createAccount": "アカウント作成",
+    "loading": "コメントを読み込み中...",
+    "beFirst": "最初にコメントしましょう ✨",
+    "loadMore": "さらにコメントを読み込む",
+    "placeholder": "あなたの感想を書いてください...",
+    "cancel": "キャンセル",
+    "reply": "返信",
+    "post": "投稿",
+    "failedPost": "コメントの投稿に失敗しました",
+    "justNow": "たった今",
+    "mAgo": "{n}分前",
+    "hAgo": "{n}時間前",
+    "dAgo": "{n}日前",
+    "edited": "(編集済み)",
+    "pinned": "ピン留め",
+    "flagged": "フラグ付き",
+    "save": "保存",
+    "editMinsLeft": "編集（残り{n}分）",
+    "editWindowClosed": "編集期間が終了しました",
+    "delete": "削除",
+    "deleteConfirm": "このコメントを削除しますか？",
+    "hide": "非表示",
+    "unhide": "表示する",
+    "pin": "ピン留め",
+    "unpin": "ピン解除",
+    "deletedComment": "このコメントは削除されました",
+    "removedByMod": "このコメントはモデレーターによって削除されました",
+    "replyTo": "{name}に返信..."
   }
 }

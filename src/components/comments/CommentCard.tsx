@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import CommentInput from './CommentInput'
 
 interface CommentUser {
@@ -36,18 +37,6 @@ interface CommentCardProps {
     isReply?: boolean
 }
 
-function timeAgo(dateStr: string): string {
-    const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-    if (seconds < 60) return 'just now'
-    const mins = Math.floor(seconds / 60)
-    if (mins < 60) return `${mins}m ago`
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours}h ago`
-    const days = Math.floor(hours / 24)
-    if (days < 30) return `${days}d ago`
-    return new Date(dateStr).toLocaleDateString()
-}
-
 function Avatar({ user }: { user: CommentUser }) {
     if (user.avatar) {
         return (
@@ -78,6 +67,7 @@ export default function CommentCard({
     comment, currentUserId, currentUserRole, projectSlug,
     episodeId, projectId, onUpdate, onDelete, isReply = false,
 }: CommentCardProps) {
+    const t = useTranslations('comments')
     const [showReplyInput, setShowReplyInput] = useState(false)
     const [editing, setEditing] = useState(false)
     const [editContent, setEditContent] = useState(comment.content)
@@ -108,6 +98,19 @@ export default function CommentCard({
 
     const canEdit = isOwner && editMinsLeft > 0 && !comment.hidden
 
+    // Translated time-ago
+    function timeAgo(dateStr: string): string {
+        const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+        if (seconds < 60) return t('justNow')
+        const mins = Math.floor(seconds / 60)
+        if (mins < 60) return t('mAgo').replace('{n}', String(mins))
+        const hours = Math.floor(mins / 60)
+        if (hours < 24) return t('hAgo').replace('{n}', String(hours))
+        const days = Math.floor(hours / 24)
+        if (days < 30) return t('dAgo').replace('{n}', String(days))
+        return new Date(dateStr).toLocaleDateString()
+    }
+
     // Hidden / deleted comment
     if (comment.hidden) {
         return (
@@ -116,8 +119,8 @@ export default function CommentCard({
                 color: 'var(--text-tertiary)', opacity: 0.6,
             }}>
                 {comment.content === '[deleted]'
-                    ? 'This comment has been deleted'
-                    : 'This comment has been removed by a moderator'}
+                    ? t('deletedComment')
+                    : t('removedByMod')}
             </div>
         )
     }
@@ -155,7 +158,7 @@ export default function CommentCard({
     }
 
     const handleDelete = async () => {
-        if (!confirm('Delete this comment?')) return
+        if (!confirm(t('deleteConfirm'))) return
         try {
             const res = await fetch(`/api/comments/${comment.id}`, { method: 'DELETE' })
             if (res.ok) onDelete(comment.id)
@@ -203,17 +206,17 @@ export default function CommentCard({
                     </span>
                     {comment.editedAt && (
                         <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                            (edited)
+                            {t('edited')}
                         </span>
                     )}
                     {comment.pinned && (
                         <span style={{ fontSize: '0.68rem', color: 'var(--accent-gold)', fontWeight: 600 }}>
-                            📌 Pinned
+                            📌 {t('pinned')}
                         </span>
                     )}
                     {comment.flagged && isAdmin && (
                         <span style={{ fontSize: '0.68rem', color: '#eab308', fontWeight: 600 }}>
-                            🚩 Flagged
+                            🚩 {t('flagged')}
                         </span>
                     )}
                 </div>
@@ -237,10 +240,10 @@ export default function CommentCard({
                             <button onClick={handleEdit} disabled={editSubmitting} style={{
                                 ...actionBtnStyle, background: 'var(--accent-gold)', color: '#000', fontWeight: 600,
                             }}>
-                                {editSubmitting ? '...' : 'Save'}
+                                {editSubmitting ? '...' : t('save')}
                             </button>
                             <button onClick={() => { setEditing(false); setEditContent(comment.content) }} style={actionBtnStyle}>
-                                Cancel
+                                {t('cancel')}
                             </button>
                         </div>
                     </div>
@@ -267,26 +270,26 @@ export default function CommentCard({
                         {/* Reply (only on top-level) */}
                         {!isReply && currentUserId && (
                             <button onClick={() => setShowReplyInput(!showReplyInput)} style={actionBtnStyle}>
-                                Reply
+                                {t('reply')}
                             </button>
                         )}
 
                         {/* Edit (owner, within window) */}
                         {canEdit && (
                             <button onClick={() => { setEditing(true); setEditContent(comment.content) }} style={actionBtnStyle}>
-                                Edit ({editMinsLeft}m left)
+                                {t('editMinsLeft').replace('{n}', String(editMinsLeft))}
                             </button>
                         )}
                         {isOwner && editMinsLeft <= 0 && !comment.hidden && (
                             <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                                Edit window closed
+                                {t('editWindowClosed')}
                             </span>
                         )}
 
                         {/* Delete (owner) */}
                         {isOwner && (
                             <button onClick={handleDelete} style={{ ...actionBtnStyle, color: 'var(--error)' }}>
-                                Delete
+                                {t('delete')}
                             </button>
                         )}
 
@@ -294,13 +297,13 @@ export default function CommentCard({
                         {isAdmin && !isOwner && (
                             <>
                                 <button onClick={() => handleModerate(comment.hidden ? 'unhide' : 'hide')} style={actionBtnStyle}>
-                                    {comment.hidden ? 'Unhide' : 'Hide'}
+                                    {comment.hidden ? t('unhide') : t('hide')}
                                 </button>
                                 <button onClick={() => handleModerate(comment.pinned ? 'unpin' : 'pin')} style={actionBtnStyle}>
-                                    {comment.pinned ? 'Unpin' : 'Pin'}
+                                    {comment.pinned ? t('unpin') : t('pin')}
                                 </button>
                                 <button onClick={handleDelete} style={{ ...actionBtnStyle, color: 'var(--error)' }}>
-                                    Delete
+                                    {t('delete')}
                                 </button>
                             </>
                         )}
@@ -316,7 +319,7 @@ export default function CommentCard({
                             parentId={comment.id}
                             onSubmit={handleReplySubmit}
                             onCancel={() => setShowReplyInput(false)}
-                            placeholder={`Reply to ${comment.user.name}...`}
+                            placeholder={t('replyTo').replace('{name}', comment.user.name)}
                             autoFocus
                         />
                     </div>
