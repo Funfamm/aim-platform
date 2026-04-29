@@ -6,7 +6,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import { locales, localeNames } from '@/i18n/routing'
 
 
-interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; preferredLanguage: string; authProvider: 'email' | 'google' | 'apple' | 'multiple'; suspended: boolean; lockedUntil: string | null; failedLoginAttempts: number; subscribed: boolean; subscriberActive: boolean | null; subscribedAt: string | null }
+interface UserRow { id: string; name: string; email: string; role: string; applications: number; donations: number; createdAt: string; preferredLanguage: string; authProvider: 'email' | 'google' | 'apple' | 'multiple'; registrationSource: string | null; suspended: boolean; lockedUntil: string | null; failedLoginAttempts: number; subscribed: boolean; subscriberActive: boolean | null; subscribedAt: string | null }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
 
 export default function AdminUsersPage() {
@@ -406,7 +406,7 @@ export default function AdminUsersPage() {
                                             style={{ cursor: 'pointer', accentColor: 'var(--accent-gold)', width: '14px', height: '14px' }}
                                         />
                                     </th>
-                                    {['Name', 'Email', 'Role', 'Via', 'Lang', 'Status', 'Sub', 'Apps', 'Joined', 'Actions'].map(h => (
+                                    {['Name', 'Email', 'Role', 'Via', 'Source', 'Lang', 'Status', 'Sub', 'Apps', 'Joined', 'Actions'].map(h => (
                                         <th key={h} style={{ padding: '8px 12px', fontWeight: 700, fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', textAlign: 'left' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -488,6 +488,31 @@ export default function AdminUsersPage() {
                                                     }}>
                                                         🔗 Multi
                                                     </span>
+                                                )}
+                                            </td>
+                                            {/* Registration Source */}
+                                            <td style={{ padding: '8px 12px' }}>
+                                                {u.registrationSource ? (
+                                                    <span style={{
+                                                        display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                        fontSize: '0.58rem', padding: '2px 7px', borderRadius: '4px', fontWeight: 700,
+                                                        background: u.registrationSource === 'organic' ? 'rgba(107,114,128,0.1)'
+                                                            : u.registrationSource.includes('campaign') ? 'rgba(139,92,246,0.1)'
+                                                            : u.registrationSource.includes('email') ? 'rgba(6,182,212,0.1)'
+                                                            : 'rgba(16,185,129,0.1)',
+                                                        color: u.registrationSource === 'organic' ? '#9ca3af'
+                                                            : u.registrationSource.includes('campaign') ? '#a78bfa'
+                                                            : u.registrationSource.includes('email') ? '#06b6d4'
+                                                            : '#10b981',
+                                                        border: `1px solid ${u.registrationSource === 'organic' ? 'rgba(107,114,128,0.2)'
+                                                            : u.registrationSource.includes('campaign') ? 'rgba(139,92,246,0.25)'
+                                                            : u.registrationSource.includes('email') ? 'rgba(6,182,212,0.25)'
+                                                            : 'rgba(16,185,129,0.25)'}`,
+                                                    }}>
+                                                        {u.registrationSource.replace(/_/g, ' ')}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>—</span>
                                                 )}
                                             </td>
                                             <td style={{ padding: '8px 12px' }}>
