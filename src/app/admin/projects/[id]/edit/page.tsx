@@ -117,13 +117,16 @@ export default function ProjectEditPage() {
             // Load episodes for series
             if (p.projectType === 'series') {
                 fetch(`/api/admin/episodes?projectId=${projectId}`)
-                    .then(r => r.ok ? r.json() : [])
-                    .then((eps: any[]) => setEpisodes(eps.map(e => ({
-                        id: e.id, title: e.title, number: e.number, season: e.season,
-                        videoUrl: e.videoUrl || '', duration: e.duration || '',
-                        description: e.description || '', thumbnail: e.thumbnail || '',
-                        published: e.published ?? false,
-                    }))))
+                    .then(r => r.ok ? r.json() : { episodes: [] })
+                    .then((data: any) => {
+                        const eps = Array.isArray(data) ? data : (data.episodes || [])
+                        setEpisodes(eps.map((e: any) => ({
+                            id: e.id, title: e.title, number: e.number, season: e.season,
+                            videoUrl: e.videoUrl || '', duration: e.duration || '',
+                            description: e.description || '', thumbnail: e.thumbnail || '',
+                            published: e.published ?? false,
+                        })))
+                    })
                     .catch(() => {})
             }
         }).catch(() => setError('Failed to load project')).finally(() => setLoading(false))
@@ -178,6 +181,7 @@ export default function ProjectEditPage() {
     }
 
     const saveEpisode = async (idx: number) => {
+        if (isNew) { setError('Save the project first, then add episodes'); return }
         const ep = episodes[idx]
         if (!ep.title) { setError('Episode title is required'); return }
         const key = ep.id || `new-${idx}`
@@ -192,12 +196,13 @@ export default function ProjectEditPage() {
             }
             const isCreate = !ep.id
             const res = await fetch('/api/admin/episodes', {
-                method: isCreate ? 'POST' : 'PATCH',
+                method: isCreate ? 'POST' : 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(isCreate ? payload : { id: ep.id, ...payload }),
             })
             if (!res.ok) { const d = await res.json(); throw new Error(d.error || 'Failed') }
-            const saved = await res.json()
+            const data = await res.json()
+            const saved = data.episode || data
             setEpisodes(prev => prev.map((e, i) => i === idx ? {
                 ...e, id: saved.id, _new: false, _dirty: false,
             } : e))
@@ -503,7 +508,7 @@ export default function ProjectEditPage() {
                     </div>
 
                     {/* ══ EPISODES (series only) ══ */}
-                    {form.projectType === 'series' && !isNew && (
+                    {form.projectType === 'series' && (
                         <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
                             <SectionHeader id="episodes" emoji="📺" title={`Episodes (${episodes.length})`} />
                             {openSections.episodes && (
