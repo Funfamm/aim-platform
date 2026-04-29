@@ -1,8 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import CommentInput from './CommentInput'
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function timeAgo(dateStr: string, t: (key: string) => string): string {
+    const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
+    if (seconds < 60) return t('justNow')
+    const mins = Math.floor(seconds / 60)
+    if (mins < 60) return t('mAgo').replace('{n}', String(mins))
+    const hours = Math.floor(mins / 60)
+    if (hours < 24) return t('hAgo').replace('{n}', String(hours))
+    const days = Math.floor(hours / 24)
+    if (days < 30) return t('dAgo').replace('{n}', String(days))
+    return new Date(dateStr).toLocaleDateString()
+}
 
 interface CommentUser {
     id: string
@@ -98,19 +111,6 @@ export default function CommentCard({
 
     const canEdit = isOwner && editMinsLeft > 0 && !comment.hidden
 
-    // Translated time-ago
-    function timeAgo(dateStr: string): string {
-        const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
-        if (seconds < 60) return t('justNow')
-        const mins = Math.floor(seconds / 60)
-        if (mins < 60) return t('mAgo').replace('{n}', String(mins))
-        const hours = Math.floor(mins / 60)
-        if (hours < 24) return t('hAgo').replace('{n}', String(hours))
-        const days = Math.floor(hours / 24)
-        if (days < 30) return t('dAgo').replace('{n}', String(days))
-        return new Date(dateStr).toLocaleDateString()
-    }
-
     // Hidden / deleted comment
     if (comment.hidden) {
         return (
@@ -202,7 +202,7 @@ export default function CommentCard({
                         {comment.user.name}
                     </span>
                     <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                        {timeAgo(comment.createdAt)}
+                        {timeAgo(comment.createdAt, t)}
                     </span>
                     {comment.editedAt && (
                         <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
