@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { rateLimitComments } from '@/middleware/rateLimitComments'
-import DOMPurify from 'isomorphic-dompurify'
+/** Strip all HTML tags — lightweight replacement for isomorphic-dompurify
+ *  (jsdom crashes Vercel serverless at import time, causing a 404) */
+function stripHtml(input: string): string {
+    return input.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, m => {
+        const map: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" }
+        return map[m] || m
+    })
+}
 import { notifyUser } from '@/lib/notifications'
 
 // Lightweight profanity check (bad-words@4 is broken on Node v24)
@@ -119,7 +126,7 @@ export async function POST(req: Request) {
         }
 
         // Sanitize — strip ALL HTML tags
-        const clean = DOMPurify.sanitize(rawContent, { ALLOWED_TAGS: [] }).trim()
+        const clean = stripHtml(rawContent).trim()
         if (!clean || clean.length > 2000) {
             return NextResponse.json(
                 { error: clean ? 'Comment too long (max 2000 characters)' : 'Comment cannot be empty' },

@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
-import DOMPurify from 'isomorphic-dompurify'
+/** Strip all HTML tags — lightweight replacement for isomorphic-dompurify */
+function stripHtml(input: string): string {
+    return input.replace(/<[^>]*>/g, '').replace(/&[^;]+;/g, m => {
+        const map: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" }
+        return map[m] || m
+    })
+}
 
 const EDIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
 
@@ -39,7 +45,7 @@ export async function PATCH(
 
     try {
         const { content: rawContent } = await req.json()
-        const clean = DOMPurify.sanitize(rawContent || '', { ALLOWED_TAGS: [] }).trim()
+        const clean = stripHtml(rawContent || '').trim()
         if (!clean || clean.length > 2000) {
             return NextResponse.json(
                 { error: clean ? 'Comment too long (max 2000 characters)' : 'Comment cannot be empty' },
