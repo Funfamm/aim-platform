@@ -292,7 +292,11 @@
     "emailPlaceholder": "Ihre E-Mail",
     "submitBtn": "Abonnieren",
     "submitting": "Wird abonniert...",
-    "error": "Etwas ist schiefgelaufen."
+    "error": "Etwas ist schiefgelaufen.",
+    "watchFreePrompt": "Unsere Filme kostenlos ansehen — erstelle dein Konto",
+    "createAccountTitle": "Unsere Filme Kostenlos Ansehen",
+    "createAccountDesc": "Erstelle ein kostenloses Konto, um Filme anzusehen, dich für Rollen zu bewerben und der Community beizutreten.",
+    "createAccountBtn": "Kostenloses Konto Erstellen →"
   },
   "castingCard": {
     "role": "Rolle",
@@ -542,7 +546,8 @@
     "roleSoundDesigner": "Tondesigner",
     "roleArtDirector": "Szenenbildner",
     "roleCostumeDesigner": "Kostümdesigner",
-    "roleMakeupArtist": "Maskenbildner"
+    "roleMakeupArtist": "Maskenbildner",
+    "freeAccount": "Kostenlos Ansehen — Konto Erstellen"
   },
   "castingForm": {
     "pageLabel": "Casting-Bewerbung",
@@ -806,7 +811,12 @@
     "hidePassword": "Passwort verbergen",
     "showPassword": "Passwort anzeigen",
     "allFieldsRequired": "Name, E-Mail und Passwort sind erforderlich",
-    "accountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits"
+    "accountExists": "Ein Konto mit dieser E-Mail-Adresse existiert bereits",
+    "continueApple": "Weiter mit Apple",
+    "orRegisterEmail": "oder mit E-Mail registrieren",
+    "valuePropFilms": "Filme kostenlos in voller Länge ansehen",
+    "valuePropCasting": "Bewirb dich für Casting-Rollen",
+    "valuePropCommunity": "Tritt der Community bei"
   },
   "login": {
     "welcomeBack": "Willkommen Zurück",

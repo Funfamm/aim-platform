@@ -275,7 +275,11 @@
     "emailPlaceholder": "メールを入力",
     "submitBtn": "登録",
     "submitting": "登録中...",
-    "error": "エラーが発生。"
+    "error": "エラーが発生。",
+    "watchFreePrompt": "映画を無料で視聴 — アカウントを作成",
+    "createAccountTitle": "映画を無料で視聴",
+    "createAccountDesc": "無料アカウントを作成して、映画を視聴し、キャスティングに応募し、コミュニティに参加しましょう。",
+    "createAccountBtn": "無料アカウントを作成 →"
   },
   "castingCard": {
     "role": "役",
@@ -525,7 +529,8 @@
     "roleSoundDesigner": "サウンドデザイナー",
     "roleArtDirector": "アートディレクター",
     "roleCostumeDesigner": "衣装デザイナー",
-    "roleMakeupArtist": "メイクアップアーティスト"
+    "roleMakeupArtist": "メイクアップアーティスト",
+    "freeAccount": "無料で視聴 — アカウント作成"
   },
   "castingForm": {
     "pageLabel": "キャスティング応募",
@@ -789,7 +794,12 @@
     "hidePassword": "パスワードを隠す",
     "showPassword": "パスワードを表示",
     "allFieldsRequired": "名前、メールアドレス、パスワードは必須です",
-    "accountExists": "このメールアドレスを持つアカウントはすでに存在します"
+    "accountExists": "このメールアドレスを持つアカウントはすでに存在します",
+    "continueApple": "Appleで続ける",
+    "orRegisterEmail": "またはメールで登録",
+    "valuePropFilms": "映画を全編無料で視聴",
+    "valuePropCasting": "キャスティングの役に応募",
+    "valuePropCommunity": "コミュニティに参加"
   },
   "login": {
     "welcomeBack": "おかえりなさい",

@@ -292,7 +292,11 @@
     "emailPlaceholder": "Tu email",
     "submitBtn": "Suscribirse",
     "submitting": "Suscribiendo...",
-    "error": "Algo salió mal."
+    "error": "Algo salió mal.",
+    "watchFreePrompt": "Mira nuestras películas gratis — crea tu cuenta",
+    "createAccountTitle": "Mira Nuestras Películas Gratis",
+    "createAccountDesc": "Crea una cuenta gratuita para ver películas completas, postularte a roles de casting y unirte a la comunidad.",
+    "createAccountBtn": "Crea Tu Cuenta Gratis →"
   },
   "castingCard": {
     "role": "Rol",
@@ -542,7 +546,8 @@
     "roleSoundDesigner": "Diseñador de Sonido",
     "roleArtDirector": "Director Artístico",
     "roleCostumeDesigner": "Diseñador de Vestuario",
-    "roleMakeupArtist": "Maquillador"
+    "roleMakeupArtist": "Maquillador",
+    "freeAccount": "Ver Gratis — Crear Cuenta"
   },
   "castingForm": {
     "pageLabel": "Solicitud de Casting",
@@ -806,7 +811,12 @@
     "hidePassword": "Ocultar contraseña",
     "showPassword": "Mostrar contraseña",
     "allFieldsRequired": "Se requieren nombre, correo electrónico y contraseña.",
-    "accountExists": "Ya existe una cuenta con este correo electrónico"
+    "accountExists": "Ya existe una cuenta con este correo electrónico",
+    "continueApple": "Continuar con Apple",
+    "orRegisterEmail": "o regístrate con email",
+    "valuePropFilms": "Mira películas completas gratis",
+    "valuePropCasting": "Postúlate a roles de casting",
+    "valuePropCommunity": "Únete a la comunidad"
   },
   "login": {
     "welcomeBack": "Bienvenido",

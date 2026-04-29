@@ -294,7 +294,11 @@
     "emailPlaceholder": "بريدك",
     "submitBtn": "اشترك",
     "submitting": "جاري...",
-    "error": "حدث خطأ."
+    "error": "حدث خطأ.",
+    "watchFreePrompt": "شاهد أفلامنا مجانًا — أنشئ حسابك",
+    "createAccountTitle": "شاهد أفلامنا مجانًا",
+    "createAccountDesc": "أنشئ حسابًا مجانيًا لمشاهدة الأفلام الكاملة والتقدم لأدوار التمثيل والانضمام إلى المجتمع.",
+    "createAccountBtn": "أنشئ حسابك المجاني ←"
   },
   "castingCard": {
     "role": "دور",
@@ -544,7 +548,8 @@
     "roleSoundDesigner": "مصمم الصوت",
     "roleArtDirector": "المدير الفني",
     "roleCostumeDesigner": "مصمم الأزياء",
-    "roleMakeupArtist": "فنان المكياج"
+    "roleMakeupArtist": "فنان المكياج",
+    "freeAccount": "شاهد مجانًا — أنشئ حسابًا"
   },
   "castingForm": {
     "pageLabel": "طلب كاستنج",
@@ -808,7 +813,12 @@
     "hidePassword": "إخفاء كلمة المرور",
     "showPassword": "إظهار كلمة المرور",
     "allFieldsRequired": "الاسم والبريد الإلكتروني وكلمة المرور مطلوبة",
-    "accountExists": "يوجد حساب بهذا البريد الإلكتروني بالفعل"
+    "accountExists": "يوجد حساب بهذا البريد الإلكتروني بالفعل",
+    "continueApple": "المتابعة مع Apple",
+    "orRegisterEmail": "أو سجل بالبريد الإلكتروني",
+    "valuePropFilms": "شاهد الأفلام الكاملة مجانًا",
+    "valuePropCasting": "تقدم لأدوار التمثيل",
+    "valuePropCommunity": "انضم إلى المجتمع"
   },
   "login": {
     "welcomeBack": "مرحباً بعودتك",

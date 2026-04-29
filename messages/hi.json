@@ -292,7 +292,11 @@
     "emailPlaceholder": "अपना ईमेल",
     "submitBtn": "सदस्यता लें",
     "submitting": "सब्सक्राइब हो रहा है...",
-    "error": "कुछ गलत हो गया।"
+    "error": "कुछ गलत हो गया।",
+    "watchFreePrompt": "हमारी फ़िल्में मुफ़्त देखें — अपना खाता बनाएँ",
+    "createAccountTitle": "हमारी फ़िल्में मुफ़्त देखें",
+    "createAccountDesc": "पूरी फ़िल्में देखने, कास्टिंग रोल के लिए आवेदन करने और समुदाय में शामिल होने के लिए एक मुफ़्त खाता बनाएँ।",
+    "createAccountBtn": "अपना मुफ़्त खाता बनाएँ →"
   },
   "castingCard": {
     "role": "भूमिका",
@@ -542,7 +546,8 @@
     "roleSoundDesigner": "ध्वनि डिज़ाइनर",
     "roleArtDirector": "कला निर्देशक",
     "roleCostumeDesigner": "पोशाक डिज़ाइनर",
-    "roleMakeupArtist": "मेकअप कलाकार"
+    "roleMakeupArtist": "मेकअप कलाकार",
+    "freeAccount": "मुफ़्त देखें — खाता बनाएँ"
   },
   "castingForm": {
     "pageLabel": "कास्टिंग आवेदन",
@@ -806,7 +811,12 @@
     "hidePassword": "पासवर्ड छुपाएं",
     "showPassword": "पासवर्ड दिखाएं",
     "allFieldsRequired": "नाम, ईमेल और पासवर्ड आवश्यक है",
-    "accountExists": "इस ईमेल वाला एक खाता पहले से मौजूद है"
+    "accountExists": "इस ईमेल वाला एक खाता पहले से मौजूद है",
+    "continueApple": "Apple से जारी रखें",
+    "orRegisterEmail": "या ईमेल से पंजीकरण करें",
+    "valuePropFilms": "पूरी फ़िल्में मुफ़्त देखें",
+    "valuePropCasting": "कास्टिंग रोल के लिए आवेदन करें",
+    "valuePropCommunity": "समुदाय में शामिल हों"
   },
   "login": {
     "welcomeBack": "फिर से स्वागत है",

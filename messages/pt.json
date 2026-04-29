@@ -292,7 +292,11 @@
     "emailPlaceholder": "Seu email",
     "submitBtn": "Inscrever-se",
     "submitting": "Inscrevendo...",
-    "error": "Algo deu errado."
+    "error": "Algo deu errado.",
+    "watchFreePrompt": "Assista nossos filmes de graça — crie sua conta",
+    "createAccountTitle": "Assista Nossos Filmes de Graça",
+    "createAccountDesc": "Crie uma conta gratuita para assistir filmes completos, candidatar-se a papéis e participar da comunidade.",
+    "createAccountBtn": "Crie Sua Conta Grátis →"
   },
   "castingCard": {
     "role": "Papel",
@@ -542,7 +546,8 @@
     "roleSoundDesigner": "Designer de Som",
     "roleArtDirector": "Diretor de Arte",
     "roleCostumeDesigner": "Figurinista",
-    "roleMakeupArtist": "Maquiador"
+    "roleMakeupArtist": "Maquiador",
+    "freeAccount": "Assistir Grátis — Criar Conta"
   },
   "castingForm": {
     "pageLabel": "Candidatura Casting",
@@ -806,7 +811,12 @@
     "hidePassword": "Ocultar senha",
     "showPassword": "Mostrar senha",
     "allFieldsRequired": "Nome, e-mail e senha são obrigatórios",
-    "accountExists": "Já existe uma conta com este e-mail"
+    "accountExists": "Já existe uma conta com este e-mail",
+    "continueApple": "Continuar com Apple",
+    "orRegisterEmail": "ou registre-se com email",
+    "valuePropFilms": "Assista filmes completos de graça",
+    "valuePropCasting": "Candidate-se a papéis de casting",
+    "valuePropCommunity": "Junte-se à comunidade"
   },
   "login": {
     "welcomeBack": "Bem-vindo",

@@ -292,7 +292,11 @@
     "emailPlaceholder": "Entrez votre email",
     "submitBtn": "S'abonner",
     "submitting": "En cours...",
-    "error": "Erreur."
+    "error": "Erreur.",
+    "watchFreePrompt": "Regardez nos films gratuitement — créez votre compte",
+    "createAccountTitle": "Regardez Nos Films Gratuitement",
+    "createAccountDesc": "Créez un compte gratuit pour regarder des films, postuler à des rôles et rejoindre la communauté.",
+    "createAccountBtn": "Créer Votre Compte Gratuit →"
   },
   "castingCard": {
     "role": "Rôle",
@@ -542,7 +546,8 @@
     "roleSoundDesigner": "Concepteur Sonore",
     "roleArtDirector": "Directeur Artistique",
     "roleCostumeDesigner": "Costumier",
-    "roleMakeupArtist": "Maquilleur"
+    "roleMakeupArtist": "Maquilleur",
+    "freeAccount": "Regarder Gratuitement — Créer un Compte"
   },
   "castingForm": {
     "pageLabel": "Candidature Casting",
@@ -806,7 +811,12 @@
     "hidePassword": "Masquer le mot de passe",
     "showPassword": "Afficher le mot de passe",
     "allFieldsRequired": "Le nom, l'e-mail et le mot de passe sont requis",
-    "accountExists": "Un compte avec cette adresse e-mail existe déjà"
+    "accountExists": "Un compte avec cette adresse e-mail existe déjà",
+    "continueApple": "Continuer avec Apple",
+    "orRegisterEmail": "ou inscrivez-vous par email",
+    "valuePropFilms": "Regardez des films complets gratuitement",
+    "valuePropCasting": "Postulez à des rôles de casting",
+    "valuePropCommunity": "Rejoignez la communauté"
   },
   "login": {
     "welcomeBack": "Bon Retour",

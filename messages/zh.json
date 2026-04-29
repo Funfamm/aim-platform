@@ -293,7 +293,11 @@
     "emailPlaceholder": "输入邮箱",
     "submitBtn": "订阅",
     "submitting": "订阅中...",
-    "error": "出了点问题。"
+    "error": "出了点问题。",
+    "watchFreePrompt": "免费观看我们的电影 — 创建您的账户",
+    "createAccountTitle": "免费观看我们的电影",
+    "createAccountDesc": "创建免费账户以观看完整电影、申请演员角色并加入社区。",
+    "createAccountBtn": "创建免费账户 →"
   },
   "castingCard": {
     "role": "角色",
@@ -543,7 +547,8 @@
     "roleSoundDesigner": "声音设计",
     "roleArtDirector": "美术指导",
     "roleCostumeDesigner": "服装设计",
-    "roleMakeupArtist": "化妆师"
+    "roleMakeupArtist": "化妆师",
+    "freeAccount": "免费观看 — 创建账户"
   },
   "castingForm": {
     "pageLabel": "选角申请",
@@ -807,7 +812,12 @@
     "hidePassword": "隐藏密码",
     "showPassword": "显示密码",
     "allFieldsRequired": "姓名、电子邮件和密码为必填项",
-    "accountExists": "使用此电子邮件的帐户已存在"
+    "accountExists": "使用此电子邮件的帐户已存在",
+    "continueApple": "使用Apple继续",
+    "orRegisterEmail": "或使用邮箱注册",
+    "valuePropFilms": "免费观看完整电影",
+    "valuePropCasting": "申请演员角色",
+    "valuePropCommunity": "加入社区"
   },
   "login": {
     "welcomeBack": "欢迎回来",

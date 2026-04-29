@@ -292,7 +292,11 @@
     "emailPlaceholder": "Введите email",
     "submitBtn": "Подписаться",
     "submitting": "Подписка...",
-    "error": "Ошибка."
+    "error": "Ошибка.",
+    "watchFreePrompt": "Смотрите наши фильмы бесплатно — создайте аккаунт",
+    "createAccountTitle": "Смотрите Наши Фильмы Бесплатно",
+    "createAccountDesc": "Создайте бесплатный аккаунт, чтобы смотреть фильмы, подавать заявки на роли и присоединиться к сообществу.",
+    "createAccountBtn": "Создать Бесплатный Аккаунт →"
   },
   "castingCard": {
     "role": "Роль",
@@ -542,7 +546,8 @@
     "roleSoundDesigner": "Звукорежиссёр",
     "roleArtDirector": "Арт-директор",
     "roleCostumeDesigner": "Художник по костюмам",
-    "roleMakeupArtist": "Визажист"
+    "roleMakeupArtist": "Визажист",
+    "freeAccount": "Смотреть Бесплатно — Создать Аккаунт"
   },
   "castingForm": {
     "pageLabel": "Заявка на Кастинг",
@@ -806,7 +811,12 @@
     "hidePassword": "Скрыть пароль",
     "showPassword": "Показать пароль",
     "allFieldsRequired": "Требуется имя, адрес электронной почты и пароль.",
-    "accountExists": "Аккаунт с таким адресом электронной почты уже существует"
+    "accountExists": "Аккаунт с таким адресом электронной почты уже существует",
+    "continueApple": "Продолжить с Apple",
+    "orRegisterEmail": "или зарегистрируйтесь по email",
+    "valuePropFilms": "Смотрите полные фильмы бесплатно",
+    "valuePropCasting": "Подайте заявку на кастинг",
+    "valuePropCommunity": "Присоединяйтесь к сообществу"
   },
   "login": {
     "welcomeBack": "С возвращением",
