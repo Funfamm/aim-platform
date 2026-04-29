@@ -169,11 +169,11 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                 } else {
                     // Not logged in, redirect to login
                     // Note: useRouter from @/i18n/navigation auto-prefixes locale
-                    router.push(`/login?redirect=/works/${project.slug}/watch`)
+                    router.push(`/register?redirect=/works/${project.slug}/watch&utm_source=watch_wall`)
                 }
             })
             .catch(() => {
-                router.push(`/login?redirect=/works/${project.slug}/watch`)
+                router.push(`/register?redirect=/works/${project.slug}/watch&utm_source=watch_wall`)
             })
             .finally(() => setCheckingAuth(false))
     }
@@ -368,7 +368,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                                         <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
                                         <path d="M10 8l6 4-6 4V8z" fill="currentColor" />
                                     </svg>
-                                    {user ? t('watchFull') : t('watchNow')}
+                                    {user ? t('watchFull') : (t('freeAccount', { defaultMessage: 'Watch Free — Create Account' }))}
                                     {!user && (
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -381,7 +381,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                             <button
                                 onClick={async () => {
                                     if (!user) {
-                                        router.push(`/login?redirect=/works/${project.slug}`)
+                                        router.push(`/register?redirect=/works/${project.slug}&utm_source=watchlist_wall`)
                                         return
                                     }
                                     if (isSaved) {
@@ -516,16 +516,16 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                                         </p>
                                         <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
                                             <button
-                                                onClick={() => router.push(`/login?redirect=/works/${project.slug}#trailer`)}
+                                                onClick={() => router.push(`/register?redirect=/works/${project.slug}#trailer&utm_source=trailer_lock`)}
                                                 className="btn btn-primary"
                                                 style={{
                                                     padding: '12px 28px', fontWeight: 700, fontSize: '0.9rem',
                                                 }}
                                             >
-                                                {t('signIn')}
+                                                {t('createAccount')}
                                             </button>
                                             <button
-                                                onClick={() => router.push(`/signup?redirect=/works/${project.slug}#trailer`)}
+                                                onClick={() => router.push(`/login?redirect=/works/${project.slug}#trailer`)}
                                                 className="btn"
                                                 style={{
                                                     padding: '12px 28px', fontWeight: 600, fontSize: '0.9rem',
@@ -534,7 +534,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                                                     color: '#fff',
                                                 }}
                                             >
-                                                {t('createAccount')}
+                                                {t('signIn')}
                                             </button>
                                         </div>
                                     </div>

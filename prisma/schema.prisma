@@ -58,6 +58,7 @@ model User {
   watchlist                  Watchlist[]
   comments                   Comment[]
   commentLikes               CommentLike[]
+  registrationSource         String?               // utm_source at registration: conversion_campaign | welcome_email | watch_wall | trailer_lock | watchlist_wall | comment_wall | subscribe_form | subscribe_page | organic
 
   @@index([role])
   @@index([createdAt])

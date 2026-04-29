@@ -35,14 +35,28 @@ export default function SubscribeForm() {
 
     if (status === 'sent') {
         return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-sm)',
-                fontSize: '0.85rem',
-                color: 'var(--accent-gold)',
-            }}>
-                <span>✓</span> {t('subscribed')}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-sm)',
+                    fontSize: '0.85rem',
+                    color: 'var(--accent-gold)',
+                }}>
+                    <span>✓</span> {t('subscribed')}
+                </div>
+                <a
+                    href={`/${locale}/register?utm_source=subscribe_form`}
+                    style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        padding: '0.6rem 1.2rem', fontSize: '0.8rem', fontWeight: 600,
+                        background: 'rgba(212,168,83,0.12)', border: '1px solid rgba(212,168,83,0.25)',
+                        borderRadius: 'var(--radius-md)', color: 'var(--accent-gold)',
+                        textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer',
+                    }}
+                >
+                    🎬 {t('watchFreePrompt', { defaultMessage: 'Watch our films free — create your account' })}
+                </a>
             </div>
         )
     }

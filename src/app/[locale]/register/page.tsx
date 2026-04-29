@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import Link from 'next/link'
 import { useRouter } from '@/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
@@ -11,6 +12,7 @@ import { useTranslations, useLocale } from 'next-intl'
 export default function RegisterPage() {
     const t = useTranslations('register')
     const locale = useLocale()
+    const searchParams = useSearchParams()
     const [name, setName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -18,8 +20,48 @@ export default function RegisterPage() {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
+    const [emailReadOnly, setEmailReadOnly] = useState(false)
+    const [providers, setProviders] = useState<{ google: boolean; apple: boolean }>({ google: false, apple: false })
     const { register } = useAuth()
     const router = useRouter()
+
+    const redirectTo = searchParams.get('redirect') || ''
+    const utmSource = searchParams.get('utm_source') || ''
+
+    // Decode email from signed token
+    useEffect(() => {
+        const token = searchParams.get('token')
+        if (!token) return
+        fetch(`/api/auth/verify-token?token=${encodeURIComponent(token)}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data?.email) {
+                    setEmail(data.email)
+                    setEmailReadOnly(true)
+                }
+            })
+            .catch(() => { })
+    }, [searchParams])
+
+    // Load OAuth providers
+    useEffect(() => {
+        fetch('/api/auth/providers')
+            .then(async (r) => {
+                if (!r.ok) return { google: false, apple: false }
+                try { return await r.json() } catch { return { google: false, apple: false } }
+            })
+            .then(data => setProviders(data))
+            .catch(() => { })
+    }, [])
+
+    const clearPrefilledEmail = () => {
+        setEmail('')
+        setEmailReadOnly(false)
+        // Remove token from URL without reload
+        const url = new URL(window.location.href)
+        url.searchParams.delete('token')
+        window.history.replaceState({}, '', url.toString())
+    }
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
@@ -33,15 +75,16 @@ export default function RegisterPage() {
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password, locale }),
+                body: JSON.stringify({ name, email, password, locale, utm_source: utmSource || undefined }),
             })
             const data = await res.json()
             if (res.ok && data.requiresVerification) {
                 // Redirect to the verification page with the email
-                router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+                const verifyUrl = `/verify-email?email=${encodeURIComponent(email)}${redirectTo ? `&redirect=${encodeURIComponent(redirectTo)}` : ''}`
+                router.push(verifyUrl)
             } else if (res.ok && data.user) {
                 // Fallback: already verified (e.g. OAuth)
-                router.push('/')
+                router.push(redirectTo || '/')
             } else {
                 let err = data.error || t('registrationFailed')
                 if (data.error === 'Name, email, and password are required') err = t('allFieldsRequired')
@@ -53,6 +96,8 @@ export default function RegisterPage() {
         }
         setLoading(false)
     }
+
+    const oauthReturnTo = redirectTo && redirectTo !== '/' ? `?returnTo=${encodeURIComponent(redirectTo)}` : ''
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -72,7 +117,7 @@ export default function RegisterPage() {
                     position: 'relative',
                     zIndex: 1,
                 }}>
-                    <div style={{ textAlign: 'center', marginBottom: 'var(--space-2xl)' }}>
+                    <div style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>
                         <div style={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -86,7 +131,7 @@ export default function RegisterPage() {
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase' as const,
                             color: 'var(--accent-gold)',
-                            marginBottom: 'var(--space-lg)',
+                            marginBottom: 'var(--space-md)',
                         }}>
                             <span style={{
                                 width: '5px', height: '5px',
@@ -100,9 +145,20 @@ export default function RegisterPage() {
                             fontWeight: 800,
                             marginBottom: 'var(--space-sm)',
                         }}>{t('createAccount')}</h1>
-                        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>
+                        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', marginBottom: 'var(--space-md)' }}>
                             {t('registerDesc')}
                         </p>
+
+                        {/* Value proposition */}
+                        <div style={{
+                            display: 'flex', flexDirection: 'column', gap: '6px',
+                            alignItems: 'center',
+                            fontSize: '0.82rem', color: 'var(--text-tertiary)',
+                        }}>
+                            <span>🎬 {t('valuePropFilms', { defaultMessage: 'Watch full films for free' })}</span>
+                            <span>🎭 {t('valuePropCasting', { defaultMessage: 'Apply for casting roles' })}</span>
+                            <span>💬 {t('valuePropCommunity', { defaultMessage: 'Join the community' })}</span>
+                        </div>
                     </div>
 
                     <div style={{
@@ -124,6 +180,52 @@ export default function RegisterPage() {
                             }}>
                                 {error}
                             </div>
+                        )}
+
+                        {/* OAuth Buttons */}
+                        {(providers.google || providers.apple) && (
+                            <>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginBottom: 'var(--space-lg)' }}>
+                                    {providers.google && (
+                                        <a href={`/api/auth/google${oauthReturnTo}`} style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                                            width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)',
+                                            border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                                            color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600,
+                                            textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer',
+                                        }}>
+                                            <svg width="18" height="18" viewBox="0 0 24 24">
+                                                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                                                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                                <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                                                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                                            </svg>
+                                            {t('continueGoogle', { defaultMessage: 'Continue with Google' })}
+                                        </a>
+                                    )}
+                                    {providers.apple && (
+                                        <a href={`/api/auth/apple${oauthReturnTo}`} style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
+                                            width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)',
+                                            border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)',
+                                            color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 600,
+                                            textDecoration: 'none', transition: 'all 0.2s', cursor: 'pointer',
+                                        }}>
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.32 2.32-1.55 4.4-3.74 4.25z" />
+                                            </svg>
+                                            {t('continueApple', { defaultMessage: 'Continue with Apple' })}
+                                        </a>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginBottom: 'var(--space-lg)' }}>
+                                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+                                        {t('orRegisterEmail', { defaultMessage: 'or register with email' })}
+                                    </span>
+                                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
+                                </div>
+                            </>
                         )}
 
                         <form onSubmit={handleSubmit}>
@@ -154,21 +256,39 @@ export default function RegisterPage() {
                                     display: 'block', fontSize: '0.8rem', fontWeight: 600,
                                     color: 'var(--text-secondary)', marginBottom: '6px', letterSpacing: '0.03em',
                                 }}>{t('email')}</label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                    placeholder={t('emailPlaceholder')}
-                                    onInvalid={(e) => { const el = e.target as HTMLInputElement; el.setCustomValidity(el.validity.valueMissing ? t('fillRequired') : t('emailInvalid')) }}
-                                    onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
-                                    style={{
-                                        width: '100%', padding: '0.75rem 1rem',
-                                        background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)',
-                                        borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
-                                        fontSize: '0.9rem', outline: 'none',
-                                    }}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) => !emailReadOnly && setEmail(e.target.value)}
+                                        readOnly={emailReadOnly}
+                                        required
+                                        placeholder={t('emailPlaceholder')}
+                                        onInvalid={(e) => { const el = e.target as HTMLInputElement; el.setCustomValidity(el.validity.valueMissing ? t('fillRequired') : t('emailInvalid')) }}
+                                        onInput={(e) => (e.target as HTMLInputElement).setCustomValidity('')}
+                                        style={{
+                                            width: '100%', padding: '0.75rem 1rem',
+                                            background: emailReadOnly ? 'rgba(212,168,83,0.06)' : 'var(--bg-primary)',
+                                            border: emailReadOnly ? '1px solid rgba(212,168,83,0.2)' : '1px solid var(--border-subtle)',
+                                            borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                                            fontSize: '0.9rem', outline: 'none',
+                                            opacity: emailReadOnly ? 0.85 : 1,
+                                        }}
+                                    />
+                                    {emailReadOnly && (
+                                        <button
+                                            type="button"
+                                            onClick={clearPrefilledEmail}
+                                            style={{
+                                                position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                                                background: 'none', border: 'none', cursor: 'pointer',
+                                                fontSize: '0.72rem', color: 'var(--accent-gold)', fontWeight: 600,
+                                            }}
+                                        >
+                                            Not you? Clear
+                                        </button>
+                                    )}
+                                </div>
                             </div>
 
                             <div style={{ marginBottom: 'var(--space-md)' }}>
@@ -252,7 +372,7 @@ export default function RegisterPage() {
                             fontSize: '0.85rem', color: 'var(--text-tertiary)',
                         }}>
                             {t('alreadyHaveAccount')}{' '}
-                            <Link href={`/${locale}/login`} style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
+                            <Link href={`/${locale}/login${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
                                 {t('signIn')}
                             </Link>
                         </div>

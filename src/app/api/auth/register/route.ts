@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (blocked) return blocked
 
     try {
-        const { name, email: rawEmail, password, locale } = await request.json()
+        const { name, email: rawEmail, password, locale, utm_source } = await request.json()
         const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : rawEmail
         const country = request.headers.get('x-vercel-ip-country') || undefined
 
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
                 verificationExpiry: expiry,
                 ...(locale && locale !== 'en' ? { preferredLanguage: locale } : {}),
                 ...(country ? { country } : {}),
+                registrationSource: utm_source || 'organic',
             },
         }), 'register_create_user')
 

@@ -294,7 +294,11 @@
     "emailPlaceholder": "Enter your email",
     "submitBtn": "Subscribe to Updates",
     "submitting": "Subscribing...",
-    "error": "Something went wrong. Try again."
+    "error": "Something went wrong. Try again.",
+    "watchFreePrompt": "Watch our films free — create your account",
+    "createAccountTitle": "Watch Our Films Free",
+    "createAccountDesc": "Create a free account to watch full films, apply for casting roles, and join the community.",
+    "createAccountBtn": "Create Your Free Account →"
   },
   "castingCard": {
     "role": "Role",
@@ -500,6 +504,7 @@
     "watchTrailer": "Watch Trailer",
     "watchFull": "Watch Full Film",
     "watchNow": "Watch Now",
+    "freeAccount": "Watch Free — Create Account",
     "loading": "Loading...",
     "save": "Save",
     "saved": "Saved",
@@ -795,6 +800,11 @@
     "creatingAccount": "Creating account...",
     "or": "or",
     "continueGoogle": "Continue with Google",
+    "continueApple": "Continue with Apple",
+    "orRegisterEmail": "or register with email",
+    "valuePropFilms": "Watch full films for free",
+    "valuePropCasting": "Apply for casting roles",
+    "valuePropCommunity": "Join the community",
     "alreadyHaveAccount": "Already have an account?",
     "signIn": "Sign in",
     "passwordsNoMatch": "Passwords do not match",

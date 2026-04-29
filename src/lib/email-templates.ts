@@ -669,18 +669,20 @@ export async function subscribeWelcomeWithOverrides(name?: string, siteUrl?: str
         body:       emailT('subscribeWelcome', locale, 'body')       || "You're now part of our creative community. Here's what you can look forward to:",
         highlights: emailT('subscribeWelcome', locale, 'highlights') || '🎥 Early access to new film releases\n🎭 Casting call announcements\n🎬 Behind-the-scenes exclusives\n📢 Platform updates & news',
         noSpam:     emailT('subscribeWelcome', locale, 'noSpam')     || "We don't spam. Only meaningful updates when we have something worth sharing.",
-        buttonText: emailT('subscribeWelcome', locale, 'buttonText') || 'Explore AIM Studio →',
-        buttonUrl:  siteUrl || '',
+        buttonText: emailT('subscribeWelcome', locale, 'buttonText') || 'Create Your Free Account →',
+        buttonUrl:  siteUrl ? `${siteUrl}/register?utm_source=welcome_email` : '',
     })
     const greetName = name ? `Hey ${name}, ` : ''
     const highlightItems = f.highlights.split('\n').filter(Boolean).map(
         item => `<tr><td style="padding: 4px 0; font-size: 14px; color: ${TEXT_PRIMARY}; line-height: 1.6;">${item}</td></tr>`
     ).join('')
+    const accountCta = emailT('subscribeWelcome', locale, 'accountCta') || 'Create a free account to watch our full films, apply for casting roles, and join the community.'
     return emailWrapper(
         heading(f.heading) +
         subtext(`${greetName}${f.subtext}`) +
         paragraph(f.body) +
         `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin: 8px 0 24px; padding: 16px 20px; background-color: ${BG_DARK}; border-radius: 8px; border-left: 3px solid ${BRAND_COLOR};">${highlightItems}</table>` +
+        paragraph(accountCta) +
         paragraph(f.noSpam) +
         (f.buttonUrl ? divider() + button(f.buttonText, f.buttonUrl) : ''),
         emailT('subscribeWelcome', locale, 'subject') || 'Welcome to AIM Studio! 🎬',
@@ -693,8 +695,8 @@ export async function subscribeWelcomeBackWithOverrides(name?: string, siteUrl?:
         heading:    emailT('subscribeWelcomeBack', locale, 'heading')    || 'Welcome Back! 🎬',
         body:       emailT('subscribeWelcomeBack', locale, 'body')       || "You've re-joined our newsletter. You'll be the first to know about new projects, casting calls, behind-the-scenes content, and exclusive announcements.",
         noSpam:     emailT('subscribeWelcomeBack', locale, 'noSpam')     || "We don't spam. Only meaningful updates when we have something worth sharing.",
-        buttonText: emailT('subscribeWelcomeBack', locale, 'buttonText') || 'Visit AIM Studio',
-        buttonUrl:  siteUrl || '',
+        buttonText: emailT('subscribeWelcomeBack', locale, 'buttonText') || 'Sign In to Your Account →',
+        buttonUrl:  siteUrl ? `${siteUrl}/login?utm_source=welcome_back_email` : '',
         footer:     emailT('subscribeWelcomeBack', locale, 'footer')     || 'You received this email because you re-subscribed to updates from AIM Studio.',
     })
     const subtextStr = emailT('subscribeWelcomeBack', locale, 'subtext') || 'Great to have you with us again!'

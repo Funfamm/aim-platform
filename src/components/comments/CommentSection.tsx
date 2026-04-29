@@ -129,10 +129,10 @@ export default function CommentSection({
                     gap: '12px',
                 }}>
                     <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-                        Sign in to join the conversation
+                        Create a free account to join the conversation
                     </span>
                     <a
-                        href={`/login?redirect=/works/${projectSlug}`}
+                        href={`/register?redirect=/works/${projectSlug}&utm_source=comment_wall`}
                         style={{
                             padding: '8px 20px',
                             fontSize: '0.82rem',
@@ -144,7 +144,7 @@ export default function CommentSection({
                             transition: 'opacity 0.2s',
                         }}
                     >
-                        Sign In
+                        Create Account
                     </a>
                 </div>
             )}

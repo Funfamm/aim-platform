@@ -96,9 +96,34 @@ export default function SubscribePage() {
                                     <div style={{ padding: 'var(--space-lg) 0' }}>
                                         <div style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)' }}>✅</div>
                                         <h3 style={{ marginBottom: 'var(--space-xs)' }}>{t('subscribedTitle')}</h3>
-                                        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>
+                                        <p style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem', marginBottom: 'var(--space-lg)' }}>
                                             {t('subscribedDesc')}
                                         </p>
+
+                                        {/* Registration prompt */}
+                                        <div style={{
+                                            background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)',
+                                            borderRadius: 'var(--radius-lg)', padding: 'var(--space-lg)',
+                                            textAlign: 'center',
+                                        }}>
+                                            <div style={{ fontSize: '1.5rem', marginBottom: 'var(--space-xs)' }}>🎬</div>
+                                            <h4 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 'var(--space-xs)' }}>
+                                                {t('createAccountTitle', { defaultMessage: 'Watch Our Films Free' })}
+                                            </h4>
+                                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.82rem', lineHeight: 1.6, marginBottom: 'var(--space-md)' }}>
+                                                {t('createAccountDesc', { defaultMessage: 'Create a free account to watch full films, apply for casting roles, and join the community.' })}
+                                            </p>
+                                            <a
+                                                href={`/${locale}/register?utm_source=subscribe_page`}
+                                                className="btn btn-primary"
+                                                style={{
+                                                    display: 'inline-block', padding: '0.7rem 1.8rem',
+                                                    fontSize: '0.9rem', fontWeight: 700, textDecoration: 'none',
+                                                }}
+                                            >
+                                                {t('createAccountBtn', { defaultMessage: 'Create Your Free Account →' })}
+                                            </a>
+                                        </div>
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSubmit}>

@@ -38,6 +38,9 @@ export default function AdminSubscribersPage() {
     const [actionLoading, setActionLoading] = useState(false)
     const [toast, setToast]             = useState('')
     const [purging, setPurging]         = useState(false)
+    const [campaign, setCampaign]       = useState<{ eligible: number; lastSentAt: string | null; cooldownActive: boolean } | null>(null)
+    const [campaignLoading, setCampaignLoading] = useState(false)
+    const [campaignSending, setCampaignSending] = useState(false)
 
     const showToast = (msg: string) => {
         setToast(msg)
@@ -67,6 +70,16 @@ export default function AdminSubscribersPage() {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchData(1) }, [fetchData])
+
+    // Fetch campaign status
+    useEffect(() => {
+        setCampaignLoading(true)
+        fetch('/api/admin/subscriber-campaign')
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data) setCampaign(data) })
+            .catch(() => {})
+            .finally(() => setCampaignLoading(false))
+    }, [])
 
     // debounced search
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -171,6 +184,60 @@ export default function AdminSubscribersPage() {
         window.open(`/api/admin/subscribers?${params}`, '_blank')
     }
 
+    const sendCampaign = async () => {
+        setCampaignSending(true)
+        try {
+            // Step 1: Dry run preview
+            const previewRes = await fetch('/api/admin/subscriber-campaign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dryRun: true }),
+            })
+            const preview = await previewRes.json()
+            if (!previewRes.ok) {
+                showToast(`❌ ${preview.error || 'Campaign failed'}`)
+                setCampaignSending(false)
+                return
+            }
+            if (preview.eligible === 0) {
+                showToast('✅ All subscribers already have accounts!')
+                setCampaignSending(false)
+                return
+            }
+
+            // Step 2: Confirm
+            if (!confirm(
+                `Send conversion campaign?\n\n` +
+                `${preview.eligible} eligible subscribers will receive an email.\n` +
+                `${preview.alreadyRegistered} already have accounts (skipped).\n\n` +
+                `Sample: ${preview.sampleEmails?.join(', ') || 'none'}\n\n` +
+                `Continue?`
+            )) {
+                setCampaignSending(false)
+                return
+            }
+
+            // Step 3: Send
+            const sendRes = await fetch('/api/admin/subscriber-campaign', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dryRun: false }),
+            })
+            const result = await sendRes.json()
+            if (sendRes.ok) {
+                showToast(`📧 Campaign queued: ${result.queued} emails`)
+                // Refresh campaign status
+                const statusRes = await fetch('/api/admin/subscriber-campaign')
+                if (statusRes.ok) setCampaign(await statusRes.json())
+            } else {
+                showToast(`❌ ${result.error || 'Campaign failed'}`)
+            }
+        } catch {
+            showToast('❌ Campaign failed — network error')
+        }
+        setCampaignSending(false)
+    }
+
     const labelStyle: React.CSSProperties = {
         fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase',
         letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '4px', display: 'block',
@@ -273,6 +340,46 @@ export default function AdminSubscribersPage() {
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
                         </div>
                     ))}
+                </div>
+
+                {/* Conversion Campaign */}
+                <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)', border: '1px solid rgba(139,92,246,0.2)', background: 'rgba(139,92,246,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--space-md)' }}>
+                        <div>
+                            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
+                                📧 Subscriber → User Campaign
+                            </h3>
+                            {campaignLoading ? (
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Loading...</span>
+                            ) : campaign ? (
+                                <div style={{ display: 'flex', gap: 'var(--space-lg)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                                    <span><strong style={{ color: '#8b5cf6' }}>{campaign.eligible}</strong> eligible</span>
+                                    {campaign.lastSentAt && (
+                                        <span>Last sent: {new Date(campaign.lastSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                    )}
+                                    {campaign.cooldownActive && (
+                                        <span style={{ color: '#f59e0b', fontWeight: 600 }}>⏳ 7-day cooldown active</span>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={sendCampaign}
+                            disabled={campaignSending || (campaign?.cooldownActive ?? false) || (campaign?.eligible === 0)}
+                            style={{
+                                padding: '8px 20px', borderRadius: 'var(--radius-md)',
+                                fontSize: '0.82rem', fontWeight: 700, cursor: campaignSending ? 'not-allowed' : 'pointer',
+                                background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(139,92,246,0.08))',
+                                border: '1px solid rgba(139,92,246,0.3)',
+                                color: '#a78bfa',
+                                opacity: (campaignSending || campaign?.cooldownActive || campaign?.eligible === 0) ? 0.5 : 1,
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            {campaignSending ? '⏳ Sending...' : '🚀 Send Campaign'}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filters */}
