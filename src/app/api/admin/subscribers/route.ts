@@ -50,6 +50,33 @@ export async function GET(req: Request) {
         where.email = { in: [] }
     }
 
+    // Survey status cross-reference
+    const [surveyResponders, surveyQueuedEmails] = await Promise.all([
+        db.surveyResponse.findMany({ select: { email: true } }),
+        db.emailQueue.findMany({
+            where: { type: 'survey_campaign', status: { in: ['sent', 'processing', 'pending'] } },
+            select: { to: true },
+        }),
+    ])
+    const surveyRespondedSet = new Set((surveyResponders as { email: string | null }[]).filter(r => r.email).map(r => r.email!.toLowerCase()))
+    const surveySentSet = new Set((surveyQueuedEmails as { to: string }[]).map(r => r.to.toLowerCase()))
+    // Merge: anyone who responded was also sent
+    for (const e of surveyRespondedSet) surveySentSet.add(e)
+
+    // Survey filters
+    if (status === 'survey_sent') {
+        const sentArr = [...surveySentSet]
+        where.email = { in: sentArr.length > 0 ? sentArr : ['__none__'], mode: 'insensitive' }
+    } else if (status === 'survey_responded') {
+        const respArr = [...surveyRespondedSet]
+        where.email = { in: respArr.length > 0 ? respArr : ['__none__'], mode: 'insensitive' }
+    } else if (status === 'survey_not_sent') {
+        // All subscribers NOT in the sent set
+        const allSubsForFilter = await db.subscriber.findMany({ select: { email: true } }) as { email: string }[]
+        const notSent = allSubsForFilter.filter((s: { email: string }) => !surveySentSet.has(s.email.toLowerCase())).map((s: { email: string }) => s.email)
+        where.email = { in: notSent.length > 0 ? notSent : ['__none__'] }
+    }
+
     // Converted filter: subscribers whose email matches a registered User
     // subscriber_only: subscribers whose email does NOT match any User
     if (status === 'converted' || status === 'subscriber_only' || status === 'verified' || status === 'unverified') {
@@ -148,6 +175,7 @@ export async function GET(req: Request) {
     // Enrich each subscriber with conversion data
     const enriched = subscribers.map((s: { id: string; email: string; name: string | null; active: boolean; subscribedAt: Date }) => {
         const matchedUser = userMap.get(s.email.toLowerCase()) || null
+        const emailLower = s.email.toLowerCase()
         return {
             ...s,
             failedSends: failedMap.get(s.email) || 0,
@@ -157,6 +185,9 @@ export async function GET(req: Request) {
             convertedAt: matchedUser?.createdAt || null,
             emailVerified: matchedUser?.emailVerified ?? null,
             language: matchedUser?.preferredLanguage || (matchedUser ? 'en' : null),
+            // Survey fields
+            surveySent: surveySentSet.has(emailLower),
+            surveyResponded: surveyRespondedSet.has(emailLower),
         }
     })
 
@@ -180,7 +211,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
         subscribers: enriched,
-        stats: { total, active, inactive, failed: failedCount },
+        stats: { total, active, inactive, failed: failedCount, surveySent: surveySentSet.size, surveyResponded: surveyRespondedSet.size },
         conversion: {
             totalSubscribers: total,
             totalUsers,

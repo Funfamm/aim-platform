@@ -16,9 +16,12 @@ interface Subscriber {
     convertedAt: string | null
     emailVerified: boolean | null
     language: string | null
+    // Survey fields
+    surveySent: boolean
+    surveyResponded: boolean
 }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
-interface Stats { total: number; active: number; inactive: number; failed: number }
+interface Stats { total: number; active: number; inactive: number; failed: number; surveySent: number; surveyResponded: number }
 interface Conversion {
     totalSubscribers: number; totalUsers: number; converted: number
     conversionRate: number; subscriberOnly: number; userOnly: number
@@ -28,7 +31,7 @@ interface Conversion {
 export default function AdminSubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([])
     const [pagination, setPagination]   = useState<Pagination>({ page: 1, limit: 50, total: 0, totalPages: 0 })
-    const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0, failed: 0 })
+    const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0, failed: 0, surveySent: 0, surveyResponded: 0 })
     const [conversion, setConversion]   = useState<Conversion>({ totalSubscribers: 0, totalUsers: 0, converted: 0, conversionRate: 0, subscriberOnly: 0, userOnly: 0, overlap: 0, newConversionsThisMonth: 0 })
     const [loading, setLoading]         = useState(true)
     const [search, setSearch]           = useState('')
@@ -352,8 +355,8 @@ export default function AdminSubscribersPage() {
                     {[
                         { label: 'Converted', value: conversion.converted, color: '#8b5cf6', suffix: '', filter: 'converted' },
                         { label: 'Conversion Rate', value: conversion.conversionRate, color: '#06b6d4', suffix: '%', filter: '' },
-                        { label: 'Sub Only', value: conversion.subscriberOnly, color: '#f59e0b', suffix: '', filter: 'subscriber_only' },
-                        { label: 'New This Month', value: conversion.newConversionsThisMonth, color: '#10b981', suffix: '', filter: 'new_month' },
+                        { label: 'Survey Sent', value: stats.surveySent, color: '#3b82f6', suffix: '', filter: 'survey_sent' },
+                        { label: 'Responded', value: stats.surveyResponded, color: '#10b981', suffix: stats.surveySent > 0 ? ` (${Math.round(stats.surveyResponded / stats.surveySent * 100)}%)` : '', filter: 'survey_responded' },
                     ].map(s => (
                         <div key={s.label} className="admin-card" style={{
                             padding: 'var(--space-lg)', textAlign: 'center',
@@ -460,6 +463,11 @@ export default function AdminSubscribersPage() {
                                 <optgroup label="Health">
                                     <option value="failed">⚠️ Has Failures</option>
                                 </optgroup>
+                                <optgroup label="Survey">
+                                    <option value="survey_sent">📧 Survey Sent</option>
+                                    <option value="survey_responded">📋 Survey Responded</option>
+                                    <option value="survey_not_sent">❌ Survey Not Sent</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div>
@@ -541,7 +549,7 @@ export default function AdminSubscribersPage() {
                                             style={{ accentColor: 'var(--accent-gold)', cursor: 'pointer' }}
                                         />
                                     </th>
-                                    {['Email', 'Name', 'Status', 'Converted', 'Subscribed', 'Lang', 'Verified', 'Fails'].map(h => (
+                                    {['Email', 'Name', 'Status', 'Converted', 'Survey', 'Subscribed', 'Lang', 'Verified', 'Fails'].map(h => (
                                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -600,6 +608,30 @@ export default function AdminSubscribersPage() {
                                                 </div>
                                             ) : (
                                                 <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Subscriber only</span>
+                                            )}
+                                        </td>
+                                        {/* Survey */}
+                                        <td style={{ padding: '10px 14px' }}>
+                                            {sub.surveyResponded ? (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
+                                                    color: '#10b981',
+                                                }}>
+                                                    📋 Responded
+                                                </span>
+                                            ) : sub.surveySent ? (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
+                                                    color: '#60a5fa',
+                                                }}>
+                                                    ✉️ Sent
+                                                </span>
+                                            ) : (
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>—</span>
                                             )}
                                         </td>
                                         {/* Subscribed */}
