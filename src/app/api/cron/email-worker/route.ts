@@ -27,9 +27,9 @@ import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 import crypto from 'crypto'
 
 // ── Configuration ──────────────────────────────────────────────────────────
-const BATCH_SIZE = 4           // emails per batch (matches Graph concurrency limit)
-const BATCH_DELAY_MS = 2000    // delay between batches (matches stabilized setting)
-const MAX_PER_RUN = 20         // max emails per cron invocation (prevents timeout)
+const BATCH_SIZE = 10          // emails per batch (ACS handles concurrency well)
+const BATCH_DELAY_MS = 500     // delay between batches (ACS doesn't need 2s Graph throttle gap)
+const MAX_PER_RUN = 200        // max emails per cron invocation (drains 2k queue in ~10 runs)
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 

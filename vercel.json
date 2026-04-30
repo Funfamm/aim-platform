@@ -44,6 +44,9 @@
     },
     "src/app/api/upload/copy/route.ts": {
       "maxDuration": 60
+    },
+    "src/app/api/cron/email-worker/route.ts": {
+      "maxDuration": 60
     }
   }
 }
