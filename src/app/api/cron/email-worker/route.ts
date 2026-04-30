@@ -29,7 +29,8 @@ import crypto from 'crypto'
 // ── Configuration ──────────────────────────────────────────────────────────
 const BATCH_SIZE = 5           // emails per batch — conservative for ISP reputation
 const BATCH_DELAY_MS = 1000    // 1s between batches — gentle pacing
-const MAX_PER_RUN = 50         // max emails per cron run (~50/min → 3k/hour → safe for ACS)
+const MAX_PER_RUN = 50         // max emails per cron run (Pro plan: 60s maxDuration)
+const MAX_RUNTIME_MS = 110000  // stop claiming new batches after 110s (leave 10s buffer from 120s maxDuration)
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
@@ -95,7 +96,7 @@ export async function GET(request: Request) {
         }
 
         // ── ATOMIC CLAIM: grab + lock pending jobs in one query ────────────
-        while (processed < MAX_PER_RUN) {
+        while (processed < MAX_PER_RUN && (Date.now() - startTime) < MAX_RUNTIME_MS) {
             const claimed: Array<{
                 id: string; to: string; subject: string; html: string;
                 text: string | null; replyTo: string | null;
