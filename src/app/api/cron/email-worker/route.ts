@@ -80,7 +80,7 @@ export async function GET(request: Request) {
                         })
                     }
                 } catch (alertErr) {
-                    logger.error('email-worker', 'Failed to send stuck-jobs admin alert', alertErr)
+                    logger.error('email-worker', 'Failed to send stuck-jobs admin alert', { error: alertErr })
                 }
             }
         }
