@@ -53,7 +53,7 @@ function groupNotifications(list: Notification[]): Record<string, Notification[]
 export default function NotificationsPage() {
     const router = useRouter()
     const t = useTranslations('NotificationsPage')
-    const { markAllRead: ctxMarkAllRead, refresh: ctxRefresh } = useNotifications()
+    const { markAllRead: ctxMarkAllRead, refresh: ctxRefresh, newNotification, clearNewNotification } = useNotifications()
 
     const [prefs, setPrefs] = useState<Prefs | null>(null)
     const [notifications, setNotifications] = useState<Notification[]>([])
@@ -97,6 +97,19 @@ export default function NotificationsPage() {
             setReceiveLocalizedEmails(langData.receiveLocalizedEmails ?? true)
         }).finally(() => setLoading(false))
     }, [])
+
+    // ── Live notification injection — new messages appear instantly while on this page ──
+    useEffect(() => {
+        if (!newNotification) return
+        // Prepend the new notification to the feed (deduplicate by ID)
+        setNotifications(prev => {
+            if (prev.some(n => n.id === newNotification.id)) return prev
+            return [newNotification, ...prev]
+        })
+        setUnreadCount(prev => prev + 1)
+        clearNewNotification()
+    }, [newNotification, clearNewNotification])
+
 
 
     async function markAllRead() {
