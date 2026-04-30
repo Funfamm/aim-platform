@@ -1418,3 +1418,30 @@ export function scriptWithdrawalEmail(
         ${button(localizedButton, `${siteUrl}/scripts`)}
     `, emailT('scriptWithdrawal', locale, 'subject')?.replace('{title}', scriptTitle) || `Script Withdrawn: ${scriptTitle}`, undefined, locale)
 }
+
+// ──────────────────────────────────────────────────────────────
+// Survey Invite Email
+// ──────────────────────────────────────────────────────────────
+
+export function surveyInviteEmail(name: string | null, surveyUrl: string, locale = 'en'): string {
+    const greeting = name
+        ? (emailT('surveyInvite', locale, 'greeting') || 'Hi {name},').replace('{name}', name)
+        : (emailT('surveyInvite', locale, 'greetingGeneric') || 'Hi there,')
+    const intro = emailT('surveyInvite', locale, 'intro') || "We've been creating films and you've been with us from the start. Now we want to hear from you."
+    const question = emailT('surveyInvite', locale, 'question') || 'What kind of films do you want to see from AIM Studio?'
+    const ctaButton = emailT('surveyInvite', locale, 'ctaButton') || 'Answer in 10 Seconds'
+    const closing = emailT('surveyInvite', locale, 'closing') || 'Your answer directly influences what we produce next. No login required. Takes 10 seconds.'
+    const signature = emailT('surveyInvite', locale, 'signature') || 'The AIM Studio Team'
+    const preheader = emailT('surveyInvite', locale, 'preheader') || 'One question. Your answer guides our next production.'
+    const subject = emailT('surveyInvite', locale, 'subject') || 'You shape what AIM Studio makes next 🎬'
+
+    return emailWrapper(`
+        ${paragraph(greeting)}
+        ${paragraph(intro)}
+        ${paragraph(`<strong>${question}</strong>`)}
+        ${button(ctaButton + ' →', surveyUrl)}
+        ${paragraph(closing)}
+        ${divider()}
+        ${paragraph(`— ${signature}`)}
+    `, preheader, undefined, locale)
+}

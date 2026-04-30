@@ -1752,5 +1752,31 @@
     "securedByPaypal": "PayPal买家保护保障付款安全",
     "loadingPaypal": "正在加载PayPal...",
     "paymentSchedule": "付款计划"
+  },
+  "surveyPage": {
+    "title": "塑造我们的下一部作品",
+    "subtitle": "告诉我们您想在 AIM Studio 观看什么。您的回答将指导我们的制作方向。",
+    "question": "您想看什么类型的电影？",
+    "selectAll": "选择所有适用的选项",
+    "optional": "还有其他想看的内容吗？（可选）",
+    "submit": "提交",
+    "submitting": "提交中...",
+    "thankYouTitle": "谢谢您！",
+    "thankYouMessage": "您的声音正在塑造 AIM Studio 的下一部作品。准备好后我们会通知您。",
+    "convertTitle": "想成为第一个观看的人吗？",
+    "convertMessage": "创建免费账户，提前访问我们制作的所有内容。",
+    "convertButton": "创建免费账户",
+    "convertSkip": "以后再说",
+    "alreadyResponded": "您已经分享了您的想法。感谢您 — 敬请期待即将到来的内容。",
+    "error": "出了点问题，请重试。",
+    "categories": {
+      "action": "动作/惊悚",
+      "drama": "剧情与家庭",
+      "documentary": "纪录片",
+      "horror": "恐怖",
+      "romance": "浪漫",
+      "shorts": "短片",
+      "all": "以上全部"
+    }
   }
 }

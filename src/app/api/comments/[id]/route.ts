@@ -56,7 +56,7 @@ export async function PATCH(
         const updated = await prisma.comment.update({
             where: { id },
             data: { content: clean, editedAt: new Date() },
-            include: { user: { select: { id: true, name: true, avatar: true } } },
+            include: { user: { select: { id: true, name: true, avatar: true, accentColor: true } } },
         })
 
         return NextResponse.json({ comment: updated })

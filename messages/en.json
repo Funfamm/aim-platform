@@ -1746,5 +1746,31 @@
     "deletedComment": "This comment has been deleted",
     "removedByMod": "This comment has been removed by a moderator",
     "replyTo": "Reply to {name}..."
+  },
+  "surveyPage": {
+    "title": "Shape What We Make Next",
+    "subtitle": "Tell us what you want to watch on AIM Studio. Your answer guides what we produce.",
+    "question": "What kind of films do you want to see?",
+    "selectAll": "Select all that apply",
+    "optional": "Anything else you'd love to see? (optional)",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "thankYouTitle": "Thank you!",
+    "thankYouMessage": "Your voice is shaping what AIM Studio makes next. We'll be in touch when it's ready.",
+    "convertTitle": "Want to be the first to watch?",
+    "convertMessage": "Create a free account — it's free, and you'll get early access to everything we make.",
+    "convertButton": "Create Your Free Account",
+    "convertSkip": "Maybe later",
+    "alreadyResponded": "You've already shared your thoughts. We appreciate it — stay tuned for what's coming.",
+    "error": "Something went wrong, please try again.",
+    "categories": {
+      "action": "Action / Thriller",
+      "drama": "Drama & Family",
+      "documentary": "Documentary",
+      "horror": "Horror",
+      "romance": "Romance",
+      "shorts": "Short Films",
+      "all": "All of the above"
+    }
   }
 }

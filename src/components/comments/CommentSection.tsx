@@ -35,15 +35,25 @@ export default function CommentSection({
             if (cursor) {
                 setComments(prev => [...prev, ...data.comments])
             } else {
-                setComments(data.comments || [])
+                setComments(prev => {
+                    // Only update if something actually changed — prevents flash
+                    if (prev.length === (data.comments || []).length &&
+                        prev[0]?.id === data.comments?.[0]?.id) return prev
+                    return data.comments || []
+                })
             }
             setNextCursor(data.nextCursor)
         } catch { /* ignore */ }
     }, [projectId, episodeId])
 
     useEffect(() => {
-        const timer = setTimeout(() => fetchComments().finally(() => setLoading(false)), 0)
-        return () => clearTimeout(timer)
+        fetchComments().finally(() => setLoading(false))
+
+        const interval = setInterval(() => {
+            fetchComments()
+        }, 15000)
+
+        return () => clearInterval(interval)
     }, [fetchComments])
 
     // Deep link scroll — handle #comment-{id} hash

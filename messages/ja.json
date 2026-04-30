@@ -1753,5 +1753,31 @@
     "securedByPaypal": "PayPal購入保護による安全な支払い",
     "loadingPaypal": "PayPalを読み込み中...",
     "paymentSchedule": "支払いスケジュール"
+  },
+  "surveyPage": {
+    "title": "次の作品を一緒に決めましょう",
+    "subtitle": "AIM Studioで何を見たいか教えてください。あなたの回答が制作の方向性を決めます。",
+    "question": "どんな映画を見たいですか？",
+    "selectAll": "該当するものをすべて選択",
+    "optional": "他に見たいものはありますか？（任意）",
+    "submit": "送信",
+    "submitting": "送信中...",
+    "thankYouTitle": "ありがとうございます！",
+    "thankYouMessage": "あなたの声がAIM Studioの次回作を形作っています。準備ができたらご連絡します。",
+    "convertTitle": "最初に観たいですか？",
+    "convertMessage": "無料アカウントを作成して、すべての作品に早期アクセスしましょう。",
+    "convertButton": "無料アカウントを作成",
+    "convertSkip": "後で",
+    "alreadyResponded": "すでにご意見をいただいています。ありがとうございます — 今後の展開にご期待ください。",
+    "error": "問題が発生しました。もう一度お試しください。",
+    "categories": {
+      "action": "アクション / スリラー",
+      "drama": "ドラマ & ファミリー",
+      "documentary": "ドキュメンタリー",
+      "horror": "ホラー",
+      "romance": "ロマンス",
+      "shorts": "短編映画",
+      "all": "上記すべて"
+    }
   }
 }

@@ -100,6 +100,19 @@ export async function POST(request: Request) {
             console.log(`[DEV] Email verification code for ${email}: ${code}`)
         }
 
+        // ── Survey conversion tracking ──
+        // If the user came from survey_completion, mark their SurveyResponse
+        if (utm_source === 'survey_completion') {
+            try {
+                await prisma.surveyResponse.updateMany({
+                    where: { email },
+                    data: { converted: true },
+                })
+            } catch (convErr) {
+                console.error('[Register] survey conversion tracking failed:', convErr)
+            }
+        }
+
         return NextResponse.json({ requiresVerification: true, email })
     } catch (error) {
         console.error('Registration error:', error)

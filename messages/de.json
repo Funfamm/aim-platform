@@ -1752,5 +1752,31 @@
     "securedByPaypal": "Zahlungen gesichert durch PayPal-Käuferschutz",
     "loadingPaypal": "PayPal wird geladen...",
     "paymentSchedule": "Zahlungsplan"
+  },
+  "surveyPage": {
+    "title": "Gestalten Sie Unser Nächstes Werk",
+    "subtitle": "Sagen Sie uns, was Sie auf AIM Studio sehen möchten. Ihre Antwort bestimmt, was wir produzieren.",
+    "question": "Welche Art von Filmen möchten Sie sehen?",
+    "selectAll": "Wählen Sie alle zutreffenden aus",
+    "optional": "Gibt es noch etwas, das Sie gerne sehen würden? (optional)",
+    "submit": "Absenden",
+    "submitting": "Wird gesendet...",
+    "thankYouTitle": "Vielen Dank!",
+    "thankYouMessage": "Ihre Stimme formt, was AIM Studio als Nächstes erschafft. Wir melden uns, wenn es soweit ist.",
+    "convertTitle": "Möchten Sie der Erste sein, der zuschaut?",
+    "convertMessage": "Erstellen Sie ein kostenloses Konto und erhalten Sie frühzeitigen Zugang zu allem, was wir schaffen.",
+    "convertButton": "Kostenloses Konto Erstellen",
+    "convertSkip": "Vielleicht später",
+    "alreadyResponded": "Sie haben bereits Ihre Meinung geteilt. Wir schätzen das — bleiben Sie gespannt.",
+    "error": "Etwas ist schiefgelaufen, bitte versuchen Sie es erneut.",
+    "categories": {
+      "action": "Action / Thriller",
+      "drama": "Drama & Familie",
+      "documentary": "Dokumentarfilm",
+      "horror": "Horror",
+      "romance": "Romantik",
+      "shorts": "Kurzfilme",
+      "all": "Alles oben Genannte"
+    }
   }
 }

@@ -680,6 +680,31 @@ model EmailBounceEvent {
   @@index([occurredAt])
 }
 
+model Survey {
+  id          String           @id @default(cuid())
+  title       String
+  active      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  responses   SurveyResponse[]
+}
+
+model SurveyResponse {
+  id           String   @id @default(cuid())
+  surveyId     String
+  subscriberId String?
+  email        String?
+  selections   String[]
+  freeText     String?
+  locale       String   @default("en")
+  country      String?
+  createdAt    DateTime @default(now())
+  converted    Boolean  @default(false)
+  survey       Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+
+  @@index([surveyId])
+  @@index([email])
+}
+
 model Donation {
   id        String   @id @default(cuid())
   userId    String?
