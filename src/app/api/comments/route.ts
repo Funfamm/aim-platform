@@ -53,12 +53,12 @@ export async function GET(req: Request) {
                 { createdAt: 'desc' },
             ],
             include: {
-                user: { select: { id: true, name: true, avatar: true } },
+                user: { select: { id: true, name: true, avatar: true, accentColor: true } },
                 replies: {
                     where: { hidden: false },
                     orderBy: { createdAt: 'asc' },
                     include: {
-                        user: { select: { id: true, name: true, avatar: true } },
+                        user: { select: { id: true, name: true, avatar: true, accentColor: true } },
                         _count: { select: { likes: true } },
                         ...(userId ? {
                             likes: {
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
                 flagged,
             },
             include: {
-                user: { select: { id: true, name: true, avatar: true } },
+                user: { select: { id: true, name: true, avatar: true, accentColor: true } },
             },
         })
 

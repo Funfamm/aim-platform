@@ -87,7 +87,7 @@ export default function CommentSection({
         <div style={{
             maxWidth: '800px',
             margin: '0 auto',
-            padding: 'var(--space-2xl) var(--space-lg)',
+            padding: '16px var(--space-lg) var(--space-2xl)',
         }}>
             {/* Header */}
             <div style={{

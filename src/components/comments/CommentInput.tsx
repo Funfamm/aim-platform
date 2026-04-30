@@ -78,6 +78,13 @@ export default function CommentInput({
     }
 
     return (
+        <div style={{
+            position: 'sticky',
+            bottom: 0,
+            backgroundColor: 'var(--bg-primary, #0d0d0d)',
+            zIndex: 10,
+            paddingBottom: 'env(safe-area-inset-bottom)',
+        }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <textarea
                 ref={textareaRef}
@@ -101,7 +108,13 @@ export default function CommentInput({
                     transition: 'border-color 0.2s',
                     fontFamily: 'inherit',
                 }}
-                onFocus={e => (e.target.style.borderColor = 'rgba(212,168,83,0.4)')}
+                onFocus={e => {
+                    e.target.style.borderColor = 'rgba(212,168,83,0.4)'
+                    // Wait for mobile keyboard to open, then scroll input into view
+                    setTimeout(() => {
+                        textareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    }, 300)
+                }}
                 onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
             />
 
@@ -145,6 +158,7 @@ export default function CommentInput({
                     ✗ {error}
                 </p>
             )}
+        </div>
         </div>
     )
 }

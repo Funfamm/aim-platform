@@ -76,6 +76,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
     const [appliedCastingIds, setAppliedCastingIds] = useState<Set<string>>(new Set())
     const [lightboxImg, setLightboxImg] = useState<string | null>(null)
     const [activeSeason, setActiveSeason] = useState(1)
+    const [synopsisExpanded, setSynopsisExpanded] = useState(false)
 
     const router = useRouter()
     const colors = statusColors[project.status] || statusColors.upcoming
@@ -562,7 +563,26 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                         <div>
                             <h2 style={{ marginBottom: 'var(--space-lg)' }}>{t('synopsis')}</h2>
                             <div className="divider" />
-                            <p style={{ fontSize: '1.05rem', lineHeight: 1.8, overflowWrap: 'break-word', wordBreak: 'break-word' }}>{description}</p>
+                            <p style={{
+                                fontSize: '1.05rem', lineHeight: 1.8, overflowWrap: 'break-word', wordBreak: 'break-word',
+                                display: '-webkit-box',
+                                WebkitLineClamp: synopsisExpanded ? undefined : 3,
+                                WebkitBoxOrient: 'vertical' as const,
+                                overflow: synopsisExpanded ? 'visible' : 'hidden',
+                            }}>{description}</p>
+                            {description && description.length > 180 && (
+                                <button
+                                    onClick={() => setSynopsisExpanded(!synopsisExpanded)}
+                                    style={{
+                                        background: 'none', border: 'none',
+                                        color: 'var(--accent-gold, #c9a84c)',
+                                        fontSize: '0.85rem', padding: '4px 0',
+                                        cursor: 'pointer', fontWeight: 500,
+                                    }}
+                                >
+                                    {synopsisExpanded ? 'Show less ▲' : 'Show more ▼'}
+                                </button>
+                            )}
 
                             {/* Episodes list for series */}
                             {project.projectType === 'series' && project.episodes.length > 0 && (() => {

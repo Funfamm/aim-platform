@@ -21,6 +21,7 @@ interface CommentUser {
     id: string
     name: string
     avatar: string | null
+    accentColor?: string | null
 }
 
 export interface CommentData {
@@ -50,6 +51,13 @@ interface CommentCardProps {
     isReply?: boolean
 }
 
+// Map user accentColor names → hex for avatar rendering
+const ACCENT_COLORS: Record<string, string> = {
+    gold: '#d4a853', blue: '#60a5fa', purple: '#a78bfa',
+    green: '#34d399', red: '#f87171', orange: '#fb923c',
+    pink: '#f472b6', teal: '#2dd4bf', cyan: '#22d3ee',
+}
+
 function Avatar({ user }: { user: CommentUser }) {
     if (user.avatar) {
         return (
@@ -64,12 +72,14 @@ function Avatar({ user }: { user: CommentUser }) {
         )
     }
     const initial = user.name?.charAt(0)?.toUpperCase() || '?'
+    const hex = ACCENT_COLORS[user.accentColor || 'gold'] || ACCENT_COLORS.gold
     return (
         <div style={{
             width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
-            background: 'linear-gradient(135deg, rgba(212,168,83,0.3), rgba(212,168,83,0.1))',
+            background: `linear-gradient(135deg, ${hex}44, ${hex}22)`,
+            border: `1.5px solid ${hex}55`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '0.78rem', fontWeight: 700, color: 'var(--accent-gold)',
+            fontSize: '0.78rem', fontWeight: 700, color: hex,
         }}>
             {initial}
         </div>

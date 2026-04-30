@@ -30,11 +30,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     const markAllRead = useCallback(() => setUnreadCount(0), [])
 
-    // Poll every 60 s when logged in
+    // Poll every 15s when logged in for near-instant notification delivery
     useEffect(() => {
         if (!user) { queueMicrotask(() => setUnreadCount(0)); return }
         queueMicrotask(() => refresh())
-        const id = setInterval(refresh, 60_000)
+        const id = setInterval(refresh, 15_000)
         return () => clearInterval(id)
     }, [user, refresh])
 
