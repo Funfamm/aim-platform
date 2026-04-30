@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import AdminSidebar from '@/components/AdminSidebar'
 
 interface CategoryBreakdown {
     key: string
@@ -108,7 +109,14 @@ export default function AdminSurveyPage() {
     }
 
     if (loading) {
-        return <div style={styles.page}><p style={styles.loadingText}>Loading survey data...</p></div>
+        return (
+            <div className="admin-layout">
+                <AdminSidebar />
+                <main className="admin-main">
+                    <div style={styles.page}><p style={styles.loadingText}>Loading survey data...</p></div>
+                </main>
+            </div>
+        )
     }
 
     const ftPerPage = 20
@@ -118,6 +126,9 @@ export default function AdminSurveyPage() {
     const maxBar = Math.max(...(data?.categoryBreakdown.map(c => c.percentage) || [1]))
 
     return (
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
         <div style={styles.page}>
             <div style={styles.header}>
                 <h1 style={styles.title}>📊 Audience Survey</h1>
@@ -258,6 +269,8 @@ export default function AdminSurveyPage() {
                     {sendResult && <p style={styles.sendResult}>{sendResult}</p>}
                 </div>
             </div>
+        </div>
+            </main>
         </div>
     )
 }
