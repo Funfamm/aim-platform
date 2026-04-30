@@ -51,6 +51,19 @@ export async function GET(request: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
 
+        // ── STALE CLAIM RECOVERY ────────────────────────────────────────────
+        // Reset emails stuck in 'processing' for >3 minutes (crashed worker)
+        const staleReset: Array<{ id: string }> = await prisma.$queryRawUnsafe(`
+            UPDATE "EmailQueue"
+            SET status = 'pending', "updatedAt" = NOW()
+            WHERE status = 'processing'
+              AND "updatedAt" < NOW() - INTERVAL '3 minutes'
+            RETURNING id
+        `)
+        if (staleReset.length > 0) {
+            logger.warn('email-worker', `Recovered ${staleReset.length} stale 'processing' jobs`)
+        }
+
         // ── ATOMIC CLAIM: grab + lock pending jobs in one query ────────────
         // Raw SQL ensures SELECT + UPDATE is atomic — no race conditions
         while (processed < MAX_PER_RUN) {
