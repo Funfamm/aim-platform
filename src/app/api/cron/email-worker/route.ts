@@ -72,7 +72,7 @@ export async function GET(request: Request) {
                 try {
                     const adminEmail = process.env.ADMIN_EMAIL
                     if (adminEmail) {
-                        const { sendTransactionalEmail } = await import('@/lib/email')
+                        const { sendTransactionalEmail } = await import('@/lib/email-router')
                         await sendTransactionalEmail({
                             to: adminEmail,
                             subject: `⚠️ AIM Studio: ${staleReset.length} stuck email jobs recovered`,
