@@ -296,7 +296,7 @@ export default function AdminSurveyPage() {
                     <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#10b981', marginBottom: 4 }}>
                         🔄 Campaign in progress — {data.delivery!.pending + data.delivery!.processing} remaining
                     </div>
-                    <button onClick={() => document.querySelector('.admin-main')?.scrollTo({ top: 0, behavior: 'smooth' })} className="btn btn-ghost" style={{ fontSize: '0.78rem', marginTop: 6 }}>View Progress ↑</button>
+                    <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="btn btn-ghost" style={{ fontSize: '0.78rem', marginTop: 6 }}>View Progress ↑</button>
                 </div>
             ) : (
             <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 24, border: '1px solid rgba(212,168,83,0.15)' }}>
