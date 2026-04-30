@@ -46,7 +46,7 @@ export default function CommentSection({
         } catch { /* ignore */ }
     }, [projectId, episodeId])
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         fetchComments().finally(() => setLoading(false))
 
@@ -56,6 +56,7 @@ export default function CommentSection({
 
         return () => clearInterval(interval)
     }, [fetchComments])
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     // Deep link scroll — handle #comment-{id} hash
     useEffect(() => {
