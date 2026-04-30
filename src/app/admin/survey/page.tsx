@@ -26,6 +26,24 @@ interface RecentResponse {
     flagged: boolean
 }
 
+interface DeliveryLogEntry {
+    to: string
+    success: boolean
+    transport: string | null
+    sentAt: string | null
+    error: string | null
+}
+
+interface DeliveryStats {
+    total: number
+    sent: number
+    pending: number
+    processing: number
+    failed: number
+    cancelled: number
+    log: DeliveryLogEntry[]
+}
+
 interface SurveyData {
     totalResponses: number
     responsesLast24h: number
@@ -38,6 +56,7 @@ interface SurveyData {
     recentResponses: RecentResponse[]
     recentTotal: number
     surveyId: string | null
+    delivery?: DeliveryStats
 }
 
 function countryFlag(code: string | null): string {
@@ -118,6 +137,18 @@ export default function AdminSurveyPage() {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchData() }, [fetchData])
+
+    // Auto-poll delivery stats every 10s when campaign is active
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    useEffect(() => {
+        const d = data?.delivery
+        if (!d || d.total === 0) return
+        const isActive = d.pending > 0 || d.processing > 0
+        if (!isActive) return
+
+        const interval = setInterval(() => { fetchData(rrPage) }, 10000)
+        return () => clearInterval(interval)
+    }, [data?.delivery, fetchData, rrPage])
 
     const handleFtFilterChange = (filter: 'all' | 'flagged' | 'clean') => {
         setFtFilter(filter)
@@ -529,6 +560,68 @@ export default function AdminSurveyPage() {
                             </p>
                         )}
                     </div>
+
+                    {/* ── Campaign Delivery Tracker ── */}
+                    {data?.delivery && data.delivery.total > 0 && (
+                        <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
+                            <h2 style={{ ...styles.sectionTitle, margin: '0 0 16px' }}>
+                                📡 Campaign Delivery
+                                {(data.delivery.pending > 0 || data.delivery.processing > 0) && (
+                                    <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 500, marginLeft: 8, animation: 'pulse 2s infinite' }}>● LIVE</span>
+                                )}
+                            </h2>
+
+                            {/* Progress bar */}
+                            <div style={{ marginBottom: 16 }}>
+                                <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.04)' }}>
+                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.sent / data.delivery.total) * 100 : 0}%`, background: '#10b981', transition: 'width 0.5s ease' }} />
+                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.processing / data.delivery.total) * 100 : 0}%`, background: '#c9a84c', transition: 'width 0.5s ease' }} />
+                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.failed / data.delivery.total) * 100 : 0}%`, background: '#ef4444', transition: 'width 0.5s ease' }} />
+                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.cancelled / data.delivery.total) * 100 : 0}%`, background: '#6b7280', transition: 'width 0.5s ease' }} />
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 6, textAlign: 'center' }}>
+                                    {data.delivery.sent} of {data.delivery.total} delivered ({data.delivery.total > 0 ? Math.round((data.delivery.sent / data.delivery.total) * 100) : 0}%)
+                                </div>
+                            </div>
+
+                            {/* Status cards */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20 }}>
+                                {[
+                                    { label: 'Sent', value: data.delivery.sent, color: '#10b981' },
+                                    { label: 'Processing', value: data.delivery.processing, color: '#c9a84c' },
+                                    { label: 'Pending', value: data.delivery.pending, color: '#3b82f6' },
+                                    { label: 'Failed', value: data.delivery.failed, color: '#ef4444' },
+                                    { label: 'Suppressed', value: data.delivery.cancelled, color: '#6b7280' },
+                                ].map(s => (
+                                    <div key={s.label} style={{ textAlign: 'center', padding: '10px 4px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)' }}>
+                                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: s.color }}>{s.value}</div>
+                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{s.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* Recent delivery log */}
+                            {data.delivery.log.length > 0 && (
+                                <div>
+                                    <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Recent Activity</h3>
+                                    <div style={{ maxHeight: 200, overflowY: 'auto', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                                            <tbody>
+                                                {data.delivery.log.map((entry, i) => (
+                                                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                        <td style={{ padding: '6px 12px', width: 24 }}>{entry.success ? '✅' : '❌'}</td>
+                                                        <td style={{ padding: '6px 8px', color: 'var(--text-primary)' }}>{entry.to}</td>
+                                                        <td style={{ padding: '6px 8px', color: 'var(--text-tertiary)' }}>{entry.transport || '—'}</td>
+                                                        <td style={{ padding: '6px 8px', color: 'var(--text-tertiary)', textAlign: 'right' }}>{entry.sentAt ? timeAgo(entry.sentAt) : '—'}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </main>
         </div>

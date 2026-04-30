@@ -124,6 +124,24 @@ export async function GET(req: Request) {
             flagged: r.flagged,
         }))
 
+        // ── Campaign delivery stats (live pipeline visibility) ──
+        const [deliverySent, deliveryPending, deliveryProcessing, deliveryFailed, deliveryCancelled] = await Promise.all([
+            prisma.emailQueue.count({ where: { type: 'survey_campaign', status: 'sent' } }),
+            prisma.emailQueue.count({ where: { type: 'survey_campaign', status: 'pending' } }),
+            prisma.emailQueue.count({ where: { type: 'survey_campaign', status: 'processing' } }),
+            prisma.emailQueue.count({ where: { type: 'survey_campaign', status: 'failed' } }),
+            prisma.emailQueue.count({ where: { type: 'survey_campaign', status: 'cancelled' } }),
+        ])
+        const deliveryTotal = deliverySent + deliveryPending + deliveryProcessing + deliveryFailed + deliveryCancelled
+
+        // Recent delivery log (last 10)
+        const deliveryLog = await prisma.emailLog.findMany({
+            where: { type: 'survey_campaign' },
+            orderBy: { sentAt: 'desc' },
+            take: 10,
+            select: { to: true, success: true, transport: true, sentAt: true, error: true },
+        })
+
         return NextResponse.json({
             totalResponses,
             responsesLast24h,
@@ -136,6 +154,21 @@ export async function GET(req: Request) {
             recentResponses,
             recentTotal,
             surveyId: survey.id,
+            delivery: {
+                total: deliveryTotal,
+                sent: deliverySent,
+                pending: deliveryPending,
+                processing: deliveryProcessing,
+                failed: deliveryFailed,
+                cancelled: deliveryCancelled,
+                log: deliveryLog.map(l => ({
+                    to: maskEmail(l.to),
+                    success: l.success,
+                    transport: l.transport,
+                    sentAt: l.sentAt?.toISOString() || null,
+                    error: l.error ? l.error.slice(0, 120) : null,
+                })),
+            },
         })
     } catch (error) {
         console.error('[Admin Survey] Error:', error)

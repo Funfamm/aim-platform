@@ -2,32 +2,34 @@ const { PrismaClient } = require('@prisma/client')
 const p = new PrismaClient()
 
 async function main() {
-    // Check ALL survey_campaign email logs — not just campaign@system
-    const allLogs = await p.emailLog.findMany({
+    // Queue status for survey_campaign
+    const queueStatus = await p.$queryRawUnsafe(
+        `SELECT status, COUNT(*)::int as count FROM "EmailQueue" WHERE type = 'survey_campaign' GROUP BY status ORDER BY count DESC`
+    )
+    console.log('EmailQueue (survey_campaign) by status:', JSON.stringify(queueStatus))
+
+    // EmailLog entries for survey_campaign
+    const logCount = await p.emailLog.count({ where: { type: 'survey_campaign' } })
+    const successCount = await p.emailLog.count({ where: { type: 'survey_campaign', success: true } })
+    const failCount = await p.emailLog.count({ where: { type: 'survey_campaign', success: false } })
+    console.log(`\nEmailLog (survey_campaign): ${logCount} total, ${successCount} success, ${failCount} failed`)
+
+    // Show last 10 sent
+    const recent = await p.emailLog.findMany({
         where: { type: 'survey_campaign' },
         orderBy: { sentAt: 'desc' },
+        take: 10,
+        select: { to: true, success: true, transport: true, sentAt: true, error: true },
     })
-    console.log(`Total survey_campaign EmailLog entries: ${allLogs.length}`)
-    for (const log of allLogs) {
-        console.log(`  to=${log.to}, success=${log.success}, sentAt=${log.sentAt?.toISOString()}, transport=${log.transport}`)
+    console.log('\nLast 10 entries:')
+    for (const r of recent) {
+        console.log(`  ${r.sentAt?.toISOString()} | ${r.to} | ${r.success ? '✅' : '❌'} | ${r.transport} ${r.error ? '| ' + r.error.slice(0, 80) : ''}`)
     }
 
-    // The cooldown check in the send API looks for:
-    // type: 'survey_campaign', success: true, sentAt >= 30 days ago
-    const recentCampaign = await p.emailLog.findFirst({
-        where: {
-            type: 'survey_campaign',
-            sentAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-            success: true,
-        },
-        orderBy: { sentAt: 'desc' },
-    })
-    console.log('\nCooldown-triggering entry:', recentCampaign ? JSON.stringify({
-        id: recentCampaign.id,
-        to: recentCampaign.to,
-        sentAt: recentCampaign.sentAt,
-        subject: recentCampaign.subject,
-    }) : 'NONE')
+    // Pending in queue
+    const pending = await p.emailQueue.count({ where: { type: 'survey_campaign', status: 'pending' } })
+    const processing = await p.emailQueue.count({ where: { type: 'survey_campaign', status: 'processing' } })
+    console.log(`\nQueue: ${pending} pending, ${processing} processing`)
 
     await p.$disconnect()
 }
