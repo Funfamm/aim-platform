@@ -50,6 +50,7 @@ export async function POST(req: Request) {
         const recentCampaign = await prisma.emailLog.findFirst({
             where: {
                 type: 'survey_campaign',
+                to: 'campaign@system',  // only match actual campaign sends, not test previews
                 sentAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
                 success: true,
             },
