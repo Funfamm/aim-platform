@@ -51,34 +51,63 @@ export async function GET(request: Request) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
 
-        // ── STALE CLAIM RECOVERY ────────────────────────────────────────────
-        // Reset emails stuck in 'processing' for >3 minutes (crashed worker)
+        // ── STEP 0: STALE CLAIM RECOVERY ────────────────────────────────────
+        // Reset jobs stuck in 'processing' for >5 minutes (worker timeout/crash)
         const staleReset: Array<{ id: string }> = await prisma.$queryRawUnsafe(`
             UPDATE "EmailQueue"
-            SET status = 'pending', "updatedAt" = NOW()
+            SET status = 'pending', "claimedAt" = NULL, "updatedAt" = NOW(),
+                attempts = COALESCE(attempts, 0) + 1
             WHERE status = 'processing'
-              AND "updatedAt" < NOW() - INTERVAL '3 minutes'
+              AND (
+                ("claimedAt" IS NOT NULL AND "claimedAt" < NOW() - INTERVAL '5 minutes')
+                OR ("claimedAt" IS NULL AND "updatedAt" < NOW() - INTERVAL '5 minutes')
+              )
             RETURNING id
         `)
         if (staleReset.length > 0) {
             logger.warn('email-worker', `Recovered ${staleReset.length} stale 'processing' jobs`)
+
+            // Admin alert when >10 jobs are stuck (sign of systemic issue)
+            if (staleReset.length > 10) {
+                try {
+                    const adminEmail = process.env.ADMIN_EMAIL
+                    if (adminEmail) {
+                        const { sendTransactionalEmail } = await import('@/lib/email')
+                        await sendTransactionalEmail({
+                            to: adminEmail,
+                            subject: `⚠️ AIM Studio: ${staleReset.length} stuck email jobs recovered`,
+                            html: `<p>${staleReset.length} email jobs were stuck in 'processing' and have been reset.</p><p>This may indicate a worker timeout issue. Check Vercel function logs.</p><p>Time: ${new Date().toISOString()}</p>`,
+                        })
+                    }
+                } catch (alertErr) {
+                    logger.error('email-worker', 'Failed to send stuck-jobs admin alert', alertErr)
+                }
+            }
+        }
+
+        // ── Mark exhausted jobs as permanently failed ──
+        const exhausted = await prisma.emailQueue.updateMany({
+            where: { status: 'pending', attempts: { gte: 3 } },
+            data: { status: 'failed', error: 'Max attempts exceeded after repeated worker timeouts' },
+        })
+        if (exhausted.count > 0) {
+            logger.warn('email-worker', `Marked ${exhausted.count} jobs as failed (max attempts exceeded)`)
         }
 
         // ── ATOMIC CLAIM: grab + lock pending jobs in one query ────────────
-        // Raw SQL ensures SELECT + UPDATE is atomic — no race conditions
         while (processed < MAX_PER_RUN) {
-            // Claim a batch atomically using UPDATE ... FROM (SELECT ... FOR UPDATE SKIP LOCKED)
             const claimed: Array<{
                 id: string; to: string; subject: string; html: string;
                 text: string | null; replyTo: string | null;
                 attempts: number; maxAttempts: number; type: string;
             }> = await prisma.$queryRawUnsafe(`
                 UPDATE "EmailQueue"
-                SET "status" = 'processing', "updatedAt" = NOW()
+                SET "status" = 'processing', "claimedAt" = NOW(), "updatedAt" = NOW()
                 WHERE "id" IN (
                     SELECT "id" FROM "EmailQueue"
                     WHERE "status" = 'pending'
                       AND "nextRunAt" <= NOW()
+                      AND "attempts" < 3
                     ORDER BY "priority" ASC, "nextRunAt" ASC
                     LIMIT ${BATCH_SIZE}
                     FOR UPDATE SKIP LOCKED
