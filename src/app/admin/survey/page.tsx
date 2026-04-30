@@ -1,733 +1,317 @@
 'use client'
-
 import { useState, useEffect, useCallback, useRef } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
-
-interface CategoryBreakdown {
-    key: string
-    label: string
-    count: number
-    percentage: number
-}
-
-interface FreeTextItem {
-    id: string
-    text: string
-    createdAt: string
-    country: string | null
-    flagged: boolean
-}
-
-interface RecentResponse {
-    email: string | null
-    selections: string[]
-    country: string | null
-    createdAt: string
-    flagged: boolean
-}
-
-interface DeliveryLogEntry {
-    to: string
-    success: boolean
-    transport: string | null
-    sentAt: string | null
-    error: string | null
-}
-
-interface DeliveryStats {
-    total: number
-    sent: number
-    pending: number
-    processing: number
-    failed: number
-    cancelled: number
-    log: DeliveryLogEntry[]
-}
-
-interface SurveyData {
-    totalResponses: number
-    responsesLast24h: number
-    conversionRate: number
-    convertedCount: number
-    categoryBreakdown: CategoryBreakdown[]
-    freeTextResponses: FreeTextItem[]
-    freeTextTotal: number
-    freeTextFlaggedCount: number
-    recentResponses: RecentResponse[]
-    recentTotal: number
-    surveyId: string | null
-    delivery?: DeliveryStats
-}
-
-function countryFlag(code: string | null): string {
-    if (!code || code.length !== 2) return '🌍'
-    const offset = 0x1F1E6
-    return String.fromCodePoint(
-        code.charCodeAt(0) - 65 + offset,
-        code.charCodeAt(1) - 65 + offset
-    )
-}
-
-function timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime()
-    const mins = Math.floor(diff / 60000)
-    if (mins < 60) return `${mins}m ago`
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours}h ago`
-    const days = Math.floor(hours / 24)
-    return `${days}d ago`
-}
+import { SurveyData, FreeTextItem, timeAgo, countryFlag } from './types'
+import { MetricCards, CategoryBreakdownChart, ConversionFunnel, GenreConversion, GeographicStats, ResponseTimeline, PeakHoursChart, ModerationSummary, DeliveryTracker } from './sections'
 
 export default function AdminSurveyPage() {
     const [data, setData] = useState<SurveyData | null>(null)
     const [loading, setLoading] = useState(true)
+    const [refreshing, setRefreshing] = useState(false)
 
-    // Free text pagination + filter
     const [ftPage, setFtPage] = useState(1)
-    const [ftFilter, setFtFilter] = useState<'all' | 'flagged' | 'clean'>('all')
+    const [ftFilter, setFtFilter] = useState<'all' | 'flagged' | 'clean' | 'converted'>('all')
     const [ftItems, setFtItems] = useState<FreeTextItem[]>([])
     const [ftTotal, setFtTotal] = useState(0)
     const [ftFlaggedCount, setFtFlaggedCount] = useState(0)
+    const [ftConvertedCount, setFtConvertedCount] = useState(0)
     const [ftLoading, setFtLoading] = useState(false)
-
-    // Recent responses pagination
     const [rrPage, setRrPage] = useState(1)
 
-    // Send state
     const [sending, setSending] = useState(false)
     const [sendProgress, setSendProgress] = useState<{ queued: number; total: number } | null>(null)
     const [sendResult, setSendResult] = useState<string | null>(null)
     const [testEmail, setTestEmail] = useState('')
-
     const abortRef = useRef<AbortController | null>(null)
+    const ftRef = useRef<HTMLDivElement | null>(null)
 
     const fetchData = useCallback(async (rrP = 1) => {
         try {
-            const params = new URLSearchParams({ rrPage: String(rrP) })
-            const res = await fetch(`/api/admin/survey?${params}`)
+            const res = await fetch(`/api/admin/survey?rrPage=${rrP}`)
             if (res.ok) {
                 const json = await res.json()
+                if (json.empty) { setData(null); return }
                 setData(json)
                 setFtItems(json.freeTextResponses)
                 setFtTotal(json.freeTextTotal)
                 setFtFlaggedCount(json.freeTextFlaggedCount)
+                setFtConvertedCount(json.freeTextConvertedCount || 0)
             }
-        } catch { /* ignore */ }
-        finally { setLoading(false) }
+        } catch { /* */ }
+        finally { setLoading(false); setRefreshing(false) }
     }, [])
 
     const fetchFreeText = useCallback(async (page: number, filter: string) => {
         setFtLoading(true)
         try {
-            const params = new URLSearchParams({ ftPage: String(page), ftFilter: filter })
-            const res = await fetch(`/api/admin/survey?${params}`)
+            const res = await fetch(`/api/admin/survey?ftPage=${page}&ftFilter=${filter}`)
             if (res.ok) {
                 const json = await res.json()
-                if (page === 1) {
-                    setFtItems(json.freeTextResponses)
-                } else {
-                    setFtItems(prev => [...prev, ...json.freeTextResponses])
-                }
+                if (page === 1) setFtItems(json.freeTextResponses)
+                else setFtItems(prev => [...prev, ...json.freeTextResponses])
                 setFtTotal(json.freeTextTotal)
                 setFtFlaggedCount(json.freeTextFlaggedCount)
+                setFtConvertedCount(json.freeTextConvertedCount || 0)
             }
-        } catch { /* ignore */ }
+        } catch { /* */ }
         finally { setFtLoading(false) }
     }, [])
 
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchData() }, [fetchData])
 
-    // Auto-poll delivery stats every 10s when campaign is active
+    // Auto-refresh every 60s + delivery poll every 10s when active
+    useEffect(() => {
+        const interval = setInterval(() => { fetchData(rrPage) }, 60000)
+        return () => clearInterval(interval)
+    }, [fetchData, rrPage])
+
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         const d = data?.delivery
         if (!d || d.total === 0) return
-        const isActive = d.pending > 0 || d.processing > 0
-        if (!isActive) return
-
+        if (d.pending <= 0 && d.processing <= 0) return
         const interval = setInterval(() => { fetchData(rrPage) }, 10000)
         return () => clearInterval(interval)
     }, [data?.delivery, fetchData, rrPage])
 
-    const handleFtFilterChange = (filter: 'all' | 'flagged' | 'clean') => {
-        setFtFilter(filter)
-        setFtPage(1)
-        fetchFreeText(1, filter)
-    }
+    const handleRefresh = () => { setRefreshing(true); fetchData(rrPage) }
+    const handleFtFilter = (f: 'all' | 'flagged' | 'clean' | 'converted') => { setFtFilter(f); setFtPage(1); fetchFreeText(1, f) }
+    const handleLoadMoreFt = () => { const n = ftPage + 1; setFtPage(n); fetchFreeText(n, ftFilter) }
+    const handleRrPage = (p: number) => { setRrPage(p); fetchData(p) }
 
-    const handleLoadMoreFt = () => {
-        const next = ftPage + 1
-        setFtPage(next)
-        fetchFreeText(next, ftFilter)
+    const handleDeleteFt = async (id: string) => {
+        const res = await fetch('/api/admin/survey', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) })
+        if (res.ok) { setFtItems(p => p.filter(i => i.id !== id)); setFtTotal(p => p - 1) }
     }
-
-    const handleRrPageChange = (page: number) => {
-        setRrPage(page)
-        fetchData(page)
-    }
-
-    // ── Delete flagged free text ──
-    const handleDeleteFreeText = async (id: string) => {
-        try {
-            const res = await fetch('/api/admin/survey', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
-            })
-            if (res.ok) {
-                setFtItems(prev => prev.filter(item => item.id !== id))
-                setFtTotal(prev => prev - 1)
-            }
-        } catch { /* ignore */ }
-    }
-
-    // ── Toggle flag ──
     const handleToggleFlag = async (id: string, flagged: boolean) => {
-        try {
-            const res = await fetch('/api/admin/survey', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id, flagged }),
-            })
-            if (res.ok) {
-                setFtItems(prev => prev.map(item => item.id === id ? { ...item, flagged } : item))
-                setFtFlaggedCount(prev => flagged ? prev + 1 : prev - 1)
-            }
-        } catch { /* ignore */ }
-    }
-
-    // ── Send survey with SSE progress ──
-    const handleSendSurvey = async (test?: boolean) => {
-        setSending(true)
-        setSendResult(null)
-        setSendProgress(null)
-
-        try {
-            if (test && testEmail) {
-                const res = await fetch('/api/admin/survey/send', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ testEmail }),
-                })
-                const json = await res.json()
-                setSendResult(res.ok ? `✅ Test email queued to ${testEmail}` : `❌ ${json.error}`)
-                setSending(false)
-                return
-            }
-
-            // Full send — use SSE
-            const abort = new AbortController()
-            abortRef.current = abort
-
-            const res = await fetch('/api/admin/survey/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({}),
-                signal: abort.signal,
-            })
-
-            if (!res.ok) {
-                const json = await res.json().catch(() => ({ error: 'Send failed' }))
-                setSendResult(`❌ ${json.error}${json.lastSentAt ? ` (last sent: ${new Date(json.lastSentAt).toLocaleDateString()})` : ''}`)
-                setSending(false)
-                return
-            }
-
-            const reader = res.body?.getReader()
-            const decoder = new TextDecoder()
-            if (!reader) {
-                setSendResult('❌ No response stream')
-                setSending(false)
-                return
-            }
-
-            let buffer = ''
-            while (true) {
-                const { done, value } = await reader.read()
-                if (done) break
-                buffer += decoder.decode(value, { stream: true })
-
-                const lines = buffer.split('\n')
-                buffer = lines.pop() || ''
-
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        try {
-                            const event = JSON.parse(line.slice(6))
-                            if (event.type === 'progress') {
-                                setSendProgress({ queued: event.queued, total: event.total })
-                            } else if (event.type === 'done') {
-                                setSendResult(`✅ Survey sent to ${event.queued} subscribers`)
-                                setSendProgress(null)
-                                fetchData()
-                            } else if (event.type === 'error') {
-                                setSendResult(`❌ Error after ${event.queued} queued: ${event.error}`)
-                                setSendProgress(null)
-                            }
-                        } catch { /* ignore parse errors */ }
-                    }
-                }
-            }
-        } catch (err) {
-            if (err instanceof Error && err.name !== 'AbortError') {
-                setSendResult('❌ Network error')
-            }
-        } finally {
-            setSending(false)
-            abortRef.current = null
+        const res = await fetch('/api/admin/survey', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, flagged }) })
+        if (res.ok) {
+            setFtItems(p => p.map(i => i.id === id ? { ...i, flagged } : i))
+            setFtFlaggedCount(p => flagged ? p + 1 : p - 1)
         }
     }
 
-    const handleExport = () => {
-        window.open('/api/admin/survey/export', '_blank')
+    const handleSend = async (test?: boolean) => {
+        setSending(true); setSendResult(null); setSendProgress(null)
+        try {
+            if (test && testEmail) {
+                const res = await fetch('/api/admin/survey/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ testEmail }) })
+                const json = await res.json()
+                setSendResult(res.ok ? `✅ Test email queued to ${testEmail}` : `❌ ${json.error}`)
+                setSending(false); return
+            }
+            const abort = new AbortController(); abortRef.current = abort
+            const res = await fetch('/api/admin/survey/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}), signal: abort.signal })
+            if (!res.ok) {
+                const json = await res.json().catch(() => ({ error: 'Send failed' }))
+                setSendResult(`❌ ${json.error}${json.lastSentAt ? ` (last sent: ${new Date(json.lastSentAt).toLocaleDateString()})` : ''}`)
+                setSending(false); return
+            }
+            const reader = res.body?.getReader(); const decoder = new TextDecoder()
+            if (!reader) { setSendResult('❌ No stream'); setSending(false); return }
+            let buffer = ''
+            while (true) {
+                const { done, value } = await reader.read(); if (done) break
+                buffer += decoder.decode(value, { stream: true })
+                const lines = buffer.split('\n'); buffer = lines.pop() || ''
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const ev = JSON.parse(line.slice(6))
+                            if (ev.type === 'progress') setSendProgress({ queued: ev.queued, total: ev.total })
+                            else if (ev.type === 'done') { setSendResult(`✅ Survey sent to ${ev.queued} subscribers`); setSendProgress(null); fetchData() }
+                            else if (ev.type === 'error') { setSendResult(`❌ Error: ${ev.error}`); setSendProgress(null) }
+                        } catch { /* */ }
+                    }
+                }
+            }
+        } catch (err) { if (err instanceof Error && err.name !== 'AbortError') setSendResult('❌ Network error') }
+        finally { setSending(false); abortRef.current = null }
     }
 
-    if (loading) {
-        return (
-            <div className="admin-layout">
-                <AdminSidebar />
-                <main className="admin-main">
-                    <div style={styles.page}>
-                        <div className="loading-spinner" style={{ margin: '60px auto', width: 28, height: 28 }} />
-                    </div>
-                </main>
-            </div>
-        )
-    }
+    if (loading) return (
+        <div className="admin-layout"><AdminSidebar /><main className="admin-main">
+            <div style={{ padding: '24px 32px' }}><div className="loading-spinner" style={{ margin: '60px auto', width: 28, height: 28 }} /></div>
+        </main></div>
+    )
+
+    if (!data) return (
+        <div className="admin-layout"><AdminSidebar /><main className="admin-main">
+            <div style={{ padding: '24px 32px' }}><p style={{ color: 'var(--text-secondary)' }}>No active survey found.</p></div>
+        </main></div>
+    )
 
     const rrPerPage = 50
-    const rrTotalPages = Math.ceil((data?.recentTotal ?? 0) / rrPerPage)
-    const maxBar = Math.max(...(data?.categoryBreakdown.map(c => c.percentage) || [1]))
+    const rrTotalPages = Math.ceil((data.recentTotal ?? 0) / rrPerPage)
     const ftHasMore = ftItems.length < ftTotal
+    const ftCleanCount = ftTotal - ftFlaggedCount
 
     return (
-        <div className="admin-layout">
-            <AdminSidebar />
-            <main className="admin-main">
-                <div style={styles.page}>
-                    {/* ── Header ── */}
-                    <div className="admin-header">
-                        <h1 className="admin-page-title">📊 Audience Survey</h1>
-                        <button onClick={handleExport} className="btn btn-ghost" style={{ fontSize: '0.82rem' }}>
-                            ⬇️ Export CSV
-                        </button>
-                    </div>
+        <div className="admin-layout"><AdminSidebar /><main className="admin-main"><div style={{ padding: '24px 32px', maxWidth: 1100 }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <h1 className="admin-page-title" style={{ margin: 0 }}>📊 Audience Survey</h1>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={handleRefresh} className="btn btn-ghost" style={{ fontSize: '0.82rem' }}>
+                        {refreshing ? '⏳' : '🔄'} Refresh
+                    </button>
+                    <button onClick={() => window.open('/api/admin/survey/export', '_blank')} className="btn btn-ghost" style={{ fontSize: '0.82rem' }}>⬇️ Export CSV</button>
+                </div>
+            </div>
 
-                    {/* ── Metric Cards ── */}
-                    <div style={styles.metricsRow}>
-                        {[
-                            { value: data?.totalResponses ?? 0, label: 'Total Responses', color: '#d4a853' },
-                            { value: data?.responsesLast24h ?? 0, label: 'Last 24 Hours', color: '#10b981' },
-                            { value: `${data?.convertedCount ?? 0}`, label: 'Converted to Users', color: '#8b5cf6', suffix: ` (${data?.conversionRate ?? 0}%)` },
-                        ].map(m => (
-                            <div key={m.label} className="admin-card" style={{ padding: '20px 24px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '2rem', fontWeight: 800, color: m.color }}>
-                                    {m.value}
-                                    {m.suffix && <span style={{ fontSize: '0.9rem', fontWeight: 500, color: 'var(--text-secondary)' }}>{m.suffix}</span>}
+            {/* S1: Metrics */}
+            <MetricCards d={data} />
+            {/* S2: Categories */}
+            <CategoryBreakdownChart d={data} />
+            {/* S3: Funnel */}
+            <ConversionFunnel d={data} />
+            {/* S4: Genre Conversion */}
+            <GenreConversion d={data} />
+            {/* S5: Geographic */}
+            <GeographicStats d={data} />
+            {/* S6: Timeline */}
+            <ResponseTimeline d={data} />
+            {/* S7: Peak Hours */}
+            <PeakHoursChart d={data} />
+
+            {/* S10: Moderation */}
+            <ModerationSummary d={data} onFilter={() => { handleFtFilter('flagged'); ftRef.current?.scrollIntoView({ behavior: 'smooth' }) }} />
+
+            {/* S8: Open Responses */}
+            <div ref={ftRef} className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 24 }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 12px', color: 'var(--text-primary)' }}>💬 Open Responses</h2>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+                    {([
+                        ['all', `All (${ftTotal})`],
+                        ['clean', `Clean (${ftCleanCount})`],
+                        ['flagged', `Flagged 🚩 (${ftFlaggedCount})`],
+                        ['converted', `Converted ✅ (${ftConvertedCount})`],
+                    ] as const).map(([key, label]) => (
+                        <button key={key} onClick={() => handleFtFilter(key)} style={{
+                            padding: '5px 14px', borderRadius: 20, fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                            background: ftFilter === key ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)',
+                            border: `1px solid ${ftFilter === key ? 'rgba(201,168,76,0.4)' : 'var(--border-subtle)'}`,
+                            color: ftFilter === key ? '#d4a853' : 'var(--text-secondary)',
+                        }}>{label}</button>
+                    ))}
+                </div>
+                {ftItems.length === 0 ? (
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', textAlign: 'center', padding: 20 }}>No responses in this filter.</p>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {ftItems.map(item => (
+                            <div key={item.id} style={{
+                                padding: '10px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.02)',
+                                borderLeft: `3px solid ${item.flagged ? '#f59e0b' : item.converted ? '#10b981' : 'transparent'}`,
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                            }}>
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', margin: '0 0 4px', lineHeight: 1.4 }}>
+                                        &ldquo;{item.text}&rdquo;
+                                    </p>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', display: 'flex', gap: 8, alignItems: 'center' }}>
+                                        {item.country && <span>{countryFlag(item.country)} {item.country}</span>}
+                                        <span>{timeAgo(item.createdAt)}</span>
+                                        {item.flagged && <span style={{ color: '#f59e0b' }}>🚩 Flagged</span>}
+                                        {item.converted && <span style={{ color: '#10b981' }}>✅ Converted</span>}
+                                    </div>
                                 </div>
-                                <div style={styles.metricLabel}>{m.label}</div>
+                                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                                    <button onClick={() => handleToggleFlag(item.id, !item.flagged)} title={item.flagged ? 'Unflag' : 'Flag'} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: 4, opacity: 0.6 }}>
+                                        {item.flagged ? '✓' : '🚩'}
+                                    </button>
+                                    <button onClick={() => handleDeleteFt(item.id)} title="Remove text" style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', padding: 4, color: '#ef4444', opacity: 0.6 }}>🗑️</button>
+                                </div>
                             </div>
                         ))}
                     </div>
+                )}
+                {ftHasMore && (
+                    <button onClick={handleLoadMoreFt} disabled={ftLoading} style={{
+                        display: 'block', margin: '14px auto 0', padding: '7px 24px', borderRadius: 8,
+                        fontSize: '0.78rem', fontWeight: 500, cursor: 'pointer',
+                        background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)',
+                    }}>{ftLoading ? 'Loading...' : `Load more (${ftItems.length} of ${ftTotal})`}</button>
+                )}
+            </div>
 
-                    {/* ── Category Breakdown ── */}
-                    <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                        <h2 style={styles.sectionTitle}>Category Breakdown</h2>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                            {data?.categoryBreakdown.map(cat => (
-                                <div key={cat.key} style={styles.barRow}>
-                                    <div style={styles.barLabel}>{cat.label}</div>
-                                    <div style={styles.barTrack}>
-                                        <div style={{
-                                            ...styles.barFill,
-                                            width: `${maxBar > 0 ? (cat.percentage / maxBar) * 100 : 0}%`,
-                                        }} />
-                                    </div>
-                                    <div style={styles.barValue}>{cat.count} ({cat.percentage}%)</div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* ── Open Responses ── */}
-                    <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
-                            <h2 style={{ ...styles.sectionTitle, margin: 0 }}>
-                                Open Responses
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: 8 }}>
-                                    {ftTotal} total{ftFlaggedCount > 0 && ` · ${ftFlaggedCount} flagged`}
-                                </span>
-                            </h2>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                                {(['all', 'flagged', 'clean'] as const).map(f => (
-                                    <button
-                                        key={f}
-                                        onClick={() => handleFtFilterChange(f)}
-                                        style={{
-                                            padding: '4px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600,
-                                            cursor: 'pointer', transition: 'all 0.15s',
-                                            background: ftFilter === f ? (f === 'flagged' ? 'rgba(234,179,8,0.12)' : 'rgba(212,168,83,0.1)') : 'transparent',
-                                            border: `1px solid ${ftFilter === f ? (f === 'flagged' ? 'rgba(234,179,8,0.3)' : 'rgba(212,168,83,0.2)') : 'var(--border-subtle)'}`,
-                                            color: ftFilter === f ? (f === 'flagged' ? '#eab308' : 'var(--accent-gold)') : 'var(--text-tertiary)',
-                                        }}
-                                    >
-                                        {f === 'flagged' ? `🚩 Flagged (${ftFlaggedCount})` : f === 'clean' ? '✓ Clean' : 'All'}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {ftItems.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: 'var(--space-xl)', color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>
-                                {ftFilter === 'flagged' ? 'No flagged responses' : 'No open responses yet'}
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                                {ftItems.map(item => (
-                                    <div key={item.id} style={{
-                                        padding: '12px 16px', borderRadius: 10,
-                                        background: item.flagged ? 'rgba(234,179,8,0.04)' : 'rgba(255,255,255,0.02)',
-                                        border: `1px solid ${item.flagged ? 'rgba(234,179,8,0.15)' : 'var(--border-subtle)'}`,
-                                        display: 'flex', gap: 12, alignItems: 'flex-start',
-                                    }}>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
-                                            <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)', lineHeight: 1.5, fontStyle: 'italic' }}>
-                                                {item.flagged && <span style={{ marginRight: 6 }}>🚩</span>}
-                                                &ldquo;{item.text}&rdquo;
-                                            </div>
-                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: 4 }}>
-                                                {countryFlag(item.country)} {item.country || '??'} &bull; {timeAgo(item.createdAt)}
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                                            <button
-                                                onClick={() => handleToggleFlag(item.id, !item.flagged)}
-                                                title={item.flagged ? 'Unflag' : 'Flag'}
-                                                style={styles.iconBtn}
-                                            >
-                                                {item.flagged ? '✓' : '🚩'}
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteFreeText(item.id)}
-                                                title="Remove text"
-                                                style={{ ...styles.iconBtn, color: '#ef4444' }}
-                                            >
-                                                🗑️
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {ftHasMore && (
-                            <button
-                                onClick={handleLoadMoreFt}
-                                disabled={ftLoading}
-                                style={{
-                                    display: 'block', margin: '16px auto 0', padding: '8px 28px',
-                                    borderRadius: 8, fontSize: '0.82rem', fontWeight: 500, cursor: 'pointer',
-                                    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)',
-                                    color: 'var(--text-secondary)', transition: 'all 0.15s',
-                                }}
-                            >
-                                {ftLoading ? 'Loading...' : `Load more (${ftItems.length} of ${ftTotal})`}
-                            </button>
-                        )}
-                    </div>
-
-                    {/* ── Recent Responses Table ── */}
-                    <div className="admin-card" style={{ overflow: 'hidden', marginBottom: 'var(--space-lg)' }}>
-                        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-subtle)' }}>
-                            <h2 style={{ ...styles.sectionTitle, margin: 0 }}>
-                                Recent Responses
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: 8 }}>
-                                    {data?.recentTotal ?? 0} total
-                                </span>
-                            </h2>
-                        </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                                    {['Time', 'Email', 'Selections', 'Country', ''].map(h => (
-                                        <th key={h} style={styles.th}>{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {data?.recentResponses.map((r, i) => (
-                                    <tr key={i} style={{
-                                        borderBottom: '1px solid rgba(255,255,255,0.03)',
-                                        background: r.flagged ? 'rgba(234,179,8,0.03)' : undefined,
-                                    }}>
-                                        <td style={styles.td}>{timeAgo(r.createdAt)}</td>
-                                        <td style={styles.td}>{r.email || '—'}</td>
-                                        <td style={styles.td}>{r.selections.join(', ')}</td>
-                                        <td style={styles.td}>{countryFlag(r.country)} {r.country || '—'}</td>
-                                        <td style={styles.td}>{r.flagged && <span title="Flagged">🚩</span>}</td>
-                                    </tr>
-                                ))}
-                                {(!data?.recentResponses || data.recentResponses.length === 0) && (
-                                    <tr><td colSpan={5} style={{ ...styles.td, textAlign: 'center' }}>No responses yet</td></tr>
-                                )}
-                            </tbody>
-                        </table>
-                        {rrTotalPages > 1 && (
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16, padding: '12px' }}>
-                                <button
-                                    disabled={rrPage <= 1}
-                                    onClick={() => handleRrPageChange(rrPage - 1)}
-                                    className="btn btn-ghost" style={{ fontSize: '0.8rem', padding: '6px 14px' }}
-                                >← Prev</button>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>
-                                    Page {rrPage} of {rrTotalPages}
-                                </span>
-                                <button
-                                    disabled={rrPage >= rrTotalPages}
-                                    onClick={() => handleRrPageChange(rrPage + 1)}
-                                    className="btn btn-ghost" style={{ fontSize: '0.8rem', padding: '6px 14px' }}
-                                >Next →</button>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* ── Send Survey Email ── */}
-                    <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)', border: '1px solid rgba(212,168,83,0.15)' }}>
-                        <h2 style={{ ...styles.sectionTitle, margin: '0 0 12px' }}>📬 Send Survey Email</h2>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: '0 0 6px' }}>
-                            Send to all active, non-suppressed subscribers.
-                        </p>
-                        <p style={{ color: '#f59e0b', fontSize: '0.82rem', margin: '0 0 18px' }}>
-                            ⚠️ Send the survey BEFORE the conversion campaign email.
-                        </p>
-
-                        <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
-                            <input
-                                type="email"
-                                placeholder="Test email address"
-                                value={testEmail}
-                                onChange={e => setTestEmail(e.target.value)}
-                                style={styles.testInput}
-                            />
-                            <button
-                                onClick={() => handleSendSurvey(true)}
-                                disabled={sending || !testEmail}
-                                style={styles.testBtn}
-                            >
-                                Preview Email
-                            </button>
-                        </div>
-
-                        <button
-                            onClick={() => handleSendSurvey(false)}
-                            disabled={sending}
-                            style={{
-                                width: '100%', padding: '12px 24px',
-                                background: sending ? 'rgba(212,168,83,0.3)' : 'var(--accent-gold, #c9a84c)',
-                                color: '#0f1115', border: 'none', borderRadius: 8,
-                                fontSize: '0.95rem', fontWeight: 700,
-                                cursor: sending ? 'not-allowed' : 'pointer',
-                                opacity: sending ? 0.7 : 1, transition: 'all 0.15s',
-                            }}
-                        >
-                            {sending ? 'Sending...' : 'Send Survey Email to All Subscribers'}
-                        </button>
-
-                        {/* ── Progress bar ── */}
-                        {sendProgress && (
-                            <div style={{ marginTop: 14 }}>
-                                <div style={{
-                                    height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)',
-                                    overflow: 'hidden', marginBottom: 6,
-                                }}>
-                                    <div style={{
-                                        height: '100%', borderRadius: 4,
-                                        background: 'linear-gradient(90deg, #c9a84c, #e8c36a)',
-                                        width: `${sendProgress.total > 0 ? (sendProgress.queued / sendProgress.total) * 100 : 0}%`,
-                                        transition: 'width 0.3s ease',
-                                    }} />
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
-                                    Sending... {sendProgress.queued.toLocaleString()} / {sendProgress.total.toLocaleString()}
-                                </div>
-                            </div>
-                        )}
-
-                        {sendResult && (
-                            <p style={{ marginTop: 12, fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 500 }}>
-                                {sendResult}
-                            </p>
-                        )}
-                    </div>
-
-                    {/* ── Campaign Delivery Tracker ── */}
-                    {data?.delivery && data.delivery.total > 0 && (
-                        <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)' }}>
-                            <h2 style={{ ...styles.sectionTitle, margin: '0 0 16px' }}>
-                                📡 Campaign Delivery
-                                {(data.delivery.pending > 0 || data.delivery.processing > 0) && (
-                                    <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 500, marginLeft: 8, animation: 'pulse 2s infinite' }}>● LIVE</span>
-                                )}
-                            </h2>
-
-                            {/* Progress bar */}
-                            <div style={{ marginBottom: 16 }}>
-                                <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.04)' }}>
-                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.sent / data.delivery.total) * 100 : 0}%`, background: '#10b981', transition: 'width 0.5s ease' }} />
-                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.processing / data.delivery.total) * 100 : 0}%`, background: '#c9a84c', transition: 'width 0.5s ease' }} />
-                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.failed / data.delivery.total) * 100 : 0}%`, background: '#ef4444', transition: 'width 0.5s ease' }} />
-                                    <div style={{ width: `${data.delivery.total > 0 ? (data.delivery.cancelled / data.delivery.total) * 100 : 0}%`, background: '#6b7280', transition: 'width 0.5s ease' }} />
-                                </div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 6, textAlign: 'center' }}>
-                                    {data.delivery.sent} of {data.delivery.total} delivered ({data.delivery.total > 0 ? Math.round((data.delivery.sent / data.delivery.total) * 100) : 0}%)
-                                </div>
-                            </div>
-
-                            {/* Status cards */}
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 20 }}>
-                                {[
-                                    { label: 'Sent', value: data.delivery.sent, color: '#10b981' },
-                                    { label: 'Processing', value: data.delivery.processing, color: '#c9a84c' },
-                                    { label: 'Pending', value: data.delivery.pending, color: '#3b82f6' },
-                                    { label: 'Failed', value: data.delivery.failed, color: '#ef4444' },
-                                    { label: 'Suppressed', value: data.delivery.cancelled, color: '#6b7280' },
-                                ].map(s => (
-                                    <div key={s.label} style={{ textAlign: 'center', padding: '10px 4px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)' }}>
-                                        <div style={{ fontSize: '1.25rem', fontWeight: 800, color: s.color }}>{s.value}</div>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 2 }}>{s.label}</div>
-                                    </div>
-                                ))}
-                            </div>
-
-                            {/* Recent delivery log */}
-                            {data.delivery.log.length > 0 && (
-                                <div>
-                                    <h3 style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Recent Activity</h3>
-                                    <div style={{ maxHeight: 200, overflowY: 'auto', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>
-                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
-                                            <tbody>
-                                                {data.delivery.log.map((entry, i) => (
-                                                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                                                        <td style={{ padding: '6px 12px', width: 24 }}>{entry.success ? '✅' : '❌'}</td>
-                                                        <td style={{ padding: '6px 8px', color: 'var(--text-primary)' }}>{entry.to}</td>
-                                                        <td style={{ padding: '6px 8px', color: 'var(--text-tertiary)' }}>{entry.transport || '—'}</td>
-                                                        <td style={{ padding: '6px 8px', color: 'var(--text-tertiary)', textAlign: 'right' }}>{entry.sentAt ? timeAgo(entry.sentAt) : '—'}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+            {/* S9: Recent Responses Table */}
+            <div className="admin-card" style={{ overflow: 'hidden', marginBottom: 24 }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border-subtle)' }}>
+                    <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                        Recent Responses <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 400, marginLeft: 6 }}>{data.recentTotal} total</span>
+                    </h2>
                 </div>
-            </main>
-        </div>
-    )
-}
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+                    <thead><tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        {['Time', 'Email', 'Selections', 'Country', 'Conv.', ''].map(h => (
+                            <th key={h} style={{ padding: '8px 12px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.7rem', textTransform: 'uppercase' }}>{h}</th>
+                        ))}
+                    </tr></thead>
+                    <tbody>
+                        {data.recentResponses.map((r) => (
+                            <tr key={r.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: r.flagged ? 'rgba(234,179,8,0.03)' : undefined }}>
+                                <td style={{ padding: '7px 12px' }}>{timeAgo(r.createdAt)}</td>
+                                <td style={{ padding: '7px 12px' }}>{r.email || '—'}</td>
+                                <td style={{ padding: '7px 12px' }}>{r.selections.slice(0, 3).join(', ')}{r.selections.length > 3 ? ` +${r.selections.length - 3}` : ''}</td>
+                                <td style={{ padding: '7px 12px' }}>{countryFlag(r.country)} {r.country || '—'}</td>
+                                <td style={{ padding: '7px 12px' }}>{r.converted ? '✅' : '—'}</td>
+                                <td style={{ padding: '7px 12px' }}>{r.flagged ? '🚩' : ''}</td>
+                            </tr>
+                        ))}
+                        {data.recentResponses.length === 0 && <tr><td colSpan={6} style={{ padding: 20, textAlign: 'center', color: 'var(--text-tertiary)' }}>No responses yet</td></tr>}
+                    </tbody>
+                </table>
+                {rrTotalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, padding: 10 }}>
+                        <button disabled={rrPage <= 1} onClick={() => handleRrPage(rrPage - 1)} className="btn btn-ghost" style={{ fontSize: '0.78rem', padding: '5px 12px' }}>← Prev</button>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Page {rrPage} of {rrTotalPages}</span>
+                        <button disabled={rrPage >= rrTotalPages} onClick={() => handleRrPage(rrPage + 1)} className="btn btn-ghost" style={{ fontSize: '0.78rem', padding: '5px 12px' }}>Next →</button>
+                    </div>
+                )}
+            </div>
 
-const styles: Record<string, React.CSSProperties> = {
-    page: {
-        padding: '24px 32px',
-        maxWidth: 1100,
-    },
-    metricsRow: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: 'var(--space-md)',
-        marginBottom: 'var(--space-lg)',
-    },
-    metricLabel: {
-        fontSize: '0.72rem',
-        color: 'var(--text-tertiary)',
-        marginTop: 4,
-        textTransform: 'uppercase' as const,
-        letterSpacing: '0.08em',
-    },
-    sectionTitle: {
-        fontSize: '1rem',
-        fontWeight: 700,
-        color: 'var(--text-primary)',
-        margin: '0 0 16px',
-    },
-    barRow: {
-        display: 'grid',
-        gridTemplateColumns: '160px 1fr 100px',
-        alignItems: 'center',
-        gap: 12,
-    },
-    barLabel: {
-        fontSize: '0.82rem',
-        color: 'var(--text-primary)',
-        fontWeight: 500,
-        whiteSpace: 'nowrap' as const,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    },
-    barTrack: {
-        height: 18,
-        background: 'rgba(255,255,255,0.04)',
-        borderRadius: 6,
-        overflow: 'hidden',
-    },
-    barFill: {
-        height: '100%',
-        background: 'linear-gradient(90deg, #c9a84c, #e8c36a)',
-        borderRadius: 6,
-        transition: 'width 0.5s ease',
-        minWidth: 2,
-    },
-    barValue: {
-        fontSize: '0.78rem',
-        color: 'var(--text-secondary)',
-        textAlign: 'right' as const,
-        whiteSpace: 'nowrap' as const,
-    },
-    th: {
-        textAlign: 'left' as const,
-        padding: '10px 14px',
-        color: 'var(--text-tertiary)',
-        fontWeight: 700,
-        fontSize: '0.65rem',
-        textTransform: 'uppercase' as const,
-        letterSpacing: '0.08em',
-    },
-    td: {
-        padding: '10px 14px',
-        color: 'var(--text-primary)',
-        fontSize: '0.82rem',
-    },
-    iconBtn: {
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        fontSize: '0.78rem',
-        padding: '4px 6px',
-        borderRadius: 4,
-        color: 'var(--text-tertiary)',
-        transition: 'opacity 0.15s',
-    },
-    testInput: {
-        flex: 1,
-        padding: '10px 14px',
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 8,
-        color: 'var(--text-primary)',
-        fontSize: '0.88rem',
-        outline: 'none',
-    },
-    testBtn: {
-        padding: '10px 20px',
-        background: 'transparent',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 8,
-        color: 'var(--accent-gold)',
-        fontSize: '0.82rem',
-        fontWeight: 600,
-        cursor: 'pointer',
-        whiteSpace: 'nowrap' as const,
-    },
+            {/* S11: Export */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
+                {[
+                    { label: '📥 Export All as CSV', filter: 'all' },
+                    { label: '📥 Export Flagged Only', filter: 'flagged' },
+                    { label: '📥 Export Converted Only', filter: 'converted' },
+                ].map(e => (
+                    <button key={e.filter} onClick={() => window.open(`/api/admin/survey/export?filter=${e.filter}`, '_blank')} className="btn btn-ghost" style={{ fontSize: '0.78rem', padding: '8px 16px' }}>{e.label}</button>
+                ))}
+            </div>
+
+            {/* S12: Delivery Tracker */}
+            <DeliveryTracker d={data} />
+
+            {/* Send Survey */}
+            <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 24, border: '1px solid rgba(212,168,83,0.15)' }}>
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 10px', color: 'var(--text-primary)' }}>📬 Send Survey Email</h2>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0 0 4px' }}>Send to all active, non-suppressed subscribers.</p>
+                <p style={{ color: '#f59e0b', fontSize: '0.78rem', margin: '0 0 14px' }}>⚠️ Send the survey BEFORE the conversion campaign email.</p>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                    <input type="email" placeholder="Test email address" value={testEmail} onChange={e => setTestEmail(e.target.value)}
+                        style={{ flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'rgba(255,255,255,0.03)', color: 'var(--text-primary)', fontSize: '0.85rem' }} />
+                    <button onClick={() => handleSend(true)} disabled={sending || !testEmail}
+                        className="btn btn-ghost" style={{ fontSize: '0.82rem', padding: '8px 18px' }}>Preview Email</button>
+                </div>
+                <button onClick={() => handleSend(false)} disabled={sending} style={{
+                    width: '100%', padding: '11px 20px', background: sending ? 'rgba(212,168,83,0.3)' : 'var(--accent-gold, #c9a84c)',
+                    color: '#0f1115', border: 'none', borderRadius: 8, fontSize: '0.92rem', fontWeight: 700,
+                    cursor: sending ? 'not-allowed' : 'pointer', opacity: sending ? 0.7 : 1, transition: 'all 0.15s',
+                }}>{sending ? 'Sending...' : 'Send Survey Email to All Subscribers'}</button>
+                {sendProgress && (
+                    <div style={{ marginTop: 12 }}>
+                        <div style={{ height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: 4 }}>
+                            <div style={{ height: '100%', borderRadius: 4, background: 'linear-gradient(90deg, #c9a84c, #e8c36a)', width: `${sendProgress.total > 0 ? (sendProgress.queued / sendProgress.total) * 100 : 0}%`, transition: 'width 0.3s' }} />
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', textAlign: 'center' }}>Sending... {sendProgress.queued.toLocaleString()} / {sendProgress.total.toLocaleString()}</div>
+                    </div>
+                )}
+                {sendResult && <p style={{ marginTop: 10, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>{sendResult}</p>}
+            </div>
+        </div></main></div>
+    )
 }
