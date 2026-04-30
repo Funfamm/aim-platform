@@ -23,7 +23,6 @@ export async function POST(req: Request) {
 
         // ── Test mode: send one email ──
         if (testEmail) {
-            // Get or create survey
             let survey = await prisma.survey.findFirst({ where: { active: true }, orderBy: { createdAt: 'desc' } })
             if (!survey) {
                 survey = await prisma.survey.create({ data: { title: 'Audience Survey 2026' } })
@@ -76,51 +75,87 @@ export async function POST(req: Request) {
             select: { id: true, email: true, name: true, locale: true, country: true },
         })
 
-        // ── Queue emails in batches of 50 ──
+        const total = subscribers.length
         const campaignId = `survey-${Date.now()}`
-        let queued = 0
         const batchSize = 50
 
-        for (let i = 0; i < subscribers.length; i += batchSize) {
-            const batch = subscribers.slice(i, i + batchSize)
-            const emailRecords = batch.map(sub => {
-                const token = generateUnsubscribeToken(sub.email, 'subscriber')
-                const surveyUrl = `${SITE_URL}/survey?token=${encodeURIComponent(token)}&sid=${survey!.id}&utm_source=survey_email`
-                const locale = inferLocaleFromCountry(sub.country, sub.locale)
-                const name = sub.name || null
-                const html = surveyInviteEmail(name, surveyUrl, locale)
-
-                return {
-                    to: sub.email,
-                    subject: 'You shape what AIM Studio makes next 🎬',
-                    html,
-                    type: 'survey_campaign' as const,
-                    priority: 3,
-                    status: 'pending' as const,
-                    campaignId,
+        // ── SSE streaming response ──
+        const encoder = new TextEncoder()
+        const stream = new ReadableStream({
+            async start(controller) {
+                const send = (data: Record<string, unknown>) => {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`))
                 }
-            })
 
-            await prisma.emailQueue.createMany({ data: emailRecords })
-            queued += batch.length
-        }
+                let queued = 0
+                let suppressed = 0
 
-        // Log the campaign send
-        await prisma.emailLog.create({
-            data: {
-                to: 'campaign@system',
-                subject: `Survey campaign: ${queued} emails`,
-                type: 'survey_campaign',
-                success: true,
-                transport: 'queue',
+                try {
+                    for (let i = 0; i < subscribers.length; i += batchSize) {
+                        const batch = subscribers.slice(i, i + batchSize)
+                        const emailRecords = batch.map(sub => {
+                            const token = generateUnsubscribeToken(sub.email, 'subscriber')
+                            const surveyUrl = `${SITE_URL}/survey?token=${encodeURIComponent(token)}&sid=${survey!.id}&utm_source=survey_email`
+                            const locale = inferLocaleFromCountry(sub.country, sub.locale)
+                            const name = sub.name || null
+                            const html = surveyInviteEmail(name, surveyUrl, locale)
+
+                            return {
+                                to: sub.email,
+                                subject: 'You shape what AIM Studio makes next 🎬',
+                                html,
+                                type: 'survey_campaign' as const,
+                                priority: 3,
+                                status: 'pending' as const,
+                                campaignId,
+                            }
+                        })
+
+                        await prisma.emailQueue.createMany({ data: emailRecords })
+                        queued += batch.length
+
+                        // Send progress update
+                        send({ type: 'progress', queued, total, batch: Math.floor(i / batchSize) + 1 })
+                    }
+
+                    // Log the campaign send
+                    await prisma.emailLog.create({
+                        data: {
+                            to: 'campaign@system',
+                            subject: `Survey campaign: ${queued} emails`,
+                            type: 'survey_campaign',
+                            success: true,
+                            transport: 'queue',
+                        },
+                    })
+
+                    // Final done event
+                    send({
+                        type: 'done',
+                        queued,
+                        total,
+                        suppressed,
+                        surveyId: survey!.id,
+                        campaignId,
+                    })
+                } catch (err) {
+                    send({
+                        type: 'error',
+                        error: err instanceof Error ? err.message : 'Unknown error',
+                        queued,
+                    })
+                } finally {
+                    controller.close()
+                }
             },
         })
 
-        return NextResponse.json({
-            queued,
-            total: subscribers.length,
-            surveyId: survey.id,
-            campaignId,
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
         })
     } catch (error) {
         console.error('[Admin Survey Send] Error:', error)

@@ -699,6 +699,7 @@ model SurveyResponse {
   country      String?
   createdAt    DateTime @default(now())
   converted    Boolean  @default(false)
+  flagged      Boolean  @default(false)
   survey       Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
 
   @@index([surveyId])

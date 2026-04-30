@@ -4,6 +4,23 @@ import { verifyUnsubscribeToken } from '@/lib/unsubscribe-token'
 
 const VALID_CATEGORIES = ['action', 'drama', 'documentary', 'horror', 'romance', 'shorts', 'all']
 
+// ── Profanity / inappropriate content filter ──
+const BLOCKED_TERMS = [
+    'porn', 'xxx', 'nsfw', 'hentai', 'onlyfans', 'sex tape',
+    'nude', 'naked', 'penis', 'vagina', 'dildo', 'blowjob',
+    'handjob', 'cumshot', 'orgasm', 'masturbat', 'anal sex',
+    'fetish', 'bdsm', 'escort', 'prostitut', 'camgirl',
+    'xvideos', 'pornhub', 'redtube', 'xhamster', 'brazzers',
+    'nigger', 'nigga', 'faggot', 'kike', 'spic', 'chink',
+    'kill yourself', 'kys', 'go die',
+]
+
+function isFlagged(text: string | null | undefined): boolean {
+    if (!text) return false
+    const lower = text.toLowerCase()
+    return BLOCKED_TERMS.some(term => lower.includes(term))
+}
+
 // Simple in-memory rate limit: 3 submissions per IP per hour
 const ipSubmitMap = new Map<string, { count: number; resetAt: number }>()
 
@@ -85,6 +102,9 @@ export async function POST(req: Request) {
             if (subscriber) subscriberId = subscriber.id
         }
 
+        // Auto-flag inappropriate content
+        const flagged = isFlagged(freeText)
+
         // Create response
         await prisma.surveyResponse.create({
             data: {
@@ -93,6 +113,7 @@ export async function POST(req: Request) {
                 email: email ? email.toLowerCase() : null,
                 selections,
                 freeText: freeText || null,
+                flagged,
                 locale,
                 country,
             },
