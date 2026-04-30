@@ -62,9 +62,10 @@ export function CategoryBreakdownChart({ d }: { d: SurveyData }) {
 export function ConversionFunnel({ d }: { d: SurveyData }) {
     const f = d.funnel
     const steps = [
-        { icon: '📧', label: 'Emails Sent', count: f.emailsSent, pct: 100 },
-        { icon: '📋', label: 'Survey Completed', count: f.surveyCompleted, pct: f.openRate || 0 },
-        { icon: '✅', label: 'Registered', count: f.actuallyRegistered, pct: f.conversionRate || 0 },
+        { icon: '📬', label: 'Emails Queued', count: f.emailsQueued, pct: 100 },
+        { icon: '📧', label: 'Delivered', count: f.emailsSent, pct: f.emailsQueued > 0 ? Math.round(f.emailsSent / f.emailsQueued * 100) : 0 },
+        { icon: '📋', label: 'Survey Completed', count: f.surveyCompleted, pct: f.emailsSent > 0 ? Math.round(f.surveyCompleted / f.emailsSent * 100) : 0 },
+        { icon: '✅', label: 'Registered', count: f.actuallyRegistered, pct: f.surveyCompleted > 0 ? Math.round(f.actuallyRegistered / f.surveyCompleted * 100) : 0 },
     ]
     return (
         <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 24 }}>

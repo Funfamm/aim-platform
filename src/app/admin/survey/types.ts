@@ -16,7 +16,7 @@ export interface DeliveryStats {
     log: DeliveryLogEntry[]
 }
 export interface FunnelData {
-    emailsSent: number; surveyCompleted: number; clickedRegister: number; actuallyRegistered: number
+    emailsQueued: number; emailsSent: number; surveyCompleted: number; clickedRegister: number; actuallyRegistered: number
     openRate: number | null; completionRate: number | null; conversionRate: number | null
 }
 export interface GenreConversion {

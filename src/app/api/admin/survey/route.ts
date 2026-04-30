@@ -135,14 +135,16 @@ export async function GET(req: Request) {
             })
 
         // ── CONVERSION FUNNEL ──
-        const emailsSent = await prisma.emailQueue.count({ where: { type: 'survey_campaign' } })
+        const emailsQueued = await prisma.emailQueue.count({ where: { type: 'survey_campaign' } })
+        const emailsDelivered = await prisma.emailQueue.count({ where: { type: 'survey_campaign', status: 'sent' } })
         const funnel = {
-            emailsSent,
+            emailsQueued,
+            emailsSent: emailsDelivered,
             surveyCompleted: totalResponses,
             clickedRegister: convertedCount,
             actuallyRegistered: convertedCount,
-            openRate: emailsSent > 0 ? round1(totalResponses / emailsSent * 100) : null,
-            completionRate: emailsSent > 0 ? round1(totalResponses / emailsSent * 100) : null,
+            openRate: emailsDelivered > 0 ? round1(totalResponses / emailsDelivered * 100) : null,
+            completionRate: emailsDelivered > 0 ? round1(totalResponses / emailsDelivered * 100) : null,
             conversionRate: totalResponses > 0 ? round1(convertedCount / totalResponses * 100) : null,
         }
 
