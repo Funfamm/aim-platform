@@ -54,10 +54,11 @@ export async function GET(request: Request) {
 
         // ── STEP 0: STALE CLAIM RECOVERY ────────────────────────────────────
         // Reset jobs stuck in 'processing' for >5 minutes (worker timeout/crash)
+        // Increments timeoutCount (NOT attempts — attempts is only for real send failures)
         const staleReset: Array<{ id: string }> = await prisma.$queryRawUnsafe(`
             UPDATE "EmailQueue"
             SET status = 'pending', "claimedAt" = NULL, "updatedAt" = NOW(),
-                attempts = COALESCE(attempts, 0) + 1
+                "timeoutCount" = COALESCE("timeoutCount", 0) + 1
             WHERE status = 'processing'
               AND (
                 ("claimedAt" IS NOT NULL AND "claimedAt" < NOW() - INTERVAL '5 minutes')
@@ -71,7 +72,11 @@ export async function GET(request: Request) {
             // Admin alert when >10 jobs are stuck (sign of systemic issue)
             if (staleReset.length > 10) {
                 try {
-                    const adminEmail = process.env.ADMIN_EMAIL
+                    let adminEmail = process.env.ADMIN_EMAIL
+                    if (!adminEmail) {
+                        const settings = await prisma.siteSettings.findFirst({ select: { notifyEmail: true } })
+                        adminEmail = settings?.notifyEmail || undefined
+                    }
                     if (adminEmail) {
                         const { sendTransactionalEmail } = await import('@/lib/email-router')
                         await sendTransactionalEmail({
@@ -87,9 +92,10 @@ export async function GET(request: Request) {
         }
 
         // ── Mark exhausted jobs as permanently failed ──
+        // Only real send failures (attempts >= 3) cause permanent failure — NOT timeouts
         const exhausted = await prisma.emailQueue.updateMany({
             where: { status: 'pending', attempts: { gte: 3 } },
-            data: { status: 'failed', error: 'Max attempts exceeded after repeated worker timeouts' },
+            data: { status: 'failed', error: 'Max send attempts exceeded (3 genuine delivery failures)' },
         })
         if (exhausted.count > 0) {
             logger.warn('email-worker', `Marked ${exhausted.count} jobs as failed (max attempts exceeded)`)

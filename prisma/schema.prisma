@@ -639,7 +639,8 @@ model EmailQueue {
   campaignId  String?                         // groups emails from same broadcast
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  claimedAt   DateTime?                    // set when status → processing; used for timeout recovery
+  claimedAt    DateTime?                    // set when status → processing; used for timeout recovery
+  timeoutCount Int       @default(0)        // how many times this job was recovered from a worker timeout (not a real failure)
 
   @@index([status, priority, nextRunAt])      // worker query: pending + priority sort
   @@index([campaignId])                       // admin campaign view
