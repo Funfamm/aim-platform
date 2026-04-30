@@ -4,12 +4,14 @@ import { SurveyData, countryFlag, timeAgo } from './types'
 
 // ── Section 1: Metric Cards ──
 export function MetricCards({ d }: { d: SurveyData }) {
+    const delivered = d.delivery?.sent || 0
+    const responseRate = delivered > 0 ? Math.round(d.totalResponses / delivered * 1000) / 10 : 0
     const cards = [
         { value: d.totalResponses, label: 'Total Responses', color: '#d4a853' },
         { value: d.responsesLast24h, label: 'Last 24 Hours', color: '#10b981' },
         { value: d.responsesThisWeek, label: 'This Week', color: '#3b82f6' },
+        { value: `${responseRate}%`, label: 'Response Rate', color: '#06b6d4', suffix: ` (${d.totalResponses} of ${delivered})` },
         { value: `${d.convertedCount}`, label: 'Converted to Users', color: '#8b5cf6', suffix: ` (${d.convertedPercentage}%)` },
-        { value: d.openTextCount, label: 'Open Text Responses', color: '#f59e0b' },
         { value: d.countriesReached, label: 'Countries Reached', color: '#ec4899' },
     ]
     return (
@@ -73,7 +75,8 @@ export function ConversionFunnel({ d }: { d: SurveyData }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
                 {steps.map((s, i) => {
                     const width = i === 0 ? 100 : Math.max(5, s.pct)
-                    const dropoff = i > 0 ? Math.round(100 - (s.count / steps[i - 1].count) * 100) : 0
+                    const dropoff = i > 0 ? Math.round(100 - (s.count / (steps[i - 1].count || 1)) * 100) : 0
+                    const isLive = d.delivery && (d.delivery.pending > 0 || d.delivery.processing > 0)
                     return (
                         <div key={s.label}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
@@ -85,12 +88,15 @@ export function ConversionFunnel({ d }: { d: SurveyData }) {
                                     </div>
                                 </div>
                                 <div style={{ width: 50, fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'right' }}>{i === 0 ? '100%' : `${s.pct}%`}</div>
-                                {i > 0 && <div style={{ width: 80, fontSize: '0.7rem', color: dropoff > 80 ? '#ef4444' : '#f59e0b', textAlign: 'right' }}>▼ {dropoff}% drop</div>}
+                                {i > 0 && <div style={{ width: 80, fontSize: '0.7rem', color: isLive ? '#f59e0b' : (dropoff > 80 ? '#ef4444' : '#f59e0b'), textAlign: 'right' }}>▼ {dropoff}% drop</div>}
                             </div>
                         </div>
                     )
                 })}
             </div>
+            {d.delivery && (d.delivery.pending > 0 || d.delivery.processing > 0) && (
+                <p style={{ marginTop: 10, fontSize: '0.72rem', color: '#f59e0b', fontStyle: 'italic' }}>📡 Campaign in progress — delivery stats update as emails send</p>
+            )}
             {d.avgTimeToConvert !== null && (
                 <div style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
                     ⏱️ Average time to convert: <strong style={{ color: 'var(--text-primary)' }}>{d.avgTimeToConvert}h</strong>
@@ -134,7 +140,6 @@ export function GeographicStats({ d }: { d: SurveyData }) {
                 {d.topCountries.map(c => (
                     <div key={c.country} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: '0.82rem' }}>
                         <span>{countryFlag(c.country)}</span>
-                        <span style={{ width: 30, color: 'var(--text-secondary)', fontWeight: 600 }}>{c.country}</span>
                         <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.04)' }}>
                             <div style={{ height: '100%', borderRadius: 3, background: '#c9a84c', width: `${c.percentage}%` }} />
                         </div>
@@ -147,7 +152,6 @@ export function GeographicStats({ d }: { d: SurveyData }) {
                 {d.genreByCountry.map(c => (
                     <div key={c.country} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', fontSize: '0.82rem' }}>
                         <span>{countryFlag(c.country)}</span>
-                        <span style={{ width: 30, color: 'var(--text-secondary)', fontWeight: 600 }}>{c.country}</span>
                         <span style={{ color: 'var(--text-tertiary)' }}>→</span>
                         <span style={{ color: 'var(--text-primary)' }}>{c.topGenre}</span>
                     </div>
@@ -217,12 +221,19 @@ export function ModerationSummary({ d, onFilter }: { d: SurveyData; onFilter: ()
 export function DeliveryTracker({ d }: { d: SurveyData }) {
     const del = d.delivery
     if (!del || del.total === 0) return null
+    const isLive = del.pending > 0 || del.processing > 0
+    const isComplete = !isLive && del.sent > 0
     return (
         <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 24 }}>
             <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>
-                📡 Campaign Delivery
-                {(del.pending > 0 || del.processing > 0) && <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 500, marginLeft: 8 }}>● LIVE</span>}
+                {isComplete ? '✅ Campaign Complete' : '📡 Campaign Delivery'}
+                {isLive && <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 500, marginLeft: 8 }}>● LIVE</span>}
             </h2>
+            {isComplete && (
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '-8px 0 16px' }}>
+                    {del.sent.toLocaleString()} delivered • {del.failed} failed
+                </p>
+            )}
             <div style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', height: 10, borderRadius: 6, overflow: 'hidden', background: 'rgba(255,255,255,0.04)' }}>
                     <div style={{ width: `${(del.sent / del.total) * 100}%`, background: '#10b981', transition: 'width 0.5s' }} />

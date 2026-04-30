@@ -146,6 +146,7 @@ export default function AdminSurveyPage() {
     const rrTotalPages = Math.ceil((data.recentTotal ?? 0) / rrPerPage)
     const ftHasMore = ftItems.length < ftTotal
     const ftCleanCount = ftTotal - ftFlaggedCount
+    const campaignActive = data.delivery && (data.delivery.pending > 0 || data.delivery.processing > 0)
 
     return (
         <div className="admin-layout"><AdminSidebar /><main className="admin-main"><div style={{ padding: '24px 32px', maxWidth: 1100 }}>
@@ -159,6 +160,9 @@ export default function AdminSurveyPage() {
                     <button onClick={() => window.open('/api/admin/survey/export', '_blank')} className="btn btn-ghost" style={{ fontSize: '0.82rem' }}>⬇️ Export CSV</button>
                 </div>
             </div>
+
+            {/* S12: Delivery Tracker — at top when campaign is active */}
+            <DeliveryTracker d={data} />
 
             {/* S1: Metrics */}
             <MetricCards d={data} />
@@ -178,9 +182,10 @@ export default function AdminSurveyPage() {
             {/* S10: Moderation */}
             <ModerationSummary d={data} onFilter={() => { handleFtFilter('flagged'); ftRef.current?.scrollIntoView({ behavior: 'smooth' }) }} />
 
-            {/* S8: Open Responses */}
+            {/* S8: Written Comments */}
             <div ref={ftRef} className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 24 }}>
-                <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 12px', color: 'var(--text-primary)' }}>💬 Open Responses</h2>
+                <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 4px', color: 'var(--text-primary)' }}>✍️ Written Comments</h2>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', margin: '0 0 12px' }}>Only responses that included a written comment appear here</p>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
                     {([
                         ['all', `All (${ftTotal})`],
@@ -255,7 +260,7 @@ export default function AdminSurveyPage() {
                                 <td style={{ padding: '7px 12px' }}>{timeAgo(r.createdAt)}</td>
                                 <td style={{ padding: '7px 12px' }}>{r.email || '—'}</td>
                                 <td style={{ padding: '7px 12px' }}>{r.selections.slice(0, 3).join(', ')}{r.selections.length > 3 ? ` +${r.selections.length - 3}` : ''}</td>
-                                <td style={{ padding: '7px 12px' }}>{countryFlag(r.country)} {r.country || '—'}</td>
+                                <td style={{ padding: '7px 12px' }}>{countryFlag(r.country)}</td>
                                 <td style={{ padding: '7px 12px' }}>{r.converted ? '✅' : '—'}</td>
                                 <td style={{ padding: '7px 12px' }}>{r.flagged ? '🚩' : ''}</td>
                             </tr>
@@ -283,10 +288,17 @@ export default function AdminSurveyPage() {
                 ))}
             </div>
 
-            {/* S12: Delivery Tracker */}
-            <DeliveryTracker d={data} />
+            {/* S12: Delivery Tracker already at top */}
 
-            {/* Send Survey */}
+            {/* Send Survey — hidden when campaign is active */}
+            {campaignActive ? (
+                <div className="admin-card" style={{ padding: '18px 24px', marginBottom: 24, textAlign: 'center', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <div style={{ fontSize: '0.92rem', fontWeight: 600, color: '#10b981', marginBottom: 4 }}>
+                        🔄 Campaign in progress — {data.delivery!.pending + data.delivery!.processing} remaining
+                    </div>
+                    <button onClick={() => document.querySelector('.admin-main')?.scrollTo({ top: 0, behavior: 'smooth' })} className="btn btn-ghost" style={{ fontSize: '0.78rem', marginTop: 6 }}>View Progress ↑</button>
+                </div>
+            ) : (
             <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 24, border: '1px solid rgba(212,168,83,0.15)' }}>
                 <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 10px', color: 'var(--text-primary)' }}>📬 Send Survey Email</h2>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0 0 4px' }}>Send to all active, non-suppressed subscribers.</p>
@@ -312,6 +324,7 @@ export default function AdminSurveyPage() {
                 )}
                 {sendResult && <p style={{ marginTop: 10, fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>{sendResult}</p>}
             </div>
+            )}
         </div></main></div>
     )
 }

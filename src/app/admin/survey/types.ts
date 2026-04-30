@@ -47,8 +47,8 @@ export interface SurveyData {
 
 export function countryFlag(code: string | null): string {
     if (!code || code.length !== 2) return '🌍'
-    const offset = 0x1F1E6
-    return String.fromCodePoint(code.charCodeAt(0) - 65 + offset, code.charCodeAt(1) - 65 + offset)
+    const upper = code.toUpperCase()
+    return upper.split('').map(c => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('')
 }
 
 export function timeAgo(dateStr: string): string {
