@@ -54,7 +54,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const latestKnownIdRef = useRef<string | null>(null)
     // Track whether the user is on the notifications page (ref for use in callbacks)
     const isOnNotificationsPageRef = useRef(isOnNotificationsPage)
-    isOnNotificationsPageRef.current = isOnNotificationsPage
+    useEffect(() => { isOnNotificationsPageRef.current = isOnNotificationsPage }, [isOnNotificationsPage])
 
     const refresh = useCallback(async () => {
         if (!user) return
