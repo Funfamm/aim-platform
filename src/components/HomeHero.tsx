@@ -239,7 +239,9 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                         fontWeight: 800,
                         lineHeight: 1.15,
                     }}>
-                        {heroTitle || t('title')}{' '}
+                        {heroTitle || t('title')}
+                        <br />
+                        <span style={{ fontWeight: 400, opacity: 0.9 }}>that </span>
                         <span style={{
                             display: 'inline-grid',
                             verticalAlign: 'baseline',
