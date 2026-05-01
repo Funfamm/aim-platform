@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 
 // Type shims for Web Speech API (not in default TS DOM types)
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -56,6 +56,15 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
     const bargeInListeningRef = useRef(false)
     const idleWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const speakStartedAtRef = useRef(0) // grace period — ignore mic for first 2s of playback
+    const fetchAbortRef = useRef<AbortController | null>(null)
+
+    // Cancel any in-flight fetch (chat or TTS)
+    const cancelInFlightFetch = useCallback(() => {
+        if (fetchAbortRef.current) {
+            fetchAbortRef.current.abort()
+            fetchAbortRef.current = null
+        }
+    }, [])
     const replayLastRef = useRef<string>('') // last AI response text for replay
 
     useEffect(() => {
@@ -114,9 +123,11 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
     }, [])
 
     const stopEverything = () => {
+        cancelInFlightFetch()
         recognitionRef.current?.stop()
         recognitionRef.current?.abort()
         currentAudioRef.current?.pause()
+        currentAudioRef.current = null
         micStreamRef.current?.getTracks().forEach(t => t.stop())
         audioContextRef.current?.close()
         cancelAnimationFrame(animFrameRef.current)
@@ -191,15 +202,22 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
             bargeInCountRef.current = 0
             speakStartedAtRef.current = Date.now()
 
-            // Safety: if nothing resolves within 30s, force-resolve
+            // Safety: if nothing resolves within 60s, force-resolve
+            // But only if audio is genuinely stuck, not still playing
             const safetyTimer = setTimeout(() => {
+                const audio = currentAudioRef.current
+                // If audio is still actively playing, don't interrupt it
+                if (audio && !audio.paused && !audio.ended) {
+                    console.warn('[Voice] safety timer fired but audio still playing — ignoring')
+                    return
+                }
                 console.warn('[Voice] safety timer fired — force-resolving speakResponse')
                 currentAudioRef.current?.pause()
                 currentAudioRef.current = null
                 if (window.speechSynthesis) window.speechSynthesis.cancel()
                 speakResolveRef.current?.()
                 speakResolveRef.current = null
-            }, 30000)
+            }, 60000)
 
             const done = () => {
                 clearTimeout(safetyTimer)
@@ -235,6 +253,9 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                         currentAudioRef.current = audio
 
                         // Wait for audio to be ready, then play
+                        // Wait for audio to be ready with proper timeout + cleanup
+                        const CANPLAYTHROUGH_TIMEOUT_MS = 15000
+
                         ttsAudioPlayed = await new Promise<boolean>((playResolve) => {
                             let settled = false
                             const settle = (ok: boolean) => {
@@ -243,7 +264,8 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                                 playResolve(ok)
                             }
 
-                            audio.oncanplaythrough = () => {
+                            const onCanPlay = () => {
+                                audio.removeEventListener('canplaythrough', onCanPlay)
                                 console.log('[Voice] audio canplaythrough — calling play()')
                                 audio.play()
                                     .then(() => {
@@ -257,20 +279,34 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                                     })
                             }
 
+                            audio.addEventListener('canplaythrough', onCanPlay)
+
                             audio.onerror = (err) => {
                                 console.warn('[Voice] audio element error:', err)
+                                audio.removeEventListener('canplaythrough', onCanPlay)
                                 URL.revokeObjectURL(url)
                                 settle(false)
                             }
 
-                            // Timeout: if canplaythrough never fires in 5s, give up
-                            setTimeout(() => {
-                                if (!settled) {
-                                    console.warn('[Voice] audio load timeout — falling through')
-                                    URL.revokeObjectURL(url)
-                                    settle(false)
+                            // Timeout: if canplaythrough never fires, tear down properly
+                            const loadTimeout = setTimeout(() => {
+                                if (settled) return
+                                console.warn('[Voice] audio load timeout — falling through to browser TTS')
+                                audio.removeEventListener('canplaythrough', onCanPlay)
+                                // Properly tear down the half-loaded audio so it can't ghost-play later
+                                try {
+                                    audio.pause()
+                                    audio.removeAttribute('src')
+                                    audio.load() // resets internal state
+                                } catch (e) {
+                                    console.warn('[Voice] error tearing down stalled audio:', e)
                                 }
-                            }, 5000)
+                                URL.revokeObjectURL(url)
+                                settle(false)
+                            }, CANPLAYTHROUGH_TIMEOUT_MS)
+
+                            // Clear the timeout if canplaythrough fires first
+                            audio.addEventListener('canplaythrough', () => clearTimeout(loadTimeout), { once: true })
 
                             audio.load()
                         })
@@ -324,6 +360,12 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
     }
 
     const sendToAI = async (userText: string) => {
+        // Cancel any previous in-flight request before starting a new one
+        cancelInFlightFetch()
+
+        const controller = new AbortController()
+        fetchAbortRef.current = controller
+
         setPhaseSync('thinking')
         const history = [...messages, { role: 'user' as const, text: userText }]
         setMessages(history)
@@ -333,23 +375,46 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ question: userText, context: insightContext }),
+                signal: controller.signal,
             })
+
+            // Bail out if this request was aborted while waiting
+            if (controller.signal.aborted) return
+
             const result = await res.json()
+
+            // Double-check: another query may have started
+            if (controller.signal.aborted) return
+            if (fetchAbortRef.current !== controller) return // stale
+
             const answer = result.answer || 'Sorry, I couldn\'t get a response. Try again?'
             replayLastRef.current = answer
             setMessages(prev => [...prev, { role: 'ai', text: answer }])
             await speakResponse(answer)
-        } catch {
+
+            // After speaking, only continue if we're still the active request
+            if (fetchAbortRef.current === controller) {
+                setPhaseSync('idle')
+                autoListenTimeoutRef.current = setTimeout(() => startListening(), 600)
+                resetIdleWatchdog()
+            }
+        } catch (err: any) {
+            if (err.name === 'AbortError') {
+                console.log('[Voice] fetch aborted (new query started)')
+                return
+            }
             const errMsg = 'I hit a snag. Can you try asking again?'
             replayLastRef.current = errMsg
             setMessages(prev => [...prev, { role: 'ai', text: errMsg }])
             await speakResponse(errMsg)
+            setPhaseSync('idle')
+            autoListenTimeoutRef.current = setTimeout(() => startListening(), 600)
+            resetIdleWatchdog()
+        } finally {
+            if (fetchAbortRef.current === controller) {
+                fetchAbortRef.current = null
+            }
         }
-
-        // Speech finished — return to listening
-        setPhaseSync('idle')
-        autoListenTimeoutRef.current = setTimeout(() => startListening(), 600)
-        resetIdleWatchdog()
     }
 
     const handleReplay = async () => {
@@ -367,7 +432,26 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
         const SR = w.SpeechRecognition || w.webkitSpeechRecognition
         if (!SR) { alert('Voice recognition not supported in this browser. Use Google Chrome.'); return }
 
-        currentAudioRef.current?.pause()
+        // Fix 2: Don't pause audio that's still actively playing.
+        // Defer listening until playback ends naturally.
+        const audio = currentAudioRef.current
+        if (audio) {
+            const audioStillPlaying = !audio.paused && !audio.ended
+            if (audioStillPlaying) {
+                console.log('[Voice] startListening deferred — audio still playing')
+                const onEnded = () => {
+                    audio.removeEventListener('ended', onEnded)
+                    audio.removeEventListener('pause', onEnded)
+                    startListening()
+                }
+                audio.addEventListener('ended', onEnded, { once: true })
+                audio.addEventListener('pause', onEnded, { once: true })
+                return
+            }
+            // Audio is paused or ended — safe to clean up
+            try { audio.pause() } catch {}
+            currentAudioRef.current = null
+        }
         if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel()
 
         const recognition = new SR()
@@ -436,6 +520,7 @@ export default function VoiceConversation({ onClose, insightContext }: Props) {
 
     const toggleListening = () => {
         if (autoListenTimeoutRef.current) clearTimeout(autoListenTimeoutRef.current)
+        cancelInFlightFetch() // abort any pending fetch when user manually interrupts
         if (phase === 'listening') { stopListening(); return }
         if (phase === 'speaking') {
             currentAudioRef.current?.pause()
