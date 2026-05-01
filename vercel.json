@@ -46,7 +46,7 @@
       "maxDuration": 60
     },
     "src/app/api/cron/email-worker/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
     }
   }
 }
