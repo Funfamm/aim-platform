@@ -301,7 +301,7 @@
     "submitBtn": "Suscribirse",
     "submitting": "Suscribiendo...",
     "error": "Algo salió mal.",
-    "watchFreePrompt": "Mira nuestras películas gratis — crea tu cuenta",
+    "watchFreePrompt": "Mira nuestras películas gratis - crea tu cuenta",
     "createAccountTitle": "Mira Nuestras Películas Gratis",
     "createAccountDesc": "Crea una cuenta gratuita para ver películas completas, postularte a roles de casting y unirte a la comunidad.",
     "createAccountBtn": "Crea Tu Cuenta Gratis →"
@@ -555,7 +555,7 @@
     "roleArtDirector": "Director Artístico",
     "roleCostumeDesigner": "Diseñador de Vestuario",
     "roleMakeupArtist": "Maquillador",
-    "freeAccount": "Ver Gratis — Crear Cuenta"
+    "freeAccount": "Ver Gratis - Crear Cuenta"
   },
   "castingForm": {
     "pageLabel": "Solicitud de Casting",
@@ -645,7 +645,7 @@
     "invalidImage": "Por favor sube una imagen (JPG, PNG, etc.)",
     "submitError": "Error al enviar solicitud",
     "genericError": "Algo salió mal. Intenta de nuevo.",
-    "friendlyUploadError": "¡Ups! Tuvimos un pequeño problema al subir tus archivos. Verifica tu conexión a internet e intenta de nuevo — ¡tu información está guardada!",
+    "friendlyUploadError": "¡Ups! Tuvimos un pequeño problema al subir tus archivos. Verifica tu conexión a internet e intenta de nuevo - ¡tu información está guardada!",
     "emailLabel": "Email:",
     "ageLabel": "Edad:",
     "genderLabel": "Género:",
@@ -1194,7 +1194,7 @@
     "formErrorClosed": "Esta convocatoria ya no acepta envíos.",
     "formErrorMax": "Se ha alcanzado el máximo de envíos para esta convocatoria.",
     "disclaimerTitle": "Directrices de envío",
-    "disclaimerItem1": "Sin compensación económica — es una oportunidad de crédito y portafolio.",
+    "disclaimerItem1": "Sin compensación económica - es una oportunidad de crédito y portafolio.",
     "disclaimerItem2": "Tu guión será revisado por nuestro equipo creativo para su potencial de producción.",
     "disclaimerItem3": "Los 3 mejores guiones serán revisados por nuestro equipo.",
     "disclaimerItem4": "Los guiones seleccionados podrían adaptarse para producción en estudio.",
@@ -1239,7 +1239,7 @@
     "withdrawing": "Retirando...",
     "withdrawSuccess": "Envío retirado exitosamente",
     "withdrawError": "Error al retirar. Inténtalo de nuevo.",
-    "withdrawErrorProcessed": "No se puede retirar — tu envío ya fue procesado.",
+    "withdrawErrorProcessed": "No se puede retirar - tu envío ya fue procesado.",
     "resubmitBtn": "Reenviar guión",
     "resubmitHint": "Retiraste tu envío anteriormente. Puedes enviar de nuevo.",
     "withdrawnBadge": "Retirado",
@@ -1359,7 +1359,7 @@
     "subtitlesLabel": "Subtítulos",
     "audioLabel": "Audio",
     "loadingSubtitles": "Cargando...",
-    "fallbackNotice": "Subtítulos no disponibles en este idioma — mostrando inglés",
+    "fallbackNotice": "Subtítulos no disponibles en este idioma - mostrando inglés",
     "noSubtitles": "No hay subtítulos disponibles",
     "subtitleLoadError": "Error al cargar subtítulos"
   },
@@ -1411,7 +1411,7 @@
   "startProject": {
     "hero": {
       "title": "Creemos algo inolvidable",
-      "subtitle": "Cuéntanos qué quieres crear — desde videos de cumpleaños hasta comerciales, branding y producciones personalizadas.",
+      "subtitle": "Cuéntanos qué quieres crear - desde videos de cumpleaños hasta comerciales, branding y producciones personalizadas.",
       "cta": "Inicia tu proyecto"
     },
     "steps": {
@@ -1595,14 +1595,14 @@
       "contactAgreement": "Acepto ser contactado sobre esta solicitud de proyecto."
     },
     "helpers": {
-      "overviewHint": "Cuéntanos qué quieres crear. Mantenlo simple — lo perfeccionaremos contigo.",
+      "overviewHint": "Cuéntanos qué quieres crear. Mantenlo simple - lo perfeccionaremos contigo.",
       "reviewHint": "Revisa los detalles de tu proyecto antes de enviar.",
       "uploadHint": "Agrega fotos, videos, logos, música o archivos de referencia que nos ayuden a entender tu visión.",
       "uploading": "Subiendo...",
       "uploadTypes": "Imágenes, videos, audio, PDF, ZIP",
       "remaining": "restantes",
       "filesUploaded": "archivos subidos",
-      "adminPreview": "Vista previa de administrador — los campos obligatorios se omiten. Puedes navegar libremente.",
+      "adminPreview": "Vista previa de administrador - los campos obligatorios se omiten. Puedes navegar libremente.",
       "videoLimit": "Video: hasta 500 MB",
       "audioLimit": "Audio: hasta 50 MB",
       "docLimit": "Imágenes/Docs: hasta 10 MB",
@@ -1689,13 +1689,13 @@
     "deposit": {
       "subtitle": "Paga un depósito del 40% para confirmar la reserva de tu proyecto. El saldo restante se factura en los hitos de producción.",
       "scheduleTitle": "Calendario de pagos",
-      "milestoneDeposit": "Depósito — A pagar ahora",
-      "milestoneMidpoint": "Pago intermedio — Después del corte preliminar",
-      "milestoneFinal": "Pago final — Antes de la entrega",
+      "milestoneDeposit": "Depósito - A pagar ahora",
+      "milestoneMidpoint": "Pago intermedio - Después del corte preliminar",
+      "milestoneFinal": "Pago final - Antes de la entrega",
       "projectTotal": "Total del proyecto",
       "dueNow": "A pagar ahora",
       "ofTotal": "de",
-      "dueAtCheckout": "Depósito del 40% — A pagar al checkout",
+      "dueAtCheckout": "Depósito del 40% - A pagar al checkout",
       "remainderNote": "El 60% restante se factura en los hitos de producción",
       "paymentReceived": "Pago del depósito recibido",
       "readyToSubmit": "¡Tu depósito está asegurado. Envía tu proyecto para comenzar!",
@@ -1773,7 +1773,7 @@
     "convertMessage": "Crea una cuenta gratuita y tendrás acceso anticipado a todo lo que creemos.",
     "convertButton": "Crear Tu Cuenta Gratis",
     "convertSkip": "Quizás después",
-    "alreadyResponded": "Ya compartiste tus ideas. Lo apreciamos — mantente atento a lo que viene.",
+    "alreadyResponded": "Ya compartiste tus ideas. Lo apreciamos - mantente atento a lo que viene.",
     "error": "Algo salió mal, por favor intenta de nuevo.",
     "categories": {
       "action": "Acción / Suspenso",

@@ -301,7 +301,7 @@
     "submitBtn": "S'abonner",
     "submitting": "En cours...",
     "error": "Erreur.",
-    "watchFreePrompt": "Regardez nos films gratuitement — créez votre compte",
+    "watchFreePrompt": "Regardez nos films gratuitement - créez votre compte",
     "createAccountTitle": "Regardez Nos Films Gratuitement",
     "createAccountDesc": "Créez un compte gratuit pour regarder des films, postuler à des rôles et rejoindre la communauté.",
     "createAccountBtn": "Créer Votre Compte Gratuit →"
@@ -555,7 +555,7 @@
     "roleArtDirector": "Directeur Artistique",
     "roleCostumeDesigner": "Costumier",
     "roleMakeupArtist": "Maquilleur",
-    "freeAccount": "Regarder Gratuitement — Créer un Compte"
+    "freeAccount": "Regarder Gratuitement - Créer un Compte"
   },
   "castingForm": {
     "pageLabel": "Candidature Casting",
@@ -645,7 +645,7 @@
     "invalidImage": "Veuillez télécharger une image",
     "submitError": "Erreur d'envoi",
     "genericError": "Erreur. Réessayez.",
-    "friendlyUploadError": "Oups ! Un petit souci lors du téléchargement. Vérifiez votre connexion et réessayez — vos informations sont sauvegardées !",
+    "friendlyUploadError": "Oups ! Un petit souci lors du téléchargement. Vérifiez votre connexion et réessayez - vos informations sont sauvegardées !",
     "emailLabel": "Email:",
     "ageLabel": "Âge:",
     "genderLabel": "Genre:",
@@ -946,7 +946,7 @@
     "benefit2Title": "Portée Mondiale",
     "benefit2Desc": "Connectez-vous à notre audience internationale de cinéastes, artistes et passionnés de cinéma.",
     "benefit3Title": "Partenaire Innovation",
-    "benefit3Desc": "Soyez à la pointe du cinéma IA — la prochaine frontière de la narration créative.",
+    "benefit3Desc": "Soyez à la pointe du cinéma IA - la prochaine frontière de la narration créative.",
     "benefit4Title": "Accès Exclusif",
     "benefit4Desc": "Invitations VIP aux avant-premières, événements en coulisses et ateliers réservés aux partenaires.",
     "tiersLabel": "Niveaux de Collaboration",
@@ -1194,7 +1194,7 @@
     "formErrorClosed": "Cet appel n'accepte plus de soumissions.",
     "formErrorMax": "Le nombre maximum de soumissions a été atteint.",
     "disclaimerTitle": "Directives de soumission",
-    "disclaimerItem1": "Aucune compensation financière — il s'agit d'une opportunité de crédit et de portfolio.",
+    "disclaimerItem1": "Aucune compensation financière - il s'agit d'une opportunité de crédit et de portfolio.",
     "disclaimerItem2": "Votre scénario sera examiné par notre équipe créative pour son potentiel de production.",
     "disclaimerItem3": "Les 3 meilleurs scénarios seront examinés par notre équipe.",
     "disclaimerItem4": "Les scénarios sélectionnés pourront être adaptés pour une production en studio.",
@@ -1239,15 +1239,15 @@
     "withdrawing": "Retrait en cours...",
     "withdrawSuccess": "Soumission retirée avec succès",
     "withdrawError": "Échec du retrait. Veuillez réessayer.",
-    "withdrawErrorProcessed": "Impossible de retirer — votre soumission a déjà été traitée.",
+    "withdrawErrorProcessed": "Impossible de retirer - votre soumission a déjà été traitée.",
     "resubmitBtn": "Resoumettre le scénario",
     "resubmitHint": "Vous avez retiré votre soumission. Vous pouvez soumettre à nouveau.",
     "withdrawnBadge": "Retiré",
     "withdrawnDate": "Retiré le",
-    "formScriptContentError": "Veuillez coller votre scénario ou télécharger un fichier — au moins un est requis.",
+    "formScriptContentError": "Veuillez coller votre scénario ou télécharger un fichier - au moins un est requis.",
     "formScriptHint": "Coller du texte ou télécharger un fichier",
-    "formScriptOptionA": "Option A — Coller le texte du scénario",
-    "formScriptOptionB": "Option B — Télécharger le fichier du scénario",
+    "formScriptOptionA": "Option A - Coller le texte du scénario",
+    "formScriptOptionB": "Option B - Télécharger le fichier du scénario",
     "formScriptRemoveFile": "Supprimer le fichier"
   },
   "notFound": {
@@ -1359,7 +1359,7 @@
     "subtitlesLabel": "Sous-titres",
     "audioLabel": "Audio",
     "loadingSubtitles": "Chargement...",
-    "fallbackNotice": "Sous-titres non disponibles dans cette langue — affichage en anglais",
+    "fallbackNotice": "Sous-titres non disponibles dans cette langue - affichage en anglais",
     "noSubtitles": "Aucun sous-titre disponible",
     "subtitleLoadError": "Impossible de charger les sous-titres"
   },
@@ -1411,7 +1411,7 @@
   "startProject": {
     "hero": {
       "title": "Créons quelque chose d'inoubliable",
-      "subtitle": "Dites-nous ce que vous souhaitez créer — des vidéos d'anniversaire aux publicités, branding et productions sur mesure.",
+      "subtitle": "Dites-nous ce que vous souhaitez créer - des vidéos d'anniversaire aux publicités, branding et productions sur mesure.",
       "cta": "Démarrer votre projet"
     },
     "steps": {
@@ -1595,14 +1595,14 @@
       "contactAgreement": "J'accepte d'être contacté au sujet de cette demande de projet."
     },
     "helpers": {
-      "overviewHint": "Dites-nous ce que vous voulez créer. Restez simple — nous affinerons ensemble.",
+      "overviewHint": "Dites-nous ce que vous voulez créer. Restez simple - nous affinerons ensemble.",
       "reviewHint": "Vérifiez les détails de votre projet avant de soumettre.",
       "uploadHint": "Ajoutez des photos, vidéos, logos, musiques ou fichiers de référence pour nous aider à comprendre votre vision.",
       "uploading": "Téléchargement...",
       "uploadTypes": "Images, vidéos, audio, PDF, ZIP",
       "remaining": "restants",
       "filesUploaded": "fichiers téléchargés",
-      "adminPreview": "Aperçu admin — les champs obligatoires sont ignorés. Vous pouvez naviguer librement.",
+      "adminPreview": "Aperçu admin - les champs obligatoires sont ignorés. Vous pouvez naviguer librement.",
       "videoLimit": "Vidéo : jusqu'à 500 Mo",
       "audioLimit": "Audio : jusqu'à 50 Mo",
       "docLimit": "Images/Docs : jusqu'à 10 Mo",
@@ -1689,13 +1689,13 @@
     "deposit": {
       "subtitle": "Payez un acompte de 40% pour confirmer la réservation de votre projet. Le solde restant est facturé aux étapes de production.",
       "scheduleTitle": "Calendrier de paiement",
-      "milestoneDeposit": "Acompte — Dû maintenant",
-      "milestoneMidpoint": "Paiement intermédiaire — Après le montage préliminaire",
-      "milestoneFinal": "Paiement final — Avant la livraison",
+      "milestoneDeposit": "Acompte - Dû maintenant",
+      "milestoneMidpoint": "Paiement intermédiaire - Après le montage préliminaire",
+      "milestoneFinal": "Paiement final - Avant la livraison",
       "projectTotal": "Total du projet",
       "dueNow": "Dû maintenant",
       "ofTotal": "de",
-      "dueAtCheckout": "Acompte de 40% — Dû au paiement",
+      "dueAtCheckout": "Acompte de 40% - Dû au paiement",
       "remainderNote": "Les 60% restants sont facturés aux étapes de production",
       "paymentReceived": "Paiement de l'acompte reçu",
       "readyToSubmit": "Votre acompte est sécurisé. Soumettez votre projet pour commencer !",
@@ -1773,7 +1773,7 @@
     "convertMessage": "Créez un compte gratuit et accédez en avant-première à tout ce que nous créons.",
     "convertButton": "Créer Votre Compte Gratuit",
     "convertSkip": "Peut-être plus tard",
-    "alreadyResponded": "Vous avez déjà partagé votre avis. Merci — restez à l'écoute.",
+    "alreadyResponded": "Vous avez déjà partagé votre avis. Merci - restez à l'écoute.",
     "error": "Une erreur est survenue, veuillez réessayer.",
     "categories": {
       "action": "Action / Thriller",

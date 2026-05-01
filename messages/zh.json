@@ -288,7 +288,7 @@
     "ctaCasting": "浏览我们的作品",
     "missionText": "AIM Studio的存在是为了展示人工智能与电影叙事相遇时会发生什么，并与社区一起构建一切。",
     "storyText": "我们不是传统的封闭式工作室。我们创造AI驱动的电影和视觉体验，并且公开地进行。\n\n这是共同构建的电影。你的才华、你的创意，由AI驱动。欢迎来到AIM Studio。",
-    "heroSubtitleP2": "我们用AI制作这些电影——不是因为技术是重点，而是因为这是我们这样规模的工作室讲述如此宏大故事的唯一方式。工具是新的。感受却和每个人的家庭一样古老。"
+    "heroSubtitleP2": "我们用AI制作这些电影--不是因为技术是重点，而是因为这是我们这样规模的工作室讲述如此宏大故事的唯一方式。工具是新的。感受却和每个人的家庭一样古老。"
   },
   "subscribe": {
     "label": "通知",
@@ -301,7 +301,7 @@
     "submitBtn": "订阅",
     "submitting": "订阅中...",
     "error": "出了点问题。",
-    "watchFreePrompt": "免费观看我们的电影 — 创建您的账户",
+    "watchFreePrompt": "免费观看我们的电影 - 创建您的账户",
     "createAccountTitle": "免费观看我们的电影",
     "createAccountDesc": "创建免费账户以观看完整电影、申请演员角色并加入社区。",
     "createAccountBtn": "创建免费账户 →"
@@ -555,7 +555,7 @@
     "roleArtDirector": "美术指导",
     "roleCostumeDesigner": "服装设计",
     "roleMakeupArtist": "化妆师",
-    "freeAccount": "免费观看 — 创建账户"
+    "freeAccount": "免费观看 - 创建账户"
   },
   "castingForm": {
     "pageLabel": "选角申请",
@@ -645,7 +645,7 @@
     "invalidImage": "请上传图片",
     "submitError": "提交错误",
     "genericError": "错误。请重试。",
-    "friendlyUploadError": "哎呀！上传文件时遇到了小问题。请检查您的网络连接后重试 — 您的信息已保存！",
+    "friendlyUploadError": "哎呀！上传文件时遇到了小问题。请检查您的网络连接后重试 - 您的信息已保存！",
     "emailLabel": "邮箱:",
     "ageLabel": "年龄:",
     "genderLabel": "性别:",
@@ -946,7 +946,7 @@
     "benefit2Title": "全球覆盖",
     "benefit2Desc": "与我们由电影人、艺术家和电影爱好者组成的国际观众互动。",
     "benefit3Title": "创新伙伴",
-    "benefit3Desc": "引领AI电影创新——故事创作的下一个前沿。",
+    "benefit3Desc": "引领AI电影创新--故事创作的下一个前沿。",
     "benefit4Title": "独家访问",
     "benefit4Desc": "首映式、幕后活动和伙伴专属工作坊的VIP邀请。",
     "tiersLabel": "合作级别",
@@ -1194,7 +1194,7 @@
     "formErrorClosed": "此次征稿已结束，不再接受投稿。",
     "formErrorMax": "此次征稿已达最大投稿数量。",
     "disclaimerTitle": "投稿须知",
-    "disclaimerItem1": "无金钱报酬——这是一次获得署名及作品集展示的机会。",
+    "disclaimerItem1": "无金钱报酬--这是一次获得署名及作品集展示的机会。",
     "disclaimerItem2": "您的剧本将由我们的创意团队评估制作潜力。",
     "disclaimerItem3": "排名前三的剧本将由团队进行深入评审。",
     "disclaimerItem4": "入选剧本可能被改编用于工作室电影制作。",
@@ -1239,15 +1239,15 @@
     "withdrawing": "正在撤回...",
     "withdrawSuccess": "投稿已成功撤回",
     "withdrawError": "撤回失败，请重试。",
-    "withdrawErrorProcessed": "无法撤回 — 您的投稿已被处理。",
+    "withdrawErrorProcessed": "无法撤回 - 您的投稿已被处理。",
     "resubmitBtn": "重新提交剧本",
     "resubmitHint": "您之前撤回了投稿，可以重新提交。",
     "withdrawnBadge": "已撤回",
     "withdrawnDate": "撤回日期",
-    "formScriptContentError": "请粘贴您的剧本或上传文件——至少需要提供一项。",
+    "formScriptContentError": "请粘贴您的剧本或上传文件--至少需要提供一项。",
     "formScriptHint": "粘贴文本或上传文件",
-    "formScriptOptionA": "选项A —— 粘贴剧本文本",
-    "formScriptOptionB": "选项B —— 上传剧本文件",
+    "formScriptOptionA": "选项A -- 粘贴剧本文本",
+    "formScriptOptionB": "选项B -- 上传剧本文件",
     "formScriptRemoveFile": "移除文件"
   },
   "notFound": {
@@ -1359,7 +1359,7 @@
     "subtitlesLabel": "字幕",
     "audioLabel": "音频",
     "loadingSubtitles": "加载中...",
-    "fallbackNotice": "此语言字幕暂不可用 — 显示英文",
+    "fallbackNotice": "此语言字幕暂不可用 - 显示英文",
     "noSubtitles": "没有可用字幕",
     "subtitleLoadError": "字幕加载失败"
   },
@@ -1411,7 +1411,7 @@
   "startProject": {
     "hero": {
       "title": "让我们创造难忘的作品",
-      "subtitle": "告诉我们您想创作什么——从生日视频到广告、品牌推广和定制制作。",
+      "subtitle": "告诉我们您想创作什么--从生日视频到广告、品牌推广和定制制作。",
       "cta": "开始您的项目"
     },
     "steps": {
@@ -1595,14 +1595,14 @@
       "contactAgreement": "我同意就此项目请求与我联系。"
     },
     "helpers": {
-      "overviewHint": "告诉我们您想创作什么。保持简单——我们会一起完善。",
+      "overviewHint": "告诉我们您想创作什么。保持简单--我们会一起完善。",
       "reviewHint": "提交前请检查项目详情。",
       "uploadHint": "添加照片、视频、标志、音乐或参考文件，帮助我们理解您的愿景。",
       "uploading": "上传中...",
       "uploadTypes": "图片、视频、音频、PDF、ZIP",
       "remaining": "剩余",
       "filesUploaded": "文件已上传",
-      "adminPreview": "管理员预览——必填字段已跳过。您可以自由浏览所有步骤。",
+      "adminPreview": "管理员预览--必填字段已跳过。您可以自由浏览所有步骤。",
       "videoLimit": "视频：最大 500 MB",
       "audioLimit": "音频：最大 50 MB",
       "docLimit": "图片/文档：最大 10 MB",
@@ -1689,13 +1689,13 @@
     "deposit": {
       "subtitle": "支付40%定金以确认您的项目预订。余额将在制作里程碑时开具发票。",
       "scheduleTitle": "付款时间表",
-      "milestoneDeposit": "定金 — 立即支付",
-      "milestoneMidpoint": "中期付款 — 粗剪完成后",
-      "milestoneFinal": "尾款 — 交付前",
+      "milestoneDeposit": "定金 - 立即支付",
+      "milestoneMidpoint": "中期付款 - 粗剪完成后",
+      "milestoneFinal": "尾款 - 交付前",
       "projectTotal": "项目总额",
       "dueNow": "立即支付",
       "ofTotal": "的",
-      "dueAtCheckout": "40%定金 — 结账时支付",
+      "dueAtCheckout": "40%定金 - 结账时支付",
       "remainderNote": "剩余60%在制作里程碑时开具发票",
       "paymentReceived": "定金已收到",
       "readyToSubmit": "您的定金已确保。提交您的项目以开始！",
@@ -1773,7 +1773,7 @@
     "convertMessage": "创建免费账户，提前访问我们制作的所有内容。",
     "convertButton": "创建免费账户",
     "convertSkip": "以后再说",
-    "alreadyResponded": "您已经分享了您的想法。感谢您 — 敬请期待即将到来的内容。",
+    "alreadyResponded": "您已经分享了您的想法。感谢您 - 敬请期待即将到来的内容。",
     "error": "出了点问题，请重试。",
     "categories": {
       "action": "动作/惊悚",

@@ -242,6 +242,16 @@ export default async function AboutPage() {
                                 }}>
                                     {tHome('visionP1')}
                                 </p>
+                                <p style={{
+                                    fontSize: 'clamp(0.85rem, 1.8vw, 0.95rem)',
+                                    color: 'var(--text-tertiary)',
+                                    maxWidth: '600px',
+                                    margin: '0 auto',
+                                    lineHeight: 1.75,
+                                    marginTop: 'var(--space-sm)',
+                                }}>
+                                    {tHome('visionP2')}
+                                </p>
                             </div>
                         </ScrollReveal3D>
 
@@ -253,7 +263,7 @@ export default async function AboutPage() {
                                 {
                                     icon: '🎯',
                                     value: tHome('zeroCompromise'),
-                                    desc: tHome('visionP2'),
+                                    desc: t('innovationDesc'),
                                     cardClass: 'feature-card-gold',
                                     border: 'rgba(212,168,83,0.25)',
                                 },

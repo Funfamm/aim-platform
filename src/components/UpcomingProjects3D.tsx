@@ -240,7 +240,7 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
                         <p className="animate-fade-in-up delay-2" style={{
                             fontSize: '0.95rem', maxWidth: '440px', margin: '0 auto',
                             lineHeight: 1.6, textAlign: 'center', color: 'var(--text-secondary)',
-                        }}>{upd?.heroDesc || t('noProjects')}</p>
+                        }}>{upd?.heroDesc || t('description')}</p>
 
 
                         {/* Video indicator dots */}
@@ -425,7 +425,7 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
                     </div>
 
                     {/* Scroll CTA */}
-                    <a href="#projects" className="btn btn-primary btn-lg animate-fade-in-up delay-3" style={{ marginTop: 'var(--space-sm)' }}>
+                    <a href="#upcoming-grid" className="btn btn-primary btn-lg animate-fade-in-up delay-3" style={{ marginTop: 'var(--space-sm)' }}>
                         {t('explore')}
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M12 5v14M5 12l7 7 7-7" />
@@ -455,7 +455,7 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
             </section>
 
             {/* ═══ PROJECTS SECTION — scrolls over the fixed video ═══ */}
-            <section id="projects" style={{
+            <section id="upcoming-grid" style={{
                 position: 'relative',
                 zIndex: 2,
             }}>

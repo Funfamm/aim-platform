@@ -301,7 +301,7 @@
     "submitBtn": "Abonnieren",
     "submitting": "Wird abonniert...",
     "error": "Etwas ist schiefgelaufen.",
-    "watchFreePrompt": "Unsere Filme kostenlos ansehen — erstelle dein Konto",
+    "watchFreePrompt": "Unsere Filme kostenlos ansehen - erstelle dein Konto",
     "createAccountTitle": "Unsere Filme Kostenlos Ansehen",
     "createAccountDesc": "Erstelle ein kostenloses Konto, um Filme anzusehen, dich für Rollen zu bewerben und der Community beizutreten.",
     "createAccountBtn": "Kostenloses Konto Erstellen →"
@@ -555,7 +555,7 @@
     "roleArtDirector": "Szenenbildner",
     "roleCostumeDesigner": "Kostümdesigner",
     "roleMakeupArtist": "Maskenbildner",
-    "freeAccount": "Kostenlos Ansehen — Konto Erstellen"
+    "freeAccount": "Kostenlos Ansehen - Konto Erstellen"
   },
   "castingForm": {
     "pageLabel": "Casting-Bewerbung",
@@ -645,7 +645,7 @@
     "invalidImage": "Bitte ein Bild hochladen",
     "submitError": "Fehler beim Senden",
     "genericError": "Fehler. Erneut versuchen.",
-    "friendlyUploadError": "Hoppla! Beim Hochladen gab es ein kleines Problem. Bitte überprüfe deine Internetverbindung und versuche es erneut — deine Daten sind gespeichert!",
+    "friendlyUploadError": "Hoppla! Beim Hochladen gab es ein kleines Problem. Bitte überprüfe deine Internetverbindung und versuche es erneut - deine Daten sind gespeichert!",
     "emailLabel": "E-Mail:",
     "ageLabel": "Alter:",
     "genderLabel": "Geschlecht:",
@@ -946,7 +946,7 @@
     "benefit2Title": "Globale Reichweite",
     "benefit2Desc": "Verbinden Sie sich mit unserem internationalen Publikum aus Filmemachern, Künstlern und Kinobegeisterten.",
     "benefit3Title": "Innovationspartner",
-    "benefit3Desc": "Seien Sie an der Spitze des KI-Kinos — der nächsten Grenze kreativer Geschichten.",
+    "benefit3Desc": "Seien Sie an der Spitze des KI-Kinos - der nächsten Grenze kreativer Geschichten.",
     "benefit4Title": "Exklusiver Zugang",
     "benefit4Desc": "VIP-Einladungen zu Premieren, Backstage-Events und Workshops nur für Partner.",
     "tiersLabel": "Kooperationsstufen",
@@ -1194,7 +1194,7 @@
     "formErrorClosed": "Dieser Script-Call nimmt keine weiteren Einsendungen an.",
     "formErrorMax": "Maximale Anzahl an Einsendungen für diesen Call erreicht.",
     "disclaimerTitle": "Einreichungsrichtlinien",
-    "disclaimerItem1": "Keine finanzielle Vergütung — dies ist eine Portfolio-Chance.",
+    "disclaimerItem1": "Keine finanzielle Vergütung - dies ist eine Portfolio-Chance.",
     "disclaimerItem2": "Dein Drehbuch wird von unserem Kreativteam auf Produktionspotenzial geprüft.",
     "disclaimerItem3": "Die Top 3 Drehbücher werden von unserem Team reviewt.",
     "disclaimerItem4": "Ausgewählte Drehbücher können für die Studioproduktion adaptiert werden.",
@@ -1239,15 +1239,15 @@
     "withdrawing": "Wird zurückgezogen...",
     "withdrawSuccess": "Einreichung zurückgezogen",
     "withdrawError": "Fehler beim Zurückziehen. Bitte erneut versuchen.",
-    "withdrawErrorProcessed": "Kann nicht zurückgezogen werden — bereits verarbeitet.",
+    "withdrawErrorProcessed": "Kann nicht zurückgezogen werden - bereits verarbeitet.",
     "resubmitBtn": "Drehbuch erneut einreichen",
     "resubmitHint": "Du hast deine Einreichung zurückgezogen. Du kannst erneut einreichen.",
     "withdrawnBadge": "Zurückgezogen",
     "withdrawnDate": "Zurückgezogen am",
     "formScriptContentError": "Bitte fügen Sie Ihr Skript ein oder laden Sie eine Datei hoch – mindestens eines ist erforderlich.",
     "formScriptHint": "Text einfügen oder Datei hochladen",
-    "formScriptOptionA": "Option A — Skripttext einfügen",
-    "formScriptOptionB": "Option B — Skriptdatei hochladen",
+    "formScriptOptionA": "Option A - Skripttext einfügen",
+    "formScriptOptionB": "Option B - Skriptdatei hochladen",
     "formScriptRemoveFile": "Datei entfernen"
   },
   "notFound": {
@@ -1359,7 +1359,7 @@
     "subtitlesLabel": "Untertitel",
     "audioLabel": "Audio",
     "loadingSubtitles": "Wird geladen...",
-    "fallbackNotice": "Untertitel in dieser Sprache nicht verfügbar — Englisch wird angezeigt",
+    "fallbackNotice": "Untertitel in dieser Sprache nicht verfügbar - Englisch wird angezeigt",
     "noSubtitles": "Keine Untertitel verfügbar",
     "subtitleLoadError": "Untertitel konnten nicht geladen werden"
   },
@@ -1411,7 +1411,7 @@
   "startProject": {
     "hero": {
       "title": "Lass uns etwas Unvergessliches schaffen",
-      "subtitle": "Erzählen Sie uns, was Sie erstellen möchten — von Geburtstagsvideos über Werbung bis hin zu individuellen Produktionen.",
+      "subtitle": "Erzählen Sie uns, was Sie erstellen möchten - von Geburtstagsvideos über Werbung bis hin zu individuellen Produktionen.",
       "cta": "Projekt starten"
     },
     "steps": {
@@ -1595,14 +1595,14 @@
       "contactAgreement": "Ich stimme zu, bezüglich dieser Projektanfrage kontaktiert zu werden."
     },
     "helpers": {
-      "overviewHint": "Erzählen Sie uns, was Sie erstellen möchten. Halten Sie es einfach — wir verfeinern es gemeinsam.",
+      "overviewHint": "Erzählen Sie uns, was Sie erstellen möchten. Halten Sie es einfach - wir verfeinern es gemeinsam.",
       "reviewHint": "Überprüfen Sie Ihre Projektdetails vor dem Absenden.",
       "uploadHint": "Fügen Sie Fotos, Videos, Logos, Musik oder Referenzdateien hinzu.",
       "uploading": "Wird hochgeladen...",
       "uploadTypes": "Bilder, Videos, Audio, PDF, ZIP",
       "remaining": "verbleibend",
       "filesUploaded": "Dateien hochgeladen",
-      "adminPreview": "Admin-Vorschau — Pflichtfelder werden übersprungen. Sie können frei navigieren.",
+      "adminPreview": "Admin-Vorschau - Pflichtfelder werden übersprungen. Sie können frei navigieren.",
       "videoLimit": "Video: bis zu 500 MB",
       "audioLimit": "Audio: bis zu 50 MB",
       "docLimit": "Bilder/Dokumente: bis zu 10 MB",
@@ -1689,13 +1689,13 @@
     "deposit": {
       "subtitle": "Zahlen Sie eine Anzahlung von 40%, um Ihre Projektbuchung zu bestätigen. Der Restbetrag wird bei Produktionsmeilensteinen in Rechnung gestellt.",
       "scheduleTitle": "Zahlungsplan",
-      "milestoneDeposit": "Anzahlung — Jetzt fällig",
-      "milestoneMidpoint": "Zwischenzahlung — Nach dem Rohschnitt",
-      "milestoneFinal": "Abschlusszahlung — Vor der Lieferung",
+      "milestoneDeposit": "Anzahlung - Jetzt fällig",
+      "milestoneMidpoint": "Zwischenzahlung - Nach dem Rohschnitt",
+      "milestoneFinal": "Abschlusszahlung - Vor der Lieferung",
       "projectTotal": "Projektgesamtbetrag",
       "dueNow": "Jetzt fällig",
       "ofTotal": "von",
-      "dueAtCheckout": "40% Anzahlung — Fällig beim Checkout",
+      "dueAtCheckout": "40% Anzahlung - Fällig beim Checkout",
       "remainderNote": "Verbleibende 60% werden bei Produktionsmeilensteinen in Rechnung gestellt",
       "paymentReceived": "Anzahlung erhalten",
       "readyToSubmit": "Ihre Anzahlung ist gesichert. Reichen Sie Ihr Projekt ein, um loszulegen!",
@@ -1773,7 +1773,7 @@
     "convertMessage": "Erstellen Sie ein kostenloses Konto und erhalten Sie frühzeitigen Zugang zu allem, was wir schaffen.",
     "convertButton": "Kostenloses Konto Erstellen",
     "convertSkip": "Vielleicht später",
-    "alreadyResponded": "Sie haben bereits Ihre Meinung geteilt. Wir schätzen das — bleiben Sie gespannt.",
+    "alreadyResponded": "Sie haben bereits Ihre Meinung geteilt. Wir schätzen das - bleiben Sie gespannt.",
     "error": "Etwas ist schiefgelaufen, bitte versuchen Sie es erneut.",
     "categories": {
       "action": "Action / Thriller",
