@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { createToken, createRefreshToken, setUserCookie } from '@/lib/auth'
+import { createToken, createRefreshToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 import { handleDeviceFingerprint } from '@/lib/device-fingerprint'
 import { SUBTITLE_TARGET_LANGS } from '@/config/subtitles'
@@ -227,7 +227,6 @@ export async function GET(req: Request) {
         }
         const token = await createToken(tokenPayload)
         const refresh = await createRefreshToken(tokenPayload)
-        await setUserCookie(token, refresh)
 
         // New device detection + branded email alert (fire-and-forget)
         void handleDeviceFingerprint(req, user.id, user.name, user.email, tokenVersion).catch(() => {})
@@ -248,7 +247,34 @@ export async function GET(req: Request) {
                 ? safePath
                 : `/${preferredLanguage}${safePath}`
 
-        return r(localePath)
+        // CRITICAL: Set auth cookies directly on the redirect response.
+        // Using cookies().set() followed by NextResponse.redirect() can
+        // cause cookies to not propagate in Next.js App Router, resulting
+        // in the user landing on the destination page without a session.
+        const isProduction = process.env.NODE_ENV === 'production'
+        const domainConfig = process.env.NEXT_PUBLIC_COOKIE_DOMAIN
+            ? { domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN }
+            : {}
+        const redirectResponse = r(localePath)
+
+        redirectResponse.cookies.set('user_token', token, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'lax',
+            maxAge: 15 * 60,
+            path: '/',
+            ...domainConfig,
+        })
+        redirectResponse.cookies.set('refresh_token', refresh, {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: 'lax',
+            maxAge: 7 * 24 * 60 * 60,
+            path: '/',
+            ...domainConfig,
+        })
+
+        return redirectResponse
     } catch (err) {
         console.error('[Google OAuth] Unexpected error:', err)
         return r('/login?error=oauth_failed')
