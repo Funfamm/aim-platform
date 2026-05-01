@@ -1025,33 +1025,43 @@ select::placeholder {
 
   /* Optimize Three Ways In cards for mobile */
   .three-ways-card {
-    padding: 1.25rem 1.15rem;
-    border-radius: var(--radius-lg);
+    padding: 1rem 1rem;
+    border-radius: var(--radius-md);
   }
 
-  
   .three-ways-icon {
-    width: 40px;
-    height: 40px;
-    margin-bottom: var(--space-md);
+    width: 32px;
+    height: 32px;
+    margin-bottom: var(--space-sm);
+    border-radius: var(--radius-md);
+  }
+
+  .three-ways-icon svg {
+    width: 16px;
+    height: 16px;
   }
 
   .three-ways-card h3 {
-    font-size: 1.15rem;
+    font-size: 1rem;
+    margin-bottom: 2px;
   }
 
+  .three-ways-sub {
+    font-size: 0.55rem;
+    margin-bottom: var(--space-sm);
+  }
 
   .three-ways-card p {
-    font-size: 0.8rem;
-    line-height: 1.5;
+    font-size: 0.78rem;
+    line-height: 1.45;
   }
-
 
   .three-ways-card .card-cta {
-    padding: 0.55rem 1.25rem;
-    font-size: 0.75rem;
-    margin-top: var(--space-md);
+    padding: 0.45rem 1rem;
+    font-size: 0.7rem;
+    margin-top: var(--space-sm);
   }
+
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
