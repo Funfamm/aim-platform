@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/suppression-cleanup",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/daily-admin-summary",
+      "schedule": "0 12 * * *"
     }
   ],
   "functions": {

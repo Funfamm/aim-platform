@@ -10,121 +10,121 @@ datasource db {
 }
 
 model User {
-  id                     String                      @id @default(cuid())
-  name                   String
-  email                  String                      @unique
-  passwordHash           String?
-  googleId               String?                     @unique
-  appleId                String?                     @unique
-  avatar                 String?
-  bannerUrl              String?
-  role                   String                      @default("member")
-  tokenVersion           Int                         @default(0)
-  knownDevices           String?
-  lastLoginAt            DateTime?
-  emailVerified          Boolean                     @default(false)
-  verificationCode       String?
-  verificationExpiry     DateTime?
-  createdAt              DateTime                    @default(now())
-  updatedAt              DateTime                    @updatedAt
-  trainingXp             Int                         @default(0)
-  trainingStreak         Int                         @default(0)
-  lastTrainingAt         DateTime?
-  mfaEnabled             Boolean                     @default(false)
-  failedLoginAttempts    Int                         @default(0)
-  lockedUntil            DateTime?                   // auto-clears after TTL
-  suspended              Boolean                     @default(false)  // manual admin ban
-  mfaTempCode            String?
-  mfaExpiresAt           DateTime?
-  preferredLanguage      String                      @default("en")
-  receiveLocalizedEmails Boolean                     @default(true)
-  accentColor            String                      @default("gold")
-  themeMode              String                      @default("dark")
-  mediaProfile           Json?                       // { front_headshot, side_profile, full_body, expression, optional_1, optional_2, voiceRecording }
-  country                String?                     // ISO 3166-1 alpha-2 (e.g. "NG", "US") — auto-detected on registration
-  applications           Application[]
-  donations              Donation[]
-  enrollments            Enrollment[]
-  lessonProgress         LessonProgress[]
-  passwordHistory        PasswordHistory[]
-  ownedProjects          Project[]
-  quizAttempts           QuizAttempt[]
-  reviewActivities       ReviewActivity[]
-  trainingBadges         TrainingBadge[]
-  notifications              UserNotification[]
-  notificationPreference     UserNotificationPreference?
-  scriptCallNotifications    ScriptCallNotify[]
-  watchHistory               WatchHistory[]
-  watchlist                  Watchlist[]
-  comments                   Comment[]
-  commentLikes               CommentLike[]
-  registrationSource         String?               // utm_source at registration: conversion_campaign | welcome_email | watch_wall | trailer_lock | watchlist_wall | comment_wall | subscribe_form | subscribe_page | organic
+  id                      String                      @id @default(cuid())
+  name                    String
+  email                   String                      @unique
+  passwordHash            String?
+  googleId                String?                     @unique
+  appleId                 String?                     @unique
+  avatar                  String?
+  bannerUrl               String?
+  role                    String                      @default("member")
+  tokenVersion            Int                         @default(0)
+  knownDevices            String?
+  lastLoginAt             DateTime?
+  emailVerified           Boolean                     @default(false)
+  verificationCode        String?
+  verificationExpiry      DateTime?
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt
+  trainingXp              Int                         @default(0)
+  trainingStreak          Int                         @default(0)
+  lastTrainingAt          DateTime?
+  mfaEnabled              Boolean                     @default(false)
+  failedLoginAttempts     Int                         @default(0)
+  lockedUntil             DateTime? // auto-clears after TTL
+  suspended               Boolean                     @default(false) // manual admin ban
+  mfaTempCode             String?
+  mfaExpiresAt            DateTime?
+  preferredLanguage       String                      @default("en")
+  receiveLocalizedEmails  Boolean                     @default(true)
+  accentColor             String                      @default("gold")
+  themeMode               String                      @default("dark")
+  mediaProfile            Json? // { front_headshot, side_profile, full_body, expression, optional_1, optional_2, voiceRecording }
+  country                 String? // ISO 3166-1 alpha-2 (e.g. "NG", "US") — auto-detected on registration
+  applications            Application[]
+  donations               Donation[]
+  enrollments             Enrollment[]
+  lessonProgress          LessonProgress[]
+  passwordHistory         PasswordHistory[]
+  ownedProjects           Project[]
+  quizAttempts            QuizAttempt[]
+  reviewActivities        ReviewActivity[]
+  trainingBadges          TrainingBadge[]
+  notifications           UserNotification[]
+  notificationPreference  UserNotificationPreference?
+  scriptCallNotifications ScriptCallNotify[]
+  watchHistory            WatchHistory[]
+  watchlist               Watchlist[]
+  comments                Comment[]
+  commentLikes            CommentLike[]
+  registrationSource      String? // utm_source at registration: conversion_campaign | welcome_email | watch_wall | trailer_lock | watchlist_wall | comment_wall | subscribe_form | subscribe_page | organic
 
   @@index([role])
   @@index([createdAt])
 }
 
 model Project {
-  id           String         @id @default(cuid())
-  title        String
-  slug         String         @unique
-  tagline      String         @default("")
-  description  String
-  status       String         @default("upcoming")
-  projectType  String         @default("movie")
-  coverImage   String?
-  trailerUrl   String?
-  filmUrl      String?
-  genre        String?
-  year         String?
-  duration     String?
-  gallery      String?
-  translations String?
-  credits      String?
-  sponsorData  String?        // JSON: { name, logoUrl?, description? } — per-project sponsor for publish emails
-  featured     Boolean        @default(false)
-  published    Boolean        @default(false)  // visibility gate — only published projects appear on public pages
-  publishAt    DateTime?                       // if set, cron publishes the project at this time
-  publishNotifyGroups String?                   // JSON: { subscribers, members, cast } — audience for scheduled publish
-  sortOrder    Int            @default(0)
-  viewCount    Int            @default(0)  // cached counter — incremented by /api/projects/view
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  country      String?
-  ownerId      String?
-  castingCalls CastingCall[]
-  cast         FilmCast[]
-  donations    Donation[]
-  episodes     Episode[]
-  subtitles    FilmSubtitle[]
-  audioTracks  AudioTrack[]   // Phase 2: dubbed audio tracks
-  owner        User?          @relation(fields: [ownerId], references: [id])
-  scriptCalls  ScriptCall[]
-  watchHistory WatchHistory[]
-  watchlist    Watchlist[]
-  liveEvents   LiveEvent[]
-  views        ProjectView[]
-  comments     Comment[]
+  id                  String         @id @default(cuid())
+  title               String
+  slug                String         @unique
+  tagline             String         @default("")
+  description         String
+  status              String         @default("upcoming")
+  projectType         String         @default("movie")
+  coverImage          String?
+  trailerUrl          String?
+  filmUrl             String?
+  genre               String?
+  year                String?
+  duration            String?
+  gallery             String?
+  translations        String?
+  credits             String?
+  sponsorData         String? // JSON: { name, logoUrl?, description? } — per-project sponsor for publish emails
+  featured            Boolean        @default(false)
+  published           Boolean        @default(false) // visibility gate — only published projects appear on public pages
+  publishAt           DateTime? // if set, cron publishes the project at this time
+  publishNotifyGroups String? // JSON: { subscribers, members, cast } — audience for scheduled publish
+  sortOrder           Int            @default(0)
+  viewCount           Int            @default(0) // cached counter — incremented by /api/projects/view
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  country             String?
+  ownerId             String?
+  castingCalls        CastingCall[]
+  cast                FilmCast[]
+  donations           Donation[]
+  episodes            Episode[]
+  subtitles           FilmSubtitle[]
+  audioTracks         AudioTrack[] // Phase 2: dubbed audio tracks
+  owner               User?          @relation(fields: [ownerId], references: [id])
+  scriptCalls         ScriptCall[]
+  watchHistory        WatchHistory[]
+  watchlist           Watchlist[]
+  liveEvents          LiveEvent[]
+  views               ProjectView[]
+  comments            Comment[]
 
   @@index([title, tagline])
-  @@index([viewCount])           // trending sort
+  @@index([viewCount]) // trending sort
   @@index([featured, sortOrder]) // featured row
-  @@index([createdAt])           // new releases sort
-  @@index([genre, viewCount])    // genre rows sorted by popularity
+  @@index([createdAt]) // new releases sort
+  @@index([genre, viewCount]) // genre rows sorted by popularity
 }
 
 // Phase 2 — Dubbed audio track per language per project/episode
 model AudioTrack {
-  id          String   @id @default(cuid())
-  projectId   String
-  episodeId   String?  // null = applies to the full film
-  language    String   // ISO 639-1 e.g. "es"
-  label       String   // Display label e.g. "Español (Doblaje)"
-  audioUrl    String   // R2 object URL
-  isPrimary   Boolean  @default(false)  // true = original/source audio
-  status      String   @default("ready") // ready | processing | failed
-  createdAt   DateTime @default(now())
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  projectId String
+  episodeId String? // null = applies to the full film
+  language  String // ISO 639-1 e.g. "es"
+  label     String // Display label e.g. "Español (Doblaje)"
+  audioUrl  String // R2 object URL
+  isPrimary Boolean  @default(false) // true = original/source audio
+  status    String   @default("ready") // ready | processing | failed
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, episodeId, language])
   @@index([projectId])
@@ -134,8 +134,8 @@ model FilmCast {
   id              String   @id @default(cuid())
   projectId       String
   name            String
-  jobTitle        String   // Actor, Director, Producer, etc.
-  character       String?  // Character name in the film
+  jobTitle        String // Actor, Director, Producer, etc.
+  character       String? // Character name in the film
   bio             String?  @db.Text
   photoUrl        String?
   instagramUrl    String?
@@ -146,6 +146,7 @@ model FilmCast {
 
   @@index([projectId])
 }
+
 model Watchlist {
   id        String   @id @default(cuid())
   userId    String
@@ -162,10 +163,10 @@ model Watchlist {
 model ProjectView {
   id         String   @id @default(cuid())
   projectId  String
-  userId     String?  // null for anonymous visitors
+  userId     String? // null for anonymous visitors
   source     String   @default("browse") // browse | search | recommendation | hover | share
   locale     String   @default("en")
-  durationMs Int?     // how long they stayed (set on page leave)
+  durationMs Int? // how long they stayed (set on page leave)
   createdAt  DateTime @default(now())
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
@@ -179,13 +180,13 @@ model WatchHistory {
   id           String   @id @default(cuid())
   userId       String
   projectId    String
-  episodeId    String?  // null = project-level, set = per-episode tracking
+  episodeId    String? // null = project-level, set = per-episode tracking
   watchedAt    DateTime @default(now())
   progress     Float    @default(0)
-  subtitleLang String?  // ISO 639-1 code of subtitle used, null if captions off
-  audioLang    String?  // ISO 639-1 code of audio track used
+  subtitleLang String? // ISO 639-1 code of subtitle used, null if captions off
+  audioLang    String? // ISO 639-1 code of audio track used
   captionsOn   Boolean  @default(false)
-  completePct  Float?   // 0.0–1.0 fraction of video watched at session end
+  completePct  Float? // 0.0–1.0 fraction of video watched at session end
   project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   episode      Episode? @relation(fields: [episodeId], references: [id], onDelete: SetNull)
@@ -196,19 +197,19 @@ model WatchHistory {
 }
 
 model Episode {
-  id          String         @id @default(cuid())
-  projectId   String
-  title       String
-  number      Int
-  season      Int            @default(1)
-  videoUrl    String?
-  duration    String?
-  published   Boolean        @default(false)
-  description String?
-  thumbnail   String?
-  createdAt   DateTime       @default(now())
-  project     Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  comments    Comment[]
+  id           String         @id @default(cuid())
+  projectId    String
+  title        String
+  number       Int
+  season       Int            @default(1)
+  videoUrl     String?
+  duration     String?
+  published    Boolean        @default(false)
+  description  String?
+  thumbnail    String?
+  createdAt    DateTime       @default(now())
+  project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  comments     Comment[]
   watchHistory WatchHistory[]
 
   @@unique([projectId, season, number])
@@ -219,52 +220,51 @@ model FilmSubtitle {
   id               String   @id @default(cuid())
   projectId        String
   episodeId        String?
-  mediaType        String   @default("movie")  // "movie" | "trailer"
+  mediaType        String   @default("movie") // "movie" | "trailer"
   language         String   @default("en")
-  originalLanguage String   @default("en")   // source language of the video content
-  segments         String   // JSON: TranscriptSegment[] (source language)
-  translations     String?  // JSON: Record<lang, TranscriptSegment[]>
+  originalLanguage String   @default("en") // source language of the video content
+  segments         String // JSON: TranscriptSegment[] (source language)
+  translations     String? // JSON: Record<lang, TranscriptSegment[]>
   status           String   @default("pending")
   translateStatus  String   @default("pending") // pending|partial|complete|failed
-  langStatus       Json?    // Record<lang, 'pending'|'processing'|'completed'|'failed'|'reviewed'>
-  vttPaths         Json?    // Record<lang, string> — versioned R2 object keys e.g. "subtitles/{id}/{lang}-{hash}.vtt"
-  qcIssues         String?  // JSON: QCResult[] — Netflix-spec checks on English track
-  generatedWith    String?  // key label used for translation e.g. "My Gemini Key 1"
-  transcribedWith  String?  // ASR model used e.g. "whisper-medium"
+  langStatus       Json? // Record<lang, 'pending'|'processing'|'completed'|'failed'|'reviewed'>
+  vttPaths         Json? // Record<lang, string> — versioned R2 object keys e.g. "subtitles/{id}/{lang}-{hash}.vtt"
+  qcIssues         String? // JSON: QCResult[] — Netflix-spec checks on English track
+  generatedWith    String? // key label used for translation e.g. "My Gemini Key 1"
+  transcribedWith  String? // ASR model used e.g. "whisper-medium"
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   // ┬ T4: Track-level subtitle placement — desktop (defaults for all cues) ┬
-  verticalAnchor   String   @default("bottom")  // bottom|lower_third|middle|upper_third|top
-  horizontalAlign  String   @default("center")  // left|center|right
-  offsetYPercent   Float    @default(0)
-  offsetXPercent   Float    @default(0)
-  safeAreaMarginPx Int      @default(12)
-  backgroundStyle  String   @default("shadow")  // none|shadow|box
-  fontScale        Float    @default(1.0)
+  verticalAnchor   String @default("bottom") // bottom|lower_third|middle|upper_third|top
+  horizontalAlign  String @default("center") // left|center|right
+  offsetYPercent   Float  @default(0)
+  offsetXPercent   Float  @default(0)
+  safeAreaMarginPx Int    @default(12)
+  backgroundStyle  String @default("shadow") // none|shadow|box
+  fontScale        Float  @default(1.0)
   // JSON: per-cue overrides keyed by cue index string
-  cueOverrides     String   @default("{}")
+  cueOverrides     String @default("{}")
 
   // ┬ T4-M: Independent mobile placement fields ┬
   // When useSeparateMobilePlacement=false the player falls back to desktop values.
   useSeparateMobilePlacement Boolean @default(false)
-  mobileVerticalAnchor       String  @default("bottom")  // bottom|lower_third
+  mobileVerticalAnchor       String  @default("bottom") // bottom|lower_third
   mobileHorizontalAlign      String  @default("center")
   mobileOffsetYPercent       Float   @default(0)
   mobileOffsetXPercent       Float   @default(0)
-  mobileSafeAreaMarginPx     Int     @default(20)        // larger default for home indicator
-  mobileFontScale            Float   @default(0.9)       // slightly smaller for narrow screens
-  
+  mobileSafeAreaMarginPx     Int     @default(20) // larger default for home indicator
+  mobileFontScale            Float   @default(0.9) // slightly smaller for narrow screens
+
   // ┬ T4-L: Independent mobile landscape placement fields ┬
-  landscapeVerticalAnchor    String  @default("bottom")
-  landscapeHorizontalAlign   String  @default("center")
-  landscapeOffsetYPercent    Float   @default(0)
-  landscapeOffsetXPercent    Float   @default(0)
-  landscapeSafeAreaMarginPx  Int     @default(20)
-  landscapeFontScale         Float   @default(0.9)
+  landscapeVerticalAnchor   String @default("bottom")
+  landscapeHorizontalAlign  String @default("center")
+  landscapeOffsetYPercent   Float  @default(0)
+  landscapeOffsetXPercent   Float  @default(0)
+  landscapeSafeAreaMarginPx Int    @default(20)
+  landscapeFontScale        Float  @default(0.9)
 
-
-  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project          Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
   revisions        SubtitleRevision[]
   historyClearLogs SubtitleHistoryClear[]
 
@@ -274,15 +274,15 @@ model FilmSubtitle {
 
 // ┬ T3-B: Server-side subtitle revision history ┬
 model SubtitleRevision {
-  id             String       @id @default(cuid())
-  subtitleId     String
-  savedAt        DateTime     @default(now())
-  savedBy        String
-  savedByEmail   String       @default("")
-  changeSource   String       // manual_edit|import_srt|import_vtt|auto_generate|approve|translate|restore_revision
-  segmentsSnap   String
-  placementSnap  String       @default("{}")
-  subtitle       FilmSubtitle @relation(fields: [subtitleId], references: [id], onDelete: Cascade)
+  id            String       @id @default(cuid())
+  subtitleId    String
+  savedAt       DateTime     @default(now())
+  savedBy       String
+  savedByEmail  String       @default("")
+  changeSource  String // manual_edit|import_srt|import_vtt|auto_generate|approve|translate|restore_revision
+  segmentsSnap  String
+  placementSnap String       @default("{}")
+  subtitle      FilmSubtitle @relation(fields: [subtitleId], references: [id], onDelete: Cascade)
 
   @@index([subtitleId, savedAt])
 }
@@ -292,11 +292,11 @@ model SubtitleRevision {
 model SubtitleHistoryClear {
   id              String       @id @default(cuid())
   subtitleId      String
-  clearedBy       String       // userId of the admin who performed the action
+  clearedBy       String // userId of the admin who performed the action
   clearedByEmail  String       @default("")
   clearedAt       DateTime     @default(now())
-  clearActionType String       // clear_only|archive_and_clear|reset_and_clear|delete_drafts
-  reason          String?      // optional admin-supplied reason
+  clearActionType String // clear_only|archive_and_clear|reset_and_clear|delete_drafts
+  reason          String? // optional admin-supplied reason
   rowsDeleted     Int          @default(0)
   subtitle        FilmSubtitle @relation(fields: [subtitleId], references: [id], onDelete: Cascade)
 
@@ -361,17 +361,17 @@ model Application {
   statusNoteTranslations String?
   status                 ApplicationStatus         @default(submitted)
   audioUrl               String?
-  scheduledAuditAt       DateTime?                 // legacy — kept for backward compat, no longer written
+  scheduledAuditAt       DateTime? // legacy — kept for backward compat, no longer written
   // ── AI Audit Queue fields ──
-  auditState             String?                   // queued | processing | scored_hidden | scored_visible | failed
+  auditState             String? // queued | processing | scored_hidden | scored_visible | failed
   queuedAt               DateTime?
   aiScoredAt             DateTime?
   processingAttempts     Int                       @default(0)
   lastProcessingError    String?
   adminRevealOverride    Boolean                   @default(false)
-  pendingNotifyStatus    String?                   // status whose notification is scheduled — sent by cron when notifyAfter ≤ now
-  notifyAfter            DateTime?                 // fire delayed status notification at or after this time
-  priority               Int                       @default(0)  // higher = processed first
+  pendingNotifyStatus    String? // status whose notification is scheduled — sent by cron when notifyAfter ≤ now
+  notifyAfter            DateTime? // fire delayed status notification at or after this time
+  priority               Int                       @default(0) // higher = processed first
   castingCall            CastingCall               @relation(fields: [castingCallId], references: [id], onDelete: Cascade)
   user                   User?                     @relation(fields: [userId], references: [id])
   notifications          ApplicationNotification[]
@@ -470,23 +470,23 @@ model SiteSettings {
   notifyOnContentPublish        Boolean        @default(true)
   emailReplyTo                  String?
   // Bulk / ACS transport
-  bulkTransport                 String         @default("graph")  // graph | acs — transport for queued/bulk emails
-  acsConnectionString           String?                           // Azure Communication Services connection string (encrypted)
-  acsSenderAddress              String?                           // ACS verified sender e.g. DoNotReply@mail.impactaistudio.com
+  bulkTransport                 String         @default("graph") // graph | acs — transport for queued/bulk emails
+  acsConnectionString           String? // Azure Communication Services connection string (encrypted)
+  acsSenderAddress              String? // ACS verified sender e.g. DoNotReply@mail.impactaistudio.com
   resultRevealDelayHours        Int            @default(6)
-  auditDelayHours               Int            @default(2)  // hours after submission to run auto-audit (legacy)
+  auditDelayHours               Int            @default(2) // hours after submission to run auto-audit (legacy)
   auditQueueBatchSize           Int            @default(10) // max apps scored per cron run
   trailerPreviewEnabled         Boolean        @default(false) // gate: pause trailer after N seconds for logged-out users
-  trailerPreviewSeconds         Int            @default(15)    // how many seconds of trailer to show before gate
-  trailerPreviewMessage         String?                         // custom gate prompt (fallback: "Sign in to watch the full trailer")
+  trailerPreviewSeconds         Int            @default(15) // how many seconds of trailer to show before gate
+  trailerPreviewMessage         String? // custom gate prompt (fallback: "Sign in to watch the full trailer")
   // Log retention
-  logRetentionDays              Int            @default(90)    // auto-purge EmailLog, EmailQueue, EmailBounceEvent older than N days (0 = never)
+  logRetentionDays              Int            @default(90) // auto-purge EmailLog, EmailQueue, EmailBounceEvent older than N days (0 = never)
   // Page content (admin CMS — same pattern as aboutPageData)
-  homePageData                  String?        // JSON: hero rotating words, sub-headline, CTA labels, Three Ways In cards
-  worksPageData                 String?        // JSON: hero title, accent, description, CTA
-  upcomingPageData              String?        // JSON: hero title, accent, description
-  footerPageData                String?        // JSON: tagline override, brand signature
-  joinCtaData                   String?        // JSON: eyebrow, title, accent, body, button labels
+  homePageData                  String? // JSON: hero rotating words, sub-headline, CTA labels, Three Ways In cards
+  worksPageData                 String? // JSON: hero title, accent, description, CTA
+  upcomingPageData              String? // JSON: hero title, accent, description
+  footerPageData                String? // JSON: tagline override, brand signature
+  joinCtaData                   String? // JSON: eyebrow, title, accent, body, button labels
 }
 
 model PasswordHistory {
@@ -547,9 +547,9 @@ model Announcement {
   bodyHtml        String?  @db.Text
   imageUrl        String?
   link            String?
-  translations    String?  @db.Text     // JSON: Record<locale, {title, message, ...}>
-  audienceGroups  String?               // JSON: {members, subscribers, cast}
-  specificUserIds String?  @db.Text     // JSON: string[]
+  translations    String?  @db.Text // JSON: Record<locale, {title, message, ...}>
+  audienceGroups  String? // JSON: {members, subscribers, cast}
+  specificUserIds String?  @db.Text // JSON: string[]
   recipientCount  Int      @default(0)
   status          String   @default("sent") // sent | failed
   sentById        String?
@@ -577,7 +577,7 @@ model ApplicationNotification {
   body              String
   recipientEmail    String
   status            String      @default("sent")
-  notifiedForStatus String?     // dedup key — which status triggered this notification
+  notifiedForStatus String? // dedup key — which status triggered this notification
   createdAt         DateTime    @default(now())
   application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 
@@ -585,38 +585,38 @@ model ApplicationNotification {
 }
 
 model Subscriber {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String?
-  source          String?                       // "organic" | "admin_csv_import" | "api" — traceability
-  country         String?                       // ISO 3166-1 alpha-2 — auto-detected on subscribe
-  locale          String    @default("en")      // UI locale at subscribe time — drives campaign email language
-  subscribedAt    DateTime  @default(now())
-  active          Boolean   @default(false)   // false until double opt-in confirmed
-  confirmToken    String?                      // null once confirmed
-  confirmedAt     DateTime?                    // set when subscriber clicks confirmation link
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  source         String? // "organic" | "admin_csv_import" | "api" — traceability
+  country        String? // ISO 3166-1 alpha-2 — auto-detected on subscribe
+  locale         String    @default("en") // UI locale at subscribe time — drives campaign email language
+  subscribedAt   DateTime  @default(now())
+  active         Boolean   @default(false) // false until double opt-in confirmed
+  confirmToken   String? // null once confirmed
+  confirmedAt    DateTime? // set when subscriber clicks confirmation link
   // Bounce tracking
-  bounceCount     Int       @default(0)       // total delivery failures
-  lastBounceAt    DateTime?                    // when the last bounce occurred
-  suppressedAt    DateTime?                    // when auto-suppressed
-  suppressReason  String?                      // hard_bounce | soft_bounce | complaint | manual
+  bounceCount    Int       @default(0) // total delivery failures
+  lastBounceAt   DateTime? // when the last bounce occurred
+  suppressedAt   DateTime? // when auto-suppressed
+  suppressReason String? // hard_bounce | soft_bounce | complaint | manual
 
   @@index([active])
   @@index([suppressedAt])
 }
 
 model EmailLog {
-  id              String    @id @default(cuid())
-  trackingId      String?   @unique            // UUID for open-tracking pixel
-  to              String
-  subject         String
-  type            String    @default("general")
-  transport       String    @default("unknown")
-  success         Boolean
-  error           String?   @db.Text
-  bounceCategory  String?                       // hard_bounce | soft_bounce | complaint | throttle | null
-  sentAt          DateTime  @default(now())
-  openedAt        DateTime?                     // set when tracking pixel is loaded
+  id             String    @id @default(cuid())
+  trackingId     String?   @unique // UUID for open-tracking pixel
+  to             String
+  subject        String
+  type           String    @default("general")
+  transport      String    @default("unknown")
+  success        Boolean
+  error          String?   @db.Text
+  bounceCategory String? // hard_bounce | soft_bounce | complaint | throttle | null
+  sentAt         DateTime  @default(now())
+  openedAt       DateTime? // set when tracking pixel is loaded
 
   @@index([to])
   @@index([sentAt])
@@ -628,44 +628,44 @@ model EmailLog {
 }
 
 model EmailQueue {
-  id          String    @id @default(cuid())
-  to          String                          // recipient email
-  subject     String
-  html        String    @db.Text              // full HTML body
-  text        String?                         // optional plain text
-  replyTo     String?
-  type        String    @default("broadcast") // broadcast | announcement | content_publish | new_role | sponsor
-  priority    Int       @default(3)           // 0=critical, 1=high, 2=normal, 3=low
-  status      String    @default("pending")   // pending | processing | sent | failed | cancelled
-  attempts    Int       @default(0)
-  maxAttempts Int       @default(3)
-  error       String?                         // last error message
-  nextRunAt   DateTime  @default(now())       // when this job becomes eligible
-  sentAt      DateTime?
-  campaignId  String?                         // groups emails from same broadcast
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  claimedAt    DateTime?                    // set when status → processing; used for timeout recovery
-  timeoutCount Int       @default(0)        // how many times this job was recovered from a worker timeout (not a real failure)
+  id           String    @id @default(cuid())
+  to           String // recipient email
+  subject      String
+  html         String    @db.Text // full HTML body
+  text         String? // optional plain text
+  replyTo      String?
+  type         String    @default("broadcast") // broadcast | announcement | content_publish | new_role | sponsor
+  priority     Int       @default(3) // 0=critical, 1=high, 2=normal, 3=low
+  status       String    @default("pending") // pending | processing | sent | failed | cancelled
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3)
+  error        String? // last error message
+  nextRunAt    DateTime  @default(now()) // when this job becomes eligible
+  sentAt       DateTime?
+  campaignId   String? // groups emails from same broadcast
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  claimedAt    DateTime? // set when status → processing; used for timeout recovery
+  timeoutCount Int       @default(0) // how many times this job was recovered from a worker timeout (not a real failure)
 
-  @@index([status, priority, nextRunAt])      // worker query: pending + priority sort
-  @@index([campaignId])                       // admin campaign view
-  @@index([createdAt])                        // cleanup
+  @@index([status, priority, nextRunAt]) // worker query: pending + priority sort
+  @@index([campaignId]) // admin campaign view
+  @@index([createdAt]) // cleanup
 }
 
 /// Master suppression list — emails that must NOT receive any email.
 /// Populated automatically by the bounce engine and manually by admins.
 model EmailSuppression {
   id         String    @id @default(cuid())
-  email      String    @unique              // normalized lowercase
-  reason     String                          // hard_bounce | soft_bounce | complaint | manual | unsubscribe
-  bounceType String?                         // permanent | transient | undetermined
-  source     String    @default("system")    // system | admin | user | acs_webhook
-  detail     String?   @db.Text              // raw error message / NDR code
+  email      String    @unique // normalized lowercase
+  reason     String // hard_bounce | soft_bounce | complaint | manual | unsubscribe
+  bounceType String? // permanent | transient | undetermined
+  source     String    @default("system") // system | admin | user | acs_webhook
+  detail     String?   @db.Text // raw error message / NDR code
   createdAt  DateTime  @default(now())
-  expiresAt  DateTime?                       // soft bounces expire (retry after 7 days)
-  removedAt  DateTime?                       // admin can lift suppression
-  removedBy  String?                          // admin user ID who lifted it
+  expiresAt  DateTime? // soft bounces expire (retry after 7 days)
+  removedAt  DateTime? // admin can lift suppression
+  removedBy  String? // admin user ID who lifted it
 
   @@index([email])
   @@index([reason])
@@ -677,23 +677,23 @@ model EmailSuppression {
 /// Used by the suppression engine for soft-bounce threshold counting
 /// and by webhook dedup to prevent duplicate processing.
 model EmailBounceEvent {
-  id          String   @id @default(cuid())
-  email       String                          // normalized lowercase
-  bounceType  String                          // hard_bounce | soft_bounce | complaint
-  source      String   @default("mailer")     // mailer | webhook | worker
-  detail      String?  @db.Text              // raw error message / NDR code
-  occurredAt  DateTime @default(now())
+  id         String   @id @default(cuid())
+  email      String // normalized lowercase
+  bounceType String // hard_bounce | soft_bounce | complaint
+  source     String   @default("mailer") // mailer | webhook | worker
+  detail     String?  @db.Text // raw error message / NDR code
+  occurredAt DateTime @default(now())
 
   @@index([email, bounceType, occurredAt])
   @@index([occurredAt])
 }
 
 model Survey {
-  id          String           @id @default(cuid())
-  title       String
-  active      Boolean          @default(true)
-  createdAt   DateTime         @default(now())
-  responses   SurveyResponse[]
+  id        String           @id @default(cuid())
+  title     String
+  active    Boolean          @default(true)
+  createdAt DateTime         @default(now())
+  responses SurveyResponse[]
 }
 
 model SurveyResponse {
@@ -781,7 +781,7 @@ model PageMedia {
   sortOrder Int      @default(0)
   duration  Int      @default(10)
   active    Boolean  @default(true)
-  target    String   @default("all")  // "all" | "desktop" | "mobile"
+  target    String   @default("all") // "all" | "desktop" | "mobile"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -790,32 +790,32 @@ model PageMedia {
 }
 
 model ScriptCall {
-  id                   String             @id @default(cuid())
-  title                String
-  description          String
-  genre                String?
-  toneKeywords         String?
-  targetLength         String?
-  projectId            String?
-  status               String             @default("draft")
-  isPublic             Boolean            @default(false)
-  deadline             String?
-  maxSubmissions       Int                @default(100)
-  contentTranslations  String?            @db.Text
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  project              Project?           @relation(fields: [projectId], references: [id])
-  submissions          ScriptSubmission[]
-  notifications        ScriptCallNotify[]
+  id                  String             @id @default(cuid())
+  title               String
+  description         String
+  genre               String?
+  toneKeywords        String?
+  targetLength        String?
+  projectId           String?
+  status              String             @default("draft")
+  isPublic            Boolean            @default(false)
+  deadline            String?
+  maxSubmissions      Int                @default(100)
+  contentTranslations String?            @db.Text
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  project             Project?           @relation(fields: [projectId], references: [id])
+  submissions         ScriptSubmission[]
+  notifications       ScriptCallNotify[]
 
   @@index([title])
 }
 
 model ScriptCallNotify {
-  id           String    @id @default(cuid())
+  id           String     @id @default(cuid())
   scriptCallId String
   userId       String
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime   @default(now())
   scriptCall   ScriptCall @relation(fields: [scriptCallId], references: [id], onDelete: Cascade)
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -837,7 +837,7 @@ model ScriptSubmission {
   genre              String?
   estimatedDuration  String?
   status             String          @default("submitted")
-  lastNotifiedStatus String?         // dedup key — last status a notification was sent for
+  lastNotifiedStatus String? // dedup key — last status a notification was sent for
   createdAt          DateTime        @default(now())
   analysis           ScriptAnalysis?
   scriptCall         ScriptCall      @relation(fields: [scriptCallId], references: [id], onDelete: Cascade)
@@ -882,7 +882,7 @@ model FilmView {
   id            String   @id @default(cuid())
   projectId     String
   userId        String?
-  mediaType     String   @default("film")  // "film" | "trailer"
+  mediaType     String   @default("film") // "film" | "trailer"
   watchDuration Int      @default(0)
   completed     Boolean  @default(false)
   createdAt     DateTime @default(now())
@@ -890,7 +890,7 @@ model FilmView {
   @@index([projectId])
   @@index([createdAt])
   @@index([mediaType])
-  @@index([mediaType, createdAt])  // trailer analytics: today/week/month counts
+  @@index([mediaType, createdAt]) // trailer analytics: today/week/month counts
 }
 
 model ApiKey {
@@ -1151,10 +1151,10 @@ enum ApplicationStatus {
 // Separate from the existing logger/console output so the UI can query it.
 model AdminAuditLog {
   id            String   @id @default(cuid())
-  actor         String   // userId of the admin
-  action        String   // AuditAction enum value
-  targetSummary String   // human-readable summary e.g. "47 applications (rejected)"
-  details       Json?    // arbitrary metadata
+  actor         String // userId of the admin
+  action        String // AuditAction enum value
+  targetSummary String // human-readable summary e.g. "47 applications (rejected)"
+  details       Json? // arbitrary metadata
   createdAt     DateTime @default(now())
 
   @@index([action])
@@ -1166,48 +1166,48 @@ model AdminAuditLog {
 // Backs every realtime room: live auditions, Q&A, premieres, and watch parties.
 // Watch Party events use Redis Pub/Sub + SSE for sync — LiveKit is NOT used for WP.
 model LiveEvent {
-  id             String    @id @default(cuid())
-  title          String
-  roomName       String    @unique
-  status         String    @default("scheduled") // scheduled | live | ended
-  eventType      String    @default("general")   // general | audition | q_and_a | watch_party
+  id        String @id @default(cuid())
+  title     String
+  roomName  String @unique
+  status    String @default("scheduled") // scheduled | live | ended
+  eventType String @default("general") // general | audition | q_and_a | watch_party
 
   // ── Scheduling ──────────────────────────────────────────────────────────────
-  scheduledAt    DateTime? // when the event is planned to start (drives invite expiry)
-  startedAt      DateTime?
-  endedAt        DateTime?
+  scheduledAt DateTime? // when the event is planned to start (drives invite expiry)
+  startedAt   DateTime?
+  endedAt     DateTime?
 
   // ── LiveKit event settings ───────────────────────────────────────────────────
   // permissions JSON: { camera, mic, screenShare, chat, reactions } — all booleans
   // Enforced at token-mint time and via UpdateParticipant for live changes.
-  permissions    Json?     // LiveKit events only
-  captionsActive Boolean   @default(false) // true while caption worker is connected
-  recordingUrl   String?   // set by egress worker after recording completes
-  egressId       String?   // LiveKit egress ID while a recording is in progress
+  permissions    Json? // LiveKit events only
+  captionsActive Boolean @default(false) // true while caption worker is connected
+  recordingUrl   String? // set by egress worker after recording completes
+  egressId       String? // LiveKit egress ID while a recording is in progress
 
   // ── Watch Party settings ─────────────────────────────────────────────────────
   // projectId holds the linked film; episodeId optionally pins to a specific episode.
   // The actual media URL is resolved server-side from Project.filmUrl / Episode.videoUrl
   // and delivered as a short-lived presigned R2 URL — never stored on this model.
-  episodeId      String?   // optional — pins to a specific Episode within the project
-  lobbyEnabled   Boolean   @default(true)  // show waiting room before host starts
-  replayEnabled  Boolean   @default(false) // allow re-watching after event ends
+  episodeId     String? // optional — pins to a specific Episode within the project
+  lobbyEnabled  Boolean @default(true) // show waiting room before host starts
+  replayEnabled Boolean @default(false) // allow re-watching after event ends
 
   // Durable playback milestones — NOT the live sync loop (Redis owns live state)
   playbackStartedAt DateTime?
-  lastCheckpointSec Float?    // written at: play, end, and seeks > 10 min
+  lastCheckpointSec Float? // written at: play, end, and seeks > 10 min
 
   // ── Relations ────────────────────────────────────────────────────────────────
-  hostUserId     String
-  projectId      String?
-  castingCallId  String?   // for audition rooms — ties room to a specific CastingCall
-  project        Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  invites        EventInvite[]
-  messages       WatchPartyMessage[]
-  reactions      WatchPartyReaction[]
-  analytics      LiveEventAnalyticEvent[]
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  hostUserId    String
+  projectId     String?
+  castingCallId String? // for audition rooms — ties room to a specific CastingCall
+  project       Project?                 @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  invites       EventInvite[]
+  messages      WatchPartyMessage[]
+  reactions     WatchPartyReaction[]
+  analytics     LiveEventAnalyticEvent[]
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
 
   @@index([status])
   @@index([hostUserId])
@@ -1219,29 +1219,29 @@ model LiveEvent {
 // ── Admin-curated movie collections for homepage/works page rows ──
 
 model MovieRoll {
-  id           String             @id @default(cuid())
-  title        String             // Display name, e.g. "Award Winners"
-  titleI18n    String?            // JSON i18n: { "fr": "Primés", "es": "Premiados", ... }
-  icon         String             @default("🎬") // Emoji or symbol shown beside the title
-  slug         String             @unique        // URL-safe identifier
-  displayOn    String             @default("both") // "homepage" | "works" | "both"
-  visible      Boolean            @default(true)
-  sortOrder    Int                @default(0)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  projects     MovieRollProject[]
+  id        String             @id @default(cuid())
+  title     String // Display name, e.g. "Award Winners"
+  titleI18n String? // JSON i18n: { "fr": "Primés", "es": "Premiados", ... }
+  icon      String             @default("🎬") // Emoji or symbol shown beside the title
+  slug      String             @unique // URL-safe identifier
+  displayOn String             @default("both") // "homepage" | "works" | "both"
+  visible   Boolean            @default(true)
+  sortOrder Int                @default(0)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  projects  MovieRollProject[]
 
   @@index([visible, sortOrder])
   @@index([displayOn])
 }
 
 model MovieRollProject {
-  id         String    @id @default(cuid())
-  rollId     String
-  projectId  String
-  sortOrder  Int       @default(0)
-  roll       MovieRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
-  createdAt  DateTime  @default(now())
+  id        String    @id @default(cuid())
+  rollId    String
+  projectId String
+  sortOrder Int       @default(0)
+  roll      MovieRoll @relation(fields: [rollId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
 
   @@unique([rollId, projectId])
   @@index([rollId, sortOrder])
@@ -1259,21 +1259,21 @@ model MovieRollProject {
 //
 // One active job per (projectId, episodeId) is enforced in the generate route.
 model SubtitleJob {
-  id             String    @id @default(cuid())
+  id             String   @id @default(cuid())
   projectId      String
-  episodeId      String?                              // null = whole film, non-null = episode
-  status         String    @default("queued")         // queued | processing | ready | failed
-  sourceVideoUrl String                               // URL passed to the worker
-  workerRunId    String?                              // opaque ID returned by the worker
-  vttUrl         String?                              // public R2 URL of the .vtt file
-  srtUrl         String?                              // public R2 URL of the .srt file
+  episodeId      String? // null = whole film, non-null = episode
+  status         String   @default("queued") // queued | processing | ready | failed
+  sourceVideoUrl String // URL passed to the worker
+  workerRunId    String? // opaque ID returned by the worker
+  vttUrl         String? // public R2 URL of the .vtt file
+  srtUrl         String? // public R2 URL of the .srt file
   errorMessage   String?
-  retriedJobId   String?                              // previous job this retried
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  retriedJobId   String? // previous job this retried
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  @@index([projectId, episodeId, status])             // fast "is a job running?" lookup
-  @@index([status, createdAt])                        // cron: find stuck jobs
+  @@index([projectId, episodeId, status]) // fast "is a job running?" lookup
+  @@index([status, createdAt]) // cron: find stuck jobs
   @@index([projectId])
 }
 
@@ -1359,13 +1359,13 @@ model LiveEventAnalyticEvent {
 // Preserved indefinitely — never cascade-deleted.
 model AuditLog {
   id          String   @id @default(cuid())
-  adminId     String                        // userId of the admin who acted
+  adminId     String // userId of the admin who acted
   adminEmail  String
-  action      String                        // suspend|unsuspend|unlock|delete|purge
-  targetType  String                        // user|subscriber
+  action      String // suspend|unsuspend|unlock|delete|purge
+  targetType  String // user|subscriber
   targetId    String
   targetEmail String
-  reason      String?                       // optional context supplied by admin
+  reason      String? // optional context supplied by admin
   createdAt   DateTime @default(now())
 
   @@index([adminId])
@@ -1376,65 +1376,65 @@ model AuditLog {
 
 // ── Client project request submissions (/start-project) ──────────────────────
 model ProjectRequest {
-  id               String   @id                       // AIM-YYYYMMDD-NNN format
-  projectType      String                             // birthday|brand|commercial|music|film|event|custom
-  status           String   @default("received")      // received|reviewing|scope_confirmed|in_production|awaiting_client|delivered|completed|cancelled
+  id          String @id // AIM-YYYYMMDD-NNN format
+  projectType String // birthday|brand|commercial|music|film|event|custom
+  status      String @default("received") // received|reviewing|scope_confirmed|in_production|awaiting_client|delivered|completed|cancelled
 
   // Contact
-  clientName       String
-  email            String
-  phone            String?
-  contactMethod    String?
-  companyName      String?
+  clientName    String
+  email         String
+  phone         String?
+  contactMethod String?
+  companyName   String?
 
   // Project overview
-  projectTitle     String
-  description      String   @db.Text
-  deadline         DateTime?
-  audience         String?
-  projectGoal      String?
+  projectTitle String
+  description  String    @db.Text
+  deadline     DateTime?
+  audience     String?
+  projectGoal  String?
 
   // Creative direction
-  tone             Json?                              // string[] e.g. ["cinematic","bold"]
+  tone             Json? // string[] e.g. ["cinematic","bold"]
   visualStyle      String?
-  inspirationLinks Json?                              // string[] of URLs
-  avoidNotes       String?  @db.Text
+  inspirationLinks Json? // string[] of URLs
+  avoidNotes       String? @db.Text
   emotionalFeeling String?
 
   // Budget & delivery
   budgetRange      String?
-  budgetCurrency   String   @default("USD")
+  budgetCurrency   String  @default("USD")
   duration         String?
   aspectRatio      String?
   deliveryPlatform String?
-  addOns           Json?                              // string[] e.g. ["voiceover","subtitles"]
-  rushDelivery     Boolean  @default(false)
+  addOns           Json? // string[] e.g. ["voiceover","subtitles"]
+  rushDelivery     Boolean @default(false)
 
   // Dynamic type-specific fields
-  customFields     Json?                              // varies per projectType
+  customFields Json? // varies per projectType
 
   // File uploads
-  uploads          Json?                              // [{key,url,name,type,size}]
+  uploads Json? // [{key,url,name,type,size}]
 
   // Consent (audit fix #6)
-  consentUpload    Boolean  @default(false)
-  consentContact   Boolean  @default(false)
+  consentUpload  Boolean @default(false)
+  consentContact Boolean @default(false)
 
   // Payment (milestone billing: 40/30/30)
-  agreedProjectTotal Float?                            // exact total agreed by client (USD)
-  paymentStatus    String   @default("unpaid")         // unpaid|deposit_paid|midpoint_paid|fully_paid|refunded|cancelled
+  agreedProjectTotal Float? // exact total agreed by client (USD)
+  paymentStatus      String @default("unpaid") // unpaid|deposit_paid|midpoint_paid|fully_paid|refunded|cancelled
 
   // Meta
-  language         String   @default("en")
-  adminNotes       String?  @db.Text
-  urgent           Boolean  @default(false)
-  userId           String?                            // linked if user is logged in
-  accessToken      String?  @unique                   // token for unauthenticated progress tracking
+  language    String  @default("en")
+  adminNotes  String? @db.Text
+  urgent      Boolean @default(false)
+  userId      String? // linked if user is logged in
+  accessToken String? @unique // token for unauthenticated progress tracking
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  payments         ProjectPayment[]
+  payments ProjectPayment[]
 
   @@index([status])
   @@index([projectType])
@@ -1449,20 +1449,20 @@ model ProjectRequest {
 // Deposit is collected in the Start a Project flow via PayPal JS SDK.
 // Midpoint and final are admin-triggered invoices sent via email.
 model ProjectPayment {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   projectRequestId String
-  milestone        String                             // deposit|midpoint|final
+  milestone        String // deposit|midpoint|final
   amount           Float
-  currency         String   @default("USD")
-  status           String   @default("pending")       // pending|completed|refunded
-  paypalOrderId    String?  @unique
+  currency         String    @default("USD")
+  status           String    @default("pending") // pending|completed|refunded
+  paypalOrderId    String?   @unique
   paypalCaptureId  String?
   paidAt           DateTime?
-  invoiceSentAt    DateTime?                           // when admin sent the pay link
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  invoiceSentAt    DateTime? // when admin sent the pay link
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  projectRequest   ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
+  projectRequest ProjectRequest @relation(fields: [projectRequestId], references: [id], onDelete: Cascade)
 
   @@index([projectRequestId, milestone])
   @@index([paypalOrderId])
@@ -1474,25 +1474,25 @@ model ProjectPayment {
 model Comment {
   id        String    @id @default(cuid())
   projectId String
-  episodeId String?   // null = project-level comment
+  episodeId String? // null = project-level comment
   userId    String
-  parentId  String?   // null = top-level, set = reply (1 level only)
+  parentId  String? // null = top-level, set = reply (1 level only)
   content   String    @db.Text
   hidden    Boolean   @default(false)
   hiddenAt  DateTime?
-  hiddenBy  String?   // admin userId who hid this comment
+  hiddenBy  String? // admin userId who hid this comment
   pinned    Boolean   @default(false)
-  flagged   Boolean   @default(false)  // auto-flagged by profanity filter
+  flagged   Boolean   @default(false) // auto-flagged by profanity filter
   editedAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  episode   Episode?  @relation(fields: [episodeId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent    Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
-  replies   Comment[] @relation("CommentReplies")
-  likes     CommentLike[]
+  project Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  episode Episode?      @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies Comment[]     @relation("CommentReplies")
+  likes   CommentLike[]
 
   @@index([projectId, createdAt])
   @@index([episodeId, createdAt])
@@ -1506,24 +1506,24 @@ model CommentLike {
   userId    String
   createdAt DateTime @default(now())
 
-  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([commentId, userId])
 }
 
 model ContentTranslation {
   id            String    @id @default(cuid())
-  scope         String    // "home", "works", "upcoming", "about", "footer", "joinCta"
-  locale        String    // "en" (snapshot), "es", "fr", "ar", etc.
-  sourceVersion Int       @default(1)  // increments when English source changes
-  content       String    // JSON: the translated field values (or English snapshot when locale="en")
-  status        String    @default("pending_review")  // "pending_review" | "approved" | "stale"
-  reviewedBy    String?   // admin ID who approved
+  scope         String // "home", "works", "upcoming", "about", "footer", "joinCta"
+  locale        String // "en" (snapshot), "es", "fr", "ar", etc.
+  sourceVersion Int       @default(1) // increments when English source changes
+  content       String // JSON: the translated field values (or English snapshot when locale="en")
+  status        String    @default("pending_review") // "pending_review" | "approved" | "stale"
+  reviewedBy    String? // admin ID who approved
   reviewedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   @@unique([scope, locale])
   @@index([scope, status])
-}
+}
