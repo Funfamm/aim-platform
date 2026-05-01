@@ -45,14 +45,14 @@
     "title": "Cinema for the moments that",
     "accent": "mattered.",
     "titleSuffix": "",
-    "description": "We make films about sacrifice, regret, and the people we'd do anything for. Then we open the doors — so you can watch them, audition for the next one, or learn to make your own.",
+    "description": "We craft cinematic experiences exploring sacrifice and resilience. Watch our productions, audition for upcoming roles, or learn the art of filmmaking.",
     "cta": "Watch the Films",
     "ctaCasting": "Join the Next One",
-    "word1": "mattered.",
-    "word2": "cost something.",
-    "word3": "changed us.",
-    "word4": "broke us open.",
-    "word5": "we can't forget."
+    "word1": "resonate.",
+    "word2": "inspire.",
+    "word3": "endure.",
+    "word4": "provoke.",
+    "word5": "matter."
   },
   "home": {
     "portfolio": "Portfolio",
@@ -63,7 +63,7 @@
     "ourVision": "Our Vision",
     "redefining": "Cinema for the moments we",
     "redefiningAccent": "can't take back.",
-    "visionP1": "We make films about the call you didn't make. The warning you ignored. The sacrifice someone made quietly so you could keep going. We tell stories about the cost of nonchalance — and the people who refused to live with it.",
+    "visionP1": "We make films about the call you didn't make. The warning you ignored. The sacrifice someone made quietly so you could keep going. We tell stories about the cost of nonchalance and the people who refused to live with it.",
     "visionP2": "AI is how we make films this ambitious as a small studio. It's not what makes them matter. The feelings are. They always were.",
     "zeroCompromise": "Stories That Matter",
     "limitless": "No Story Too Small",
@@ -71,7 +71,7 @@
     "films": "Films",
     "upcomingStat": "Upcoming",
     "castingStat": "Casting",
-    "limitlessDesc": "The stories Hollywood doesn't make — the quiet ones, the personal ones, the ones about your grandfather's diary or the family you'd die for — those are the ones we exist to tell.",
+    "limitlessDesc": "The stories Hollywood doesn't make: the quiet ones, the personal ones, the ones about your grandfather's diary or the family you'd die for. These are the ones we exist to tell.",
     "cinematicDesc": "Every shot is intentional. Every choice serves the story. AI gives us speed; craft gives us meaning. We bring both.",
     "curatedCollections": "Curated Collections"
   },
