@@ -21,11 +21,15 @@ export default async function UpcomingPage() {
         },
     })
 
+    const siteSettings = await prisma.siteSettings.findFirst({ select: { upcomingPageData: true } }).catch(() => null)
+
+
     return (
         <>
 <main id="main-content">
-                <UpcomingProjects3D projects={upcomingProjects} />
+                <UpcomingProjects3D projects={upcomingProjects} overrides={siteSettings?.upcomingPageData || null} />
             </main>
+
             <Footer />
         </>
     )

@@ -36,10 +36,35 @@ const EMPTY_ABOUT: AboutPageData = {
     ctaButtonText: '', ctaSecondaryText: '',
 }
 
+type WorksPageData = {
+    heroLabel: string; heroTitle: string; heroAccent: string; heroDesc: string; heroCta: string
+}
+const EMPTY_WORKS: WorksPageData = { heroLabel: '', heroTitle: '', heroAccent: '', heroDesc: '', heroCta: '' }
+
+type UpcomingPageData = {
+    heroLabel: string; heroTitle: string; heroAccent: string; heroDesc: string
+}
+const EMPTY_UPCOMING: UpcomingPageData = { heroLabel: '', heroTitle: '', heroAccent: '', heroDesc: '' }
+
+type FooterPageData = {
+    taglineOverride: string; brandSignature: string
+}
+const EMPTY_FOOTER: FooterPageData = { taglineOverride: '', brandSignature: '' }
+
+type JoinCtaData = {
+    eyebrow: string; title: string; accent: string; body: string; primaryLabel: string; secondaryLabel: string
+}
+const EMPTY_JOIN_CTA: JoinCtaData = { eyebrow: '', title: '', accent: '', body: '', primaryLabel: '', secondaryLabel: '' }
+
+
 type Settings = {
     siteName: string; tagline: string; aboutText: string; studioStory: string; mission: string
     aboutPageData: string
     homePageData: string
+    worksPageData: string
+    upcomingPageData: string
+    footerPageData: string
+    joinCtaData: string
     logoUrl: string; contactEmail: string; contactPhone: string; address: string
     socialLinks: SocialLinks
     // AI
@@ -81,10 +106,13 @@ type Settings = {
 const TABS = [
     { key: 'general', label: '🏷️ General' },
     { key: 'homepage', label: '🏠 Homepage' },
+    { key: 'works', label: '🎬 Works Page' },
+    { key: 'upcoming', label: '📅 Upcoming' },
     { key: 'about', label: '📖 About & Mission' },
+    { key: 'footer', label: '🦶 Footer' },
     { key: 'contact', label: '📬 Contact & Social' },
     { key: 'apikeys', label: '🔑 API Keys & Agents' },
-    { key: 'casting', label: '🎬 Casting' },
+    { key: 'casting', label: '🎭 Casting' },
     { key: 'content', label: '🔒 Content Access' },
     { key: 'auth', label: '🔐 Authentication' },
     { key: 'donations', label: '💰 Donations' },
@@ -119,11 +147,147 @@ const SIDEBAR_LINKS = [
 ]
 
 /* ── Email / SMTP Tab Component ── */
+/* ── Translation Panel Component ── */
+function TranslationPanel({
+    scope,
+    translations,
+    setTranslations,
+    translating,
+    setTranslating,
+    translateMsg,
+    setTranslateMsg
+}: {
+    scope: string
+    translations: any[]
+    setTranslations: (val: any[]) => void
+    translating: boolean
+    setTranslating: (val: boolean) => void
+    translateMsg: string
+    setTranslateMsg: (val: string) => void
+}) {
+    const loadTranslations = useCallback(() => {
+        fetch(`/api/admin/translation-review?scope=${scope}`)
+            .then(r => r.json())
+            .then(data => { if (Array.isArray(data)) setTranslations(data) })
+            .catch(() => { /* */ })
+    }, [scope, setTranslations])
+
+    useEffect(() => {
+        loadTranslations()
+    }, [loadTranslations])
+
+    const handleGenerateTranslations = async () => {
+        setTranslating(true); setTranslateMsg('')
+        try {
+            const res = await fetch('/api/admin/translate-page', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scope }),
+            })
+            const data = await res.json()
+            if (res.ok) {
+                setTranslateMsg(`✅ ${data.message}`)
+                loadTranslations()
+            } else {
+                setTranslateMsg(`❌ ${data.error}`)
+            }
+        } catch { setTranslateMsg('❌ Network error') }
+        finally { setTranslating(false) }
+    }
+
+    const handleApprove = async (locale: string) => {
+        try {
+            await fetch('/api/admin/translation-review', {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scope, locale, status: 'approved' }),
+            })
+            loadTranslations()
+        } catch { /* */ }
+    }
+
+    const handleApproveAll = async () => {
+        try {
+            await fetch('/api/admin/translation-review', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ scope, action: 'approve_all' }),
+            })
+            loadTranslations()
+        } catch { /* */ }
+    }
+
+    const sectionHeader = (emoji: string, title: string, desc: string) => (
+        <>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: '4px', marginTop: 'var(--space-xl)' }}>{emoji} {title}</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>{desc}</div>
+        </>
+    )
+
+    return (
+        <>
+            {sectionHeader('🌐', 'Translations', 'Generate AI translations and review them before publishing.')}
+            <div style={{
+                padding: 'var(--space-lg)', background: 'rgba(255,255,255,0.02)',
+                borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)',
+            }}>
+                <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+                    <button type="button" onClick={handleGenerateTranslations} disabled={translating}
+                        className="btn btn-primary" style={{ fontSize: '0.78rem' }}>
+                        {translating ? 'Generating...' : '🌐 Generate Translations'}
+                    </button>
+                    <button type="button" onClick={loadTranslations} className="btn btn-secondary" style={{ fontSize: '0.78rem' }}>
+                        Refresh Status
+                    </button>
+                    {translations.filter((t: any) => t.locale !== 'en' && ['pending_review', 'stale'].includes(t.status)).length > 0 && (
+                        <button type="button" onClick={handleApproveAll} className="btn btn-secondary" style={{ fontSize: '0.78rem', borderColor: 'rgba(52,211,153,0.3)', color: 'var(--success)' }}>
+                            ✓ Approve All
+                        </button>
+                    )}
+                </div>
+                {translateMsg && <div style={{ fontSize: '0.75rem', color: translateMsg.startsWith('✅') ? 'var(--success)' : 'var(--error)', marginBottom: 'var(--space-sm)' }}>{translateMsg}</div>}
+
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
+                    Only changed fields are re-translated. Approved translations stay untouched.
+                </div>
+
+                {/* Locale status table */}
+                {translations.filter((t: any) => t.locale !== 'en').length > 0 && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+                        {translations.filter((t: any) => t.locale !== 'en').map((t: any) => (
+                            <div key={t.locale} style={{
+                                padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                                background: t.status === 'approved' ? 'rgba(52,211,153,0.04)' : t.status === 'stale' ? 'rgba(239,68,68,0.04)' : 'rgba(245,158,11,0.04)',
+                                border: `1px solid ${t.status === 'approved' ? 'rgba(52,211,153,0.2)' : t.status === 'stale' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                            }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t.locale.toUpperCase()}</span>
+                                    <span style={{
+                                        fontSize: '0.6rem', fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--radius-full)',
+                                        background: t.status === 'approved' ? 'rgba(52,211,153,0.15)' : t.status === 'stale' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                                        color: t.status === 'approved' ? 'var(--success)' : t.status === 'stale' ? 'var(--error)' : '#f59e0b',
+                                    }}>{t.status === 'pending_review' ? 'PENDING' : t.status.toUpperCase()}</span>
+                                </div>
+                                {t.status !== 'approved' && (
+                                    <button type="button" onClick={() => handleApprove(t.locale)}
+                                        style={{
+                                            marginTop: '6px', fontSize: '0.65rem', fontWeight: 600,
+                                            color: 'var(--success)', background: 'none', border: 'none', cursor: 'pointer',
+                                            textDecoration: 'underline',
+                                        }}>Approve</button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </>
+    )
+}
+
 function EmailSmtpTab({ settings, update, Toggle }: {
     settings: Settings
     update: (field: keyof Settings, value: unknown) => void
     Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; label: string }>
 }) {
+
     const [testingSending, setTestSending] = useState(false)
     const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null)
     const [saving, setSaving] = useState(false)
@@ -827,6 +991,7 @@ export default function AdminSettingsPage() {
     const [tab, setTab] = useState<string>('general')
     const [settings, setSettings] = useState<Settings>({
         siteName: '', tagline: '', aboutText: '', studioStory: '', mission: '', aboutPageData: '', homePageData: '',
+        worksPageData: '', upcomingPageData: '', footerPageData: '', joinCtaData: '',
         logoUrl: '', contactEmail: '', contactPhone: '', address: '',
         socialLinks: { youtube: '', instagram: '', tiktok: '', x: '', imdb: '' },
         geminiApiKey: '', aiModel: 'gemini-2.5-flash', aiCustomPrompt: '', aiAutoAudit: false,
@@ -903,6 +1068,19 @@ export default function AdminSettingsPage() {
     const [homeTranslating, setHomeTranslating] = useState(false)
     const [homeTranslateMsg, setHomeTranslateMsg] = useState('')
 
+    const [worksTranslations, setWorksTranslations] = useState<any[]>([])
+    const [worksTranslating, setWorksTranslating] = useState(false)
+    const [worksTranslateMsg, setWorksTranslateMsg] = useState('')
+
+    const [upcomingTranslations, setUpcomingTranslations] = useState<any[]>([])
+    const [upcomingTranslating, setUpcomingTranslating] = useState(false)
+    const [upcomingTranslateMsg, setUpcomingTranslateMsg] = useState('')
+
+    const [footerTranslations, setFooterTranslations] = useState<any[]>([])
+    const [footerTranslating, setFooterTranslating] = useState(false)
+    const [footerTranslateMsg, setFooterTranslateMsg] = useState('')
+
+
     const handleBulkAction = async (action: 'enable' | 'disable' | 'delete' | 'clearErrors' | 'assignAgent') => {
         if (selectedKeys.size === 0) return
         if (action === 'delete' && !confirm(`Are you sure you want to delete ${selectedKeys.size} selected keys? This cannot be undone.`)) return
@@ -946,7 +1124,14 @@ export default function AdminSettingsPage() {
                     ...data,
                     socialLinks: social,
                     logoUrl: data.logoUrl || '',
+                    aboutPageData: data.aboutPageData || '',
+                    homePageData: data.homePageData || '',
+                    worksPageData: data.worksPageData || '',
+                    upcomingPageData: data.upcomingPageData || '',
+                    footerPageData: data.footerPageData || '',
+                    joinCtaData: data.joinCtaData || '',
                     geminiApiKey: data.geminiApiKey || '',
+
                     aiCustomPrompt: data.aiCustomPrompt || '',
                     notifyEmail: data.notifyEmail || '',
                     contactEmail: data.contactEmail || '',
@@ -2862,62 +3047,237 @@ export default function AdminSettingsPage() {
                                             </div>
                                         ))}
 
-                                        {/* ── Translation Panel ── */}
-                                        {sectionHeader('🌐', 'Translations', 'Generate AI translations and review them before publishing.')}
+                                        {/* ── Join CTA Card ── */}
+                                        {sectionHeader('✉️', 'Join CTA Card', 'The large "Join the Community" card at the bottom of the homepage.')}
                                         <div style={{
-                                            padding: 'var(--space-lg)', background: 'rgba(255,255,255,0.02)',
-                                            borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)',
+                                            padding: 'var(--space-md)', marginBottom: 'var(--space-md)',
+                                            background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-lg)',
+                                            border: '1px solid var(--border-subtle)',
                                         }}>
-                                            <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
-                                                <button type="button" onClick={handleGenerateTranslations} disabled={translating}
-                                                    className="btn btn-primary" style={{ fontSize: '0.78rem' }}>
-                                                    {translating ? 'Generating...' : '🌐 Generate Translations'}
-                                                </button>
-                                                <button type="button" onClick={loadTranslations} className="btn btn-secondary" style={{ fontSize: '0.78rem' }}>
-                                                    Refresh Status
-                                                </button>
-                                                {translations.filter((t: any) => t.locale !== 'en' && ['pending_review', 'stale'].includes(t.status)).length > 0 && (
-                                                    <button type="button" onClick={handleApproveAll} className="btn btn-secondary" style={{ fontSize: '0.78rem', borderColor: 'rgba(52,211,153,0.3)', color: 'var(--success)' }}>
-                                                        ✓ Approve All
-                                                    </button>
-                                                )}
-                                            </div>
-                                            {translateMsg && <div style={{ fontSize: '0.75rem', color: translateMsg.startsWith('✅') ? 'var(--success)' : 'var(--error)', marginBottom: 'var(--space-sm)' }}>{translateMsg}</div>}
-
-                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
-                                                Only changed fields are re-translated. Approved translations stay untouched.
-                                            </div>
-
-                                            {/* Locale status table */}
-                                            {translations.filter((t: any) => t.locale !== 'en').length > 0 && (
-                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
-                                                    {translations.filter((t: any) => t.locale !== 'en').map((t: any) => (
-                                                        <div key={t.locale} style={{
-                                                            padding: '10px 14px', borderRadius: 'var(--radius-md)',
-                                                            background: t.status === 'approved' ? 'rgba(52,211,153,0.04)' : t.status === 'stale' ? 'rgba(239,68,68,0.04)' : 'rgba(245,158,11,0.04)',
-                                                            border: `1px solid ${t.status === 'approved' ? 'rgba(52,211,153,0.2)' : t.status === 'stale' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`,
-                                                        }}>
-                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t.locale.toUpperCase()}</span>
-                                                                <span style={{
-                                                                    fontSize: '0.6rem', fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--radius-full)',
-                                                                    background: t.status === 'approved' ? 'rgba(52,211,153,0.15)' : t.status === 'stale' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
-                                                                    color: t.status === 'approved' ? 'var(--success)' : t.status === 'stale' ? 'var(--error)' : '#f59e0b',
-                                                                }}>{t.status === 'pending_review' ? 'PENDING' : t.status.toUpperCase()}</span>
+                                            {(() => {
+                                                let jcd: Record<string, any> = {}
+                                                try { if (settings.joinCtaData) jcd = JSON.parse(settings.joinCtaData) } catch { /* */ }
+                                                const uj = (key: string, val: any) => {
+                                                    const next = { ...jcd, [key]: val }
+                                                    update('joinCtaData' as keyof Settings, JSON.stringify(next))
+                                                }
+                                                return (
+                                                    <div className="admin-form-stack">
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                            <div>
+                                                                <label className="admin-label">Eyebrow (gold caps)</label>
+                                                                <input className="form-input" value={jcd.eyebrow || ''} onChange={e => uj('eyebrow', e.target.value)} placeholder="JOIN US" />
                                                             </div>
-                                                            {t.status !== 'approved' && (
-                                                                <button type="button" onClick={() => handleApprove(t.locale)}
-                                                                    style={{
-                                                                        marginTop: '6px', fontSize: '0.65rem', fontWeight: 600,
-                                                                        color: 'var(--success)', background: 'none', border: 'none', cursor: 'pointer',
-                                                                        textDecoration: 'underline',
-                                                                    }}>Approve</button>
-                                                            )}
+                                                            <div>
+                                                                <label className="admin-label">Headline (gold accent part)</label>
+                                                                <input className="form-input" value={jcd.accent || ''} onChange={e => uj('accent', e.target.value)} placeholder="matter." />
+                                                            </div>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
+                                                        <div>
+                                                            <label className="admin-label">Main Headline</label>
+                                                            <input className="form-input" value={jcd.title || ''} onChange={e => uj('title', e.target.value)} placeholder="Help us tell the stories that" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="admin-label">Body Text</label>
+                                                            <textarea className="form-textarea" value={jcd.body || ''} onChange={e => uj('body', e.target.value)} placeholder="We're casting voices, collaborators, and sponsors who believe cinema should still mean something. If that's you, we want to hear from you." rows={2} />
+                                                        </div>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                            <div>
+                                                                <label className="admin-label">Primary Button</label>
+                                                                <input className="form-input" value={jcd.primaryLabel || ''} onChange={e => uj('primaryLabel', e.target.value)} placeholder="View Open Roles" />
+                                                            </div>
+                                                            <div>
+                                                                <label className="admin-label">Secondary Button</label>
+                                                                <input className="form-input" value={jcd.secondaryLabel || ''} onChange={e => uj('secondaryLabel', e.target.value)} placeholder="Explore Projects" />
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                )
+                                            })()}
                                         </div>
+
+                                        <TranslationPanel
+                                            scope="home"
+                                            translations={homeTranslations}
+                                            setTranslations={setHomeTranslations}
+                                            translating={homeTranslating}
+                                            setTranslating={setHomeTranslating}
+                                            translateMsg={homeTranslateMsg}
+                                            setTranslateMsg={setHomeTranslateMsg}
+                                        />
+                                    </section>
+                                )
+                            })()}
+
+                            {/* ─── Works Page CMS ─── */}
+                            {tab === 'works' && (() => {
+                                let wpd: Record<string, any> = {}
+                                try { if (settings.worksPageData) wpd = JSON.parse(settings.worksPageData) } catch { /* */ }
+                                const uw = (key: string, val: any) => {
+                                    const next = { ...wpd, [key]: val }
+                                    update('worksPageData' as keyof Settings, JSON.stringify(next))
+                                }
+                                const sectionHeader = (emoji: string, title: string, desc: string) => (
+                                    <>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: '4px', marginTop: 'var(--space-xl)' }}>{emoji} {title}</div>
+                                        <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>{desc}</div>
+                                    </>
+                                )
+
+                                return (
+                                    <section className="admin-form-section">
+                                        <h3 className="admin-form-section-title">🎬 Works Page Content</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
+                                            Customize the main Works landing page hero.
+                                        </p>
+
+                                        {sectionHeader('🎥', 'Hero Section', 'The main banner on the /works page.')}
+                                        <div className="admin-form-stack">
+                                            <div>
+                                                <label className="admin-label">Hero Label (top pill)</label>
+                                                <input className="form-input" value={wpd.heroLabel || ''} onChange={e => uw('heroLabel', e.target.value)} placeholder="THE FILMS" />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                <div>
+                                                    <label className="admin-label">Title (plain text)</label>
+                                                    <input className="form-input" value={wpd.heroTitle || ''} onChange={e => uw('heroTitle', e.target.value)} placeholder="Stories worth" />
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label">Title Accent (gold italic)</label>
+                                                    <input className="form-input" value={wpd.heroAccent || ''} onChange={e => uw('heroAccent', e.target.value)} placeholder="witnessing." />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Hero Description</label>
+                                                <textarea className="form-textarea" value={wpd.heroDesc || ''} onChange={e => uw('heroDesc', e.target.value)} placeholder="Every film is a moment someone almost let pass." rows={3} />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">CTA Button Label</label>
+                                                <input className="form-input" value={wpd.heroCta || ''} onChange={e => uw('heroCta', e.target.value)} placeholder="Watch Now" />
+                                            </div>
+                                        </div>
+
+
+                                        <TranslationPanel
+                                            scope="works"
+                                            translations={worksTranslations}
+                                            setTranslations={setWorksTranslations}
+                                            translating={worksTranslating}
+                                            setTranslating={setWorksTranslating}
+                                            translateMsg={worksTranslateMsg}
+                                            setTranslateMsg={setWorksTranslateMsg}
+                                        />
+                                    </section>
+                                )
+                            })()}
+
+                            {/* ─── Upcoming Page CMS ─── */}
+                            {tab === 'upcoming' && (() => {
+                                let upd: Record<string, any> = {}
+                                try { if (settings.upcomingPageData) upd = JSON.parse(settings.upcomingPageData) } catch { /* */ }
+                                const uu = (key: string, val: any) => {
+                                    const next = { ...upd, [key]: val }
+                                    update('upcomingPageData' as keyof Settings, JSON.stringify(next))
+                                }
+                                const sectionHeader = (emoji: string, title: string, desc: string) => (
+                                    <>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: '4px', marginTop: 'var(--space-xl)' }}>{emoji} {title}</div>
+                                        <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>{desc}</div>
+                                    </>
+                                )
+
+                                return (
+                                    <section className="admin-form-section">
+                                        <h3 className="admin-form-section-title">📅 Upcoming Page Content</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
+                                            Customize the Upcoming landing page hero.
+                                        </p>
+
+                                        {sectionHeader('🚀', 'Hero Section', 'The main banner on the /upcoming page.')}
+                                        <div className="admin-form-stack">
+                                            <div>
+                                                <label className="admin-label">Hero Label (top pill)</label>
+                                                <input className="form-input" value={upd.heroLabel || ''} onChange={e => uu('heroLabel', e.target.value)} placeholder="WHAT'S NEXT" />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                <div>
+                                                    <label className="admin-label">Title (plain text)</label>
+                                                    <input className="form-input" value={upd.heroTitle || ''} onChange={e => uu('heroTitle', e.target.value)} placeholder="The next ones to" />
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label">Title Accent (gold italic)</label>
+                                                    <input className="form-input" value={upd.heroAccent || ''} onChange={e => uu('heroAccent', e.target.value)} placeholder="reckon with." />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Hero Description (for empty state)</label>
+                                                <textarea className="form-textarea" value={upd.heroDesc || ''} onChange={e => uu('heroDesc', e.target.value)} placeholder="More films about the moments that mattered. And the people who paid for them." rows={3} />
+                                            </div>
+                                        </div>
+
+
+                                        <TranslationPanel
+                                            scope="upcoming"
+                                            translations={upcomingTranslations}
+                                            setTranslations={setUpcomingTranslations}
+                                            translating={upcomingTranslating}
+                                            setTranslating={setUpcomingTranslating}
+                                            translateMsg={upcomingTranslateMsg}
+                                            setTranslateMsg={setUpcomingTranslateMsg}
+                                        />
+                                    </section>
+                                )
+                            })()}
+
+                            {/* ─── Footer CMS ─── */}
+                            {tab === 'footer' && (() => {
+                                let fpd: Record<string, any> = {}
+                                try { if (settings.footerPageData) fpd = JSON.parse(settings.footerPageData) } catch { /* */ }
+                                const uf = (key: string, val: any) => {
+                                    const next = { ...fpd, [key]: val }
+                                    update('footerPageData' as keyof Settings, JSON.stringify(next))
+                                }
+                                const sectionHeader = (emoji: string, title: string, desc: string) => (
+                                    <>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: '4px', marginTop: 'var(--space-xl)' }}>{emoji} {title}</div>
+                                        <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>{desc}</div>
+                                    </>
+                                )
+
+                                return (
+                                    <section className="admin-form-section">
+                                        <h3 className="admin-form-section-title">🦶 Footer Content</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
+                                            Global footer branding and tagline.
+                                        </p>
+
+                                        {sectionHeader('🏷️', 'Branding', 'Tagline and signature appearing in the site footer.')}
+                                        <div className="admin-form-stack">
+                                            <div>
+                                                <label className="admin-label">Tagline Override</label>
+                                                <input className="form-input" value={fpd.taglineOverride || ''} onChange={e => uf('taglineOverride', e.target.value)} placeholder="AIM Studio. Cinema about sacrifice, regret, and the people we'd do anything for." />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Brand Signature</label>
+                                                <input className="form-input" value={fpd.brandSignature || ''} onChange={e => uf('brandSignature', e.target.value)} placeholder="DON'T LOOK AWAY." />
+                                            </div>
+                                        </div>
+
+
+                                        <TranslationPanel
+                                            scope="footer"
+                                            translations={footerTranslations}
+                                            setTranslations={setFooterTranslations}
+                                            translating={footerTranslating}
+                                            setTranslating={setFooterTranslating}
+                                            translateMsg={footerTranslateMsg}
+                                            setTranslateMsg={setFooterTranslateMsg}
+                                        />
+                                    </section>
+                                )
+                            })()}
+
                                     </section>
                                 )
                             })()}

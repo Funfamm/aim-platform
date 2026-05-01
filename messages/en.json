@@ -46,9 +46,10 @@
     "titleAccentPrefix": "that",
     "accent": "resonate.",
     "titleSuffix": "",
-    "description": "We craft cinematic experiences exploring sacrifice and resilience. Watch our productions, audition for upcoming roles, or learn the art of filmmaking.",
+    "description": "We make films about sacrifice, regret, and the people we'd do anything for. Then we open the doors - so you can watch them, audition for the next one, or learn to make your own.",
     "cta": "Watch the Films",
     "ctaCasting": "Join the Next One",
+
     "word1": "resonate.",
     "word2": "inspire.",
     "word3": "endure.",
@@ -56,10 +57,11 @@
     "word5": "matter."
   },
   "home": {
-    "portfolio": "Portfolio",
+    "portfolio": "THE PRODUCTIONS",
     "featured": "Featured",
     "featuredAccent": "Works",
     "featuredDesc": "Our latest productions, crafted with AI precision and artistic vision.",
+
     "viewAllWorks": "View All Works",
     "ourVision": "Our Vision",
     "redefining": "Cinema for the moments we",
@@ -248,7 +250,8 @@
     "title": "We make films about",
     "titleAccent": "what we almost lost.",
     "heroSubtitle": "AIM Studio tells stories about sacrifice, regret, and the people who refused to look away.",
-    "heroSubtitleP2": "We make these films with AI — not because the technology is the point, but because it's the only way a studio our size could tell stories this big. The tools are new. The feelings are old as anyone's family.",
+    "heroSubtitleP2": "We make these films with AI - not because the technology is the point, but because it's the only way a studio our size could tell stories this big. The tools are new. The feelings are old as anyone's family.",
+
     "missionTitle": "Our Mission",
     "statsProductions": "Films & Shorts",
     "statsCountries": "Countries Reached",
@@ -278,7 +281,7 @@
     "innovationDesc": "We don't make films to show off the technology. We make films about people, sacrifices, and the moments that decide everything. The AI just lets us make them at all.",
     "inclusivity": "No Story Too Small",
     "inclusivitySub": "Create Together",
-    "inclusivityDesc": "The stories Hollywood doesn't make — the quiet ones, the personal ones, the ones about your grandfather's diary or the family you'd die for — those are the ones we exist to tell.",
+    "inclusivityDesc": "The stories Hollywood doesn't make - the quiet ones, the personal ones, the ones about your grandfather's diary or the family you'd die for - those are the ones we exist to tell.",
     "authenticity": "Every Frame, On Purpose",
     "authenticitySub": "No Barriers",
     "authenticityDesc": "Every shot is intentional. Every choice serves the story. AI gives us speed; craft gives us meaning. We bring both.",

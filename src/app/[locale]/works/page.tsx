@@ -35,8 +35,9 @@ export default async function WorksPage() {
             include: { projects: { orderBy: { sortOrder: 'asc' }, select: { projectId: true, sortOrder: true } } },
         }),
         getUserSession(),
-        prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true } }).catch(() => null),
+        prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true, worksPageData: true } }).catch(() => null),
     ])
+
 
     const isLoggedIn = !!session?.userId
     const showTrailer = (trailerSettings?.allowPublicTrailers !== false) || isLoggedIn
@@ -86,7 +87,9 @@ export default async function WorksPage() {
                 inProdCount={inProdCount}
                 genres={genres}
                 rolls={rolls as Parameters<typeof WorksPageClient>[0]['rolls']}
+                overrides={trailerSettings?.worksPageData || null}
             />
+
             <Footer />
         </>
     )

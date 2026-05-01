@@ -64,7 +64,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           bannerDurationHours: true,
         },
       }),
-      prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true, allowPublicTrailers: true, homePageData: true } }).catch(() => null),
+      prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true, allowPublicTrailers: true, homePageData: true, joinCtaData: true } }).catch(() => null),
+
       prisma.movieRoll.findMany({
         where: {
           visible: true,
@@ -217,7 +218,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           }))} />
 
 
-          <div style={{ textAlign: 'center', marginTop: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+          <div style={{ textAlign: 'center', marginTop: 'var(--space-lg)', marginBottom: 'var(--space-2xl)' }}>
+
             <Link href="/works" className="btn btn-secondary">
               {t('viewAllWorks')}
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -260,7 +262,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <ThreeWaysIn overrides={hpd} />
 
       {/* ═══ SPONSORS & CASTING CTA ═══ */}
-      <SponsorBannerSection sponsors={localizedSponsors} />
+      <SponsorBannerSection sponsors={localizedSponsors} overrides={siteSettings?.joinCtaData} />
+
 
       </div>{/* end scrolling content wrapper */}
 

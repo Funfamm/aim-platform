@@ -31,9 +31,23 @@ interface HeroVideo {
     duration: number
 }
 
-export default function UpcomingProjects3D({ projects }: { projects: UpcomingProject[] }) {
+export default function UpcomingProjects3D({ projects, overrides }: { projects: UpcomingProject[], overrides?: string | null }) {
     const t = useTranslations('upcomingHero')
     const locale = useLocale()
+
+    // Parse overrides
+    const upd = (() => {
+        if (!overrides) return null
+        try {
+            const data = JSON.parse(overrides)
+            // Handle translations
+            if (locale !== 'en' && data.translations?.[locale]) {
+                return { ...data, ...data.translations[locale] }
+            }
+            return data
+        } catch { return null }
+    })()
+
     const isMobile = useIsMobile()
     const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
@@ -203,28 +217,30 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                                 background: 'var(--accent-gold)',
                                 animation: 'pulse-gold 2s infinite',
                             }} />
-                            {t('label')}
+                            {upd?.heroLabel || t('label')}
                         </span>
 
-                        <h1 className="upcoming-hero-title animate-fade-in-up delay-1" style={{
+
                             fontSize: 'clamp(2rem, 5vw, 3.2rem)',
                             fontWeight: 800,
                             lineHeight: 1.1,
                         }}>
-                            {t('title')}{' '}
+                            {upd?.heroTitle || t('title')}{' '}
                             <span style={{
                                 fontFamily: 'var(--font-serif)', fontStyle: 'italic',
                                 background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
                                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                                 backgroundClip: 'text',
-                            }}>{t('titleAccent')}</span>
+                            }}>{upd?.heroAccent || t('titleAccent')}</span>
                         </h1>
+
 
                         <div className="animate-fade-in-up delay-2" style={{ fontSize: '3rem' }}>🎬</div>
                         <p className="animate-fade-in-up delay-2" style={{
                             fontSize: '0.95rem', maxWidth: '440px', margin: '0 auto',
                             lineHeight: 1.6, textAlign: 'center', color: 'var(--text-secondary)',
-                        }}>{t('noProjects')}</p>
+                        }}>{upd?.heroDesc || t('noProjects')}</p>
+
 
                         {/* Video indicator dots */}
                         {videos.length > 1 && (
@@ -348,22 +364,24 @@ export default function UpcomingProjects3D({ projects }: { projects: UpcomingPro
                             background: 'var(--accent-gold)',
                             animation: 'pulse-gold 2s infinite',
                         }} />
-                        {t('label')}
+                        {upd?.heroLabel || t('label')}
                     </span>
+
 
                     <h1 className="upcoming-hero-title animate-fade-in-up delay-1" style={{
                         fontSize: 'clamp(2rem, 5vw, 3.2rem)',
                         fontWeight: 800,
                         lineHeight: 1.1,
                     }}>
-                        {t('title')}{' '}
+                        {upd?.heroTitle || t('title')}{' '}
                         <span style={{
                             fontFamily: 'var(--font-serif)', fontStyle: 'italic',
                             background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
                             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
                             backgroundClip: 'text',
-                        }}>{t('titleAccent')}</span>
+                        }}>{upd?.heroAccent || t('titleAccent')}</span>
                     </h1>
+
 
                     {/* Stats pill — same style as Works landing page */}
                     <div className="animate-fade-in-up delay-2" style={{

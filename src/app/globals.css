@@ -1025,9 +1025,10 @@ select::placeholder {
 
   /* Optimize Three Ways In cards for mobile */
   .three-ways-card {
-    padding: 1.75rem 1.5rem;
+    padding: 1.25rem 1.15rem;
     border-radius: var(--radius-lg);
   }
+
   
   .three-ways-icon {
     width: 40px;
@@ -1036,13 +1037,15 @@ select::placeholder {
   }
 
   .three-ways-card h3 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
   }
 
+
   .three-ways-card p {
-    font-size: 0.85rem;
-    line-height: 1.6;
+    font-size: 0.8rem;
+    line-height: 1.5;
   }
+
 
   .three-ways-card .card-cta {
     padding: 0.55rem 1.25rem;
@@ -2419,6 +2422,7 @@ select::placeholder {
 }
 
 .step-dot {
+
   display: flex;
   align-items: center;
   gap: var(--space-sm);

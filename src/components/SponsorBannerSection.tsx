@@ -2,8 +2,9 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useIsMobile } from '@/hooks/useIsMobile'
+
 
 interface HomeSponsor {
     id: string; name: string; logoUrl: string | null; bannerUrl: string | null
@@ -200,11 +201,27 @@ function SponsorCard({ s, index, visible, isMobile }: { s: HomeSponsor; index: n
 }
 
 // ── Section ──────────────────────────────────────────────────────────────────
-export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSponsor[] }) {
+export default function SponsorBannerSection({ sponsors, overrides }: { sponsors: HomeSponsor[], overrides?: string | null }) {
     const t = useTranslations('sponsorCta')
+    const locale = useLocale()
     const isMobile = useIsMobile()
+
+    // Parse overrides
+    const jcd = (() => {
+        if (!overrides) return null
+        try {
+            const data = JSON.parse(overrides)
+            // Handle translations
+            if (locale !== 'en' && data.translations?.[locale]) {
+                return { ...data, ...data.translations[locale] }
+            }
+            return data
+        } catch { return null }
+    })()
+
     const gridRef = useRef<HTMLDivElement>(null)
     const [visible, setVisible] = useState(false)
+
 
     // Reveal the entire grid once it enters the viewport
     useEffect(() => {
@@ -294,25 +311,27 @@ export default function SponsorBannerSection({ sponsors }: { sponsors: HomeSpons
                         pointerEvents: 'none',
                     }} />
 
-                    <span className="text-label">{t('joinLabel')}</span>
+                    <span className="text-label">{jcd?.eyebrow || t('joinLabel')}</span>
                     <h2 style={{
                         marginTop: 'var(--space-sm)', marginBottom: 'var(--space-sm)',
                         fontSize: 'clamp(1.6rem, 4vw, 2.2rem)',
                     }}>
-                        {t('joinTitle')}{' '}
+                        {jcd?.title || t('joinTitle')}{' '}
                         <span style={{
                             fontFamily: 'var(--font-serif)', fontStyle: 'italic',
                             background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
                             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                        }}>{t('joinAccent')}</span>
+                        }}>{jcd?.accent || t('joinAccent')}</span>
                     </h2>
+
                     <p style={{
                         maxWidth: '440px', margin: '0 auto var(--space-lg)',
                         fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6,
-                    }}>{t('joinDesc')}</p>
+                    }}>{jcd?.body || t('joinDesc')}</p>
                     <div className="cta-button-row" style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
-                        <Link href="/casting" className="btn btn-primary btn-lg">{t('viewRoles')}</Link>
-                        <Link href="/upcoming" className="btn btn-secondary btn-lg">{t('exploreProjects')}</Link>
+                        <Link href="/casting" className="btn btn-primary btn-lg">{jcd?.primaryLabel || t('viewRoles')}</Link>
+                        <Link href="/upcoming" className="btn btn-secondary btn-lg">{jcd?.secondaryLabel || t('exploreProjects')}</Link>
+
                         <Link href="/contact" className="btn btn-secondary btn-lg" style={{
                             background: 'rgba(212,168,83,0.08)',
                             border: '1px solid rgba(212,168,83,0.25)',

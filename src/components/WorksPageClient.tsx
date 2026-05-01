@@ -56,15 +56,31 @@ interface WorksPageClientProps {
         slug: string
         projects: Project[]
     }>
+    overrides?: string | null
 }
+
 
 // ── Detects mobile viewport after hydration (SSR-safe) ──────────────────────
 
 
 
-export default function WorksPageClient({ projects, completedCount, inProdCount, genres, rolls = [] }: WorksPageClientProps) {
+export default function WorksPageClient({ projects, completedCount, inProdCount, genres, rolls = [], overrides }: WorksPageClientProps) {
     const t = useTranslations('works')
     const locale = useLocale()
+
+    // Parse overrides
+    const wpd = (() => {
+        if (!overrides) return null
+        try {
+            const data = JSON.parse(overrides)
+            // Handle translations
+            if (locale !== 'en' && data.translations?.[locale]) {
+                return { ...data, ...data.translations[locale] }
+            }
+            return data
+        } catch { return null }
+    })()
+
     const isMobile = useIsMobile()
     useScrollRestoration('works')
 
@@ -219,16 +235,14 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                 background: 'var(--accent-gold)',
                                 animation: 'pulse-gold 2s infinite',
                             }} />
-                            {t('label')}
+                            {wpd?.heroLabel || t('label')}
                         </span>
 
-                        <h1 className="animate-fade-in-up delay-1" style={{
-                            fontSize: 'clamp(1.8rem, 4.5vw, 2.8rem)',
-                            fontWeight: 800,
+
                             marginBottom: 'var(--space-sm)',
                             lineHeight: 1.15,
                         }}>
-                            {t('title')}{' '}
+                            {wpd?.heroTitle || t('title')}{' '}
                             <span style={{
                                 fontFamily: 'var(--font-serif)',
                                 fontStyle: 'italic',
@@ -236,8 +250,9 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                 WebkitBackgroundClip: 'text',
                                 WebkitTextFillColor: 'transparent',
                                 backgroundClip: 'text',
-                            }}>{t('titleAccent')}</span>
+                            }}>{wpd?.heroAccent || t('titleAccent')}</span>
                         </h1>
+
 
                         {/* Compact stats pill */}
                         <div className="hero-stats-pill animate-fade-in-up delay-2" style={{
@@ -274,11 +289,12 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                         gap: 'var(--space-md)',
                     }}>
                         <a href="#projects" className="btn btn-primary btn-lg animate-fade-in-up delay-3">
-                            {t('viewDetails')}
+                            {wpd?.heroCta || t('viewDetails')}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M12 5v14M5 12l7 7 7-7" />
                             </svg>
                         </a>
+
 
                         {videoCount > 1 && (
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
@@ -370,8 +386,9 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                 margin: '0 auto',
                                 lineHeight: 1.6,
                             }}>
-                                {t('description')}
+                                {wpd?.heroDesc || t('description')}
                             </p>
+
                         </div>
 
                         {projects.length === 0 ? (
@@ -403,7 +420,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                                 ) : (
                                     <div style={{ textAlign: 'center', padding: 'var(--space-4xl) 0', color: 'var(--text-tertiary)' }}>
                                         <div style={{ fontSize: '2.5rem', marginBottom: 'var(--space-md)' }}>🎬</div>
-                                        <p style={{ fontSize: '0.9rem' }}>No collections yet — check back soon.</p>
+                                        <p style={{ fontSize: '0.9rem' }}>No collections yet - check back soon.</p>
                                     </div>
                                 )}
                             </div>

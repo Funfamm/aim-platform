@@ -9,7 +9,9 @@ interface ThreeWaysInProps {
         card1Title?: string; card1Sub?: string; card1Body?: string; card1Cta?: string
         card2Title?: string; card2Sub?: string; card2Body?: string; card2Cta?: string
         card3Title?: string; card3Sub?: string; card3Body?: string; card3Cta?: string
+        threeWaysEyebrow?: string; threeWaysTitle?: string; threeWaysAccent?: string
     }
+
 }
 
 export default function ThreeWaysIn({ overrides }: ThreeWaysInProps) {
@@ -64,20 +66,23 @@ export default function ThreeWaysIn({ overrides }: ThreeWaysInProps) {
     ]
 
     return (
-        <section className="section" style={{ position: 'relative', zIndex: 2 }}>
+        <section className="section" style={{ position: 'relative', zIndex: 2, paddingTop: 'var(--space-2xl)' }}>
+
             <div className="container">
                 {/* Section header */}
                 <ScrollReveal3D direction="up" delay={0}>
                     <div style={{ textAlign: 'center', marginBottom: 'var(--space-3xl)' }}>
                         <span className="text-label" style={{ display: 'block', marginBottom: 'var(--space-sm)' }}>
-                            {t('eyebrow')}
+                            {overrides?.threeWaysEyebrow || t('eyebrow')}
                         </span>
+
                         <h2 style={{
                             fontSize: 'clamp(1.8rem, 3.5vw, 2.5rem)',
                             fontWeight: 800,
-                            lineHeight: 1.2,
+                            lineHeight: 1.35,
                         }}>
-                            {t('title')}{' '}
+
+                            {overrides?.threeWaysTitle || t('title')}{' '}
                             <span style={{
                                 fontFamily: 'var(--font-serif)',
                                 fontStyle: 'italic',
@@ -86,9 +91,10 @@ export default function ThreeWaysIn({ overrides }: ThreeWaysInProps) {
                                 WebkitTextFillColor: 'transparent',
                                 backgroundClip: 'text',
                             }}>
-                                {t('titleAccent')}
+                                {overrides?.threeWaysAccent || t('titleAccent')}
                             </span>
                         </h2>
+
                     </div>
                 </ScrollReveal3D>
 

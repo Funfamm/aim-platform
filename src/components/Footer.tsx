@@ -10,7 +10,13 @@ interface FooterSponsor {
 }
 
 export default function Footer() {
-    const [brand, setBrand] = useState({ name: 'AIM Studio', social: { youtube: '', instagram: '', x: '' } })
+    const [brand, setBrand] = useState<{
+        name: string;
+        social: { youtube: string; instagram: string; x: string };
+        taglineOverride?: string;
+        brandSignature?: string;
+    }>({ name: 'AIM Studio', social: { youtube: '', instagram: '', x: '' } })
+
     const [footerSponsors, setFooterSponsors] = useState<FooterSponsor[]>([])
     const t = useTranslations('footer')
     const locale = useLocale()
@@ -22,8 +28,23 @@ export default function Footer() {
                 const name = data.siteName || 'AIM Studio'
                 let social = { youtube: '', instagram: '', x: '' }
                 try { social = { ...social, ...JSON.parse(data.socialLinks || '{}') } } catch { /* */ }
-                setBrand({ name, social })
+
+                // Parse footer overrides
+                let fpd = null
+                if (data.footerPageData) {
+                    try {
+                        const parsed = JSON.parse(data.footerPageData)
+                        if (locale !== 'en' && parsed.translations?.[locale]) {
+                            fpd = { ...parsed, ...parsed.translations[locale] }
+                        } else {
+                            fpd = parsed
+                        }
+                    } catch { /* */ }
+                }
+
+                setBrand({ name, social, ...fpd })
             })
+
             .catch(() => { /* */ })
     }, [])
 
@@ -54,11 +75,12 @@ export default function Footer() {
                             </h3>
                         </Link>
                         <p>
-                            {t('tagline')}
+                            {brand.taglineOverride || t('tagline')}
                         </p>
                         <div className="brand-signature" style={{ marginTop: 'var(--space-sm)' }}>
-                            {t('brandSignature')}
+                            {brand.brandSignature || t('brandSignature')}
                         </div>
+
                     </div>
 
                     {/* Link columns — side-by-side on mobile */}
