@@ -52,7 +52,8 @@
     "word2": "Inmersivo",
     "word3": "Audaz",
     "word4": "Sin Límites",
-    "word5": "Visionario"
+    "word5": "Visionario",
+    "titleAccentPrefix": "que"
   },
   "home": {
     "portfolio": "Portafolio",
@@ -220,7 +221,8 @@
     "validationRequired": "Por favor, completa este campo.",
     "watchFreeTitle": "Mira nuestras películas gratis",
     "watchFreeDesc": "Crea una cuenta gratuita para ver películas completas y postularte a roles de casting.",
-    "watchFreeBtn": "Crear Cuenta Gratis →"
+    "watchFreeBtn": "Crear Cuenta Gratis →",
+    "brandSignature": "NO APARTES LA MIRADA."
   },
   "common": {
     "loading": "Cargando...",
@@ -285,7 +287,8 @@
     "ctaButton": "Unirse a la Comunidad",
     "ctaCasting": "Ver Nuestras Obras",
     "missionText": "AIM Studio existe para mostrar lo que sucede cuando la inteligencia artificial se encuentra con la narración cinematográfica y para construirlo todo con la comunidad.",
-    "storyText": "No somos un estudio tradicional. Creamos películas, cortos y experiencias visuales impulsadas por IA y lo hacemos abiertamente. Nuestros castings llegan a creadores en más de 30 países.\n\nEsto es cine construido juntos. Tu talento, tu creatividad, impulsados por IA. Bienvenido a AIM Studio."
+    "storyText": "No somos un estudio tradicional. Creamos películas, cortos y experiencias visuales impulsadas por IA y lo hacemos abiertamente. Nuestros castings llegan a creadores en más de 30 países.\n\nEsto es cine construido juntos. Tu talento, tu creatividad, impulsados por IA. Bienvenido a AIM Studio.",
+    "heroSubtitleP2": "Hacemos estas películas con IA - no porque la tecnología sea el punto, sino porque es la única manera en que un estudio de nuestro tamaño podría contar historias tan grandes. Las herramientas son nuevas. Los sentimientos son tan antiguos como la familia de cualquiera."
   },
   "subscribe": {
     "label": "Notificaciones",
@@ -1781,5 +1784,22 @@
       "shorts": "Cortometrajes",
       "all": "Todo lo anterior"
     }
+  },
+  "threeWaysIn": {
+    "eyebrow": "TRES FORMAS DE ENTRAR",
+    "title": "Un estudio.",
+    "titleAccent": "Tres puertas.",
+    "card1Title": "Mira",
+    "card1Sub": "CINE QUE VALE LA PENA VER",
+    "card1Body": "Películas sobre los momentos que importaron. Los sacrificios, los arrepentimientos, las personas por las que haríamos cualquier cosa.",
+    "card1Cta": "Ver las películas",
+    "card2Title": "Participa",
+    "card2Sub": "VÉTE EN PANTALLA",
+    "card2Body": "Convocatorias reales para nuestras próximas producciones. No se necesita experiencia. Solo trae algo auténtico.",
+    "card2Cta": "Ver roles abiertos",
+    "card3Title": "Aprende a hacerlo",
+    "card3Sub": "LA PRÓXIMA GENERACIÓN DEL CINE",
+    "card3Body": "Entrena con nosotros. Construye con IA. Haz películas que importen.",
+    "card3Cta": "Explorar formación"
   }
 }

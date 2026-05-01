@@ -52,7 +52,8 @@
     "word2": "沉浸式",
     "word3": "大胆",
     "word4": "无限",
-    "word5": "有远见"
+    "word5": "有远见",
+    "titleAccentPrefix": "那些"
   },
   "home": {
     "portfolio": "作品集",
@@ -220,7 +221,8 @@
     "validationRequired": "请填写此字段。",
     "watchFreeTitle": "免费观看我们的电影",
     "watchFreeDesc": "创建免费账户，观看完整电影并申请演员角色。",
-    "watchFreeBtn": "创建免费账户 →"
+    "watchFreeBtn": "创建免费账户 →",
+    "brandSignature": "别移开目光。"
   },
   "common": {
     "loading": "加载中...",
@@ -285,7 +287,8 @@
     "ctaButton": "加入社区",
     "ctaCasting": "浏览我们的作品",
     "missionText": "AIM Studio的存在是为了展示人工智能与电影叙事相遇时会发生什么，并与社区一起构建一切。",
-    "storyText": "我们不是传统的封闭式工作室。我们创造AI驱动的电影和视觉体验，并且公开地进行。\n\n这是共同构建的电影。你的才华、你的创意，由AI驱动。欢迎来到AIM Studio。"
+    "storyText": "我们不是传统的封闭式工作室。我们创造AI驱动的电影和视觉体验，并且公开地进行。\n\n这是共同构建的电影。你的才华、你的创意，由AI驱动。欢迎来到AIM Studio。",
+    "heroSubtitleP2": "我们用AI制作这些电影——不是因为技术是重点，而是因为这是我们这样规模的工作室讲述如此宏大故事的唯一方式。工具是新的。感受却和每个人的家庭一样古老。"
   },
   "subscribe": {
     "label": "通知",
@@ -1781,5 +1784,22 @@
       "shorts": "短片",
       "all": "以上全部"
     }
+  },
+  "threeWaysIn": {
+    "eyebrow": "三种参与方式",
+    "title": "一个工作室。",
+    "titleAccent": "三扇门。",
+    "card1Title": "观看",
+    "card1Sub": "值得见证的电影",
+    "card1Body": "关于那些重要时刻的电影。那些牺牲、遗憾，以及我们愿意为之付出一切的人。",
+    "card1Cta": "观看影片",
+    "card2Title": "参与其中",
+    "card2Sub": "在银幕上看到自己",
+    "card2Body": "为我们下一部作品进行的真实选角。无需经验。只需带来真实的自己。",
+    "card2Cta": "查看开放角色",
+    "card3Title": "学习制作",
+    "card3Sub": "电影的下一代",
+    "card3Body": "与我们一起训练。用AI创作。制作有意义的电影。",
+    "card3Cta": "探索培训"
   }
 }

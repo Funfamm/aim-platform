@@ -220,11 +220,12 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
                             {upd?.heroLabel || t('label')}
                         </span>
 
-
+                        <h1 className="animate-fade-in-up delay-1" style={{
                             fontSize: 'clamp(2rem, 5vw, 3.2rem)',
                             fontWeight: 800,
                             lineHeight: 1.1,
                         }}>
+
                             {upd?.heroTitle || t('title')}{' '}
                             <span style={{
                                 fontFamily: 'var(--font-serif)', fontStyle: 'italic',

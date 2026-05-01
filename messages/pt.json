@@ -52,7 +52,8 @@
     "word2": "Imersivo",
     "word3": "Ousado",
     "word4": "Sem Limites",
-    "word5": "Visionário"
+    "word5": "Visionário",
+    "titleAccentPrefix": "que"
   },
   "home": {
     "portfolio": "Portfólio",
@@ -220,7 +221,8 @@
     "validationRequired": "Por favor, preencha este campo.",
     "watchFreeTitle": "Assista nossos filmes de graça",
     "watchFreeDesc": "Crie uma conta gratuita para assistir filmes completos e se candidatar a papéis.",
-    "watchFreeBtn": "Criar Conta Grátis →"
+    "watchFreeBtn": "Criar Conta Grátis →",
+    "brandSignature": "NÃO DESVIE O OLHAR."
   },
   "common": {
     "loading": "Carregando...",
@@ -285,7 +287,8 @@
     "ctaButton": "Junte-se à Comunidade",
     "ctaCasting": "Ver Nossas Obras",
     "missionText": "AIM Studio existe para mostrar o que acontece quando a inteligência artificial encontra a narrativa cinematográfica e para construir tudo com a comunidade.",
-    "storyText": "Não somos um estúdio tradicional. Criamos filmes e experiências visuais alimentados por IA e fazemos isso abertamente.\n\nIsto é cinema construído juntos. Seu talento, sua criatividade, alimentados por IA. Bem-vindo ao AIM Studio."
+    "storyText": "Não somos um estúdio tradicional. Criamos filmes e experiências visuais alimentados por IA e fazemos isso abertamente.\n\nIsto é cinema construído juntos. Seu talento, sua criatividade, alimentados por IA. Bem-vindo ao AIM Studio.",
+    "heroSubtitleP2": "Fazemos estes filmes com IA - não porque a tecnologia seja o ponto, mas porque é a única forma de um estúdio do nosso tamanho contar histórias tão grandes. As ferramentas são novas. Os sentimentos são tão antigos quanto a família de qualquer pessoa."
   },
   "subscribe": {
     "label": "Notificações",
@@ -1781,5 +1784,22 @@
       "shorts": "Curtas-Metragens",
       "all": "Todos os anteriores"
     }
+  },
+  "threeWaysIn": {
+    "eyebrow": "TRÊS FORMAS DE ENTRAR",
+    "title": "Um estúdio.",
+    "titleAccent": "Três portas.",
+    "card1Title": "Assista",
+    "card1Sub": "CINEMA QUE VALE A PENA VER",
+    "card1Body": "Filmes sobre os momentos que importaram. Os sacrifícios, os arrependimentos, as pessoas pelas quais faríamos qualquer coisa.",
+    "card1Cta": "Ver os filmes",
+    "card2Title": "Participe",
+    "card2Sub": "VEJA-SE NA TELA",
+    "card2Body": "Chamadas reais de elenco para nossas próximas produções. Não é necessária experiência. Apenas traga algo verdadeiro.",
+    "card2Cta": "Ver papéis abertos",
+    "card3Title": "Aprenda a criar",
+    "card3Sub": "A PRÓXIMA GERAÇÃO DO CINEMA",
+    "card3Body": "Treine conosco. Construa com IA. Faça filmes que importam.",
+    "card3Cta": "Explorar treinamento"
   }
 }

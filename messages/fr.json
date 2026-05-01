@@ -52,7 +52,8 @@
     "word2": "Immersif",
     "word3": "Audacieux",
     "word4": "Sans Limites",
-    "word5": "Visionnaire"
+    "word5": "Visionnaire",
+    "titleAccentPrefix": "qui"
   },
   "home": {
     "portfolio": "Portfolio",
@@ -220,7 +221,8 @@
     "validationRequired": "Veuillez remplir ce champ.",
     "watchFreeTitle": "Regardez nos films gratuitement",
     "watchFreeDesc": "Créez un compte gratuit pour regarder nos films et postuler aux castings.",
-    "watchFreeBtn": "Créer un Compte Gratuit →"
+    "watchFreeBtn": "Créer un Compte Gratuit →",
+    "brandSignature": "NE DÉTOURNEZ PAS LE REGARD."
   },
   "common": {
     "loading": "Chargement...",
@@ -285,7 +287,8 @@
     "ctaButton": "Rejoindre la Communauté",
     "ctaCasting": "Voir Nos Œuvres",
     "missionText": "AIM Studio existe pour montrer ce qui se passe quand l'intelligence artificielle rencontre le cinéma et pour tout construire avec la communauté. Chaque production que nous publions, chaque outil que nous construisons, chaque opportunité que nous créons est conçue pour être partagée.",
-    "storyText": "Nous ne sommes pas un studio traditionnel derrière des portes closes. Nous créons des films, des courts métrages et des expériences visuelles propulsés par l'IA et nous le faisons au grand jour. Nos castings touchent des créateurs dans plus de 30 pays. Notre hub de formation enseigne de vraies compétences. Notre plateforme est l'endroit où la communauté regarde, apprend et rejoint le processus.\n\nC'est du cinéma construit ensemble. Votre talent, votre créativité, propulsés par l'IA. Bienvenue chez AIM Studio."
+    "storyText": "Nous ne sommes pas un studio traditionnel derrière des portes closes. Nous créons des films, des courts métrages et des expériences visuelles propulsés par l'IA et nous le faisons au grand jour. Nos castings touchent des créateurs dans plus de 30 pays. Notre hub de formation enseigne de vraies compétences. Notre plateforme est l'endroit où la communauté regarde, apprend et rejoint le processus.\n\nC'est du cinéma construit ensemble. Votre talent, votre créativité, propulsés par l'IA. Bienvenue chez AIM Studio.",
+    "heroSubtitleP2": "Nous réalisons ces films avec l'IA - non pas parce que la technologie est le sujet, mais parce que c'est la seule façon pour un studio de notre taille de raconter des histoires aussi grandes. Les outils sont nouveaux. Les émotions sont aussi anciennes que n'importe quelle famille."
   },
   "subscribe": {
     "label": "Notifications",
@@ -1781,5 +1784,22 @@
       "shorts": "Courts Métrages",
       "all": "Tout ce qui précède"
     }
+  },
+  "threeWaysIn": {
+    "eyebrow": "TROIS FAÇONS D'ENTRER",
+    "title": "Un studio.",
+    "titleAccent": "Trois portes.",
+    "card1Title": "Regardez",
+    "card1Sub": "UN CINÉMA QUI MÉRITE D'ÊTRE VU",
+    "card1Body": "Des films sur les moments qui comptaient. Les sacrifices, les regrets, les personnes pour lesquelles on ferait n'importe quoi.",
+    "card1Cta": "Voir les films",
+    "card2Title": "Participez",
+    "card2Sub": "VOYEZ-VOUS À L'ÉCRAN",
+    "card2Body": "De vrais castings pour nos prochaines productions. Aucune expérience requise. Apportez juste quelque chose de vrai.",
+    "card2Cta": "Voir les rôles",
+    "card3Title": "Apprenez à créer",
+    "card3Sub": "LA PROCHAINE GÉNÉRATION DU CINÉMA",
+    "card3Body": "Formez-vous avec nous. Créez avec l'IA. Faites des films qui comptent.",
+    "card3Cta": "Explorer la formation"
   }
 }

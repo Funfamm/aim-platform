@@ -66,7 +66,8 @@ export default function ThreeWaysIn({ overrides }: ThreeWaysInProps) {
     ]
 
     return (
-        <section className="section" style={{ position: 'relative', zIndex: 2, paddingTop: 'var(--space-2xl)' }}>
+        <section className="section" style={{ position: 'relative', zIndex: 2, paddingTop: 'var(--space-4xl)' }}>
+
 
             <div className="container">
                 {/* Section header */}

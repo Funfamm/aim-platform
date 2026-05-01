@@ -52,7 +52,8 @@
     "word2": "Immersiv",
     "word3": "Mutig",
     "word4": "Grenzenlos",
-    "word5": "Visionär"
+    "word5": "Visionär",
+    "titleAccentPrefix": "die"
   },
   "home": {
     "portfolio": "Portfolio",
@@ -220,7 +221,8 @@
     "validationRequired": "Bitte füllen Sie dieses Feld aus.",
     "watchFreeTitle": "Unsere Filme kostenlos ansehen",
     "watchFreeDesc": "Erstellen Sie ein kostenloses Konto, um Filme anzusehen und sich für Casting-Rollen zu bewerben.",
-    "watchFreeBtn": "Kostenloses Konto Erstellen →"
+    "watchFreeBtn": "Kostenloses Konto Erstellen →",
+    "brandSignature": "SCHAU NICHT WEG."
   },
   "common": {
     "loading": "Wird geladen...",
@@ -285,7 +287,8 @@
     "ctaButton": "Der Gemeinschaft Beitreten",
     "ctaCasting": "Unsere Werke Ansehen",
     "missionText": "AIM Studio existiert, um zu zeigen, was passiert, wenn künstliche Intelligenz auf filmisches Erzählen trifft und um alles mit der Gemeinschaft aufzubauen.",
-    "storyText": "Wir sind kein traditionelles Studio hinter verschlossenen Türen. Wir erstellen KI-gesteuerte Filme und visuelle Erlebnisse und machen es öffentlich.\n\nDies ist Kino, gemeinsam gebaut. Ihr Talent, Ihre Kreativität, angetrieben von KI. Willkommen bei AIM Studio."
+    "storyText": "Wir sind kein traditionelles Studio hinter verschlossenen Türen. Wir erstellen KI-gesteuerte Filme und visuelle Erlebnisse und machen es öffentlich.\n\nDies ist Kino, gemeinsam gebaut. Ihr Talent, Ihre Kreativität, angetrieben von KI. Willkommen bei AIM Studio.",
+    "heroSubtitleP2": "Wir machen diese Filme mit KI - nicht weil die Technologie der Punkt ist, sondern weil es die einzige Möglichkeit ist, wie ein Studio unserer Größe so große Geschichten erzählen kann. Die Werkzeuge sind neu. Die Gefühle sind so alt wie jede Familie."
   },
   "subscribe": {
     "label": "Benachrichtigungen",
@@ -1781,5 +1784,22 @@
       "shorts": "Kurzfilme",
       "all": "Alles oben Genannte"
     }
+  },
+  "threeWaysIn": {
+    "eyebrow": "DREI WEGE HINEIN",
+    "title": "Ein Studio.",
+    "titleAccent": "Drei Türen.",
+    "card1Title": "Ansehen",
+    "card1Sub": "KINO, DAS ES WERT IST",
+    "card1Body": "Filme über die Momente, die zählten. Die Opfer, das Bedauern, die Menschen, für die wir alles tun würden.",
+    "card1Cta": "Filme ansehen",
+    "card2Title": "Mitmachen",
+    "card2Sub": "SEHEN SIE SICH AUF DER LEINWAND",
+    "card2Body": "Echte Castings für unsere nächsten Produktionen. Keine Erfahrung nötig. Bringen Sie einfach etwas Echtes mit.",
+    "card2Cta": "Offene Rollen ansehen",
+    "card3Title": "Lernen Sie es zu machen",
+    "card3Sub": "DIE NÄCHSTE GENERATION DES KINOS",
+    "card3Body": "Trainieren Sie mit uns. Bauen Sie mit KI. Machen Sie Filme, die zählen.",
+    "card3Cta": "Training erkunden"
   }
 }

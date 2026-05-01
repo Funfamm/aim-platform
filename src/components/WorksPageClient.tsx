@@ -238,10 +238,14 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                             {wpd?.heroLabel || t('label')}
                         </span>
 
-
+                        <h1 className="animate-fade-in-up delay-1" style={{
+                            fontSize: 'clamp(2rem, 5vw, 3rem)',
+                            fontWeight: 800,
+                            textAlign: 'center',
                             marginBottom: 'var(--space-sm)',
                             lineHeight: 1.15,
                         }}>
+
                             {wpd?.heroTitle || t('title')}{' '}
                             <span style={{
                                 fontFamily: 'var(--font-serif)',
@@ -253,6 +257,14 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                             }}>{wpd?.heroAccent || t('titleAccent')}</span>
                         </h1>
 
+                        <p className="animate-fade-in-up delay-2" style={{
+                            fontSize: 'clamp(0.9rem, 1.5vw, 1.05rem)',
+                            lineHeight: 1.7,
+                            color: 'var(--text-secondary)',
+                            maxWidth: '480px',
+                            textAlign: 'center',
+                            marginBottom: 'var(--space-sm)',
+                        }}>{wpd?.heroDesc || t('description')}</p>
 
                         {/* Compact stats pill */}
                         <div className="hero-stats-pill animate-fade-in-up delay-2" style={{
@@ -288,8 +300,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         gap: 'var(--space-md)',
                     }}>
-                        <a href="#projects" className="btn btn-primary btn-lg animate-fade-in-up delay-3">
-                            {wpd?.heroCta || t('viewDetails')}
+                        <a href="#films-grid" className="btn btn-primary btn-lg animate-fade-in-up delay-3">
+                            {wpd?.heroCta || t('watchNow')}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M12 5v14M5 12l7 7 7-7" />
                             </svg>
@@ -322,7 +334,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             </section>
 
             {/* ═══ PROJECTS GALLERY — scrolls over the video ═══ */}
-            <section id="projects" style={{
+            <section id="films-grid" style={{
                 position: 'relative',
                 zIndex: 2,
                 marginTop: '-30px',

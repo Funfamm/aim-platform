@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
 import AdminSidebar from '@/components/AdminSidebar'
 
 /* ── Types ── */
@@ -1158,9 +1159,8 @@ export default function AdminSettingsPage() {
                     notifyOnNewRole: data.notifyOnNewRole ?? true,
                     notifyOnAnnouncement: data.notifyOnAnnouncement ?? true,
                     notifyOnContentPublish: data.notifyOnContentPublish ?? true,
-                    aboutPageData: data.aboutPageData || '',
-                    homePageData: data.homePageData || '',
                 })
+
                 setDirty(false)
             })
             .catch(() => setError('Failed to load settings'))
@@ -3277,11 +3277,6 @@ export default function AdminSettingsPage() {
                                     </section>
                                 )
                             })()}
-
-                                    </section>
-                                )
-                            })()}
-
 
 
                             {/* Save button — not shown on Security tab */}
