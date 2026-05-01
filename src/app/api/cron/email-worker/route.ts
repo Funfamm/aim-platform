@@ -30,7 +30,7 @@ import crypto from 'crypto'
 const BATCH_SIZE = 5           // emails per batch — conservative for ISP reputation
 const BATCH_DELAY_MS = 1000    // 1s between batches — gentle pacing
 const MAX_PER_RUN = 50         // max emails per cron run (Pro plan: 60s maxDuration)
-const MAX_RUNTIME_MS = 110000  // stop claiming new batches after 110s (leave 10s buffer from 120s maxDuration)
+const MAX_RUNTIME_MS = 280000  // stop claiming new batches after 280s (leave 20s buffer from 300s maxDuration)
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms))
 
