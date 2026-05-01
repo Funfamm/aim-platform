@@ -144,7 +144,27 @@ export default async function AboutPage() {
                                     {t('titleAccent')}
                                 </span>
                             </h1>
+
+                            <p style={{
+                                fontSize: 'clamp(0.9rem, 1.8vw, 1.05rem)',
+                                lineHeight: 1.7,
+                                color: 'var(--text-secondary)',
+                                maxWidth: '600px',
+                                margin: '0 auto var(--space-md)',
+                            }}>
+                                {t('heroSubtitle')}
+                            </p>
+                            <p style={{
+                                fontSize: 'clamp(0.85rem, 1.5vw, 0.95rem)',
+                                lineHeight: 1.7,
+                                color: 'var(--text-tertiary)',
+                                maxWidth: '580px',
+                                margin: '0 auto',
+                            }}>
+                                {t('heroSubtitleP2')}
+                            </p>
                         </ScrollReveal3D>
+
 
                         {/* Scroll indicator */}
                         <div style={{
