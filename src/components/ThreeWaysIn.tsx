@@ -96,42 +96,24 @@ export default function ThreeWaysIn({ overrides }: ThreeWaysInProps) {
                 <div className="grid-3">
                     {cards.map((card, i) => (
                         <ScrollReveal3D key={i} direction="up" delay={150 * (i + 1)}>
-                            <div className="three-ways-card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                            <div className="three-ways-card">
                                 {/* Icon */}
                                 <div className="three-ways-icon">
                                     {card.icon}
                                 </div>
 
                                 {/* Title */}
-                                <h3 style={{
-                                    fontSize: '1.4rem',
-                                    fontWeight: 800,
-                                    marginBottom: 'var(--space-xs)',
-                                    color: 'var(--text-primary)',
-                                }}>
+                                <h3>
                                     {card.title}
                                 </h3>
 
                                 {/* Subtitle (gold caps) */}
-                                <span style={{
-                                    display: 'block',
-                                    fontSize: '0.65rem',
-                                    fontWeight: 700,
-                                    letterSpacing: '0.15em',
-                                    textTransform: 'uppercase',
-                                    color: 'var(--accent-gold)',
-                                    marginBottom: 'var(--space-md)',
-                                }}>
+                                <span className="three-ways-sub">
                                     {card.sub}
                                 </span>
 
                                 {/* Body */}
-                                <p style={{
-                                    fontSize: '0.9rem',
-                                    lineHeight: 1.7,
-                                    color: 'var(--text-secondary)',
-                                    flex: 1,
-                                }}>
+                                <p>
                                     {card.body}
                                 </p>
 
