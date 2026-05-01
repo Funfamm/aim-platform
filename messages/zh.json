@@ -217,7 +217,10 @@
     "emailPlaceholder": "输入邮箱",
     "subscribe": "订阅",
     "subscribed": "已订阅！",
-    "validationRequired": "请填写此字段。"
+    "validationRequired": "请填写此字段。",
+    "watchFreeTitle": "免费观看我们的电影",
+    "watchFreeDesc": "创建免费账户，观看完整电影并申请演员角色。",
+    "watchFreeBtn": "创建免费账户 →"
   },
   "common": {
     "loading": "加载中...",

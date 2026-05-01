@@ -217,7 +217,10 @@
     "emailPlaceholder": "अपना ईमेल दर्ज करें",
     "subscribe": "सदस्यता लें",
     "subscribed": "आप सदस्य हैं!",
-    "validationRequired": "कृपया इस फ़ील्ड को भरें।"
+    "validationRequired": "कृपया इस फ़ील्ड को भरें।",
+    "watchFreeTitle": "हमारी फ़िल्में मुफ़्त देखें",
+    "watchFreeDesc": "पूरी फ़िल्में देखने और कास्टिंग भूमिकाओं के लिए आवेदन करने हेतु मुफ़्त खाता बनाएं।",
+    "watchFreeBtn": "मुफ़्त खाता बनाएं →"
   },
   "common": {
     "loading": "लोड हो रहा है...",

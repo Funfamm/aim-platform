@@ -481,6 +481,12 @@ model SiteSettings {
   trailerPreviewMessage         String?                         // custom gate prompt (fallback: "Sign in to watch the full trailer")
   // Log retention
   logRetentionDays              Int            @default(90)    // auto-purge EmailLog, EmailQueue, EmailBounceEvent older than N days (0 = never)
+  // Page content (admin CMS — same pattern as aboutPageData)
+  homePageData                  String?        // JSON: hero rotating words, sub-headline, CTA labels, Three Ways In cards
+  worksPageData                 String?        // JSON: hero title, accent, description, CTA
+  upcomingPageData              String?        // JSON: hero title, accent, description
+  footerPageData                String?        // JSON: tagline override, brand signature
+  joinCtaData                   String?        // JSON: eyebrow, title, accent, body, button labels
 }
 
 model PasswordHistory {
@@ -1504,4 +1510,20 @@ model CommentLike {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([commentId, userId])
+}
+
+model ContentTranslation {
+  id            String    @id @default(cuid())
+  scope         String    // "home", "works", "upcoming", "about", "footer", "joinCta"
+  locale        String    // "en" (snapshot), "es", "fr", "ar", etc.
+  sourceVersion Int       @default(1)  // increments when English source changes
+  content       String    // JSON: the translated field values (or English snapshot when locale="en")
+  status        String    @default("pending_review")  // "pending_review" | "approved" | "stale"
+  reviewedBy    String?   // admin ID who approved
+  reviewedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([scope, locale])
+  @@index([scope, status])
 }

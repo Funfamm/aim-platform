@@ -121,6 +121,12 @@ export async function PUT(req: Request) {
             notifyOnContentPublish: body.notifyOnContentPublish ?? false,
             // Log retention
             logRetentionDays: body.logRetentionDays ?? 90,
+            // Page content (admin CMS)
+            homePageData: body.homePageData || null,
+            worksPageData: body.worksPageData || null,
+            upcomingPageData: body.upcomingPageData || null,
+            footerPageData: body.footerPageData || null,
+            joinCtaData: body.joinCtaData || null,
         }
 
         // Only update API key if user provided a new one (not masked)

@@ -859,6 +859,116 @@ select::placeholder {
   opacity: 0;
 }
 
+/* ── Shimmer gold text effect for hero rotating words ── */
+.shimmer-gold-text {
+  background-size: 200% 100% !important;
+  animation: goldShimmer 3s linear infinite !important;
+}
+
+/* ── Footer brand signature tracking-in animation ── */
+@keyframes trackingIn {
+  0% {
+    letter-spacing: 0.5em;
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.6;
+  }
+  100% {
+    letter-spacing: 0.3em;
+    opacity: 1;
+  }
+}
+
+.brand-signature {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--accent-gold);
+  opacity: 0;
+  animation: trackingIn 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) forwards;
+  animation-delay: 0.5s;
+  text-shadow: 0 0 20px rgba(212, 168, 83, 0.15);
+}
+
+/* ── Three Ways In section ── */
+.three-ways-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 2.5rem 2rem;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.35s ease,
+              box-shadow 0.35s ease;
+  overflow: hidden;
+}
+
+.three-ways-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-gold), transparent);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.three-ways-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(212, 168, 83, 0.25);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3),
+              0 0 30px rgba(212, 168, 83, 0.06);
+}
+
+.three-ways-card:hover::before {
+  opacity: 1;
+}
+
+.three-ways-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: rgba(212, 168, 83, 0.08);
+  border: 1px solid rgba(212, 168, 83, 0.15);
+  color: var(--accent-gold);
+  margin-bottom: var(--space-lg);
+  transition: box-shadow 0.35s ease;
+}
+
+.three-ways-card:hover .three-ways-icon {
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.15);
+}
+
+.three-ways-card .card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-lg);
+  padding: 0.65rem 1.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  border-radius: var(--radius-full);
+  background: rgba(212, 168, 83, 0.08);
+  border: 1px solid rgba(212, 168, 83, 0.2);
+  color: var(--accent-gold);
+  transition: all 0.25s ease;
+  text-decoration: none;
+}
+
+.three-ways-card .card-cta:hover {
+  background: rgba(212, 168, 83, 0.15);
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(212, 168, 83, 0.12);
+}
+
 /* â”€â”€ Responsive â”€â”€ */
 @media (max-width: 1024px) {
   .grid-4 {

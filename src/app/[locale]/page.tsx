@@ -7,6 +7,7 @@ const FeaturedProjects3D = dynamic(() => import('@/components/FeaturedProjects3D
 const RollRow = dynamic(() => import('@/components/mobile/RollRow'))
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import SponsorBannerSection from '@/components/SponsorBannerSection'
+import ThreeWaysIn from '@/components/ThreeWaysIn'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { sanitizeBigInt } from '@/lib/serializer'
@@ -63,7 +64,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           bannerDurationHours: true,
         },
       }),
-      prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true, allowPublicTrailers: true } }).catch(() => null),
+      prisma.siteSettings.findFirst({ select: { castingCallsEnabled: true, allowPublicTrailers: true, homePageData: true } }).catch(() => null),
       prisma.movieRoll.findMany({
         where: {
           visible: true,
@@ -113,6 +114,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   const t = await getTranslations('home')
 
+  // Parse homePageData for admin CMS overrides
+  let hpd: Record<string, any> = {}
+  try { if (siteSettings?.homePageData) hpd = JSON.parse(siteSettings.homePageData) } catch { /* */ }
+
   return (
     <main id="main-content">
       <Scene3D />
@@ -123,6 +128,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         upcomingCount={upcomingCount}
         openCastings={openCastings}
         castingEnabled={siteSettings?.castingCallsEnabled ?? true}
+        rotatingWords={Array.isArray(hpd.rotatingWords) && hpd.rotatingWords.length > 0 ? hpd.rotatingWords : undefined}
+        subHeadline={hpd.subHeadline || undefined}
+        heroLabel={hpd.heroLabel || undefined}
+        heroTitle={hpd.heroTitle || undefined}
+        heroCta={hpd.heroCta || undefined}
+        heroCtaCasting={hpd.heroCtaCasting || undefined}
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}
@@ -244,6 +255,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </section>
       )}
+
+      {/* ═══ THREE WAYS IN ═══ */}
+      <ThreeWaysIn overrides={hpd} />
 
       {/* ═══ SPONSORS & CASTING CTA ═══ */}
       <SponsorBannerSection sponsors={localizedSponsors} />

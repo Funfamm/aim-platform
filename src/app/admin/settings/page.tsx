@@ -39,6 +39,7 @@ const EMPTY_ABOUT: AboutPageData = {
 type Settings = {
     siteName: string; tagline: string; aboutText: string; studioStory: string; mission: string
     aboutPageData: string
+    homePageData: string
     logoUrl: string; contactEmail: string; contactPhone: string; address: string
     socialLinks: SocialLinks
     // AI
@@ -79,6 +80,7 @@ type Settings = {
 
 const TABS = [
     { key: 'general', label: '🏷️ General' },
+    { key: 'homepage', label: '🏠 Homepage' },
     { key: 'about', label: '📖 About & Mission' },
     { key: 'contact', label: '📬 Contact & Social' },
     { key: 'apikeys', label: '🔑 API Keys & Agents' },
@@ -824,7 +826,7 @@ function EmailPreviewGallery() {
 export default function AdminSettingsPage() {
     const [tab, setTab] = useState<string>('general')
     const [settings, setSettings] = useState<Settings>({
-        siteName: '', tagline: '', aboutText: '', studioStory: '', mission: '', aboutPageData: '',
+        siteName: '', tagline: '', aboutText: '', studioStory: '', mission: '', aboutPageData: '', homePageData: '',
         logoUrl: '', contactEmail: '', contactPhone: '', address: '',
         socialLinks: { youtube: '', instagram: '', tiktok: '', x: '', imdb: '' },
         geminiApiKey: '', aiModel: 'gemini-2.5-flash', aiCustomPrompt: '', aiAutoAudit: false,
@@ -895,6 +897,11 @@ export default function AdminSettingsPage() {
     const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
     const [bulkActionLoading, setBulkActionLoading] = useState(false)
     const [bulkAgent, setBulkAgent] = useState('all')
+
+    // Homepage translation panel state (hoisted — hooks can't live inside IIFE)
+    const [homeTranslations, setHomeTranslations] = useState<any[]>([])
+    const [homeTranslating, setHomeTranslating] = useState(false)
+    const [homeTranslateMsg, setHomeTranslateMsg] = useState('')
 
     const handleBulkAction = async (action: 'enable' | 'disable' | 'delete' | 'clearErrors' | 'assignAgent') => {
         if (selectedKeys.size === 0) return
@@ -967,6 +974,7 @@ export default function AdminSettingsPage() {
                     notifyOnAnnouncement: data.notifyOnAnnouncement ?? true,
                     notifyOnContentPublish: data.notifyOnContentPublish ?? true,
                     aboutPageData: data.aboutPageData || '',
+                    homePageData: data.homePageData || '',
                 })
                 setDirty(false)
             })
@@ -2671,6 +2679,248 @@ export default function AdminSettingsPage() {
                                     </div>
                                 </section>
                             )}
+
+                            {/* ─── Homepage CMS ─── */}
+                            {tab === 'homepage' && (() => {
+                                let hpd: Record<string, any> = {}
+                                try { if (settings.homePageData) hpd = JSON.parse(settings.homePageData) } catch { /* */ }
+                                const words: string[] = Array.isArray(hpd.rotatingWords) ? hpd.rotatingWords : []
+                                const uh = (key: string, val: any) => {
+                                    const next = { ...hpd, [key]: val }
+                                    update('homePageData' as keyof Settings, JSON.stringify(next))
+                                }
+                                const hintStyle = { fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '3px' } as const
+                                const sectionHeader = (emoji: string, title: string, desc: string) => (
+                                    <>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: '4px', marginTop: 'var(--space-xl)' }}>{emoji} {title}</div>
+                                        <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>{desc}</div>
+                                    </>
+                                )
+
+                                // Translation panel state (hoisted to component level)
+                                const translations = homeTranslations
+                                const setTranslations = setHomeTranslations
+                                const translating = homeTranslating
+                                const setTranslating = setHomeTranslating
+                                const translateMsg = homeTranslateMsg
+                                const setTranslateMsg = setHomeTranslateMsg
+
+                                const loadTranslations = () => {
+                                    fetch('/api/admin/translation-review?scope=home')
+                                        .then(r => r.json())
+                                        .then(data => { if (Array.isArray(data)) setTranslations(data) })
+                                        .catch(() => { /* */ })
+                                }
+
+                                const handleGenerateTranslations = async () => {
+                                    setTranslating(true); setTranslateMsg('')
+                                    try {
+                                        const res = await fetch('/api/admin/translate-page', {
+                                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ scope: 'home' }),
+                                        })
+                                        const data = await res.json()
+                                        if (res.ok) {
+                                            setTranslateMsg(`✅ ${data.message}`)
+                                            loadTranslations()
+                                        } else {
+                                            setTranslateMsg(`❌ ${data.error}`)
+                                        }
+                                    } catch { setTranslateMsg('❌ Network error') }
+                                    finally { setTranslating(false) }
+                                }
+
+                                const handleApprove = async (locale: string) => {
+                                    try {
+                                        await fetch('/api/admin/translation-review', {
+                                            method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ scope: 'home', locale, status: 'approved' }),
+                                        })
+                                        loadTranslations()
+                                    } catch { /* */ }
+                                }
+
+                                const handleApproveAll = async () => {
+                                    try {
+                                        await fetch('/api/admin/translation-review', {
+                                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ scope: 'home', action: 'approve_all' }),
+                                        })
+                                        loadTranslations()
+                                    } catch { /* */ }
+                                }
+
+                                return (
+                                    <section className="admin-form-section">
+                                        <h3 className="admin-form-section-title">🏠 Homepage Content</h3>
+                                        <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
+                                            Edit all homepage sections. <strong style={{ color: 'var(--text-secondary)' }}>Leave fields empty to use locale translations.</strong>
+                                        </p>
+
+                                        {/* ── Hero Section ── */}
+                                        {sectionHeader('🎬', 'Hero Section', 'The main banner — eyebrow label, headline, sub-headline, and CTA buttons.')}
+                                        <div className="admin-form-stack">
+                                            <div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <label className="admin-label">Eyebrow Label <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(small gold caps)</span></label>
+                                                    <span style={{ fontSize: '0.6rem', color: (hpd.heroLabel || '').length > 30 ? '#f59e0b' : 'var(--text-tertiary)' }}>{(hpd.heroLabel || '').length}/30</span>
+                                                </div>
+                                                <input className="form-input" value={hpd.heroLabel || ''} maxLength={30}
+                                                    onChange={e => uh('heroLabel', e.target.value)} placeholder="DON'T LOOK AWAY" />
+                                                <div style={hintStyle}>Leave empty to use translation</div>
+                                            </div>
+                                            <div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <label className="admin-label">Headline (regular text)</label>
+                                                    <span style={{ fontSize: '0.6rem', color: (hpd.heroTitle || '').length > 40 ? '#f59e0b' : 'var(--text-tertiary)' }}>{(hpd.heroTitle || '').length}/40</span>
+                                                </div>
+                                                <input className="form-input" value={hpd.heroTitle || ''} maxLength={40}
+                                                    onChange={e => uh('heroTitle', e.target.value)} placeholder="Cinema for the moments that" />
+                                                <div style={hintStyle}>The gold rotating words appear after this text</div>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Sub-headline</label>
+                                                <textarea className="form-textarea" value={hpd.subHeadline || ''} maxLength={200}
+                                                    onChange={e => uh('subHeadline', e.target.value)} placeholder="We make films about sacrifice, regret..." rows={3} />
+                                                <div style={hintStyle}>Body text below the headline. Max 200 characters.</div>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
+                                                <div>
+                                                    <label className="admin-label">Primary CTA Label</label>
+                                                    <input className="form-input" value={hpd.heroCta || ''} maxLength={24}
+                                                        onChange={e => uh('heroCta', e.target.value)} placeholder="Watch the Films" />
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label">Secondary CTA Label</label>
+                                                    <input className="form-input" value={hpd.heroCtaCasting || ''} maxLength={24}
+                                                        onChange={e => uh('heroCtaCasting', e.target.value)} placeholder="Join the Next One" />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* ── Rotating Words ── */}
+                                        {sectionHeader('✨', 'Rotating Words', 'The gold italic words that cycle in the hero headline. Add or remove freely.')}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: 'var(--space-md)' }}>
+                                            {words.map((word: string, i: number) => (
+                                                <div key={i} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                    <input className="form-input" value={word}
+                                                        onChange={e => {
+                                                            const next = [...words]; next[i] = e.target.value
+                                                            uh('rotatingWords', next)
+                                                        }}
+                                                        placeholder={`Word ${i + 1}`}
+                                                        style={{ flex: 1 }} />
+                                                    <button type="button" onClick={() => {
+                                                        const next = words.filter((_: string, j: number) => j !== i)
+                                                        uh('rotatingWords', next)
+                                                    }} className="btn btn-ghost" style={{ padding: '6px 10px', color: 'var(--error)', fontSize: '0.75rem' }}>✕</button>
+                                                </div>
+                                            ))}
+                                            <button type="button" onClick={() => uh('rotatingWords', [...words, ''])}
+                                                className="btn btn-secondary" style={{ alignSelf: 'flex-start', padding: '6px 16px', fontSize: '0.78rem' }}>
+                                                + Add Word
+                                            </button>
+                                            {words.length === 0 && <div style={hintStyle}>No custom words — using defaults from translations (mattered., cost something., etc.)</div>}
+                                            {words.length === 1 && <div style={hintStyle}>⚠️ Only 1 word = no rotation animation. Add 2+ for rotation.</div>}
+                                        </div>
+
+                                        {/* ── Three Ways In Cards ── */}
+                                        {sectionHeader('🚪', 'Three Ways In Section', 'The 3-card section between Featured Works and Join CTA.')}
+                                        {[1, 2, 3].map(n => (
+                                            <div key={n} style={{
+                                                padding: 'var(--space-md)', marginBottom: 'var(--space-md)',
+                                                background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-lg)',
+                                                border: '1px solid var(--border-subtle)',
+                                            }}>
+                                                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '8px' }}>Card {n}</div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                                                    <div>
+                                                        <label className="admin-label" style={{ fontSize: '0.65rem' }}>Title</label>
+                                                        <input className="form-input" value={hpd[`card${n}Title`] || ''} maxLength={30}
+                                                            onChange={e => uh(`card${n}Title`, e.target.value)}
+                                                            placeholder={n === 1 ? 'Watch' : n === 2 ? 'Be in it' : 'Learn to make it'} />
+                                                    </div>
+                                                    <div>
+                                                        <label className="admin-label" style={{ fontSize: '0.65rem' }}>Subtitle (gold caps)</label>
+                                                        <input className="form-input" value={hpd[`card${n}Sub`] || ''} maxLength={40}
+                                                            onChange={e => uh(`card${n}Sub`, e.target.value)}
+                                                            placeholder={n === 1 ? 'CINEMA WORTH WITNESSING' : n === 2 ? 'SEE YOURSELF ON SCREEN' : 'THE NEXT GENERATION'} />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label" style={{ fontSize: '0.65rem' }}>Body</label>
+                                                    <textarea className="form-textarea" value={hpd[`card${n}Body`] || ''} maxLength={220}
+                                                        onChange={e => uh(`card${n}Body`, e.target.value)} rows={2}
+                                                        placeholder="Card description..." />
+                                                </div>
+                                                <div style={{ marginTop: '6px' }}>
+                                                    <label className="admin-label" style={{ fontSize: '0.65rem' }}>CTA Button Label</label>
+                                                    <input className="form-input" value={hpd[`card${n}Cta`] || ''} maxLength={24}
+                                                        onChange={e => uh(`card${n}Cta`, e.target.value)}
+                                                        placeholder={n === 1 ? 'See the Films' : n === 2 ? 'View Open Roles' : 'Explore Training'} />
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        {/* ── Translation Panel ── */}
+                                        {sectionHeader('🌐', 'Translations', 'Generate AI translations and review them before publishing.')}
+                                        <div style={{
+                                            padding: 'var(--space-lg)', background: 'rgba(255,255,255,0.02)',
+                                            borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)',
+                                        }}>
+                                            <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center', marginBottom: 'var(--space-md)', flexWrap: 'wrap' }}>
+                                                <button type="button" onClick={handleGenerateTranslations} disabled={translating}
+                                                    className="btn btn-primary" style={{ fontSize: '0.78rem' }}>
+                                                    {translating ? 'Generating...' : '🌐 Generate Translations'}
+                                                </button>
+                                                <button type="button" onClick={loadTranslations} className="btn btn-secondary" style={{ fontSize: '0.78rem' }}>
+                                                    Refresh Status
+                                                </button>
+                                                {translations.filter((t: any) => t.locale !== 'en' && ['pending_review', 'stale'].includes(t.status)).length > 0 && (
+                                                    <button type="button" onClick={handleApproveAll} className="btn btn-secondary" style={{ fontSize: '0.78rem', borderColor: 'rgba(52,211,153,0.3)', color: 'var(--success)' }}>
+                                                        ✓ Approve All
+                                                    </button>
+                                                )}
+                                            </div>
+                                            {translateMsg && <div style={{ fontSize: '0.75rem', color: translateMsg.startsWith('✅') ? 'var(--success)' : 'var(--error)', marginBottom: 'var(--space-sm)' }}>{translateMsg}</div>}
+
+                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
+                                                Only changed fields are re-translated. Approved translations stay untouched.
+                                            </div>
+
+                                            {/* Locale status table */}
+                                            {translations.filter((t: any) => t.locale !== 'en').length > 0 && (
+                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
+                                                    {translations.filter((t: any) => t.locale !== 'en').map((t: any) => (
+                                                        <div key={t.locale} style={{
+                                                            padding: '10px 14px', borderRadius: 'var(--radius-md)',
+                                                            background: t.status === 'approved' ? 'rgba(52,211,153,0.04)' : t.status === 'stale' ? 'rgba(239,68,68,0.04)' : 'rgba(245,158,11,0.04)',
+                                                            border: `1px solid ${t.status === 'approved' ? 'rgba(52,211,153,0.2)' : t.status === 'stale' ? 'rgba(239,68,68,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                                                        }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>{t.locale.toUpperCase()}</span>
+                                                                <span style={{
+                                                                    fontSize: '0.6rem', fontWeight: 600, padding: '2px 8px', borderRadius: 'var(--radius-full)',
+                                                                    background: t.status === 'approved' ? 'rgba(52,211,153,0.15)' : t.status === 'stale' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+                                                                    color: t.status === 'approved' ? 'var(--success)' : t.status === 'stale' ? 'var(--error)' : '#f59e0b',
+                                                                }}>{t.status === 'pending_review' ? 'PENDING' : t.status.toUpperCase()}</span>
+                                                            </div>
+                                                            {t.status !== 'approved' && (
+                                                                <button type="button" onClick={() => handleApprove(t.locale)}
+                                                                    style={{
+                                                                        marginTop: '6px', fontSize: '0.65rem', fontWeight: 600,
+                                                                        color: 'var(--success)', background: 'none', border: 'none', cursor: 'pointer',
+                                                                        textDecoration: 'underline',
+                                                                    }}>Approve</button>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </section>
+                                )
+                            })()}
 
 
 

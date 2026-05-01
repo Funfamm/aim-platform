@@ -217,7 +217,10 @@
     "emailPlaceholder": "Seu email",
     "subscribe": "Inscrever-se",
     "subscribed": "Você está inscrito!",
-    "validationRequired": "Por favor, preencha este campo."
+    "validationRequired": "Por favor, preencha este campo.",
+    "watchFreeTitle": "Assista nossos filmes de graça",
+    "watchFreeDesc": "Crie uma conta gratuita para assistir filmes completos e se candidatar a papéis.",
+    "watchFreeBtn": "Criar Conta Grátis →"
   },
   "common": {
     "loading": "Carregando...",

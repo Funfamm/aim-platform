@@ -56,6 +56,9 @@ export default function Footer() {
                         <p>
                             {t('tagline')}
                         </p>
+                        <div className="brand-signature" style={{ marginTop: 'var(--space-sm)' }}>
+                            {t('brandSignature')}
+                        </div>
                     </div>
 
                     {/* Link columns — side-by-side on mobile */}

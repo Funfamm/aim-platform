@@ -219,7 +219,10 @@
     "emailPlaceholder": "بريدك الإلكتروني",
     "subscribe": "اشترك",
     "subscribed": "أنت مشترك!",
-    "validationRequired": "يرجى ملء هذا الحقل."
+    "validationRequired": "يرجى ملء هذا الحقل.",
+    "watchFreeTitle": "شاهد أفلامنا مجاناً",
+    "watchFreeDesc": "أنشئ حساباً مجانياً لمشاهدة الأفلام الكاملة والتقدم لأدوار التمثيل.",
+    "watchFreeBtn": "إنشاء حساب مجاني ←"
   },
   "common": {
     "loading": "جارٍ التحميل...",

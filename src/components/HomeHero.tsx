@@ -15,12 +15,21 @@ interface HomeHeroProps {
     upcomingCount: number
     openCastings: number
     castingEnabled: boolean
+    rotatingWords?: string[]
+    subHeadline?: string
+    heroLabel?: string
+    heroTitle?: string
+    heroCta?: string
+    heroCtaCasting?: string
 }
 
-export default function HomeHero({ completedCount, upcomingCount, openCastings, castingEnabled }: HomeHeroProps) {
+export default function HomeHero({ completedCount, upcomingCount, openCastings, castingEnabled, rotatingWords, subHeadline, heroLabel, heroTitle, heroCta, heroCtaCasting }: HomeHeroProps) {
     const t = useTranslations('hero')
     const th = useTranslations('home')
-    const ROTATING_WORDS = useMemo(() => [t('word1'), t('word2'), t('word3'), t('word4'), t('word5')], [t])
+    const ROTATING_WORDS = useMemo(() => {
+        if (rotatingWords && rotatingWords.length > 0) return rotatingWords
+        return [t('word1'), t('word2'), t('word3'), t('word4'), t('word5')]
+    }, [rotatingWords, t])
     const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
     const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
@@ -221,23 +230,23 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
 
                 <div className="hero-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center' }}>
                     <span className="text-label animate-fade-in-up" style={{ display: 'block', marginBottom: 'var(--space-sm)' }}>
-                        {t('label')}
+                        {heroLabel || t('label')}
                     </span>
 
                     <h1 className="animate-fade-in-up delay-1" style={{
                         fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
-                        marginBottom: 'var(--space-sm)',
+                        marginBottom: 'var(--space-md)',
                         fontWeight: 800,
                         lineHeight: 1.15,
                     }}>
-                        {t('title', { accent: '' })}{' '}
+                        {heroTitle || t('title')}{' '}
                         <span style={{
                             display: 'inline-grid',
                             verticalAlign: 'baseline',
                         }}>
                             {/* All words in same grid cell — container sizes to widest */}
                             {ROTATING_WORDS.map((word: string, i: number) => (
-                                <span key={i} style={{
+                                <span key={i} className={i === wordIdx && wordFade ? 'shimmer-gold-text' : ''} style={{
                                     gridRow: 1,
                                     gridColumn: 1,
                                     fontFamily: 'var(--font-serif)',
@@ -252,21 +261,30 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                                     transition: 'opacity 0.4s ease, transform 0.4s ease',
                                 }}>{word}</span>
                             ))}
-                        </span>{' '}
-                        <br />
-                        {t('titleSuffix')}
+                        </span>
                     </h1>
 
-                    <div className="hero-actions hero-cta-row animate-fade-in-up delay-2" style={{ marginBottom: 'var(--space-xl)' }}>
+                    {/* Sub-headline */}
+                    <p className="animate-fade-in-up delay-2" style={{
+                        fontSize: 'clamp(0.95rem, 1.8vw, 1.15rem)',
+                        lineHeight: 1.7,
+                        color: 'var(--text-secondary)',
+                        maxWidth: '580px',
+                        marginBottom: 'var(--space-xl)',
+                    }}>
+                        {subHeadline || t('description')}
+                    </p>
+
+                    <div className="hero-actions hero-cta-row animate-fade-in-up delay-3" style={{ marginBottom: 'var(--space-xl)' }}>
                         <Link href="/works" prefetch={false} className="btn btn-primary btn-lg">
-                            {t('cta')}
+                            {heroCta || t('cta')}
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
                         </Link>
                         {castingEnabled && (
                             <Link href="/casting" prefetch={false} className="btn btn-secondary btn-lg">
-                                {t('ctaCasting')}
+                                {heroCtaCasting || t('ctaCasting')}
                             </Link>
                         )}
                     </div>

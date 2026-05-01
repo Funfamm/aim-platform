@@ -200,7 +200,10 @@
     "emailPlaceholder": "メールを入力",
     "subscribe": "購読",
     "subscribed": "購読済み！",
-    "validationRequired": "このフィールドを入力してください。"
+    "validationRequired": "このフィールドを入力してください。",
+    "watchFreeTitle": "映画を無料で視聴",
+    "watchFreeDesc": "無料アカウントを作成して、映画を視聴し、キャスティングに応募しましょう。",
+    "watchFreeBtn": "無料アカウントを作成 →"
   },
   "common": {
     "loading": "読み込み中...",

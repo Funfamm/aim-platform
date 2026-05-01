@@ -55,10 +55,10 @@ export default function SubscribeForm() {
                     borderRadius: 'var(--radius-md)',
                 }}>
                     <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                        🎬 Watch our films free
+                        🎬 {t('watchFreeTitle')}
                     </div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5, marginBottom: '10px' }}>
-                        Create a free account to watch full films{'\n'}and apply for casting roles.
+                        {t('watchFreeDesc')}
                     </div>
                     <a
                         href={`/${locale}/register?utm_source=subscribe_form`}
@@ -74,7 +74,7 @@ export default function SubscribeForm() {
                             transition: 'opacity 0.2s',
                         }}
                     >
-                        Create Your Free Account →
+                        {t('watchFreeBtn')}
                     </a>
                 </div>
             </div>

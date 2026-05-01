@@ -217,7 +217,10 @@
     "emailPlaceholder": "이메일 입력",
     "subscribe": "구독",
     "subscribed": "구독됨!",
-    "validationRequired": "이 필드를 채워 주세요."
+    "validationRequired": "이 필드를 채워 주세요.",
+    "watchFreeTitle": "무료로 영화 보기",
+    "watchFreeDesc": "무료 계정을 만들어 전체 영화를 감상하고 캐스팅에 지원하세요.",
+    "watchFreeBtn": "무료 계정 만들기 →"
   },
   "common": {
     "loading": "로딩 중...",

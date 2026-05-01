@@ -217,7 +217,10 @@
     "emailPlaceholder": "Ihre E-Mail",
     "subscribe": "Abonnieren",
     "subscribed": "Sie sind abonniert!",
-    "validationRequired": "Bitte füllen Sie dieses Feld aus."
+    "validationRequired": "Bitte füllen Sie dieses Feld aus.",
+    "watchFreeTitle": "Unsere Filme kostenlos ansehen",
+    "watchFreeDesc": "Erstellen Sie ein kostenloses Konto, um Filme anzusehen und sich für Casting-Rollen zu bewerben.",
+    "watchFreeBtn": "Kostenloses Konto Erstellen →"
   },
   "common": {
     "loading": "Wird geladen...",
