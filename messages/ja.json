@@ -26,9 +26,10 @@
   "hero": {
     "label": "AI映画",
     "title": "AIが{accent}に出会う場所",
+    "titleAccentPrefix": "",
     "accent": "大胆な",
     "titleSuffix": "ストーリーテリング",
-    "description": "最先端のAIで魅力的なビジュアルストーリーを作ります。",
+    "description": "最先端のAIで魅力的なビジュアルストーリーを制作します。作品を視聴し、オーディションに参加してください。",
     "cta": "作品を探す",
     "ctaCasting": "キャスティングを見る",
     "word1": "映画的",

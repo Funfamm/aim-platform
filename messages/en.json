@@ -43,7 +43,8 @@
   "hero": {
     "label": "DON'T LOOK AWAY",
     "title": "Cinema for the moments",
-    "accent": "mattered.",
+    "titleAccentPrefix": "that",
+    "accent": "resonate.",
     "titleSuffix": "",
     "description": "We craft cinematic experiences exploring sacrifice and resilience. Watch our productions, audition for upcoming roles, or learn the art of filmmaking.",
     "cta": "Watch the Films",

@@ -239,31 +239,54 @@ export default function HomeHero({ completedCount, upcomingCount, openCastings, 
                         fontWeight: 800,
                         lineHeight: 1.15,
                     }}>
-                        {heroTitle || t('title')}
-                        <br />
-                        <span style={{ fontWeight: 400, opacity: 0.9 }}>that </span>
-                        <span style={{
-                            display: 'inline-grid',
-                            verticalAlign: 'baseline',
-                        }}>
-                            {/* All words in same grid cell — container sizes to widest */}
-                            {ROTATING_WORDS.map((word: string, i: number) => (
-                                <span key={i} className={i === wordIdx && wordFade ? 'shimmer-gold-text' : ''} style={{
-                                    gridRow: 1,
-                                    gridColumn: 1,
-                                    fontFamily: 'var(--font-serif)',
-                                    fontStyle: 'italic',
-                                    whiteSpace: 'nowrap',
-                                    background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
-                                    WebkitBackgroundClip: 'text',
-                                    WebkitTextFillColor: 'transparent',
-                                    backgroundClip: 'text',
-                                    opacity: i === wordIdx && wordFade ? 1 : 0,
-                                    transform: i === wordIdx && wordFade ? 'translateY(0)' : 'translateY(8px)',
-                                    transition: 'opacity 0.4s ease, transform 0.4s ease',
-                                }}>{word}</span>
-                            ))}
-                        </span>
+                        {(() => {
+                            const rawTitle = heroTitle || t('title');
+                            const prefix = t('titleAccentPrefix');
+                            
+                            const renderRotatingWordsSpan = () => (
+                                <span style={{
+                                    display: 'inline-grid',
+                                    verticalAlign: 'baseline',
+                                }}>
+                                    {ROTATING_WORDS.map((word: string, i: number) => (
+                                        <span key={i} className={i === wordIdx && wordFade ? 'shimmer-gold-text' : ''} style={{
+                                            gridRow: 1,
+                                            gridColumn: 1,
+                                            fontFamily: 'var(--font-serif)',
+                                            fontStyle: 'italic',
+                                            whiteSpace: 'nowrap',
+                                            background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent',
+                                            backgroundClip: 'text',
+                                            opacity: i === wordIdx && wordFade ? 1 : 0,
+                                            transform: i === wordIdx && wordFade ? 'translateY(0)' : 'translateY(8px)',
+                                            transition: 'opacity 0.4s ease, transform 0.4s ease',
+                                        }}>{word}</span>
+                                    ))}
+                                </span>
+                            );
+
+                            if (rawTitle.includes('{accent}')) {
+                                const parts = rawTitle.split('{accent}');
+                                return (
+                                    <>
+                                        {parts[0]}
+                                        {renderRotatingWordsSpan()}
+                                        {parts[1]}
+                                    </>
+                                );
+                            }
+
+                            return (
+                                <>
+                                    {rawTitle}
+                                    <br />
+                                    {prefix && <span style={{ fontWeight: 800, opacity: 1 }}>{prefix} </span>}
+                                    {renderRotatingWordsSpan()}
+                                </>
+                            );
+                        })()}
                     </h1>
 
                     {/* Sub-headline */}
