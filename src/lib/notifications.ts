@@ -98,6 +98,8 @@ interface NotifyAllOptions {
     targetUserIds?: string[]
     /** Custom CTA button override for campaigns */
     ctaOverride?: { text: string; url: string; color: string }
+    /** When true, skip the SiteSettings notification toggle check (for explicit admin sends) */
+    skipSettingsGate?: boolean
 }
 
 // ─── Core: notify a single user ───────────────────────────────────────────────
@@ -314,9 +316,12 @@ export async function broadcastNotification(opts: NotifyAllOptions): Promise<voi
             },
         })
 
-        if (opts.type === 'new_role' && !settings?.notifyOnNewRole) return
-        if (opts.type === 'announcement' && !settings?.notifyOnAnnouncement) return
-        if (opts.type === 'content_publish' && !settings?.notifyOnContentPublish) return
+        // Skip the settings gate for explicit admin sends (Outreach Center)
+        if (!opts.skipSettingsGate) {
+            if (opts.type === 'new_role' && !settings?.notifyOnNewRole) return
+            if (opts.type === 'announcement' && !settings?.notifyOnAnnouncement) return
+            if (opts.type === 'content_publish' && !settings?.notifyOnContentPublish) return
+        }
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
@@ -704,6 +709,8 @@ export async function notifyAnnouncement(
         imageUrl,
         bodyHtml,
         ctaOverride,
+        // Outreach Center is an explicit admin action — always bypass the settings toggle
+        skipSettingsGate: true,
     }
 
     // ── Registered members (opted-in) ─────────────────────────────────────────
