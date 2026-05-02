@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 type HistoryItem = {
     id: string; title: string; message: string; type?: string; ctaText?: string | null
@@ -17,40 +17,38 @@ export default function HistoryTab() {
     const [total, setTotal] = useState(0)
     const [typeFilter, setTypeFilter] = useState<string | null>(null)
     const [fetchError, setFetchError] = useState<string | null>(null)
-    const [refreshKey, setRefreshKey] = useState(0)
-
-    useEffect(() => {
-        let cancelled = false
+    const fetchHistory = useCallback((p: number, type: string | null) => {
         setLoading(true)
         setHistory([])
         setFetchError(null)
-        const params = new URLSearchParams({ page: String(page) })
-        if (typeFilter) params.set('type', typeFilter)
+        const params = new URLSearchParams({ page: String(p) })
+        if (type) params.set('type', type)
         fetch(`/api/admin/announcements?${params}`)
             .then(r => {
                 if (!r.ok) throw new Error(`HTTP ${r.status}`)
                 return r.json()
             })
             .then(data => {
-                if (cancelled) return
                 setHistory(data.announcements ?? [])
                 setTotal(data.total ?? 0)
                 setTotalPages(data.totalPages ?? 1)
             })
-            .catch((err) => {
-                if (cancelled) return
+            .catch(err => {
                 setFetchError(`Failed to load history: ${err.message || 'Network error'}`)
             })
-            .finally(() => { if (!cancelled) setLoading(false) })
-        return () => { cancelled = true }
-    }, [page, typeFilter, refreshKey])
+            .finally(() => setLoading(false))
+    }, [])
+
+    useEffect(() => { fetchHistory(page, typeFilter) }, [fetchHistory, page, typeFilter])
+
+    const [refreshKey, setRefreshKey] = useState(0)
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}><div className="loading-spinner" style={{ margin: '0 auto', width: 28, height: 28 }} /></div>
 
     if (fetchError) return (
         <div className="outreachErrorBlock">
             <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600, marginBottom: '12px' }}>⚠️ {fetchError}</div>
-            <button onClick={() => setRefreshKey(k => k + 1)} className="outreachRetryBtn">🔄 Retry</button>
+            <button onClick={() => fetchHistory(page, typeFilter)} className="outreachRetryBtn">🔄 Retry</button>
         </div>
     )
 
