@@ -199,7 +199,21 @@ export default function EmailAnalyticsPage() {
                         {/* Period summary */}
                         <div style={{ padding: '20px', borderRadius: '12px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                             <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '14px' }}>
-                                {period === 'daily' ? 'Last 7 Days' : period === 'weekly' ? 'Last 4 Weeks' : 'Last 3 Months'}
+                            {(() => {
+                                const now = new Date()
+                                const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                                const end = fmt(now)
+                                if (period === 'daily') {
+                                    const start = new Date(now); start.setDate(start.getDate() - 6)
+                                    return `Last 7 Days (${fmt(start)} – ${end})`
+                                }
+                                if (period === 'weekly') {
+                                    const start = new Date(now); start.setDate(start.getDate() - 27)
+                                    return `Last 4 Weeks (${fmt(start)} – ${end})`
+                                }
+                                const start = new Date(now); start.setMonth(start.getMonth() - 2); start.setDate(1)
+                                return `Last 3 Months (${fmt(start)} – ${end})`
+                            })()}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px' }}>
                                 {[
