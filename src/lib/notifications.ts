@@ -701,7 +701,7 @@ export async function notifyAnnouncement(
         title,
         message,
         link: inAppLink,
-        emailSubject: `📣 ${title} | AIM Studio`,
+        emailSubject: `AIM Studio: ${title}`,
         // Default English HTML — rebuilt per-user locale inside notifyUser()
         emailHtml: announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml, 'en', ctaOverride),
         translations,
@@ -748,7 +748,7 @@ export async function notifyAnnouncement(
                 const lt = translations?.[loc] as Record<string, string> | undefined
                 const locTitle   = lt?.title   || title
                 const locMessage = lt?.message  || message
-                const locSubject = lt?.title ? `📣 ${lt.title} | AIM Studio` : `📣 ${title} | AIM Studio`
+                const locSubject = lt?.title ? `AIM Studio: ${lt.title}` : `AIM Studio: ${title}`
 
                 // Build per-locale CTA override with translated text
                 const locCta = ctaOverride

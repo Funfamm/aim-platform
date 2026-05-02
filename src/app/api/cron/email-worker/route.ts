@@ -156,13 +156,13 @@ export async function GET(request: Request) {
                         }
 
                         // ── Route via configured transport ─────────────────────────
-                        // ACS is only for subscriber/newsletter emails (different sender domain).
-                        // Member emails (announcement, content_publish, new_role, etc.) always
-                        // use Graph to maintain sender reputation and domain consistency.
+                        // ACS handles subscriber/newsletter AND admin outreach (announcements,
+                        // campaigns) — all bulk mail benefits from dedicated bulk infrastructure.
+                        // Member transactional emails (new_role status changes) use Graph.
                         let success = false
-                        const isSubscriberEmail = job.type === 'broadcast' || job.type === 'subscriber' || job.type === 'newsletter' || job.type === 'conversion_campaign' || job.type === 'survey_campaign' || job.type.startsWith('subscriber_')
+                        const isBulkEmail = job.type === 'broadcast' || job.type === 'subscriber' || job.type === 'newsletter' || job.type === 'conversion_campaign' || job.type === 'survey_campaign' || job.type === 'announcement' || job.type === 'campaign' || job.type.startsWith('subscriber_') || job.type.endsWith('_test')
                         const bulkConfig = await getBulkTransportConfig()
-                        const useAcs = isSubscriberEmail && bulkConfig.transport === 'acs' && bulkConfig.acsConnectionString && bulkConfig.acsSenderAddress
+                        const useAcs = isBulkEmail && bulkConfig.transport === 'acs' && bulkConfig.acsConnectionString && bulkConfig.acsSenderAddress
 
                         if (useAcs) {
                             // ACS subscriber path — inject List-Unsubscribe headers
@@ -229,13 +229,17 @@ export async function GET(request: Request) {
                                 throw new Error(`ACS: ${acsMsg}`)
                             }
                         } else {
-                            // Graph path — for member emails and fallback when ACS not configured
+                            // Graph path — for member emails and fallback when ACS not configured.
+                            // Pass job.type so mailer.ts buildUnsubscribeHeaders() injects
+                            // List-Unsubscribe + Precedence:bulk for all bulk/outreach mail
+                            // (satisfies Gmail/Yahoo RFC 8058 bulk sender requirements).
                             success = await sendEmail({
                                 to: job.to,
                                 subject: job.subject,
                                 html: job.html,
                                 text: job.text || undefined,
                                 replyTo: job.replyTo || undefined,
+                                type: (job.type as import('@/lib/mailer').EmailType) || 'notification',
                             })
                         }
 

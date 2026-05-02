@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         await db.emailQueue.create({
             data: {
                 to: testEmail,
-                subject: `[TEST] ${typeIcon} ${title.trim()} | AIM Studio`,
+                subject: `[Preview] AIM Studio: ${title.trim()}`,
                 html,
                 type: `${type || 'announcement'}_test`,
                 priority: 0,
