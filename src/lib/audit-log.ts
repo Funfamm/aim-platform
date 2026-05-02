@@ -17,6 +17,7 @@ export type AuditAction =
     | 'LIFT_SUPPRESSION'
     | 'DELETE_SUPPRESSION'
     | 'PURGE_SUPPRESSED_SUBSCRIBERS'
+    | 'PURGE_BOT_SUBSCRIBERS'
 
 interface AuditEntry {
     actor: string       // userId of the admin performing the action
