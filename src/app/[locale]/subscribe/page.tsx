@@ -185,7 +185,7 @@ export default function SubscribePage() {
                                                 {t('error')}
                                             </p>
                                         )}
-                                        <button type="submit" disabled={status === 'sending' || !turnstileReady} className="btn btn-primary"
+                                        <button type="submit" disabled={status === 'sending'} className="btn btn-primary"
                                             style={{ width: '100%', padding: '0.8rem', fontWeight: 700 }}>
                                             {status === 'sending' ? t('submitting') : t('submitBtn')}
                                         </button>

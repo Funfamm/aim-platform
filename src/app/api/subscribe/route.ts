@@ -32,10 +32,7 @@ export async function POST(request: NextRequest) {
 
         // ── Cloudflare Turnstile verification ─────────────────────────────────
         const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
-        if (turnstileSecret) {
-            if (!turnstileToken) {
-                return NextResponse.json({ error: 'Bot verification failed. Please refresh and try again.' }, { status: 400 })
-            }
+        if (turnstileSecret && turnstileToken) {
             try {
                 const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
                     method: 'POST',
