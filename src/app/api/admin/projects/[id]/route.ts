@@ -26,6 +26,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...(body.duration !== undefined && { duration: body.duration || null }),
             ...(body.featured !== undefined && { featured: body.featured }),
             ...(body.published !== undefined && { published: body.published }),
+            ...(body.subtitlesPublic !== undefined && { subtitlesPublic: body.subtitlesPublic }),
             // Clear publishAt when manually publishing
             ...(body.published === true && { publishAt: null }),
             // Save publishAt when scheduling — accepts ISO string or null

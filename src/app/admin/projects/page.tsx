@@ -18,7 +18,7 @@ import { readSSEStream } from '@/lib/sse-reader'
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
-    featured: boolean; published: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null
+    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
     gallery: string | null; credits: string | null; sponsorData: string | null
     viewCount: number
@@ -28,7 +28,7 @@ type Project = {
 type FormData = {
     title: string; slug: string; tagline: string; description: string
     status: string; genre: string; year: string; duration: string
-    featured: boolean; published: boolean; publishAt: string; coverImage: string
+    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
 }
@@ -36,7 +36,7 @@ type FormData = {
 const EMPTY_FORM: FormData = {
     title: '', slug: '', tagline: '', description: '',
     status: 'upcoming', genre: '', year: '', duration: '',
-    featured: false, published: false, publishAt: '', coverImage: '',
+    featured: false, published: false, subtitlesPublic: false, publishAt: '', coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
 }
@@ -249,6 +249,7 @@ export default function AdminProjectsPage() {
             duration: p.duration || '',
             featured: p.featured,
             published: p.published ?? false,
+            subtitlesPublic: p.subtitlesPublic ?? false,
             publishAt: p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : '',
             coverImage: p.coverImage || '',
             trailerUrl: p.trailerUrl || '',
@@ -1437,39 +1438,78 @@ export default function AdminProjectsPage() {
                                                 style={{ cursor: 'pointer', appearance: 'auto' }}>
                                                 <option value="movie">Movie</option>
                                                 <option value="series">Series</option>
+                                                <option value="shorts">Shorts (no trailer)</option>
                                             </select>
                                         </div>
                                         <div />
                                     </div>
 
-                                    {/* Trailer — Drag & Drop */}
-                                    <div style={{ marginTop: 'var(--space-md)' }}>
-                                        <FileUploader
-                                            label="Trailer (public)"
-                                            accept="video/*"
-                                            category="trailers"
-                                            currentUrl={form.trailerUrl}
-                                            onUpload={url => updateField('trailerUrl', url)}
-                                            maxSizeMB={100}
-                                            compact
-                                        />
-                                    </div>
-
-                                    {/* Full Film — Drag & Drop */}
-                                    <div style={{ marginTop: 'var(--space-md)' }}>
-                                        <FileUploader
-                                            label="Full Film (members only)"
-                                            accept="video/*"
-                                            category="films"
-                                            currentUrl={form.filmUrl}
-                                            onUpload={url => updateField('filmUrl', url)}
-                                            maxSizeMB={5000}
-                                        />
-                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                                            When set, a &quot;Watch Now&quot; button appears on the project page (login required).
+                                    {/* Trailer — hidden for Shorts */}
+                                    {form.projectType !== 'shorts' && (
+                                        <div style={{ marginTop: 'var(--space-md)' }}>
+                                            <FileUploader
+                                                label="Trailer (public)"
+                                                accept="video/*"
+                                                category="trailers"
+                                                currentUrl={form.trailerUrl}
+                                                onUpload={url => updateField('trailerUrl', url)}
+                                                maxSizeMB={100}
+                                                compact
+                                            />
                                         </div>
-                                    </div>
+                                    )}
+
+                                    {/* Full Film — only for movie/short types */}
+                                    {(form.projectType === 'movie' || form.projectType === 'short') && (
+                                        <div style={{ marginTop: 'var(--space-md)' }}>
+                                            <FileUploader
+                                                label="Full Film (members only)"
+                                                accept="video/*"
+                                                category="films"
+                                                currentUrl={form.filmUrl}
+                                                onUpload={url => updateField('filmUrl', url)}
+                                                maxSizeMB={5000}
+                                            />
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>
+                                                When set, a &quot;Watch Now&quot; button appears on the project page (login required).
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
+
+                                {/* —— Episodes (series + shorts) —— */}
+                                {(form.projectType === 'series' || form.projectType === 'shorts') && editingId && (() => {
+                                    const epProject = projects.find(p => p.id === editingId)
+                                    const eps: Array<{ id: string; number: number; season: number; title: string; videoUrl: string | null; duration: string | null; published: boolean }> = (epProject as { episodes?: Array<{ id: string; number: number; season: number; title: string; videoUrl: string | null; duration: string | null; published: boolean }> })?.episodes ?? []
+                                    return (
+                                        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
+                                            <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>
+                                                📺 Episodes ({eps.length})
+                                            </div>
+                                            {eps.length === 0 ? (
+                                                <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                                    No episodes yet. Use the full editor (Edit button) to add and upload episodes.
+                                                </div>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    {eps.map(ep => (
+                                                        <div key={ep.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', fontSize: '0.8rem' }}>
+                                                            <span style={{ color: 'var(--accent-gold)', fontWeight: 700, minWidth: '36px' }}>S{ep.season}E{ep.number}</span>
+                                                            <span style={{ flex: 1 }}>{ep.title}</span>
+                                                            {ep.videoUrl
+                                                                ? <span style={{ fontSize: '0.62rem', color: '#34d399', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', padding: '2px 7px', borderRadius: '99px' }}>▶ Ready</span>
+                                                                : <span style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '99px' }}>No video</span>
+                                                            }
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <div style={{ marginTop: 'var(--space-sm)', fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                                                💡 To add/upload episodes, use the full editor via the <strong>Edit</strong> button on the project card.
+                                            </div>
+                                        </div>
+                                    )
+                                })()}
 
                                 {/* —— Gallery & Credits —— */}
                                 <div className="glass-card" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
@@ -1616,6 +1656,19 @@ export default function AdminProjectsPage() {
                                                     : isPartial ? `${count} of ${TOTAL_SUBTITLE_LANGS} languages translated. Click CC to translate the remaining — already translated languages are preserved.`
                                                     : 'Generate multi-language subtitles for this film. Click CC to auto-transcribe and translate, or upload an existing SRT/VTT file.'}
                                             </div>
+                                            {/* Subtitles public toggle */}
+                                            <label style={{
+                                                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                                                cursor: 'pointer', fontSize: '0.85rem', marginBottom: 'var(--space-md)',
+                                                color: form.subtitlesPublic ? '#34d399' : 'var(--text-secondary)',
+                                                fontWeight: form.subtitlesPublic ? 700 : 400,
+                                                transition: 'all 0.2s',
+                                            }}>
+                                                <input type="checkbox" checked={form.subtitlesPublic}
+                                                    onChange={e => updateField('subtitlesPublic', e.target.checked)}
+                                                    style={{ width: '18px', height: '18px', accentColor: '#34d399' }} />
+                                                {form.subtitlesPublic ? '🌐 Subtitles visible to users' : '🔒 Subtitles hidden from users'}
+                                            </label>
                                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 'var(--space-md)' }}>
                                                 {/* ── Server Worker Button (recommended) ── */}
                                                 {(() => {
