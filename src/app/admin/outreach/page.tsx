@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import './outreach.css'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import AdminSidebar from '@/components/AdminSidebar'
 import Link from 'next/link'
@@ -15,6 +16,32 @@ function OutreachContent() {
     const initial = (params.get('tab') as Tab) || 'compose'
     const [tab, setTab] = useState<Tab>(initial)
 
+    // Check if Compose tab has unsaved content
+    const isComposeDirty = useCallback((): boolean => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const check = (window as any).__outreachComposeDirty
+        return typeof check === 'function' ? check() : false
+    }, [])
+
+    // Guard tab switch — prompt if leaving compose with content
+    const handleTabSwitch = useCallback((newTab: Tab) => {
+        if (tab === 'compose' && newTab !== 'compose' && isComposeDirty()) {
+            if (!window.confirm('You have unsaved draft content. Switch tabs anyway?')) return
+        }
+        setTab(newTab)
+    }, [tab, isComposeDirty])
+
+    // Guard browser navigation (close/refresh)
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (tab === 'compose' && isComposeDirty()) {
+                e.preventDefault()
+            }
+        }
+        window.addEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+    }, [tab, isComposeDirty])
+
     const tabs: { key: Tab; icon: string; label: string }[] = [
         { key: 'compose', icon: '📝', label: 'Compose' },
         { key: 'results', icon: '📊', label: 'Survey Results' },
@@ -25,6 +52,7 @@ function OutreachContent() {
         <div className="admin-layout">
             <AdminSidebar />
             <main className="admin-main" style={{ maxWidth: 900 }}>
+
                 <Link href="/admin" style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '20px' }}>
                     ← Admin Dashboard
                 </Link>
@@ -39,35 +67,28 @@ function OutreachContent() {
                 </div>
 
                 {/* Tab bar */}
-                <div style={{
-                    display: 'flex', gap: '4px', marginBottom: '24px',
-                    padding: '4px', borderRadius: '12px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid var(--border-subtle)',
-                    position: 'sticky', top: 0, zIndex: 10,
-                    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-                }}>
+                <div role="tablist" aria-label="Outreach Center tabs" className="outreachTabBar">
                     {tabs.map(t => (
                         <button
                             key={t.key}
-                            onClick={() => setTab(t.key)}
-                            style={{
-                                flex: 1, padding: '10px 16px', borderRadius: '10px',
-                                border: 'none', cursor: 'pointer',
-                                fontSize: '0.82rem', fontWeight: tab === t.key ? 700 : 500,
-                                background: tab === t.key ? 'rgba(212,168,83,0.12)' : 'transparent',
-                                color: tab === t.key ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                                transition: 'all 0.15s',
-                            }}
+                            role="tab"
+                            id={`outreach-tab-${t.key}`}
+                            aria-selected={tab === t.key}
+                            aria-controls={`outreach-panel-${t.key}`}
+                            onClick={() => handleTabSwitch(t.key)}
+                            className="outreachTabBtn"
+                            data-active={tab === t.key}
                         >
                             {t.icon} {t.label}
                         </button>
                     ))}
                 </div>
 
-                {tab === 'compose' && <ComposeTab />}
-                {tab === 'results' && <SurveyResultsTab />}
-                {tab === 'history' && <HistoryTab />}
+                <div role="tabpanel" id={`outreach-panel-${tab}`} aria-labelledby={`outreach-tab-${tab}`}>
+                    {tab === 'compose' && <ComposeTab />}
+                    {tab === 'results' && <SurveyResultsTab />}
+                    {tab === 'history' && <HistoryTab />}
+                </div>
             </main>
         </div>
     )
@@ -80,3 +101,4 @@ export default function OutreachPage() {
         </Suspense>
     )
 }
+

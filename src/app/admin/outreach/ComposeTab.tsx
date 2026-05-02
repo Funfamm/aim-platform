@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import AdminImageUpload from '@/components/AdminImageUpload'
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
@@ -13,21 +13,10 @@ const CTA_COLORS = [
     { label: 'Red', value: '#ef4444' },
 ]
 
-const inp: React.CSSProperties = {
-    width: '100%', padding: '11px 14px', borderRadius: '10px',
-    background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)',
-    color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none',
-    boxSizing: 'border-box', fontFamily: 'inherit',
-}
-const lbl: React.CSSProperties = {
-    display: 'block', fontSize: '0.7rem', fontWeight: 700, marginBottom: '7px',
-    color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.07em',
-}
-const card: React.CSSProperties = {
-    background: 'var(--bg-secondary)', borderRadius: '16px',
-    border: '1px solid var(--border-subtle)', padding: '24px',
-    display: 'flex', flexDirection: 'column', gap: '18px',
-}
+// Style constants replaced by CSS classes in outreach.css:
+// .outreachInput  → inp
+// .outreachLabel  → lbl
+// .outreachCard   → card
 
 export default function ComposeTab() {
     const [outreachType, setOutreachType] = useState<OutreachType>('announcement')
@@ -42,6 +31,8 @@ export default function ComposeTab() {
     const [sending, setSending] = useState(false)
     const [result, setResult] = useState<{ success?: boolean; error?: string } | null>(null)
     const [testEmail, setTestEmail] = useState('')
+    const [sendingTest, setSendingTest] = useState(false)
+    const [testResult, setTestResult] = useState<string | null>(null)
 
     // Audience
     const [notifyGroups, setNotifyGroups] = useState({ members: true, subscribers: false, cast: false })
@@ -59,7 +50,64 @@ export default function ComposeTab() {
     const [loadingLocales, setLoadingLocales] = useState(false)
 
     const someAudienceSelected = notifyGroups.members || notifyGroups.subscribers || notifyGroups.cast || selectedUsers.length > 0
-    const canSend = title.trim() && message.trim() && !sending && someAudienceSelected
+    const ctaUrlValid = !ctaUrl.trim() || /^(\/|https:\/\/)/.test(ctaUrl.trim())
+    const canSend = title.trim() && message.trim() && !sending && someAudienceSelected && ctaUrlValid
+
+    // ── Draft autosave ──────────────────────────────────────────────────────────
+    const DRAFT_KEY = 'outreach_compose_draft'
+    const hasMounted = useRef(false)
+
+    // Restore draft on mount
+    useEffect(() => {
+        try {
+            const raw = localStorage.getItem(DRAFT_KEY)
+            if (!raw) return
+            const d = JSON.parse(raw)
+            if (d.title) setTitle(d.title)
+            if (d.message) setMessage(d.message)
+            if (d.bodyHtml) setBodyHtml(d.bodyHtml)
+            if (d.imageUrl) setImageUrl(d.imageUrl)
+            if (d.link) setLink(d.link)
+            if (d.outreachType) setOutreachType(d.outreachType)
+            if (d.ctaText) setCtaText(d.ctaText)
+            if (d.ctaUrl) setCtaUrl(d.ctaUrl)
+            if (d.ctaColor) setCtaColor(d.ctaColor)
+            if (d.testEmail) setTestEmail(d.testEmail)
+        } catch { /* corrupted draft — ignore */ }
+        hasMounted.current = true
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    // Debounced save to localStorage on field changes
+    useEffect(() => {
+        if (!hasMounted.current) return
+        const timer = setTimeout(() => {
+            try {
+                localStorage.setItem(DRAFT_KEY, JSON.stringify({
+                    title, message, bodyHtml, imageUrl, link, outreachType,
+                    ctaText, ctaUrl, ctaColor, testEmail,
+                }))
+            } catch { /* quota exceeded — ignore */ }
+        }, 1000)
+        return () => clearTimeout(timer)
+    }, [title, message, bodyHtml, imageUrl, link, outreachType, ctaText, ctaUrl, ctaColor, testEmail])
+
+    // Check if form has meaningful content (used for unsaved-changes guard)
+    const isDirty = useCallback(() => {
+        return !!(title.trim() || message.trim() || bodyHtml)
+    }, [title, message, bodyHtml])
+
+    // Expose isDirty on window so parent page can query it before tab switch
+    useEffect(() => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).__outreachComposeDirty = isDirty
+        return () => { delete (window as any).__outreachComposeDirty }
+    }, [isDirty])
+
+    // Clear draft after successful send
+    const clearDraft = useCallback(() => {
+        try { localStorage.removeItem(DRAFT_KEY) } catch {}
+    }, [])
 
     // Auto-set defaults per type
     useEffect(() => {
@@ -127,6 +175,25 @@ export default function ComposeTab() {
         finally { setTranslating(false) }
     }
 
+    async function handleTestSend() {
+        if (!testEmail || !title.trim() || !message.trim() || !ctaUrlValid) return
+        setSendingTest(true); setTestResult(null)
+        try {
+            const res = await fetch('/api/admin/announcements/test', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    testEmail, title: title.trim(), message: message.trim(),
+                    bodyHtml: bodyHtml || undefined, imageUrl: imageUrl.trim() || undefined,
+                    link: link.trim() || undefined, type: outreachType,
+                    ctaText: ctaText.trim() || undefined, ctaUrl: ctaUrl.trim() || undefined, ctaColor,
+                }),
+            })
+            const data = await res.json()
+            setTestResult(res.ok ? `✅ Test sent to ${testEmail}` : `❌ ${data.error || 'Failed'}`)
+        } catch { setTestResult('❌ Network error') }
+        finally { setSendingTest(false) }
+    }
+
     async function handleSend(e?: React.FormEvent) {
         e?.preventDefault()
         if (!canSend) return
@@ -148,6 +215,7 @@ export default function ComposeTab() {
                 setResult({ success: true })
                 setTitle(''); setMessage(''); setBodyHtml(''); setImageUrl(''); setLink('')
                 setCtaText(''); setCtaUrl(''); setTranslations({}); setHasTranslated(false)
+                clearDraft()
             } else { setResult({ error: data.error || 'Failed' }) }
         } catch { setResult({ error: 'Network error' }) }
         finally { setSending(false) }
@@ -179,22 +247,22 @@ export default function ComposeTab() {
             </div>
 
             {/* Content */}
-            <div style={{ ...card, borderColor: 'rgba(212,168,83,0.2)' }}>
-                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--accent-gold)' }}>
+            <div className="outreachCard" style={{ borderColor: 'rgba(212,168,83,0.2)' }}>
+                <div className="outreachSectionHeader" style={{ color: 'var(--accent-gold)' }}>
                     Content
                 </div>
                 <div>
-                    <label style={lbl}>Title <span style={{ color: '#ef4444' }}>*</span></label>
-                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} maxLength={100} placeholder="e.g. Season 2 Casting Now Open" required style={inp} />
+                    <label className="outreachLabel">Title <span style={{ color: '#ef4444' }}>*</span></label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} maxLength={100} placeholder="e.g. Season 2 Casting Now Open" required className="outreachInput" />
                     <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '4px', textAlign: 'right' }}>{title.length}/100</div>
                 </div>
                 <div>
-                    <label style={lbl}>Message <span style={{ color: '#ef4444' }}>*</span></label>
-                    <textarea value={message} onChange={e => setMessage(e.target.value)} maxLength={500} rows={3} placeholder="Short summary for emails..." required style={{ ...inp, resize: 'vertical', lineHeight: 1.6 }} />
+                    <label className="outreachLabel">Message <span style={{ color: '#ef4444' }}>*</span></label>
+                    <textarea value={message} onChange={e => setMessage(e.target.value)} maxLength={500} rows={3} placeholder="Short summary for emails..." required className="outreachInput" style={{ resize: 'vertical', lineHeight: 1.6 }} />
                     <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '4px', textAlign: 'right' }}>{message.length}/500</div>
                 </div>
                 <div>
-                    <label style={lbl}>Rich Body <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
+                    <label className="outreachLabel">Rich Body <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none' }}>(optional)</span></label>
                     <div style={{ overflowX: 'auto', maxWidth: '100%' }}>
                         <RichTextEditor value={bodyHtml} onChange={setBodyHtml} placeholder="Add formatted body content…" />
                     </div>
@@ -202,30 +270,35 @@ export default function ComposeTab() {
                 <AdminImageUpload value={imageUrl} onChange={setImageUrl} category="announcements" label="Banner Image (optional)" hint="Recommended 1200×628px." />
                 {outreachType === 'announcement' && (
                     <div>
-                        <label style={lbl}>Link <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none' }}>(optional CTA)</span></label>
-                        <input type="text" value={link} onChange={e => setLink(e.target.value)} placeholder="/casting or https://…" style={inp} />
+                        <label className="outreachLabel">Link <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none' }}>(optional CTA)</span></label>
+                        <input type="text" value={link} onChange={e => setLink(e.target.value)} placeholder="/casting or https://…" className="outreachInput" />
                     </div>
                 )}
             </div>
 
             {/* CTA Editor — Campaign & Survey only */}
             {(outreachType === 'campaign' || outreachType === 'survey') && (
-                <div style={{ ...card, borderColor: 'rgba(59,130,246,0.2)' }}>
-                    <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#60a5fa' }}>
+                <div className="outreachCard" style={{ borderColor: 'rgba(59,130,246,0.2)' }}>
+                    <div className="outreachSectionHeader" style={{ color: '#60a5fa' }}>
                         Call-to-Action Button
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                         <div>
-                            <label style={lbl}>Button Text</label>
-                            <input type="text" value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="Watch Now →" style={inp} />
+                            <label className="outreachLabel">Button Text</label>
+                            <input type="text" value={ctaText} onChange={e => setCtaText(e.target.value)} placeholder="Watch Now →" className="outreachInput" />
                         </div>
                         <div>
-                            <label style={lbl}>Button URL</label>
-                            <input type="text" value={ctaUrl} onChange={e => setCtaUrl(e.target.value)} placeholder="/survey or https://..." style={inp} disabled={outreachType === 'survey'} />
+                            <label className="outreachLabel">Button URL</label>
+                            <input type="text" value={ctaUrl} onChange={e => setCtaUrl(e.target.value)} placeholder="/survey or https://..." className="outreachInput" disabled={outreachType === 'survey'} />
+                    </div>
+                    {!ctaUrlValid && (
+                        <div className="outreachValidationError" style={{ gridColumn: '1 / -1' }}>
+                            ⚠️ URL must start with / or https://
                         </div>
+                    )}
                     </div>
                     <div>
-                        <label style={lbl}>Button Color</label>
+                        <label className="outreachLabel">Button Color</label>
                         <div style={{ display: 'flex', gap: '8px' }}>
                             {CTA_COLORS.map(c => (
                                 <button key={c.value} type="button" onClick={() => setCtaColor(c.value)} style={{
@@ -252,8 +325,8 @@ export default function ComposeTab() {
             )}
 
             {/* Audience */}
-            <div style={{ ...card, borderColor: 'rgba(192,132,252,0.15)' }}>
-                <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#c084fc' }}>
+            <div className="outreachCard" style={{ borderColor: 'rgba(192,132,252,0.15)' }}>
+                <div className="outreachSectionHeader" style={{ color: '#c084fc' }}>
                     📨 Audience
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -292,7 +365,7 @@ export default function ComposeTab() {
                 {/* Specific Users */}
                 <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '14px' }}>
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#60a5fa', marginBottom: '8px' }}>🎯 Target Specific Users (optional)</div>
-                    <input type="text" placeholder="Search by name or email..." value={userSearch} onChange={e => setUserSearch(e.target.value)} style={{ ...inp, fontSize: '0.82rem' }} />
+                    <input type="text" placeholder="Search by name or email..." value={userSearch} onChange={e => setUserSearch(e.target.value)} className="outreachInput" style={{ fontSize: '0.82rem' }} />
                     {searchingUsers && <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', padding: '4px 0' }}>🔍 Searching...</div>}
                     {userResults.length > 0 && (
                         <div style={{ marginTop: '6px', maxHeight: 150, overflowY: 'auto', borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)' }}>
@@ -321,10 +394,10 @@ export default function ComposeTab() {
 
             {/* Translation */}
             {neededLocales && neededLocales.length > 0 && (
-                <div style={{ ...card, borderColor: hasTranslated ? 'rgba(52,211,153,0.25)' : 'var(--border-subtle)' }}>
+                <div className="outreachCard" style={{ borderColor: hasTranslated ? 'rgba(52,211,153,0.25)' : 'var(--border-subtle)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
-                            <div style={{ fontSize: '0.62rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.12em', color: hasTranslated ? '#34d399' : 'var(--accent-gold)' }}>
+                            <div className="outreachSectionHeader" style={{ color: hasTranslated ? '#34d399' : 'var(--accent-gold)' }}>
                                 {hasTranslated ? `✅ ${neededLocales.length} Languages Translated` : `🌐 Translate ${neededLocales.length} Languages`}
                             </div>
                         </div>
@@ -351,11 +424,12 @@ export default function ComposeTab() {
             )}
 
             {/* Test + Send */}
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <input type="email" placeholder="Test email..." value={testEmail} onChange={e => setTestEmail(e.target.value)} style={{ ...inp, flex: 1, maxWidth: 280 }} />
-                <button type="button" disabled={!testEmail || sending} onClick={() => { /* TODO: test send */ }} style={{ padding: '11px 18px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.82rem', cursor: 'pointer' }}>
-                    📧 Send Test
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <input type="email" placeholder="Test email..." value={testEmail} onChange={e => setTestEmail(e.target.value)} className="outreachInput" style={{ flex: 1, maxWidth: 280 }} />
+                <button type="button" disabled={!testEmail || sendingTest || !title.trim() || !message.trim()} onClick={handleTestSend} style={{ padding: '11px 18px', borderRadius: '10px', border: '1px solid var(--border-subtle)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.82rem', cursor: sendingTest ? 'wait' : 'pointer' }}>
+                    {sendingTest ? '⏳ Sending…' : '📧 Send Test'}
                 </button>
+                {testResult && <span style={{ fontSize: '0.78rem', fontWeight: 600, color: testResult.startsWith('✅') ? '#10b981' : '#ef4444' }}>{testResult}</span>}
             </div>
 
             <button type="submit" disabled={!canSend} style={{

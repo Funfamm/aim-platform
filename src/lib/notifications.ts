@@ -69,6 +69,8 @@ interface NotifyUserOptions {
     sponsorData?: { name: string; logoUrl?: string; description?: string } | null
     /** When true, queue the email for async bulk delivery (ACS) instead of immediate Graph send */
     useQueue?: boolean
+    /** Custom CTA button override for campaigns */
+    ctaOverride?: { text: string; url: string; color: string }
 }
 
 interface NotifyAllOptions {
@@ -94,6 +96,8 @@ interface NotifyAllOptions {
     sponsorData?: { name: string; logoUrl?: string; description?: string } | null
     /** When set, only notify these specific user IDs (e.g. cast applicants) */
     targetUserIds?: string[]
+    /** Custom CTA button override for campaigns */
+    ctaOverride?: { text: string; url: string; color: string }
 }
 
 // ─── Core: notify a single user ───────────────────────────────────────────────
@@ -206,7 +210,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                         managePrefs: lt?.managePrefs || undefined,
                     // Use the translated body if the admin form stored one for this locale,
                     // otherwise fall back to the English rich HTML
-                    }, opts.imageUrl, lt?.bodyHtml || opts.bodyHtml, locale)
+                    }, opts.imageUrl, lt?.bodyHtml || opts.bodyHtml, locale, opts.ctaOverride)
                 } else if (opts.type === 'new_role') {
                     // Rebuild the email using the localized CTA link for this user's locale.
                     // opts.roleName carries the raw role name — no need to strip the composed
@@ -648,6 +652,7 @@ export async function notifyAnnouncement(
     bodyHtml?: string,
     notifyGroups: { subscribers?: boolean; members?: boolean; cast?: boolean } = { subscribers: false, members: true, cast: false },
     specificUserIds?: string[],
+    ctaOverride?: { text: string; url: string; color: string },
 ): Promise<void> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://impactaistudio.com'
     const inAppLink = link || '/'
@@ -685,11 +690,12 @@ export async function notifyAnnouncement(
         link: inAppLink,
         emailSubject: `📣 ${title} | AIM Studio`,
         // Default English HTML — rebuilt per-user locale inside notifyUser()
-        emailHtml: announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml),
+        emailHtml: announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml, 'en', ctaOverride),
         translations,
         // Thread these through so every per-locale rebuild also gets the banner + rich body
         imageUrl,
         bodyHtml,
+        ctaOverride,
     }
 
     // ── Registered members (opted-in) ─────────────────────────────────────────
@@ -714,7 +720,7 @@ export async function notifyAnnouncement(
         logger.info('notifications', `Queuing announcement to ${uniqueSubs.length} newsletter subscribers`)
 
         if (uniqueSubs.length > 0) {
-            const announcementHtml = announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml)
+            const announcementHtml = announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml, 'en', ctaOverride)
             await enqueueBroadcastCampaign(
                 uniqueSubs.map((s: { email: string }) => ({ email: s.email })),
                 () => ({ subject: `📣 ${title} | AIM Studio`, html: announcementHtml }),

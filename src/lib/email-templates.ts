@@ -159,6 +159,20 @@ function button(text: string, url: string): string {
     <p style="margin: 0; font-size: 11px; color: #6b7280; word-break: break-all;">Or copy this link: <a href="${url}" style="color: ${BRAND_COLOR}; text-decoration: underline;">${url}</a></p>`
 }
 
+/** CTA button with custom background color — for campaigns and outreach */
+function colorButton(text: string, url: string, bgColor: string): string {
+    // Choose text color based on brightness of background
+    const textColor = ['#c9a84c', '#10b981', '#f59e0b'].includes(bgColor) ? '#0f1115' : '#ffffff'
+    return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin: 24px 0;">
+        <tr>
+            <td align="center" style="background-color: ${bgColor}; border-radius: 8px;">
+                <a href="${url}" target="_blank" style="display: block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: ${textColor}; text-decoration: none; letter-spacing: 0.3px; mso-padding-alt: 14px 32px;">${text}</a>
+            </td>
+        </tr>
+    </table>
+    <p style="margin: 0; font-size: 11px; color: #6b7280; word-break: break-all;">Or copy this link: <a href="${url}" style="color: ${bgColor}; text-decoration: underline;">${url}</a></p>`
+}
+
 /** Secondary outline/ghost button — uses table layout for bulletproof mobile tap targets */
 function secondaryButton(text: string, url: string): string {
     return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin: 12px 0;">
@@ -1009,11 +1023,14 @@ export function announcementEmail(
     imageUrl?: string,
     bodyHtml?: string,
     locale = 'en',
+    ctaOverride?: { text: string; url: string; color: string },
 ): string {
-    const ctaUrl       = link
+    const ctaUrl       = ctaOverride?.url
+        ? (ctaOverride.url.startsWith('http') ? ctaOverride.url : `${siteUrl || 'https://impactaistudio.com'}${ctaOverride.url}`)
+        : link
         ? (link.startsWith('http') ? link : `${siteUrl || 'https://impactaistudio.com'}${link}`)
         : siteUrl || 'https://impactaistudio.com'
-    const ctaText      = i18n?.buttonText  ?? (link ? 'View Announcement \u2192' : 'Visit AIM Studio \u2192')
+    const ctaText      = (ctaOverride?.text || i18n?.buttonText) ?? (link ? 'View Announcement \u2192' : 'Visit AIM Studio \u2192')
     const badge        = i18n?.badgeText   ?? 'Platform Announcement'
     const footerOptIn  = i18n?.footerOptIn ?? "You're receiving this because you opted in to platform announcements."
     const managePrefs  = i18n?.managePrefs ?? 'Manage preferences'
@@ -1025,6 +1042,8 @@ export function announcementEmail(
     const isAllowedTag = (tag: string) => /^<\/?(?:p|strong|em|b|i|h2|h3|ul|ol|li|a|br)\b[^>]*>$/i.test(tag)
     const safeBody     = bodyHtml ? bodyHtml.replace(/<[^>]+>/g, (t) => isAllowedTag(t) ? t : '') : ''
     const bodyBlock    = safeBody ? `<div style="margin:16px 0;font-size:15px;color:#c9c7c4;line-height:1.75;">${safeBody}</div>` : ''
+    // Use custom-color button when ctaOverride is provided
+    const ctaButton    = ctaOverride?.color ? colorButton(ctaText, ctaUrl, ctaOverride.color) : button(ctaText, ctaUrl)
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
             <div style="font-size:52px;margin-bottom:12px;">📣</div>
@@ -1036,7 +1055,7 @@ export function announcementEmail(
         ${heading(title)}
         ${paragraph(message)}
         ${bodyBlock}
-        ${button(ctaText, ctaUrl)}
+        ${ctaButton}
         ${divider()}
         ${paragraph(`<span style="font-size:12px;color:#6b7280;">${footerOptIn} <a href="${siteUrl || 'https://impactaistudio.com'}/notifications" style="color:#6b7280;text-decoration:underline;">${managePrefs}</a></span>`)}
     `, title, undefined, locale)

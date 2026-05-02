@@ -12,16 +12,44 @@ export default function HistoryTab() {
     const [history, setHistory] = useState<HistoryItem[]>([])
     const [loading, setLoading] = useState(true)
     const [expandedId, setExpandedId] = useState<string | null>(null)
+    const [page, setPage] = useState(1)
+    const [totalPages, setTotalPages] = useState(1)
+    const [total, setTotal] = useState(0)
+    const [typeFilter, setTypeFilter] = useState<string | null>(null)
+    const [fetchError, setFetchError] = useState<string | null>(null)
 
-    useEffect(() => {
-        fetch('/api/admin/announcements')
-            .then(r => r.ok ? r.json() : { announcements: [] })
-            .then(data => setHistory(data.announcements ?? []))
-            .catch(() => {})
+    const fetchHistory = (p: number, type: string | null) => {
+        setLoading(true)
+        setHistory([])
+        setFetchError(null)
+        const params = new URLSearchParams({ page: String(p) })
+        if (type) params.set('type', type)
+        fetch(`/api/admin/announcements?${params}`)
+            .then(r => {
+                if (!r.ok) throw new Error(`HTTP ${r.status}`)
+                return r.json()
+            })
+            .then(data => {
+                setHistory(data.announcements ?? [])
+                setTotal(data.total ?? 0)
+                setTotalPages(data.totalPages ?? 1)
+            })
+            .catch((err) => {
+                setFetchError(`Failed to load history: ${err.message || 'Network error'}`)
+            })
             .finally(() => setLoading(false))
-    }, [])
+    }
+
+    useEffect(() => { fetchHistory(page, typeFilter) }, [page, typeFilter])
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}><div className="loading-spinner" style={{ margin: '0 auto', width: 28, height: 28 }} /></div>
+
+    if (fetchError) return (
+        <div className="outreachErrorBlock">
+            <div style={{ color: '#ef4444', fontSize: '0.85rem', fontWeight: 600, marginBottom: '12px' }}>⚠️ {fetchError}</div>
+            <button onClick={() => fetchHistory(page, typeFilter)} className="outreachRetryBtn">🔄 Retry</button>
+        </div>
+    )
 
     const typeBadge = (type?: string) => {
         const t = type || 'announcement'
@@ -40,9 +68,19 @@ export default function HistoryTab() {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>📜 Outreach History</h2>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{history.length} total</span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{total} total</span>
+            </div>
+
+            {/* Type Filter */}
+            <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                {([null, 'announcement', 'survey', 'campaign'] as const).map(t => (
+                    <button key={t ?? 'all'} onClick={() => { setTypeFilter(t); setPage(1) }} aria-pressed={typeFilter === t}
+                        className="outreachFilterPill" data-active={typeFilter === t}>
+                        {t === null ? 'All' : t === 'announcement' ? '📣 Announcements' : t === 'survey' ? '📊 Surveys' : '📧 Campaigns'}
+                    </button>
+                ))}
             </div>
 
             {history.length === 0 ? (
@@ -110,6 +148,15 @@ export default function HistoryTab() {
                             </div>
                         )
                     })}
+                </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+                <div className="outreachPagination">
+                    <button disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="outreachPaginationBtn">← Prev</button>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Page {page} of {totalPages}</span>
+                    <button disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="outreachPaginationBtn">Next →</button>
                 </div>
             )}
         </div>

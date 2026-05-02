@@ -1,0 +1,295 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Outreach Center — Design Tokens & Shared Styles
+   Used by ComposeTab, HistoryTab, and page.tsx
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Base tokens ─────────────────────────────────────────────────── */
+.outreachInput {
+    width: 100%;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    outline: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    transition: border-color 0.15s;
+}
+.outreachInput:focus {
+    border-color: var(--accent-gold, #c9a84c);
+}
+
+.outreachLabel {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-bottom: 7px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.outreachCard {
+    background: var(--bg-secondary);
+    border-radius: 16px;
+    border: 1px solid var(--border-subtle);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+/* ── Section header (uppercase pill) ─────────────────────────────── */
+.outreachSectionHeader {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
+/* ── Type radio card ─────────────────────────────────────────────── */
+.outreachTypeCard {
+    flex: 1;
+    padding: 16px;
+    border-radius: 14px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    background: var(--bg-secondary);
+}
+.outreachTypeCard:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+.outreachTypeCard[data-selected="true"] {
+    border-color: var(--accent-gold, #c9a84c);
+    background: rgba(212, 168, 83, 0.08);
+}
+
+/* ── Tab bar (page-level) ────────────────────────────────────────── */
+.outreachTabBar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    padding: 4px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.outreachTabBtn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 500;
+    background: transparent;
+    color: var(--text-tertiary);
+    transition: all 0.15s;
+}
+.outreachTabBtn[data-active="true"] {
+    font-weight: 700;
+    background: rgba(212, 168, 83, 0.12);
+    color: var(--accent-gold, #c9a84c);
+}
+
+/* ── Filter pill (History tab) ───────────────────────────────────── */
+.outreachFilterPill {
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.outreachFilterPill:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+.outreachFilterPill[data-active="true"] {
+    background: rgba(212, 168, 83, 0.12);
+    color: var(--accent-gold, #c9a84c);
+    border-color: var(--accent-gold, #c9a84c);
+    font-weight: 600;
+}
+
+/* ── History item row ────────────────────────────────────────────── */
+.outreachHistoryItem {
+    padding: 18px 22px;
+    border-radius: 12px;
+    border: 1px solid var(--border-subtle);
+    background: var(--bg-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.outreachHistoryItem:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(212, 168, 83, 0.25);
+}
+
+/* ── Type badge ──────────────────────────────────────────────────── */
+.outreachTypeBadge {
+    font-size: 0.68rem;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+.outreachTypeBadge[data-type="announcement"] {
+    background: rgba(249, 115, 22, 0.15);
+    color: #f97316;
+}
+.outreachTypeBadge[data-type="survey"] {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+.outreachTypeBadge[data-type="campaign"] {
+    background: rgba(139, 92, 246, 0.15);
+    color: #8b5cf6;
+}
+
+/* ── CTA color swatch ────────────────────────────────────────────── */
+.outreachColorSwatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+}
+.outreachColorSwatch[data-selected="true"] {
+    border-width: 3px;
+    border-color: white;
+}
+
+/* ── Validation error hint ───────────────────────────────────────── */
+.outreachValidationError {
+    font-size: 0.72rem;
+    color: #ef4444;
+    font-weight: 600;
+    margin-top: -6px;
+}
+
+/* ── Primary action button ───────────────────────────────────────── */
+.outreachBtnPrimary {
+    padding: 14px 32px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: linear-gradient(135deg, #c9a84c, #a88a38);
+    color: #111;
+}
+.outreachBtnPrimary:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(201, 168, 76, 0.3);
+}
+.outreachBtnPrimary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Ghost / secondary button ────────────────────────────────────── */
+.outreachBtnGhost {
+    padding: 8px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.outreachBtnGhost:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.04);
+}
+.outreachBtnGhost:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Pagination controls ─────────────────────────────────────────── */
+.outreachPagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 24px;
+}
+.outreachPaginationBtn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.outreachPaginationBtn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.04);
+}
+.outreachPaginationBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+/* ── Error / retry block ─────────────────────────────────────────── */
+.outreachErrorBlock {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-tertiary);
+}
+.outreachRetryBtn {
+    margin-top: 12px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.15s;
+}
+.outreachRetryBtn:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .outreachTabBar {
+        flex-direction: column;
+    }
+    .outreachTabBtn {
+        text-align: center;
+    }
+    .outreachCard {
+        padding: 16px;
+        gap: 14px;
+    }
+    .outreachPagination {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .outreachFilterPill {
+        font-size: 0.72rem;
+        padding: 5px 10px;
+    }
+    .outreachBtnPrimary {
+        width: 100%;
+        text-align: center;
+    }
+}

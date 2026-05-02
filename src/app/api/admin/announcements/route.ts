@@ -10,35 +10,47 @@ const db = prisma as any
  * GET /api/admin/announcements
  * Returns paginated announcement history (newest first).
  */
-export async function GET() {
+export async function GET(req: Request) {
     try { await requireAdmin() } catch {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const announcements = await db.announcement.findMany({
-        orderBy: { sentAt: 'desc' },
-        take: 50,
-        select: {
-            id: true,
-            title: true,
-            message: true,
-            bodyHtml: true,
-            imageUrl: true,
-            link: true,
-            translations: true,
-            audienceGroups: true,
-            specificUserIds: true,
-            recipientCount: true,
-            status: true,
-            type: true,
-            ctaText: true,
-            ctaUrl: true,
-            ctaColor: true,
-            sentAt: true,
-        },
-    })
+    const url = new URL(req.url)
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10))
+    const perPage = 30
+    const typeFilter = url.searchParams.get('type') // optional: 'announcement' | 'survey' | 'campaign'
 
-    return NextResponse.json({ announcements })
+    const where = typeFilter ? { type: typeFilter } : {}
+
+    const [announcements, total] = await Promise.all([
+        db.announcement.findMany({
+            where,
+            orderBy: { sentAt: 'desc' },
+            skip: (page - 1) * perPage,
+            take: perPage,
+            select: {
+                id: true,
+                title: true,
+                message: true,
+                bodyHtml: true,
+                imageUrl: true,
+                link: true,
+                translations: true,
+                audienceGroups: true,
+                specificUserIds: true,
+                recipientCount: true,
+                status: true,
+                type: true,
+                ctaText: true,
+                ctaUrl: true,
+                ctaColor: true,
+                sentAt: true,
+            },
+        }),
+        db.announcement.count({ where }),
+    ])
+
+    return NextResponse.json({ announcements, total, page, totalPages: Math.ceil(total / perPage) })
 }
 
 /**
@@ -132,7 +144,8 @@ export async function POST(req: Request) {
     }
 
     // Fire-and-forget — returns immediately; delivery is async
-    notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml, groups, specificUserIds).catch((err) => {
+    const ctaOverride = (ctaText && ctaUrl) ? { text: ctaText.trim(), url: ctaUrl.trim(), color: ctaColor || '#c9a84c' } : undefined
+    notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml, groups, specificUserIds, ctaOverride).catch((err) => {
         console.error('[announcements] broadcast failed:', err)
     })
 
