@@ -8,7 +8,18 @@ type HistoryItem = {
     sentAt: string; recipientCount: number; audienceGroups: string | null; status: string
 }
 
-export default function HistoryTab() {
+export interface ReuseData {
+    title: string; message: string; type: string
+    bodyHtml?: string; imageUrl?: string; link?: string
+    ctaText?: string; ctaUrl?: string; ctaColor?: string
+    translations?: Record<string, Record<string, string>>
+}
+
+interface HistoryTabProps {
+    onReuse?: (data: ReuseData) => void
+}
+
+export default function HistoryTab({ onReuse }: HistoryTabProps) {
     const [history, setHistory] = useState<HistoryItem[]>([])
     const [loading, setLoading] = useState(true)
     const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -17,6 +28,9 @@ export default function HistoryTab() {
     const [total, setTotal] = useState(0)
     const [typeFilter, setTypeFilter] = useState<string | null>(null)
     const [fetchError, setFetchError] = useState<string | null>(null)
+    const [actionLoading, setActionLoading] = useState<string | null>(null)
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
     const fetchHistory = useCallback((p: number, type: string | null) => {
         setLoading(true)
         setHistory([])
@@ -39,9 +53,55 @@ export default function HistoryTab() {
             .finally(() => setLoading(false))
     }, [])
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { fetchHistory(page, typeFilter) }, [fetchHistory, page, typeFilter])
 
-    const [refreshKey, setRefreshKey] = useState(0)
+    // ── Delete a single history item ──────────────────────────────────────────
+    async function handleDelete(id: string) {
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/announcements/${id}`, { method: 'DELETE' })
+            if (res.ok) {
+                setHistory(prev => prev.filter(a => a.id !== id))
+                setTotal(prev => prev - 1)
+                setConfirmDeleteId(null)
+                setExpandedId(null)
+            }
+        } catch { /* silent */ }
+        finally { setActionLoading(null) }
+    }
+
+    // ── Resend an existing item with original audience ────────────────────────
+    async function handleResend(id: string) {
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/announcements/${id}/resend`, { method: 'POST' })
+            if (res.ok) {
+                // Refresh the list to show the new resend record
+                fetchHistory(page, typeFilter)
+            }
+        } catch { /* silent */ }
+        finally { setActionLoading(null) }
+    }
+
+    // ── Reuse: load content into ComposeTab ───────────────────────────────────
+    function handleReuse(a: HistoryItem) {
+        let translations: Record<string, Record<string, string>> | undefined
+        try { translations = a.translations ? JSON.parse(a.translations) : undefined } catch { /* */ }
+
+        onReuse?.({
+            title: a.title,
+            message: a.message,
+            type: a.type || 'announcement',
+            bodyHtml: a.bodyHtml || undefined,
+            imageUrl: a.imageUrl || undefined,
+            link: a.link || undefined,
+            ctaText: a.ctaText || undefined,
+            ctaUrl: a.ctaUrl || undefined,
+            ctaColor: a.ctaColor || undefined,
+            translations,
+        })
+    }
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}><div className="loading-spinner" style={{ margin: '0 auto', width: 28, height: 28 }} /></div>
 
@@ -66,6 +126,21 @@ export default function HistoryTab() {
             </span>
         )
     }
+
+    const actionBtn = (label: string, onClick: () => void, color: string, disabled?: boolean) => (
+        <button
+            onClick={(e) => { e.stopPropagation(); onClick() }}
+            disabled={disabled}
+            style={{
+                fontSize: '0.72rem', padding: '5px 12px', borderRadius: '6px',
+                background: disabled ? 'rgba(255,255,255,0.03)' : color,
+                color: '#fff', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer',
+                fontWeight: 600, opacity: disabled ? 0.4 : 1, transition: 'all 0.15s',
+            }}
+        >
+            {label}
+        </button>
+    )
 
     return (
         <div>
@@ -92,6 +167,7 @@ export default function HistoryTab() {
                         let groups: Record<string, boolean> = {}
                         try { groups = a.audienceGroups ? JSON.parse(a.audienceGroups) : {} } catch {}
                         const isExpanded = expandedId === a.id
+                        const isBusy = actionLoading === a.id
 
                         return (
                             <div key={a.id} style={{
@@ -144,6 +220,21 @@ export default function HistoryTab() {
                                         {a.translations && (() => {
                                             try { const t = JSON.parse(a.translations); const c = Object.keys(t).length; return c > 0 ? <div style={{ fontSize: '0.72rem', color: '#34d399' }}>🌐 {c} translation{c !== 1 ? 's' : ''}</div> : null } catch { return null }
                                         })()}
+
+                                        {/* ── Action Buttons ──────────────────────────────── */}
+                                        <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '10px' }}>
+                                            {onReuse && actionBtn('✏️ Reuse in Compose', () => handleReuse(a), 'rgba(59,130,246,0.15)', isBusy)}
+                                            {actionBtn('🔄 Resend', () => handleResend(a.id), 'rgba(52,211,153,0.15)', isBusy)}
+                                            {confirmDeleteId === a.id ? (
+                                                <>
+                                                    <span style={{ fontSize: '0.72rem', color: '#ef4444', alignSelf: 'center' }}>Delete?</span>
+                                                    {actionBtn('Yes', () => handleDelete(a.id), 'rgba(239,68,68,0.3)', isBusy)}
+                                                    {actionBtn('No', () => setConfirmDeleteId(null), 'rgba(255,255,255,0.08)', isBusy)}
+                                                </>
+                                            ) : (
+                                                actionBtn('🗑️ Delete', () => setConfirmDeleteId(a.id), 'rgba(239,68,68,0.1)', isBusy)
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>

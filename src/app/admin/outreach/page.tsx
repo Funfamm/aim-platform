@@ -7,7 +7,7 @@ import AdminSidebar from '@/components/AdminSidebar'
 import Link from 'next/link'
 import ComposeTab from './ComposeTab'
 import SurveyResultsTab from './SurveyResultsTab'
-import HistoryTab from './HistoryTab'
+import HistoryTab, { type ReuseData } from './HistoryTab'
 
 type Tab = 'compose' | 'results' | 'history'
 
@@ -15,6 +15,7 @@ function OutreachContent() {
     const params = useSearchParams()
     const initial = (params.get('tab') as Tab) || 'compose'
     const [tab, setTab] = useState<Tab>(initial)
+    const [reuseData, setReuseData] = useState<ReuseData | null>(null)
 
     // Check if Compose tab has unsaved content
     const isComposeDirty = useCallback((): boolean => {
@@ -30,6 +31,12 @@ function OutreachContent() {
         }
         setTab(newTab)
     }, [tab, isComposeDirty])
+
+    // Handle reuse from history — load data and switch to compose tab
+    const handleReuse = useCallback((data: ReuseData) => {
+        setReuseData(data)
+        setTab('compose')
+    }, [])
 
     // Guard browser navigation (close/refresh)
     useEffect(() => {
@@ -85,9 +92,9 @@ function OutreachContent() {
                 </div>
 
                 <div role="tabpanel" id={`outreach-panel-${tab}`} aria-labelledby={`outreach-tab-${tab}`}>
-                    {tab === 'compose' && <ComposeTab />}
+                    {tab === 'compose' && <ComposeTab initialData={reuseData} />}
                     {tab === 'results' && <SurveyResultsTab />}
-                    {tab === 'history' && <HistoryTab />}
+                    {tab === 'history' && <HistoryTab onReuse={handleReuse} />}
                 </div>
             </main>
         </div>

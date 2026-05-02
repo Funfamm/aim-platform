@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import AdminImageUpload from '@/components/AdminImageUpload'
+import type { ReuseData } from './HistoryTab'
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
 
 type OutreachType = 'announcement' | 'survey' | 'campaign'
@@ -18,7 +19,11 @@ const CTA_COLORS = [
 // .outreachLabel  → lbl
 // .outreachCard   → card
 
-export default function ComposeTab() {
+interface ComposeTabProps {
+    initialData?: ReuseData | null
+}
+
+export default function ComposeTab({ initialData }: ComposeTabProps) {
     const [outreachType, setOutreachType] = useState<OutreachType>('announcement')
     const [title, setTitle] = useState('')
     const [message, setMessage] = useState('')
@@ -77,6 +82,28 @@ export default function ComposeTab() {
         hasMounted.current = true
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    // ── Load reuse data from history ──────────────────────────────────────────
+    useEffect(() => {
+        if (!initialData) return
+        setTitle(initialData.title)
+        setMessage(initialData.message)
+        setOutreachType((initialData.type as OutreachType) || 'announcement')
+        setBodyHtml(initialData.bodyHtml || '')
+        setImageUrl(initialData.imageUrl || '')
+        setLink(initialData.link || '')
+        setCtaText(initialData.ctaText || '')
+        setCtaUrl(initialData.ctaUrl || '')
+        setCtaColor(initialData.ctaColor || '#c9a84c')
+        if (initialData.translations) {
+            setTranslations(initialData.translations as Record<string, { title: string; message: string }>)
+            setHasTranslated(true)
+        } else {
+            setTranslations({})
+            setHasTranslated(false)
+        }
+        setResult(null)
+    }, [initialData])
 
     // Debounced save to localStorage on field changes
     useEffect(() => {
