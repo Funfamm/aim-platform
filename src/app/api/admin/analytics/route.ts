@@ -36,7 +36,9 @@ export async function GET(req: NextRequest) {
     const section = req.nextUrl.searchParams.get('section') || 'all'
 
     const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    // Use US Eastern timezone for all date boundaries
+    const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }))
+    const today = new Date(estNow.getFullYear(), estNow.getMonth(), estNow.getDate())
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
     const week = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
     const month = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -59,6 +61,10 @@ export async function GET(req: NextRequest) {
             // Script submissions
             scriptSubmissionCount, pendingScriptReviews,
             recentScriptSubmissions,
+            // Subscriber growth
+            newSubsToday, newSubsWeek,
+            // Email queue health
+            emailQueuePending, emailQueueProcessing, emailQueueFailed,
         ] = await Promise.all([
             prisma.pageView.findMany({
                 where: { createdAt: { gte: fiveMin } },
@@ -116,6 +122,13 @@ export async function GET(req: NextRequest) {
                     scriptCall: { select: { title: true } },
                 },
             }),
+            // Subscriber growth — daily and weekly
+            prisma.subscriber.count({ where: { subscribedAt: { gte: today }, active: true } }),
+            prisma.subscriber.count({ where: { subscribedAt: { gte: week }, active: true } }),
+            // Email queue health — live operational visibility
+            prisma.emailQueue.count({ where: { status: 'pending' } }),
+            prisma.emailQueue.count({ where: { status: 'processing' } }),
+            prisma.emailQueue.count({ where: { status: 'failed' } }),
         ])
 
         const conversionRate = castingPageViews > 0 ? ((appsMonth / castingPageViews) * 100) : 0
@@ -172,10 +185,17 @@ export async function GET(req: NextRequest) {
             donationsMonth,
             subscribers,       // verified registered users (industry standard)
             mailingList,       // active newsletter-only signups
+            newSubsToday,      // new subscribers today (EST)
+            newSubsWeek,       // new subscribers this week
             trailerCount,      // projects that have a trailer
             trailerViews,      // trailer-related page views this month
             conversionRate: Math.round(conversionRate * 10) / 10,
             castingViews: castingPageViews,
+        }
+        result.emailQueue = {
+            pending: emailQueuePending,
+            processing: emailQueueProcessing,
+            failed: emailQueueFailed,
         }
         result.content = {
             totalFilmViews: filmViews,

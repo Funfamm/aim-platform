@@ -10,6 +10,9 @@ interface Subscriber {
     active: boolean
     subscribedAt: string
     failedSends: number
+    country: string | null
+    botScore: number
+    hasOpened: boolean
     // Conversion fields
     converted: boolean
     userId: string | null
@@ -22,6 +25,7 @@ interface Subscriber {
 }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
 interface Stats { total: number; active: number; inactive: number; failed: number; surveySent: number; surveyResponded: number }
+interface BotStats { highRisk: number; medRisk: number; countryBreakdown: { country: string; count: number }[] }
 interface Conversion {
     totalSubscribers: number; totalUsers: number; converted: number
     conversionRate: number; subscriberOnly: number; userOnly: number
@@ -32,6 +36,7 @@ export default function AdminSubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([])
     const [pagination, setPagination]   = useState<Pagination>({ page: 1, limit: 50, total: 0, totalPages: 0 })
     const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0, failed: 0, surveySent: 0, surveyResponded: 0 })
+    const [botStats, setBotStats]       = useState<BotStats>({ highRisk: 0, medRisk: 0, countryBreakdown: [] })
     const [conversion, setConversion]   = useState<Conversion>({ totalSubscribers: 0, totalUsers: 0, converted: 0, conversionRate: 0, subscriberOnly: 0, userOnly: 0, overlap: 0, newConversionsThisMonth: 0 })
     const [loading, setLoading]         = useState(true)
     const [search, setSearch]           = useState('')
@@ -66,6 +71,7 @@ export default function AdminSubscribersPage() {
             setSubscribers(subs)
             setPagination(data.pagination)
             setStats(data.stats)
+            if (data.botStats) setBotStats(data.botStats)
             if (data.conversion) setConversion(data.conversion)
         }
         setLoading(false)
@@ -329,12 +335,13 @@ export default function AdminSubscribersPage() {
 
                 {/* Stats */}
                 {/* Subscriber stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
                     {[
                         { label: 'Total', value: stats.total, color: '#d4a853', filter: 'all' },
                         { label: 'Active',   value: stats.active,   color: '#10b981', filter: 'active' },
                         { label: 'Inactive', value: stats.inactive, color: '#6b7280', filter: 'inactive' },
                         { label: 'Failed Sends', value: stats.failed, color: '#ef4444', filter: 'failed' },
+                        { label: '🤖 Bot Risk (High)', value: botStats.highRisk, color: '#dc2626', filter: 'suspect_bot' },
                     ].map(s => (
                         <div key={s.label} className="admin-card" style={{
                             padding: 'var(--space-lg)', textAlign: 'center', cursor: 'pointer',
@@ -349,6 +356,24 @@ export default function AdminSubscribersPage() {
                         </div>
                     ))}
                 </div>
+
+                {/* Country breakdown — only show if there are multiple countries */}
+                {botStats.countryBreakdown.length > 1 && (
+                    <div className="admin-card" style={{ padding: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Top Countries</div>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {botStats.countryBreakdown.map(c => (
+                                <span key={c.country} style={{
+                                    padding: '4px 10px', borderRadius: '99px', fontSize: '0.72rem', fontWeight: 600,
+                                    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)',
+                                    color: 'var(--text-secondary)',
+                                }}>
+                                    {c.country} · {c.count}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Conversion reporting */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
@@ -462,6 +487,7 @@ export default function AdminSubscribersPage() {
                                 </optgroup>
                                 <optgroup label="Health">
                                     <option value="failed">⚠️ Has Failures</option>
+                                    <option value="suspect_bot">🤖 Suspect Bots</option>
                                 </optgroup>
                                 <optgroup label="Survey">
                                     <option value="survey_sent">📧 Survey Sent</option>
@@ -549,7 +575,7 @@ export default function AdminSubscribersPage() {
                                             style={{ accentColor: 'var(--accent-gold)', cursor: 'pointer' }}
                                         />
                                     </th>
-                                    {['Email', 'Name', 'Status', 'Converted', 'Survey', 'Subscribed', 'Lang', 'Verified', 'Fails'].map(h => (
+                                    {['Email', 'Name', 'Country', 'Status', 'Bot Risk', 'Converted', 'Survey', 'Subscribed', 'Fails'].map(h => (
                                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>{h}</th>
                                     ))}
                                 </tr>
@@ -577,6 +603,20 @@ export default function AdminSubscribersPage() {
                                         <td style={{ padding: '10px 14px' }}>
                                             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{sub.name || <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>—</span>}</span>
                                         </td>
+                                        {/* Country */}
+                                        <td style={{ padding: '10px 14px' }}>
+                                            {sub.country ? (
+                                                <span style={{
+                                                    padding: '2px 7px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 600,
+                                                    background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)',
+                                                    color: '#818cf8', textTransform: 'uppercase',
+                                                }}>
+                                                    {sub.country}
+                                                </span>
+                                            ) : (
+                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>—</span>
+                                            )}
+                                        </td>
                                         <td style={{ padding: '10px 14px' }}>
                                             <span style={{
                                                 display: 'inline-flex', alignItems: 'center', gap: '4px',
@@ -587,6 +627,32 @@ export default function AdminSubscribersPage() {
                                             }}>
                                                 {sub.active ? '● Active' : '○ Inactive'}
                                             </span>
+                                        </td>
+                                        {/* Bot Risk */}
+                                        <td style={{ padding: '10px 14px' }}>
+                                            {sub.botScore >= 70 ? (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)',
+                                                    color: '#ef4444',
+                                                }}>
+                                                    🤖 High ({sub.botScore})
+                                                </span>
+                                            ) : sub.botScore >= 40 ? (
+                                                <span style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '3px',
+                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
+                                                    color: '#f59e0b',
+                                                }}>
+                                                    ⚠️ Med ({sub.botScore})
+                                                </span>
+                                            ) : (
+                                                <span style={{ fontSize: '0.68rem', color: '#10b981', fontWeight: 600 }}>
+                                                    ✓ Low
+                                                </span>
+                                            )}
                                         </td>
                                         {/* Converted */}
                                         <td style={{ padding: '10px 14px' }}>
@@ -640,30 +706,7 @@ export default function AdminSubscribersPage() {
                                                 {new Date(sub.subscribedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                                             </span>
                                         </td>
-                                        {/* Language */}
-                                        <td style={{ padding: '10px 14px' }}>
-                                            {sub.language ? (
-                                                <span style={{
-                                                    padding: '2px 7px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 600,
-                                                    background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)',
-                                                    color: '#818cf8', textTransform: 'uppercase',
-                                                }}>
-                                                    {sub.language}
-                                                </span>
-                                            ) : (
-                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>—</span>
-                                            )}
-                                        </td>
-                                        {/* Verified */}
-                                        <td style={{ padding: '10px 14px' }}>
-                                            {sub.emailVerified === true ? (
-                                                <span style={{ fontSize: '0.72rem', color: '#10b981' }}>✓</span>
-                                            ) : sub.emailVerified === false ? (
-                                                <span style={{ fontSize: '0.72rem', color: '#f59e0b' }}>✕</span>
-                                            ) : (
-                                                <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>—</span>
-                                            )}
-                                        </td>
+
                                         {/* Fails */}
                                         <td style={{ padding: '10px 14px' }}>
                                             {sub.failedSends > 0 ? (

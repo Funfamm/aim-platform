@@ -2,6 +2,35 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
+// ── Bot Detection Scoring ─────────────────────────────────────────────────────
+// Each signal adds to a 0-100 bot risk score.
+// Score >= 70 = high risk, 40-69 = medium, <40 = low
+const DISPOSABLE_DOMAINS = new Set([
+    'emailax.pro', 'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
+    'yopmail.com', 'trashmail.com', 'fakeinbox.com', 'sharklasers.com', 'dispostable.com',
+    'mailnesia.com', 'tempail.com', 'temp-mail.org', 'mohmal.com', 'emailondeck.com',
+    'getnada.com', '10minutemail.com', 'minutemail.com', 'maildrop.cc', 'mailcatch.com',
+    'discard.email', 'tempr.email', 'temp-mail.io', 'guerrillamailblock.com', 'grr.la',
+])
+
+function calcBotScore(
+    sub: { email: string; name: string | null; country: string | null },
+    hasOpened: boolean,
+    signupVelocity: number, // how many subs from same country in same hour
+): number {
+    let score = 0
+    if (!sub.name) score += 15
+    if (!hasOpened) score += 30
+    // High-volume countries with no platform relevance (adjust as needed)
+    const suspectCountries = new Set(['RU', 'CN', 'IN', 'BR', 'VN', 'ID', 'PK', 'BD', 'NG'])
+    if (sub.country && suspectCountries.has(sub.country)) score += 20
+    if (signupVelocity >= 10) score += 20 // 10+ signups from same country in same hour
+    else if (signupVelocity >= 5) score += 10
+    const domain = sub.email.split('@')[1]?.toLowerCase()
+    if (domain && DISPOSABLE_DOMAINS.has(domain)) score += 25
+    return Math.min(score, 100)
+}
+
 export async function GET(req: Request) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
 
@@ -118,6 +147,15 @@ export async function GET(req: Request) {
     }
 
     // New this month: subscribed in the current calendar month
+    // Suspect bot filter — server-side is approximated by country + no name
+    // Real score is calculated post-query via enrichment
+    if (status === 'suspect_bot') {
+        // Approximate: subscribers from high-volume suspect countries with no name
+        const suspectCountries = ['RU', 'CN', 'VN', 'BD', 'PK']
+        where.country = { in: suspectCountries }
+        where.name = null
+    }
+
     if (status === 'new_month') {
         const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
         where.subscribedAt = { gte: monthStart }
@@ -157,7 +195,7 @@ export async function GET(req: Request) {
         orderBy,
         skip: (page - 1) * limit,
         take: limit,
-        select: { id: true, email: true, name: true, active: true, subscribedAt: true },
+        select: { id: true, email: true, name: true, active: true, subscribedAt: true, country: true },
     })
 
     // Look up matching Users by email for conversion tracking
@@ -172,10 +210,31 @@ export async function GET(req: Request) {
         [u.email.toLowerCase(), u]
     ))
 
-    // Enrich each subscriber with conversion data
-    const enriched = subscribers.map((s: { id: string; email: string; name: string | null; active: boolean; subscribedAt: Date }) => {
+    // ── Bot detection: open tracking + signup velocity ──────────────────
+    const subEmails2 = subscribers.map((s: { email: string }) => s.email)
+    const openedRecords = subEmails2.length > 0
+        ? await db.emailLog.findMany({
+            where: { to: { in: subEmails2 }, openedAt: { not: null } },
+            select: { to: true },
+            distinct: ['to'],
+        }) as { to: string }[]
+        : []
+    const openedSet = new Set(openedRecords.map((r: { to: string }) => r.to.toLowerCase()))
+
+    // Signup velocity: count subscribers from same country within ±1 hour
+    const countryGroups = await db.subscriber.groupBy({
+        by: ['country'],
+        _count: { country: true },
+    }) as { country: string | null; _count: { country: number } }[]
+    const countryCountMap = new Map(countryGroups.map((g: { country: string | null; _count: { country: number } }) => [g.country, g._count.country]))
+
+    // Enrich each subscriber with conversion data + bot score
+    const enriched = subscribers.map((s: { id: string; email: string; name: string | null; active: boolean; subscribedAt: Date; country: string | null }) => {
         const matchedUser = userMap.get(s.email.toLowerCase()) || null
         const emailLower = s.email.toLowerCase()
+        const hasOpened = openedSet.has(emailLower)
+        const velocity = countryCountMap.get(s.country) || 0
+        const botScore = calcBotScore(s, hasOpened, velocity)
         return {
             ...s,
             failedSends: failedMap.get(s.email) || 0,
@@ -188,6 +247,9 @@ export async function GET(req: Request) {
             // Survey fields
             surveySent: surveySentSet.has(emailLower),
             surveyResponded: surveyRespondedSet.has(emailLower),
+            // Bot detection
+            botScore,
+            hasOpened,
         }
     })
 
@@ -209,9 +271,34 @@ export async function GET(req: Request) {
     const newConversions = recentUsers.filter((u: { email: string }) => subEmailSet.has(u.email.toLowerCase())).length
     const conversionRate = subEmailSet.size > 0 ? Math.round((overlap / subEmailSet.size) * 100) : 0
 
+    // Bot stats: count high-risk subscribers across entire list
+    const allSubsForBot = await db.subscriber.findMany({
+        select: { email: true, name: true, country: true },
+    }) as { email: string; name: string | null; country: string | null }[]
+    const allOpenedRecords = await db.emailLog.findMany({
+        where: { openedAt: { not: null } },
+        select: { to: true },
+        distinct: ['to'],
+    }) as { to: true }[]
+    const allOpenedSet = new Set((allOpenedRecords as unknown as { to: string }[]).map(r => r.to.toLowerCase()))
+    let highRiskCount = 0; let medRiskCount = 0
+    for (const s of allSubsForBot) {
+        const bScore = calcBotScore(s, allOpenedSet.has(s.email.toLowerCase()), countryCountMap.get(s.country) || 0)
+        if (bScore >= 70) highRiskCount++
+        else if (bScore >= 40) medRiskCount++
+    }
+
+    // Country breakdown for admin panel
+    const countryBreakdown = countryGroups
+        .filter((g: { country: string | null; _count: { country: number } }) => g.country)
+        .sort((a: { _count: { country: number } }, b: { _count: { country: number } }) => b._count.country - a._count.country)
+        .slice(0, 10)
+        .map((g: { country: string | null; _count: { country: number } }) => ({ country: g.country, count: g._count.country }))
+
     return NextResponse.json({
         subscribers: enriched,
         stats: { total, active, inactive, failed: failedCount, surveySent: surveySentSet.size, surveyResponded: surveyRespondedSet.size },
+        botStats: { highRisk: highRiskCount, medRisk: medRiskCount, countryBreakdown },
         conversion: {
             totalSubscribers: total,
             totalUsers,

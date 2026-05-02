@@ -553,11 +553,16 @@ model Announcement {
   recipientCount  Int      @default(0)
   status          String   @default("sent") // sent | failed
   sentById        String?
+  type            String   @default("announcement") // announcement | survey | campaign
+  ctaText         String?  // CTA button label e.g. "Watch Now →"
+  ctaUrl          String?  // CTA button destination URL
+  ctaColor        String?  @default("#c9a84c") // CTA button background color
   sentAt          DateTime @default(now())
   createdAt       DateTime @default(now())
 
   @@index([sentAt])
   @@index([sentById])
+  @@index([type])
 }
 
 model SearchAnalytics {

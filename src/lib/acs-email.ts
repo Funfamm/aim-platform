@@ -63,11 +63,16 @@ export function invalidateAcsClient(): void {
 /**
  * Send a single email via Azure Communication Services.
  *
- * ACS uses a poller pattern:
- *   1. `client.beginSend(message)` → starts the send operation
- *   2. `poller.pollUntilDone()` → waits for delivery confirmation
+ * ACS uses a two-phase pattern:
+ *   1. `client.beginSend(message)` → queues the email in ACS (HTTP POST)
+ *   2. `poller.pollUntilDone()`    → polls for delivery confirmation
  *
- * Timeout: 2 minutes (ACS usually delivers in <10s)
+ * For BULK email we use fire-and-forget:
+ *   - Once `beginSend()` succeeds, ACS has accepted the message and WILL
+ *     deliver it. We do NOT wait for `pollUntilDone()` because that blocks
+ *     10–60+ seconds per email, which stalls the entire worker.
+ *   - Delivery failures (bounces) are handled asynchronously via ACS
+ *     webhooks / the EmailBounceEvent table.
  */
 export async function sendViaACS(config: AcsConfig, options: AcsEmailOptions): Promise<void> {
     const client = getAcsClient(config.connectionString)
@@ -91,16 +96,15 @@ export async function sendViaACS(config: AcsConfig, options: AcsEmailOptions): P
     }
 
     try {
-        const poller = await client.beginSend(message)
-        const result = await poller.pollUntilDone()
+        // Phase 1: Queue the email in ACS (~1-2s HTTP round-trip)
+        await client.beginSend(message)
 
-        if (result.status !== 'Succeeded') {
-            const errorDetail = result.error?.message || `ACS send status: ${result.status}`
-            throw new Error(errorDetail)
-        }
-
-        logger.info('acs-email', `Email sent via ACS to ${options.to}: ${options.subject}`)
+        // beginSend() succeeded — ACS has accepted the message and will deliver it.
+        // We do NOT call pollUntilDone() — that blocks 10-60s per email
+        // and is the root cause of the worker stalling.
+        logger.info('acs-email', `Email queued in ACS to ${options.to}: ${options.subject}`)
     } catch (err) {
+        // beginSend() itself failed — bad credentials, invalid sender, network error
         // Re-throw with context for the mailer's retry logic
         const msg = err instanceof Error ? err.message : String(err)
         logger.error('acs-email', `ACS send failed to ${options.to}: ${msg}`)

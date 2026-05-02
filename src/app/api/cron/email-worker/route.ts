@@ -27,9 +27,9 @@ import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 import crypto from 'crypto'
 
 // ── Configuration ──────────────────────────────────────────────────────────
-const BATCH_SIZE = 5           // emails per batch (Azure quota: 30/min, keep headroom)
+const BATCH_SIZE = 20           // emails per batch (ACS fire-and-forget: ~1-2s per send)
 const BATCH_DELAY_MS = 1000    // 1s between batches — gentle pacing
-const MAX_PER_RUN = 50         // max emails per cron run (maxDuration: 300s)
+const MAX_PER_RUN = 200         // max emails per cron run (maxDuration: 300s)
 
 const MAX_RUNTIME_MS = 280000  // stop claiming new batches after 280s (leave 20s buffer from 300s maxDuration)
 

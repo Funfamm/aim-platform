@@ -1,13 +1,55 @@
 'use client'
 
-import { useState, FormEvent } from 'react'
+import { useState, useRef, useEffect, FormEvent } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
+
+// Turnstile site key (public)
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 export default function SubscribeForm() {
     const t = useTranslations('footer')
     const locale = useLocale()
     const [email, setEmail] = useState('')
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+    const [turnstileToken, setTurnstileToken] = useState('')
+    const turnstileRef = useRef<HTMLDivElement>(null)
+
+    // Load Turnstile widget
+    useEffect(() => {
+        if (!TURNSTILE_SITE_KEY || !turnstileRef.current) return
+
+        // Load the Turnstile script if not already loaded
+        const existingScript = document.querySelector('script[src*="turnstile"]')
+        if (!existingScript) {
+            const script = document.createElement('script')
+            script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+            script.async = true
+            script.defer = true
+            script.onload = () => renderWidget()
+            document.head.appendChild(script)
+        } else {
+            // Script already loaded, render widget
+            renderWidget()
+        }
+
+        function renderWidget() {
+            if (!(window as unknown as Record<string, unknown>).turnstile || !turnstileRef.current) {
+                // Wait for Turnstile to initialize
+                setTimeout(renderWidget, 200)
+                return
+            }
+            const ts = (window as unknown as { turnstile: { render: (el: HTMLElement, opts: Record<string, unknown>) => void } }).turnstile
+            // Clear any previous widget
+            turnstileRef.current.innerHTML = ''
+            ts.render(turnstileRef.current, {
+                sitekey: TURNSTILE_SITE_KEY,
+                callback: (token: string) => setTurnstileToken(token),
+                'expired-callback': () => setTurnstileToken(''),
+                theme: 'dark',
+                size: 'compact',
+            })
+        }
+    }, [])
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
@@ -20,7 +62,7 @@ export default function SubscribeForm() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, locale, website: '' }),
+                body: JSON.stringify({ email, locale, website: '', turnstileToken }),
             })
             if (res.ok) {
                 setStatus('sent')
@@ -84,6 +126,7 @@ export default function SubscribeForm() {
     return (
         <form onSubmit={handleSubmit} style={{
             display: 'flex',
+            flexDirection: 'column',
             gap: 'var(--space-sm)',
             maxWidth: '480px',
         }}>
@@ -96,35 +139,40 @@ export default function SubscribeForm() {
                 aria-hidden="true"
                 style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
             />
-            <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder={t('emailPlaceholder')}
-                onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
-                onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
-                style={{
-                    flex: 1,
-                    minWidth: 0,
-                    padding: '0.6rem 1rem',
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-md)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.85rem',
-                    outline: 'none',
-                }}
-            />
-            <button
-                type="submit"
-                disabled={status === 'sending'}
-                className="btn btn-primary"
-                style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.5rem', fontSize: '0.85rem', flexShrink: 0 }}
-            >
-                {status === 'sending' ? '...' : t('subscribe')}
-            </button>
+            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder={t('emailPlaceholder')}
+                    onInvalid={e => (e.target as HTMLInputElement).setCustomValidity(t('validationRequired'))}
+                    onInput={e => (e.target as HTMLInputElement).setCustomValidity('')}
+                    style={{
+                        flex: 1,
+                        minWidth: 0,
+                        padding: '0.6rem 1rem',
+                        background: 'var(--bg-primary)',
+                        border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-md)',
+                        color: 'var(--text-primary)',
+                        fontSize: '0.85rem',
+                        outline: 'none',
+                    }}
+                />
+                <button
+                    type="submit"
+                    disabled={status === 'sending' || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
+                    className="btn btn-primary"
+                    style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.5rem', fontSize: '0.85rem', flexShrink: 0 }}
+                >
+                    {status === 'sending' ? '...' : t('subscribe')}
+                </button>
+            </div>
+            {/* Turnstile widget — renders inline below the input */}
+            {TURNSTILE_SITE_KEY && (
+                <div ref={turnstileRef} style={{ minHeight: '65px' }} />
+            )}
         </form>
     )
 }
-

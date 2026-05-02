@@ -25,10 +25,37 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
         }
 
-        const { email, name, locale, website } = await request.json()
+        const { email, name, locale, website, turnstileToken } = await request.json()
 
         // Honeypot: bots fill this hidden field; humans never see it
         if (website) return NextResponse.json({ success: true })
+
+        // ── Cloudflare Turnstile verification ─────────────────────────────────
+        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
+        if (turnstileSecret) {
+            if (!turnstileToken) {
+                return NextResponse.json({ error: 'Bot verification failed. Please refresh and try again.' }, { status: 400 })
+            }
+            try {
+                const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({
+                        secret: turnstileSecret,
+                        response: turnstileToken,
+                        remoteip: ip,
+                    }),
+                })
+                const verifyData = await verifyRes.json()
+                if (!verifyData.success) {
+                    console.warn('[subscribe] Turnstile verification failed:', verifyData)
+                    return NextResponse.json({ error: 'Bot verification failed. Please try again.' }, { status: 403 })
+                }
+            } catch (err) {
+                console.error('[subscribe] Turnstile verify error:', err)
+                // Fail open — don't block if Cloudflare is down
+            }
+        }
 
         if (!email || typeof email !== 'string') {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })

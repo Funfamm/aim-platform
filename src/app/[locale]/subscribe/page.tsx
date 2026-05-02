@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useEffect, useRef, FormEvent } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
@@ -18,6 +18,36 @@ export default function SubscribePage() {
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [bgImages, setBgImages] = useState<string[]>(DEFAULT_IMAGES)
     const [currentBg, setCurrentBg] = useState(0)
+    const [turnstileToken, setTurnstileToken] = useState('')
+    const turnstileRef = useRef<HTMLDivElement>(null)
+    const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
+
+    // Load Turnstile widget
+    useEffect(() => {
+        if (!TURNSTILE_SITE_KEY || !turnstileRef.current) return
+        const existingScript = document.querySelector('script[src*="turnstile"]')
+        if (!existingScript) {
+            const script = document.createElement('script')
+            script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
+            script.async = true; script.defer = true
+            script.onload = () => renderWidget()
+            document.head.appendChild(script)
+        } else { renderWidget() }
+        function renderWidget() {
+            if (!(window as unknown as Record<string, unknown>).turnstile || !turnstileRef.current) {
+                setTimeout(renderWidget, 200); return
+            }
+            const ts = (window as unknown as { turnstile: { render: (el: HTMLElement, opts: Record<string, unknown>) => void } }).turnstile
+            turnstileRef.current.innerHTML = ''
+            ts.render(turnstileRef.current, {
+                sitekey: TURNSTILE_SITE_KEY,
+                callback: (token: string) => setTurnstileToken(token),
+                'expired-callback': () => setTurnstileToken(''),
+                theme: 'dark', size: 'normal',
+            })
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     useEffect(() => {
         fetch('/api/admin/media?page=subscribe')
@@ -44,7 +74,7 @@ export default function SubscribePage() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, locale }),
+                body: JSON.stringify({ email, locale, turnstileToken }),
             })
             if (res.ok) { setStatus('sent'); setEmail('') }
             else setStatus('error')
@@ -142,10 +172,14 @@ export default function SubscribePage() {
                                                 {t('error')}
                                             </p>
                                         )}
-                                        <button type="submit" disabled={status === 'sending'} className="btn btn-primary"
+                                        <button type="submit" disabled={status === 'sending' || (!!TURNSTILE_SITE_KEY && !turnstileToken)} className="btn btn-primary"
                                             style={{ width: '100%', padding: '0.8rem', fontWeight: 700 }}>
                                             {status === 'sending' ? t('submitting') : t('submitBtn')}
                                         </button>
+                                        {/* Turnstile widget */}
+                                        {TURNSTILE_SITE_KEY && (
+                                            <div ref={turnstileRef} style={{ display: 'flex', justifyContent: 'center', marginTop: 'var(--space-sm)' }} />
+                                        )}
                                     </form>
                                 )}
                             </div>

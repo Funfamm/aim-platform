@@ -91,6 +91,8 @@ interface AnalyticsData {
         totalDonations: number; donationsMonth: number
         subscribers: number
         mailingList: number
+        newSubsToday: number
+        newSubsWeek: number
         trailerCount: number
         trailerViews: number
         conversionRate: number; castingViews: number
@@ -102,6 +104,11 @@ interface AnalyticsData {
         failedMonth: number
         successRate: number
         byType: { type: string; count: number }[]
+    }
+    emailQueue?: {
+        pending: number
+        processing: number
+        failed: number
     }
     sparklines: { views: number[]; users: number[]; apps: number[] }
     recentActivity: { id: string; path: string; device: string | null; createdAt: string; referrer: string | null }[]
@@ -650,16 +657,16 @@ export default function AdminAnalyticsPage() {
                                 {data?.dashboard && (
                                     <>
                                         <div className="aa-cmd-strip" style={{
-                                            display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--space-sm)',
+                                            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-sm)',
                                             marginBottom: 'var(--space-lg)',
                                         }}>
                                             {[
-                                                { label: 'Projects', value: data.dashboard.projectCount, icon: '🎬', color: 'var(--accent-gold)', gradient: 'rgba(212,168,83,0.06)' },
+                                                { label: 'Projects', value: data.dashboard.projectCount, icon: '🎬', color: 'var(--accent-gold)', gradient: 'rgba(212,168,83,0.06)', alwaysShow: true },
                                                 { label: 'Open Castings', value: data.dashboard.castingCount, icon: '🎭', color: '#f59e0b', gradient: 'rgba(245,158,11,0.05)' },
                                                 { label: 'Applications', value: data.dashboard.applicationCount, icon: '📋', color: '#3b82f6', gradient: 'rgba(59,130,246,0.05)' },
                                                 { label: 'Pending Review', value: data.dashboard.pendingCount, icon: '⌛', color: data.dashboard.pendingCount > 0 ? '#ef4444' : '#22c55e', gradient: data.dashboard.pendingCount > 0 ? 'rgba(239,68,68,0.05)' : 'rgba(34,197,94,0.04)' },
                                                 { label: 'Script Submissions', value: data.dashboard.scriptSubmissionCount, icon: '✍️', color: data.dashboard.pendingScriptReviews > 0 ? '#f59e0b' : '#a855f7', gradient: data.dashboard.pendingScriptReviews > 0 ? 'rgba(245,158,11,0.06)' : 'rgba(168,85,247,0.05)', badge: data.dashboard.pendingScriptReviews > 0 ? data.dashboard.pendingScriptReviews : null },
-                                            ].map((stat, idx) => (
+                                            ].filter(stat => ('alwaysShow' in stat && stat.alwaysShow) || stat.value > 0).map((stat, idx) => (
                                                 <div key={stat.label} className="cmd-card" style={{
                                                     background: `linear-gradient(135deg, ${stat.gradient}, var(--bg-secondary))`,
                                                     border: '1px solid var(--border-subtle)',
@@ -915,19 +922,27 @@ export default function AdminAnalyticsPage() {
                                         <StatCard label="Page Views" value={data.traffic.monthViews} sublabel={<><TrendArrow current={data.realTime.todayViews} previous={data.realTime.yesterdayViews} /> <span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>{data.realTime.todayViews} today</span></>} sparkData={data.sparklines.views} color="var(--accent-gold)" delay={0} />
                                         <StatCard label="Users" value={data.engagement.totalUsers} sublabel={<span style={{ color: '#22c55e', fontSize: '0.65rem', fontWeight: 600 }}>+{data.engagement.newUsersMonth} this month</span>} sparkData={data.sparklines.users} color="#22c55e" delay={1} />
                                         <StatCard label="Applications" value={data.engagement.totalApps} sublabel={<span style={{ color: '#3b82f6', fontSize: '0.65rem', fontWeight: 600 }}>+{data.engagement.appsMonth} this month</span>} sparkData={data.sparklines.apps} color="#3b82f6" delay={2} />
-                                        <StatCard label="Subscribers" value={data.engagement.subscribers} sublabel={<span style={{ color: 'var(--text-tertiary)', fontSize: '0.62rem' }}>verified members · {data.engagement.conversionRate}% cast. conv.</span>} sparkData={[]} color="#a855f7" delay={3} />
+                                        <StatCard label="Subscribers" value={data.engagement.subscribers} sublabel={<><span style={{ color: '#22c55e', fontSize: '0.62rem', fontWeight: 600 }}>+{data.engagement.newSubsToday ?? 0} today</span> <span style={{ color: 'var(--text-tertiary)', fontSize: '0.58rem' }}>· +{data.engagement.newSubsWeek ?? 0} this week · {data.engagement.conversionRate}% conv.</span></>} sparkData={[]} color="#a855f7" delay={3} />
                                     </div>
                                 </div>
 
                                 {/* ── Engagement Metrics Strip ── */}
-                                <div className="aa-engage-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
+                                <div className="aa-engage-strip" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 'var(--space-sm)', marginBottom: 'var(--space-xl)', animation: 'cardCascade 0.6s ease 0.35s both' }}>
                                     {[
                                         { label: 'This Week', value: data.traffic.weekViews, icon: '📅', color: 'var(--accent-gold)', glow: 'rgba(212,168,83,0.08)' },
-                                        { label: 'Mailing List', value: data.engagement.mailingList, icon: '📧', color: '#a855f7', glow: 'rgba(168,85,247,0.06)', sublabel: 'newsletter signups' },
+                                        { label: 'Mailing List', value: data.engagement.mailingList, icon: '📧', color: '#a855f7', glow: 'rgba(168,85,247,0.06)', sublabel: data.engagement.newSubsToday > 0 ? `+${data.engagement.newSubsToday} today` : 'newsletter signups' },
                                         { label: 'Casting Views', value: data.engagement.castingViews, icon: '🎭', color: '#f59e0b', glow: 'rgba(245,158,11,0.06)' },
                                         { label: 'Donations', value: data.engagement.totalDonations, icon: '💰', color: '#22c55e', glow: 'rgba(34,197,94,0.06)' },
                                         { label: 'Film Views', value: data.content.totalFilmViews, icon: '🎬', color: '#3b82f6', glow: 'rgba(59,130,246,0.06)' },
                                         { label: 'Trailers', value: data.engagement.trailerCount, icon: '🎞️', color: '#e879f9', glow: 'rgba(232,121,249,0.06)', sublabel: data.engagement.trailerViews > 0 ? `${data.engagement.trailerViews} views/mo` : 'No views yet' },
+                                        ...(data.emailQueue ? [{
+                                            label: 'Email Queue',
+                                            value: (data.emailQueue.pending || 0) + (data.emailQueue.processing || 0),
+                                            icon: '📬',
+                                            color: (data.emailQueue.pending || 0) + (data.emailQueue.processing || 0) > 10 ? '#ef4444' : (data.emailQueue.pending || 0) + (data.emailQueue.processing || 0) > 0 ? '#f59e0b' : '#22c55e',
+                                            glow: (data.emailQueue.pending || 0) + (data.emailQueue.processing || 0) > 10 ? 'rgba(239,68,68,0.06)' : 'rgba(34,197,94,0.06)',
+                                            sublabel: data.emailQueue.failed > 0 ? `${data.emailQueue.failed} failed` : (data.emailQueue.pending || 0) > 0 ? `${data.emailQueue.pending} pending` : 'all clear',
+                                        }] : []),
                                     ].map((stat, i) => (
                                         <div key={stat.label} className="cmd-card" style={{
                                             ...glassCard, padding: '14px 16px',

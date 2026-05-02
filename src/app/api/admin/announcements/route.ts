@@ -30,6 +30,10 @@ export async function GET() {
             specificUserIds: true,
             recipientCount: true,
             status: true,
+            type: true,
+            ctaText: true,
+            ctaUrl: true,
+            ctaColor: true,
             sentAt: true,
         },
     })
@@ -54,7 +58,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { title, message, link, translations, bodyHtml, imageUrl, notifyGroups, specificUserIds } = body as {
+    const { title, message, link, translations, bodyHtml, imageUrl, notifyGroups, specificUserIds, type, ctaText, ctaUrl, ctaColor } = body as {
         title?: string
         message?: string
         link?: string
@@ -63,6 +67,10 @@ export async function POST(req: Request) {
         imageUrl?: string
         notifyGroups?: { subscribers?: boolean; members?: boolean; cast?: boolean }
         specificUserIds?: string[]
+        type?: 'announcement' | 'survey' | 'campaign'
+        ctaText?: string
+        ctaUrl?: string
+        ctaColor?: string
     }
 
     if (!title || !message) {
@@ -82,6 +90,14 @@ export async function POST(req: Request) {
     if (imageUrl && !/^https:\/\//.test(imageUrl)) {
         return NextResponse.json({ error: 'imageUrl must be a valid https URL' }, { status: 400 })
     }
+
+    // Validate CTA URL — only relative paths or https URLs allowed (prevents XSS)
+    if (ctaUrl && !/^(\/|https:\/\/)/.test(ctaUrl)) {
+        return NextResponse.json({ error: 'ctaUrl must be a relative path (/) or https URL' }, { status: 400 })
+    }
+
+    // Validate outreach type
+    const outreachType = type && ['announcement', 'survey', 'campaign'].includes(type) ? type : 'announcement'
 
     // Read audience selection — default to nobody if omitted (admin must opt-in each group)
     const groups: { subscribers?: boolean; members?: boolean; cast?: boolean } = notifyGroups ?? {
@@ -105,6 +121,10 @@ export async function POST(req: Request) {
                 recipientCount: 0, // updated async
                 status: 'sent',
                 sentById,
+                type: outreachType,
+                ctaText: ctaText?.trim() || null,
+                ctaUrl: ctaUrl?.trim() || null,
+                ctaColor: ctaColor || '#c9a84c',
             },
         })
     } catch (err) {
