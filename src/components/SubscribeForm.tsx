@@ -26,6 +26,7 @@ export default function SubscribeForm() {
             script.async = true
             script.defer = true
             script.onload = () => renderWidget()
+            script.onerror = () => { /* widget failed to load — button stays enabled */ }
             document.head.appendChild(script)
         } else {
             // Script already loaded, render widget
@@ -45,6 +46,7 @@ export default function SubscribeForm() {
                 sitekey: TURNSTILE_SITE_KEY,
                 callback: (token: string) => setTurnstileToken(token),
                 'expired-callback': () => setTurnstileToken(''),
+                'error-callback': () => { /* widget error — button stays enabled */ },
                 theme: 'dark',
                 size: 'compact',
             })
@@ -162,7 +164,7 @@ export default function SubscribeForm() {
                 />
                 <button
                     type="submit"
-                    disabled={status === 'sending' || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
+                    disabled={status === 'sending'}
                     className="btn btn-primary"
                     style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.5rem', fontSize: '0.85rem', flexShrink: 0 }}
                 >
