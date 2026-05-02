@@ -19,18 +19,29 @@ export default function SubscribePage() {
     const [bgImages, setBgImages] = useState<string[]>(DEFAULT_IMAGES)
     const [currentBg, setCurrentBg] = useState(0)
     const [turnstileToken, setTurnstileToken] = useState('')
+    const [turnstileReady, setTurnstileReady] = useState(false)
     const turnstileRef = useRef<HTMLDivElement>(null)
     const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
-    // Load Turnstile widget
+    // Load Turnstile widget with fallback timeout
     useEffect(() => {
-        if (!TURNSTILE_SITE_KEY || !turnstileRef.current) return
+        if (!TURNSTILE_SITE_KEY || !turnstileRef.current) {
+            setTurnstileReady(true)  // No key configured — don't block
+            return
+        }
+
+        // Fallback: if Turnstile doesn't load in 5s, enable the button anyway
+        const fallbackTimer = setTimeout(() => {
+            if (!turnstileReady) setTurnstileReady(true)
+        }, 5000)
+
         const existingScript = document.querySelector('script[src*="turnstile"]')
         if (!existingScript) {
             const script = document.createElement('script')
             script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
             script.async = true; script.defer = true
             script.onload = () => renderWidget()
+            script.onerror = () => setTurnstileReady(true) // Script blocked — enable button
             document.head.appendChild(script)
         } else { renderWidget() }
         function renderWidget() {
@@ -41,11 +52,13 @@ export default function SubscribePage() {
             turnstileRef.current.innerHTML = ''
             ts.render(turnstileRef.current, {
                 sitekey: TURNSTILE_SITE_KEY,
-                callback: (token: string) => setTurnstileToken(token),
+                callback: (token: string) => { setTurnstileToken(token); setTurnstileReady(true) },
                 'expired-callback': () => setTurnstileToken(''),
+                'error-callback': () => setTurnstileReady(true),
                 theme: 'dark', size: 'normal',
             })
         }
+        return () => clearTimeout(fallbackTimer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -172,7 +185,7 @@ export default function SubscribePage() {
                                                 {t('error')}
                                             </p>
                                         )}
-                                        <button type="submit" disabled={status === 'sending' || (!!TURNSTILE_SITE_KEY && !turnstileToken)} className="btn btn-primary"
+                                        <button type="submit" disabled={status === 'sending' || !turnstileReady} className="btn btn-primary"
                                             style={{ width: '100%', padding: '0.8rem', fontWeight: 700 }}>
                                             {status === 'sending' ? t('submitting') : t('submitBtn')}
                                         </button>
