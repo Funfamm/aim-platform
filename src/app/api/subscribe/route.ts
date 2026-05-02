@@ -3,6 +3,28 @@ import { prisma } from '@/lib/db'
 import { sendTransactionalEmail } from '@/lib/email-router'
 import { subscribeWelcomeBackWithOverrides, subscribeWelcomeWithOverrides } from '@/lib/email-templates'
 import { t as et } from '@/lib/email-i18n'
+import { suppressEmail } from '@/lib/suppression'
+
+// ── Bot Detection (same signals as admin subscriber panel) ─────────────────
+const BOT_DISPOSABLE_DOMAINS = new Set([
+    'emailax.pro', 'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
+    'yopmail.com', 'trashmail.com', 'fakeinbox.com', 'sharklasers.com', 'dispostable.com',
+    'mailnesia.com', 'tempail.com', 'temp-mail.org', 'mohmal.com', 'emailondeck.com',
+    'getnada.com', '10minutemail.com', 'minutemail.com', 'maildrop.cc', 'mailcatch.com',
+    'discard.email', 'tempr.email', 'temp-mail.io', 'guerrillamailblock.com', 'grr.la',
+])
+const BOT_SUSPECT_COUNTRIES = new Set(['RU', 'CN', 'VN', 'BD', 'PK', 'IN', 'BR', 'ID', 'NG'])
+
+function calcSubscribeBotScore(email: string, name: string | null, country: string | null, recentCountryCount: number): number {
+    let score = 0
+    if (!name) score += 15
+    const domain = email.split('@')[1]?.toLowerCase()
+    if (domain && BOT_DISPOSABLE_DOMAINS.has(domain)) score += 25
+    if (country && BOT_SUSPECT_COUNTRIES.has(country)) score += 20
+    if (recentCountryCount >= 10) score += 20
+    else if (recentCountryCount >= 5) score += 10
+    return Math.min(score, 100)
+}
 
 // Simple in-memory rate limiter: max 3 subscribe attempts per IP per hour
 const ipAttempts = new Map<string, number[]>()
@@ -167,6 +189,25 @@ export async function POST(request: NextRequest) {
             await db.subscriber.create({
                 data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date(), locale: userLocale, ...(country ? { country } : {}) },
             })
+        }
+
+        // ── Bot detection: score this new subscriber immediately ──────────────
+        // Count recent signups from the same country in the last hour (velocity signal)
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+        const recentCountryCount = country ? await db.subscriber.count({
+            where: { country, subscribedAt: { gte: oneHourAgo } },
+        }) : 0
+        const botScore = calcSubscribeBotScore(normalizedEmail, name || null, country || null, recentCountryCount)
+        if (botScore >= 70) {
+            // Safety: never auto-suppress a registered user account
+            const existingUser = await db.user.findFirst({ where: { email: normalizedEmail }, select: { id: true } })
+            if (!existingUser) {
+                // High-risk bot — suppress immediately and deactivate
+                await suppressEmail(normalizedEmail, 'bot', `Auto-detected at subscribe: score ${botScore}`, 'subscribe')
+                console.warn(`[subscribe] HIGH-RISK BOT suppressed: ${normalizedEmail} (score=${botScore}, country=${country})`)
+                // Return success silently — don't reveal detection to the bot
+                return NextResponse.json({ success: true, confirmed: true })
+            }
         }
 
         sendTransactionalEmail({

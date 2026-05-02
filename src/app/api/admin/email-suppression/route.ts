@@ -124,6 +124,74 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: true, purged: count })
         }
 
+        case 'purge_bots': {
+            const threshold = typeof body.threshold === 'number' ? body.threshold : 70
+            // Find all subscribers above the bot score threshold
+            const botSubs = await prisma.subscriber.findMany({
+                where: { botScore: { gte: threshold } },
+                select: { email: true, botScore: true },
+            })
+            if (botSubs.length === 0) {
+                return NextResponse.json({ success: true, purged: 0 })
+            }
+
+            // ── Safety exclusions: protect real subscribers ──────────────────────
+            const botEmails = botSubs.map(s => s.email)
+
+            // 1. Exclude anyone who has opened an email — real engagement
+            const openers = await prisma.emailLog.findMany({
+                where: { to: { in: botEmails }, openedAt: { not: null } },
+                select: { to: true },
+                distinct: ['to'],
+            })
+            const openerSet = new Set(openers.map(o => o.to.toLowerCase()))
+
+            // 2. Exclude converted subscribers (registered users)
+            const users = await prisma.user.findMany({
+                where: { email: { in: botEmails, mode: 'insensitive' } },
+                select: { email: true },
+            })
+            const userSet = new Set(users.map(u => u.email.toLowerCase()))
+
+            // Only purge if NOT engaged and NOT a registered user
+            const eligible = botSubs.filter(s =>
+                !openerSet.has(s.email.toLowerCase()) &&
+                !userSet.has(s.email.toLowerCase())
+            )
+            if (eligible.length === 0) {
+                return NextResponse.json({ success: true, purged: 0, message: 'All high-risk subscribers have engagement signals — none purged.' })
+            }
+
+            const eligibleEmails = eligible.map(s => s.email)
+            // Suppress each confirmed bot email
+            await Promise.all(eligible.map(sub =>
+                prisma.emailSuppression.upsert({
+                    where: { email: sub.email },
+                    create: {
+                        email: sub.email,
+                        reason: 'bot',
+                        bounceType: 'permanent',
+                        source: 'admin',
+                        detail: `Auto-suppressed: bot score ${sub.botScore} >= threshold ${threshold}`,
+                    },
+                    update: {
+                        reason: 'bot',
+                        bounceType: 'permanent',
+                        source: 'admin',
+                        detail: `Auto-suppressed: bot score ${sub.botScore} >= threshold ${threshold}`,
+                        removedAt: null,
+                        removedBy: null,
+                    },
+                })
+            ))
+            // Permanently delete only the confirmed-bot subscriber rows
+            const del = await prisma.subscriber.deleteMany({
+                where: { email: { in: eligibleEmails } },
+            })
+            logAdminAction({ actor: session.userId, action: 'PURGE_BOT_SUBSCRIBERS', target: `${del.count} bots (score >= ${threshold}, ${openers.length + users.length} protected by engagement/conversion)` })
+            return NextResponse.json({ success: true, purged: del.count, protected: openers.length + users.length })
+        }
+
         default:
             return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }

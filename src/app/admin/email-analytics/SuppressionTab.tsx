@@ -8,7 +8,7 @@ interface SuppressionRecord {
 }
 
 const badge = (reason: string) => {
-    const colors: Record<string, string> = { hard_bounce: '#ef4444', soft_bounce: '#f59e0b', complaint: '#dc2626', manual: '#8b5cf6', unsubscribe: '#6b7280' }
+    const colors: Record<string, string> = { hard_bounce: '#ef4444', soft_bounce: '#f59e0b', complaint: '#dc2626', manual: '#8b5cf6', unsubscribe: '#6b7280', bot: '#f59e0b' }
     return { display: 'inline-block', fontSize: '0.6rem', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: `${colors[reason] || '#666'}22`, color: colors[reason] || '#666', textTransform: 'uppercase' as const }
 }
 
@@ -90,6 +90,7 @@ export default function SuppressionTab() {
                     { label: 'Soft Bounces', value: stats.soft_bounce || 0, color: '#f59e0b' },
                     { label: 'Complaints', value: stats.complaint || 0, color: '#dc2626' },
                     { label: 'Manual', value: stats.manual || 0, color: '#8b5cf6' },
+                    { label: 'Bots', value: stats.bot || 0, color: '#f59e0b' },
                 ].map(s => (
                     <div key={s.label} style={{ padding: '14px', borderRadius: '10px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '4px' }}>{s.label}</div>
@@ -109,6 +110,7 @@ export default function SuppressionTab() {
                     <option value="soft_bounce">Soft Bounce</option>
                     <option value="complaint">Complaint</option>
                     <option value="manual">Manual</option>
+                    <option value="bot">🤖 Bot</option>
                 </select>
                 <button onClick={() => doAction('purge_subscribers')} disabled={actionLoading === 'purge_subscribers'}
                     style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer' }}>

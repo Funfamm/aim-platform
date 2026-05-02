@@ -46,6 +46,7 @@ export default function AdminSubscribersPage() {
     const [actionLoading, setActionLoading] = useState(false)
     const [toast, setToast]             = useState('')
     const [purging, setPurging]         = useState(false)
+    const [purgingBots, setPurgingBots] = useState(false)
     const [campaign, setCampaign]       = useState<{ eligible: number; lastSentAt: string | null; cooldownActive: boolean } | null>(null)
     const [campaignLoading, setCampaignLoading] = useState(true)
     const [campaignSending, setCampaignSending] = useState(false)
@@ -186,6 +187,46 @@ export default function AdminSubscribersPage() {
         setPurging(false)
     }
 
+    const handlePurgeBots = async () => {
+        setPurgingBots(true)
+        try {
+            // Preview: get count of high-risk bot subscribers
+            const previewRes = await fetch('/api/admin/email-suppression?reason=bot&active=true')
+            const previewData = await previewRes.json()
+            const botCount = previewData.total ?? 0
+
+            // Also count suppressable bots not yet on list by querying subscribers directly
+            const botSubRes = await fetch('/api/admin/subscribers?botRisk=high&limit=1')
+            const botSubData = botSubRes.ok ? await botSubRes.json() : {}
+            const eligible = botSubData.stats?.highRisk ?? botCount
+
+            if (!confirm(
+                `Permanently suppress and delete high-risk bot subscribers (bot score ≥ 70)?\n\n` +
+                `This will:\n• Add all high-risk bots to the suppression list with reason "bot"\n• Permanently delete their subscriber records\n• They cannot re-subscribe\n\nThis cannot be undone. Continue?`
+            )) {
+                setPurgingBots(false)
+                return
+            }
+
+            const res = await fetch('/api/admin/email-suppression', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'purge_bots', threshold: 70 }),
+            })
+            const result = await res.json()
+            if (res.ok) {
+                const protected_ = result.protected ?? 0
+                showToast(`🤖 Purged ${result.purged} bot${result.purged !== 1 ? 's' : ''}${protected_ > 0 ? ` · ${protected_} real subscriber${protected_ !== 1 ? 's' : ''} protected` : ''}`)
+                await fetchData(1)
+            } else {
+                showToast(`❌ ${result.error || 'Purge failed'}`)
+            }
+        } catch {
+            showToast('❌ Purge failed — network error')
+        }
+        setPurgingBots(false)
+    }
+
     const exportCsv = () => {
         const params = new URLSearchParams({ format: 'csv', sort, status })
         if (search) params.set('search', search)
@@ -308,6 +349,20 @@ export default function AdminSubscribersPage() {
                             }}
                         >
                             {purging ? '⏳ Purging…' : '🗑️ Purge Dead'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handlePurgeBots}
+                            disabled={purgingBots}
+                            style={{
+                                padding: '6px 14px', borderRadius: 'var(--radius-md)',
+                                fontSize: '0.78rem', fontWeight: 600, cursor: purgingBots ? 'not-allowed' : 'pointer',
+                                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.22)',
+                                color: '#f59e0b', opacity: purgingBots ? 0.5 : 1, transition: 'all 0.15s',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            {purgingBots ? '⏳ Purging…' : '🤖 Purge Bots'}
                         </button>
                         <button
                             type="button"
