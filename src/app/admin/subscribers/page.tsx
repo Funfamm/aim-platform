@@ -607,7 +607,7 @@ export default function AdminSubscribersPage() {
                                         <td style={{ padding: '10px 14px' }}>
                                             {sub.country ? (
                                                 <span style={{
-                                                    padding: '2px 7px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 600,
+                                                    padding: '2px 7px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 600,
                                                     background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)',
                                                     color: '#818cf8', textTransform: 'uppercase',
                                                 }}>
@@ -620,7 +620,7 @@ export default function AdminSubscribersPage() {
                                         <td style={{ padding: '10px 14px' }}>
                                             <span style={{
                                                 display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                                padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                                                 background: sub.active ? 'rgba(16,185,129,0.1)' : 'rgba(107,114,128,0.1)',
                                                 color: sub.active ? '#10b981' : '#9ca3af',
                                                 border: `1px solid ${sub.active ? 'rgba(16,185,129,0.25)' : 'rgba(107,114,128,0.2)'}`,
@@ -633,7 +633,7 @@ export default function AdminSubscribersPage() {
                                             {sub.botScore >= 70 ? (
                                                 <span style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                                                     background: 'rgba(220,38,38,0.12)', border: '1px solid rgba(220,38,38,0.3)',
                                                     color: '#ef4444',
                                                 }}>
@@ -642,7 +642,7 @@ export default function AdminSubscribersPage() {
                                             ) : sub.botScore >= 40 ? (
                                                 <span style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                                                     background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)',
                                                     color: '#f59e0b',
                                                 }}>
@@ -660,7 +660,7 @@ export default function AdminSubscribersPage() {
                                                 <div>
                                                     <span style={{
                                                         display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                                        padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                        padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                                                         background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)',
                                                         color: '#a78bfa',
                                                     }}>
@@ -681,7 +681,7 @@ export default function AdminSubscribersPage() {
                                             {sub.surveyResponded ? (
                                                 <span style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                                                     background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)',
                                                     color: '#10b981',
                                                 }}>
@@ -690,7 +690,7 @@ export default function AdminSubscribersPage() {
                                             ) : sub.surveySent ? (
                                                 <span style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                                    padding: '2px 8px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    padding: '2px 8px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                                                     background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)',
                                                     color: '#60a5fa',
                                                 }}>
@@ -712,7 +712,7 @@ export default function AdminSubscribersPage() {
                                             {sub.failedSends > 0 ? (
                                                 <span style={{
                                                     display: 'inline-flex', alignItems: 'center', gap: '3px',
-                                                    padding: '2px 7px', borderRadius: '99px', fontSize: '0.68rem', fontWeight: 700,
+                                                    padding: '2px 7px', borderRadius: '6px', fontSize: '0.68rem', fontWeight: 700,
                                                     background: sub.failedSends >= 3 ? 'rgba(239,68,68,0.12)' : 'rgba(245,158,11,0.1)',
                                                     color: sub.failedSends >= 3 ? '#ef4444' : '#f59e0b',
                                                     border: `1px solid ${sub.failedSends >= 3 ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.2)'}`,
