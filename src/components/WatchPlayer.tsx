@@ -245,14 +245,29 @@ export default function WatchPlayer({
         }
     }, [updateVideoRect])
 
-    /* Lock body scroll when mobile portrait lang sheet is open */
+    /* Lock body scroll when lang overlay/sheet is open (any mobile orientation) */
     useEffect(() => {
-        if (isMobile && !isLandscape && showLangMenu) {
+        if (showLangMenu) {
             const prev = document.body.style.overflow
             document.body.style.overflow = 'hidden'
             return () => { document.body.style.overflow = prev }
         }
-    }, [isMobile, isLandscape, showLangMenu])
+    }, [showLangMenu])
+
+    /* Auto-pause video when CC language overlay opens; resume on close */
+    const wasPlayingBeforeLangMenu = useRef(false)
+    useEffect(() => {
+        const vid = videoRef.current
+        if (!vid) return
+        if (showLangMenu && isMobile) {
+            wasPlayingBeforeLangMenu.current = !vid.paused
+            if (!vid.paused) { vid.pause(); setIsPlaying(false) }
+        } else if (!showLangMenu && isMobile && wasPlayingBeforeLangMenu.current) {
+            vid.play().catch(() => {}); setIsPlaying(true)
+            wasPlayingBeforeLangMenu.current = false
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showLangMenu, isMobile])
 
     /* Cleanup blob URLs */
     useEffect(() => {
@@ -738,6 +753,14 @@ export default function WatchPlayer({
                 @keyframes aimSheetIn {
                     from { transform: translateY(100%); }
                     to   { transform: translateY(0); }
+                }
+                @keyframes aimOverlayIn {
+                    from { opacity: 0; }
+                    to   { opacity: 1; }
+                }
+                @keyframes aimOverlayItemIn {
+                    from { opacity: 0; transform: translateY(8px); }
+                    to   { opacity: 1; transform: translateY(0); }
                 }
                 @media (max-width: 640px) {
                     .aim-desktop-only { display: none !important; }
@@ -1416,8 +1439,8 @@ export default function WatchPlayer({
                                                     animation: 'aimFadeIn 0.2s ease',
                                                 }}>{ccStatusText}</div>
                                             )}
-                                            {/* ── Language picker: dropdown in landscape/desktop, bottom-sheet in mobile portrait ── */}
-                                            {showLangMenu && (!isMobile || isLandscape) && (
+                                            {/* ── Language picker: dropdown on desktop, full-screen overlay on mobile (both orientations) ── */}
+                                            {showLangMenu && !isMobile && (
                                                 /* Desktop dropdown — insetInlineEnd so it never clips off-screen in RTL */
                                                 <div style={{
                                                     position: 'absolute', bottom: '110%', insetInlineEnd: 0,
@@ -1427,7 +1450,7 @@ export default function WatchPlayer({
                                                     minWidth: '160px', backdropFilter: 'blur(10px)',
                                                     boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                                                     animation: 'aimFadeIn 0.15s ease',
-                                                    direction: 'ltr',  /* keep language names LTR regardless of page direction */
+                                                    direction: 'ltr',
                                                 }}>
                                                     <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '6px 10px 4px' }}>{tPlayer('subtitles')}</div>
                                                     {ccAvailable.length === 0 && (
@@ -1456,77 +1479,120 @@ export default function WatchPlayer({
                                                         }}>{tPlayer('subtitlesOff')}</button>
                                                 </div>
                                             )}
-                                            {/* Mobile portrait bottom sheet — rendered via portal so it's never clipped */}
-                                            {showLangMenu && isMobile && !isLandscape && typeof document !== 'undefined' && createPortal(
+                                            {/* Mobile: full-screen overlay (portrait + landscape) — pauses video, 2-column grid */}
+                                            {showLangMenu && isMobile && typeof document !== 'undefined' && createPortal(
                                                 <>
-                                                    {/* Backdrop */}
+                                                    {/* Blurred backdrop — covers entire screen */}
                                                     <div
                                                         onClick={() => setShowLangMenu(false)}
                                                         style={{
                                                             position: 'fixed', inset: 0,
-                                                            background: 'rgba(0,0,0,0.6)',
-                                                            backdropFilter: 'blur(4px)',
+                                                            background: 'rgba(0,0,0,0.75)',
+                                                            backdropFilter: 'blur(12px)',
+                                                            WebkitBackdropFilter: 'blur(12px)',
                                                             zIndex: 99998,
+                                                            animation: 'aimOverlayIn 0.2s ease',
                                                         }}
                                                     />
-                                                    {/* Sheet */}
-                                                    <div style={{
-                                                        position: 'fixed', bottom: 0, left: 0, right: 0,
-                                                        background: 'rgba(13,15,20,0.98)',
-                                                        borderTop: '1px solid rgba(212,168,83,0.25)',
-                                                        borderRadius: '20px 20px 0 0',
-                                                        zIndex: 99999,
-                                                        maxHeight: '65dvh',
-                                                        overflowY: 'auto',
-                                                        paddingBottom: 'env(safe-area-inset-bottom)',
-                                                        animation: 'aimSheetIn 0.25s cubic-bezier(0.32,0.72,0,1)',
-                                                    }}>
-                                                        {/* Handle */}
-                                                        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '12px', paddingBottom: '4px' }}>
-                                                            <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
-                                                        </div>
-                                                        {/* Title */}
-                                                        <div style={{
-                                                            fontSize: '0.78rem', fontWeight: 700,
-                                                            textTransform: 'uppercase', letterSpacing: '0.08em',
-                                                            color: 'var(--accent-gold)', padding: '8px 20px 12px',
-                                                            borderBottom: '1px solid rgba(255,255,255,0.07)',
-                                                        }}>{tPlayer('subtitles')}</div>
-                                                        {/* Rows — 44px min-height for touch targets */}
-                                                        <div style={{ padding: '8px 12px' }}>
-                                                            {ccAvailable.map(lang => (
-                                                                <button key={lang}
-                                                                    onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
+                                                    {/* Overlay content — centered, scrollable */}
+                                                    <div
+                                                        onClick={() => setShowLangMenu(false)}
+                                                        style={{
+                                                            position: 'fixed', inset: 0,
+                                                            zIndex: 99999,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            padding: 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+                                                            animation: 'aimOverlayIn 0.25s ease',
+                                                        }}
+                                                    >
+                                                        <div
+                                                            onClick={e => e.stopPropagation()}
+                                                            style={{
+                                                                width: '90%', maxWidth: '440px', maxHeight: '80dvh',
+                                                                overflowY: 'auto',
+                                                                background: 'rgba(13,15,20,0.95)',
+                                                                border: '1px solid rgba(212,168,83,0.25)',
+                                                                borderRadius: '16px',
+                                                                padding: '20px',
+                                                                boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+                                                            }}
+                                                        >
+                                                            {/* Header */}
+                                                            <div style={{
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                marginBottom: '16px', paddingBottom: '12px',
+                                                                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                                            }}>
+                                                                <div style={{
+                                                                    fontSize: '0.82rem', fontWeight: 700,
+                                                                    textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                                    color: 'var(--accent-gold)',
+                                                                }}>{tPlayer('subtitles')}</div>
+                                                                <button
+                                                                    onClick={() => setShowLangMenu(false)}
                                                                     style={{
-                                                                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                        width: '100%', minHeight: '44px', padding: '8px 12px',
-                                                                        background: ccLang === lang && ccEnabled ? 'rgba(212,168,83,0.1)' : 'transparent',
-                                                                        border: 'none', borderRadius: '10px',
-                                                                        fontSize: '1rem', cursor: 'pointer',
-                                                                        color: ccLang === lang && ccEnabled ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                                                                        fontFamily: 'inherit',
+                                                                        background: 'rgba(255,255,255,0.08)', border: 'none',
+                                                                        borderRadius: '50%', width: '32px', height: '32px',
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                        cursor: 'pointer', color: 'var(--text-secondary)',
                                                                         WebkitTapHighlightColor: 'transparent',
-                                                                    }}>
-                                                                    <span>{LANGUAGE_NAMES[lang] || lang}</span>
-                                                                    {ccLang === lang && ccEnabled && (
-                                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                                            <polyline points="20 6 9 17 4 12" />
-                                                                        </svg>
-                                                                    )}
+                                                                    }}
+                                                                >
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                                        <line x1="18" y1="6" x2="6" y2="18" />
+                                                                        <line x1="6" y1="6" x2="18" y2="18" />
+                                                                    </svg>
                                                                 </button>
-                                                            ))}
-                                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '8px 4px' }} />
+                                                            </div>
+                                                            {/* 2-column grid of languages */}
+                                                            <div style={{
+                                                                display: 'grid',
+                                                                gridTemplateColumns: ccAvailable.length > 4 ? 'repeat(2, 1fr)' : '1fr',
+                                                                gap: '6px',
+                                                            }}>
+                                                                {ccAvailable.map((lang, i) => (
+                                                                    <button key={lang}
+                                                                        onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
+                                                                        style={{
+                                                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                            minHeight: '48px', padding: '10px 14px',
+                                                                            background: ccLang === lang && ccEnabled
+                                                                                ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
+                                                                            border: ccLang === lang && ccEnabled
+                                                                                ? '1px solid rgba(212,168,83,0.35)' : '1px solid rgba(255,255,255,0.06)',
+                                                                            borderRadius: '10px',
+                                                                            fontSize: '0.9rem', cursor: 'pointer',
+                                                                            color: ccLang === lang && ccEnabled
+                                                                                ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                                                            fontFamily: 'inherit',
+                                                                            WebkitTapHighlightColor: 'transparent',
+                                                                            animation: `aimOverlayItemIn 0.2s ease ${i * 0.03}s both`,
+                                                                        }}
+                                                                    >
+                                                                        <span>{LANGUAGE_NAMES[lang] || lang}</span>
+                                                                        {ccLang === lang && ccEnabled && (
+                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                                                <polyline points="20 6 9 17 4 12" />
+                                                                            </svg>
+                                                                        )}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                            {/* Turn off button */}
+                                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '12px 0' }} />
                                                             <button
                                                                 onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
                                                                 style={{
-                                                                    display: 'flex', alignItems: 'center',
-                                                                    width: '100%', minHeight: '44px', padding: '8px 12px',
-                                                                    background: !ccEnabled ? 'rgba(255,255,255,0.05)' : 'transparent',
-                                                                    border: 'none', borderRadius: '10px',
-                                                                    fontSize: '1rem', cursor: 'pointer',
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                    width: '100%', minHeight: '48px', padding: '10px 14px',
+                                                                    background: !ccEnabled ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
+                                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                                    borderRadius: '10px',
+                                                                    fontSize: '0.9rem', cursor: 'pointer',
                                                                     color: 'var(--text-tertiary)', fontFamily: 'inherit',
                                                                     WebkitTapHighlightColor: 'transparent',
-                                                                }}>
+                                                                }}
+                                                            >
                                                                 {tPlayer('subtitlesOff')}
                                                             </button>
                                                         </div>
