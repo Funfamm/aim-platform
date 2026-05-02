@@ -57,12 +57,17 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
     if (!project) notFound()
 
-    // Block direct access to unpublished projects
-    if (!project.published) notFound()
-
-    // Enforce trailer access — trailers are locked behind login (same as films)
+    // Fetch session early — needed for both the admin preview bypass and trailer logic
     const session = await getUserSession()
     const isLoggedIn = !!session?.userId
+
+    // Block direct access to unpublished projects — admins can preview
+    if (!project.published) {
+        const isAdmin = session?.role === 'admin' || session?.role === 'superadmin'
+        if (!isAdmin) notFound()
+    }
+
+    // Enforce trailer access — trailers are locked behind login (same as films)
     let siteAllowTrailers = true
     try {
         const ss = await prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true } })

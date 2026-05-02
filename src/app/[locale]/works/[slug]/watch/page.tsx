@@ -63,8 +63,11 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
 
     if (!project) notFound()
 
-    // Block watch access to unpublished projects (Watch Party has its own route)
-    if (!project.published) notFound()
+    // Block watch access to unpublished projects — admins can preview
+    if (!project.published) {
+        const isAdmin = session?.role === 'admin' || session?.role === 'superadmin'
+        if (!isAdmin) notFound()
+    }
 
     // Record watch history — upsert on the most recent existing row so we
     // never overwrite completePct (resume position) with a blank new record.

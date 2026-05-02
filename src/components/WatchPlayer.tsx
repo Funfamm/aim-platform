@@ -73,7 +73,7 @@ export default function WatchPlayer({
     const watchedSecsRef = useRef(0) // accumulated watch seconds
 
     /* ── Derived ── */
-    const isSeries = project.projectType === 'series' && project.episodes.length > 0
+    const isSeries = (project.projectType === 'series' || project.projectType === 'shorts') && project.episodes.length > 0
 
     /* ── Playback state ── */
     const [activeEpisode, setActiveEpisode] = useState<Episode | null>(

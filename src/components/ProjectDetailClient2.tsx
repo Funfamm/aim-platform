@@ -265,7 +265,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                                 }} />
                                 {status.label}
                             </span>
-                            {project.projectType === 'series' && (
+                            {(project.projectType === 'series' || project.projectType === 'shorts') && (
                                 <span style={{
                                     display: 'inline-flex', marginLeft: '8px',
                                     fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.14em',
@@ -275,7 +275,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                                     padding: '4px 12px',
                                     borderRadius: 'var(--radius-full)',
                                     border: '1px solid rgba(96,165,250,0.25)',
-                                }}>{t('series')}</span>
+                                }}>{project.projectType === 'shorts' ? '🎬 Shorts' : t('series')}</span>
                             )}
                         </div>
 
@@ -318,7 +318,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                             )}
                             {project.year && <span>{project.year}</span>}
                             {project.duration && <span>{project.duration}</span>}
-                            {project.projectType === 'series' && project.episodes.length > 0 && (
+                            {(project.projectType === 'series' || project.projectType === 'shorts') && project.episodes.length > 0 && (
                                 <span>{project.episodes.length} {project.episodes.length !== 1 ? t('episodes') : t('episode')}</span>
                             )}
                         </div>
@@ -584,8 +584,8 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                                 </button>
                             )}
 
-                            {/* Episodes list for series */}
-                            {project.projectType === 'series' && project.episodes.length > 0 && (() => {
+                            {/* Episodes list for series and shorts */}
+                            {(project.projectType === 'series' || project.projectType === 'shorts') && project.episodes.length > 0 && (() => {
                                 const publishedEps = project.episodes.filter(e => e.published !== false)
                                 const seasons = [...new Set(publishedEps.map(e => e.season))].sort((a, b) => a - b)
                                 const filteredEps = seasons.length > 1

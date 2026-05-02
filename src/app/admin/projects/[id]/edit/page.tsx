@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { useLocale } from 'next-intl'
 import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
-import { TOTAL_SUBTITLE_LANGS, requiresTranslationGate } from '@/config/subtitles'
+import { TOTAL_SUBTITLE_LANGS, SUBTITLE_TARGET_LANGS, requiresTranslationGate } from '@/config/subtitles'
 import PublishGateModal from '@/components/admin/PublishGateModal'
 
 /* ── Types ── */
@@ -57,6 +58,7 @@ export default function ProjectEditPage() {
     const [subtitleApproval, setSubtitleApproval] = useState('')
 
     // Publish gate
+    const locale = useLocale()
     const [showPublishWarning, setShowPublishWarning] = useState(false)
 
     // Episodes
@@ -114,8 +116,8 @@ export default function ProjectEditPage() {
                     setTranslateStatus(sub.translateStatus ?? 'pending')
                 }).catch(() => {})
             }
-            // Load episodes for series
-            if (p.projectType === 'series') {
+            // Load episodes for series and shorts
+            if (p.projectType === 'series' || p.projectType === 'shorts') {
                 fetch(`/api/admin/episodes?projectId=${projectId}`)
                     .then(r => r.ok ? r.json() : { episodes: [] })
                     .then((data: any) => {
@@ -139,7 +141,20 @@ export default function ProjectEditPage() {
         if (!form.title || !form.description) { setError('Please fill in title and description'); return }
         const needsGate = (form.published || requiresTranslationGate(form.status, form.filmUrl)) && !!form.filmUrl
         if (!override && needsGate && !isNew) {
-            if (translationCount < TOTAL_SUBTITLE_LANGS) { setShowPublishWarning(true); return }
+            // Re-fetch the latest subtitle count right before the gate — avoids stale state
+            // if subtitles were generated after the page was first loaded.
+            let freshCount = translationCount
+            try {
+                const subRes = await fetch(`/api/subtitles/${projectId}?lang=en`)
+                if (subRes.ok) {
+                    const subJson = await subRes.json()
+                    // Filter to target langs only — `available` also contains the source language
+                    const allAvail: string[] = subJson.available ?? []
+                    freshCount = allAvail.filter((l: string) => (SUBTITLE_TARGET_LANGS as readonly string[]).includes(l)).length
+                    setTranslationCount(freshCount)
+                }
+            } catch { /* fall through with cached count */ }
+            if (freshCount < TOTAL_SUBTITLE_LANGS) { setShowPublishWarning(true); return }
         }
         if (allRolls.length > 0 && selectedRollIds.length === 0) {
             setError('🎬 This project must be assigned to at least one Movie Roll before saving.')
@@ -329,11 +344,23 @@ export default function ProjectEditPage() {
             <main className="admin-main">
                 {/* Header */}
                 <div className="admin-header" style={{ marginBottom: 'var(--space-lg)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
                         <button onClick={() => router.push('/admin/projects')} className="btn btn-ghost btn-sm" style={{ padding: '4px 10px' }}>← Back</button>
-                        <h1 className="admin-page-title" style={{ fontSize: '1.3rem' }}>
+                        <h1 className="admin-page-title" style={{ fontSize: '1.3rem', flex: 1 }}>
                             {isNew ? '🎬 New Project' : `✏️ ${originalTitle}`}
                         </h1>
+                        {/* Preview as User — only for saved projects with video content */}
+                        {!isNew && form.slug && (form.filmUrl || episodes.some(e => e.videoUrl)) && (
+                            <a
+                                href={`/${locale}/works/${form.slug}/watch`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn btn-ghost btn-sm"
+                                style={{ fontSize: '0.78rem', border: '1px solid rgba(212,168,83,0.3)', color: 'var(--accent-gold)' }}
+                            >
+                                👁 Preview as User
+                            </a>
+                        )}
                     </div>
                 </div>
 
@@ -425,6 +452,7 @@ export default function ProjectEditPage() {
                                             <option value="movie">Movie</option>
                                             <option value="series">Series</option>
                                             <option value="short">Short Film</option>
+                                            <option value="shorts">Shorts (no trailer)</option>
                                         </select>
                                     </div>
                                 </div>
@@ -449,17 +477,39 @@ export default function ProjectEditPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
                                 <div>
                                     <label className="form-label">Cover Image</label>
-                                    <FileUploader category="projects" accept="image/*" onUpload={(url) => updateField('coverImage', url)} />
-                                    {form.coverImage && <input className="form-input" value={form.coverImage} onChange={e => updateField('coverImage', e.target.value)} style={{ marginTop: 6, fontSize: '0.75rem' }} />}
+                                    <FileUploader
+                                        category="projects" accept="image/*"
+                                        currentUrl={form.coverImage}
+                                        onUpload={(url) => updateField('coverImage', url)}
+                                        label="Cover Image"
+                                    />
                                 </div>
-                                <div>
-                                    <label className="form-label">Trailer URL</label>
-                                    <input className="form-input" value={form.trailerUrl} onChange={e => updateField('trailerUrl', e.target.value)} placeholder="YouTube embed or direct video URL" />
-                                </div>
-                                <div>
-                                    <label className="form-label">Film URL</label>
-                                    <input className="form-input" value={form.filmUrl} onChange={e => updateField('filmUrl', e.target.value)} placeholder="Direct video file URL (R2/CDN)" />
-                                </div>
+
+                                {/* Trailer — hidden for Shorts since they don't use trailers */}
+                                {form.projectType !== 'shorts' && (
+                                    <div>
+                                        <FileUploader
+                                            category="trailers" accept="video/*,image/*"
+                                            maxSizeMB={2000}
+                                            currentUrl={form.trailerUrl}
+                                            onUpload={(url) => updateField('trailerUrl', url)}
+                                            label="Trailer (drag & drop or paste URL)"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Film URL — for movies and short films (not series/shorts which use episodes) */}
+                                {(form.projectType === 'movie' || form.projectType === 'short') && (
+                                    <div>
+                                        <FileUploader
+                                            category="films" accept="video/*,image/*"
+                                            maxSizeMB={5000}
+                                            currentUrl={form.filmUrl}
+                                            onUpload={(url) => updateField('filmUrl', url)}
+                                            label="Film / Main Video (drag & drop or paste URL)"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -507,8 +557,8 @@ export default function ProjectEditPage() {
                         )}
                     </div>
 
-                    {/* ══ EPISODES (series only) ══ */}
-                    {form.projectType === 'series' && (
+                    {/* ══ EPISODES (series + shorts) ══ */}
+                    {(form.projectType === 'series' || form.projectType === 'shorts') && (
                         <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
                             <SectionHeader id="episodes" emoji="📺" title={`Episodes (${episodes.length})`} />
                             {openSections.episodes && (
@@ -543,19 +593,21 @@ export default function ProjectEditPage() {
                                                         placeholder="Episode title" style={{ fontSize: '0.82rem', padding: '6px 8px' }} />
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '8px', marginBottom: '8px' }}>
-                                                <div>
-                                                    <label style={epLabelStyle}>Video URL</label>
-                                                    <input className="form-input" value={ep.videoUrl}
-                                                        onChange={e => updateEpisode(idx, 'videoUrl', e.target.value)}
-                                                        placeholder="CDN video URL" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
-                                                </div>
-                                                <div>
-                                                    <label style={epLabelStyle}>Duration</label>
-                                                    <input className="form-input" value={ep.duration}
-                                                        onChange={e => updateEpisode(idx, 'duration', e.target.value)}
-                                                        placeholder="12 min" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
-                                                </div>
+                                            <div style={{ marginBottom: '8px' }}>
+                                                <FileUploader
+                                                    category="episodes" accept="video/*,image/*"
+                                                    maxSizeMB={5000}
+                                                    currentUrl={ep.videoUrl}
+                                                    compact
+                                                    onUpload={(url) => updateEpisode(idx, 'videoUrl', url)}
+                                                    label="Episode Video (drag & drop or paste URL)"
+                                                />
+                                            </div>
+                                            <div style={{ marginBottom: '8px' }}>
+                                                <label style={epLabelStyle}>Duration</label>
+                                                <input className="form-input" value={ep.duration}
+                                                    onChange={e => updateEpisode(idx, 'duration', e.target.value)}
+                                                    placeholder="e.g. 12 min" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
                                             </div>
                                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
                                                 <div>
