@@ -190,19 +190,22 @@ export default function AdminSubscribersPage() {
     const handlePurgeBots = async () => {
         setPurgingBots(true)
         try {
-            // Preview: get count of high-risk bot subscribers
-            const previewRes = await fetch('/api/admin/email-suppression?reason=bot&active=true')
-            const previewData = await previewRes.json()
-            const botCount = previewData.total ?? 0
+            // Preview: count subscribers stored with botScore >= 70 in the DB
+            const previewRes = await fetch('/api/admin/subscribers?status=suspect_bot&limit=1')
+            const previewData = previewRes.ok ? await previewRes.json() : {}
+            // botStats.highRisk comes from the full-list scan in the subscribers API
+            const highRiskCount = previewData.botStats?.highRisk ?? 0
 
-            // Also count suppressable bots not yet on list by querying subscribers directly
-            const botSubRes = await fetch('/api/admin/subscribers?botRisk=high&limit=1')
-            const botSubData = botSubRes.ok ? await botSubRes.json() : {}
-            const eligible = botSubData.stats?.highRisk ?? botCount
+            if (highRiskCount === 0) {
+                showToast('✅ No high-risk bots found')
+                setPurgingBots(false)
+                return
+            }
 
             if (!confirm(
                 `Permanently suppress and delete high-risk bot subscribers (bot score ≥ 70)?\n\n` +
-                `This will:\n• Add all high-risk bots to the suppression list with reason "bot"\n• Permanently delete their subscriber records\n• They cannot re-subscribe\n\nThis cannot be undone. Continue?`
+                `${highRiskCount} high-risk bot${highRiskCount !== 1 ? 's' : ''} found.\n\n` +
+                `This will:\n• Add all high-risk bots to the suppression list with reason "bot"\n• Permanently delete their subscriber records\n• Subscribers who have opened emails or created accounts are protected\n\nThis cannot be undone. Continue?`
             )) {
                 setPurgingBots(false)
                 return

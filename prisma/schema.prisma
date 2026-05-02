@@ -605,9 +605,12 @@ model Subscriber {
   lastBounceAt   DateTime? // when the last bounce occurred
   suppressedAt   DateTime? // when auto-suppressed
   suppressReason String? // hard_bounce | soft_bounce | complaint | manual
+  // Bot detection
+  botScore       Int       @default(0) // 0-100; >= 70 = high risk, 40-69 = medium
 
   @@index([active])
   @@index([suppressedAt])
+  @@index([botScore])
 }
 
 model EmailLog {

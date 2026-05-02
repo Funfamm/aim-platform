@@ -178,26 +178,27 @@ export async function POST(request: NextRequest) {
         }
 
         // Case 3: New subscriber OR pending (never confirmed) — immediate confirmation + welcome email
-        if (existing && !existing.confirmedAt) {
-            // Pending confirmation — upgrade to active immediately
-            await db.subscriber.update({
-                where: { email: normalizedEmail },
-                data: { active: true, confirmedAt: new Date(), confirmToken: null, locale: userLocale, ...(name ? { name } : {}) },
-            })
-        } else {
-            // Brand new subscriber — create as active immediately (no double opt-in)
-            await db.subscriber.create({
-                data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date(), locale: userLocale, ...(country ? { country } : {}) },
-            })
-        }
-
-        // ── Bot detection: score this new subscriber immediately ──────────────
-        // Count recent signups from the same country in the last hour (velocity signal)
+        // ── Bot detection: compute score before writing subscriber ────────────
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
         const recentCountryCount = country ? await db.subscriber.count({
             where: { country, subscribedAt: { gte: oneHourAgo } },
         }) : 0
         const botScore = calcSubscribeBotScore(normalizedEmail, name || null, country || null, recentCountryCount)
+
+        if (existing && !existing.confirmedAt) {
+            // Pending confirmation — upgrade to active immediately
+            await db.subscriber.update({
+                where: { email: normalizedEmail },
+                data: { active: true, confirmedAt: new Date(), confirmToken: null, locale: userLocale, botScore, ...(name ? { name } : {}) },
+            })
+        } else {
+            // Brand new subscriber — create as active immediately (no double opt-in)
+            await db.subscriber.create({
+                data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date(), locale: userLocale, botScore, ...(country ? { country } : {}) },
+            })
+        }
+
+        // ── Auto-suppress if high-risk bot ────────────────────────────────────
         if (botScore >= 70) {
             // Safety: never auto-suppress a registered user account
             const existingUser = await db.user.findFirst({ where: { email: normalizedEmail }, select: { id: true } })
