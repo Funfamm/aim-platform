@@ -203,6 +203,10 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                 const lt = opts.translations?.[locale] as Record<string, string> | undefined
 
                 if (opts.type === 'announcement') {
+                    // Build per-locale CTA override: use translated ctaText if available
+                    const localizedCta = opts.ctaOverride
+                        ? { ...opts.ctaOverride, text: lt?.ctaText || opts.ctaOverride.text }
+                        : undefined
                     html = announcementEmail(displayTitle, displayMessage, localizedLink ?? opts.link, siteUrl, {
                         badgeText: lt?.badgeText || undefined,
                         buttonText: lt?.buttonText || undefined,
@@ -210,7 +214,7 @@ export async function notifyUser(opts: NotifyUserOptions): Promise<void> {
                         managePrefs: lt?.managePrefs || undefined,
                     // Use the translated body if the admin form stored one for this locale,
                     // otherwise fall back to the English rich HTML
-                    }, opts.imageUrl, lt?.bodyHtml || opts.bodyHtml, locale, opts.ctaOverride)
+                    }, opts.imageUrl, lt?.bodyHtml || opts.bodyHtml, locale, localizedCta)
                 } else if (opts.type === 'new_role') {
                     // Rebuild the email using the localized CTA link for this user's locale.
                     // opts.roleName carries the raw role name — no need to strip the composed
@@ -666,15 +670,19 @@ export async function notifyAnnouncement(
             resolve(null)
         }, 10_000))
 
+        const fieldsToTranslate: Record<string, string> = {
+            title,
+            message,
+            badgeText: 'Platform Announcement',
+            buttonText: link ? 'View Announcement →' : 'View in Notifications →',
+            footerOptIn: "You're receiving this because you opted in to platform announcements.",
+            managePrefs: 'Manage preferences',
+        }
+        // Include custom CTA button text so it gets translated per-locale
+        if (ctaOverride?.text) fieldsToTranslate.ctaText = ctaOverride.text
+
         translations = await Promise.race([
-            translateContent({
-                title,
-                message,
-                badgeText: 'Platform Announcement',
-                buttonText: link ? 'View Announcement →' : 'View in Notifications →',
-                footerOptIn: "You're receiving this because you opted in to platform announcements.",
-                managePrefs: 'Manage preferences',
-            }, 'all').catch((err) => {
+            translateContent(fieldsToTranslate, 'all').catch((err) => {
                 logger.warn('notifications', 'translateContent failed', { error: err })
                 return null
             }),
@@ -704,28 +712,56 @@ export async function notifyAnnouncement(
     }
 
     // ── Newsletter subscribers (queued via EmailQueue) ──────────────────────────
+    // Each subscriber has a `locale` field — group by locale and render per-locale HTML
     if (notifyGroups.subscribers === true) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
         const registeredEmails = await db.user.findMany({ select: { email: true } })
             .then((rows: { email: string }[]) => new Set(rows.map((r: { email: string }) => r.email.toLowerCase())))
 
-        const subscribers = await db.subscriber.findMany({
+        const subscribers: { email: string; name: string | null; locale: string }[] = await db.subscriber.findMany({
             where: { active: true },
-            select: { email: true, name: true },
+            select: { email: true, name: true, locale: true },
         })
 
         // Deduplicate: exclude subscribers who are also registered users
-        const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
+        const uniqueSubs = subscribers.filter(s => !registeredEmails.has(s.email.toLowerCase()))
         logger.info('notifications', `Queuing announcement to ${uniqueSubs.length} newsletter subscribers`)
 
         if (uniqueSubs.length > 0) {
-            const announcementHtml = announcementEmail(title, message, link, siteUrl, undefined, imageUrl, bodyHtml, 'en', ctaOverride)
-            await enqueueBroadcastCampaign(
-                uniqueSubs.map((s: { email: string }) => ({ email: s.email })),
-                () => ({ subject: `📣 ${title} | AIM Studio`, html: announcementHtml }),
-                'subscriber_announcement',
-            )
+            // Group subscribers by locale for per-locale email rendering
+            const byLocale = new Map<string, { email: string }[]>()
+            for (const s of uniqueSubs) {
+                const loc = s.locale || 'en'
+                if (!byLocale.has(loc)) byLocale.set(loc, [])
+                byLocale.get(loc)!.push({ email: s.email })
+            }
+
+            for (const [loc, subs] of byLocale) {
+                const lt = translations?.[loc] as Record<string, string> | undefined
+                const locTitle   = lt?.title   || title
+                const locMessage = lt?.message  || message
+                const locSubject = lt?.title ? `📣 ${lt.title} | AIM Studio` : `📣 ${title} | AIM Studio`
+
+                // Build per-locale CTA override with translated text
+                const locCta = ctaOverride
+                    ? { ...ctaOverride, text: lt?.ctaText || ctaOverride.text }
+                    : undefined
+
+                const locHtml = announcementEmail(locTitle, locMessage, link, siteUrl, {
+                    badgeText:  lt?.badgeText  || undefined,
+                    buttonText: lt?.buttonText || undefined,
+                    footerOptIn: lt?.footerOptIn || undefined,
+                    managePrefs: lt?.managePrefs || undefined,
+                }, imageUrl, lt?.bodyHtml || bodyHtml, loc, locCta)
+
+                logger.info('notifications', `  ↳ ${loc}: ${subs.length} subscribers`)
+                await enqueueBroadcastCampaign(
+                    subs,
+                    () => ({ subject: locSubject, html: locHtml }),
+                    'subscriber_announcement',
+                )
+            }
         }
     }
 
@@ -838,31 +874,47 @@ export async function notifyContentPublish(
     }
 
     // ── Newsletter subscribers (queued via EmailQueue) ────────────────────────────
+    // Each subscriber has a `locale` field — group by locale and render per-locale HTML
     if (notifyGroups.subscribers === true) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
         const registeredEmails = await db.user.findMany({ select: { email: true } })
             .then((rows: { email: string }[]) => new Set(rows.map((r: { email: string }) => r.email.toLowerCase())))
 
-        const subscribers = await db.subscriber.findMany({
+        const subscribers: { email: string; name: string | null; locale: string }[] = await db.subscriber.findMany({
             where: { active: true },
-            select: { email: true, name: true },
+            select: { email: true, name: true, locale: true },
         })
 
         // Deduplicate: exclude subscribers who are also registered users
-        const uniqueSubs = subscribers.filter((s: { email: string }) => !registeredEmails.has(s.email.toLowerCase()))
+        const uniqueSubs = subscribers.filter(s => !registeredEmails.has(s.email.toLowerCase()))
         logger.info('notifications', `Queuing content publish to ${uniqueSubs.length} newsletter subscribers`)
 
         if (uniqueSubs.length > 0) {
-            await enqueueBroadcastCampaign(
-                uniqueSubs.map((s: { email: string }) => ({ email: s.email })),
-                (email: string) => {
-                    const unsubUrl = buildUnsubscribeUrl(link.split('/').slice(0, 3).join('/'), email, 'subscriber')
-                    const html = contentPublishEmail(contentTitle, contentType, link, 'en', status, sponsorData, unsubUrl)
-                    return { subject: `✨ New ${contentType}: ${contentTitle} | AIM Studio`, html }
-                },
-                'subscriber_content_publish',
-            )
+            // Group by locale
+            const byLocale = new Map<string, { email: string }[]>()
+            for (const s of uniqueSubs) {
+                const loc = s.locale || 'en'
+                if (!byLocale.has(loc)) byLocale.set(loc, [])
+                byLocale.get(loc)!.push({ email: s.email })
+            }
+
+            for (const [loc, subs] of byLocale) {
+                const lt = translations?.[loc] as Record<string, string> | undefined
+                const locContentTitle = lt?.contentTitle || projectTitles[loc] || contentTitle
+                const locSubject = `✨ New ${contentType}: ${locContentTitle} | AIM Studio`
+
+                logger.info('notifications', `  ↳ ${loc}: ${subs.length} subscribers`)
+                await enqueueBroadcastCampaign(
+                    subs,
+                    (email: string) => {
+                        const unsubUrl = buildUnsubscribeUrl(link.split('/').slice(0, 3).join('/'), email, 'subscriber')
+                        const html = contentPublishEmail(locContentTitle, contentType, link, loc, status, sponsorData, unsubUrl)
+                        return { subject: locSubject, html }
+                    },
+                    'subscriber_content_publish',
+                )
+            }
         }
     }
 

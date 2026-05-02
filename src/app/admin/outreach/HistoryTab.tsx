@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 type HistoryItem = {
     id: string; title: string; message: string; type?: string; ctaText?: string | null
@@ -18,7 +18,7 @@ export default function HistoryTab() {
     const [typeFilter, setTypeFilter] = useState<string | null>(null)
     const [fetchError, setFetchError] = useState<string | null>(null)
 
-    const fetchHistory = (p: number, type: string | null) => {
+    const fetchHistory = useCallback((p: number, type: string | null) => {
         setLoading(true)
         setHistory([])
         setFetchError(null)
@@ -38,9 +38,9 @@ export default function HistoryTab() {
                 setFetchError(`Failed to load history: ${err.message || 'Network error'}`)
             })
             .finally(() => setLoading(false))
-    }
+    }, [])
 
-    useEffect(() => { fetchHistory(page, typeFilter) }, [page, typeFilter])
+    useEffect(() => { fetchHistory(page, typeFilter) }, [fetchHistory, page, typeFilter])
 
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}><div className="loading-spinner" style={{ margin: '0 auto', width: 28, height: 28 }} /></div>
 
