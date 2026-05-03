@@ -52,9 +52,12 @@ export async function POST(request: NextRequest) {
         // Honeypot: bots fill this hidden field; humans never see it
         if (website) return NextResponse.json({ success: true })
 
-        // ── Cloudflare Turnstile verification ─────────────────────────────────
+        // ── Cloudflare Turnstile verification (MANDATORY when configured) ────
         const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
-        if (turnstileSecret && turnstileToken) {
+        if (turnstileSecret) {
+            if (!turnstileToken) {
+                return NextResponse.json({ error: 'Bot verification required. Please complete the challenge.' }, { status: 403 })
+            }
             try {
                 const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
                     method: 'POST',
