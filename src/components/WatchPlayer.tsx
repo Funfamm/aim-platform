@@ -14,6 +14,7 @@ import FallbackNotice from '@/components/player/FallbackNotice'
 interface Episode {
     id: string; title: string; number: number
     season: number; videoUrl: string | null; duration: string | null
+    description?: string | null; thumbnail?: string | null
 }
 interface WatchProject {
     id: string; title: string; slug: string; tagline: string
@@ -761,6 +762,10 @@ export default function WatchPlayer({
                 @keyframes aimOverlayItemIn {
                     from { opacity: 0; transform: translateY(8px); }
                     to   { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes aimEqBar {
+                    from { height: 3px; }
+                    to   { height: 12px; }
                 }
                 @media (max-width: 640px) {
                     .aim-desktop-only { display: none !important; }
@@ -1656,44 +1661,113 @@ export default function WatchPlayer({
                 {isSeries && (
                     <div style={{
                         marginTop: 'var(--space-lg)', marginBottom: 'var(--space-xl)',
-                        background: 'var(--bg-secondary)',
-                        borderRadius: 'var(--radius-lg)',
-                        border: '1px solid var(--border-subtle)',
-                        padding: 'var(--space-lg)',
-                        maxHeight: '400px', overflowY: 'auto',
+                        padding: '0 var(--space-lg)',
                     }}>
                         <h3 style={{
-                            fontSize: '0.75rem', fontWeight: 600,
-                            textTransform: 'uppercase', letterSpacing: '0.1em',
-                            color: 'var(--accent-gold)', marginBottom: 'var(--space-md)',
-                        }}>Episodes</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            {project.episodes.map(ep => (
-                                <button key={ep.id} onClick={() => playEpisode(ep)} style={{
-                                    display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                                    padding: '0.6rem 0.8rem',
-                                    background: activeEpisode?.id === ep.id ? 'var(--accent-gold-glow)' : 'transparent',
-                                    border: activeEpisode?.id === ep.id ? '1px solid rgba(212,168,83,0.3)' : '1px solid transparent',
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: ep.videoUrl ? 'pointer' : 'not-allowed',
-                                    opacity: ep.videoUrl ? 1 : 0.4,
-                                    textAlign: 'left', width: '100%',
-                                    transition: 'all 0.2s', color: 'var(--text-primary)',
-                                }}>
-                                    <span style={{
-                                        fontSize: '0.7rem', fontWeight: 700,
-                                        color: activeEpisode?.id === ep.id ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                                        minWidth: '28px',
-                                    }}>E{ep.number}</span>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ep.title}</div>
-                                        {ep.duration && <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{ep.duration}</div>}
-                                    </div>
-                                    {activeEpisode?.id === ep.id && (
-                                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
-                                    )}
-                                </button>
-                            ))}
+                            fontSize: '1.1rem', fontWeight: 700,
+                            color: 'var(--text-primary)', marginBottom: 'var(--space-lg)',
+                        }}>{translatedTitle}</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            {project.episodes.map(ep => {
+                                const isActive = activeEpisode?.id === ep.id
+                                const thumbSrc = ep.thumbnail || project.coverImage
+                                return (
+                                    <button
+                                        key={ep.id}
+                                        onClick={() => playEpisode(ep)}
+                                        style={{
+                                            display: 'flex', flexDirection: 'column', gap: '0',
+                                            background: 'none', border: 'none',
+                                            cursor: ep.videoUrl ? 'pointer' : 'not-allowed',
+                                            opacity: ep.videoUrl ? 1 : 0.4,
+                                            textAlign: 'left', width: '100%',
+                                            color: 'var(--text-primary)',
+                                            WebkitTapHighlightColor: 'transparent',
+                                        }}
+                                    >
+                                        {/* Row: Thumbnail + Title/Duration */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: ep.description ? '10px' : '0' }}>
+                                            {/* Thumbnail with play overlay */}
+                                            <div style={{
+                                                position: 'relative', flexShrink: 0,
+                                                width: '140px', height: '80px',
+                                                borderRadius: '6px', overflow: 'hidden',
+                                                background: '#1a1a1a',
+                                                border: isActive ? '2px solid rgba(212,168,83,0.5)' : '2px solid transparent',
+                                                transition: 'border-color 0.2s',
+                                            }}>
+                                                {thumbSrc ? (
+                                                    <img
+                                                        src={thumbSrc}
+                                                        alt={ep.title}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                        loading="lazy"
+                                                    />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)' }} />
+                                                )}
+                                                {/* Play button overlay */}
+                                                <div style={{
+                                                    position: 'absolute', inset: 0,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    background: isActive ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.4)',
+                                                    transition: 'background 0.2s',
+                                                }}>
+                                                    <div style={{
+                                                        width: '32px', height: '32px', borderRadius: '50%',
+                                                        background: 'rgba(0,0,0,0.7)', border: '2px solid rgba(255,255,255,0.8)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    }}>
+                                                        {isActive ? (
+                                                            /* Playing indicator bars */
+                                                            <div style={{ display: 'flex', gap: '2px', alignItems: 'flex-end', height: '12px' }}>
+                                                                {[0, 0.15, 0.3].map((d, i) => (
+                                                                    <div key={i} style={{
+                                                                        width: '3px', background: 'var(--accent-gold)', borderRadius: '1px',
+                                                                        animation: `aimEqBar 0.8s ease-in-out ${d}s infinite alternate`,
+                                                                    }} />
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="white">
+                                                                <polygon points="6 3 20 12 6 21" />
+                                                            </svg>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* Title + Duration */}
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{
+                                                    fontSize: '0.95rem', fontWeight: 600,
+                                                    color: isActive ? 'var(--accent-gold)' : 'var(--text-primary)',
+                                                    marginBottom: '2px',
+                                                }}>
+                                                    {ep.number}. {ep.title}
+                                                </div>
+                                                {ep.duration && (
+                                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
+                                                        {ep.duration}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {/* Description below */}
+                                        {ep.description && (
+                                            <div style={{
+                                                fontSize: '0.82rem', lineHeight: 1.5,
+                                                color: 'var(--text-tertiary)',
+                                                display: '-webkit-box',
+                                                WebkitLineClamp: 3,
+                                                WebkitBoxOrient: 'vertical' as const,
+                                                overflow: 'hidden',
+                                            }}>
+                                                {ep.description}
+                                            </div>
+                                        )}
+                                    </button>
+                                )
+                            })}
                         </div>
                     </div>
                 )}
