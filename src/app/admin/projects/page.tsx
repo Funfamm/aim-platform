@@ -437,9 +437,25 @@ export default function AdminProjectsPage() {
                             setServerJobMsg(s => ({ ...s, [key]: '🤖 Subtitle job queued — worker is transcribing in the background.' }))
                             pollServerJob(pid, d.jobId, 'movie')
                         } else if (r.status === 409) {
-                            setServerJobStatus(s => ({ ...s, [key]: d.status ?? 'processing' }))
-                            setServerJobMsg(s => ({ ...s, [key]: '♻️ A subtitle job is already active for this project.' }))
-                            if (d.jobId) pollServerJob(pid, d.jobId, 'movie')
+                            // Auto-clear stuck job and retry
+                            setServerJobMsg(s => ({ ...s, [key]: '♻️ Clearing stuck job and retrying…' }))
+                            await fetch('/api/admin/subtitle-jobs/clear-stuck', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ projectId: pid }),
+                            })
+                            const retry = await fetch('/api/subtitles/generate', {
+                                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ projectId: pid, videoUrl: saved.filmUrl, mediaType: 'movie' }),
+                            })
+                            const rd = await retry.json().catch(() => ({}))
+                            if (retry.ok && rd.jobId) {
+                                setServerJobId(s => ({ ...s, [key]: rd.jobId }))
+                                setServerJobMsg(s => ({ ...s, [key]: '🤖 Subtitle job queued — worker is transcribing in the background.' }))
+                                pollServerJob(pid, rd.jobId, 'movie')
+                            } else {
+                                setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                                setServerJobMsg(s => ({ ...s, [key]: '⚠️ Could not restart subtitle job.' }))
+                            }
                         } else {
                             setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
                             setServerJobMsg(s => ({ ...s, [key]: '⚠️ Worker not reachable. Set WORKER_URL in Vercel env, or use the manual button.' }))
@@ -993,13 +1009,23 @@ export default function AdminProjectsPage() {
         if (!editingId || !videoUrl) { setError('Episode needs a video URL first'); return }
         setInlineEpSubStatus(prev => ({ ...prev, [epId]: 'generating' }))
         try {
-            const res = await fetch('/api/subtitles/generate', {
+            let res = await fetch('/api/subtitles/generate', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ projectId: editingId, episodeId: epId, videoUrl }),
             })
+            // Auto-clear stuck job and retry once
+            if (res.status === 409) {
+                await fetch('/api/admin/subtitle-jobs/clear-stuck', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId: editingId, episodeId: epId }),
+                })
+                res = await fetch('/api/subtitles/generate', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId: editingId, episodeId: epId, videoUrl }),
+                })
+            }
             if (!res.ok) {
                 const d = await res.json()
-                if (res.status === 409) { setError('Subtitle job already in progress'); setInlineEpSubStatus(prev => ({ ...prev, [epId]: 'error' })); return }
                 throw new Error(d.error || 'Failed')
             }
             const { jobId } = await res.json()

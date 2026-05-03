@@ -267,18 +267,25 @@ export default function ProjectEditPage() {
         if (!videoUrl) { setError('Episode needs a video URL first'); return }
         setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'generating' }))
         try {
-            const res = await fetch('/api/subtitles/generate', {
+            let res = await fetch('/api/subtitles/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ projectId, episodeId: epId, videoUrl }),
             })
+            // Auto-clear stuck job and retry once
+            if (res.status === 409) {
+                await fetch('/api/admin/subtitle-jobs/clear-stuck', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId, episodeId: epId }),
+                })
+                res = await fetch('/api/subtitles/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId, episodeId: epId, videoUrl }),
+                })
+            }
             if (!res.ok) {
                 const d = await res.json()
-                if (res.status === 409) {
-                    // Already running
-                    setError('Subtitle job already in progress for this episode')
-                    return
-                }
                 throw new Error(d.error || 'Failed to start')
             }
             const { jobId } = await res.json()
@@ -728,14 +735,24 @@ export default function ProjectEditPage() {
                                                         setSubGenerating(true)
                                                         setError('')
                                                         try {
-                                                            const res = await fetch('/api/subtitles/generate', {
+                                                            let res = await fetch('/api/subtitles/generate', {
                                                                 method: 'POST',
                                                                 headers: { 'Content-Type': 'application/json' },
                                                                 body: JSON.stringify({ projectId, videoUrl: form.filmUrl }),
                                                             })
+                                                            if (res.status === 409) {
+                                                                await fetch('/api/admin/subtitle-jobs/clear-stuck', {
+                                                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ projectId }),
+                                                                })
+                                                                res = await fetch('/api/subtitles/generate', {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ projectId, videoUrl: form.filmUrl }),
+                                                                })
+                                                            }
                                                             if (!res.ok) {
                                                                 const d = await res.json()
-                                                                if (res.status === 409) { setError('Subtitle job already in progress'); return }
                                                                 throw new Error(d.error || 'Failed to start')
                                                             }
                                                             setSaveSuccess(false)
