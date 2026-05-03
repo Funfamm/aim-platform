@@ -1883,7 +1883,7 @@ export default function AdminProjectsPage() {
 
                                 {/* ── Movie Rolls ── */}
                                 <div className="glass-card" style={{ padding: 'var(--space-lg)', border: rollError ? '1px solid rgba(239,68,68,0.4)' : undefined, background: rollError ? 'rgba(239,68,68,0.04)' : undefined }}>
-                                    <SectionHeader id="rolls" emoji="\ud83c\udf9e\ufe0f" title="Movie Rolls" />
+                                    <SectionHeader id="rolls" emoji="🎞️" title="Movie Rolls" />
                                     {openSections.rolls && (
                                         <div style={{ paddingTop: 'var(--space-sm)' }}>
                                     <div style={{ fontSize: '0.75rem', color: rollError ? '#ef4444' : 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
