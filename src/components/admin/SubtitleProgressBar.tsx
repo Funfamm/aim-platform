@@ -34,16 +34,18 @@ export default function SubtitleProgressBar({ status, compact = false }: Subtitl
     const startTimeRef = useRef<number>(0)
 
     useEffect(() => {
-        if (status === 'done') {
-            setProgress(100)
-            return
-        }
-        if (status === 'error' || status !== 'generating') return
+        if (status === 'error' || (status !== 'generating' && status !== 'done')) return
 
         if (startTimeRef.current === 0) startTimeRef.current = Date.now()
         const startTime = startTimeRef.current
 
         const interval = setInterval(() => {
+            if (status === 'done') {
+                setProgress(100)
+                clearInterval(interval)
+                return
+            }
+
             const elapsed = (Date.now() - startTime) / 1000
 
             // Simulate progress based on typical transcription timing
