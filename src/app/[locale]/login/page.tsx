@@ -24,6 +24,15 @@ export default function LoginPage() {
     const searchParams = useSearchParams()
     const redirectTo = searchParams.get('redirect') || searchParams.get('next') || '/'
 
+    // If user is already authenticated (e.g. just came from Google OAuth),
+    // redirect them away from the login page immediately.
+    const { user: authUser, loading: authLoading } = useAuth()
+    useEffect(() => {
+        if (!authLoading && authUser) {
+            router.replace(redirectTo.startsWith('/') ? redirectTo : '/')
+        }
+    }, [authUser, authLoading, router, redirectTo])
+
     useEffect(() => {
         fetch('/api/auth/providers')
             .then(async (r) => {
@@ -127,6 +136,16 @@ export default function LoginPage() {
         fontSize: '0.9rem',
         outline: 'none',
         transition: 'border-color 0.2s',
+    }
+
+    // Don't render the login form while auth is loading, or if user is
+    // already authenticated (prevents the blink before redirect fires).
+    if (authLoading || authUser) {
+        return (
+            <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>Loading…</div>
+            </main>
+        )
     }
 
     return (
