@@ -122,6 +122,8 @@ export default function AdminProjectsPage() {
     const [reviewProjectId, setReviewProjectId] = useState<string | null>(null)
     const [reviewProjectTitle, setReviewProjectTitle] = useState('')
     const [reviewMediaType, setReviewMediaType] = useState<string>('movie')
+    const [reviewEpisodeId, setReviewEpisodeId] = useState<string | null>(null)
+    const [reviewEpisodeLabel, setReviewEpisodeLabel] = useState<string>('')
     const [reviewData, setReviewData] = useState<ReviewSubtitle | null>(null)
     const [reviewLang, setReviewLang] = useState('en')
     const [reviewLoading, setReviewLoading] = useState(false)
@@ -745,11 +747,13 @@ export default function AdminProjectsPage() {
     const updateField = (field: keyof FormData, value: string | boolean) =>
         setForm(f => ({ ...f, [field]: value }))
 
-    const openReview = async (projectId: string, title: string, mediaType: string = 'movie', episodeId?: string | null) => {
+    const openReview = async (projectId: string, title: string, mediaType: string = 'movie', episodeId?: string | null, episodeLabel?: string) => {
         const requestId = ++reviewRequestRef.current
         setReviewProjectId(projectId)
         setReviewProjectTitle(title)
         setReviewMediaType(mediaType)
+        setReviewEpisodeId(episodeId ?? null)
+        setReviewEpisodeLabel(episodeLabel ?? '')
         setReviewLang('en')
         setReviewData(null)
         setReviewLoading(true)
@@ -1959,11 +1963,16 @@ export default function AdminProjectsPage() {
                                                         </button>
                                                     )
                                                 })()}
-                                                {(serverJobStatus[stateKey] === 'ready' || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial' || count > 0) && (
-                                                    <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title, activeMediaType, activeEpisodeId)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
-                                                        🔍 Review Subtitles
-                                                    </button>
-                                                )}
+                                                {(serverJobStatus[stateKey] === 'ready' || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial' || count > 0) && (() => {
+                                                    const activeEp = activeEpisodeId ? epList.find(ep => ep.id === activeEpisodeId) : null
+                                                    const epLabel = activeEp ? `S${activeEp.season}E${activeEp.number}` : ''
+                                                    return (
+                                                        <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title, activeMediaType, activeEpisodeId, epLabel)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
+                                                            🔍 Review Subtitles
+                                                        </button>
+                                                    )
+                                                })()}
+                                            
                                             </div>
                                             {progress > 0 && progress < 100 && (
                                                 <div style={{ marginBottom: 'var(--space-md)' }}>
@@ -2296,12 +2305,12 @@ export default function AdminProjectsPage() {
                         }}>
                             <div>
                                 <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '2px' }}>
-                                    🔍 {reviewMediaType === 'trailer' ? 'Trailer' : 'Movie'} Subtitle Review
+                                    🔍 {reviewMediaType === 'trailer' ? 'Trailer' : reviewMediaType === 'episode' ? (reviewEpisodeLabel || 'Episode') : 'Movie'} Subtitle Review
                                 </h2>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
                                     {reviewProjectTitle}
-                                    <span style={{ padding: '1px 6px', marginLeft: '6px', fontSize: '0.6rem', fontWeight: 700, borderRadius: '4px', background: reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.3)' : 'rgba(59,130,246,0.3)'}`, color: reviewMediaType === 'trailer' ? '#c084fc' : '#60a5fa' }}>
-                                        {reviewMediaType === 'trailer' ? '🎬 Trailer' : '🎥 Movie'}
+                                    <span style={{ padding: '1px 6px', marginLeft: '6px', fontSize: '0.6rem', fontWeight: 700, borderRadius: '4px', background: reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.12)' : reviewMediaType === 'episode' ? 'rgba(52,211,153,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.3)' : reviewMediaType === 'episode' ? 'rgba(52,211,153,0.3)' : 'rgba(59,130,246,0.3)'}`, color: reviewMediaType === 'trailer' ? '#c084fc' : reviewMediaType === 'episode' ? '#34d399' : '#60a5fa' }}>
+                                        {reviewMediaType === 'trailer' ? '🎬 Trailer' : reviewMediaType === 'episode' ? `📺 ${reviewEpisodeLabel || 'Episode'}` : '🎥 Movie'}
                                     </span>
                                     {reviewData && ` · ${reviewData.segments.length} segments`}
                                     {reviewData?.transcribedWith && ` · ${reviewData.transcribedWith}`}
