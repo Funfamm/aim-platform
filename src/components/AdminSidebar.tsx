@@ -25,6 +25,7 @@ const NAV_ITEMS = [
     { href: '/admin/users', label: '👥 Users' },
     { href: '/admin/audit', label: '🛡️ Audit Log' },
     { href: '/admin/subscribers', label: '📬 Subscribers' },
+    { href: '/admin/notifications/ctas', label: '🔔 Notify Me CTAs' },
     { href: '/admin/outreach', label: '📡 Outreach' },
     { href: '/admin/email-analytics', label: '📧 Email Analytics' },
     { href: '/admin/settings', label: '⚙️ Settings' },

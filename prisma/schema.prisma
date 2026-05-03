@@ -1536,3 +1536,74 @@ model ContentTranslation {
   @@unique([scope, locale])
   @@index([scope, status])
 }
+
+// ── Reusable Notification System ───────────────────────────────────────────────
+// Generalized "Notify Me" CTA system — admin attaches a CTA to any video.
+// Two types: "release" (pre-release interest) and "more" (continuation interest).
+
+/// Email-based notification signups from public end-card CTAs.
+/// Not tied to user accounts — anonymous email capture.
+model NotificationSignup {
+  id               String    @id @default(cuid())
+  email            String    // stored lowercase + trimmed
+  signupTag        String    // e.g. "grandpas_diary_release", links to CtaConfiguration.signupTag
+  notificationType String    // "release" | "more"
+  sourceVideoId    String?   // Project.id that served the CTA
+  language         String    @default("en") // UI locale at signup time
+  country          String?   // ISO 3166-1 alpha-2, auto-detected from request
+  ipHash           String?   // SHA-256 hash of IP for abuse prevention / rate limiting
+  userAgent        String?
+  notifiedAt       DateTime? // set when launch email is sent (dedup gate)
+  unsubscribeToken String    @unique // 64-char hex via crypto.randomBytes(32)
+  createdAt        DateTime  @default(now())
+
+  @@unique([email, signupTag]) // one signup per email per CTA tag
+  @@index([signupTag])
+  @@index([email])
+  @@index([createdAt])
+  @@index([notifiedAt])
+}
+
+/// Per-video CTA configuration — controls what end-card copy appears and when.
+/// Each video can have at most one active CTA at a time.
+model CtaConfiguration {
+  id                    String   @id @default(cuid())
+  videoId               String   // Project.id — the film/video this CTA is attached to
+  notificationType      String   // "release" | "more"
+  signupTag             String   @unique // auto-generated: {project_slug}_{type}
+  status                String   @default("active") // active | disabled | auto_disabled_post_release
+  // ── End-card copy ──
+  eyebrow               String
+  headlineRegular       String
+  headlineItalic        String
+  subtext               String
+  buttonLabel           String
+  footnote              String
+  // ── Modal copy ──
+  modalHeadline         String   @default("Stay in the loop")
+  modalSubtext          String   @default("Drop your email — we'll let you know the moment it's live.")
+  modalButtonLabel      String   @default("Notify Me")
+  modalFootnote         String   @default("No spam. Unsubscribe anytime.")
+  modalPrivacyNote      String   @default("Your email is only used for this notification.")
+  // ── Confirmation copy ──
+  confirmationHeadline  String   @default("You're in.")
+  confirmationSubtext   String   @default("We'll email you the moment it drops.")
+  confirmationButton    String   @default("Got it")
+  // ── Post-release "Now Playing" copy (auto-applied when release CTA converts) ──
+  releasedEyebrow       String   @default("NOW PLAYING")
+  releasedHeadline      String   @default("It's here.")
+  releasedSubtext       String   @default("The wait is over.")
+  releasedButtonLabel   String   @default("▶ Watch Now")
+  // ── Behavior ──
+  triggerSecondsFromEnd Int      @default(5) // seconds before video end to show end-card
+  // ── Translations ──
+  // JSON: Record<locale, { eyebrow, headlineRegular, headlineItalic, subtext, ... }>
+  copyTranslations      String?  @db.Text
+  // ── Audit ──
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  createdBy             String?  // admin user ID who created this CTA
+
+  @@index([videoId])
+  @@index([status])
+}

@@ -85,6 +85,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         } catch (err) {
             console.error('[publish] notifyContentPublish failed:', err)
         }
+
+        // ── Lifecycle: Auto-disable release CTAs on publish ──
+        // When a project is published, any active "release" CTA is automatically
+        // transitioned to "auto_disabled_post_release". The end-card will then
+        // show the "Now Playing" copy with a "Watch Now" button.
+        try {
+            const result = await prisma.ctaConfiguration.updateMany({
+                where: { videoId: id, notificationType: 'release', status: 'active' },
+                data: { status: 'auto_disabled_post_release' },
+            })
+            if (result.count > 0) {
+                console.log(`[publish] Auto-disabled ${result.count} release CTA(s) for project ${id} (${project.title})`)
+            }
+        } catch (err) {
+            console.error('[publish] Failed to auto-disable release CTAs:', err)
+        }
     }
 
     return NextResponse.json(project)

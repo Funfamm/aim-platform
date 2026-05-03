@@ -9,6 +9,9 @@ import { useTranslations, useLocale } from 'next-intl'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
 import { LANGUAGE_NAMES, SUBTITLE_TARGET_LANGS } from '@/config/subtitles'
 import FallbackNotice from '@/components/player/FallbackNotice'
+import NotifyMeEndCard, { type CtaConfig } from '@/components/player/NotifyMeEndCard'
+import NotifyMeModal from '@/components/player/NotifyMeModal'
+import NotifyMeConfirmation from '@/components/player/NotifyMeConfirmation'
 
 /* ─────────────────────────── Types ─────────────────────────── */
 interface Episode {
@@ -120,6 +123,13 @@ export default function WatchPlayer({
     const [ccChecked, setCcChecked]         = useState(false)
     const [showFallbackNotice, setShowFallbackNotice] = useState(false)
     const [activeTrackUrl, setActiveTrackUrl] = useState<string | null>(null)
+
+    /* ── Notify Me CTA state ── */
+    const [ctaConfig, setCtaConfig] = useState<CtaConfig | null>(null)
+    const [showEndCard, setShowEndCard] = useState(false)
+    const [showNotifyModal, setShowNotifyModal] = useState(false)
+    const [showNotifyConfirm, setShowNotifyConfirm] = useState(false)
+    const endCardDismissedRef = useRef(false)
     /* T4-E: Track-level subtitle placement from the backend (desktop) */
     const [subtitlePlacement, setSubtitlePlacement] = useState<{
         verticalAnchor: string
@@ -369,6 +379,14 @@ export default function WatchPlayer({
             })
             .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [project.id])
+
+    /* Fetch Notify Me CTA config for this video */
+    useEffect(() => {
+        fetch(`/api/notify-me/cta/${project.id}`)
+            .then(r => r.json())
+            .then(data => { if (data.cta) setCtaConfig(data.cta) })
+            .catch(() => {})
     }, [project.id])
 
     /* Controls auto-hide */
@@ -677,6 +695,13 @@ export default function WatchPlayer({
         liveProgressRef.current.currentTime = vid.currentTime
         if (vid.buffered.length > 0) {
             setBuffered(vid.buffered.end(vid.buffered.length - 1))
+        }
+        // ── Notify Me end-card trigger ──
+        if (ctaConfig && !endCardDismissedRef.current && vid.duration > 0) {
+            const secsLeft = vid.duration - vid.currentTime
+            if (secsLeft <= ctaConfig.triggerSecondsFromEnd && secsLeft >= 0) {
+                if (!showEndCard && !showNotifyModal && !showNotifyConfirm) setShowEndCard(true)
+            }
         }
     }
     const handleLoadedMetadata = () => {
@@ -1038,7 +1063,13 @@ export default function WatchPlayer({
                             onLoadedMetadata={handleLoadedMetadata}
                             onPlay={() => setIsPlaying(true)}
                             onPause={() => setIsPlaying(false)}
-                            onEnded={() => { setIsPlaying(false); sendSessionEnd() }}
+                            onEnded={() => {
+                                setIsPlaying(false); sendSessionEnd()
+                                // Show end-card on video end if CTA is active and not dismissed
+                                if (ctaConfig && !endCardDismissedRef.current && !showEndCard && !showNotifyModal && !showNotifyConfirm) {
+                                    setShowEndCard(true)
+                                }
+                            }}
                             onWaiting={() => setIsLoading(true)}
                             onCanPlay={() => setIsLoading(false)}
                             onSeeked={() => setIsLoading(false)}
@@ -1199,6 +1230,32 @@ export default function WatchPlayer({
                         <FallbackNotice
                             lang={userPreferredLang}
                             langName={LANGUAGE_NAMES[userPreferredLang] || userPreferredLang}
+                        />
+                    )}
+
+                    {/* ── Notify Me End-Card Overlay ── */}
+                    {ctaConfig && (
+                        <NotifyMeEndCard
+                            config={ctaConfig}
+                            visible={showEndCard}
+                            onNotifyClick={() => { setShowEndCard(false); setShowNotifyModal(true) }}
+                            onWatchNow={() => { window.location.href = ctaConfig.watchNowUrl || `/watch/${project.slug}` }}
+                        />
+                    )}
+                    {ctaConfig?.modal && (
+                        <NotifyMeModal
+                            copy={ctaConfig.modal}
+                            signupTag={ctaConfig.signupTag}
+                            visible={showNotifyModal}
+                            onClose={() => { setShowNotifyModal(false); endCardDismissedRef.current = true }}
+                            onSuccess={() => { setShowNotifyModal(false); setShowNotifyConfirm(true) }}
+                        />
+                    )}
+                    {ctaConfig?.confirmation && (
+                        <NotifyMeConfirmation
+                            copy={ctaConfig.confirmation}
+                            visible={showNotifyConfirm}
+                            onClose={() => { setShowNotifyConfirm(false); endCardDismissedRef.current = true }}
                         />
                     )}
 
