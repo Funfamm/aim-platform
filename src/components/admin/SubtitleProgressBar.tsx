@@ -32,8 +32,6 @@ interface SubtitleProgressBarProps {
 export default function SubtitleProgressBar({ status, compact = false }: SubtitleProgressBarProps) {
     const [progress, setProgress] = useState(0)
     const startTimeRef = useRef<number>(0)
-    if (startTimeRef.current === 0) startTimeRef.current = Date.now()
-    const startTime = startTimeRef.current
 
     useEffect(() => {
         if (status === 'done') {
@@ -41,6 +39,9 @@ export default function SubtitleProgressBar({ status, compact = false }: Subtitl
             return
         }
         if (status === 'error' || status !== 'generating') return
+
+        if (startTimeRef.current === 0) startTimeRef.current = Date.now()
+        const startTime = startTimeRef.current
 
         const interval = setInterval(() => {
             const elapsed = (Date.now() - startTime) / 1000
@@ -66,7 +67,7 @@ export default function SubtitleProgressBar({ status, compact = false }: Subtitl
         }, 500)
 
         return () => clearInterval(interval)
-    }, [status, startTime])
+    }, [status])
 
     if (!status || status === 'idle') return null
 
