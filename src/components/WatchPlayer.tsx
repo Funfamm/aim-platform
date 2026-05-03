@@ -1490,7 +1490,7 @@ export default function WatchPlayer({
                                                             background: 'rgba(0,0,0,0.75)',
                                                             backdropFilter: 'blur(12px)',
                                                             WebkitBackdropFilter: 'blur(12px)',
-                                                            zIndex: 99998,
+                                                            zIndex: 9999998,
                                                             animation: 'aimOverlayIn 0.2s ease',
                                                         }}
                                                     />
@@ -1499,7 +1499,7 @@ export default function WatchPlayer({
                                                         onClick={() => setShowLangMenu(false)}
                                                         style={{
                                                             position: 'fixed', inset: 0,
-                                                            zIndex: 99999,
+                                                            zIndex: 9999999,
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                             padding: 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
                                                             animation: 'aimOverlayIn 0.25s ease',
@@ -1508,23 +1508,26 @@ export default function WatchPlayer({
                                                         <div
                                                             onClick={e => e.stopPropagation()}
                                                             style={{
-                                                                width: '90%', maxWidth: '440px', maxHeight: '80dvh',
+                                                                width: isLandscape ? '95%' : '90%',
+                                                                maxWidth: isLandscape ? '600px' : '440px',
+                                                                maxHeight: isLandscape ? '90dvh' : '80dvh',
                                                                 overflowY: 'auto',
                                                                 background: 'rgba(13,15,20,0.95)',
                                                                 border: '1px solid rgba(212,168,83,0.25)',
-                                                                borderRadius: '16px',
-                                                                padding: '20px',
+                                                                borderRadius: isLandscape ? '12px' : '16px',
+                                                                padding: isLandscape ? '12px 16px' : '20px',
                                                                 boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
                                                             }}
                                                         >
                                                             {/* Header */}
                                                             <div style={{
                                                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                marginBottom: '16px', paddingBottom: '12px',
+                                                                marginBottom: isLandscape ? '8px' : '16px',
+                                                                paddingBottom: isLandscape ? '8px' : '12px',
                                                                 borderBottom: '1px solid rgba(255,255,255,0.08)',
                                                             }}>
                                                                 <div style={{
-                                                                    fontSize: '0.82rem', fontWeight: 700,
+                                                                    fontSize: isLandscape ? '0.75rem' : '0.82rem', fontWeight: 700,
                                                                     textTransform: 'uppercase', letterSpacing: '0.1em',
                                                                     color: 'var(--accent-gold)',
                                                                 }}>{tPlayer('subtitles')}</div>
@@ -1532,7 +1535,9 @@ export default function WatchPlayer({
                                                                     onClick={() => setShowLangMenu(false)}
                                                                     style={{
                                                                         background: 'rgba(255,255,255,0.08)', border: 'none',
-                                                                        borderRadius: '50%', width: '32px', height: '32px',
+                                                                        borderRadius: '50%',
+                                                                        width: isLandscape ? '28px' : '32px',
+                                                                        height: isLandscape ? '28px' : '32px',
                                                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                                         cursor: 'pointer', color: 'var(--text-secondary)',
                                                                         WebkitTapHighlightColor: 'transparent',
@@ -1544,24 +1549,27 @@ export default function WatchPlayer({
                                                                     </svg>
                                                                 </button>
                                                             </div>
-                                                            {/* 2-column grid of languages */}
+                                                            {/* Language grid: 3-col in landscape, 2-col in portrait */}
                                                             <div style={{
                                                                 display: 'grid',
-                                                                gridTemplateColumns: ccAvailable.length > 4 ? 'repeat(2, 1fr)' : '1fr',
-                                                                gap: '6px',
+                                                                gridTemplateColumns: isLandscape
+                                                                    ? 'repeat(3, 1fr)'
+                                                                    : (ccAvailable.length > 4 ? 'repeat(2, 1fr)' : '1fr'),
+                                                                gap: isLandscape ? '4px' : '6px',
                                                             }}>
                                                                 {ccAvailable.map((lang, i) => (
                                                                     <button key={lang}
                                                                         onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
                                                                         style={{
                                                                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                            minHeight: '48px', padding: '10px 14px',
+                                                                            minHeight: isLandscape ? '40px' : '48px',
+                                                                            padding: isLandscape ? '6px 12px' : '10px 14px',
                                                                             background: ccLang === lang && ccEnabled
                                                                                 ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
                                                                             border: ccLang === lang && ccEnabled
                                                                                 ? '1px solid rgba(212,168,83,0.35)' : '1px solid rgba(255,255,255,0.06)',
-                                                                            borderRadius: '10px',
-                                                                            fontSize: '0.9rem', cursor: 'pointer',
+                                                                            borderRadius: isLandscape ? '8px' : '10px',
+                                                                            fontSize: isLandscape ? '0.8rem' : '0.9rem', cursor: 'pointer',
                                                                             color: ccLang === lang && ccEnabled
                                                                                 ? 'var(--accent-gold)' : 'var(--text-secondary)',
                                                                             fontFamily: 'inherit',
@@ -1571,7 +1579,7 @@ export default function WatchPlayer({
                                                                     >
                                                                         <span>{LANGUAGE_NAMES[lang] || lang}</span>
                                                                         {ccLang === lang && ccEnabled && (
-                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                                                 <polyline points="20 6 9 17 4 12" />
                                                                             </svg>
                                                                         )}
@@ -1579,16 +1587,17 @@ export default function WatchPlayer({
                                                                 ))}
                                                             </div>
                                                             {/* Turn off button */}
-                                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: '12px 0' }} />
+                                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: isLandscape ? '8px 0' : '12px 0' }} />
                                                             <button
                                                                 onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
                                                                 style={{
                                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                    width: '100%', minHeight: '48px', padding: '10px 14px',
+                                                                    width: '100%', minHeight: isLandscape ? '40px' : '48px',
+                                                                    padding: isLandscape ? '6px 14px' : '10px 14px',
                                                                     background: !ccEnabled ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
                                                                     border: '1px solid rgba(255,255,255,0.08)',
-                                                                    borderRadius: '10px',
-                                                                    fontSize: '0.9rem', cursor: 'pointer',
+                                                                    borderRadius: isLandscape ? '8px' : '10px',
+                                                                    fontSize: isLandscape ? '0.8rem' : '0.9rem', cursor: 'pointer',
                                                                     color: 'var(--text-tertiary)', fontFamily: 'inherit',
                                                                     WebkitTapHighlightColor: 'transparent',
                                                                 }}
