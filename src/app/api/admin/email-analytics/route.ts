@@ -39,8 +39,20 @@ export async function GET(request: Request) {
     const now = new Date()
 
     // ── Period-based date ranges ──────────────────────────────────────────
-    const periodDays = period === 'monthly' ? 90 : period === 'weekly' ? 30 : 7
-    const periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000)
+    // For daily: stats cover today only (start of day in user's tz)
+    // For weekly/monthly: stats cover 30d / 90d as before
+    let periodStart: Date
+    let periodDays: number
+    if (period === 'daily') {
+        periodDays = 1
+        // Compute start-of-today in the user's local timezone
+        const localNow = new Date(now.getTime() - tzOffsetMin * 60 * 1000)
+        const startOfLocalDay = new Date(Date.UTC(localNow.getUTCFullYear(), localNow.getUTCMonth(), localNow.getUTCDate()))
+        periodStart = new Date(startOfLocalDay.getTime() + tzOffsetMin * 60 * 1000)
+    } else {
+        periodDays = period === 'monthly' ? 90 : 30
+        periodStart = new Date(now.getTime() - periodDays * 24 * 60 * 60 * 1000)
+    }
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
 
     // ── Core Stats (all time + period) ────────────────────────────────────

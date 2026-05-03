@@ -204,8 +204,7 @@ export default function EmailAnalyticsPage() {
                                 const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
                                 const end = fmt(now)
                                 if (period === 'daily') {
-                                    const start = new Date(now); start.setDate(start.getDate() - 6)
-                                    return `Last 7 Days (${fmt(start)} – ${end})`
+                                    return `Today (${end})`
                                 }
                                 if (period === 'weekly') {
                                     const start = new Date(now); start.setDate(start.getDate() - 27)
