@@ -166,12 +166,30 @@ export default function ProjectEditPage() {
                         }
                     })
                     .catch(() => {})
-                // Load approval status
+                // Load approval status + detect existing subtitle from admin API
+                // (independent of public subtitlesPublic gate)
                 const aqQs = episodeId ? `projectId=${projectId}&mediaType=episode&episodeId=${episodeId}` : `projectId=${projectId}&mediaType=${mediaType}`
                 fetch(`/api/admin/subtitles?${aqQs}`)
                     .then(r => r.ok ? r.json() : {})
-                    .then((res: { subtitle?: { status?: string } }) => {
+                    .then((res: { subtitle?: { status?: string; segments?: string; translations?: string; translateStatus?: string } }) => {
                         if (res.subtitle?.status) setSubtitleApproval(prev => ({ ...prev, [key]: res.subtitle!.status! }))
+                        // If the admin API confirms a subtitle exists with segments,
+                        // make sure the UI reflects that even if the public API is gated
+                        if (res.subtitle?.segments) {
+                            setSubtitlePhase(s => ({ ...s, [key]: s[key] || 'done' }))
+                            // Count translations from the admin record
+                            let adminCount = 1 // at least the source language
+                            try {
+                                const translations = res.subtitle.translations ? JSON.parse(res.subtitle.translations) : null
+                                if (translations && typeof translations === 'object') {
+                                    adminCount += Object.keys(translations).length
+                                }
+                            } catch { /* ignore parse errors */ }
+                            setTranslationCount(s => ({ ...s, [key]: Math.max(s[key] ?? 0, adminCount) }))
+                            if (res.subtitle.translateStatus) {
+                                setTranslateStatus(s => ({ ...s, [key]: res.subtitle!.translateStatus! }))
+                            }
+                        }
                     })
                     .catch(() => {})
             }

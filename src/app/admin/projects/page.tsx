@@ -240,6 +240,26 @@ export default function AdminProjectsPage() {
                                 }
                             })
                             .catch(() => {})
+                        // Admin API fallback — detect existing subtitles even if subtitlesPublic is false
+                        const aqQs = episodeId ? `projectId=${p.id}&mediaType=episode&episodeId=${episodeId}` : `projectId=${p.id}&mediaType=${mediaType}`
+                        fetch(`/api/admin/subtitles?${aqQs}`)
+                            .then(r => r.ok ? r.json() : {})
+                            .then((res: { subtitle?: { segments?: string; translations?: string; translateStatus?: string } }) => {
+                                if (res.subtitle?.segments) {
+                                    setSubtitlePhase(s => ({ ...s, [key]: s[key] || 'done' }))
+                                    let adminCount = 1
+                                    try {
+                                        const translations = res.subtitle.translations ? JSON.parse(res.subtitle.translations) : null
+                                        if (translations && typeof translations === 'object') adminCount += Object.keys(translations).length
+                                    } catch { /* ignore */ }
+                                    setTranslationCount(s => ({ ...s, [key]: Math.max(s[key] ?? 0, adminCount) }))
+                                    if (res.subtitle.translateStatus) {
+                                        setTranslateStatus(s => ({ ...s, [key]: res.subtitle!.translateStatus! }))
+                                    }
+                                    setSubtitleStatus(s => ({ ...s, [key]: s[key] || `✓ ${adminCount} lang` }))
+                                }
+                            })
+                            .catch(() => {})
                     }
                     if (p.filmUrl)    checkSubtitle('movie')
                     if (p.trailerUrl) checkSubtitle('trailer')
