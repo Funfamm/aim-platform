@@ -57,6 +57,17 @@ export default function PageTransition({ children }: { children: React.ReactNode
             return
         }
 
+        // Auth-related redirects (login, register, verify, forgot-password)
+        // should feel instant — no slide animation, just a fast crossfade.
+        // The slide animation on these routes makes redirects feel glitchy.
+        const authRoutes = ['/login', '/register', '/verify-email', '/forgot-password']
+        const isAuthTransition = authRoutes.some(r => pathname.includes(r) || prevPathname.current.includes(r))
+        if (isAuthTransition) {
+            prevPathname.current = pathname
+            setDisplayChildren(children)
+            return
+        }
+
         // Mobile confirmed: slide exit → enter
         setDirection(dir)
         setStage('exit')

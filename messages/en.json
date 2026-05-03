@@ -872,7 +872,8 @@
     "tooManyAttempts": "Too many failed attempts. Your account is locked for {minutes} minutes.",
     "adminOauthDisallowed": "Admin accounts must sign in with email and password. Please use the form below.",
     "oauthNotConfigured": "OAuth login is not configured. Please contact an administrator.",
-    "oauthFailed": "OAuth sign-in failed. Please try again or use email and password."
+    "oauthFailed": "OAuth sign-in failed. Please try again or use email and password.",
+    "redirecting": "Redirecting…"
   },
   "contact": {
     "label": "Get in Touch",

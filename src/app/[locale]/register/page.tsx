@@ -22,11 +22,18 @@ export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [emailReadOnly, setEmailReadOnly] = useState(false)
     const [providers, setProviders] = useState<{ google: boolean; apple: boolean }>({ google: false, apple: false })
-    const { register } = useAuth()
+    const { register, user: authUser, loading: authLoading } = useAuth()
     const router = useRouter()
 
     const redirectTo = searchParams.get('redirect') || ''
     const utmSource = searchParams.get('utm_source') || ''
+
+    // If user is already authenticated, redirect them away
+    useEffect(() => {
+        if (!authLoading && authUser) {
+            router.replace(redirectTo && redirectTo.startsWith('/') ? redirectTo : '/')
+        }
+    }, [authUser, authLoading, router, redirectTo])
 
     // Decode email from signed token
     useEffect(() => {
@@ -98,6 +105,31 @@ export default function RegisterPage() {
     }
 
     const oauthReturnTo = redirectTo && redirectTo !== '/' ? `?returnTo=${encodeURIComponent(redirectTo)}` : ''
+
+    // Don't render the form while auth is loading, or if user is
+    // already authenticated (prevents form flash before redirect)
+    if (authLoading || authUser) {
+        return (
+            <>
+                <main id="main-content" style={{
+                    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 'calc(80px + var(--space-2xl)) var(--space-lg) var(--space-2xl)', position: 'relative',
+                }}>
+                    <CinematicBackground variant="auth" />
+                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+                        <div style={{
+                            width: '36px', height: '36px', margin: '0 auto var(--space-md)',
+                            border: '3px solid rgba(212,168,83,0.15)',
+                            borderTopColor: 'var(--accent-gold)',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite',
+                        }} />
+                    </div>
+                </main>
+                <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </>
+        )
+    }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

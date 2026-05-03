@@ -142,9 +142,27 @@ export default function LoginPage() {
     // already authenticated (prevents the blink before redirect fires).
     if (authLoading || authUser) {
         return (
-            <main style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>Loading…</div>
-            </main>
+            <>
+                <main id="main-content" style={{
+                    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 'calc(80px + var(--space-2xl)) var(--space-lg) var(--space-2xl)', position: 'relative',
+                }}>
+                    <CinematicBackground variant="auth" />
+                    <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+                        <div style={{
+                            width: '36px', height: '36px', margin: '0 auto var(--space-md)',
+                            border: '3px solid rgba(212,168,83,0.15)',
+                            borderTopColor: 'var(--accent-gold)',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite',
+                        }} />
+                        <div style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem', letterSpacing: '0.03em' }}>
+                            {authUser ? t('redirecting') : ''}
+                        </div>
+                    </div>
+                </main>
+                <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </>
         )
     }
 
