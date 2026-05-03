@@ -1,16 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import { useLocale } from 'next-intl';
+import { useParams } from 'next/navigation';
 
 /** Safely get locale — returns 'en' when rendered outside NextIntlClientProvider */
 function useSafeLocale(): string {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useLocale();
-  } catch {
-    return 'en';
-  }
+  const params = useParams();
+  return (params?.locale as string) || 'en';
 }
 
 // Shape returned by /api/search

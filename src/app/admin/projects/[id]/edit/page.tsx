@@ -1,8 +1,9 @@
 'use client'
+// Force rebuild 1
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useLocale } from 'next-intl'
+
 import AdminSidebar from '@/components/AdminSidebar'
 import FileUploader from '@/components/FileUploader'
 import { TOTAL_SUBTITLE_LANGS, SUBTITLE_TARGET_LANGS, requiresTranslationGate } from '@/config/subtitles'
@@ -58,7 +59,7 @@ export default function ProjectEditPage() {
     const [subtitleApproval, setSubtitleApproval] = useState('')
 
     // Publish gate
-    const locale = useLocale()
+
     const [showPublishWarning, setShowPublishWarning] = useState(false)
 
     // Episodes
@@ -352,7 +353,7 @@ export default function ProjectEditPage() {
                         {/* Preview as User — only for saved projects with video content */}
                         {!isNew && form.slug && (form.filmUrl || episodes.some(e => e.videoUrl)) && (
                             <a
-                                href={`/${locale}/works/${form.slug}/watch`}
+                                href={`/${params?.locale || 'en'}/works/${form.slug}/watch`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="btn btn-ghost btn-sm"

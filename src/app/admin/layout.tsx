@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/auth'
+import { NextIntlClientProvider } from 'next-intl'
 import { CsrfProvider } from '@/components/CsrfProvider'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +12,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         redirect('/en/login?redirect=/admin')
     }
 
-    return <CsrfProvider>{children}</CsrfProvider>
+    return (
+        <NextIntlClientProvider locale="en" messages={{}}>
+            <CsrfProvider>{children}</CsrfProvider>
+        </NextIntlClientProvider>
+    )
 }
 
