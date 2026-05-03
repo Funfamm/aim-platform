@@ -182,6 +182,22 @@ export default function AdminProjectsPage() {
     // Track per-project approval state (refreshed after editor closes)
     const [subtitleApproval, setSubtitleApproval]     = useState<Record<string, string>>({})
 
+    // ── Section collapse state ────────────────────────────────────────────
+    const defaultSections = { basic: true, status: false, media: true, episodes: true, gallery: false, sponsor: false, subtitles: true, rolls: false }
+    const [openSections, setOpenSections] = useState<Record<string, boolean>>(defaultSections)
+    const toggleSection = (id: string) => setOpenSections(s => ({ ...s, [id]: !s[id] }))
+
+    // ── Episode management for inline editor (series / shorts) ────────────
+    type EpisodeRow = {
+        id?: string; number: number; season: number; title: string
+        videoUrl: string; thumbnail: string; description: string; duration: string
+        published: boolean; _new?: boolean
+    }
+    const [inlineEpisodes, setInlineEpisodes] = useState<EpisodeRow[]>([])
+    const [inlineEpSaving, setInlineEpSaving] = useState<string | null>(null)
+    const [inlineEpSubStatus, setInlineEpSubStatus] = useState<Record<string, 'generating' | 'done' | 'error'>>({})
+    const [inlineEpSubLangs, setInlineEpSubLangs] = useState<Record<string, string[]>>({})
+
     // ── Movie Roll assignment (inside project modal) ──────────────────────
     type RollOption = { id: string; title: string; icon: string; displayOn: string; visible: boolean }
     const [allRolls, setAllRolls] = useState<RollOption[]>([])
@@ -225,9 +241,10 @@ export default function AdminProjectsPage() {
         setEditingId(null)
         setForm(EMPTY_FORM)
         setSelectedRollIds([])
+        setInlineEpisodes([])
+        setOpenSections(defaultSections)
         setShowModal(true)
         setError('')
-        // Fetch available rolls
         setRollsLoading(true)
         fetch('/api/admin/movie-rolls')
             .then(r => r.ok ? r.json() : [])
@@ -260,11 +277,20 @@ export default function AdminProjectsPage() {
             sponsorData: p.sponsorData || '',
         })
         setSelectedRollIds([])
+        setOpenSections(defaultSections)
         setShowModal(true)
         setWasPublished(p.published ?? false)
-        // Reset audience checkboxes when opening a project
         setNotifyGroups({ subscribers: false, members: false, cast: false })
         setError('')
+        // Load episodes for series / shorts
+        if (p.projectType === 'series' || p.projectType === 'shorts') {
+            fetch(`/api/admin/episodes?projectId=${p.id}`)
+                .then(r => r.ok ? r.json() : { episodes: [] })
+                .then(d => setInlineEpisodes(d.episodes || []))
+                .catch(() => {})
+        } else {
+            setInlineEpisodes([])
+        }
         // Fetch rolls + current assignments + subtitle approval status in parallel
         setRollsLoading(true)
         Promise.all([
@@ -898,6 +924,89 @@ export default function AdminProjectsPage() {
         setTranslatingId(null)
     }
 
+    // ── Inline SectionHeader ──────────────────────────────────────────────
+    const SectionHeader = ({ id, emoji, title }: { id: string; emoji: string; title: string }) => (
+        <button type="button" onClick={() => toggleSection(id)} style={{
+            display: 'flex', alignItems: 'center', gap: '8px', width: '100%',
+            background: 'none', border: 'none', cursor: 'pointer', padding: '12px 0',
+            fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', textAlign: 'left',
+        }}>
+            <span>{emoji}</span>
+            <span style={{ flex: 1 }}>{title}</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: openSections[id] ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+        </button>
+    )
+
+    // ── Inline episode helpers ────────────────────────────────────────────
+    const addInlineEpisode = () => {
+        const maxNum = inlineEpisodes.reduce((m, e) => Math.max(m, e.number), 0)
+        setInlineEpisodes(prev => [...prev, { number: maxNum + 1, season: 1, title: '', videoUrl: '', thumbnail: '', description: '', duration: '', published: false, _new: true }])
+    }
+    const updateInlineEpisode = (idx: number, field: string, value: string | number | boolean) =>
+        setInlineEpisodes(prev => prev.map((ep, i) => i === idx ? { ...ep, [field]: value } : ep))
+
+    const saveInlineEpisode = async (idx: number) => {
+        if (!editingId) return
+        const ep = inlineEpisodes[idx]
+        if (!ep.title) { setError('Episode title is required'); return }
+        const key = ep.id || `new-${idx}`
+        setInlineEpSaving(key)
+        try {
+            const url = ep.id ? `/api/admin/episodes/${ep.id}` : '/api/admin/episodes'
+            const method = ep.id ? 'PUT' : 'POST'
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...ep, projectId: editingId }) })
+            if (!res.ok) throw new Error('Failed to save')
+            const data = await res.json()
+            setInlineEpisodes(prev => prev.map((e, i) => i === idx ? { ...data.episode, _new: false } : e))
+        } catch { setError('Failed to save episode') }
+        setInlineEpSaving(null)
+    }
+
+    const deleteInlineEpisode = async (idx: number) => {
+        const ep = inlineEpisodes[idx]
+        if (!ep.id) { setInlineEpisodes(prev => prev.filter((_, i) => i !== idx)); return }
+        if (!confirm(`Delete episode "${ep.title}"?`)) return
+        try {
+            await fetch(`/api/admin/episodes/${ep.id}`, { method: 'DELETE' })
+            setInlineEpisodes(prev => prev.filter((_, i) => i !== idx))
+        } catch { setError('Failed to delete episode') }
+    }
+
+    const generateInlineEpSubtitles = async (epId: string, videoUrl: string) => {
+        if (!editingId || !videoUrl) { setError('Episode needs a video URL first'); return }
+        setInlineEpSubStatus(prev => ({ ...prev, [epId]: 'generating' }))
+        try {
+            const res = await fetch('/api/subtitles/generate', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: editingId, episodeId: epId, videoUrl }),
+            })
+            if (!res.ok) {
+                const d = await res.json()
+                if (res.status === 409) { setError('Subtitle job already in progress'); setInlineEpSubStatus(prev => ({ ...prev, [epId]: 'error' })); return }
+                throw new Error(d.error || 'Failed')
+            }
+            const { jobId } = await res.json()
+            const poll = setInterval(async () => {
+                try {
+                    const jr = await fetch(`/api/subtitles/status/${jobId}`)
+                    const jd = await jr.json()
+                    if (jd.status === 'completed') {
+                        clearInterval(poll)
+                        setInlineEpSubStatus(prev => ({ ...prev, [epId]: 'done' }))
+                        fetch(`/api/subtitles/${editingId}?lang=en&episodeId=${epId}`)
+                            .then(r => r.json()).then(d => { if (d.available) setInlineEpSubLangs(prev => ({ ...prev, [epId]: d.available })) }).catch(() => {})
+                    } else if (jd.status === 'failed') {
+                        clearInterval(poll); setInlineEpSubStatus(prev => ({ ...prev, [epId]: 'error' }))
+                    }
+                } catch { /* keep polling */ }
+            }, 5000)
+            setTimeout(() => clearInterval(poll), 600_000)
+        } catch (err) {
+            setInlineEpSubStatus(prev => ({ ...prev, [epId]: 'error' }))
+            setError(err instanceof Error ? err.message : 'Subtitle generation failed')
+        }
+    }
+
     return (
         <div className="admin-layout">
             <AdminSidebar />
@@ -1144,105 +1253,82 @@ export default function AdminProjectsPage() {
                     <div style={{ maxWidth: '720px', margin: '0 auto' }}>
                         {/* Header with Back button */}
                         <div className="admin-header" style={{ marginBottom: 'var(--space-lg)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
                                 <button type="button" onClick={() => setShowModal(false)} className="btn btn-ghost btn-sm" style={{ padding: '4px 10px' }}>← Back</button>
-                                <h1 className="admin-page-title" style={{ fontSize: '1.3rem' }}>
+                                <h1 className="admin-page-title" style={{ fontSize: '1.3rem', flex: 1 }}>
                                     {editingId ? `✏️ ${form.title || 'Edit Project'}` : '🎬 New Project'}
                                 </h1>
+                                {editingId && form.slug && (
+                                    <a href={`/en/works/${form.slug}/watch`} target="_blank" rel="noopener noreferrer"
+                                        className="btn btn-ghost btn-sm"
+                                        style={{ fontSize: '0.72rem', color: 'var(--accent-gold)', border: '1px solid rgba(212,168,83,0.3)' }}
+                                    >👁 Preview</a>
+                                )}
                             </div>
                         </div>
 
                         <form onSubmit={handleSave}>
-                            <div className="admin-form-stack" style={{ gap: 'var(--space-md)' }}>
-                                {/* Title + Slug */}
-                                <div className="admin-form-grid">
-                                    <div>
-                                        <label className="admin-label">Title *</label>
-                                        <input className="admin-input" value={form.title}
-                                            onChange={e => { updateField('title', e.target.value); if (!editingId) updateField('slug', slugify(e.target.value)) }}
-                                            placeholder="e.g. Neon Saints" required />
-                                    </div>
-                                    <div>
-                                        <label className="admin-label">Slug</label>
-                                        <input className="admin-input" value={form.slug}
-                                            onChange={e => updateField('slug', e.target.value)}
-                                            placeholder="auto-generated" style={{ color: 'var(--text-tertiary)' }} />
-                                    </div>
-                                </div>
-
-                                {/* Tagline */}
-                                <div>
-                                    <label className="admin-label">Tagline</label>
-                                    <input className="admin-input" value={form.tagline}
-                                        onChange={e => updateField('tagline', e.target.value)}
-                                        placeholder="A short hook for the project..." />
-                                </div>
-
-                                {/* Description */}
-                                <div>
-                                    <label className="admin-label">Description *</label>
-                                    <textarea className="admin-textarea" rows={4} value={form.description}
-                                        onChange={e => updateField('description', e.target.value)}
-                                        placeholder="Full synopsis or description of the project..." required />
-                                </div>
-
-                                {/* Genre (multi-select pills), Year, Duration */}
-                                <div>
-                                    <label className="admin-label">Genre <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(select all that apply)</span></label>
-                                    {form.genre && (
-                                        <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                                            {form.genre.split(',').filter(Boolean).map(g => (
-                                                <span key={g} style={{
-                                                    fontSize: '0.65rem', fontWeight: 700,
-                                                    color: 'var(--accent-gold)',
-                                                    background: 'rgba(212,168,83,0.12)',
-                                                    border: '1px solid rgba(212,168,83,0.3)',
-                                                    padding: '2px 8px', borderRadius: '20px',
-                                                }}>{g.trim()}</span>
-                                            ))}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                                {/* ── Basic Info ── */}
+                                <div className="glass-card" style={{ padding: 'var(--space-lg)' }}>
+                                    <SectionHeader id="basic" emoji="📝" title="Basic Information" />
+                                    {openSections.basic && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
+                                            <div className="admin-form-grid">
+                                                <div>
+                                                    <label className="admin-label">Title *</label>
+                                                    <input className="admin-input" value={form.title}
+                                                        onChange={e => { updateField('title', e.target.value); if (!editingId) updateField('slug', slugify(e.target.value)) }}
+                                                        placeholder="e.g. Neon Saints" required />
+                                                </div>
+                                                <div>
+                                                    <label className="admin-label">Slug</label>
+                                                    <input className="admin-input" value={form.slug}
+                                                        onChange={e => updateField('slug', e.target.value)}
+                                                        placeholder="auto-generated" style={{ color: 'var(--text-tertiary)' }} />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Tagline</label>
+                                                <input className="admin-input" value={form.tagline} onChange={e => updateField('tagline', e.target.value)} placeholder="A short hook..." />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Description *</label>
+                                                <textarea className="admin-textarea" rows={4} value={form.description} onChange={e => updateField('description', e.target.value)} placeholder="Full synopsis..." required />
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Genre <span style={{ color: 'var(--text-tertiary)', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(select all that apply)</span></label>
+                                                {form.genre && (
+                                                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                                        {form.genre.split(',').filter(Boolean).map(g => (
+                                                            <span key={g} style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-gold)', background: 'rgba(212,168,83,0.12)', border: '1px solid rgba(212,168,83,0.3)', padding: '2px 8px', borderRadius: '20px' }}>{g.trim()}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                                    {['Action','Adventure','Animation','Biography','Comedy','Crime','Documentary','Drama','Fantasy','Historical','Horror','Musical','Mystery','Romance','Sci-Fi','Short Film','Thriller','War','Western'].map(g => {
+                                                        const selected = form.genre?.split(',').map(x => x.trim()).includes(g)
+                                                        return (
+                                                            <button key={g} type="button"
+                                                                onClick={() => { const current = form.genre ? form.genre.split(',').map(x => x.trim()).filter(Boolean) : []; const next = selected ? current.filter(x => x !== g) : [...current, g]; updateField('genre', next.join(', ')) }}
+                                                                style={{ fontSize: '0.65rem', fontWeight: 600, padding: '4px 10px', borderRadius: '20px', cursor: 'pointer', border: selected ? '1px solid rgba(212,168,83,0.5)' : '1px solid rgba(255,255,255,0.1)', background: selected ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)', color: selected ? 'var(--accent-gold)' : 'var(--text-tertiary)', transition: 'all 0.15s' }}
+                                                            >{g}</button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </div>
+                                            <div className="admin-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                                                <div><label className="admin-label">Year</label><input className="admin-input" value={form.year} onChange={e => updateField('year', e.target.value)} placeholder="e.g. 2026" /></div>
+                                                <div><label className="admin-label">Duration</label><input className="admin-input" value={form.duration} onChange={e => updateField('duration', e.target.value)} placeholder="e.g. 12 min" /></div>
+                                            </div>
                                         </div>
                                     )}
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                                        {['Action','Adventure','Animation','Biography','Comedy','Crime','Documentary','Drama','Fantasy','Historical','Horror','Musical','Mystery','Romance','Sci-Fi','Short Film','Thriller','War','Western'].map(g => {
-                                            const selected = form.genre?.split(',').map(x => x.trim()).includes(g)
-                                            return (
-                                                <button key={g} type="button"
-                                                    onClick={() => {
-                                                        const current = form.genre ? form.genre.split(',').map(x => x.trim()).filter(Boolean) : []
-                                                        const next = selected ? current.filter(x => x !== g) : [...current, g]
-                                                        updateField('genre', next.join(', '))
-                                                    }}
-                                                    style={{
-                                                        fontSize: '0.65rem', fontWeight: 600,
-                                                        padding: '4px 10px', borderRadius: '20px', cursor: 'pointer',
-                                                        border: selected ? '1px solid rgba(212,168,83,0.5)' : '1px solid rgba(255,255,255,0.1)',
-                                                        background: selected ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
-                                                        color: selected ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                                                        transition: 'all 0.15s',
-                                                    }}
-                                                >{g}</button>
-                                            )
-                                        })}
-                                    </div>
                                 </div>
-
-                                {/* Year, Duration */}
-                                <div className="admin-form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                                    <div>
-                                        <label className="admin-label">Year</label>
-                                        <input className="admin-input" value={form.year}
-                                            onChange={e => updateField('year', e.target.value)}
-                                            placeholder="e.g. 2026" />
-                                    </div>
-                                    <div>
-                                        <label className="admin-label">Duration</label>
-                                        <input className="admin-input" value={form.duration}
-                                            onChange={e => updateField('duration', e.target.value)}
-                                            placeholder="e.g. 12 min" />
-                                    </div>
-                                </div>
-
-                                {/* Status + Featured */}
+                                {/* \u2500\u2500 Status & Visibility \u2500\u2500 */}
+                                <div className="glass-card" style={{ padding: 'var(--space-lg)' }}>
+                                    <SectionHeader id="status" emoji="\ud83d\udccb" title="Status & Visibility" />
+                                    {openSections.status && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
                                 <div className="admin-form-grid">
                                     <div>
                                         <label className="admin-label">Status</label>
@@ -1301,6 +1387,7 @@ export default function AdminProjectsPage() {
                                             </div>
                                         )}
                                     </div>
+                                </div>
 
                                     {/* Notify Audience — appears when publishing OR scheduling OR re-sending */}
                                     {(form.published || form.publishAt) && !editingId?.startsWith('new') && (
@@ -1420,26 +1507,19 @@ export default function AdminProjectsPage() {
                                             )}
                                         </div>
                                     )}
+                                {/* ── Status section close ── */}
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Cover Image — Drag & Drop */}
-                                <FileUploader
-                                    label="Cover Image"
-                                    accept="image/*"
-                                    category="covers"
-                                    currentUrl={form.coverImage}
-                                    onUpload={url => updateField('coverImage', url)}
-                                    maxSizeMB={10}
-                                    compact
-                                />
-
-                                {/* Media Section */}
-                                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
-                                    <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-md)' }}>
-                                        Media & Content
-                                    </div>
-                                    <div className="admin-form-grid">
-                                        <div>
+                                {/* ── Media & Content ── */}
+                                <div className="glass-card" style={{ padding: 'var(--space-lg)' }}>
+                                    <SectionHeader id="media" emoji="🎬" title="Media & Content" />
+                                    {openSections.media && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
+                                <FileUploader label="Cover Image" accept="image/*" category="covers" currentUrl={form.coverImage} onUpload={url => updateField('coverImage', url)} maxSizeMB={10} compact />
+                                <div className="admin-form-grid">
+                                    <div>
                                             <label className="admin-label">Project Type</label>
                                             <select className="admin-input" value={form.projectType}
                                                 onChange={e => updateField('projectType', e.target.value)}
@@ -1483,45 +1563,76 @@ export default function AdminProjectsPage() {
                                             </div>
                                         </div>
                                     )}
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* —— Episodes (series + shorts) —— */}
-                                {(form.projectType === 'series' || form.projectType === 'shorts') && editingId && (() => {
-                                    const epProject = projects.find(p => p.id === editingId)
-                                    const eps: Array<{ id: string; number: number; season: number; title: string; videoUrl: string | null; duration: string | null; published: boolean }> = (epProject as { episodes?: Array<{ id: string; number: number; season: number; title: string; videoUrl: string | null; duration: string | null; published: boolean }> })?.episodes ?? []
-                                    return (
-                                        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
-                                            <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', marginBottom: 'var(--space-sm)' }}>
-                                                📺 Episodes ({eps.length})
-                                            </div>
-                                            {eps.length === 0 ? (
-                                                <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                                                    No episodes yet. Use the full editor (Edit button) to add and upload episodes.
-                                                </div>
-                                            ) : (
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                    {eps.map(ep => (
-                                                        <div key={ep.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', fontSize: '0.8rem' }}>
-                                                            <span style={{ color: 'var(--accent-gold)', fontWeight: 700, minWidth: '36px' }}>S{ep.season}E{ep.number}</span>
-                                                            <span style={{ flex: 1 }}>{ep.title}</span>
-                                                            {ep.videoUrl
-                                                                ? <span style={{ fontSize: '0.62rem', color: '#34d399', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)', padding: '2px 7px', borderRadius: '99px' }}>▶ Ready</span>
-                                                                : <span style={{ fontSize: '0.62rem', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '99px' }}>No video</span>
-                                                            }
+                                {/* ── Episodes (series + shorts) — full CRUD ── */}
+                                {(form.projectType === 'series' || form.projectType === 'shorts') && editingId && (
+                                    <div className="glass-card" style={{ padding: 'var(--space-lg)' }}>
+                                        <SectionHeader id="episodes" emoji="📺" title={`Episodes (${inlineEpisodes.length})`} />
+                                        {openSections.episodes && (
+                                            <div style={{ paddingTop: 'var(--space-sm)' }}>
+                                                {inlineEpisodes.length === 0 && <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>No episodes yet.</p>}
+                                                {inlineEpisodes.map((ep, idx) => (
+                                                    <div key={ep.id || `new-${idx}`} style={{ border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', padding: 'var(--space-md)', marginBottom: 'var(--space-sm)', background: ep._new ? 'rgba(52,211,153,0.04)' : 'rgba(255,255,255,0.02)' }}>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '60px 60px 1fr', gap: '8px', marginBottom: '8px' }}>
+                                                            <div><label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>S#</label><input className="form-input" type="number" min={1} value={ep.season} onChange={e => updateInlineEpisode(idx, 'season', Number(e.target.value))} style={{ fontSize: '0.82rem', padding: '6px 8px' }} /></div>
+                                                            <div><label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>E#</label><input className="form-input" type="number" min={1} value={ep.number} onChange={e => updateInlineEpisode(idx, 'number', Number(e.target.value))} style={{ fontSize: '0.82rem', padding: '6px 8px' }} /></div>
+                                                            <div><label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>Title *</label><input className="form-input" value={ep.title} onChange={e => updateInlineEpisode(idx, 'title', e.target.value)} placeholder="Episode title" style={{ fontSize: '0.82rem', padding: '6px 8px' }} /></div>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <div style={{ marginTop: 'var(--space-sm)', fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                                                💡 To add/upload episodes, use the full editor via the <strong>Edit</strong> button on the project card.
+                                                        <div style={{ marginBottom: '8px' }}>
+                                                            <FileUploader category="episodes" accept="video/*,image/*" maxSizeMB={5000} currentUrl={ep.videoUrl} compact onUpload={url => updateInlineEpisode(idx, 'videoUrl', url)} label="Episode Video" />
+                                                        </div>
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '8px' }}>
+                                                            <div><label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>Duration</label><input className="form-input" value={ep.duration} onChange={e => updateInlineEpisode(idx, 'duration', e.target.value)} placeholder="e.g. 12 min" style={{ fontSize: '0.78rem', padding: '6px 8px' }} /></div>
+                                                            <div><label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '4px' }}>Description</label><input className="form-input" value={ep.description} onChange={e => updateInlineEpisode(idx, 'description', e.target.value)} placeholder="Short description" style={{ fontSize: '0.78rem', padding: '6px 8px' }} /></div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.78rem' }}>
+                                                                    <input type="checkbox" checked={ep.published} onChange={e => updateInlineEpisode(idx, 'published', e.target.checked)} />
+                                                                    Published
+                                                                </label>
+                                                                {ep.id && ep.videoUrl && (
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                        {inlineEpSubStatus[ep.id] === 'generating' ? <span style={{ fontSize: '0.7rem', color: 'var(--accent-gold)' }}>⏳ Generating…</span>
+                                                                        : inlineEpSubStatus[ep.id] === 'done' ? <span style={{ fontSize: '0.7rem', color: '#34d399' }}>🗨️ {inlineEpSubLangs[ep.id]?.length || 0} langs</span>
+                                                                        : inlineEpSubStatus[ep.id] === 'error' ? <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>❌ Failed</span> : null}
+                                                                        {inlineEpSubStatus[ep.id] !== 'generating' && (
+                                                                            <button type="button" onClick={() => generateInlineEpSubtitles(ep.id!, ep.videoUrl)}
+                                                                                style={{ fontSize: '0.68rem', fontWeight: 600, padding: '3px 8px', borderRadius: '4px', border: 'none', cursor: 'pointer', background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
+                                                                                {inlineEpSubStatus[ep.id] === 'done' ? '🔄 Regen' : '🗨️ Subtitles'}
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: '6px' }}>
+                                                                <button type="button" onClick={() => saveInlineEpisode(idx)} disabled={inlineEpSaving === (ep.id || `new-${idx}`)}
+                                                                    style={{ fontSize: '0.72rem', fontWeight: 600, padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: 'rgba(52,211,153,0.15)', color: '#34d399' }}>
+                                                                    {inlineEpSaving === (ep.id || `new-${idx}`) ? 'Saving…' : ep._new ? '➕ Create' : '💾 Save'}
+                                                                </button>
+                                                                {ep.id && (
+                                                                    <button type="button" onClick={() => deleteInlineEpisode(idx)}
+                                                                        style={{ fontSize: '0.72rem', fontWeight: 600, padding: '4px 12px', borderRadius: '6px', border: 'none', cursor: 'pointer', background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                                                                        🗑
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <button type="button" onClick={addInlineEpisode} style={{ width: '100%', padding: '10px', fontSize: '0.82rem', fontWeight: 600, borderRadius: 'var(--radius-md)', border: '1px dashed rgba(212,168,83,0.3)', background: 'rgba(212,168,83,0.06)', color: 'var(--accent-gold)', cursor: 'pointer', marginTop: 'var(--space-sm)' }}>+ Add Episode</button>
                                             </div>
-                                        </div>
-                                    )
-                                })()}
+                                        )}
+                                    </div>
+                                )}
 
-                                {/* —— Gallery & Credits —— */}
-                                <div className="glass-card" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
-                                    <h4 style={{ marginBottom: 'var(--space-md)', fontSize: '0.95rem', fontWeight: 700 }}>📸 Gallery & Credits</h4>
+                                {/* ── Gallery & Credits ── */}
+                                <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
+                                    <SectionHeader id="gallery" emoji="📸" title="Gallery & Credits" />
+                                    {openSections.gallery && (
                                     <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: 'var(--space-md)' }}>
                                         <div>
                                             <label className="form-label" htmlFor="gallery">Gallery Media <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(images &amp; videos — one URL per line)</span></label>
@@ -1548,11 +1659,14 @@ export default function AdminProjectsPage() {
                                             />
                                         </div>
                                     </div>
+                                    )}
                                 </div>
 
-                                {/* —— Sponsor —— */}
-                                <div className="glass-card" style={{ padding: 'var(--space-xl)', marginTop: 'var(--space-lg)' }}>
-                                    <h4 style={{ marginBottom: 'var(--space-md)', fontSize: '0.95rem', fontWeight: 700 }}>🤝 Project Sponsor</h4>
+                                {/* ── Sponsor ── */}
+                                <div className="glass-card" style={{ padding: 'var(--space-xl)' }}>
+                                    <SectionHeader id="sponsor" emoji="🤝" title="Project Sponsor" />
+                                    {openSections.sponsor && (
+                                        <div style={{ paddingTop: 'var(--space-sm)' }}>
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
                                         Sponsor info will appear in the publish email sent to all subscribers.
                                     </p>
@@ -1582,13 +1696,7 @@ export default function AdminProjectsPage() {
                                                 </div>
                                                 <div>
                                                     <label className="form-label" htmlFor="sponsorLogo">Sponsor Logo URL</label>
-                                                    <input
-                                                        id="sponsorLogo"
-                                                        className="form-input"
-                                                        placeholder="https://cdn.example.com/sponsor-logo.png"
-                                                        value={sd.logoUrl || ''}
-                                                        onChange={e => updateSponsor('logoUrl', e.target.value)}
-                                                    />
+                                                    <input id="sponsorLogo" className="form-input" placeholder="https://cdn.example.com/sponsor-logo.png" value={sd.logoUrl || ''} onChange={e => updateSponsor('logoUrl', e.target.value)} />
                                                     {sd.logoUrl && (
                                                         <div style={{ marginTop: 8 }}>
                                                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1598,21 +1706,19 @@ export default function AdminProjectsPage() {
                                                 </div>
                                                 <div>
                                                     <label className="form-label" htmlFor="sponsorDesc">Short Description</label>
-                                                    <input
-                                                        id="sponsorDesc"
-                                                        className="form-input"
-                                                        placeholder="Brief description of the sponsor"
-                                                        value={sd.description || ''}
-                                                        onChange={e => updateSponsor('description', e.target.value)}
-                                                    />
+                                                    <input id="sponsorDesc" className="form-input" placeholder="Brief description of the sponsor" value={sd.description || ''} onChange={e => updateSponsor('description', e.target.value)} />
                                                 </div>
                                             </div>
                                         )
                                     })()}
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* —— Subtitles & Translation —— */}
-                                {editingId && (() => {
+                                {/* ── Subtitles & Translation ── */}
+                                <div className="glass-card" style={{ padding: 'var(--space-lg)' }}>
+                                    <SectionHeader id="subtitles" emoji="🌍" title="Subtitles & Translation" />
+                                    {openSections.subtitles && editingId && (() => {
                                     const pid = editingId
                                     const project = projects.find(p => p.id === pid)
                                     const movieUrl = project?.filmUrl || form.filmUrl || ''
@@ -1620,7 +1726,7 @@ export default function AdminProjectsPage() {
                                     const hasMovie = Boolean(movieUrl)
                                     const hasTrailer = Boolean(trailerUrl)
                                     if (!hasMovie && !hasTrailer) return (
-                                        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
+                                        <div style={{ paddingTop: 'var(--space-sm)', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
                                             📎 Upload a movie or trailer video above before generating subtitles.
                                         </div>
                                     )
@@ -1773,29 +1879,14 @@ export default function AdminProjectsPage() {
                                         </div>
                                     )
                                 })()}
+                                </div>
 
-                                {/* ── Movie Rolls Assignment ── */}
-                                <div
-                                    id="roll-assignment-section"
-                                    style={{
-                                        borderTop: rollError ? 'none' : '1px solid var(--border-subtle)',
-                                        paddingTop: rollError ? 0 : 'var(--space-md)',
-                                        marginTop: rollError ? 'var(--space-md)' : undefined,
-                                        padding: rollError ? '14px' : undefined,
-                                        borderRadius: rollError ? '10px' : undefined,
-                                        background: rollError ? 'rgba(239,68,68,0.04)' : undefined,
-                                        border: rollError ? '1px solid rgba(239,68,68,0.4)' : undefined,
-                                        transition: 'all 0.2s',
-                                    }}
-                                >
-                                    <div style={{ fontSize: '0.72rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: rollError ? '#ef4444' : 'var(--accent-gold)', marginBottom: 'var(--space-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        🎞️ Movie Rolls
-                                        {rollError && <span style={{ fontSize: '0.65rem', fontWeight: 700, color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '1px 8px', borderRadius: '99px', border: '1px solid rgba(239,68,68,0.25)', textTransform: 'none' }}>⚠ required — pick at least one</span>}
-                                    </div>
+                                {/* ── Movie Rolls ── */}
+                                <div className="glass-card" style={{ padding: 'var(--space-lg)', border: rollError ? '1px solid rgba(239,68,68,0.4)' : undefined, background: rollError ? 'rgba(239,68,68,0.04)' : undefined }}>
+                                    <SectionHeader id="rolls" emoji="\ud83c\udf9e\ufe0f" title="Movie Rolls" />
+                                    {openSections.rolls && (
+                                        <div style={{ paddingTop: 'var(--space-sm)' }}>
                                     <div style={{ fontSize: '0.75rem', color: rollError ? '#ef4444' : 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>
-                                        {rollError
-                                            ? 'A project must belong to at least one roll before it can be saved.'
-                                            : 'Select which rolls this project should appear in. You can choose multiple or all.'}
                                     </div>
                                     {rollsLoading ? (
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', padding: '0.5rem 0' }}>Loading rolls…</div>
@@ -1863,6 +1954,7 @@ export default function AdminProjectsPage() {
                                             })}
                                         </div>
                                     )}
+                                    </div>)}
                                 </div>
 
                                 {error && (
@@ -1872,21 +1964,11 @@ export default function AdminProjectsPage() {
                                         color: 'var(--error)', background: 'rgba(239,68,68,0.1)',
                                     }}>
                                         <span style={{ flex: 1 }}>✗ {error}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setError('')}
-                                            aria-label="Dismiss error"
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)', fontSize: '1rem', lineHeight: 1, padding: '0 2px', flexShrink: 0 }}
-                                        >✕</button>
+                                        <button type="button" onClick={() => setError('')} aria-label="Dismiss error" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)', fontSize: '1rem', lineHeight: 1, padding: '0 2px', flexShrink: 0 }}>✕</button>
                                     </div>
                                 )}
 
-                                <div style={{
-                                    position: 'sticky', bottom: 0, background: 'var(--bg-secondary)',
-                                    borderTop: '1px solid var(--border-subtle)',
-                                    padding: 'var(--space-md) 0', display: 'flex', gap: 'var(--space-md)',
-                                    justifyContent: 'flex-end', zIndex: 10,
-                                }}>
+                                <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg-secondary)', borderTop: '1px solid var(--border-subtle)', padding: 'var(--space-md) 0', display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end', zIndex: 10 }}>
                                     <button type="button" onClick={() => setShowModal(false)} className="btn btn-ghost">Cancel</button>
                                     <button type="submit" className="btn btn-primary" disabled={saving}>
                                         {saving ? 'Saving...' : editingId ? '💾 Save Changes' : '🎬 Create Project'}
