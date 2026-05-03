@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import AdminSidebar from '@/components/AdminSidebar'
+import SubtitleProgressBar from '@/components/admin/SubtitleProgressBar'
 import FileUploader from '@/components/FileUploader'
 import { transcribeVideo } from '@/lib/transcribe-client'
 import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
@@ -92,6 +93,9 @@ type ReviewSubtitle = {
 
 /** Composite state key: ensures subtitle state is always scoped by projectId + mediaType */
 const sk = (pid: string, mt: string) => `${pid}:${mt}`
+/** Episode-aware state key: for episodes, uses the tab key format `ep:${episodeId}` */
+const esk = (pid: string, mediaType: string, episodeId?: string | null) =>
+    episodeId ? sk(pid, `ep:${episodeId}`) : sk(pid, mediaType)
 
 export default function AdminProjectsPage() {
     const router = useRouter()
@@ -158,6 +162,7 @@ export default function AdminProjectsPage() {
     const [editorInitialLandscapePlacement, setEditorInitialLandscapePlacement] = useState<any>(null)
     const [editorUseSeparateMobile, setEditorUseSeparateMobile] = useState(false)
     const [editorMediaType, setEditorMediaType] = useState<string>('movie')
+    const [editorEpisodeId, setEditorEpisodeId] = useState<string | null>(null)
     // Active subtitle tab per project (movie or trailer)
     const [subtitleTab, setSubtitleTab] = useState<Record<string, string>>({})
 
@@ -299,7 +304,22 @@ export default function AdminProjectsPage() {
         if (p.projectType === 'series' || p.projectType === 'shorts') {
             fetch(`/api/admin/episodes?projectId=${p.id}`)
                 .then(r => r.ok ? r.json() : { episodes: [] })
-                .then(d => setInlineEpisodes(d.episodes || []))
+                .then(d => {
+                    const eps = d.episodes || []
+                    setInlineEpisodes(eps)
+                    // Load approval status for each episode with a video
+                    eps.forEach((ep: { id?: string; videoUrl?: string }) => {
+                        if (!ep.id || !ep.videoUrl) return
+                        fetch(`/api/admin/subtitles?projectId=${p.id}&mediaType=episode&episodeId=${ep.id}`)
+                            .then(r2 => r2.ok ? r2.json() : {})
+                            .then((res: { subtitle?: { status?: string } }) => {
+                                if (res.subtitle?.status) {
+                                    setSubtitleApproval(prev => ({ ...prev, [sk(p.id, `ep:${ep.id}`)]: res.subtitle!.status! }))
+                                }
+                            })
+                            .catch(() => {})
+                    })
+                })
                 .catch(() => {})
         } else {
             setInlineEpisodes([])
@@ -487,7 +507,7 @@ export default function AdminProjectsPage() {
 
     /** Poll the server job status every 5s until terminal state */
     const pollServerJob = (pid: string, jobId: string, mediaType: string = 'movie', episodeId?: string | null) => {
-        const key = sk(pid, mediaType)
+        const key = esk(pid, mediaType, episodeId)
         let attempts = 0
         const iv = setInterval(async () => {
             attempts++
@@ -522,7 +542,7 @@ export default function AdminProjectsPage() {
 
     /** Manually trigger server-side subtitle generation */
     const handleServerGenerate = async (pid: string, filmUrl: string, mediaType: string = 'movie', episodeId?: string | null) => {
-        const key = sk(pid, mediaType)
+        const key = esk(pid, mediaType, episodeId)
         const cur = serverJobStatus[key]
         if (cur === 'queued' || cur === 'processing') return
         setServerJobStatus(s => ({ ...s, [key]: 'queued' }))
@@ -557,9 +577,9 @@ export default function AdminProjectsPage() {
      * Delegates all parsing and API logic to subtitle-file-parser.ts (SRP fix).
      * This function only wires React state setters to the upload callbacks.
      */
-    const handleSrtUpload = async (projectId: string, file: File, mediaType: string = 'movie', _episodeId?: string | null) => {
+    const handleSrtUpload = async (projectId: string, file: File, mediaType: string = 'movie', episodeId?: string | null) => {
         const pid = projectId
-        const key = sk(pid, mediaType)
+        const key = esk(pid, mediaType, episodeId)
         await uploadSubtitleFile(pid, file, {
             onPhase:    (phase) => setSubtitlePhase(s    => ({ ...s, [key]: phase })),
             onStatus:   (msg)   => setSubtitleStatus(s   => ({ ...s, [key]: msg })),
@@ -569,7 +589,7 @@ export default function AdminProjectsPage() {
                 setTranslateStatus(s  => ({ ...s, [key]: 'pending' }))
             },
             onError: setError,
-        }, mediaType)
+        }, mediaType, episodeId)
     }
 
 
@@ -578,7 +598,7 @@ export default function AdminProjectsPage() {
      * Extracted from inline card handler so it can be called from the edit modal.
      */
     const handleGenerateSubtitles = async (pid: string, filmUrl: string, mediaType: string = 'movie', episodeId?: string | null) => {
-        const key = sk(pid, mediaType)
+        const key = esk(pid, mediaType, episodeId)
         const isRunning = subtitlePhase[key] === 'transcribing' || subtitlePhase[key] === 'translating'
         if (isRunning) return
 
@@ -781,6 +801,7 @@ export default function AdminProjectsPage() {
             setEditorStatus(subtitle.status || 'pending')
             setEditorProjectId(projectId)
             setEditorMediaType(mediaType)
+            setEditorEpisodeId(episodeId ?? null)
         } catch {
             alert('Could not load subtitles. Try again.')
         }
@@ -1638,10 +1659,14 @@ export default function AdminProjectsPage() {
                                                                     Published
                                                                 </label>
                                                                 {ep.id && ep.videoUrl && (
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                        {inlineEpSubStatus[ep.id] === 'generating' ? <span style={{ fontSize: '0.7rem', color: 'var(--accent-gold)' }}>⏳ Generating…</span>
-                                                                        : inlineEpSubStatus[ep.id] === 'done' ? <span style={{ fontSize: '0.7rem', color: '#34d399' }}>🗨️ {inlineEpSubLangs[ep.id]?.length || 0} langs</span>
-                                                                        : inlineEpSubStatus[ep.id] === 'error' ? <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>❌ Failed</span> : null}
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                                                        {inlineEpSubStatus[ep.id] === 'generating' ? (
+                                                                            <SubtitleProgressBar status="generating" compact />
+                                                                        ) : inlineEpSubStatus[ep.id] === 'done' ? (
+                                                                            <span style={{ fontSize: '0.7rem', color: '#34d399' }}>🗨️ {inlineEpSubLangs[ep.id]?.length || 0} langs</span>
+                                                                        ) : inlineEpSubStatus[ep.id] === 'error' ? (
+                                                                            <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>❌ Failed</span>
+                                                                        ) : null}
                                                                         {inlineEpSubStatus[ep.id] !== 'generating' && (
                                                                             <button type="button" onClick={() => generateInlineEpSubtitles(ep.id!, ep.videoUrl)}
                                                                                 style={{ fontSize: '0.68rem', fontWeight: 600, padding: '3px 8px', borderRadius: '4px', border: 'none', cursor: 'pointer', background: 'rgba(99,102,241,0.12)', color: '#818cf8' }}>
@@ -2461,7 +2486,7 @@ export default function AdminProjectsPage() {
             {editorProjectId && (
                 <SubtitleEditor
                     projectId={editorProjectId}
-                    episodeId={null}
+                    episodeId={editorEpisodeId}
                     mediaType={editorMediaType}
                     initialSegments={editorSegments}
                     currentStatus={editorStatus}
@@ -2475,7 +2500,7 @@ export default function AdminProjectsPage() {
                         // Update the approval lookup so the translate gate re-renders
                         setSubtitleApproval(prev => ({
                             ...prev,
-                            [sk(editorProjectId, editorMediaType)]: newStatus,
+                            [esk(editorProjectId, editorMediaType, editorEpisodeId)]: newStatus,
                         }))
                     }}
                 />

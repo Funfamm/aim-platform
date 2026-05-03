@@ -5,9 +5,15 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 import AdminSidebar from '@/components/AdminSidebar'
+import SubtitleProgressBar from '@/components/admin/SubtitleProgressBar'
+import SubtitleEditor, { type SubtitleCue } from '@/components/admin/SubtitleEditor'
 import FileUploader from '@/components/FileUploader'
-import { TOTAL_SUBTITLE_LANGS, SUBTITLE_TARGET_LANGS, requiresTranslationGate } from '@/config/subtitles'
+import { TOTAL_SUBTITLE_LANGS, SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES, requiresTranslationGate, isBlockedStreamingUrl } from '@/config/subtitles'
 import PublishGateModal from '@/components/admin/PublishGateModal'
+import { transcribeVideo } from '@/lib/transcribe-client'
+import { runQC, formatQCSummary } from '@/lib/subtitle-qc'
+import { uploadSubtitleFile } from '@/lib/subtitle-file-parser'
+import { readSSEStream } from '@/lib/sse-reader'
 
 /* ── Types ── */
 type FormData = {
@@ -53,12 +59,45 @@ export default function ProjectEditPage() {
     const [rollsLoading, setRollsLoading] = useState(false)
     const [rollError, setRollError] = useState(false)
 
-    // Subtitle state
-    const [translationCount, setTranslationCount] = useState(0)
-    const [translateStatus, setTranslateStatus] = useState('pending')
-    const [subtitleApproval, setSubtitleApproval] = useState('')
+    // ── Subtitle state (per-tab keyed: same pattern as projects list page) ──
+    /** Composite state key: ensures subtitle state is always scoped */
+    const sk = (mt: string) => `${projectId}:${mt}`
+    /** Episode-aware state key */
+    const esk = (mediaType: string, episodeId?: string | null) =>
+        episodeId ? sk(`ep:${episodeId}`) : sk(mediaType)
+    /** Parse tab key into mediaType + episodeId */
+    const parseSubTab = (tab: string): { mediaType: string; episodeId: string | null } => {
+        if (tab.startsWith('ep:')) return { mediaType: 'episode', episodeId: tab.slice(3) }
+        return { mediaType: tab, episodeId: null }
+    }
+
+    const [subtitleTab, setSubtitleTab] = useState('movie')
+    const [subtitleStatus, setSubtitleStatus] = useState<Record<string, string>>({})
+    const [subtitleProgress, setSubtitleProgress] = useState<Record<string, number>>({})
+    const [subtitlePhase, setSubtitlePhase] = useState<Record<string, 'transcribing' | 'translating' | 'done' | 'error' | null>>({})
+    const [translationCount, setTranslationCount] = useState<Record<string, number>>({})
+    const [translateStatus, setTranslateStatus] = useState<Record<string, string>>({})
+    const [subtitleApproval, setSubtitleApproval] = useState<Record<string, string>>({})
+    // Server-side subtitle job state (faster-whisper worker)
+    type ServerJobStatus = 'idle' | 'queued' | 'processing' | 'ready' | 'failed'
+    const [serverJobId, setServerJobId] = useState<Record<string, string | null>>({})
+    const [serverJobStatus, setServerJobStatus] = useState<Record<string, ServerJobStatus>>({})
+    const [serverJobMsg, setServerJobMsg] = useState<Record<string, string>>({})
+
     const [saveSuccess, setSaveSuccess] = useState(false)
     const [subGenerating, setSubGenerating] = useState(false)
+
+    // ── Subtitle Editor modal ──
+    const [editorProjectId, setEditorProjectId] = useState<string | null>(null)
+    const [editorEpisodeId, setEditorEpisodeId] = useState<string | null>(null)
+    const [editorSegments, setEditorSegments] = useState<SubtitleCue[]>([])
+    const [editorFilmUrl, setEditorFilmUrl] = useState<string | null>(null)
+    const [editorStatus, setEditorStatus] = useState('pending')
+    const [editorMediaType, setEditorMediaType] = useState<string>('movie')
+    const [editorInitialPlacement, setEditorInitialPlacement] = useState<any>(null)
+    const [editorInitialMobilePlacement, setEditorInitialMobilePlacement] = useState<any>(null)
+    const [editorInitialLandscapePlacement, setEditorInitialLandscapePlacement] = useState<any>(null)
+    const [editorUseSeparateMobile, setEditorUseSeparateMobile] = useState(false)
 
     // Publish gate
 
@@ -111,14 +150,35 @@ export default function ProjectEditPage() {
             setAllRolls(rolls)
             setSelectedRollIds(assignedIds)
             const sd = subData as Record<string, any>
-            if (sd?.subtitle?.status) setSubtitleApproval(sd.subtitle.status)
-            // Check subtitle count
-            if (p.filmUrl) {
-                fetch(`/api/subtitles/${projectId}?lang=en`).then(r => r.json()).then(sub => {
-                    setTranslationCount(sub.available?.length ?? 0)
-                    setTranslateStatus(sub.translateStatus ?? 'pending')
-                }).catch(() => {})
+            if (sd?.subtitle?.status) setSubtitleApproval(prev => ({ ...prev, [sk('movie')]: sd.subtitle.status }))
+            // Check subtitle count for movie + trailer
+            const checkSubtitle = (mediaType: string, episodeId?: string) => {
+                const key = episodeId ? sk(`ep:${episodeId}`) : sk(mediaType)
+                const qs = episodeId ? `lang=en&mediaType=episode&episodeId=${episodeId}` : `lang=en&mediaType=${mediaType}`
+                fetch(`/api/subtitles/${projectId}?${qs}`)
+                    .then(r => r.json())
+                    .then(sub => {
+                        const count = sub.available?.length ?? 0
+                        setTranslationCount(s => ({ ...s, [key]: count }))
+                        setTranslateStatus(s => ({ ...s, [key]: sub.translateStatus ?? 'pending' }))
+                        if (count > 0) {
+                            setSubtitlePhase(s => ({ ...s, [key]: 'done' }))
+                        }
+                    })
+                    .catch(() => {})
+                // Load approval status
+                const aqQs = episodeId ? `projectId=${projectId}&mediaType=episode&episodeId=${episodeId}` : `projectId=${projectId}&mediaType=${mediaType}`
+                fetch(`/api/admin/subtitles?${aqQs}`)
+                    .then(r => r.ok ? r.json() : {})
+                    .then((res: { subtitle?: { status?: string } }) => {
+                        if (res.subtitle?.status) setSubtitleApproval(prev => ({ ...prev, [key]: res.subtitle!.status! }))
+                    })
+                    .catch(() => {})
             }
+            if (p.filmUrl) checkSubtitle('movie')
+            if (p.trailerUrl) checkSubtitle('trailer')
+            // Auto-select tab
+            if (!p.filmUrl && p.trailerUrl) setSubtitleTab('trailer')
             // Load episodes for series and shorts
             if (p.projectType === 'series' || p.projectType === 'shorts') {
                 fetch(`/api/admin/episodes?projectId=${projectId}`)
@@ -131,6 +191,12 @@ export default function ProjectEditPage() {
                             description: e.description || '', thumbnail: e.thumbnail || '',
                             published: e.published ?? false,
                         })))
+                        // Check subtitle status for each episode with video
+                        eps.forEach((e: any) => { if (e.id && e.videoUrl) checkSubtitle('episode', e.id) })
+                        // Auto-select first episode tab if no movie/trailer
+                        if (!p.filmUrl && !p.trailerUrl && eps.length > 0 && eps[0].id) {
+                            setSubtitleTab(`ep:${eps[0].id}`)
+                        }
                     })
                     .catch(() => {})
             }
@@ -146,7 +212,8 @@ export default function ProjectEditPage() {
         if (!override && needsGate && !isNew) {
             // Re-fetch the latest subtitle count right before the gate — avoids stale state
             // if subtitles were generated after the page was first loaded.
-            let freshCount = translationCount
+            const movieKey = sk('movie')
+            let freshCount = translationCount[movieKey] ?? 0
             try {
                 const subRes = await fetch(`/api/subtitles/${projectId}?lang=en`)
                 if (subRes.ok) {
@@ -154,7 +221,7 @@ export default function ProjectEditPage() {
                     // Filter to target langs only — `available` also contains the source language
                     const allAvail: string[] = subJson.available ?? []
                     freshCount = allAvail.filter((l: string) => (SUBTITLE_TARGET_LANGS as readonly string[]).includes(l)).length
-                    setTranslationCount(freshCount)
+                    setTranslationCount(s => ({ ...s, [movieKey]: freshCount }))
                 }
             } catch { /* fall through with cached count */ }
             if (freshCount < TOTAL_SUBTITLE_LANGS) { setShowPublishWarning(true); return }
@@ -242,78 +309,246 @@ export default function ProjectEditPage() {
         } catch { setError('Failed to delete episode') }
     }
 
-    // ── Episode subtitle generation ──
-    const [episodeSubStatus, setEpisodeSubStatus] = useState<Record<string, 'idle' | 'generating' | 'done' | 'error'>>({})
-    const [episodeSubLangs, setEpisodeSubLangs] = useState<Record<string, string[]>>({})
+    // ── Unified subtitle handlers (matches projects list page pattern) ──
 
-    // Check subtitle availability for each saved episode on mount
-    useEffect(() => {
-        episodes.forEach(ep => {
-            if (!ep.id || !ep.videoUrl) return
-            fetch(`/api/subtitles/${projectId}?lang=en&episodeId=${ep.id}`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data.available?.length) {
-                        setEpisodeSubLangs(prev => ({ ...prev, [ep.id!]: data.available }))
-                        setEpisodeSubStatus(prev => ({ ...prev, [ep.id!]: 'done' }))
-                    }
-                })
-                .catch(() => {})
-        })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [episodes.length])
+    /** Poll the server job status every 5s until terminal state */
+    const pollServerJob = (jobId: string, mediaType: string = 'movie', episodeId?: string | null) => {
+        const key = esk(mediaType, episodeId)
+        let attempts = 0
+        const iv = setInterval(async () => {
+            attempts++
+            if (attempts > 120) {
+                clearInterval(iv)
+                setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                setServerJobMsg(s => ({ ...s, [key]: '⏱ Polling timed out (10 min). Check worker logs.' }))
+                return
+            }
+            try {
+                const r = await fetch(`/api/subtitles/status/${jobId}`)
+                if (!r.ok) return
+                const d = await r.json()
+                setServerJobStatus(s => ({ ...s, [key]: d.status }))
+                if (d.status === 'ready') {
+                    clearInterval(iv)
+                    setServerJobMsg(s => ({ ...s, [key]: '✅ Subtitles ready! You can now run translation.' }))
+                    const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+                    fetch(`/api/subtitles/${projectId}?lang=en&mediaType=${mediaType}${epQs}`).then(r2 => r2.json()).then(sub => {
+                        setTranslationCount(s => ({ ...s, [key]: sub.available?.length ?? 0 }))
+                        setTranslateStatus(s => ({ ...s, [key]: sub.translateStatus ?? 'pending' }))
+                    }).catch(() => {})
+                } else if (d.status === 'failed') {
+                    clearInterval(iv)
+                    setServerJobMsg(s => ({ ...s, [key]: `❌ Worker failed: ${d.errorMessage || 'unknown'}` }))
+                } else if (d.status === 'processing') {
+                    setServerJobMsg(s => ({ ...s, [key]: '🔄 Worker is transcribing… (may take several minutes)' }))
+                }
+            } catch { /* ignore transient errors */ }
+        }, 5000)
+    }
 
-    const generateEpisodeSubtitles = async (epId: string, videoUrl: string) => {
-        if (!videoUrl) { setError('Episode needs a video URL first'); return }
-        setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'generating' }))
+    /** Manually trigger server-side subtitle generation */
+    const handleServerGenerate = async (filmUrl: string, mediaType: string = 'movie', episodeId?: string | null) => {
+        const key = esk(mediaType, episodeId)
+        const cur = serverJobStatus[key]
+        if (cur === 'queued' || cur === 'processing') return
+        setServerJobStatus(s => ({ ...s, [key]: 'queued' }))
+        setServerJobMsg(s => ({ ...s, [key]: '⚡ Sending to worker…' }))
         try {
-            let res = await fetch('/api/subtitles/generate', {
+            const r = await fetch('/api/subtitles/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, episodeId: epId, videoUrl }),
+                body: JSON.stringify({ projectId, videoUrl: filmUrl, mediaType, ...(episodeId ? { episodeId } : {}) }),
             })
-            // Auto-clear stuck job and retry once
-            if (res.status === 409) {
-                await fetch('/api/admin/subtitle-jobs/clear-stuck', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projectId, episodeId: epId }),
+            const d = await r.json().catch(() => ({}))
+            if (r.ok && d.jobId) {
+                setServerJobId(s => ({ ...s, [key]: d.jobId }))
+                setServerJobMsg(s => ({ ...s, [key]: '🤖 Job queued — worker is processing in background.' }))
+                pollServerJob(d.jobId, mediaType, episodeId)
+            } else if (r.status === 409) {
+                setServerJobStatus(s => ({ ...s, [key]: d.status ?? 'processing' }))
+                setServerJobMsg(s => ({ ...s, [key]: '♻️ A subtitle job is already active.' }))
+                if (d.jobId) pollServerJob(d.jobId, mediaType, episodeId)
+            } else {
+                setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                setServerJobMsg(s => ({ ...s, [key]: `⚠️ ${d.error || "Worker not reachable. Is it running?"}` }))
+            }
+        } catch {
+            setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+            setServerJobMsg(s => ({ ...s, [key]: '⚠️ Network error reaching worker.' }))
+        }
+    }
+
+    /** Handle manual SRT/VTT transcript upload */
+    const handleSrtUpload = async (file: File, mediaType: string = 'movie', episodeId?: string | null) => {
+        const key = esk(mediaType, episodeId)
+        await uploadSubtitleFile(projectId, file, {
+            onPhase:    (phase) => setSubtitlePhase(s    => ({ ...s, [key]: phase })),
+            onStatus:   (msg)   => setSubtitleStatus(s   => ({ ...s, [key]: msg })),
+            onProgress: (pct)   => setSubtitleProgress(s => ({ ...s, [key]: pct })),
+            onCountReady: () => {
+                setTranslationCount(s => ({ ...s, [key]: 1 }))
+                setTranslateStatus(s  => ({ ...s, [key]: 'pending' }))
+            },
+            onError: setError,
+        }, mediaType, episodeId)
+    }
+
+    /** Generate or resume multi-language subtitles (browser fallback + translate) */
+    const handleGenerateSubtitles = async (filmUrl: string, mediaType: string = 'movie', episodeId?: string | null) => {
+        const key = esk(mediaType, episodeId)
+        const isRunning = subtitlePhase[key] === 'transcribing' || subtitlePhase[key] === 'translating'
+        if (isRunning) return
+
+        setError('')
+        setSubtitleStatus(s => ({ ...s, [key]: '' }))
+        setSubtitlePhase(s => ({ ...s, [key]: null }))
+        setSubtitleProgress(s => ({ ...s, [key]: 0 }))
+
+        const isResume = translateStatus[key] === 'partial'
+        const hasWorkerTranscript = serverJobStatus[key] === 'ready'
+        const hasExistingTranscript = (translationCount[key] ?? 0) > 0
+
+        let hasDbTranscript = hasExistingTranscript || hasWorkerTranscript
+        if (!hasDbTranscript && !isResume) {
+            try {
+                const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+                const chk = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}${epQs}`)
+                const { subtitle } = await chk.json()
+                if (subtitle?.segments) hasDbTranscript = true
+            } catch { /* ignore — fall through to browser path */ }
+        }
+
+        if (!isResume && !hasDbTranscript) {
+            const { hostname: filmHost } = isBlockedStreamingUrl(filmUrl)
+            if (filmHost) {
+                setSubtitleStatus(s => ({ ...s, [key]: `⏳ Routing via server proxy for ${filmHost}...` }))
+            }
+            setSubtitlePhase(s => ({ ...s, [key]: 'transcribing' }))
+            setSubtitleStatus(s => ({ ...s, [key]: '⏳ Loading audio engine...' }))
+            setSubtitleProgress(s => ({ ...s, [key]: 2 }))
+            try {
+                const result = await transcribeVideo(filmUrl, (status, detail) => {
+                    setSubtitleStatus(s => ({ ...s, [key]: `⏳ ${detail || status}` }))
+                    const phaseProgress: Record<string, number> = {
+                        'loading-ffmpeg': 5, 'extracting-audio': 15,
+                        'loading-model': 25, 'transcribing': 42,
+                    }
+                    setSubtitleProgress(s => ({ ...s, [key]: phaseProgress[status] || s[key] || 0 }))
                 })
-                res = await fetch('/api/subtitles/generate', {
+                const qcSummary = runQC(result.segments)
+                setSubtitleStatus(s => ({ ...s, [key]: '💾 Saving transcript...' }))
+                setSubtitleProgress(s => ({ ...s, [key]: 48 }))
+                await fetch('/api/admin/subtitles', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ projectId, episodeId: epId, videoUrl }),
+                    body: JSON.stringify({
+                        projectId, language: 'en', segments: result.segments,
+                        transcribedWith: 'whisper-medium', qcIssues: qcSummary.results, status: 'pending',
+                        mediaType, ...(episodeId ? { episodeId } : {}),
+                    }),
                 })
+                setSubtitleProgress(s => ({ ...s, [key]: 50 }))
+                setSubtitleStatus(s => ({ ...s, [key]: `✅ Transcript saved — ${formatQCSummary(qcSummary)}` }))
+                setError('')
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : 'error'
+                setSubtitleStatus(s => ({ ...s, [key]: `❌ Transcription failed: ${msg}` }))
+                setError(`Transcription failed: ${msg}`)
+                setSubtitlePhase(s => ({ ...s, [key]: 'error' }))
+                setSubtitleProgress(s => ({ ...s, [key]: 0 }))
+                return
             }
-            if (!res.ok) {
-                const d = await res.json()
-                throw new Error(d.error || 'Failed to start')
+        } else {
+            setSubtitleProgress(s => ({ ...s, [key]: 50 }))
+        }
+
+        setSubtitlePhase(s => ({ ...s, [key]: 'translating' }))
+        setSubtitleStatus(s => ({ ...s, [key]: '🌍 Starting server translation...' }))
+        try {
+            const res = await fetch('/api/admin/subtitles/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId, mediaType, ...(episodeId ? { episodeId } : {}) }),
+            })
+            if (!res.ok || !res.body) {
+                const err = await res.json().catch(() => ({}))
+                throw new Error((err as {error?: string}).error || `HTTP ${res.status}`)
             }
-            const { jobId } = await res.json()
-            // Poll job status
-            const poll = setInterval(async () => {
-                try {
-                    const jr = await fetch(`/api/subtitles/status/${jobId}`)
-                    const jd = await jr.json()
-                    if (jd.status === 'completed') {
-                        clearInterval(poll)
-                        setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'done' }))
-                        // Refresh available languages
-                        fetch(`/api/subtitles/${projectId}?lang=en&episodeId=${epId}`)
-                            .then(r => r.json())
-                            .then(data => { if (data.available) setEpisodeSubLangs(prev => ({ ...prev, [epId]: data.available })) })
-                            .catch(() => {})
-                    } else if (jd.status === 'failed') {
-                        clearInterval(poll)
-                        setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'error' }))
-                        setError(`Subtitle generation failed for episode`)
-                    }
-                } catch { /* keep polling */ }
-            }, 5000)
-            // Stop polling after 10 minutes
-            setTimeout(() => clearInterval(poll), 600_000)
+            let completed = 0
+            await readSSEStream<{
+                phase?: string; lang?: string; langName?: string;
+                pct?: number; total?: number; completed?: number;
+                allDone?: boolean; error?: string;
+            }>(res.body.getReader(), (data) => {
+                if (data.phase === 'translating' && data.langName) {
+                    setSubtitleStatus(s => ({ ...s, [key]: `🌍 Translating ${data.langName}...` }))
+                    setSubtitleProgress(s => ({ ...s, [key]: 50 + Math.round((data.pct ?? 0) * 0.48) }))
+                } else if (data.phase === 'done') {
+                    completed++
+                    setTranslationCount(s => ({ ...s, [key]: completed + 1 }))
+                } else if (data.phase === 'complete') {
+                    const allDone = data.allDone ?? false
+                    setSubtitleProgress(s => ({ ...s, [key]: 100 }))
+                    setSubtitleStatus(s => ({ ...s, [key]: allDone ? `✓ All ${TOTAL_SUBTITLE_LANGS} languages ready` : `✓ ${completed + 1} languages ready` }))
+                    setSubtitlePhase(s => ({ ...s, [key]: 'done' }))
+                    setTranslateStatus(s => ({ ...s, [key]: allDone ? 'complete' : 'partial' }))
+                    setTranslationCount(s => ({ ...s, [key]: allDone ? TOTAL_SUBTITLE_LANGS : completed + 1 }))
+                } else if (data.phase === 'error' && data.lang) {
+                    setSubtitleStatus(s => ({ ...s, [key]: `⚠️ ${data.lang} failed — continuing...` }))
+                }
+            })
         } catch (err) {
-            setEpisodeSubStatus(prev => ({ ...prev, [epId]: 'error' }))
-            setError(err instanceof Error ? err.message : 'Subtitle generation failed')
+            setSubtitleStatus(s => ({ ...s, [key]: `❌ Translation error: ${err instanceof Error ? err.message : 'error'}` }))
+            setSubtitlePhase(s => ({ ...s, [key]: 'error' }))
+            setTranslateStatus(s => ({ ...s, [key]: 'partial' }))
+        }
+    }
+
+    /** Open the subtitle editor modal — same as projects list page */
+    const openSubtitleEditor = async (filmUrl: string | null, mediaType: string = 'movie', episodeId?: string | null) => {
+        try {
+            const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}${epQs}`)
+            const { subtitle } = await res.json()
+            if (!subtitle) { alert('No subtitles found. Generate them first.'); return }
+            const segs: SubtitleCue[] = JSON.parse(subtitle.segments || '[]')
+            setEditorInitialPlacement({
+                verticalAnchor: subtitle.verticalAnchor ?? 'bottom',
+                horizontalAlign: subtitle.horizontalAlign ?? 'center',
+                offsetYPercent: subtitle.offsetYPercent ?? 0,
+                offsetXPercent: subtitle.offsetXPercent ?? 0,
+                safeAreaMarginPx: subtitle.safeAreaMarginPx ?? 12,
+                backgroundStyle: subtitle.backgroundStyle ?? 'shadow',
+                fontScale: subtitle.fontScale ?? 1.0,
+                cueOverrides: subtitle.cueOverrides
+                    ? (typeof subtitle.cueOverrides === 'string' ? JSON.parse(subtitle.cueOverrides) : subtitle.cueOverrides)
+                    : {},
+            })
+            setEditorInitialMobilePlacement({
+                verticalAnchor: subtitle.mobileVerticalAnchor ?? 'bottom',
+                horizontalAlign: subtitle.mobileHorizontalAlign ?? 'center',
+                offsetYPercent: subtitle.mobileOffsetYPercent ?? 0,
+                offsetXPercent: subtitle.mobileOffsetXPercent ?? 0,
+                safeAreaMarginPx: subtitle.mobileSafeAreaMarginPx ?? 20,
+                fontScale: subtitle.mobileFontScale ?? 0.9,
+            })
+            setEditorInitialLandscapePlacement({
+                verticalAnchor: subtitle.landscapeVerticalAnchor ?? 'bottom',
+                horizontalAlign: subtitle.landscapeHorizontalAlign ?? 'center',
+                offsetYPercent: subtitle.landscapeOffsetYPercent ?? 0,
+                offsetXPercent: subtitle.landscapeOffsetXPercent ?? 0,
+                safeAreaMarginPx: subtitle.landscapeSafeAreaMarginPx ?? 20,
+                fontScale: subtitle.landscapeFontScale ?? 0.9,
+            })
+            setEditorUseSeparateMobile(subtitle.useSeparateMobilePlacement ?? false)
+            setEditorSegments(segs)
+            setEditorFilmUrl(filmUrl)
+            setEditorStatus(subtitle.status || 'pending')
+            setEditorProjectId(projectId)
+            setEditorMediaType(mediaType)
+            setEditorEpisodeId(episodeId ?? null)
+        } catch {
+            alert('Could not load subtitles. Try again.')
         }
     }
 
@@ -642,31 +877,16 @@ export default function ProjectEditPage() {
                                                             onChange={e => updateEpisode(idx, 'published', e.target.checked)} />
                                                         Published
                                                     </label>
-                                                    {/* Subtitle status & generate button */}
-                                                    {ep.id && ep.videoUrl && (
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            {episodeSubStatus[ep.id] === 'generating' ? (
-                                                                <span style={{ fontSize: '0.7rem', color: 'var(--accent-gold)', animation: 'pulse 1.5s infinite' }}>⏳ Generating subtitles…</span>
-                                                            ) : episodeSubStatus[ep.id] === 'done' ? (
-                                                                <span style={{ fontSize: '0.7rem', color: '#34d399' }}>
-                                                                    🗨️ {episodeSubLangs[ep.id]?.length || 0} lang{(episodeSubLangs[ep.id]?.length || 0) !== 1 ? 's' : ''}
-                                                                </span>
-                                                            ) : episodeSubStatus[ep.id] === 'error' ? (
-                                                                <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>❌ Failed</span>
-                                                            ) : null}
-                                                            {episodeSubStatus[ep.id] !== 'generating' && (
-                                                                <button type="button"
-                                                                    onClick={() => generateEpisodeSubtitles(ep.id!, ep.videoUrl)}
-                                                                    style={{
-                                                                        fontSize: '0.68rem', fontWeight: 600, padding: '3px 8px',
-                                                                        borderRadius: '4px', border: 'none', cursor: 'pointer',
-                                                                        background: 'rgba(99,102,241,0.12)', color: '#818cf8',
-                                                                    }}>
-                                                                    {episodeSubStatus[ep.id] === 'done' ? '🔄 Regen' : '🗨️ Subtitles'}
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                    )}
+                                                    {/* Compact subtitle lang count — full controls in Subtitles section */}
+                                                    {ep.id && ep.videoUrl && (() => {
+                                                        const epKey = esk('episode', ep.id)
+                                                        const epCount = translationCount[epKey] ?? 0
+                                                        return epCount > 0 ? (
+                                                            <span style={{ fontSize: '0.68rem', color: epCount >= TOTAL_SUBTITLE_LANGS ? '#34d399' : '#f59e0b' }}>
+                                                                🗨️ {epCount}/{TOTAL_SUBTITLE_LANGS}
+                                                            </span>
+                                                        ) : null
+                                                    })()}
                                                 </div>
                                                 <div style={{ display: 'flex', gap: '6px' }}>
                                                     <button type="button" onClick={() => saveEpisode(idx)} disabled={episodeSaving === (ep.id || `new-${idx}`)}
@@ -705,81 +925,176 @@ export default function ProjectEditPage() {
                         </div>
                     )}
 
-                    {/* ══ SUBTITLES (movie / short only) ══ */}
-                    {!isNew && (form.projectType === 'movie' || form.projectType === 'short') && (
+                    {/* ══ SUBTITLES & TRANSLATION (all project types) ══ */}
+                    {!isNew && (() => {
+                        const tabs: { key: string; label: string }[] = []
+                        if (form.filmUrl) tabs.push({ key: 'movie', label: '🎬 Movie' })
+                        if (form.trailerUrl) tabs.push({ key: 'trailer', label: '🎬 Trailer' })
+                        episodes.filter(ep => ep.id && ep.videoUrl).forEach(ep => {
+                            tabs.push({ key: `ep:${ep.id}`, label: `S${ep.season}E${ep.number}` })
+                        })
+                        if (tabs.length === 0) return null
+                        const activeTab = tabs.find(t => t.key === subtitleTab) ? subtitleTab : (tabs[0]?.key ?? 'movie')
+                        const { mediaType: activeMediaType, episodeId: activeEpisodeId } = parseSubTab(activeTab)
+                        const activeMediaUrl = activeMediaType === 'episode'
+                            ? (episodes.find(ep => ep.id === activeEpisodeId)?.videoUrl || '')
+                            : activeTab === 'trailer' ? form.trailerUrl : form.filmUrl
+                        const stateKey = sk(activeTab)
+                        const count = translationCount[stateKey] ?? 0
+                        const isFull = count >= TOTAL_SUBTITLE_LANGS
+                        const phase = subtitlePhase[stateKey]
+                        const isRunning = phase === 'transcribing' || phase === 'translating'
+                        const progress = subtitleProgress[stateKey] ?? 0
+                        const statusMsg = subtitleStatus[stateKey] || ''
+                        return (
                         <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
-                            <SectionHeader id="subtitles" emoji="🗨️" title={`Subtitles & Transcription (${translationCount}/${TOTAL_SUBTITLE_LANGS} langs)`} />
+                            <SectionHeader id="subtitles" emoji="🗨️" title={`Subtitles & Translation (${count}/${TOTAL_SUBTITLE_LANGS} langs)`} />
                             {openSections.subtitles && (
                                 <div style={{ paddingTop: 'var(--space-sm)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-                                    {!form.filmUrl ? (
-                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
-                                            Upload a Film video above first, then generate subtitles here.
-                                        </p>
-                                    ) : (
-                                        <>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
-                                                        Transcribes the film audio → generates subtitles in {TOTAL_SUBTITLE_LANGS} languages automatically.
-                                                    </div>
-                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
-                                                        {translationCount > 0
-                                                            ? `✅ ${translationCount} language${translationCount !== 1 ? 's' : ''} done`
-                                                            : 'No subtitles generated yet'}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    disabled={subGenerating}
-                                                    onClick={async () => {
-                                                        setSubGenerating(true)
-                                                        setError('')
-                                                        try {
-                                                            let res = await fetch('/api/subtitles/generate', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({ projectId, videoUrl: form.filmUrl }),
-                                                            })
-                                                            if (res.status === 409) {
-                                                                await fetch('/api/admin/subtitle-jobs/clear-stuck', {
-                                                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ projectId }),
-                                                                })
-                                                                res = await fetch('/api/subtitles/generate', {
-                                                                    method: 'POST',
-                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ projectId, videoUrl: form.filmUrl }),
-                                                                })
-                                                            }
-                                                            if (!res.ok) {
-                                                                const d = await res.json()
-                                                                throw new Error(d.error || 'Failed to start')
-                                                            }
-                                                            setSaveSuccess(false)
-                                                            // Show success note
-                                                            setError('')
-                                                            alert('Subtitle generation started! This runs in the background. Come back in a few minutes to check.')
-                                                        } catch (err) {
-                                                            setError(err instanceof Error ? err.message : 'Failed to start subtitle generation')
-                                                        } finally {
-                                                            setSubGenerating(false)
-                                                        }
-                                                    }}
-                                                    style={{
-                                                        padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: subGenerating ? 'default' : 'pointer',
-                                                        background: 'rgba(99,102,241,0.14)', color: '#818cf8',
-                                                        fontWeight: 700, fontSize: '0.82rem', whiteSpace: 'nowrap',
-                                                    }}
-                                                >
-                                                    {subGenerating ? '⏳ Starting…' : translationCount > 0 ? '🔄 Regenerate Subtitles' : '🗨️ Generate Subtitles'}
+                                    {/* Tab bar */}
+                                    {tabs.length > 1 && (
+                                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                            {tabs.map(tab => {
+                                                const tabKey = sk(tab.key)
+                                                const tabCount = translationCount[tabKey] ?? 0
+                                                const tabFull = tabCount >= TOTAL_SUBTITLE_LANGS
+                                                return (
+                                                    <button key={tab.key} type="button"
+                                                        onClick={() => setSubtitleTab(tab.key)}
+                                                        style={{
+                                                            fontSize: '0.7rem', fontWeight: 600, padding: '4px 10px',
+                                                            borderRadius: '6px', border: '1px solid',
+                                                            borderColor: activeTab === tab.key ? 'rgba(212,168,83,0.35)' : 'rgba(255,255,255,0.08)',
+                                                            background: activeTab === tab.key ? 'rgba(212,168,83,0.18)' : 'rgba(255,255,255,0.04)',
+                                                            color: activeTab === tab.key ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                            cursor: 'pointer', transition: 'all 0.15s',
+                                                        }}>
+                                                        {tab.label}{tabFull ? ' ✅' : tabCount > 0 ? ` (${tabCount})` : ''}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                    {/* Status */}
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                                        {isFull ? 'All languages have been translated. You may regenerate if needed.'
+                                            : count > 0 ? `${count} of ${TOTAL_SUBTITLE_LANGS} languages translated. Click CC to translate the remaining.`
+                                            : 'Generate multi-language subtitles. Click Server Worker to transcribe, or upload an existing SRT/VTT.'}
+                                    </div>
+                                    {/* Button row */}
+                                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                        {/* Server Worker */}
+                                        {(() => {
+                                            const sS = serverJobStatus[stateKey] as string | undefined
+                                            const sMsg = serverJobMsg[stateKey] || ''
+                                            const isActive = sS === 'queued' || sS === 'processing'
+                                            const btnLabel = isActive ? (sS === 'processing' ? '🔄 Transcribing…' : '⏳ Queued…')
+                                                : sS === 'ready' ? '🤖 Re-generate (Server)' : sS === 'failed' ? '🔁 Retry (Server)' : '🤖 Generate (Server Worker)'
+                                            const c = sS === 'ready' ? '#34d399' : sS === 'failed' ? '#f87171' : '#818cf8'
+                                            return (<>
+                                                {sMsg && (
+                                                    <div style={{ width: '100%', fontSize: '0.7rem', padding: '7px 10px', borderRadius: '8px',
+                                                        background: sS === 'ready' ? 'rgba(52,211,153,0.06)' : sS === 'failed' ? 'rgba(248,113,113,0.06)' : 'rgba(129,140,248,0.06)',
+                                                        border: `1px solid ${sS === 'ready' ? 'rgba(52,211,153,0.2)' : sS === 'failed' ? 'rgba(248,113,113,0.2)' : 'rgba(129,140,248,0.2)'}`,
+                                                        color: sS === 'ready' ? '#34d399' : sS === 'failed' ? '#f87171' : '#a5b4fc',
+                                                        marginBottom: '4px', lineHeight: 1.5 }}>{sMsg}</div>
+                                                )}
+                                                <button type="button"
+                                                    onClick={() => activeMediaUrl && handleServerGenerate(activeMediaUrl, activeMediaType, activeEpisodeId)}
+                                                    disabled={isActive || !activeMediaUrl}
+                                                    title="Runs faster-whisper on your local worker"
+                                                    style={{ fontSize: '0.72rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
+                                                        background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.12)',
+                                                        border: `1px solid ${isActive ? 'rgba(255,255,255,0.08)' : 'rgba(129,140,248,0.3)'}`,
+                                                        color: isActive ? 'var(--text-tertiary)' : c,
+                                                        cursor: isActive ? 'not-allowed' : 'pointer' }}>{btnLabel}</button>
+                                            </>)
+                                        })()}
+                                        <div style={{ width: '100%', fontSize: '0.6rem', color: 'var(--text-tertiary)', opacity: 0.55, marginBottom: '-2px' }}>
+                                            ⬆ Server worker &nbsp;·&nbsp; ⬇ Browser fallback — manual only
+                                        </div>
+                                        {/* CC (Browser Fallback) */}
+                                        <button type="button"
+                                            onClick={() => activeMediaUrl && handleGenerateSubtitles(activeMediaUrl, activeMediaType, activeEpisodeId)}
+                                            disabled={isRunning || !activeMediaUrl}
+                                            style={{ fontSize: '0.72rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
+                                                background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)',
+                                                border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`,
+                                                color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)',
+                                                cursor: isRunning ? 'not-allowed' : 'pointer' }}>
+                                            {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[stateKey] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
+                                        </button>
+                                        {/* Upload SRT / VTT */}
+                                        <label title="Upload an existing SRT or VTT transcript"
+                                            style={{ fontSize: '0.72rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
+                                                cursor: 'pointer', display: 'inline-flex', alignItems: 'center',
+                                                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
+                                            📄 Upload SRT / VTT
+                                            <input type="file" accept=".srt,.vtt" style={{ display: 'none' }}
+                                                onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(file, activeMediaType, activeEpisodeId) }} />
+                                        </label>
+                                        {/* Edit Subtitles */}
+                                        {(serverJobStatus[stateKey] === 'ready' || count > 0 || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial') && (
+                                            <button type="button" onClick={() => openSubtitleEditor(activeMediaUrl || null, activeMediaType, activeEpisodeId)}
+                                                title="Open subtitle editor"
+                                                style={{ fontSize: '0.72rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
+                                                    background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8', cursor: 'pointer' }}>
+                                                ✏️ Edit Subtitles
+                                            </button>
+                                        )}
+                                        {/* Translate — gated on approval */}
+                                        {(() => {
+                                            const approval = subtitleApproval[stateKey] || translateStatus[stateKey]
+                                            const isApproved = approval === 'approved_source'
+                                            const hasSubtitles = (serverJobStatus[stateKey] === 'ready') || (count > 0)
+                                            if (!hasSubtitles) return null
+                                            return (
+                                                <button type="button" disabled={!isApproved || isRunning}
+                                                    title={!isApproved ? 'Edit subtitles and click "Approve Source" before translating' : 'Translate to all languages'}
+                                                    onClick={() => isApproved && activeMediaUrl && handleGenerateSubtitles(activeMediaUrl, activeMediaType, activeEpisodeId)}
+                                                    style={{ fontSize: '0.72rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
+                                                        background: isApproved ? 'rgba(52,211,153,0.12)' : 'rgba(255,255,255,0.04)',
+                                                        border: `1px solid ${isApproved ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.1)'}`,
+                                                        color: isApproved ? '#34d399' : 'var(--text-tertiary)',
+                                                        cursor: (!isApproved || isRunning) ? 'not-allowed' : 'pointer',
+                                                        opacity: (!isApproved || isRunning) ? 0.6 : 1 }}>
+                                                    {isRunning ? '🌍 Translating…' : isApproved ? '🌍 Translate All' : '🔒 Approve first'}
                                                 </button>
+                                            )
+                                        })()}
+                                        {/* Review Subtitles */}
+                                        {(serverJobStatus[stateKey] === 'ready' || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial' || count > 0) && (
+                                            <button type="button" onClick={() => openSubtitleEditor(activeMediaUrl || null, activeMediaType, activeEpisodeId)}
+                                                title="Review and edit subtitles"
+                                                style={{ fontSize: '0.72rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
+                                                    background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)', cursor: 'pointer' }}>
+                                                🔍 Review Subtitles
+                                            </button>
+                                        )}
+                                    </div>
+                                    {/* Progress bar */}
+                                    {progress > 0 && progress < 100 && (
+                                        <div>
+                                            <div style={{ height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.07)', overflow: 'hidden' }}>
+                                                <div style={{ height: '100%', borderRadius: '3px', background: 'linear-gradient(90deg, var(--accent-gold), #e8c547)',
+                                                    width: `${progress}%`, transition: 'width 0.4s ease', boxShadow: '0 0 8px rgba(212,168,83,0.4)' }} />
                                             </div>
-                                        </>
+                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
+                                                <span>{statusMsg}</span><span>{progress}%</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    {(progress === 0 || progress >= 100) && statusMsg && (
+                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', padding: '6px 10px', borderRadius: '8px',
+                                            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                            {statusMsg}
+                                        </div>
                                     )}
                                 </div>
                             )}
                         </div>
-                    )}
+                        )
+                    })()}
 
                     {/* ══ MOVIE ROLLS ══ */}
                     <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }} id="roll-assignment-section">
@@ -853,10 +1168,31 @@ export default function ProjectEditPage() {
             {showPublishWarning && (
                 <PublishGateModal
                     isOpen={true}
-                    translatedCount={translationCount}
+                    translatedCount={translationCount[sk('movie')] ?? 0}
                     saving={saving}
                     onConfirm={() => { setShowPublishWarning(false); doSave(true) }}
                     onCancel={() => setShowPublishWarning(false)}
+                />
+            )}
+
+            {/* ── Subtitle Editor modal ── */}
+            {editorProjectId && (
+                <SubtitleEditor
+                    projectId={editorProjectId}
+                    episodeId={editorEpisodeId}
+                    mediaType={editorMediaType}
+                    initialSegments={editorSegments}
+                    currentStatus={editorStatus}
+                    filmUrl={editorFilmUrl}
+                    initialPlacement={editorInitialPlacement}
+                    initialMobilePlacement={editorInitialMobilePlacement}
+                    initialLandscapePlacement={editorInitialLandscapePlacement}
+                    useSeparateMobilePlacement={editorUseSeparateMobile}
+                    onClose={() => setEditorProjectId(null)}
+                    onSaved={(newStatus) => {
+                        const edKey = editorEpisodeId ? sk(`ep:${editorEpisodeId}`) : sk(editorMediaType)
+                        setSubtitleApproval(prev => ({ ...prev, [edKey]: newStatus }))
+                    }}
                 />
             )}
         </div>

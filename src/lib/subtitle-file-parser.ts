@@ -115,6 +115,7 @@ export async function uploadSubtitleFile(
     file: File,
     handlers: SubtitleUploadHandlers,
     mediaType: string = 'movie',
+    episodeId?: string | null,
 ): Promise<void> {
     const { onPhase, onStatus, onProgress, onCountReady, onError } = handlers
 
@@ -141,6 +142,7 @@ export async function uploadSubtitleFile(
                 transcribedWith: 'manual-upload',
                 status: 'pending',
                 mediaType,
+                ...(episodeId ? { episodeId } : {}),
             }),
         })
 
