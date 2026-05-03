@@ -57,6 +57,8 @@ export default function ProjectEditPage() {
     const [translationCount, setTranslationCount] = useState(0)
     const [translateStatus, setTranslateStatus] = useState('pending')
     const [subtitleApproval, setSubtitleApproval] = useState('')
+    const [saveSuccess, setSaveSuccess] = useState(false)
+    const [subGenerating, setSubGenerating] = useState(false)
 
     // Publish gate
 
@@ -174,7 +176,9 @@ export default function ProjectEditPage() {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rollIds: selectedRollIds }),
             }).catch(() => {})
-            router.push('/admin/projects')
+            // Stay on editor — show success banner
+            setSaveSuccess(true)
+            setTimeout(() => setSaveSuccess(false), 3000)
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save')
         } finally { setSaving(false) }
@@ -694,6 +698,72 @@ export default function ProjectEditPage() {
                         </div>
                     )}
 
+                    {/* ══ SUBTITLES (movie / short only) ══ */}
+                    {!isNew && (form.projectType === 'movie' || form.projectType === 'short') && (
+                        <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+                            <SectionHeader id="subtitles" emoji="🗨️" title={`Subtitles & Transcription (${translationCount}/${TOTAL_SUBTITLE_LANGS} langs)`} />
+                            {openSections.subtitles && (
+                                <div style={{ paddingTop: 'var(--space-sm)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                                    {!form.filmUrl ? (
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
+                                            Upload a Film video above first, then generate subtitles here.
+                                        </p>
+                                    ) : (
+                                        <>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                                                        Transcribes the film audio → generates subtitles in {TOTAL_SUBTITLE_LANGS} languages automatically.
+                                                    </div>
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                                                        {translationCount > 0
+                                                            ? `✅ ${translationCount} language${translationCount !== 1 ? 's' : ''} done`
+                                                            : 'No subtitles generated yet'}
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    disabled={subGenerating}
+                                                    onClick={async () => {
+                                                        setSubGenerating(true)
+                                                        setError('')
+                                                        try {
+                                                            const res = await fetch('/api/subtitles/generate', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify({ projectId, videoUrl: form.filmUrl }),
+                                                            })
+                                                            if (!res.ok) {
+                                                                const d = await res.json()
+                                                                if (res.status === 409) { setError('Subtitle job already in progress'); return }
+                                                                throw new Error(d.error || 'Failed to start')
+                                                            }
+                                                            setSaveSuccess(false)
+                                                            // Show success note
+                                                            setError('')
+                                                            alert('Subtitle generation started! This runs in the background. Come back in a few minutes to check.')
+                                                        } catch (err) {
+                                                            setError(err instanceof Error ? err.message : 'Failed to start subtitle generation')
+                                                        } finally {
+                                                            setSubGenerating(false)
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        padding: '8px 18px', borderRadius: '8px', border: 'none', cursor: subGenerating ? 'default' : 'pointer',
+                                                        background: 'rgba(99,102,241,0.14)', color: '#818cf8',
+                                                        fontWeight: 700, fontSize: '0.82rem', whiteSpace: 'nowrap',
+                                                    }}
+                                                >
+                                                    {subGenerating ? '⏳ Starting…' : translationCount > 0 ? '🔄 Regenerate Subtitles' : '🗨️ Generate Subtitles'}
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* ══ MOVIE ROLLS ══ */}
                     <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }} id="roll-assignment-section">
                         <SectionHeader id="rolls" emoji="🎞️" title="Movie Roll Assignment" />
@@ -732,6 +802,13 @@ export default function ProjectEditPage() {
                     </div>
 
                     {/* ══ STICKY SAVE BAR ══ */}
+                    {saveSuccess && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-md)',
+                            fontSize: '0.85rem', fontWeight: 600, padding: '0.6rem 1rem', borderRadius: 'var(--radius-md)',
+                            color: '#34d399', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                            ✓ Project saved successfully
+                        </div>
+                    )}
                     {error && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-md)',
                             fontSize: '0.85rem', fontWeight: 600, padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)',
