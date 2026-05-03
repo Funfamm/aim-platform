@@ -75,6 +75,7 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
     const translateStatus = fields.translateStatus ?? 'pending'
 
     if (existing) {
+        const clearingTranslations = !fields.translations
         return prisma.filmSubtitle.update({
             where: { id: existing.id },
             data: {
@@ -86,6 +87,9 @@ export async function upsertSubtitle(data: UpsertSubtitleData) {
                 translateStatus,
                 transcribedWith: fields.transcribedWith ?? 'whisper-medium',
                 qcIssues: fields.qcIssues ?? null,
+                // When translations are cleared (fresh re-transcription), reset
+                // langStatus and vttPaths so the review modal shows accurate state.
+                ...(clearingTranslations ? { langStatus: Prisma.JsonNull, vttPaths: Prisma.JsonNull } : {}),
             },
         })
     }
