@@ -49,6 +49,7 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
             published: true,
             translations: true,
             episodes: {
+                where: { published: true },
                 orderBy: [{ season: 'asc' }, { number: 'asc' }],
             },
             cast: {

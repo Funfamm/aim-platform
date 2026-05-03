@@ -93,7 +93,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const rollProjects = allRollProjectIds.length > 0
     ? await prisma.project.findMany({
         where: { id: { in: allRollProjectIds }, published: true },
-        include: { _count: { select: { episodes: true } } },
+        include: { _count: { select: { episodes: { where: { published: true } } } } },
       })
     : [] as Awaited<ReturnType<typeof prisma.project.findMany>>
   const rollProjectMap = new Map(rollProjects.map(p => [p.id, { ...sanitizeBigInt({ ...p, _count: undefined }), episodeCount: (p as typeof p & { _count: { episodes: number } })._count?.episodes ?? 0 }]))

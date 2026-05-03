@@ -20,6 +20,7 @@ const getProject = cache(async (slug: string) => {
                 orderBy: { sortOrder: 'asc' },
             },
             episodes: {
+                where: { published: true },
                 orderBy: [{ season: 'asc' }, { number: 'asc' }],
             },
         },

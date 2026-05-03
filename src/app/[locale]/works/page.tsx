@@ -17,7 +17,7 @@ export default async function WorksPage() {
         prisma.project.findMany({
             where: { published: true },
             orderBy: { sortOrder: 'asc' },
-            include: { _count: { select: { episodes: true } } },
+            include: { _count: { select: { episodes: { where: { published: true } } } } },
         }),
         prisma.project.findMany({
             where:    { genre: { not: null }, published: true },
@@ -58,7 +58,7 @@ export default async function WorksPage() {
     const rollProjectsFull = allRollProjectIds.length > 0
         ? await prisma.project.findMany({
             where: { id: { in: allRollProjectIds }, published: true },
-            include: { _count: { select: { episodes: true } } },
+            include: { _count: { select: { episodes: { where: { published: true } } } } },
           })
         : []
     const rollProjectMap = new Map(rollProjectsFull.map(p => [p.id, { ...sanitizeBigInt(p), episodeCount: p._count.episodes }]))
