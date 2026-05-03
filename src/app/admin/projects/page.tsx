@@ -967,7 +967,8 @@ export default function AdminProjectsPage() {
         if (!ep.id) { setInlineEpisodes(prev => prev.filter((_, i) => i !== idx)); return }
         if (!confirm(`Delete episode "${ep.title}"?`)) return
         try {
-            await fetch(`/api/admin/episodes/${ep.id}`, { method: 'DELETE' })
+            const res = await fetch(`/api/admin/episodes?id=${ep.id}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error('Delete failed')
             setInlineEpisodes(prev => prev.filter((_, i) => i !== idx))
         } catch { setError('Failed to delete episode') }
     }
