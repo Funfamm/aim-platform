@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
+import { translateAndSave } from '@/lib/translate'
 
 function isAdmin(role: string) {
     return role === 'admin' || role === 'superadmin'
@@ -56,6 +57,13 @@ export async function POST(req: Request) {
             },
         })
 
+        // Fire-and-forget: translate episode title + description into all locales
+        const fieldsToTranslate: Record<string, string> = { title }
+        if (description) fieldsToTranslate.description = description
+        translateAndSave(fieldsToTranslate, async (translations) => {
+            await prisma.episode.update({ where: { id: episode.id }, data: { translations } })
+        })
+
         return NextResponse.json({ episode }, { status: 201 })
     } catch (err: any) {
         if (err?.code === 'P2002') {
@@ -95,6 +103,18 @@ export async function PUT(req: Request) {
             where: { id },
             data,
         })
+
+        // Re-translate if title or description changed
+        if (fields.title !== undefined || fields.description !== undefined) {
+            const fresh = await prisma.episode.findUnique({ where: { id }, select: { title: true, description: true } })
+            if (fresh) {
+                const fieldsToTranslate: Record<string, string> = { title: fresh.title }
+                if (fresh.description) fieldsToTranslate.description = fresh.description
+                translateAndSave(fieldsToTranslate, async (translations) => {
+                    await prisma.episode.update({ where: { id }, data: { translations } })
+                })
+            }
+        }
 
         return NextResponse.json({ episode })
     } catch (err: any) {

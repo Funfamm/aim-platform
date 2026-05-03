@@ -470,7 +470,7 @@ export default function AdminProjectsPage() {
     }
 
     /** Poll the server job status every 5s until terminal state */
-    const pollServerJob = (pid: string, jobId: string, mediaType: string = 'movie') => {
+    const pollServerJob = (pid: string, jobId: string, mediaType: string = 'movie', episodeId?: string | null) => {
         const key = sk(pid, mediaType)
         let attempts = 0
         const iv = setInterval(async () => {

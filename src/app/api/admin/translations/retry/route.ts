@@ -99,6 +99,53 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true, queued: true })
         }
 
+        case 'episode': {
+            const episode = await prisma.episode.findUnique({
+                where: { id },
+                select: { title: true, description: true, translations: true },
+            })
+            if (!episode) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+            const fields: Record<string, string> = { title: episode.title }
+            if (episode.description) fields.description = episode.description
+
+            retryMissingTranslations(
+                fields,
+                episode.translations,
+                async (merged) => {
+                    await prisma.episode.update({ where: { id }, data: { translations: merged } })
+                },
+                'all'
+            )
+            return NextResponse.json({ success: true, queued: true })
+        }
+
+        case 'cta': {
+            const cta = await prisma.ctaConfiguration.findUnique({
+                where: { id },
+                select: {
+                    eyebrow: true, headlineRegular: true, headlineItalic: true, subtext: true,
+                    buttonLabel: true, footnote: true, modalHeadline: true, modalSubtext: true,
+                    modalButtonLabel: true, modalFootnote: true, modalPrivacyNote: true,
+                    confirmationHeadline: true, confirmationSubtext: true, confirmationButton: true,
+                    releasedEyebrow: true, releasedHeadline: true, releasedSubtext: true,
+                    releasedButtonLabel: true, copyTranslations: true,
+                },
+            })
+            if (!cta) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+            const { copyTranslations, ...copyFields } = cta
+            retryMissingTranslations(
+                copyFields as Record<string, string>,
+                copyTranslations,
+                async (merged) => {
+                    await prisma.ctaConfiguration.update({ where: { id }, data: { copyTranslations: merged } })
+                },
+                'all'
+            )
+            return NextResponse.json({ success: true, queued: true })
+        }
+
         default:
             return NextResponse.json({ error: 'Unknown type' }, { status: 400 })
     }

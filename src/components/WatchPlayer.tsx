@@ -18,6 +18,7 @@ interface Episode {
     id: string; title: string; number: number
     season: number; videoUrl: string | null; duration: string | null
     description?: string | null; thumbnail?: string | null
+    translations?: string | null
 }
 interface WatchProject {
     id: string; title: string; slug: string; tagline: string
@@ -63,6 +64,47 @@ export default function WatchPlayer({
         } catch { return project.title }
     })()
 
+    // Resolve localized episode fields
+    const getLocalizedEp = (ep: Episode) => {
+        if (locale === 'en' || !ep.translations) return { title: ep.title, description: ep.description }
+        try {
+            const tr = JSON.parse(ep.translations)?.[locale]
+            return {
+                title: tr?.title || ep.title,
+                description: tr?.description || ep.description,
+            }
+        } catch { return { title: ep.title, description: ep.description } }
+    }
+
+    // Resolve localized CTA config
+    const getLocalizedCtaConfig = (config: CtaConfig): CtaConfig => {
+        if (locale === 'en' || !config.translations?.[locale]) return config
+        const tr = config.translations[locale]
+        return {
+            ...config,
+            endCard: {
+                eyebrow: tr.eyebrow || config.endCard.eyebrow,
+                headlineRegular: tr.headlineRegular || config.endCard.headlineRegular,
+                headlineItalic: tr.headlineItalic || config.endCard.headlineItalic,
+                subtext: tr.subtext || config.endCard.subtext,
+                buttonLabel: tr.buttonLabel || config.endCard.buttonLabel,
+                footnote: tr.footnote || config.endCard.footnote,
+            },
+            modal: config.modal ? {
+                headline: tr.modalHeadline || config.modal.headline,
+                subtext: tr.modalSubtext || config.modal.subtext,
+                buttonLabel: tr.modalButtonLabel || config.modal.buttonLabel,
+                footnote: tr.modalFootnote || config.modal.footnote,
+                privacyNote: tr.modalPrivacyNote || config.modal.privacyNote,
+            } : null,
+            confirmation: config.confirmation ? {
+                headline: tr.confirmationHeadline || config.confirmation.headline,
+                subtext: tr.confirmationSubtext || config.confirmation.subtext,
+                button: tr.confirmationButton || config.confirmation.button,
+            } : null,
+        }
+    }
+
     /* ── Refs ── */
     const videoRef    = useRef<HTMLVideoElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
@@ -78,9 +120,6 @@ export default function WatchPlayer({
 
     /* ── Derived ── */
     const isSeries = (project.projectType === 'series' || project.projectType === 'shorts') && project.episodes.length > 0
-    const isLastEpisode = isSeries
-        ? activeEpisode?.id === project.episodes[project.episodes.length - 1]?.id
-        : true  // movies always qualify
 
     /* ── Playback state ── */
     const [activeEpisode, setActiveEpisode] = useState<Episode | null>(
@@ -90,6 +129,9 @@ export default function WatchPlayer({
                 : project.episodes[0])
             : null
     )
+    const isLastEpisode = isSeries
+        ? activeEpisode?.id === project.episodes[project.episodes.length - 1]?.id
+        : true  // movies always qualify
     const currentVideoUrl = activeEpisode?.videoUrl || project.filmUrl
 
     const [isPlaying, setIsPlaying]       = useState(false)
@@ -1238,31 +1280,36 @@ export default function WatchPlayer({
                         />
                     )}
 
-                    {/* ── Notify Me End-Card Overlay ── */}
-                    {ctaConfig && (
-                        <NotifyMeEndCard
-                            config={ctaConfig}
-                            visible={showEndCard}
-                            onNotifyClick={() => { setShowEndCard(false); setShowNotifyModal(true) }}
-                            onWatchNow={() => { window.location.href = ctaConfig.watchNowUrl || `/watch/${project.slug}` }}
-                        />
-                    )}
-                    {ctaConfig?.modal && (
-                        <NotifyMeModal
-                            copy={ctaConfig.modal}
-                            signupTag={ctaConfig.signupTag}
-                            visible={showNotifyModal}
-                            onClose={() => { setShowNotifyModal(false); endCardDismissedRef.current = true }}
-                            onSuccess={() => { setShowNotifyModal(false); setShowNotifyConfirm(true) }}
-                        />
-                    )}
-                    {ctaConfig?.confirmation && (
-                        <NotifyMeConfirmation
-                            copy={ctaConfig.confirmation}
-                            visible={showNotifyConfirm}
-                            onClose={() => { setShowNotifyConfirm(false); endCardDismissedRef.current = true }}
-                        />
-                    )}
+                    {/* ── Notify Me End-Card Overlay (locale-aware) ── */}
+                    {ctaConfig && (() => {
+                        const localCta = getLocalizedCtaConfig(ctaConfig)
+                        return (
+                            <>
+                                <NotifyMeEndCard
+                                    config={localCta}
+                                    visible={showEndCard}
+                                    onNotifyClick={() => { setShowEndCard(false); setShowNotifyModal(true) }}
+                                    onWatchNow={() => { window.location.href = ctaConfig.watchNowUrl || `/watch/${project.slug}` }}
+                                />
+                                {localCta.modal && (
+                                    <NotifyMeModal
+                                        copy={localCta.modal}
+                                        signupTag={ctaConfig.signupTag}
+                                        visible={showNotifyModal}
+                                        onClose={() => { setShowNotifyModal(false); endCardDismissedRef.current = true }}
+                                        onSuccess={() => { setShowNotifyModal(false); setShowNotifyConfirm(true) }}
+                                    />
+                                )}
+                                {localCta.confirmation && (
+                                    <NotifyMeConfirmation
+                                        copy={localCta.confirmation}
+                                        visible={showNotifyConfirm}
+                                        onClose={() => { setShowNotifyConfirm(false); endCardDismissedRef.current = true }}
+                                    />
+                                )}
+                            </>
+                        )
+                    })()}
 
                     </div>{/* /inner video box */}
 
@@ -1805,7 +1852,7 @@ export default function WatchPlayer({
                                                     color: isActive ? 'var(--accent-gold)' : 'var(--text-primary)',
                                                     marginBottom: '2px',
                                                 }}>
-                                                    {ep.number}. {ep.title}
+                                                    {ep.number}. {getLocalizedEp(ep).title}
                                                 </div>
                                                 {ep.duration && (
                                                     <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>
@@ -1824,7 +1871,7 @@ export default function WatchPlayer({
                                                 WebkitBoxOrient: 'vertical' as const,
                                                 overflow: 'hidden',
                                             }}>
-                                                {ep.description}
+                                                {getLocalizedEp(ep).description}
                                             </div>
                                         )}
                                     </button>

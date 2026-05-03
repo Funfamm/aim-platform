@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAdmin } from '@/lib/auth'
+import { translateAndSave } from '@/lib/translate'
 
 // ── Copy templates ──────────────────────────────────────────────────────────
 const TEMPLATES = {
@@ -166,6 +167,24 @@ export async function POST(req: NextRequest) {
             },
         })
 
+        // Fire-and-forget: translate all copy fields
+        const copyFields: Record<string, string> = {
+            eyebrow: cta.eyebrow, headlineRegular: cta.headlineRegular,
+            headlineItalic: cta.headlineItalic, subtext: cta.subtext,
+            buttonLabel: cta.buttonLabel, footnote: cta.footnote,
+            modalHeadline: cta.modalHeadline, modalSubtext: cta.modalSubtext,
+            modalButtonLabel: cta.modalButtonLabel, modalFootnote: cta.modalFootnote,
+            modalPrivacyNote: cta.modalPrivacyNote,
+            confirmationHeadline: cta.confirmationHeadline,
+            confirmationSubtext: cta.confirmationSubtext,
+            confirmationButton: cta.confirmationButton,
+            releasedEyebrow: cta.releasedEyebrow, releasedHeadline: cta.releasedHeadline,
+            releasedSubtext: cta.releasedSubtext, releasedButtonLabel: cta.releasedButtonLabel,
+        }
+        translateAndSave(copyFields, async (translations) => {
+            await prisma.ctaConfiguration.update({ where: { id: cta.id }, data: { copyTranslations: translations } })
+        })
+
         return NextResponse.json({ cta }, { status: 201 })
     } catch (error) {
         console.error('[admin/cta-configurations] POST error:', error)
@@ -217,6 +236,24 @@ export async function PATCH(req: NextRequest) {
             where: { id },
             data: updates,
         })
+
+        // Re-translate all copy fields on any text change
+        const textFields = ['eyebrow', 'headlineRegular', 'headlineItalic', 'subtext', 'buttonLabel',
+            'footnote', 'modalHeadline', 'modalSubtext', 'modalButtonLabel', 'modalFootnote',
+            'modalPrivacyNote', 'confirmationHeadline', 'confirmationSubtext', 'confirmationButton',
+            'releasedEyebrow', 'releasedHeadline', 'releasedSubtext', 'releasedButtonLabel']
+        const hasTextChange = textFields.some(f => f in updates)
+        if (hasTextChange) {
+            const copyFields: Record<string, string> = {}
+            for (const f of textFields) {
+                if (typeof (updated as Record<string, unknown>)[f] === 'string') {
+                    copyFields[f] = (updated as Record<string, unknown>)[f] as string
+                }
+            }
+            translateAndSave(copyFields, async (translations) => {
+                await prisma.ctaConfiguration.update({ where: { id }, data: { copyTranslations: translations } })
+            })
+        }
 
         return NextResponse.json({ cta: updated })
     } catch (error) {
