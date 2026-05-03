@@ -17,12 +17,12 @@ const BOT_SUSPECT_COUNTRIES = new Set(['RU', 'CN', 'VN', 'BD', 'PK', 'IN', 'BR',
 
 function calcSubscribeBotScore(email: string, name: string | null, country: string | null, recentCountryCount: number): number {
     let score = 0
-    if (!name) score += 15
+    if (!name) score += 20
     const domain = email.split('@')[1]?.toLowerCase()
-    if (domain && BOT_DISPOSABLE_DOMAINS.has(domain)) score += 25
-    if (country && BOT_SUSPECT_COUNTRIES.has(country)) score += 20
-    if (recentCountryCount >= 10) score += 20
-    else if (recentCountryCount >= 5) score += 10
+    if (domain && BOT_DISPOSABLE_DOMAINS.has(domain)) score += 30
+    if (country && BOT_SUSPECT_COUNTRIES.has(country)) score += 25
+    if (recentCountryCount >= 10) score += 25
+    else if (recentCountryCount >= 5) score += 15
     return Math.min(score, 100)
 }
 
@@ -77,9 +77,9 @@ export async function POST(request: NextRequest) {
                 // Fail open — don't block if Cloudflare is down
             }
         } else if (turnstileSecret && !turnstileToken) {
-            // No token — widget didn't load (ad blocker, slow network, etc.)
-            // Log but allow; other protections (rate limit 3/hr, honeypot, bot score) cover this
-            console.warn(`[subscribe] No Turnstile token from IP ${ip} — widget may not have loaded`)
+            // No token — bot skipped the CAPTCHA widget entirely. Block it.
+            console.warn(`[subscribe] BLOCKED — no Turnstile token from IP ${ip}`)
+            return NextResponse.json({ error: 'Verification required. Please refresh and try again.' }, { status: 403 })
         }
 
         if (!email || typeof email !== 'string') {
