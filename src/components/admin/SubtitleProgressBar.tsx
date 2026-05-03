@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 /**
  * SubtitleProgressBar — Animated progress indicator for subtitle generation.
@@ -31,7 +31,8 @@ interface SubtitleProgressBarProps {
 
 export default function SubtitleProgressBar({ status, compact = false }: SubtitleProgressBarProps) {
     const [progress, setProgress] = useState(0)
-    const [startTime] = useState(Date.now())
+    const startTimeRef = useRef(Date.now())
+    const startTime = startTimeRef.current
 
     useEffect(() => {
         if (status === 'done') {
