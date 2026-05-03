@@ -52,12 +52,11 @@ export async function POST(request: NextRequest) {
         // Honeypot: bots fill this hidden field; humans never see it
         if (website) return NextResponse.json({ success: true })
 
-        // ── Cloudflare Turnstile verification (MANDATORY when configured) ────
+        // ── Cloudflare Turnstile verification ─────────────────────────────────
+        // Validate if token is present. If missing (widget didn't load), log warning
+        // but allow — other protections (rate limit, honeypot, bot score) still apply.
         const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
-        if (turnstileSecret) {
-            if (!turnstileToken) {
-                return NextResponse.json({ error: 'Bot verification required. Please complete the challenge.' }, { status: 403 })
-            }
+        if (turnstileSecret && turnstileToken) {
             try {
                 const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
                     method: 'POST',
@@ -77,6 +76,10 @@ export async function POST(request: NextRequest) {
                 console.error('[subscribe] Turnstile verify error:', err)
                 // Fail open — don't block if Cloudflare is down
             }
+        } else if (turnstileSecret && !turnstileToken) {
+            // No token — widget didn't load (ad blocker, slow network, etc.)
+            // Log but allow; other protections (rate limit 3/hr, honeypot, bot score) cover this
+            console.warn(`[subscribe] No Turnstile token from IP ${ip} — widget may not have loaded`)
         }
 
         if (!email || typeof email !== 'string') {
