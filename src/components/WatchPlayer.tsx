@@ -78,6 +78,9 @@ export default function WatchPlayer({
 
     /* ── Derived ── */
     const isSeries = (project.projectType === 'series' || project.projectType === 'shorts') && project.episodes.length > 0
+    const isLastEpisode = isSeries
+        ? activeEpisode?.id === project.episodes[project.episodes.length - 1]?.id
+        : true  // movies always qualify
 
     /* ── Playback state ── */
     const [activeEpisode, setActiveEpisode] = useState<Episode | null>(
@@ -697,7 +700,8 @@ export default function WatchPlayer({
             setBuffered(vid.buffered.end(vid.buffered.length - 1))
         }
         // ── Notify Me end-card trigger ──
-        if (ctaConfig && !endCardDismissedRef.current && vid.duration > 0) {
+        // For series, only show on the last episode
+        if (ctaConfig && !endCardDismissedRef.current && vid.duration > 0 && isLastEpisode) {
             const secsLeft = vid.duration - vid.currentTime
             if (secsLeft <= ctaConfig.triggerSecondsFromEnd && secsLeft >= 0) {
                 if (!showEndCard && !showNotifyModal && !showNotifyConfirm) setShowEndCard(true)
@@ -1066,7 +1070,8 @@ export default function WatchPlayer({
                             onEnded={() => {
                                 setIsPlaying(false); sendSessionEnd()
                                 // Show end-card on video end if CTA is active and not dismissed
-                                if (ctaConfig && !endCardDismissedRef.current && !showEndCard && !showNotifyModal && !showNotifyConfirm) {
+                                // For series, only show end-card on the last episode
+                                if (ctaConfig && !endCardDismissedRef.current && isLastEpisode && !showEndCard && !showNotifyModal && !showNotifyConfirm) {
                                     setShowEndCard(true)
                                 }
                             }}

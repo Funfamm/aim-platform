@@ -159,7 +159,13 @@ export default function AdminProjectsPage() {
     const [editorUseSeparateMobile, setEditorUseSeparateMobile] = useState(false)
     const [editorMediaType, setEditorMediaType] = useState<string>('movie')
     // Active subtitle tab per project (movie or trailer)
-    const [subtitleTab, setSubtitleTab] = useState<Record<string, 'movie' | 'trailer'>>({})
+    const [subtitleTab, setSubtitleTab] = useState<Record<string, string>>({})
+
+    /** Parse the active subtitle tab into mediaType + optional episodeId */
+    const parseSubTab = (tab: string): { mediaType: string; episodeId: string | null } => {
+        if (tab.startsWith('ep:')) return { mediaType: 'episode', episodeId: tab.slice(3) }
+        return { mediaType: tab, episodeId: null }
+    }
 
     // Auto-select the correct subtitle tab based on available media URLs.
     // This replaces the broken setState-during-render pattern.
@@ -212,11 +218,12 @@ export default function AdminProjectsPage() {
             .then(r => { if (r.status === 401) { window.location.href = '/admin/login'; return [] } return r.json() })
             .then((data: Project[]) => {
                 setProjects(data)
-                // Check which projects already have subtitles — check BOTH movie + trailer independently
+                // Check which projects already have subtitles — check movie, trailer, AND episodes
                 data.forEach((p: Project) => {
-                    const checkSubtitle = (mediaType: 'movie' | 'trailer') => {
-                        const key = sk(p.id, mediaType)
-                        fetch(`/api/subtitles/${p.id}?lang=en&mediaType=${mediaType}`)
+                    const checkSubtitle = (mediaType: string, episodeId?: string) => {
+                        const key = episodeId ? sk(p.id, `ep:${episodeId}`) : sk(p.id, mediaType)
+                        const qs = episodeId ? `lang=en&mediaType=episode&episodeId=${episodeId}` : `lang=en&mediaType=${mediaType}`
+                        fetch(`/api/subtitles/${p.id}?${qs}`)
                             .then(r => r.json())
                             .then(sub => {
                                 const count = sub.available?.length ?? 0
@@ -231,6 +238,12 @@ export default function AdminProjectsPage() {
                     }
                     if (p.filmUrl)    checkSubtitle('movie')
                     if (p.trailerUrl) checkSubtitle('trailer')
+                    // Check episodes (loaded lazily when edit opens, so also check here for the card view)
+                    if (p.projectType === 'series' || p.projectType === 'shorts') {
+                        fetch(`/api/admin/episodes?projectId=${p.id}`).then(r => r.json()).then((eps: { id: string; videoUrl: string }[]) => {
+                            eps.forEach(ep => { if (ep.videoUrl) checkSubtitle('episode', ep.id) })
+                        }).catch(() => {})
+                    }
                 })
             })
             .catch(() => setError('Failed to load projects'))
@@ -476,7 +489,8 @@ export default function AdminProjectsPage() {
                 if (d.status === 'ready') {
                     clearInterval(iv)
                     setServerJobMsg(s => ({ ...s, [key]: '✅ Subtitles ready! You can now run translation.' }))
-                    fetch(`/api/subtitles/${pid}?lang=en&mediaType=${mediaType}`).then(r2 => r2.json()).then(sub => {
+                    const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+                    fetch(`/api/subtitles/${pid}?lang=en&mediaType=${mediaType}${epQs}`).then(r2 => r2.json()).then(sub => {
                         setTranslationCount(s => ({ ...s, [key]: sub.available?.length ?? 0 }))
                         setTranslateStatus(s => ({ ...s, [key]: sub.translateStatus ?? 'pending' }))
                     }).catch(() => {})
@@ -491,7 +505,7 @@ export default function AdminProjectsPage() {
     }
 
     /** Manually trigger server-side subtitle generation */
-    const handleServerGenerate = async (pid: string, filmUrl: string, mediaType: string = 'movie') => {
+    const handleServerGenerate = async (pid: string, filmUrl: string, mediaType: string = 'movie', episodeId?: string | null) => {
         const key = sk(pid, mediaType)
         const cur = serverJobStatus[key]
         if (cur === 'queued' || cur === 'processing') return
@@ -501,17 +515,17 @@ export default function AdminProjectsPage() {
             const r = await fetch('/api/subtitles/generate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: pid, videoUrl: filmUrl, mediaType }),
+                body: JSON.stringify({ projectId: pid, videoUrl: filmUrl, mediaType, ...(episodeId ? { episodeId } : {}) }),
             })
             const d = await r.json().catch(() => ({}))
             if (r.ok && d.jobId) {
                 setServerJobId(s => ({ ...s, [key]: d.jobId }))
                 setServerJobMsg(s => ({ ...s, [key]: '🤖 Job queued — worker is processing in background.' }))
-                pollServerJob(pid, d.jobId, mediaType)
+                pollServerJob(pid, d.jobId, mediaType, episodeId)
             } else if (r.status === 409) {
                 setServerJobStatus(s => ({ ...s, [key]: d.status ?? 'processing' }))
                 setServerJobMsg(s => ({ ...s, [key]: '♻️ A subtitle job is already active.' }))
-                if (d.jobId) pollServerJob(pid, d.jobId, mediaType)
+                if (d.jobId) pollServerJob(pid, d.jobId, mediaType, episodeId)
             } else {
                 setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
                 setServerJobMsg(s => ({ ...s, [key]: `⚠️ ${d.error || "Worker not reachable. Is it running?"}` }))
@@ -527,7 +541,7 @@ export default function AdminProjectsPage() {
      * Delegates all parsing and API logic to subtitle-file-parser.ts (SRP fix).
      * This function only wires React state setters to the upload callbacks.
      */
-    const handleSrtUpload = async (projectId: string, file: File, mediaType: string = 'movie') => {
+    const handleSrtUpload = async (projectId: string, file: File, mediaType: string = 'movie', _episodeId?: string | null) => {
         const pid = projectId
         const key = sk(pid, mediaType)
         await uploadSubtitleFile(pid, file, {
@@ -547,7 +561,7 @@ export default function AdminProjectsPage() {
      * Generate or resume multi-language subtitles for a project.
      * Extracted from inline card handler so it can be called from the edit modal.
      */
-    const handleGenerateSubtitles = async (pid: string, filmUrl: string, mediaType: string = 'movie') => {
+    const handleGenerateSubtitles = async (pid: string, filmUrl: string, mediaType: string = 'movie', episodeId?: string | null) => {
         const key = sk(pid, mediaType)
         const isRunning = subtitlePhase[key] === 'transcribing' || subtitlePhase[key] === 'translating'
         if (isRunning) return
@@ -565,7 +579,8 @@ export default function AdminProjectsPage() {
         let hasDbTranscript = hasExistingTranscript || hasWorkerTranscript
         if (!hasDbTranscript && !isResume) {
             try {
-                const chk = await fetch(`/api/admin/subtitles?projectId=${pid}&mediaType=${mediaType}`)
+                const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+                const chk = await fetch(`/api/admin/subtitles?projectId=${pid}&mediaType=${mediaType}${epQs}`)
                 const { subtitle } = await chk.json()
                 if (subtitle?.segments) hasDbTranscript = true
             } catch { /* ignore — fall through to browser path */ }
@@ -597,7 +612,7 @@ export default function AdminProjectsPage() {
                     body: JSON.stringify({
                         projectId: pid, language: 'en', segments: result.segments,
                         transcribedWith: 'whisper-medium', qcIssues: qcSummary.results, status: 'pending',
-                        mediaType,
+                        mediaType, ...(episodeId ? { episodeId } : {}),
                     }),
                 })
                 setSubtitleProgress(s => ({ ...s, [key]: 50 }))
@@ -621,7 +636,7 @@ export default function AdminProjectsPage() {
             const res = await fetch('/api/admin/subtitles/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId: pid, mediaType }),
+                body: JSON.stringify({ projectId: pid, mediaType, ...(episodeId ? { episodeId } : {}) }),
             })
             if (!res.ok || !res.body) {
                 const err = await res.json().catch(() => ({}))
@@ -674,7 +689,7 @@ export default function AdminProjectsPage() {
     const updateField = (field: keyof FormData, value: string | boolean) =>
         setForm(f => ({ ...f, [field]: value }))
 
-    const openReview = async (projectId: string, title: string, mediaType: string = 'movie') => {
+    const openReview = async (projectId: string, title: string, mediaType: string = 'movie', episodeId?: string | null) => {
         const requestId = ++reviewRequestRef.current
         setReviewProjectId(projectId)
         setReviewProjectTitle(title)
@@ -684,7 +699,8 @@ export default function AdminProjectsPage() {
         setReviewLoading(true)
         setRetryingLang(null)
         try {
-            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}`)
+            const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}${epQs}`)
             const { subtitle } = await res.json()
             if (requestId !== reviewRequestRef.current) return
             if (subtitle) {
@@ -703,9 +719,10 @@ export default function AdminProjectsPage() {
     }
 
     /** Open the subtitle editor for a project */
-    const openSubtitleEditor = async (projectId: string, filmUrl: string | null, mediaType: string = 'movie') => {
+    const openSubtitleEditor = async (projectId: string, filmUrl: string | null, mediaType: string = 'movie', episodeId?: string | null) => {
         try {
-            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}`)
+            const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}${epQs}`)
             const { subtitle } = await res.json()
             if (!subtitle) { alert('No subtitles found for this project. Generate them first.'); return }
             const segs: SubtitleCue[] = JSON.parse(subtitle.segments || '[]')
@@ -952,9 +969,8 @@ export default function AdminProjectsPage() {
         const key = ep.id || `new-${idx}`
         setInlineEpSaving(key)
         try {
-            const url = ep.id ? `/api/admin/episodes/${ep.id}` : '/api/admin/episodes'
             const method = ep.id ? 'PUT' : 'POST'
-            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...ep, projectId: editingId }) })
+            const res = await fetch('/api/admin/episodes', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...ep, projectId: editingId }) })
             if (!res.ok) throw new Error('Failed to save')
             const data = await res.json()
             setInlineEpisodes(prev => prev.map((e, i) => i === idx ? { ...data.episode, _new: false } : e))
@@ -1726,13 +1742,18 @@ export default function AdminProjectsPage() {
                                     const trailerUrl = project?.trailerUrl || form.trailerUrl || ''
                                     const hasMovie = Boolean(movieUrl)
                                     const hasTrailer = Boolean(trailerUrl)
-                                    if (!hasMovie && !hasTrailer) return (
+                                    const epList = inlineEpisodes.filter(ep => ep.id && ep.videoUrl)
+                                    const hasEpisodes = epList.length > 0
+                                    if (!hasMovie && !hasTrailer && !hasEpisodes) return (
                                         <div style={{ paddingTop: 'var(--space-sm)', fontSize: '0.78rem', color: 'var(--text-tertiary)', fontStyle: 'italic' }}>
-                                            📎 Upload a movie or trailer video above before generating subtitles.
+                                            📎 Upload a movie, trailer, or episode video above before generating subtitles.
                                         </div>
                                     )
-                                    const activeTab = subtitleTab[pid] ?? (hasMovie ? 'movie' : 'trailer')
-                                    const activeMediaUrl = activeTab === 'trailer' ? trailerUrl : movieUrl
+                                    const activeTab = subtitleTab[pid] ?? (hasMovie ? 'movie' : hasTrailer ? 'trailer' : hasEpisodes ? `ep:${epList[0].id}` : 'movie')
+                                    const { mediaType: activeMediaType, episodeId: activeEpisodeId } = parseSubTab(activeTab)
+                                    const activeMediaUrl = activeMediaType === 'episode'
+                                        ? (epList.find(ep => ep.id === activeEpisodeId)?.videoUrl || '')
+                                        : activeTab === 'trailer' ? trailerUrl : movieUrl
                                     const stateKey = sk(pid, activeTab)
                                     const count = translationCount[stateKey] ?? 0
                                     const isFull = count >= TOTAL_SUBTITLE_LANGS
@@ -1750,21 +1771,33 @@ export default function AdminProjectsPage() {
                                                     {isFull ? `✅ ${count}/${TOTAL_SUBTITLE_LANGS}` : `${count}/${TOTAL_SUBTITLE_LANGS} langs`}
                                                 </span>
                                             </div>
-                                            {/* Movie / Trailer tab switcher — only when both media types exist */}
-                                            {(hasMovie && hasTrailer) && (
-                                                <div style={{ display: 'flex', gap: '4px' }}>
-                                                    {(['movie', 'trailer'] as const).map(tab => (
-                                                        <button key={tab} type="button" onClick={() => setSubtitleTab(s => ({ ...s, [pid]: tab }))}
-                                                            style={{
-                                                                fontSize: '0.6rem', fontWeight: 700, padding: '2px 10px', borderRadius: '99px', border: 'none', cursor: 'pointer',
-                                                                background: activeTab === tab ? 'rgba(212,168,83,0.18)' : 'rgba(255,255,255,0.04)',
-                                                                color: activeTab === tab ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                                                                transition: 'all 0.15s', textTransform: 'capitalize',
-                                                            }}
-                                                        >{tab === 'movie' ? '🎬 Movie' : '🎥 Trailer'}</button>
-                                                    ))}
-                                                </div>
-                                            )}
+                                            {/* Movie / Trailer / Episode tab switcher */}
+                                            {(() => {
+                                                const tabs: { key: string; label: string }[] = []
+                                                if (hasMovie) tabs.push({ key: 'movie', label: '🎬 Movie' })
+                                                if (hasTrailer) tabs.push({ key: 'trailer', label: '🎥 Trailer' })
+                                                epList.forEach(ep => tabs.push({ key: `ep:${ep.id}`, label: `📺 S${ep.season}E${ep.number}` }))
+                                                if (tabs.length <= 1) return null
+                                                return (
+                                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                        {tabs.map(tab => {
+                                                            const epKey = tab.key.startsWith('ep:') ? tab.key : null
+                                                            const epCount = epKey ? (translationCount[sk(pid, tab.key)] ?? 0) : 0
+                                                            const epFull = epKey && epCount >= TOTAL_SUBTITLE_LANGS
+                                                            return (
+                                                                <button key={tab.key} type="button" onClick={() => setSubtitleTab(s => ({ ...s, [pid]: tab.key }))}
+                                                                    style={{
+                                                                        fontSize: '0.6rem', fontWeight: 700, padding: '2px 10px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+                                                                        background: activeTab === tab.key ? 'rgba(212,168,83,0.18)' : 'rgba(255,255,255,0.04)',
+                                                                        color: activeTab === tab.key ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                                        transition: 'all 0.15s',
+                                                                    }}
+                                                                >{tab.label}{epFull ? ' ✅' : epKey && epCount > 0 ? ` (${epCount})` : ''}</button>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                )
+                                            })()}
                                             </div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.5 }}>
                                                 {isFull ? 'All languages have been translated. You may regenerate if needed.'
@@ -1802,7 +1835,7 @@ export default function AdminProjectsPage() {
                                                                 {sMsg}
                                                             </div>
                                                         )}
-                                                        <button type="button" onClick={() => handleServerGenerate(pid, activeMediaUrl, activeTab)} disabled={isActive} className="btn btn-sm"
+                                                        <button type="button" onClick={() => handleServerGenerate(pid, activeMediaUrl, activeMediaType, activeEpisodeId)} disabled={isActive} className="btn btn-sm"
                                                             title="Runs faster-whisper on your local worker. Fires automatically when video is saved."
                                                             style={{ fontSize: '0.72rem', fontWeight: 700, background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.12)', border: `1px solid ${isActive ? 'rgba(255,255,255,0.08)' : 'rgba(129,140,248,0.3)'}`, color: isActive ? 'var(--text-tertiary)' : c, cursor: isActive ? 'not-allowed' : 'pointer' }}>
                                                             {btnLabel}
@@ -1812,17 +1845,17 @@ export default function AdminProjectsPage() {
                                                 <div style={{ width: '100%', fontSize: '0.6rem', color: 'var(--text-tertiary)', opacity: 0.55, marginBottom: '-2px' }}>
                                                     ⬆ Server worker — fires automatically on video save &nbsp;·&nbsp; ⬇ Browser fallback — manual only
                                                 </div>
-                                                <button type="button" onClick={() => handleGenerateSubtitles(pid, activeMediaUrl, activeTab)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
+                                                <button type="button" onClick={() => handleGenerateSubtitles(pid, activeMediaUrl, activeMediaType, activeEpisodeId)} disabled={isRunning} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: isRunning ? 'rgba(255,255,255,0.04)' : 'rgba(212,168,83,0.12)', border: `1px solid ${isRunning ? 'rgba(255,255,255,0.08)' : 'rgba(212,168,83,0.3)'}`, color: isRunning ? 'var(--text-tertiary)' : 'var(--accent-gold)', cursor: isRunning ? 'not-allowed' : 'pointer' }}>
                                                     {phase === 'transcribing' ? '⏳ Transcribing…' : phase === 'translating' ? '🌍 Translating…' : translateStatus[stateKey] === 'partial' ? '↻ Resume Translation' : isFull ? 'CC ✓ Regenerate' : '🎬 Generate Subtitles (CC)'}
                                                 </button>
                                                 <label title="Upload an existing SRT or VTT transcript" className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
                                                     📄 Upload SRT / VTT
-                                                    <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file, activeTab) }} />
+                                                    <input type="file" accept=".srt,.vtt" style={{ display: 'none' }} onChange={async e => { const file = e.target.files?.[0]; if (!file) return; e.target.value = ''; await handleSrtUpload(pid, file, activeMediaType, activeEpisodeId) }} />
                                                 </label>
                                                 {/* Edit Subtitles — appears as soon as subtitles exist (server ready OR any lang translated) */}
                                                 {(serverJobStatus[stateKey] === 'ready' || count > 0 || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial') && (
                                                     <button type="button"
-                                                        onClick={() => openSubtitleEditor(pid, activeMediaUrl, activeTab)}
+                                                        onClick={() => openSubtitleEditor(pid, activeMediaUrl, activeMediaType, activeEpisodeId)}
                                                         className="btn btn-sm"
                                                         style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#818cf8' }}
                                                     >
@@ -1840,7 +1873,7 @@ export default function AdminProjectsPage() {
                                                             type="button"
                                                             disabled={!isApproved || isRunning}
                                                             title={!isApproved ? 'Edit subtitles and click "Approve Source" before translating' : 'Translate to all languages'}
-                                                            onClick={() => isApproved && handleGenerateSubtitles(pid, activeMediaUrl, activeTab)}
+                                                            onClick={() => isApproved && handleGenerateSubtitles(pid, activeMediaUrl, activeMediaType, activeEpisodeId)}
                                                             className="btn btn-sm"
                                                             style={{
                                                                 fontSize: '0.72rem', fontWeight: 700,
@@ -1856,7 +1889,7 @@ export default function AdminProjectsPage() {
                                                     )
                                                 })()}
                                                 {(serverJobStatus[stateKey] === 'ready' || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial' || count > 0) && (
-                                                    <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title, activeTab)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
+                                                    <button type="button" onClick={() => openReview(pid, projects.find(p => p.id === pid)?.title || form.title, activeMediaType, activeEpisodeId)} className="btn btn-sm" style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)' }}>
                                                         🔍 Review Subtitles
                                                     </button>
                                                 )}
