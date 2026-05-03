@@ -104,7 +104,7 @@ export async function GET(request: Request) {
 
     const dailyRaw: { period: string; total: bigint; failed: bigint; opened: bigint }[] = await prisma.$queryRawUnsafe(`
         SELECT
-            TO_CHAR("sentAt", '${chartFormat}') as period,
+            TO_CHAR("sentAt" + INTERVAL '1 minute' * $2, '${chartFormat}') as period,
             COUNT(*)::bigint as total,
             COUNT(*) FILTER (WHERE success = false)::bigint as failed,
             COUNT(*) FILTER (WHERE "openedAt" IS NOT NULL)::bigint as opened
@@ -112,7 +112,7 @@ export async function GET(request: Request) {
         WHERE "sentAt" >= $1
         GROUP BY period
         ORDER BY period ASC
-    `, chartStart)
+    `, chartStart, -tzOffsetMin)
 
     const chartVolume = dailyRaw.map(r => ({
         period: r.period,
