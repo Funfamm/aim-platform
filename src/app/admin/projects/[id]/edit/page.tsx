@@ -365,9 +365,25 @@ export default function ProjectEditPage() {
                 setServerJobMsg(s => ({ ...s, [key]: '🤖 Job queued — worker is processing in background.' }))
                 pollServerJob(d.jobId, mediaType, episodeId)
             } else if (r.status === 409) {
-                setServerJobStatus(s => ({ ...s, [key]: d.status ?? 'processing' }))
-                setServerJobMsg(s => ({ ...s, [key]: '♻️ A subtitle job is already active.' }))
-                if (d.jobId) pollServerJob(d.jobId, mediaType, episodeId)
+                // Auto-clear stuck job and retry
+                setServerJobMsg(s => ({ ...s, [key]: '♻️ Clearing stuck job and retrying…' }))
+                await fetch('/api/admin/subtitle-jobs/clear-stuck', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId, ...(episodeId ? { episodeId } : {}) }),
+                })
+                const retry = await fetch('/api/subtitles/generate', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId, videoUrl: filmUrl, mediaType, ...(episodeId ? { episodeId } : {}) }),
+                })
+                const rd = await retry.json().catch(() => ({}))
+                if (retry.ok && rd.jobId) {
+                    setServerJobId(s => ({ ...s, [key]: rd.jobId }))
+                    setServerJobMsg(s => ({ ...s, [key]: '🤖 Job queued — worker is transcribing in the background.' }))
+                    pollServerJob(rd.jobId, mediaType, episodeId)
+                } else {
+                    setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                    setServerJobMsg(s => ({ ...s, [key]: '⚠️ Could not restart subtitle job. Try again.' }))
+                }
             } else {
                 setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
                 setServerJobMsg(s => ({ ...s, [key]: `⚠️ ${d.error || "Worker not reachable. Is it running?"}` }))
