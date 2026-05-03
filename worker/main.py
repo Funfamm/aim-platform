@@ -71,7 +71,16 @@ WHISPER_MODEL_SIZE = os.environ.get("WHISPER_MODEL", "base")
 MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "2000"))
 VERCEL_BYPASS_SECRET = os.environ.get("VERCEL_BYPASS_SECRET", "").strip()
 # ── Groq (cloud Whisper — primary engine when configured) ─────────────────────
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+# Support multiple keys: GROQ_API_KEYS=key1,key2,key3
+# Falls back to GROQ_API_KEY (single) if GROQ_API_KEYS not set.
+# On 429 rate-limit the worker rotates to the next key automatically.
+_groq_keys_raw = os.environ.get("GROQ_API_KEYS", "").strip()
+if _groq_keys_raw:
+    GROQ_API_KEYS: list[str] = [k.strip() for k in _groq_keys_raw.split(",") if k.strip()]
+else:
+    _single = os.environ.get("GROQ_API_KEY", "").strip()
+    GROQ_API_KEYS = [_single] if _single else []
+GROQ_API_KEY = GROQ_API_KEYS[0] if GROQ_API_KEYS else ""  # kept for health endpoint
 GROQ_MODEL   = os.environ.get("GROQ_MODEL", "whisper-large-v3")
 GROQ_CHUNK_MINUTES = int(os.environ.get("GROQ_CHUNK_MINUTES", "20"))
 GROQ_MAX_BYTES = 24 * 1024 * 1024  # 24 MB — stay under Groq's 25 MB limit
@@ -208,27 +217,45 @@ async def send_callback(payload: dict, max_retries: int = 3) -> None:
 # ── Groq transcription helpers ────────────────────────────────────────────────
 
 def _groq_upload_chunk(chunk_path: Path, language: str | None, offset: float) -> tuple[list[dict], str]:
-    """Synchronous Groq API call — run inside asyncio.to_thread."""
-    import json as _json
+    """Synchronous Groq API call — run inside asyncio.to_thread.
+    Rotates through GROQ_API_KEYS on 429 rate-limit responses.
+    Raises RuntimeError if all keys are exhausted.
+    """
     import httpx
     data: dict = {"model": GROQ_MODEL, "response_format": "verbose_json"}
     if language:
         data["language"] = language
-    with open(chunk_path, "rb") as f:
-        r = httpx.post(
-            "https://api.groq.com/openai/v1/audio/transcriptions",
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
-            files={"file": (chunk_path.name, f, "audio/mpeg")},
-            data=data,
-            timeout=120,
-        )
-    r.raise_for_status()
-    result = r.json()
-    segs = [
-        {"start": round(s["start"] + offset, 3), "end": round(s["end"] + offset, 3), "text": s["text"]}
-        for s in result.get("segments", [])
-    ]
-    return segs, result.get("language", language or "en")
+
+    last_err: Exception | None = None
+    for i, key in enumerate(GROQ_API_KEYS):
+        try:
+            with open(chunk_path, "rb") as f:
+                r = httpx.post(
+                    "https://api.groq.com/openai/v1/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {key}"},
+                    files={"file": (chunk_path.name, f, "audio/mpeg")},
+                    data=data,
+                    timeout=120,
+                )
+            if r.status_code == 429:
+                log.warning(f'"Groq key {i+1}/{len(GROQ_API_KEYS)} hit rate limit (429) — trying next key"')
+                last_err = Exception(f"Key {i+1} rate-limited")
+                continue  # try next key
+            r.raise_for_status()
+            result = r.json()
+            segs = [
+                {"start": round(s["start"] + offset, 3), "end": round(s["end"] + offset, 3), "text": s["text"]}
+                for s in result.get("segments", [])
+            ]
+            return segs, result.get("language", language or "en")
+        except Exception as exc:
+            if "rate" in str(exc).lower() or "429" in str(exc):
+                log.warning(f'"Groq key {i+1}/{len(GROQ_API_KEYS)} rate-limited — trying next key"')
+                last_err = exc
+                continue
+            raise  # non-rate-limit errors propagate immediately
+
+    raise RuntimeError(f"All {len(GROQ_API_KEYS)} Groq key(s) exhausted: {last_err}")
 
 
 async def transcribe_with_groq(audio_path: Path, language: str | None) -> tuple[list[dict], str]:
