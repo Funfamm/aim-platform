@@ -70,6 +70,11 @@ R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
 WHISPER_MODEL_SIZE = os.environ.get("WHISPER_MODEL", "base")
 MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "2000"))
 VERCEL_BYPASS_SECRET = os.environ.get("VERCEL_BYPASS_SECRET", "").strip()
+# ── Groq (cloud Whisper — primary engine when configured) ─────────────────────
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
+GROQ_MODEL   = os.environ.get("GROQ_MODEL", "whisper-large-v3")
+GROQ_CHUNK_MINUTES = int(os.environ.get("GROQ_CHUNK_MINUTES", "20"))
+GROQ_MAX_BYTES = 24 * 1024 * 1024  # 24 MB — stay under Groq's 25 MB limit
 
 # ── Model: load once at startup ───────────────────────────────────────────────
 _whisper_model: WhisperModel | None = None
@@ -78,14 +83,23 @@ _whisper_model: WhisperModel | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _whisper_model
-    log.info(f'"Loading Whisper model: {WHISPER_MODEL_SIZE}"')
-    _whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")
-    log.info('"Whisper model ready"')
+    if GROQ_API_KEY:
+        log.info(f'"Groq mode enabled ({GROQ_MODEL}) — skipping local Whisper model load"')
+    else:
+        log.info(f'"Loading local Whisper model: {WHISPER_MODEL_SIZE}"')
+        _whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")
+        log.info('"Local Whisper model ready"')
     yield
     log.info('"Worker shutting down"')
 
 
+
 app = FastAPI(title="AIM Subtitle Worker", lifespan=lifespan)
+
+# ── Concurrency limiter ───────────────────────────────────────────────────────
+# Only run one transcription at a time — CPU/RAM bound. Later jobs wait cleanly
+# instead of piling up and OOM-killing the process.
+_transcription_sem = asyncio.Semaphore(1)
 
 # ── R2 client ─────────────────────────────────────────────────────────────────
 def get_r2_client():
@@ -191,8 +205,94 @@ async def send_callback(payload: dict, max_retries: int = 3) -> None:
     log.error(f'"All callback attempts failed for job {job_id_cb}"')
 
 
+# ── Groq transcription helpers ────────────────────────────────────────────────
+
+def _groq_upload_chunk(chunk_path: Path, language: str | None, offset: float) -> tuple[list[dict], str]:
+    """Synchronous Groq API call — run inside asyncio.to_thread."""
+    import json as _json
+    import httpx
+    data: dict = {"model": GROQ_MODEL, "response_format": "verbose_json"}
+    if language:
+        data["language"] = language
+    with open(chunk_path, "rb") as f:
+        r = httpx.post(
+            "https://api.groq.com/openai/v1/audio/transcriptions",
+            headers={"Authorization": f"Bearer {GROQ_API_KEY}"},
+            files={"file": (chunk_path.name, f, "audio/mpeg")},
+            data=data,
+            timeout=120,
+        )
+    r.raise_for_status()
+    result = r.json()
+    segs = [
+        {"start": round(s["start"] + offset, 3), "end": round(s["end"] + offset, 3), "text": s["text"]}
+        for s in result.get("segments", [])
+    ]
+    return segs, result.get("language", language or "en")
+
+
+async def transcribe_with_groq(audio_path: Path, language: str | None) -> tuple[list[dict], str]:
+    """Transcribe via Groq Whisper API (whisper-large-v3 on cloud GPUs, free tier).
+    Auto-chunks files larger than GROQ_MAX_BYTES.
+    """
+    file_size = audio_path.stat().st_size
+    if file_size <= GROQ_MAX_BYTES:
+        log.info(f'"Groq: uploading {file_size/1e6:.1f} MB in one shot"')
+        return await asyncio.to_thread(_groq_upload_chunk, audio_path, language, 0.0)
+
+    # ── Chunked path ────────────────────────────────────────────────────────
+    log.info(f'"Groq: file {file_size/1e6:.1f} MB > {GROQ_MAX_BYTES/1e6:.0f} MB — chunking into {GROQ_CHUNK_MINUTES}-min segments"')
+
+    def _get_duration() -> float:
+        import json as _json
+        r = subprocess.run(
+            ["ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", str(audio_path)],
+            capture_output=True, timeout=30,
+        )
+        return float(_json.loads(r.stdout)["format"]["duration"])
+
+    duration = await asyncio.to_thread(_get_duration)
+    chunk_secs = GROQ_CHUNK_MINUTES * 60
+    all_segments: list[dict] = []
+    detected_lang = language or "en"
+    offset = 0.0
+    idx = 0
+
+    while offset < duration:
+        chunk_path = audio_path.parent / f"_chunk_{idx}.mp3"
+        start = offset
+        def _cut_chunk(s=start, out=chunk_path):
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", str(audio_path), "-ss", str(s),
+                 "-t", str(chunk_secs), "-acodec", "copy", str(out)],
+                capture_output=True, timeout=120,
+            )
+        await asyncio.to_thread(_cut_chunk)
+        segs, lang = await asyncio.to_thread(_groq_upload_chunk, chunk_path, language, offset)
+        all_segments.extend(segs)
+        detected_lang = lang
+        chunk_path.unlink(missing_ok=True)
+        offset += chunk_secs
+        idx += 1
+
+    return all_segments, detected_lang
+
+
 # ── Core transcription task ───────────────────────────────────────────────────
+
+async def _guarded_transcription(job_id: str, project_id: str, video_url: str, language: str, media_type: str = "movie") -> None:
+    """Wrapper that enforces the concurrency semaphore.
+    If a job is already running, this awaits until it finishes before starting.
+    The event loop stays free the whole time — semaphore.acquire is non-blocking.
+    """
+    log.info(f'"Job {job_id} waiting for semaphore (another job may be running)"')
+    async with _transcription_sem:
+        log.info(f'"Job {job_id} acquired semaphore — starting transcription"')
+        await run_transcription(job_id, project_id, video_url, language, media_type)
+
+
 async def run_transcription(job_id: str, project_id: str, video_url: str, language: str, media_type: str = "movie") -> None:
+
     start_time = time.monotonic()
     tmp_dir = tempfile.mkdtemp(prefix="aim_subtitle_")
     video_path = Path(tmp_dir) / "video.mp4"
@@ -217,35 +317,53 @@ async def run_transcription(job_id: str, project_id: str, video_url: str, langua
                         f.write(chunk)
         log.info(f'"Video downloaded: {downloaded / 1e6:.1f} MB"')
 
-        # 3. Extract 16 kHz mono WAV with ffmpeg
-        log.info(f'"Extracting audio for job {job_id}"')
-        result = subprocess.run(
-            [
-                "ffmpeg", "-y", "-i", str(video_path),
-                "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
-                str(audio_path),
-            ],
-            capture_output=True,
-            timeout=600,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"ffmpeg failed: {result.stderr.decode()[:500]}")
+        # 3. Extract audio (MP3 for Groq upload efficiency, WAV for local model)
+        use_groq = bool(GROQ_API_KEY)
+        audio_ext = "mp3" if use_groq else "wav"
+        audio_path = Path(tmp_dir) / f"audio.{audio_ext}"
+        log.info(f'"Extracting audio as {audio_ext} for job {job_id}"')
 
-        # 4. Transcribe with faster-whisper
-        log.info(f'"Transcribing with {WHISPER_MODEL_SIZE} model for job {job_id}"')
-        if _whisper_model is None:
-            raise RuntimeError("Whisper model not loaded")
+        def _run_ffmpeg():
+            if use_groq:
+                # MP3 64k mono — ~8x smaller than WAV, accepted by Groq
+                cmd = ["ffmpeg", "-y", "-i", str(video_path),
+                       "-vn", "-acodec", "libmp3lame", "-ab", "64k", "-ar", "16000", "-ac", "1",
+                       str(audio_path)]
+            else:
+                # PCM WAV required by faster-whisper
+                cmd = ["ffmpeg", "-y", "-i", str(video_path),
+                       "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+                       str(audio_path)]
+            return subprocess.run(cmd, capture_output=True, timeout=600)
 
+        ffmpeg_result = await asyncio.to_thread(_run_ffmpeg)
+        if ffmpeg_result.returncode != 0:
+            raise RuntimeError(f"ffmpeg failed: {ffmpeg_result.stderr.decode()[:500]}")
+
+        # 4. Transcribe — Groq cloud (primary) or local faster-whisper (fallback)
         lang_arg = None if language in ("auto", "") else language
-        log.info(f'"[debug] transcriptionStarted jobId={job_id} lang_arg={lang_arg}"')
-        whisper_segs, info = _whisper_model.transcribe(
-            str(audio_path), language=lang_arg, vad_filter=True
-        )
-        detected_lang = info.language
+        log.info(f'"[debug] transcriptionStarted jobId={job_id} engine={"groq" if use_groq else "local"} lang_arg={lang_arg}"')
 
-        segments: list[dict[str, Any]] = []
-        for seg in whisper_segs:
-            segments.append({"start": round(seg.start, 3), "end": round(seg.end, 3), "text": seg.text})
+        if use_groq:
+            log.info(f'"Using Groq {GROQ_MODEL} for job {job_id}"')
+            segments, detected_lang = await transcribe_with_groq(audio_path, lang_arg)
+        else:
+            log.info(f'"Using local faster-whisper ({WHISPER_MODEL_SIZE}) for job {job_id}"')
+            if _whisper_model is None:
+                raise RuntimeError("Whisper model not loaded")
+
+            def _run_whisper():
+                segs, inf = _whisper_model.transcribe(
+                    str(audio_path), language=lang_arg, vad_filter=True
+                )
+                return list(segs), inf
+
+            whisper_segs_list, info = await asyncio.to_thread(_run_whisper)
+            detected_lang = info.language
+            segments = [
+                {"start": round(s.start, 3), "end": round(s.end, 3), "text": s.text}
+                for s in whisper_segs_list
+            ]
 
         # Critical instrumentation — matches Step 1 log format
         log.info(
@@ -304,7 +422,18 @@ async def run_transcription(job_id: str, project_id: str, video_url: str, langua
 # ── FastAPI routes ─────────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
-    return {"status": "ok", "model": WHISPER_MODEL_SIZE, "model_loaded": _whisper_model is not None}
+    if GROQ_API_KEY:
+        engine = "groq"
+        model  = GROQ_MODEL
+    else:
+        engine = "local"
+        model  = WHISPER_MODEL_SIZE
+    return {
+        "status": "ok",
+        "engine": engine,
+        "model": model,
+        "model_loaded": GROQ_API_KEY != "" or _whisper_model is not None,
+    }
 
 
 @app.post("/generate")
@@ -330,6 +459,6 @@ async def generate(request: Request, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=503, detail="VERCEL_CALLBACK_URL not configured")
 
     log.info(f'"Accepted job {job_id} for project {project_id}"')
-    background_tasks.add_task(run_transcription, job_id, project_id, video_url, language, media_type)
+    background_tasks.add_task(_guarded_transcription, job_id, project_id, video_url, language, media_type)
 
     return JSONResponse({"accepted": True, "jobId": job_id})

@@ -267,7 +267,8 @@ export default function AdminProjectsPage() {
                     if (p.trailerUrl) checkSubtitle('trailer')
                     // Check episodes (loaded lazily when edit opens, so also check here for the card view)
                     if (p.projectType === 'series' || p.projectType === 'shorts') {
-                        fetch(`/api/admin/episodes?projectId=${p.id}`).then(r => r.json()).then((eps: { id: string; videoUrl: string }[]) => {
+                        fetch(`/api/admin/episodes?projectId=${p.id}`).then(r => r.json()).then((data: { episodes?: { id: string; videoUrl: string }[] } | { id: string; videoUrl: string }[]) => {
+                            const eps = Array.isArray(data) ? data : (data.episodes || [])
                             eps.forEach(ep => { if (ep.videoUrl) checkSubtitle('episode', ep.id) })
                         }).catch(() => {})
                     }
