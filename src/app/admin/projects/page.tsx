@@ -1916,6 +1916,27 @@ export default function AdminProjectsPage() {
                                                             style={{ fontSize: '0.72rem', fontWeight: 700, background: isActive ? 'rgba(255,255,255,0.04)' : 'rgba(129,140,248,0.12)', border: `1px solid ${isActive ? 'rgba(255,255,255,0.08)' : 'rgba(129,140,248,0.3)'}`, color: isActive ? 'var(--text-tertiary)' : c, cursor: isActive ? 'not-allowed' : 'pointer' }}>
                                                             {btnLabel}
                                                         </button>
+                                                        {/* ── Reset Stuck Job — visible when queued/processing ── */}
+                                                        {isActive && (
+                                                            <button type="button" title="Clear the stuck job so you can resubmit"
+                                                                className="btn btn-sm"
+                                                                style={{ fontSize: '0.72rem', fontWeight: 700, background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.3)', color: '#fb923c', cursor: 'pointer' }}
+                                                                onClick={async () => {
+                                                                    const body: Record<string, string> = { projectId: pid }
+                                                                    if (activeEpisodeId) body.episodeId = activeEpisodeId
+                                                                    const r = await fetch('/api/admin/subtitle-jobs/clear-stuck', {
+                                                                        method: 'POST',
+                                                                        headers: { 'Content-Type': 'application/json' },
+                                                                        body: JSON.stringify(body),
+                                                                    })
+                                                                    const d = await r.json().catch(() => ({}))
+                                                                    const key = esk(pid, activeMediaType, activeEpisodeId)
+                                                                    setServerJobStatus(s => ({ ...s, [key]: 'failed' }))
+                                                                    setServerJobMsg(s => ({ ...s, [key]: `♻️ Cleared ${(d as {cleared?:number}).cleared ?? 0} stuck job(s) — ready to resubmit.` }))
+                                                                }}>
+                                                                ♻️ Reset Stuck Job
+                                                            </button>
+                                                        )}
                                                     </>)
                                                 })()}
                                                 <div style={{ width: '100%', fontSize: '0.6rem', color: 'var(--text-tertiary)', opacity: 0.55, marginBottom: '-2px' }}>
