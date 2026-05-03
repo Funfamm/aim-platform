@@ -126,25 +126,68 @@ export async function POST(request: Request) {
 
         case 'purge_bots': {
             const threshold = typeof body.threshold === 'number' ? body.threshold : 70
-            // Find all subscribers above the bot score threshold
-            const botSubs = await prisma.subscriber.findMany({
-                where: { botScore: { gte: threshold } },
-                select: { email: true, botScore: true },
+
+            // ── Bot score is computed at runtime (no DB column) ──────────────
+            const DISPOSABLE_DOMAINS = new Set([
+                'emailax.pro', 'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
+                'yopmail.com', 'trashmail.com', 'fakeinbox.com', 'sharklasers.com', 'dispostable.com',
+                'mailnesia.com', 'tempail.com', 'temp-mail.org', 'mohmal.com', 'emailondeck.com',
+                'getnada.com', '10minutemail.com', 'minutemail.com', 'maildrop.cc', 'mailcatch.com',
+                'discard.email', 'tempr.email', 'temp-mail.io', 'guerrillamailblock.com', 'grr.la',
+            ])
+            const suspectCountries = new Set(['RU', 'CN', 'IN', 'BR', 'VN', 'ID', 'PK', 'BD', 'NG'])
+
+            function calcBotScore(
+                sub: { email: string; name: string | null; country: string | null },
+                hasOpened: boolean,
+                signupVelocity: number,
+            ): number {
+                let score = 0
+                if (!sub.name) score += 15
+                if (!hasOpened) score += 30
+                if (sub.country && suspectCountries.has(sub.country)) score += 20
+                if (signupVelocity >= 10) score += 20
+                else if (signupVelocity >= 5) score += 10
+                const domain = sub.email.split('@')[1]?.toLowerCase()
+                if (domain && DISPOSABLE_DOMAINS.has(domain)) score += 25
+                return Math.min(score, 100)
+            }
+
+            // Fetch all subscribers + engagement signals
+            const allSubs = await prisma.subscriber.findMany({
+                select: { email: true, name: true, country: true },
             })
+
+            // Open tracking
+            const openedRecords = await prisma.emailLog.findMany({
+                where: { openedAt: { not: null } },
+                select: { to: true },
+                distinct: ['to'],
+            })
+            const openedSet = new Set(openedRecords.map(r => r.to.toLowerCase()))
+
+            // Country velocity
+            const countryGroups = await prisma.subscriber.groupBy({
+                by: ['country'],
+                _count: { country: true },
+            })
+            const countryCountMap = new Map(countryGroups.map(g => [g.country, g._count.country]))
+
+            // Compute scores and find high-risk bots
+            const botSubs = allSubs.filter(s => {
+                const score = calcBotScore(s, openedSet.has(s.email.toLowerCase()), countryCountMap.get(s.country) || 0)
+                return score >= threshold
+            })
+
             if (botSubs.length === 0) {
                 return NextResponse.json({ success: true, purged: 0 })
             }
 
-            // ── Safety exclusions: protect real subscribers ──────────────────────
+            // ── Safety exclusions: protect real subscribers ──────────────────
             const botEmails = botSubs.map(s => s.email)
 
             // 1. Exclude anyone who has opened an email — real engagement
-            const openers = await prisma.emailLog.findMany({
-                where: { to: { in: botEmails }, openedAt: { not: null } },
-                select: { to: true },
-                distinct: ['to'],
-            })
-            const openerSet = new Set(openers.map(o => o.to.toLowerCase()))
+            const openerSet = openedSet // already computed above
 
             // 2. Exclude converted subscribers (registered users)
             const users = await prisma.user.findMany({
@@ -159,7 +202,7 @@ export async function POST(request: Request) {
                 !userSet.has(s.email.toLowerCase())
             )
             if (eligible.length === 0) {
-                return NextResponse.json({ success: true, purged: 0, message: 'All high-risk subscribers have engagement signals — none purged.' })
+                return NextResponse.json({ success: true, purged: 0, protected: botSubs.length, message: 'All high-risk subscribers have engagement signals — none purged.' })
             }
 
             const eligibleEmails = eligible.map(s => s.email)
@@ -172,13 +215,13 @@ export async function POST(request: Request) {
                         reason: 'bot',
                         bounceType: 'permanent',
                         source: 'admin',
-                        detail: `Auto-suppressed: bot score ${sub.botScore} >= threshold ${threshold}`,
+                        detail: `Auto-suppressed: bot score >= threshold ${threshold}`,
                     },
                     update: {
                         reason: 'bot',
                         bounceType: 'permanent',
                         source: 'admin',
-                        detail: `Auto-suppressed: bot score ${sub.botScore} >= threshold ${threshold}`,
+                        detail: `Auto-suppressed: bot score >= threshold ${threshold}`,
                         removedAt: null,
                         removedBy: null,
                     },
@@ -188,8 +231,9 @@ export async function POST(request: Request) {
             const del = await prisma.subscriber.deleteMany({
                 where: { email: { in: eligibleEmails } },
             })
-            logAdminAction({ actor: session.userId, action: 'PURGE_BOT_SUBSCRIBERS', target: `${del.count} bots (score >= ${threshold}, ${openers.length + users.length} protected by engagement/conversion)` })
-            return NextResponse.json({ success: true, purged: del.count, protected: openers.length + users.length })
+            const protectedCount = botSubs.length - eligible.length
+            logAdminAction({ actor: session.userId, action: 'PURGE_BOT_SUBSCRIBERS', target: `${del.count} bots (score >= ${threshold}, ${protectedCount} protected by engagement/conversion)` })
+            return NextResponse.json({ success: true, purged: del.count, protected: protectedCount })
         }
 
         default:
