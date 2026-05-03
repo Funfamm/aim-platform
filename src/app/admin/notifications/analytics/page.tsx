@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
 interface FilmSignup {
     signupTag: string; count: number; projectTitle: string
@@ -49,7 +50,10 @@ export default function AdminNotificationAnalytics() {
     const maxSignup = Math.max(...data.topFilmsBySignups.map(f => f.count), 1)
 
     return (
-        <div style={{ padding: 'var(--space-lg)', maxWidth: '1100px' }}>
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
+            <div style={{ maxWidth: '1100px' }}>
             {/* Header */}
             <div style={{ marginBottom: 'var(--space-xl)' }}>
                 <Link href="/admin/notifications/ctas" style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', textDecoration: 'none' }}>
@@ -152,6 +156,8 @@ export default function AdminNotificationAnalytics() {
                     </div>
                 </div>
             </div>
+            </div>
+            </main>
         </div>
     )
 }

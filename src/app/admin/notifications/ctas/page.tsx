@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
 interface CtaProject {
     id: string; title: string; slug: string; status: string; coverImage: string | null
@@ -127,7 +128,10 @@ export default function AdminNotificationCtas() {
     )
 
     return (
-        <div style={{ padding: 'var(--space-lg)', maxWidth: '1200px' }}>
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
+            <div style={{ maxWidth: '1200px' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: 'var(--space-xl)' }}>
                 <div>
@@ -334,6 +338,8 @@ export default function AdminNotificationCtas() {
                     </table>
                 </div>
             )}
+            </div>
+            </main>
         </div>
     )
 }

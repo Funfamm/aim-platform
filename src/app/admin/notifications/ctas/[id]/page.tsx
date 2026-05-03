@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import AdminSidebar from '@/components/AdminSidebar'
 
 interface SignupItem {
     id: string; email: string; language: string; country: string | null
@@ -141,7 +142,10 @@ export default function AdminCtaDetail() {
     const project = cta.project as Record<string, string> | null
 
     return (
-        <div style={{ padding: 'var(--space-lg)', maxWidth: '1100px' }}>
+        <div className="admin-layout">
+            <AdminSidebar />
+            <main className="admin-main">
+            <div style={{ maxWidth: '1100px' }}>
             {/* Header */}
             <div style={{ marginBottom: 'var(--space-xl)' }}>
                 <Link href="/admin/notifications/ctas" style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', textDecoration: 'none' }}>
@@ -325,6 +329,8 @@ export default function AdminCtaDetail() {
                     )}
                 </div>
             </div>
+            </div>
+            </main>
         </div>
     )
 }
