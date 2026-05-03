@@ -31,7 +31,8 @@ interface SubtitleProgressBarProps {
 
 export default function SubtitleProgressBar({ status, compact = false }: SubtitleProgressBarProps) {
     const [progress, setProgress] = useState(0)
-    const startTimeRef = useRef(Date.now())
+    const startTimeRef = useRef<number>(0)
+    if (startTimeRef.current === 0) startTimeRef.current = Date.now()
     const startTime = startTimeRef.current
 
     useEffect(() => {
