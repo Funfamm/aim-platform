@@ -297,6 +297,15 @@ export default function SubtitleEditor({
                 if (e.key === 'l' || e.key === 'L') { e.preventDefault(); v.pause(); v.currentTime += 0.04 }
                 if (e.key === 'ArrowLeft') { e.preventDefault(); v.currentTime = Math.max(0, v.currentTime - 5) }
                 if (e.key === 'ArrowRight') { e.preventDefault(); v.currentTime = Math.min(v.duration || 999, v.currentTime + 5) }
+                // ── I / O — snap active cue IN / OUT to current video time ──
+                if ((e.key === 'i' || e.key === 'I') && activeCue >= 0) {
+                    e.preventDefault()
+                    updateCue(activeCue, { start: parseFloat(v.currentTime.toFixed(3)) })
+                }
+                if ((e.key === 'o' || e.key === 'O') && activeCue >= 0) {
+                    e.preventDefault()
+                    updateCue(activeCue, { end: parseFloat(v.currentTime.toFixed(3)) })
+                }
             }
         }
         window.addEventListener('keydown', handler)
@@ -305,6 +314,77 @@ export default function SubtitleEditor({
 
     // ── Video state ─────────────────────────────────────────────────────────────
     const videoRef = useRef<HTMLVideoElement>(null)
+
+    // ── Audio waveform (Web Audio API) ─────────────────────────────────────────
+    const waveCanvasRef  = useRef<HTMLCanvasElement>(null)
+    const audioCtxRef    = useRef<AudioContext | null>(null)
+    const analyserRef    = useRef<AnalyserNode | null>(null)
+    const waveRafRef     = useRef<number | null>(null)
+    const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
+
+    // Connect audio analyser to the video element once on mount
+    useEffect(() => {
+        const vid = videoRef.current
+        if (!vid || !filmUrl) return
+        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+        const analyser = ctx.createAnalyser()
+        analyser.fftSize = 256
+        analyser.smoothingTimeConstant = 0.7
+        const src = ctx.createMediaElementSource(vid)
+        src.connect(analyser)
+        analyser.connect(ctx.destination)
+        audioCtxRef.current    = ctx
+        analyserRef.current    = analyser
+        mediaSourceRef.current = src
+
+        const canvas = waveCanvasRef.current
+        if (!canvas) return
+        const W = canvas.width
+        const H = canvas.height
+        const buf = new Uint8Array(analyser.frequencyBinCount)
+        // scrolling waveform columns
+        const history: number[] = new Array(W).fill(0)
+
+        const draw = () => {
+            waveRafRef.current = requestAnimationFrame(draw)
+            analyser.getByteFrequencyData(buf)
+            // RMS amplitude → 0..1
+            const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length) / 255
+            history.push(rms)
+            if (history.length > W) history.shift()
+
+            const c2d = canvas.getContext('2d')
+            if (!c2d) return
+            c2d.clearRect(0, 0, W, H)
+            // background
+            c2d.fillStyle = 'rgba(0,0,0,0.55)'
+            c2d.fillRect(0, 0, W, H)
+            // centre line
+            c2d.strokeStyle = 'rgba(255,255,255,0.06)'
+            c2d.beginPath(); c2d.moveTo(0, H / 2); c2d.lineTo(W, H / 2); c2d.stroke()
+
+            history.forEach((v, x) => {
+                const barH = Math.max(1, v * (H - 4))
+                const green = Math.round(80 + v * 175)
+                c2d.fillStyle = `rgba(0,${green},80,0.85)`
+                c2d.fillRect(x, H / 2 - barH / 2, 1, barH)
+            })
+
+            // speaking indicator badge
+            const isSpeaking = rms > 0.04
+            c2d.fillStyle = isSpeaking ? 'rgba(52,211,153,0.9)' : 'rgba(255,255,255,0.12)'
+            c2d.beginPath()
+            c2d.arc(W - 8, H / 2, 4, 0, Math.PI * 2)
+            c2d.fill()
+        }
+        draw()
+
+        return () => {
+            if (waveRafRef.current) cancelAnimationFrame(waveRafRef.current)
+            src.disconnect(); analyser.disconnect(); ctx.close()
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filmUrl])
     const [activeCue, setActiveCue] = useState(-1)
 
     useEffect(() => {
@@ -1624,6 +1704,28 @@ export default function SubtitleEditor({
                                 title="Cycle through all device previews (1.5s each)"
                             >📱 Preview All</button>
                         </div>
+                    </div>
+                )}
+
+                {/* ── Waveform monitor ── */}
+                {filmUrl && (
+                    <div style={{
+                        padding: '4px 12px 6px',
+                        borderTop: '1px solid rgba(255,255,255,0.05)',
+                        background: 'rgba(0,0,0,0.4)',
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                    }}>
+                        <span style={{ fontSize: '0.52rem', color: 'rgba(52,211,153,0.7)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>🎙 Audio</span>
+                        <canvas
+                            ref={waveCanvasRef}
+                            width={420}
+                            height={32}
+                            style={{ flex: 1, borderRadius: '4px', display: 'block', maxWidth: '100%' }}
+                            title="Real-time audio waveform — green spikes = speech. Press I to snap cue IN, O to snap cue OUT to current time."
+                        />
+                        <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', flexShrink: 0, textAlign: 'right', lineHeight: 1.4 }}>
+                            [I] snap IN<br />[O] snap OUT
+                        </span>
                     </div>
                 )}
 
