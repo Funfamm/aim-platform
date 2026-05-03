@@ -175,6 +175,37 @@ export default function WatchPlayer({
     const [showNotifyModal, setShowNotifyModal] = useState(false)
     const [showNotifyConfirm, setShowNotifyConfirm] = useState(false)
     const endCardDismissedRef = useRef(false)
+
+    /* ── Up Next auto-play state ── */
+    const [showUpNext, setShowUpNext] = useState(false)
+    const [upNextCountdown, setUpNextCountdown] = useState(8)
+    const upNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const nextEpisode = useMemo(() => {
+        if (!isSeries || !activeEpisode) return null
+        const idx = project.episodes.findIndex(e => e.id === activeEpisode.id)
+        return idx >= 0 && idx < project.episodes.length - 1 ? project.episodes[idx + 1] : null
+    }, [isSeries, activeEpisode, project.episodes])
+
+    // Up Next countdown timer
+    useEffect(() => {
+        if (!showUpNext) {
+            if (upNextTimerRef.current) { clearInterval(upNextTimerRef.current); upNextTimerRef.current = null }
+            return
+        }
+        setUpNextCountdown(8)
+        upNextTimerRef.current = setInterval(() => {
+            setUpNextCountdown(prev => {
+                if (prev <= 1) {
+                    // Auto-play next
+                    setShowUpNext(false)
+                    if (nextEpisode) playEpisode(nextEpisode)
+                    return 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+        return () => { if (upNextTimerRef.current) clearInterval(upNextTimerRef.current) }
+    }, [showUpNext]) // eslint-disable-line react-hooks/exhaustive-deps
     /* T4-E: Track-level subtitle placement from the backend (desktop) */
     const [subtitlePlacement, setSubtitlePlacement] = useState<{
         verticalAnchor: string
@@ -783,6 +814,7 @@ export default function WatchPlayer({
     return (
         <div className="aim-watch-wrapper" style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: '80px' }}>
             <style>{`
+                @keyframes upNextFadeIn { from { opacity: 0; } to { opacity: 1; } }
                 .aim-player-container { font-family: inherit; padding: 0 var(--space-lg); }
                 .aim-ctrl-btn {
                     background: none; border: none; color: white;
@@ -1111,6 +1143,11 @@ export default function WatchPlayer({
                             onPause={() => setIsPlaying(false)}
                             onEnded={() => {
                                 setIsPlaying(false); sendSessionEnd()
+                                // For series: auto-play next episode (unless it's the last)
+                                if (isSeries && nextEpisode && !isLastEpisode) {
+                                    setShowUpNext(true)
+                                    return
+                                }
                                 // Show end-card on video end if CTA is active and not dismissed
                                 // For series, only show end-card on the last episode
                                 if (ctaConfig && !endCardDismissedRef.current && isLastEpisode && !showEndCard && !showNotifyModal && !showNotifyConfirm) {
@@ -1278,6 +1315,122 @@ export default function WatchPlayer({
                             lang={userPreferredLang}
                             langName={LANGUAGE_NAMES[userPreferredLang] || userPreferredLang}
                         />
+                    )}
+
+                    {/* ── Up Next auto-play overlay ── */}
+                    {showUpNext && nextEpisode && (
+                        <div
+                            style={{
+                                position: 'absolute', inset: 0, zIndex: 19,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                background: 'rgba(0,0,0,0.85)',
+                                backdropFilter: 'blur(8px)',
+                                WebkitBackdropFilter: 'blur(8px)',
+                                animation: 'upNextFadeIn 0.4s ease',
+                            }}
+                        >
+                            <div style={{ textAlign: 'center', maxWidth: '400px', padding: '0 20px' }}>
+                                {/* Countdown ring */}
+                                <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 20px' }}>
+                                    <svg width="72" height="72" viewBox="0 0 72 72" style={{ transform: 'rotate(-90deg)' }}>
+                                        <circle cx="36" cy="36" r="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                                        <circle
+                                            cx="36" cy="36" r="32" fill="none"
+                                            stroke="var(--accent-gold, #d4a853)" strokeWidth="3"
+                                            strokeLinecap="round"
+                                            strokeDasharray={2 * Math.PI * 32}
+                                            strokeDashoffset={2 * Math.PI * 32 * (1 - upNextCountdown / 8)}
+                                            style={{ transition: 'stroke-dashoffset 1s linear' }}
+                                        />
+                                    </svg>
+                                    <div style={{
+                                        position: 'absolute', inset: 0,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        fontSize: '1.4rem', fontWeight: 800, color: '#fff',
+                                        fontFamily: 'var(--font-display, inherit)',
+                                    }}>
+                                        {upNextCountdown}
+                                    </div>
+                                </div>
+
+                                {/* Label */}
+                                <div style={{
+                                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em',
+                                    textTransform: 'uppercase' as const, color: 'rgba(212,168,83,0.9)',
+                                    marginBottom: '8px',
+                                }}>
+                                    {tPlayer('upNext') || 'Up Next'}
+                                </div>
+
+                                {/* Episode title */}
+                                <h3 style={{
+                                    fontSize: 'clamp(1rem, 3vw, 1.3rem)',
+                                    fontWeight: 800, color: '#fff',
+                                    margin: '0 0 6px',
+                                    fontFamily: 'var(--font-display, inherit)',
+                                }}>
+                                    {`S${nextEpisode.season}E${nextEpisode.number}`} · {getLocalizedEp(nextEpisode).title}
+                                </h3>
+
+                                {/* Episode description */}
+                                {getLocalizedEp(nextEpisode).description && (
+                                    <p style={{
+                                        fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)',
+                                        lineHeight: 1.5, margin: '0 0 24px',
+                                        display: '-webkit-box', WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
+                                    }}>
+                                        {getLocalizedEp(nextEpisode).description}
+                                    </p>
+                                )}
+
+                                {/* Action buttons */}
+                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                                    {/* Play Now */}
+                                    <button
+                                        onClick={() => {
+                                            setShowUpNext(false)
+                                            playEpisode(nextEpisode)
+                                        }}
+                                        style={{
+                                            padding: '10px 24px', borderRadius: '10px',
+                                            border: 'none', cursor: 'pointer',
+                                            background: 'linear-gradient(135deg, #d4a853, #c49a3a)',
+                                            color: '#000', fontSize: '0.85rem', fontWeight: 800,
+                                            transition: 'transform 0.15s, box-shadow 0.2s',
+                                            boxShadow: '0 4px 16px rgba(212,168,83,0.3)',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)' }}
+                                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                                    >
+                                        ▶ {tPlayer('playNow') || 'Play Now'}
+                                    </button>
+
+                                    {/* Cancel */}
+                                    <button
+                                        onClick={() => setShowUpNext(false)}
+                                        style={{
+                                            padding: '10px 24px', borderRadius: '10px',
+                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            background: 'rgba(255,255,255,0.06)',
+                                            color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem',
+                                            fontWeight: 700, cursor: 'pointer',
+                                            transition: 'all 0.2s',
+                                        }}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
+                                        }}
+                                    >
+                                        {tPlayer('cancel') || 'Cancel'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {/* ── Notify Me End-Card Overlay (locale-aware) ── */}

@@ -1423,7 +1423,14 @@
     "hintPlay": "play",
     "hintVolume": "volume",
     "hintMute": "mute",
-    "hintFullscreen": "fullscreen"
+    "hintFullscreen": "fullscreen",
+    "backTo": "← {title}",
+    "continueFrom": "Continue from where you left off?",
+    "resume": "Resume",
+    "startOver": "Start Over",
+    "upNext": "Up Next",
+    "playNow": "Play Now",
+    "cancel": "Cancel"
   },
   "startProject": {
     "hero": {
