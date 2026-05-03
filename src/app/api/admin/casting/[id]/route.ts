@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
+import { notifyNewRole } from '@/lib/notifications'
 
 // Validates that a URL is http/https only — rejects javascript:, data:, etc.
 function isSafeUrl(url: string | undefined): boolean {
@@ -51,6 +52,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             },
             'audition'
         )
+    }
+
+    // Notify opted-in users — only when admin explicitly opts in
+    if (body.sendNotification && castingCall.status === 'open') {
+        const projectTitle = castingCall.project?.title || 'AIM Studio'
+        notifyNewRole(castingCall.id, castingCall.roleName, projectTitle).catch(() => {})
     }
 
     return NextResponse.json(castingCall)

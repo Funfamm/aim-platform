@@ -81,6 +81,7 @@ export default function AdminCastingPage() {
     const [togglingCasting, setTogglingCasting] = useState(false)
     const [showTranslations, setShowTranslations] = useState(false)
     const [retranslating, setRetranslating] = useState(false)
+    const [sendNotification, setSendNotification] = useState(false)
 
     // Fetch data
     useEffect(() => {
@@ -103,6 +104,7 @@ export default function AdminCastingPage() {
     const openCreate = () => {
         setEditingId(null)
         setForm(EMPTY_FORM)
+        setSendNotification(false)
         setShowModal(true)
         setError('')
     }
@@ -124,6 +126,7 @@ export default function AdminCastingPage() {
             status: c.status,
             bannerUrl: (c as unknown as { bannerUrl?: string }).bannerUrl || '',
         })
+        setSendNotification(false)
         setShowModal(true)
         setError('')
         setShowTranslations(false)
@@ -164,7 +167,7 @@ export default function AdminCastingPage() {
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(form),
+                body: JSON.stringify({ ...form, sendNotification }),
             })
             if (!res.ok) {
                 const data = await res.json()
@@ -726,6 +729,32 @@ export default function AdminCastingPage() {
                                         fontSize: '0.85rem', fontWeight: 600, padding: '0.4rem 0.8rem', borderRadius: 'var(--radius-md)',
                                         color: 'var(--error)', background: 'rgba(239,68,68,0.1)',
                                     }}>✗ {error}</div>
+                                )}
+
+                                {/* Notify Users toggle */}
+                                {form.status === 'open' && (
+                                    <label style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                        padding: '10px 14px', borderRadius: '8px',
+                                        background: sendNotification ? 'rgba(52,211,153,0.06)' : 'rgba(255,255,255,0.02)',
+                                        border: `1px solid ${sendNotification ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.06)'}`,
+                                        cursor: 'pointer', transition: 'all 0.2s',
+                                    }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={sendNotification}
+                                            onChange={e => setSendNotification(e.target.checked)}
+                                            style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#34d399' }}
+                                        />
+                                        <div>
+                                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: sendNotification ? '#34d399' : 'var(--text-secondary)' }}>
+                                                📧 Notify Users
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '1px' }}>
+                                                Send email + in-app notification to all opted-in users about this role
+                                            </div>
+                                        </div>
+                                    </label>
                                 )}
 
                                 <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'flex-end', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-subtle)' }}>

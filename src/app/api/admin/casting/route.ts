@@ -78,8 +78,8 @@ export async function POST(req: Request) {
         'audition'
     )
 
-    // Fire-and-forget: notify opted-in users about the new role
-    if ((body.status || 'open') === 'open') {
+    // Notify opted-in users about the new role — only when admin explicitly opts in
+    if (body.sendNotification && (body.status || 'open') === 'open') {
         const projectTitle = castingCall.project?.title || 'AIM Studio'
         notifyNewRole(castingCall.id, body.roleName, projectTitle).catch(() => {})
     }
