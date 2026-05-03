@@ -63,9 +63,9 @@ export default function NotifyMeEndCard({
             // Small delay for mount → animate transition
             const t = setTimeout(() => setAnimateIn(true), 50)
             return () => clearTimeout(t)
-        } else {
-            setAnimateIn(false)
         }
+        const t = setTimeout(() => setAnimateIn(false), 0)
+        return () => clearTimeout(t)
     }, [visible])
 
     if (!visible) return null

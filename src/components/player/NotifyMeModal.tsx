@@ -30,7 +30,8 @@ export default function NotifyMeModal({
             }, 50)
             return () => clearTimeout(t)
         }
-        setAnimateIn(false)
+        const t = setTimeout(() => setAnimateIn(false), 0)
+        return () => clearTimeout(t)
     }, [visible])
 
     if (!visible) return null

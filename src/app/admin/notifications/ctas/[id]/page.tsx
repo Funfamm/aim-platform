@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 
 interface SignupItem {
@@ -11,16 +11,37 @@ interface SignupItem {
 
 interface DistItem { language?: string; country?: string; count: number }
 
+/* ── CopyField — defined at module scope to avoid "component created during render" ── */
+function CopyField({ label, field, value, onChange }: {
+    label: string; field: string; value: string
+    onChange: (field: string, val: string) => void
+}) {
+    return (
+        <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', display: 'block', marginBottom: '4px' }}>
+                {label}
+            </label>
+            <input
+                value={value}
+                onChange={e => onChange(field, e.target.value)}
+                style={{
+                    width: '100%', padding: '8px 12px', borderRadius: '8px', boxSizing: 'border-box',
+                    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-primary)', fontSize: '0.85rem',
+                }}
+            />
+        </div>
+    )
+}
+
 export default function AdminCtaDetail() {
     const params = useParams()
-    const router = useRouter()
     const ctaId = params.id as string
 
     const [cta, setCta] = useState<Record<string, unknown> | null>(null)
     const [signups, setSignups] = useState<SignupItem[]>([])
     const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 })
     const [langDist, setLangDist] = useState<DistItem[]>([])
-    const [countryDist, setCountryDist] = useState<DistItem[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
@@ -30,51 +51,59 @@ export default function AdminCtaDetail() {
     // Editable copy fields
     const [editFields, setEditFields] = useState<Record<string, string>>({})
 
-    const fetchCta = useCallback(async () => {
-        try {
-            const res = await fetch(`/api/admin/cta-configurations?status=all`)
-            const data = await res.json()
-            const found = (data.ctas || []).find((c: Record<string, unknown>) => c.id === ctaId)
-            if (found) {
-                setCta(found)
-                setEditFields({
-                    eyebrow: found.eyebrow || '',
-                    headlineRegular: found.headlineRegular || '',
-                    headlineItalic: found.headlineItalic || '',
-                    subtext: found.subtext || '',
-                    buttonLabel: found.buttonLabel || '',
-                    footnote: found.footnote || '',
-                    modalHeadline: found.modalHeadline || '',
-                    modalSubtext: found.modalSubtext || '',
-                    modalButtonLabel: found.modalButtonLabel || '',
-                    confirmationHeadline: found.confirmationHeadline || '',
-                    confirmationSubtext: found.confirmationSubtext || '',
-                    releasedEyebrow: found.releasedEyebrow || '',
-                    releasedHeadline: found.releasedHeadline || '',
-                    releasedSubtext: found.releasedSubtext || '',
-                    releasedButtonLabel: found.releasedButtonLabel || '',
-                    triggerSecondsFromEnd: String(found.triggerSecondsFromEnd || 5),
-                })
-            }
-        } catch {}
+    // Fetch CTA data
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await fetch(`/api/admin/cta-configurations?status=all`)
+                const data = await res.json()
+                const found = (data.ctas || []).find((c: Record<string, unknown>) => c.id === ctaId)
+                if (found && !cancelled) {
+                    setCta(found)
+                    setEditFields({
+                        eyebrow: found.eyebrow || '',
+                        headlineRegular: found.headlineRegular || '',
+                        headlineItalic: found.headlineItalic || '',
+                        subtext: found.subtext || '',
+                        buttonLabel: found.buttonLabel || '',
+                        footnote: found.footnote || '',
+                        modalHeadline: found.modalHeadline || '',
+                        modalSubtext: found.modalSubtext || '',
+                        modalButtonLabel: found.modalButtonLabel || '',
+                        confirmationHeadline: found.confirmationHeadline || '',
+                        confirmationSubtext: found.confirmationSubtext || '',
+                        releasedEyebrow: found.releasedEyebrow || '',
+                        releasedHeadline: found.releasedHeadline || '',
+                        releasedSubtext: found.releasedSubtext || '',
+                        releasedButtonLabel: found.releasedButtonLabel || '',
+                        triggerSecondsFromEnd: String(found.triggerSecondsFromEnd || 5),
+                    })
+                }
+            } catch {}
+        })()
+        return () => { cancelled = true }
     }, [ctaId])
 
-    const fetchSignups = useCallback(async () => {
-        setLoading(true)
-        try {
-            const qs = new URLSearchParams({ page: String(page), limit: '30', ...(search ? { search } : {}) })
-            const res = await fetch(`/api/admin/cta-configurations/${ctaId}/signups?${qs}`)
-            const data = await res.json()
-            setSignups(data.signups || [])
-            setPagination(data.pagination || { page: 1, total: 0, totalPages: 1 })
-            setLangDist(data.distributions?.languages || [])
-            setCountryDist(data.distributions?.countries || [])
-        } catch {}
-        setLoading(false)
+    // Fetch signups
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            setLoading(true)
+            try {
+                const qs = new URLSearchParams({ page: String(page), limit: '30', ...(search ? { search } : {}) })
+                const res = await fetch(`/api/admin/cta-configurations/${ctaId}/signups?${qs}`)
+                const data = await res.json()
+                if (!cancelled) {
+                    setSignups(data.signups || [])
+                    setPagination(data.pagination || { page: 1, total: 0, totalPages: 1 })
+                    setLangDist(data.distributions?.languages || [])
+                }
+            } catch {}
+            if (!cancelled) setLoading(false)
+        })()
+        return () => { cancelled = true }
     }, [ctaId, page, search])
-
-    useEffect(() => { fetchCta() }, [fetchCta])
-    useEffect(() => { fetchSignups() }, [fetchSignups])
 
     const saveCopy = async () => {
         setSaving(true); setSaveMsg('')
@@ -90,7 +119,6 @@ export default function AdminCtaDetail() {
             })
             if (res.ok) {
                 setSaveMsg('Saved!')
-                await fetchCta()
                 setTimeout(() => setSaveMsg(''), 2000)
             } else {
                 const d = await res.json()
@@ -104,26 +132,13 @@ export default function AdminCtaDetail() {
         window.open(`/api/admin/cta-configurations/${ctaId}/signups?format=csv`, '_blank')
     }
 
+    const handleFieldChange = (field: string, val: string) => {
+        setEditFields(prev => ({ ...prev, [field]: val }))
+    }
+
     if (!cta) return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-tertiary)' }}>Loading...</div>
 
     const project = cta.project as Record<string, string> | null
-
-    const CopyField = ({ label, field }: { label: string; field: string }) => (
-        <div style={{ marginBottom: '12px' }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-tertiary)', display: 'block', marginBottom: '4px' }}>
-                {label}
-            </label>
-            <input
-                value={editFields[field] || ''}
-                onChange={e => setEditFields(prev => ({ ...prev, [field]: e.target.value }))}
-                style={{
-                    width: '100%', padding: '8px 12px', borderRadius: '8px', boxSizing: 'border-box',
-                    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-primary)', fontSize: '0.85rem',
-                }}
-            />
-        </div>
-    )
 
     return (
         <div style={{ padding: 'var(--space-lg)', maxWidth: '1100px' }}>
@@ -148,38 +163,38 @@ export default function AdminCtaDetail() {
                         <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>
                             End-Card Copy
                         </h3>
-                        <CopyField label="Eyebrow" field="eyebrow" />
-                        <CopyField label="Headline (Regular)" field="headlineRegular" />
-                        <CopyField label="Headline (Italic)" field="headlineItalic" />
-                        <CopyField label="Subtext" field="subtext" />
-                        <CopyField label="Button Label" field="buttonLabel" />
-                        <CopyField label="Footnote" field="footnote" />
+                        <CopyField label="Eyebrow" field="eyebrow" value={editFields.eyebrow || ''} onChange={handleFieldChange} />
+                        <CopyField label="Headline (Regular)" field="headlineRegular" value={editFields.headlineRegular || ''} onChange={handleFieldChange} />
+                        <CopyField label="Headline (Italic)" field="headlineItalic" value={editFields.headlineItalic || ''} onChange={handleFieldChange} />
+                        <CopyField label="Subtext" field="subtext" value={editFields.subtext || ''} onChange={handleFieldChange} />
+                        <CopyField label="Button Label" field="buttonLabel" value={editFields.buttonLabel || ''} onChange={handleFieldChange} />
+                        <CopyField label="Footnote" field="footnote" value={editFields.footnote || ''} onChange={handleFieldChange} />
 
                         <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
                             Modal Copy
                         </h3>
-                        <CopyField label="Modal Headline" field="modalHeadline" />
-                        <CopyField label="Modal Subtext" field="modalSubtext" />
-                        <CopyField label="Modal Button" field="modalButtonLabel" />
+                        <CopyField label="Modal Headline" field="modalHeadline" value={editFields.modalHeadline || ''} onChange={handleFieldChange} />
+                        <CopyField label="Modal Subtext" field="modalSubtext" value={editFields.modalSubtext || ''} onChange={handleFieldChange} />
+                        <CopyField label="Modal Button" field="modalButtonLabel" value={editFields.modalButtonLabel || ''} onChange={handleFieldChange} />
 
                         <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
                             Confirmation Copy
                         </h3>
-                        <CopyField label="Headline" field="confirmationHeadline" />
-                        <CopyField label="Subtext" field="confirmationSubtext" />
+                        <CopyField label="Headline" field="confirmationHeadline" value={editFields.confirmationHeadline || ''} onChange={handleFieldChange} />
+                        <CopyField label="Subtext" field="confirmationSubtext" value={editFields.confirmationSubtext || ''} onChange={handleFieldChange} />
 
                         <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
-                            Post-Release "Now Playing" Copy
+                            Post-Release &quot;Now Playing&quot; Copy
                         </h3>
-                        <CopyField label="Released Eyebrow" field="releasedEyebrow" />
-                        <CopyField label="Released Headline" field="releasedHeadline" />
-                        <CopyField label="Released Subtext" field="releasedSubtext" />
-                        <CopyField label="Released Button" field="releasedButtonLabel" />
+                        <CopyField label="Released Eyebrow" field="releasedEyebrow" value={editFields.releasedEyebrow || ''} onChange={handleFieldChange} />
+                        <CopyField label="Released Headline" field="releasedHeadline" value={editFields.releasedHeadline || ''} onChange={handleFieldChange} />
+                        <CopyField label="Released Subtext" field="releasedSubtext" value={editFields.releasedSubtext || ''} onChange={handleFieldChange} />
+                        <CopyField label="Released Button" field="releasedButtonLabel" value={editFields.releasedButtonLabel || ''} onChange={handleFieldChange} />
 
                         <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
                             Behavior
                         </h3>
-                        <CopyField label="Trigger (seconds from end)" field="triggerSecondsFromEnd" />
+                        <CopyField label="Trigger (seconds from end)" field="triggerSecondsFromEnd" value={editFields.triggerSecondsFromEnd || ''} onChange={handleFieldChange} />
 
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px' }}>
                             <button onClick={saveCopy} disabled={saving} style={{
@@ -207,7 +222,7 @@ export default function AdminCtaDetail() {
                         </div>
                     </div>
 
-                    {/* Language / Country chips */}
+                    {/* Language chips */}
                     {langDist.length > 0 && (
                         <div style={{ marginBottom: '12px' }}>
                             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginBottom: '6px' }}>By Language</div>

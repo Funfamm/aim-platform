@@ -35,15 +35,14 @@ export default function AdminNotificationAnalytics() {
     if (loading) return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-tertiary)' }}>Loading analytics...</div>
     if (!data) return <div style={{ padding: '48px', textAlign: 'center', color: 'var(--text-tertiary)' }}>Failed to load analytics</div>
 
-    const StatCard = ({ label, value, color = 'var(--accent-gold)', sub }: { label: string; value: string | number; color?: string; sub?: string }) => (
-        <div style={{
+    const renderStatCard = (label: string, value: string | number, color = 'var(--accent-gold)') => (
+        <div key={label} style={{
             padding: '20px', borderRadius: '12px',
             background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)',
             textAlign: 'center',
         }}>
             <div style={{ fontSize: '2rem', fontWeight: 800, color }}>{value}</div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>{label}</div>
-            {sub && <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '2px', opacity: 0.6 }}>{sub}</div>}
         </div>
     )
 
@@ -66,10 +65,10 @@ export default function AdminNotificationAnalytics() {
 
             {/* Stat cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-                <StatCard label="Total Signups" value={data.totalSignups.toLocaleString()} />
-                <StatCard label="Last 7 Days" value={`+${data.signupsLast7Days}`} color="#48bb78" />
-                <StatCard label="Last 30 Days" value={`+${data.signupsLast30Days}`} color="#63b3ed" />
-                <StatCard label="Active CTAs" value={data.activeCtas} color="#9f7aea" />
+                {renderStatCard('Total Signups', data.totalSignups.toLocaleString())}
+                {renderStatCard('Last 7 Days', `+${data.signupsLast7Days}`, '#48bb78')}
+                {renderStatCard('Last 30 Days', `+${data.signupsLast30Days}`, '#63b3ed')}
+                {renderStatCard('Active CTAs', data.activeCtas, '#9f7aea')}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>

@@ -19,7 +19,8 @@ export default function NotifyMeConfirmation({
             const t = setTimeout(() => setAnimateIn(true), 50)
             return () => clearTimeout(t)
         }
-        setAnimateIn(false)
+        const t = setTimeout(() => setAnimateIn(false), 0)
+        return () => clearTimeout(t)
     }, [visible])
 
     // Auto-dismiss after 5 seconds
