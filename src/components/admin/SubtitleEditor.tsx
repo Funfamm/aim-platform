@@ -282,9 +282,22 @@ export default function SubtitleEditor({
     // Keyboard shortcuts
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
+            const tag = (e.target as HTMLElement)?.tagName
+            const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
             if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo() }
             if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) { e.preventDefault(); redo() }
             if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveDraftRef.current?.() }
+            // Video transport shortcuts (only when not typing)
+            if (!isTyping) {
+                const v = videoRef.current
+                if (!v) return
+                if (e.key === ' ') { e.preventDefault(); v.paused ? v.play().catch(() => {}) : v.pause() }
+                if (e.key === 'j' || e.key === 'J') { e.preventDefault(); v.pause(); v.currentTime = Math.max(0, v.currentTime - 0.04) }
+                if (e.key === 'k' || e.key === 'K') { e.preventDefault(); v.pause() }
+                if (e.key === 'l' || e.key === 'L') { e.preventDefault(); v.pause(); v.currentTime += 0.04 }
+                if (e.key === 'ArrowLeft') { e.preventDefault(); v.currentTime = Math.max(0, v.currentTime - 5) }
+                if (e.key === 'ArrowRight') { e.preventDefault(); v.currentTime = Math.min(v.duration || 999, v.currentTime + 5) }
+            }
         }
         window.addEventListener('keydown', handler)
         return () => window.removeEventListener('keydown', handler)
@@ -1220,6 +1233,11 @@ export default function SubtitleEditor({
                             <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Z</kbd> Undo </span>
                             <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>Ctrl+Y</kbd> Redo</span>
                         </div>
+                        <div style={{ fontSize: '0.52rem', color: 'rgba(255,255,255,0.15)', lineHeight: 1.7, marginTop: '2px' }}>
+                            <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>Space</kbd> Play/Pause </span>
+                            <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>J</kbd>/<kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>L</kbd> Frame ±  </span>
+                            <span><kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>←</kbd>/<kbd style={{ fontFamily: 'monospace', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '3px', padding: '0 3px' }}>→</kbd> ±5s</span>
+                        </div>
                     </div>
                 </div>
 
@@ -1489,10 +1507,107 @@ export default function SubtitleEditor({
                             </div>
                         </div>
 
-                        {/* ── Row 4: Preview All Devices ── */}
-                        <div style={{ padding: '5px 10px', width: '100%', boxSizing: 'border-box', borderTop: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
+                        {/* ── Row 4: Transport Controls ── */}
+                        <div style={{
+                            padding: '6px 10px', width: '100%', boxSizing: 'border-box',
+                            borderTop: '1px solid rgba(255,255,255,0.06)', flexShrink: 0,
+                            background: 'rgba(0,0,0,0.45)',
+                            display: 'flex', alignItems: 'center', gap: '4px',
+                        }}>
+                            {/* Skip back 5s */}
+                            <button
+                                onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.max(0, v.currentTime - 5) }}
+                                title="Skip back 5s"
+                                style={{ padding: '3px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)', lineHeight: 1 }}
+                            >⏪</button>
+
+                            {/* Frame step back */}
+                            <button
+                                onClick={() => { const v = videoRef.current; if (v) { v.pause(); v.currentTime = Math.max(0, v.currentTime - 0.04) } }}
+                                title="Step back 1 frame"
+                                style={{ padding: '3px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)', lineHeight: 1 }}
+                            >◀</button>
+
+                            {/* Play / Pause */}
+                            <button
+                                onClick={() => {
+                                    const v = videoRef.current
+                                    if (!v) return
+                                    if (v.paused) v.play().catch(() => {})
+                                    else v.pause()
+                                }}
+                                title="Play / Pause (Space)"
+                                style={{
+                                    padding: '4px 12px', fontSize: '0.72rem', cursor: 'pointer', borderRadius: '5px',
+                                    background: 'rgba(212,168,83,0.12)', border: '1px solid rgba(212,168,83,0.35)',
+                                    color: 'var(--accent-gold)', fontWeight: 700, lineHeight: 1,
+                                }}
+                            >▶⏸</button>
+
+                            {/* Frame step forward */}
+                            <button
+                                onClick={() => { const v = videoRef.current; if (v) { v.pause(); v.currentTime += 0.04 } }}
+                                title="Step forward 1 frame"
+                                style={{ padding: '3px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)', lineHeight: 1 }}
+                            >▶</button>
+
+                            {/* Skip forward 5s */}
+                            <button
+                                onClick={() => { const v = videoRef.current; if (v) v.currentTime = Math.min(v.duration || 999, v.currentTime + 5) }}
+                                title="Skip forward 5s"
+                                style={{ padding: '3px 6px', fontSize: '0.65rem', cursor: 'pointer', borderRadius: '4px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)', lineHeight: 1 }}
+                            >⏩</button>
+
+                            {/* Timecode display */}
+                            <div style={{
+                                fontSize: '0.58rem', fontFamily: 'monospace', fontWeight: 600,
+                                color: 'var(--text-secondary)', padding: '0 6px',
+                                minWidth: '80px', textAlign: 'center',
+                            }}>
+                                {(() => {
+                                    const v = videoRef.current
+                                    const t = v?.currentTime || 0
+                                    const d = v?.duration || 0
+                                    const fmt = (s: number) => {
+                                        const m = Math.floor(s / 60)
+                                        const sec = Math.floor(s % 60)
+                                        const ms = Math.floor((s % 1) * 100)
+                                        return `${m}:${String(sec).padStart(2, '0')}.${String(ms).padStart(2, '0')}`
+                                    }
+                                    return `${fmt(t)} / ${fmt(d)}`
+                                })()}
+                            </div>
+
+                            {/* Divider */}
+                            <div style={{ width: '1px', height: '14px', background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} />
+
+                            {/* Speed selector */}
+                            <select
+                                onChange={e => { const v = videoRef.current; if (v) v.playbackRate = parseFloat(e.target.value) }}
+                                defaultValue="1"
+                                title="Playback speed"
+                                style={{
+                                    padding: '2px 4px', fontSize: '0.55rem', cursor: 'pointer', borderRadius: '4px',
+                                    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+                                    color: 'var(--text-tertiary)', outline: 'none',
+                                }}
+                            >
+                                <option value="0.25">0.25×</option>
+                                <option value="0.5">0.5×</option>
+                                <option value="0.75">0.75×</option>
+                                <option value="1">1×</option>
+                                <option value="1.5">1.5×</option>
+                                <option value="2">2×</option>
+                            </select>
+
+                            {/* Spacer */}
+                            <div style={{ flex: 1 }} />
+
+                            {/* Preview All Devices */}
                             <button
                                 onClick={async () => {
+                                    const v = videoRef.current
+                                    if (v) v.pause()
                                     const devices: PreviewDevice[] = ['desktop', 'portrait', 'landscape']
                                     for (const d of devices) {
                                         setPreviewDevice(d); markDevicePreviewed(d)
@@ -1501,12 +1616,13 @@ export default function SubtitleEditor({
                                     setMsg('✓ All device previews completed'); setTimeout(() => setMsg(''), 2500)
                                 }}
                                 style={{
-                                    width: '100%', padding: '5px', fontSize: '0.58rem', cursor: 'pointer',
-                                    background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
-                                    borderRadius: '6px', color: 'var(--text-tertiary)', transition: 'all 0.15s',
+                                    padding: '3px 10px', fontSize: '0.55rem', cursor: 'pointer',
+                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: '5px', color: 'var(--text-tertiary)', transition: 'all 0.15s',
+                                    whiteSpace: 'nowrap',
                                 }}
                                 title="Cycle through all device previews (1.5s each)"
-                            >📱 Preview All Devices</button>
+                            >📱 Preview All</button>
                         </div>
                     </div>
                 )}
