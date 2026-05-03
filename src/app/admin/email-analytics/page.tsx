@@ -136,30 +136,6 @@ export default function EmailAnalyticsPage() {
 
                 {!loading && data && tab === 'overview' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        {/* Stat Cards */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-                            {[
-                                { label: 'Total Sent', value: data.periodStats.sent, icon: '📤', color: '#60a5fa' },
-                                { label: 'Delivered', value: data.periodStats.success, icon: '✅', color: '#34d399' },
-                                { label: 'Failed', value: data.periodStats.failed, icon: '❌', color: '#ef4444' },
-                                { label: 'Opened', value: data.periodStats.opened, icon: '👁', color: '#c084fc' },
-                                { label: 'Success Rate', value: `${data.periodStats.successRate}%`, icon: '📈', color: '#34d399' },
-                                { label: 'Open Rate ~', value: `${data.periodStats.openRate}%`, icon: '📬', color: '#f59e0b' },
-                            ].map(s => (
-                                <div key={s.label} style={{
-                                    padding: '18px 16px', borderRadius: '12px', minHeight: '88px',
-                                    background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)',
-                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                                }}>
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                        {s.icon} {s.label}
-                                    </div>
-                                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: s.color, marginTop: '8px' }}>
-                                        {typeof s.value === 'number' ? s.value.toLocaleString() : s.value}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
 
                         {/* Open rate disclaimer */}
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', padding: '10px 14px', borderRadius: '8px', background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.12)', lineHeight: 1.5 }}>
