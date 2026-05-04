@@ -13,7 +13,10 @@ export default function SubscribeForm() {
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'pending' | 'error'>('idle')
     const [turnstileToken, setTurnstileToken] = useState('')
     const turnstileRef = useRef<HTMLDivElement>(null)
-    const loadedAtRef = useRef(Date.now()) // time-delay bot check: captured at mount
+    const loadedAtRef = useRef(0) // time-delay bot check — set on mount via useEffect (can't call Date.now() in render body)
+
+    // Capture mount timestamp for time-delay bot check
+    useEffect(() => { loadedAtRef.current = Date.now() }, [])
 
     // Load Turnstile widget
     useEffect(() => {
@@ -49,7 +52,8 @@ export default function SubscribeForm() {
                 'expired-callback': () => setTurnstileToken(''),
                 'error-callback': () => { /* widget error — button stays enabled */ },
                 theme: 'dark',
-                size: 'compact',
+                size: 'invisible',       // auto-executes; no user interaction needed
+                execution: 'render',     // fire immediately on render
             })
         }
     }, [])
@@ -188,16 +192,16 @@ export default function SubscribeForm() {
                 />
                 <button
                     type="submit"
-                    disabled={status === 'sending'}
+                    disabled={status === 'sending' || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
                     className="btn btn-primary"
-                    style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.5rem', fontSize: '0.85rem', flexShrink: 0 }}
+                    style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.5rem', fontSize: '0.85rem', flexShrink: 0, opacity: (!!TURNSTILE_SITE_KEY && !turnstileToken) ? 0.6 : 1, transition: 'opacity 0.2s' }}
                 >
-                    {status === 'sending' ? '...' : t('subscribe')}
+                    {status === 'sending' ? '...' : (!!TURNSTILE_SITE_KEY && !turnstileToken) ? '...' : t('subscribe')}
                 </button>
             </div>
-            {/* Turnstile widget — renders inline below the input */}
+            {/* Turnstile — invisible mode, auto-executes, no visible widget */}
             {TURNSTILE_SITE_KEY && (
-                <div ref={turnstileRef} style={{ minHeight: '65px' }} />
+                <div ref={turnstileRef} style={{ display: 'none' }} />
             )}
         </form>
     )

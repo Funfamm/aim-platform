@@ -298,13 +298,13 @@ export default function SubtitleEditor({
                 if (e.key === 'ArrowLeft') { e.preventDefault(); v.currentTime = Math.max(0, v.currentTime - 5) }
                 if (e.key === 'ArrowRight') { e.preventDefault(); v.currentTime = Math.min(v.duration || 999, v.currentTime + 5) }
                 // ── I / O — snap active cue IN / OUT to current video time ──
-                if ((e.key === 'i' || e.key === 'I') && activeCue >= 0) {
+                if ((e.key === 'i' || e.key === 'I') && activeCueRef.current >= 0) {
                     e.preventDefault()
-                    updateCue(activeCue, { start: parseFloat(v.currentTime.toFixed(3)) })
+                    updateCue(activeCueRef.current, { start: parseFloat(v.currentTime.toFixed(3)) })
                 }
-                if ((e.key === 'o' || e.key === 'O') && activeCue >= 0) {
+                if ((e.key === 'o' || e.key === 'O') && activeCueRef.current >= 0) {
                     e.preventDefault()
-                    updateCue(activeCue, { end: parseFloat(v.currentTime.toFixed(3)) })
+                    updateCue(activeCueRef.current, { end: parseFloat(v.currentTime.toFixed(3)) })
                 }
             }
         }
@@ -379,13 +379,20 @@ export default function SubtitleEditor({
         }
         draw()
 
+        // ── Fix: resume AudioContext on play (browser autoplay policy suspends it) ──
+        const resumeCtx = () => { if (ctx.state === 'suspended') ctx.resume().catch(() => {}) }
+        vid.addEventListener('play', resumeCtx)
+
         return () => {
+            vid.removeEventListener('play', resumeCtx)
             if (waveRafRef.current) cancelAnimationFrame(waveRafRef.current)
             src.disconnect(); analyser.disconnect(); ctx.close()
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filmUrl])
     const [activeCue, setActiveCue] = useState(-1)
+    const activeCueRef = useRef(-1) // ref keeps keydown handler current without re-registering
+    useEffect(() => { activeCueRef.current = activeCue }, [activeCue])
 
     useEffect(() => {
         const vid = videoRef.current
@@ -1707,27 +1714,6 @@ export default function SubtitleEditor({
                     </div>
                 )}
 
-                {/* ── Waveform monitor ── */}
-                {filmUrl && (
-                    <div style={{
-                        padding: '4px 12px 6px',
-                        borderTop: '1px solid rgba(255,255,255,0.05)',
-                        background: 'rgba(0,0,0,0.4)',
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                    }}>
-                        <span style={{ fontSize: '0.52rem', color: 'rgba(52,211,153,0.7)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', flexShrink: 0 }}>🎙 Audio</span>
-                        <canvas
-                            ref={waveCanvasRef}
-                            width={420}
-                            height={32}
-                            style={{ flex: 1, borderRadius: '4px', display: 'block', maxWidth: '100%' }}
-                            title="Real-time audio waveform — green spikes = speech. Press I to snap cue IN, O to snap cue OUT to current time."
-                        />
-                        <span style={{ fontSize: '0.5rem', color: 'rgba(255,255,255,0.3)', flexShrink: 0, textAlign: 'right', lineHeight: 1.4 }}>
-                            [I] snap IN<br />[O] snap OUT
-                        </span>
-                    </div>
-                )}
 
                 {/* ══════════ RIGHT PANEL — Cue Info & Device Summary ══════════ */}
                 <div style={{
@@ -1826,16 +1812,63 @@ export default function SubtitleEditor({
                 height: '42vh', flexShrink: 0, borderTop: '2px solid rgba(255,255,255,0.08)',
                 background: 'rgba(8,10,15,0.99)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
             }}>
-                {/* Timeline header */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '6px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,12,18,0.95)', flexShrink: 0 }}>
-                    <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.07em', color: 'rgba(212,168,83,0.7)', textTransform: 'uppercase' }}>
+                {/* Timeline header — includes inline waveform monitor */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '5px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(10,12,18,0.95)', flexShrink: 0 }}>
+                    <div style={{ fontSize: '0.58rem', fontWeight: 700, letterSpacing: '0.07em', color: 'rgba(212,168,83,0.7)', textTransform: 'uppercase', flexShrink: 0 }}>
                         Cue Timeline
                     </div>
-                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)' }}>{cues.length} cues</div>
-                    {warningCount > 0 && <span style={{ fontSize: '0.58rem', color: '#f59e0b' }}>⚠ {warningCount} warning{warningCount !== 1 ? 's' : ''}</span>}
-                    {hardErrors > 0 && <span style={{ fontSize: '0.58rem', color: '#ef4444' }}>✕ {hardErrors} error{hardErrors !== 1 ? 's' : ''}</span>}
-                    <div style={{ flex: 1 }} />
-                    <button onClick={() => insertAfter(cues.length - 1)} style={{ padding: '3px 10px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)', borderRadius: '5px', color: 'var(--accent-gold)' }}>+ Add Cue</button>
+                    <div style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', flexShrink: 0 }}>{cues.length} cues</div>
+                    {warningCount > 0 && <span style={{ fontSize: '0.58rem', color: '#f59e0b', flexShrink: 0 }}>⚠ {warningCount} warning{warningCount !== 1 ? 's' : ''}</span>}
+                    {hardErrors > 0 && <span style={{ fontSize: '0.58rem', color: '#ef4444', flexShrink: 0 }}>✕ {hardErrors} error{hardErrors !== 1 ? 's' : ''}</span>}
+
+                    {/* ── Inline waveform monitor + snap buttons ── */}
+                    {filmUrl && (
+                        <>
+                            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.5rem', color: 'rgba(52,211,153,0.7)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>🎙</span>
+                            <canvas
+                                ref={waveCanvasRef}
+                                width={600}
+                                height={26}
+                                style={{ flex: 1, borderRadius: '3px', display: 'block', minWidth: 0 }}
+                                title="Real-time audio waveform — green spikes = speech."
+                            />
+                            {/* Snap IN / OUT clickable buttons */}
+                            <button
+                                onClick={() => {
+                                    const v = videoRef.current
+                                    if (v && activeCue >= 0) updateCue(activeCue, { start: parseFloat(v.currentTime.toFixed(3)) })
+                                }}
+                                disabled={activeCue < 0}
+                                title="Snap active cue IN point to current time (keyboard: I)"
+                                style={{
+                                    padding: '2px 7px', fontSize: '0.58rem', fontWeight: 700, cursor: activeCue >= 0 ? 'pointer' : 'not-allowed',
+                                    background: activeCue >= 0 ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.03)',
+                                    border: `1px solid ${activeCue >= 0 ? 'rgba(52,211,153,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                                    borderRadius: '4px', color: activeCue >= 0 ? 'rgba(52,211,153,0.9)' : 'var(--text-tertiary)',
+                                    flexShrink: 0, whiteSpace: 'nowrap', opacity: activeCue >= 0 ? 1 : 0.4,
+                                }}
+                            >⬅ IN</button>
+                            <button
+                                onClick={() => {
+                                    const v = videoRef.current
+                                    if (v && activeCue >= 0) updateCue(activeCue, { end: parseFloat(v.currentTime.toFixed(3)) })
+                                }}
+                                disabled={activeCue < 0}
+                                title="Snap active cue OUT point to current time (keyboard: O)"
+                                style={{
+                                    padding: '2px 7px', fontSize: '0.58rem', fontWeight: 700, cursor: activeCue >= 0 ? 'pointer' : 'not-allowed',
+                                    background: activeCue >= 0 ? 'rgba(251,191,36,0.1)' : 'rgba(255,255,255,0.03)',
+                                    border: `1px solid ${activeCue >= 0 ? 'rgba(251,191,36,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                                    borderRadius: '4px', color: activeCue >= 0 ? '#fbbf24' : 'var(--text-tertiary)',
+                                    flexShrink: 0, whiteSpace: 'nowrap', opacity: activeCue >= 0 ? 1 : 0.4,
+                                }}
+                            >OUT ➡</button>
+                            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
+                        </>
+                    )}
+
+                    <button onClick={() => insertAfter(cues.length - 1)} style={{ padding: '3px 10px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)', borderRadius: '5px', color: 'var(--accent-gold)', flexShrink: 0 }}>+ Add Cue</button>
                 </div>
 
                 {/* Scrollable cue rows */}
