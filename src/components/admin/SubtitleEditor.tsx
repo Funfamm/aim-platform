@@ -17,6 +17,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { parseSRT, parseVTT } from '@/lib/subtitle-file-parser'
+import WaveformTimeline from '@/components/admin/WaveformTimeline'
 
 export type SubtitleCue = { start: number; end: number; text: string }
 
@@ -1735,7 +1736,7 @@ export default function SubtitleEditor({
 
             {/* ══════════ BOTTOM PANEL — Cue Timeline ══════════ */}
             <div style={{
-                height: '42vh', flexShrink: 0, borderTop: '2px solid rgba(255,255,255,0.08)',
+                height: '52vh', flexShrink: 0, borderTop: '2px solid rgba(255,255,255,0.08)',
                 background: 'rgba(8,10,15,0.99)', display: 'flex', flexDirection: 'column', overflow: 'hidden',
             }}>
                 {/* Timeline header — includes inline waveform monitor */}
@@ -1786,6 +1787,16 @@ export default function SubtitleEditor({
 
                     <button onClick={() => insertAfter(cues.length - 1)} style={{ padding: '3px 10px', fontSize: '0.6rem', cursor: 'pointer', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)', borderRadius: '5px', color: 'var(--accent-gold)', flexShrink: 0 }}>+ Add Cue</button>
                 </div>
+
+                {/* ── Full audio waveform timeline ── */}
+                {filmUrl && (
+                    <WaveformTimeline
+                        filmUrl={filmUrl}
+                        videoRef={videoRef}
+                        cues={cues}
+                        activeCue={activeCue}
+                    />
+                )}
 
                 {/* Scrollable cue rows */}
                 <div style={{ flex: 1, overflowY: 'auto', padding: '6px 10px' }}>
