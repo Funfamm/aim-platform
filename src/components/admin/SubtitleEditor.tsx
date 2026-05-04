@@ -315,80 +315,7 @@ export default function SubtitleEditor({
     // ── Video state ─────────────────────────────────────────────────────────────
     const videoRef = useRef<HTMLVideoElement>(null)
 
-    // ── Audio waveform (Web Audio API — lazy: set up on first play click) ──────
-    const waveCanvasRef  = useRef<HTMLCanvasElement>(null)
-    const audioCtxRef    = useRef<AudioContext | null>(null)
-    const analyserRef    = useRef<AnalyserNode | null>(null)
-    const waveRafRef     = useRef<number | null>(null)
-    const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
-    const audioSetupDone = useRef(false)
 
-    // Draw loop — runs from mount, reads analyserRef (flat line until first play)
-    useEffect(() => {
-        const canvas = waveCanvasRef.current
-        if (!canvas || !filmUrl) return
-        const W = canvas.width
-        const H = canvas.height
-        const buf = new Uint8Array(128)
-        const history: number[] = new Array(W).fill(0)
-
-        const draw = () => {
-            waveRafRef.current = requestAnimationFrame(draw)
-            const analyser = analyserRef.current
-            if (analyser) analyser.getByteFrequencyData(buf)
-            const rms = analyser
-                ? Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length) / 255
-                : 0
-            history.push(rms)
-            if (history.length > W) history.shift()
-
-            const c2d = canvas.getContext('2d')
-            if (!c2d) return
-            c2d.clearRect(0, 0, W, H)
-            c2d.fillStyle = 'rgba(0,0,0,0.55)'
-            c2d.fillRect(0, 0, W, H)
-            c2d.strokeStyle = 'rgba(255,255,255,0.06)'
-            c2d.beginPath(); c2d.moveTo(0, H / 2); c2d.lineTo(W, H / 2); c2d.stroke()
-            history.forEach((v, x) => {
-                const barH = Math.max(1, v * (H - 4))
-                const green = Math.round(80 + v * 175)
-                c2d.fillStyle = `rgba(0,${green},80,0.85)`
-                c2d.fillRect(x, H / 2 - barH / 2, 1, barH)
-            })
-            const isSpeaking = rms > 0.04
-            c2d.fillStyle = isSpeaking ? 'rgba(52,211,153,0.9)' : 'rgba(255,255,255,0.12)'
-            c2d.beginPath()
-            c2d.arc(W - 8, H / 2, 4, 0, Math.PI * 2)
-            c2d.fill()
-        }
-        draw()
-        return () => { if (waveRafRef.current) cancelAnimationFrame(waveRafRef.current) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filmUrl])
-
-    // ── Lazy audio setup — MUST be called from a direct user gesture (click) ──
-    // Creating AudioContext + createMediaElementSource outside a user gesture
-    // causes the context to start suspended, silencing the video permanently.
-    const lazySetupAudio = () => {
-        if (audioSetupDone.current) return   // already wired up
-        const vid = videoRef.current
-        if (!vid || !filmUrl) return
-        try {
-            const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-            const analyser = ctx.createAnalyser()
-            analyser.fftSize = 256
-            analyser.smoothingTimeConstant = 0.7
-            const src = ctx.createMediaElementSource(vid)
-            src.connect(analyser)
-            analyser.connect(ctx.destination)
-            audioCtxRef.current    = ctx
-            analyserRef.current    = analyser
-            mediaSourceRef.current = src
-            audioSetupDone.current = true
-        } catch (e) {
-            console.warn('[audio] lazy setup failed:', e)
-        }
-    }
     const [activeCue, setActiveCue] = useState(-1)
     const activeCueRef = useRef(-1) // ref keeps keydown handler current without re-registering
     useEffect(() => { activeCueRef.current = activeCue }, [activeCue])
@@ -1617,7 +1544,6 @@ export default function SubtitleEditor({
                             {/* Play / Pause */}
                             <button
                                 onClick={() => {
-                                    lazySetupAudio() // ─ set up Web Audio on first user gesture
                                     const v = videoRef.current
                                     if (!v) return
                                     if (v.paused) v.play().catch(() => {})
@@ -1821,19 +1747,10 @@ export default function SubtitleEditor({
                     {warningCount > 0 && <span style={{ fontSize: '0.58rem', color: '#f59e0b', flexShrink: 0 }}>⚠ {warningCount} warning{warningCount !== 1 ? 's' : ''}</span>}
                     {hardErrors > 0 && <span style={{ fontSize: '0.58rem', color: '#ef4444', flexShrink: 0 }}>✕ {hardErrors} error{hardErrors !== 1 ? 's' : ''}</span>}
 
-                    {/* ── Inline waveform monitor + snap buttons ── */}
+                    {/* ── Snap IN / OUT buttons ── */}
                     {filmUrl && (
                         <>
-                            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
-                            <span style={{ fontSize: '0.5rem', color: 'rgba(52,211,153,0.7)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', flexShrink: 0 }}>🎙</span>
-                            <canvas
-                                ref={waveCanvasRef}
-                                width={600}
-                                height={26}
-                                style={{ flex: 1, borderRadius: '3px', display: 'block', minWidth: 0 }}
-                                title="Real-time audio waveform — green spikes = speech."
-                            />
-                            {/* Snap IN / OUT clickable buttons */}
+                            <div style={{ flex: 1 }} />
                             <button
                                 onClick={() => {
                                     const v = videoRef.current
@@ -1864,7 +1781,6 @@ export default function SubtitleEditor({
                                     flexShrink: 0, whiteSpace: 'nowrap', opacity: activeCue >= 0 ? 1 : 0.4,
                                 }}
                             >OUT ➡</button>
-                            <div style={{ width: '1px', height: '16px', background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} />
                         </>
                     )}
 
