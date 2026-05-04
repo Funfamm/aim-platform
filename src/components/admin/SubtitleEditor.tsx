@@ -315,62 +315,46 @@ export default function SubtitleEditor({
     // ── Video state ─────────────────────────────────────────────────────────────
     const videoRef = useRef<HTMLVideoElement>(null)
 
-    // ── Audio waveform (Web Audio API) ─────────────────────────────────────────
+    // ── Audio waveform (Web Audio API — lazy: set up on first play click) ──────
     const waveCanvasRef  = useRef<HTMLCanvasElement>(null)
     const audioCtxRef    = useRef<AudioContext | null>(null)
     const analyserRef    = useRef<AnalyserNode | null>(null)
     const waveRafRef     = useRef<number | null>(null)
     const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null)
+    const audioSetupDone = useRef(false)
 
-    // Connect audio analyser to the video element once on mount
+    // Draw loop — runs from mount, reads analyserRef (flat line until first play)
     useEffect(() => {
-        const vid = videoRef.current
-        if (!vid || !filmUrl) return
-        const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
-        const analyser = ctx.createAnalyser()
-        analyser.fftSize = 256
-        analyser.smoothingTimeConstant = 0.7
-        const src = ctx.createMediaElementSource(vid)
-        src.connect(analyser)
-        analyser.connect(ctx.destination)
-        audioCtxRef.current    = ctx
-        analyserRef.current    = analyser
-        mediaSourceRef.current = src
-
         const canvas = waveCanvasRef.current
-        if (!canvas) return
+        if (!canvas || !filmUrl) return
         const W = canvas.width
         const H = canvas.height
-        const buf = new Uint8Array(analyser.frequencyBinCount)
-        // scrolling waveform columns
+        const buf = new Uint8Array(128)
         const history: number[] = new Array(W).fill(0)
 
         const draw = () => {
             waveRafRef.current = requestAnimationFrame(draw)
-            analyser.getByteFrequencyData(buf)
-            // RMS amplitude → 0..1
-            const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length) / 255
+            const analyser = analyserRef.current
+            if (analyser) analyser.getByteFrequencyData(buf)
+            const rms = analyser
+                ? Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length) / 255
+                : 0
             history.push(rms)
             if (history.length > W) history.shift()
 
             const c2d = canvas.getContext('2d')
             if (!c2d) return
             c2d.clearRect(0, 0, W, H)
-            // background
             c2d.fillStyle = 'rgba(0,0,0,0.55)'
             c2d.fillRect(0, 0, W, H)
-            // centre line
             c2d.strokeStyle = 'rgba(255,255,255,0.06)'
             c2d.beginPath(); c2d.moveTo(0, H / 2); c2d.lineTo(W, H / 2); c2d.stroke()
-
             history.forEach((v, x) => {
                 const barH = Math.max(1, v * (H - 4))
                 const green = Math.round(80 + v * 175)
                 c2d.fillStyle = `rgba(0,${green},80,0.85)`
                 c2d.fillRect(x, H / 2 - barH / 2, 1, barH)
             })
-
-            // speaking indicator badge
             const isSpeaking = rms > 0.04
             c2d.fillStyle = isSpeaking ? 'rgba(52,211,153,0.9)' : 'rgba(255,255,255,0.12)'
             c2d.beginPath()
@@ -378,18 +362,33 @@ export default function SubtitleEditor({
             c2d.fill()
         }
         draw()
-
-        // ── Fix: resume AudioContext on play (browser autoplay policy suspends it) ──
-        const resumeCtx = () => { if (ctx.state === 'suspended') ctx.resume().catch(() => {}) }
-        vid.addEventListener('play', resumeCtx)
-
-        return () => {
-            vid.removeEventListener('play', resumeCtx)
-            if (waveRafRef.current) cancelAnimationFrame(waveRafRef.current)
-            src.disconnect(); analyser.disconnect(); ctx.close()
-        }
+        return () => { if (waveRafRef.current) cancelAnimationFrame(waveRafRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filmUrl])
+
+    // ── Lazy audio setup — MUST be called from a direct user gesture (click) ──
+    // Creating AudioContext + createMediaElementSource outside a user gesture
+    // causes the context to start suspended, silencing the video permanently.
+    const lazySetupAudio = () => {
+        if (audioSetupDone.current) return   // already wired up
+        const vid = videoRef.current
+        if (!vid || !filmUrl) return
+        try {
+            const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+            const analyser = ctx.createAnalyser()
+            analyser.fftSize = 256
+            analyser.smoothingTimeConstant = 0.7
+            const src = ctx.createMediaElementSource(vid)
+            src.connect(analyser)
+            analyser.connect(ctx.destination)
+            audioCtxRef.current    = ctx
+            analyserRef.current    = analyser
+            mediaSourceRef.current = src
+            audioSetupDone.current = true
+        } catch (e) {
+            console.warn('[audio] lazy setup failed:', e)
+        }
+    }
     const [activeCue, setActiveCue] = useState(-1)
     const activeCueRef = useRef(-1) // ref keeps keydown handler current without re-registering
     useEffect(() => { activeCueRef.current = activeCue }, [activeCue])
@@ -1618,6 +1617,7 @@ export default function SubtitleEditor({
                             {/* Play / Pause */}
                             <button
                                 onClick={() => {
+                                    lazySetupAudio() // ─ set up Web Audio on first user gesture
                                     const v = videoRef.current
                                     if (!v) return
                                     if (v.paused) v.play().catch(() => {})
