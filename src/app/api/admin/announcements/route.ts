@@ -45,6 +45,7 @@ export async function GET(req: Request) {
                 ctaUrl: true,
                 ctaColor: true,
                 sentAt: true,
+                scheduledAt: true,
             },
         }),
         db.announcement.count({ where }),
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { title, message, link, translations, bodyHtml, imageUrl, notifyGroups, specificUserIds, type, ctaText, ctaUrl, ctaColor } = body as {
+    const { title, message, link, translations, bodyHtml, imageUrl, notifyGroups, specificUserIds, type, ctaText, ctaUrl, ctaColor, scheduledAt } = body as {
         title?: string
         message?: string
         link?: string
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
         ctaText?: string
         ctaUrl?: string
         ctaColor?: string
+        scheduledAt?: string // ISO 8601 UTC string for future delivery
     }
 
     if (!title || !message) {
@@ -90,7 +92,6 @@ export async function POST(req: Request) {
     }
 
     // Server-side length enforcement — mirrors the frontend maxLength constraints.
-    // A malicious or misconfigured client could bypass the UI, so we enforce here too.
     if (title.trim().length > 100) {
         return NextResponse.json({ error: 'title must be 100 characters or fewer' }, { status: 400 })
     }
@@ -98,12 +99,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'message must be 500 characters or fewer' }, { status: 400 })
     }
 
-    // Validate optional imageUrl — only https URLs allowed (prevents javascript: injection)
+    // Validate optional imageUrl
     if (imageUrl && !/^https:\/\//.test(imageUrl)) {
         return NextResponse.json({ error: 'imageUrl must be a valid https URL' }, { status: 400 })
     }
 
-    // Validate CTA URL — only relative paths or https URLs allowed (prevents XSS)
+    // Validate CTA URL
     if (ctaUrl && !/^(\/|https:\/\/)/.test(ctaUrl)) {
         return NextResponse.json({ error: 'ctaUrl must be a relative path (/) or https URL' }, { status: 400 })
     }
@@ -111,12 +112,26 @@ export async function POST(req: Request) {
     // Validate outreach type
     const outreachType = type && ['announcement', 'survey', 'campaign'].includes(type) ? type : 'announcement'
 
-    // Read audience selection — default to nobody if omitted (admin must opt-in each group)
+    // Validate scheduledAt — must be a valid future datetime (at least 1 minute from now)
+    let scheduledDate: Date | null = null
+    if (scheduledAt) {
+        const parsed = new Date(scheduledAt)
+        if (isNaN(parsed.getTime())) {
+            return NextResponse.json({ error: 'scheduledAt must be a valid ISO datetime' }, { status: 400 })
+        }
+        if (parsed.getTime() < Date.now() + 60_000) {
+            return NextResponse.json({ error: 'scheduledAt must be at least 1 minute in the future' }, { status: 400 })
+        }
+        scheduledDate = parsed
+    }
+
+    // Read audience selection
     const groups: { subscribers?: boolean; members?: boolean; cast?: boolean } = notifyGroups ?? {
         subscribers: false, members: false, cast: false,
     }
 
     const sentById = adminSession?.userId ?? null
+    const isScheduled = scheduledDate !== null
 
     // Save announcement record
     try {
@@ -130,8 +145,9 @@ export async function POST(req: Request) {
                 translations: translations ? JSON.stringify(translations) : null,
                 audienceGroups: JSON.stringify(groups),
                 specificUserIds: specificUserIds?.length ? JSON.stringify(specificUserIds) : null,
-                recipientCount: 0, // updated async
-                status: 'sent',
+                recipientCount: 0,
+                status: isScheduled ? 'scheduled' : 'sent',
+                scheduledAt: scheduledDate,
                 sentById,
                 type: outreachType,
                 ctaText: ctaText?.trim() || null,
@@ -143,7 +159,12 @@ export async function POST(req: Request) {
         console.error('[announcements] failed to save history record:', err)
     }
 
-    // Fire-and-forget — returns immediately; delivery is async
+    // If scheduled — return immediately; cron will fire at the right time
+    if (isScheduled) {
+        return NextResponse.json({ success: true, scheduled: true, scheduledAt: scheduledDate!.toISOString() })
+    }
+
+    // Immediate send — fire-and-forget
     const ctaOverride = (ctaText && ctaUrl) ? { text: ctaText.trim(), url: ctaUrl.trim(), color: ctaColor || '#c9a84c' } : undefined
     notifyAnnouncement(title, message, link, translations ?? null, imageUrl, bodyHtml, groups, specificUserIds, ctaOverride).catch((err) => {
         console.error('[announcements] broadcast failed:', err)

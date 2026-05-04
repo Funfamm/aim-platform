@@ -554,7 +554,8 @@ model Announcement {
   audienceGroups  String? // JSON: {members, subscribers, cast}
   specificUserIds String?  @db.Text // JSON: string[]
   recipientCount  Int      @default(0)
-  status          String   @default("sent") // sent | failed
+  status          String   @default("sent") // sent | failed | scheduled | cancelled
+  scheduledAt     DateTime? // future delivery time (null = sent immediately); stored in UTC
   sentById        String?
   type            String   @default("announcement") // announcement | survey | campaign
   ctaText         String?  // CTA button label e.g. "Watch Now →"
@@ -566,6 +567,7 @@ model Announcement {
   @@index([sentAt])
   @@index([sentById])
   @@index([type])
+  @@index([scheduledAt, status])
 }
 
 model SearchAnalytics {

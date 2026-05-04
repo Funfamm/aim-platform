@@ -34,10 +34,14 @@ export default function ComposeTab({ initialData }: ComposeTabProps) {
     const [ctaUrl, setCtaUrl] = useState('')
     const [ctaColor, setCtaColor] = useState('#c9a84c')
     const [sending, setSending] = useState(false)
-    const [result, setResult] = useState<{ success?: boolean; error?: string } | null>(null)
+    const [result, setResult] = useState<{ success?: boolean; scheduled?: boolean; scheduledAt?: string; error?: string } | null>(null)
     const [testEmail, setTestEmail] = useState('')
     const [sendingTest, setSendingTest] = useState(false)
     const [testResult, setTestResult] = useState<string | null>(null)
+
+    // Scheduling
+    const [scheduleMode, setScheduleMode] = useState<'now' | 'later'>('now')
+    const [scheduledAt, setScheduledAt] = useState('')  // datetime-local string (local time)
 
     // Audience
     const [notifyGroups, setNotifyGroups] = useState({ members: true, subscribers: false, cast: false })
@@ -221,10 +225,34 @@ export default function ComposeTab({ initialData }: ComposeTabProps) {
         finally { setSendingTest(false) }
     }
 
+    // Min datetime = now + 5 min (in local time, for datetime-local input)
+    function getMinSchedule() {
+        const n = new Date(Date.now() + 5 * 60 * 1000)
+        return new Date(n.getTime() - n.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    }
+
+    // Detect browser timezone abbreviation e.g. "EDT"
+    function getTzLabel() {
+        try {
+            return Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+                .formatToParts(new Date())
+                .find(p => p.type === 'timeZoneName')?.value ?? ''
+        } catch { return '' }
+    }
+
     async function handleSend(e?: React.FormEvent) {
         e?.preventDefault()
         if (!canSend) return
         setSending(true); setResult(null)
+
+        // Convert local datetime-local string → UTC ISO string for API
+        let scheduledAtUtc: string | undefined
+        if (scheduleMode === 'later' && scheduledAt) {
+            // datetime-local gives "2026-05-10T09:00" — treat as local, convert to UTC
+            const localDate = new Date(scheduledAt)
+            scheduledAtUtc = localDate.toISOString()
+        }
+
         try {
             const res = await fetch('/api/admin/announcements', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -235,13 +263,15 @@ export default function ComposeTab({ initialData }: ComposeTabProps) {
                     specificUserIds: selectedUsers.map(u => u.id),
                     translations, type: outreachType,
                     ctaText: ctaText.trim() || undefined, ctaUrl: ctaUrl.trim() || undefined, ctaColor,
+                    ...(scheduledAtUtc ? { scheduledAt: scheduledAtUtc } : {}),
                 }),
             })
             const data = await res.json()
             if (res.ok) {
-                setResult({ success: true })
+                setResult({ success: true, scheduled: data.scheduled, scheduledAt: data.scheduledAt })
                 setTitle(''); setMessage(''); setBodyHtml(''); setImageUrl(''); setLink('')
                 setCtaText(''); setCtaUrl(''); setTranslations({}); setHasTranslated(false)
+                setScheduleMode('now'); setScheduledAt('')
                 clearDraft()
             } else { setResult({ error: data.error || 'Failed' }) }
         } catch { setResult({ error: 'Network error' }) }
@@ -440,10 +470,58 @@ export default function ComposeTab({ initialData }: ComposeTabProps) {
                 </div>
             )}
 
-            {/* Status */}
+            {/* ── Schedule ─────────────────────────────────────────────────── */}
+            <div className="outreachCard" style={{ borderColor: scheduleMode === 'later' ? 'rgba(99,102,241,0.3)' : 'rgba(255,255,255,0.06)' }}>
+                <div className="outreachSectionHeader" style={{ color: scheduleMode === 'later' ? '#818cf8' : 'var(--text-secondary)', marginBottom: '12px' }}>
+                    ⏰ Delivery
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                    {(['now', 'later'] as const).map(m => (
+                        <button key={m} type="button" onClick={() => setScheduleMode(m)} style={{
+                            padding: '8px 18px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+                            border: scheduleMode === m ? '1.5px solid #818cf8' : '1px solid rgba(255,255,255,0.08)',
+                            background: scheduleMode === m ? 'rgba(99,102,241,0.12)' : 'var(--bg-secondary)',
+                            color: scheduleMode === m ? '#818cf8' : 'var(--text-secondary)', transition: 'all 0.15s',
+                        }}>
+                            {m === 'now' ? '⚡ Send Now' : '📅 Schedule'}
+                        </button>
+                    ))}
+                </div>
+
+                {scheduleMode === 'later' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <input
+                                type="datetime-local"
+                                value={scheduledAt}
+                                onChange={e => setScheduledAt(e.target.value)}
+                                min={getMinSchedule()}
+                                className="outreachInput"
+                                style={{ flex: 1, maxWidth: 260 }}
+                                required={scheduleMode === 'later'}
+                            />
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                                🌐 {getTzLabel()}
+                            </span>
+                        </div>
+                        {scheduledAt && (
+                            <div style={{ fontSize: '0.72rem', color: '#818cf8' }}>
+                                📅 Will send: {new Date(scheduledAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} ({getTzLabel()})
+                            </div>
+                        )}
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>
+                            Time is shown in your local timezone. The cron job fires every 5 minutes — delivery may be up to 5 min after the scheduled time.
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {result?.success && (
-                <div style={{ padding: '14px 18px', borderRadius: '10px', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.2)', color: '#10b981', fontWeight: 600, fontSize: '0.88rem' }}>
-                    ✅ {outreachType === 'survey' ? 'Survey' : outreachType === 'campaign' ? 'Campaign' : 'Announcement'} queued for delivery!
+                <div style={{ padding: '14px 18px', borderRadius: '10px', background: result.scheduled ? 'rgba(99,102,241,0.1)' : 'rgba(16,185,129,0.1)', border: `1px solid ${result.scheduled ? 'rgba(99,102,241,0.25)' : 'rgba(16,185,129,0.2)'}`, color: result.scheduled ? '#818cf8' : '#10b981', fontWeight: 600, fontSize: '0.88rem' }}>
+                    {result.scheduled
+                        ? <>📅 Scheduled! Will send on {new Date(result.scheduledAt!).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} ({getTzLabel()})</>
+                        : <>✅ {outreachType === 'survey' ? 'Survey' : outreachType === 'campaign' ? 'Campaign' : 'Announcement'} queued for delivery!</>
+                    }
                 </div>
             )}
             {result?.error && (
@@ -459,13 +537,18 @@ export default function ComposeTab({ initialData }: ComposeTabProps) {
                 {testResult && <span style={{ fontSize: '0.78rem', fontWeight: 600, color: testResult.startsWith('✅') ? '#10b981' : '#ef4444' }}>{testResult}</span>}
             </div>
 
-            <button type="submit" disabled={!canSend} style={{
+            <button type="submit" disabled={!canSend || (scheduleMode === 'later' && !scheduledAt)} style={{
                 padding: '15px', borderRadius: '12px', border: 'none',
-                cursor: canSend ? 'pointer' : 'not-allowed', fontWeight: 800, fontSize: '0.95rem',
-                background: canSend ? 'linear-gradient(135deg, var(--accent-gold), #c49b3a)' : 'rgba(212,168,83,0.15)',
-                color: canSend ? '#0f1115' : 'rgba(212,168,83,0.35)', transition: 'all 0.25s',
+                cursor: (canSend && !(scheduleMode === 'later' && !scheduledAt)) ? 'pointer' : 'not-allowed', fontWeight: 800, fontSize: '0.95rem',
+                background: (canSend && !(scheduleMode === 'later' && !scheduledAt))
+                    ? scheduleMode === 'later' ? 'linear-gradient(135deg, #6366f1, #4f46e5)' : 'linear-gradient(135deg, var(--accent-gold), #c49b3a)'
+                    : 'rgba(212,168,83,0.15)',
+                color: (canSend && !(scheduleMode === 'later' && !scheduledAt)) ? (scheduleMode === 'later' ? '#fff' : '#0f1115') : 'rgba(212,168,83,0.35)', transition: 'all 0.25s',
             }}>
-                {sending ? '⏳ Sending…' : `📡 Send ${outreachType === 'survey' ? 'Survey' : outreachType === 'campaign' ? 'Campaign' : 'Announcement'}`}
+                {sending ? '⏳ Processing…' : scheduleMode === 'later'
+                    ? `📅 Schedule ${outreachType === 'survey' ? 'Survey' : outreachType === 'campaign' ? 'Campaign' : 'Announcement'}`
+                    : `📡 Send ${outreachType === 'survey' ? 'Survey' : outreachType === 'campaign' ? 'Campaign' : 'Announcement'}`
+                }
             </button>
         </form>
     )

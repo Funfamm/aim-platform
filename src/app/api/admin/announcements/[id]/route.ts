@@ -31,3 +31,32 @@ export async function DELETE(
         return NextResponse.json({ error: 'Announcement not found or already deleted' }, { status: 404 })
     }
 }
+
+/**
+ * PATCH /api/admin/announcements/[id]
+ * Cancels a scheduled announcement (status: 'scheduled' -> 'cancelled').
+ */
+export async function PATCH(
+    _req: NextRequest,
+    { params }: { params: Promise<{ id: string }> },
+) {
+    try { await requireAdmin() } catch {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const { id } = await params
+    if (!id) return NextResponse.json({ error: 'Missing announcement id' }, { status: 400 })
+
+    try {
+        const ann = await db.announcement.findUnique({ where: { id }, select: { status: true } })
+        if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+        if (ann.status !== 'scheduled') {
+            return NextResponse.json({ error: 'Only scheduled announcements can be cancelled' }, { status: 409 })
+        }
+        await db.announcement.update({ where: { id }, data: { status: 'cancelled' } })
+        return NextResponse.json({ success: true })
+    } catch (err) {
+        console.error('[announcements] failed to cancel:', err)
+        return NextResponse.json({ error: 'Failed to cancel announcement' }, { status: 500 })
+    }
+}

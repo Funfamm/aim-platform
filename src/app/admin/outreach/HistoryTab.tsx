@@ -5,7 +5,7 @@ type HistoryItem = {
     id: string; title: string; message: string; type?: string; ctaText?: string | null
     ctaUrl?: string | null; ctaColor?: string | null; bodyHtml?: string | null
     imageUrl?: string | null; link?: string | null; translations?: string | null
-    sentAt: string; recipientCount: number; audienceGroups: string | null; status: string
+    sentAt: string; scheduledAt?: string | null; recipientCount: number; audienceGroups: string | null; status: string
 }
 
 export interface ReuseData {
@@ -71,6 +71,16 @@ export default function HistoryTab({ onReuse }: HistoryTabProps) {
         finally { setActionLoading(null) }
     }
 
+    // ── Cancel a scheduled announcement ──────────────────────────────────────
+    async function handleCancel(id: string) {
+        setActionLoading(id)
+        try {
+            const res = await fetch(`/api/admin/announcements/${id}`, { method: 'PATCH' })
+            if (res.ok) fetchHistory(page, typeFilter)
+        } catch { /* silent */ }
+        finally { setActionLoading(null) }
+    }
+
     // ── Resend an existing item with original audience ────────────────────────
     async function handleResend(id: string) {
         setActionLoading(id)
@@ -112,6 +122,32 @@ export default function HistoryTab({ onReuse }: HistoryTabProps) {
         </div>
     )
 
+    const statusBadge = (a: HistoryItem) => {
+        const now = Date.now()
+        if (a.status === 'scheduled' && a.scheduledAt) {
+            const msLeft = new Date(a.scheduledAt).getTime() - now
+            const hoursLeft = Math.floor(msLeft / 3_600_000)
+            const minsLeft = Math.floor((msLeft % 3_600_000) / 60_000)
+            const countdown = msLeft > 0
+                ? hoursLeft > 0 ? `in ${hoursLeft}h ${minsLeft}m` : `in ${minsLeft}m`
+                : 'firing soon'
+            return (
+                <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontWeight: 700 }}>
+                    ⏰ Scheduled {countdown}
+                </span>
+            )
+        }
+        if (a.status === 'cancelled') {
+            return <span style={{ fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px', background: 'rgba(156,163,175,0.1)', color: '#9ca3af', fontWeight: 700 }}>🚫 Cancelled</span>
+        }
+        return (
+            <span style={{
+                fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px',
+                background: a.status === 'sent' ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
+                color: a.status === 'sent' ? '#34d399' : '#ef4444',
+            }}>{a.status}</span>
+        )
+    }
     const typeBadge = (type?: string) => {
         const t = type || 'announcement'
         const colors: Record<string, { bg: string; fg: string; icon: string }> = {
@@ -185,18 +221,15 @@ export default function HistoryTab({ onReuse }: HistoryTabProps) {
                                             {a.title} {typeBadge(a.type)}
                                         </div>
                                         <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                                            {new Date(a.sentAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                            {' · '}{a.recipientCount} recipients
+                                            {a.status === 'scheduled' && a.scheduledAt
+                                                ? <>Scheduled for {new Date(a.scheduledAt).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</>
+                                                : <>{new Date(a.sentAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}{' · '}{a.recipientCount} recipients</>}
                                             {groups.members && <span style={{ marginLeft: '6px' }}>👥</span>}
                                             {groups.subscribers && <span style={{ marginLeft: '4px' }}>📬</span>}
-                                            {groups.cast && <span style={{ marginLeft: '4px' }}>🎭</span>}
+                                            {groups.cast && <span style={{ marginLeft: '4px' }}>🎥</span>}
                                         </div>
                                     </div>
-                                    <span style={{
-                                        fontSize: '0.65rem', padding: '2px 8px', borderRadius: '6px',
-                                        background: a.status === 'sent' ? 'rgba(52,211,153,0.1)' : 'rgba(239,68,68,0.1)',
-                                        color: a.status === 'sent' ? '#34d399' : '#ef4444',
-                                    }}>{a.status}</span>
+                                    {statusBadge(a)}
                                     <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
                                 </div>
 
@@ -223,8 +256,13 @@ export default function HistoryTab({ onReuse }: HistoryTabProps) {
 
                                         {/* ── Action Buttons ──────────────────────────────── */}
                                         <div style={{ display: 'flex', gap: '8px', marginTop: '6px', flexWrap: 'wrap', borderTop: '1px solid rgba(255,255,255,0.04)', paddingTop: '10px' }}>
-                                            {onReuse && actionBtn('✏️ Reuse in Compose', () => handleReuse(a), 'rgba(59,130,246,0.15)', isBusy)}
-                                            {actionBtn('🔄 Resend', () => handleResend(a.id), 'rgba(52,211,153,0.15)', isBusy)}
+                                            {a.status === 'scheduled'
+                                                ? actionBtn('🚫 Cancel', () => handleCancel(a.id), 'rgba(239,68,68,0.18)', isBusy)
+                                                : <>
+                                                    {onReuse && actionBtn('✏️ Reuse in Compose', () => handleReuse(a), 'rgba(59,130,246,0.15)', isBusy)}
+                                                    {actionBtn('🔄 Resend', () => handleResend(a.id), 'rgba(52,211,153,0.15)', isBusy)}
+                                                </>
+                                            }
                                             {confirmDeleteId === a.id ? (
                                                 <>
                                                     <span style={{ fontSize: '0.72rem', color: '#ef4444', alignSelf: 'center' }}>Delete?</span>
