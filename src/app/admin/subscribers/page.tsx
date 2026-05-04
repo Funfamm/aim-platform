@@ -50,6 +50,13 @@ export default function AdminSubscribersPage() {
     const [campaign, setCampaign]       = useState<{ eligible: number; lastSentAt: string | null; cooldownActive: boolean } | null>(null)
     const [campaignLoading, setCampaignLoading] = useState(true)
     const [campaignSending, setCampaignSending] = useState(false)
+    // ── Bot cleanup panel ──
+    type BotSuspect = { id: string; email: string; name: string | null; country: string | null; subscribedAt: string; botScore: number; active: boolean; flags: string[] }
+    const [botPanelOpen, setBotPanelOpen]       = useState(false)
+    const [botSuspects, setBotSuspects]         = useState<BotSuspect[]>([])
+    const [botSuspectsLoading, setBotSuspectsLoading] = useState(false)
+    const [selectedBotIds, setSelectedBotIds]   = useState<Set<string>>(new Set())
+    const [botDeleting, setBotDeleting]         = useState(false)
 
     const showToast = (msg: string) => {
         setToast(msg)
@@ -187,48 +194,47 @@ export default function AdminSubscribersPage() {
         setPurging(false)
     }
 
-    const handlePurgeBots = async () => {
-        setPurgingBots(true)
+    const openBotCleanup = async () => {
+        setBotPanelOpen(true)
+        setBotSuspectsLoading(true)
         try {
-            // Preview: count subscribers stored with botScore >= 70 in the DB
-            const previewRes = await fetch('/api/admin/subscribers?status=suspect_bot&limit=1')
-            const previewData = previewRes.ok ? await previewRes.json() : {}
-            // botStats.highRisk comes from the full-list scan in the subscribers API
-            const highRiskCount = previewData.botStats?.highRisk ?? 0
-
-            if (highRiskCount === 0) {
-                showToast('✅ No high-risk bots found')
-                setPurgingBots(false)
-                return
+            const res = await fetch('/api/admin/subscribers/bot-suspects?threshold=40&limit=200')
+            if (res.ok) {
+                const data = await res.json()
+                setBotSuspects(data.suspects || [])
+                // Pre-select all by default
+                setSelectedBotIds(new Set((data.suspects || []).map((s: BotSuspect) => s.id)))
             }
+        } catch { /* silent */ }
+        setBotSuspectsLoading(false)
+    }
 
-            if (!confirm(
-                `Permanently suppress and delete high-risk bot subscribers (bot score ≥ 70)?\n\n` +
-                `${highRiskCount} high-risk bot${highRiskCount !== 1 ? 's' : ''} found.\n\n` +
-                `This will:\n• Add all high-risk bots to the suppression list with reason "bot"\n• Permanently delete their subscriber records\n• Subscribers who have opened emails or created accounts are protected\n\nThis cannot be undone. Continue?`
-            )) {
-                setPurgingBots(false)
-                return
-            }
-
-            const res = await fetch('/api/admin/email-suppression', {
-                method: 'POST',
+    const confirmBotDelete = async () => {
+        if (selectedBotIds.size === 0) return
+        if (!confirm(`Permanently delete ${selectedBotIds.size} suspected bot subscriber${selectedBotIds.size !== 1 ? 's' : ''}? This cannot be undone.`)) return
+        setBotDeleting(true)
+        try {
+            const res = await fetch('/api/admin/subscribers/bot-suspects', {
+                method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'purge_bots', threshold: 70 }),
+                body: JSON.stringify({ ids: [...selectedBotIds], dryRun: false }),
             })
             const result = await res.json()
             if (res.ok) {
-                const protected_ = result.protected ?? 0
-                showToast(`🤖 Purged ${result.purged} bot${result.purged !== 1 ? 's' : ''}${protected_ > 0 ? ` · ${protected_} real subscriber${protected_ !== 1 ? 's' : ''} protected` : ''}`)
+                showToast(`🤖 Deleted ${result.deleted} bot subscriber${result.deleted !== 1 ? 's' : ''}`)
+                setBotPanelOpen(false)
+                setBotSuspects([])
+                setSelectedBotIds(new Set())
                 await fetchData(1)
             } else {
-                showToast(`❌ ${result.error || 'Purge failed'}`)
+                showToast(`❌ ${result.error || 'Delete failed'}`)
             }
         } catch {
-            showToast('❌ Purge failed — network error')
+            showToast('❌ Delete failed — network error')
         }
-        setPurgingBots(false)
+        setBotDeleting(false)
     }
+
 
     const exportCsv = () => {
         const params = new URLSearchParams({ format: 'csv', sort, status })
@@ -355,17 +361,17 @@ export default function AdminSubscribersPage() {
                         </button>
                         <button
                             type="button"
-                            onClick={handlePurgeBots}
-                            disabled={purgingBots}
+                            onClick={openBotCleanup}
+                            disabled={botSuspectsLoading}
                             style={{
                                 padding: '6px 14px', borderRadius: 'var(--radius-md)',
-                                fontSize: '0.78rem', fontWeight: 600, cursor: purgingBots ? 'not-allowed' : 'pointer',
+                                fontSize: '0.78rem', fontWeight: 600, cursor: botSuspectsLoading ? 'not-allowed' : 'pointer',
                                 background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.22)',
-                                color: '#f59e0b', opacity: purgingBots ? 0.5 : 1, transition: 'all 0.15s',
+                                color: '#f59e0b', opacity: botSuspectsLoading ? 0.5 : 1, transition: 'all 0.15s',
                                 whiteSpace: 'nowrap',
                             }}
                         >
-                            {purgingBots ? '⏳ Purging…' : '🤖 Purge Bots'}
+                            {botSuspectsLoading ? '⏳ Loading…' : '🤖 Bot Cleanup'}
                         </button>
                         <button
                             type="button"
@@ -430,6 +436,89 @@ export default function AdminSubscribersPage() {
                                 </span>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* ── Bot Cleanup Panel ── */}
+                {botPanelOpen && (
+                    <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)', border: '1px solid rgba(245,158,11,0.25)', background: 'rgba(245,158,11,0.03)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#f59e0b' }}>🤖 Bot Cleanup Preview</span>
+                                <span style={{ marginLeft: '8px', fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>
+                                    {botSuspectsLoading ? 'Loading suspects…' : `${botSuspects.length} suspect${botSuspects.length !== 1 ? 's' : ''} found (score ≥ 40)`}
+                                </span>
+                            </div>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={() => { setSelectedBotIds(new Set(botSuspects.map(s => s.id))) }}
+                                    style={{ padding: '4px 10px', fontSize: '0.7rem', cursor: 'pointer', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+                                >Select All</button>
+                                <button
+                                    onClick={() => setSelectedBotIds(new Set())}
+                                    style={{ padding: '4px 10px', fontSize: '0.7rem', cursor: 'pointer', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+                                >Deselect All</button>
+                                <button
+                                    onClick={confirmBotDelete}
+                                    disabled={botDeleting || selectedBotIds.size === 0}
+                                    style={{ padding: '4px 12px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer', borderRadius: 'var(--radius-md)', background: selectedBotIds.size > 0 ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.03)', border: `1px solid ${selectedBotIds.size > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`, color: selectedBotIds.size > 0 ? '#ef4444' : 'var(--text-tertiary)', opacity: botDeleting ? 0.6 : 1 }}
+                                >{botDeleting ? '⏳ Deleting…' : `⚠️ Delete ${selectedBotIds.size} selected`}</button>
+                                <button
+                                    onClick={() => { setBotPanelOpen(false); setBotSuspects([]); setSelectedBotIds(new Set()) }}
+                                    style={{ padding: '4px 10px', fontSize: '0.7rem', cursor: 'pointer', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-tertiary)' }}
+                                >✕ Close</button>
+                            </div>
+                        </div>
+                        {botSuspectsLoading ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-tertiary)', fontSize: '0.82rem' }}>Scanning…</div>
+                        ) : botSuspects.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '20px', color: '#10b981', fontSize: '0.82rem' }}>✅ No bot suspects found with score ≥ 40</div>
+                        ) : (
+                            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                            <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600, width: '32px' }}></th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600 }}>Email</th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600 }}>Score</th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600 }}>Country</th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600 }}>Flags</th>
+                                            <th style={{ padding: '6px 8px', textAlign: 'left', color: 'var(--text-tertiary)', fontWeight: 600 }}>Subscribed</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {botSuspects.map(s => (
+                                            <tr key={s.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: selectedBotIds.has(s.id) ? 'rgba(239,68,68,0.04)' : 'transparent' }}>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedBotIds.has(s.id)}
+                                                        onChange={e => {
+                                                            const next = new Set(selectedBotIds)
+                                                            e.target.checked ? next.add(s.id) : next.delete(s.id)
+                                                            setSelectedBotIds(next)
+                                                        }}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: '6px 8px', color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.72rem' }}>{s.email}</td>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.68rem', fontWeight: 700, background: s.botScore >= 70 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: s.botScore >= 70 ? '#ef4444' : '#f59e0b' }}>{s.botScore}</span>
+                                                </td>
+                                                <td style={{ padding: '6px 8px', color: 'var(--text-secondary)' }}>{s.country || '—'}</td>
+                                                <td style={{ padding: '6px 8px' }}>
+                                                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                        {s.flags.map((f, i) => (
+                                                            <span key={i} style={{ padding: '1px 6px', borderRadius: '99px', fontSize: '0.62rem', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{f}</span>
+                                                        ))}
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '6px 8px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>{new Date(s.subscribedAt).toLocaleDateString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 )}
 

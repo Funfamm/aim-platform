@@ -217,7 +217,19 @@ export function welcomeEmail(name: string, siteUrl?: string): string {
     `, `Welcome to AIM Studio, ${name}!`)
 }
 
-export function subscribeConfirmation(name?: string, siteUrl?: string): string {
+export function subscribeConfirmation(name?: string, siteUrl?: string, confirmUrl?: string, _locale = 'en'): string {
+    // If confirmUrl is provided, this is a double opt-in email asking the user to click
+    if (confirmUrl) {
+        return emailWrapper(`
+            ${heading('One quick step — confirm your email 📬')}
+            ${subtext(name ? `Hey ${name}, almost there!` : 'Almost there!')}
+            ${paragraph('Click the button below to confirm your AIM Studio subscription and start receiving updates about our films, casting calls, and exclusive announcements.')}
+            ${paragraph('<strong>This link expires in 72 hours.</strong> If you did not subscribe, you can safely ignore this email.')}
+            ${divider()}
+            ${button('Confirm My Subscription →', confirmUrl)}
+        `, 'Please confirm your AIM Studio subscription')
+    }
+    // Fallback: legacy welcome email (no confirm URL = already confirmed)
     return emailWrapper(`
         ${heading(`You're In! 🎉`)}
         ${subtext(name ? `Hey ${name}, thanks for subscribing!` : 'Thanks for subscribing!')}

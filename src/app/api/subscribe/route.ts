@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendTransactionalEmail } from '@/lib/email-router'
-import { subscribeWelcomeBackWithOverrides, subscribeWelcomeWithOverrides } from '@/lib/email-templates'
+import { subscribeWelcomeBackWithOverrides } from '@/lib/email-templates'
+import { subscribeConfirmation } from '@/lib/email-templates'
 import { t as et } from '@/lib/email-i18n'
 import { suppressEmail } from '@/lib/suppression'
+import crypto from 'crypto'
 
 // ── Bot Detection (same signals as admin subscriber panel) ─────────────────
 const BOT_DISPOSABLE_DOMAINS = new Set([
@@ -47,7 +49,13 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
         }
 
-        const { email, name, locale, website, turnstileToken } = await request.json()
+        const { email, name, locale, website, turnstileToken, loadedAt } = await request.json()
+
+        // ── Time-delay check: bots submit in <500ms; real users take ≥2s ──────
+        if (typeof loadedAt === 'number' && Date.now() - loadedAt < 2000) {
+            console.warn(`[subscribe] BLOCKED — too fast (${Date.now() - loadedAt}ms) from IP ${ip}`)
+            return NextResponse.json({ success: true }) // silent fake success
+        }
 
         // Honeypot: bots fill this hidden field; humans never see it
         if (website) return NextResponse.json({ success: true })
@@ -183,7 +191,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, welcomed: true })
         }
 
-        // Case 3: New subscriber OR pending (never confirmed) — immediate confirmation + welcome email
+        // Case 3: New subscriber OR pending (never confirmed) — double opt-in
         // ── Bot detection: compute score before writing subscriber ────────────
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
         const recentCountryCount = country ? await db.subscriber.count({
@@ -191,40 +199,48 @@ export async function POST(request: NextRequest) {
         }) : 0
         const botScore = calcSubscribeBotScore(normalizedEmail, name || null, country || null, recentCountryCount)
 
-        if (existing && !existing.confirmedAt) {
-            // Pending confirmation — upgrade to active immediately
-            await db.subscriber.update({
-                where: { email: normalizedEmail },
-                data: { active: true, confirmedAt: new Date(), confirmToken: null, locale: userLocale, botScore, ...(name ? { name } : {}) },
-            })
-        } else {
-            // Brand new subscriber — create as active immediately (no double opt-in)
-            await db.subscriber.create({
-                data: { email: normalizedEmail, name: name || null, active: true, confirmedAt: new Date(), locale: userLocale, botScore, ...(country ? { country } : {}) },
-            })
-        }
-
-        // ── Auto-suppress if high-risk bot ────────────────────────────────────
+        // ── Auto-suppress high-risk bots before sending any email ─────────────
         if (botScore >= 70) {
-            // Safety: never auto-suppress a registered user account
             const existingUser = await db.user.findFirst({ where: { email: normalizedEmail }, select: { id: true } })
             if (!existingUser) {
-                // High-risk bot — suppress immediately and deactivate
                 await suppressEmail(normalizedEmail, 'bot', `Auto-detected at subscribe: score ${botScore}`, 'subscribe')
                 console.warn(`[subscribe] HIGH-RISK BOT suppressed: ${normalizedEmail} (score=${botScore}, country=${country})`)
-                // Return success silently — don't reveal detection to the bot
-                return NextResponse.json({ success: true, confirmed: true })
+                return NextResponse.json({ success: true, pending: true }) // silent fake success
             }
         }
 
+        const confirmToken    = crypto.randomUUID()
+        const tokenExpiresAt  = new Date(Date.now() + 72 * 60 * 60 * 1000) // 72 hours
+
+        if (existing && !existing.confirmedAt) {
+            // Pending — refresh token and resend confirmation
+            await db.subscriber.update({
+                where: { email: normalizedEmail },
+                data: { confirmToken, tokenExpiresAt, locale: userLocale, botScore, ...(name ? { name } : {}) },
+            })
+        } else {
+            // Brand new subscriber — create as inactive pending confirmation
+            await db.subscriber.create({
+                data: {
+                    email: normalizedEmail, name: name || null,
+                    active: false, confirmedAt: null,
+                    confirmToken, tokenExpiresAt,
+                    locale: userLocale, botScore,
+                    ...(country ? { country } : {}),
+                },
+            })
+        }
+
+        // Send double opt-in confirmation email
+        const confirmUrl = `${siteUrl}/api/subscribe/confirm?token=${confirmToken}`
         sendTransactionalEmail({
             to: normalizedEmail,
-            subject: et('subscribeWelcome', userLocale, 'subject') || 'Welcome to AIM Studio! 🎬',
-            html: await subscribeWelcomeWithOverrides(name || undefined, siteUrl, userLocale),
+            subject: 'Confirm your AIM Studio subscription 📬',
+            html: subscribeConfirmation(name || undefined, siteUrl, confirmUrl, userLocale),
             type: 'subscribe',
-        }).catch(err => console.error('[subscribe] Welcome email failed:', err))
+        }).catch(err => console.error('[subscribe] Confirm email failed:', err))
 
-        return NextResponse.json({ success: true, confirmed: true })
+        return NextResponse.json({ success: true, pending: true })
     } catch (error) {
         console.error('Subscribe error:', error)
         return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 })

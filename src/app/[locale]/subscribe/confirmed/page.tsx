@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
+import { useState } from 'react'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
 
@@ -27,11 +28,103 @@ const STRINGS = {
 const EXPLORE: Record<string, string> = { en: 'Explore our work', ar: 'استعرض أعمالنا', de: 'Unsere Arbeit erkunden', es: 'Explorar nuestro trabajo', fr: 'Explorer notre travail', hi: 'हमारा काम देखें', ja: '作品を見る', ko: '작품 보기', pt: 'Explorar nosso trabalho', ru: 'Изучить наши работы', zh: '探索我们的作品' }
 const TRY_AGAIN: Record<string, string> = { en: 'Try again', ar: 'حاول مرة أخرى', de: 'Erneut versuchen', es: 'Intentar de nuevo', fr: 'Réessayer', hi: 'फिर से कोशिश करें', ja: '再試行', ko: '다시 시도', pt: 'Tentar novamente', ru: 'Попробовать снова', zh: '重试' }
 
+function ExpiredPanel({ emailParam }: { emailParam: string }) {
+    const [email, setEmail] = useState(decodeURIComponent(emailParam))
+    const [state, setState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+
+    const resend = async () => {
+        setState('sending')
+        try {
+            const res = await fetch('/api/subscribe/resend-confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            })
+            setState(res.ok ? 'sent' : 'error')
+        } catch {
+            setState('error')
+        }
+    }
+
+    if (state === 'sent') {
+        return (
+            <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '12px' }}>📬</div>
+                <p style={{ fontSize: '0.95rem', color: 'var(--accent-gold)', fontWeight: 600, marginBottom: '6px' }}>Check your inbox!</p>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    A fresh confirmation link has been sent to <strong>{email}</strong>. It expires in 72 hours.
+                </p>
+            </div>
+        )
+    }
+
+    return (
+        <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>⏰</div>
+            <h1 style={{ fontSize: 'clamp(1.4rem, 4vw, 2rem)', fontWeight: 800, marginBottom: '12px', color: 'var(--text-primary)' }}>
+                Confirmation link expired
+            </h1>
+            <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '24px' }}>
+                Your confirmation link was valid for 72 hours and has expired. Enter your email below to receive a fresh link.
+            </p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <input
+                    type="email"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    style={{
+                        padding: '0.6rem 1rem', fontSize: '0.88rem',
+                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                        minWidth: '220px', outline: 'none',
+                    }}
+                />
+                <button
+                    onClick={resend}
+                    disabled={state === 'sending' || !email}
+                    style={{
+                        padding: '0.6rem 1.4rem', fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer',
+                        background: 'linear-gradient(135deg, var(--accent-gold), #c49b3a)',
+                        border: 'none', borderRadius: 'var(--radius-md)', color: '#0f1115',
+                        opacity: state === 'sending' ? 0.7 : 1,
+                    }}
+                >
+                    {state === 'sending' ? 'Sending…' : '📨 Resend confirmation'}
+                </button>
+            </div>
+            {state === 'error' && (
+                <p style={{ fontSize: '0.8rem', color: '#ef4444' }}>Something went wrong. Please try again.</p>
+            )}
+        </div>
+    )
+}
+
 export default function SubscribeConfirmedPage() {
     const searchParams = useSearchParams()
     const locale = useLocale()
-    const status = (searchParams.get('status') || 'invalid') as 'success' | 'invalid' | 'error'
-    const strings = STRINGS[status] ?? STRINGS.invalid
+    const status = (searchParams.get('status') || 'invalid') as 'success' | 'invalid' | 'error' | 'expired'
+    const emailParam = searchParams.get('email') || ''
+
+    // Expired: show resend panel
+    if (status === 'expired') {
+        return (
+            <>
+                <main style={{
+                    minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 'calc(80px + var(--space-2xl)) var(--space-lg) var(--space-2xl)', position: 'relative',
+                }}>
+                    <CinematicBackground variant="auth" />
+                    <div style={{ width: '100%', maxWidth: '520px', position: 'relative', zIndex: 1 }}>
+                        <ExpiredPanel emailParam={emailParam} />
+                    </div>
+                </main>
+                <Footer />
+            </>
+        )
+    }
+
+    const strings = STRINGS[status as keyof typeof STRINGS] ?? STRINGS.invalid
     const l = locale as keyof typeof strings.title
 
     return (

@@ -10,9 +10,10 @@ export default function SubscribeForm() {
     const t = useTranslations('footer')
     const locale = useLocale()
     const [email, setEmail] = useState('')
-    const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
+    const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'pending' | 'error'>('idle')
     const [turnstileToken, setTurnstileToken] = useState('')
     const turnstileRef = useRef<HTMLDivElement>(null)
+    const loadedAtRef = useRef(Date.now()) // time-delay bot check: captured at mount
 
     // Load Turnstile widget
     useEffect(() => {
@@ -64,10 +65,11 @@ export default function SubscribeForm() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, locale, website: '', turnstileToken }),
+                body: JSON.stringify({ email, locale, website: '', turnstileToken, loadedAt: loadedAtRef.current }),
             })
             if (res.ok) {
-                setStatus('sent')
+                const data = await res.json()
+                setStatus(data.pending ? 'pending' : 'sent')
                 setEmail('')
             } else {
                 setStatus('error')
@@ -75,6 +77,28 @@ export default function SubscribeForm() {
         } catch {
             setStatus('error')
         }
+    }
+
+    if (status === 'pending') {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{
+                    display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                    fontSize: '0.85rem', color: 'var(--accent-gold)',
+                }}>
+                    <span>📬</span> Check your inbox!
+                </div>
+                <div style={{
+                    padding: '10px 14px',
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 'var(--radius-md)',
+                    fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.6,
+                }}>
+                    We sent a confirmation link to your email. Click it to complete your subscription. The link expires in 72 hours.
+                </div>
+            </div>
+        )
     }
 
     if (status === 'sent') {

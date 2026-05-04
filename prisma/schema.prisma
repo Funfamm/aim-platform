@@ -601,6 +601,7 @@ model Subscriber {
   subscribedAt   DateTime  @default(now())
   active         Boolean   @default(false) // false until double opt-in confirmed
   confirmToken   String? // null once confirmed
+  tokenExpiresAt DateTime? // 72h after token issued; null once confirmed
   confirmedAt    DateTime? // set when subscriber clicks confirmation link
   // Bounce tracking
   bounceCount    Int       @default(0) // total delivery failures
@@ -613,6 +614,7 @@ model Subscriber {
   @@index([active])
   @@index([suppressedAt])
   @@index([botScore])
+  @@index([confirmToken])
 }
 
 model EmailLog {
