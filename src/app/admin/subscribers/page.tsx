@@ -161,8 +161,9 @@ export default function AdminSubscribersPage() {
                 return
             }
             const preview = await previewRes.json()
-            if (preview.purgeableCount === 0) {
-                showToast('✅ No dead addresses to purge')
+            const totalPurgeable = (preview.purgeableCount || 0) + (preview.expiredUnconfirmedCount || 0)
+            if (totalPurgeable === 0) {
+                showToast('✅ No dead or expired addresses to purge')
                 setPurging(false)
                 return
             }

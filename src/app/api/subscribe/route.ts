@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendTransactionalEmail } from '@/lib/email-router'
+import { sendEmail } from '@/lib/mailer'
 import { subscribeWelcomeBackWithOverrides } from '@/lib/email-templates'
 import { subscribeConfirmation } from '@/lib/email-templates'
 import { t as et } from '@/lib/email-i18n'
@@ -224,11 +225,12 @@ export async function POST(request: NextRequest) {
 
         // Send double opt-in confirmation email
         const confirmUrl = `${siteUrl}/api/subscribe/confirm?token=${confirmToken}`
-        sendTransactionalEmail({
+        sendEmail({
             to: normalizedEmail,
             subject: 'Confirm your AIM Studio subscription 📬',
             html: subscribeConfirmation(name || undefined, siteUrl, confirmUrl, userLocale),
-            type: 'subscribe',
+            type: 'authentication',
+            isTransactional: true,
         }).catch(err => console.error('[subscribe] Confirm email failed:', err))
 
         return NextResponse.json({ success: true, pending: true })

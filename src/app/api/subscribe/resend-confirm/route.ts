@@ -7,7 +7,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendTransactionalEmail } from '@/lib/email-router'
+import { sendEmail } from '@/lib/mailer'
 import { subscribeConfirmation } from '@/lib/email-templates'
 import crypto from 'crypto'
 

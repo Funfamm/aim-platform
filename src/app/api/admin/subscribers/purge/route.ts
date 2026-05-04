@@ -44,6 +44,17 @@ export async function GET() {
             where: { email: { in: emails } },
         })
 
+        // Count expired unconfirmed subscribers
+        const expiredCutoff = new Date(Date.now() - 72 * 60 * 60 * 1000)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const expiredUnconfirmedCount = await (prisma as any).subscriber.count({
+            where: {
+                active: false,
+                confirmedAt: null,
+                tokenExpiresAt: { not: null, lte: expiredCutoff },
+            },
+        })
+
         // Breakdown by suppression reason
         const breakdown: Record<string, number> = {}
         for (const s of suppressed) {
@@ -54,6 +65,7 @@ export async function GET() {
             purgeableCount,
             suppressedCount: suppressed.length,
             breakdown,
+            expiredUnconfirmedCount,
         })
     } catch (err) {
         logger.error('admin/purge', 'Failed to preview purge', { error: err as Error })
@@ -69,14 +81,29 @@ export async function POST() {
     try {
         const deleted = await purgeAllSuppressedSubscribers()
 
-        logger.info('admin/purge', `Purged ${deleted} suppressed subscribers`)
+        // Also purge expired unconfirmed subscribers
+        const expiredCutoff = new Date(Date.now() - 72 * 60 * 60 * 1000)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const unconfirmedResult = await (prisma as any).subscriber.deleteMany({
+            where: {
+                active: false,
+                confirmedAt: null,
+                tokenExpiresAt: { not: null, lte: expiredCutoff },
+            },
+        })
+        const unconfirmedDeleted = unconfirmedResult.count
 
+        logger.info('admin/purge', `Purged ${deleted} suppressed + ${unconfirmedDeleted} expired unconfirmed subscribers`)
+
+        const totalDeleted = deleted + unconfirmedDeleted
         return NextResponse.json({
             success: true,
-            deleted,
-            message: deleted > 0
-                ? `Permanently removed ${deleted} dead subscriber${deleted !== 1 ? 's' : ''}`
-                : 'No suppressed subscribers to purge',
+            deleted: totalDeleted,
+            suppressedDeleted: deleted,
+            unconfirmedDeleted,
+            message: totalDeleted > 0
+                ? `Permanently removed ${deleted} suppressed + ${unconfirmedDeleted} expired unconfirmed subscriber${totalDeleted !== 1 ? 's' : ''}`
+                : 'No subscribers to purge',
         })
     } catch (err) {
         logger.error('admin/purge', 'Purge failed', { error: err as Error })

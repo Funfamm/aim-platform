@@ -27,6 +27,7 @@ export async function GET(request: Request) {
     let expiredLifted = 0
     let subscribersReactivated = 0
     let bounceEventsPruned = 0
+    let unconfirmedPurged = 0
 
     try {
         // ── 1. Find and lift expired temp suppressions ──────────────────────
@@ -88,13 +89,30 @@ export async function GET(request: Request) {
         })
         bounceEventsPruned = pruneResult.count
 
-        logger.info('suppression-cleanup', `Cron: lifted ${expiredLifted} expired, reactivated ${subscribersReactivated} subscribers, pruned ${bounceEventsPruned} old bounce events`)
+        // ── 4. Purge expired unconfirmed subscribers ─────────────────────────
+        // These are rows where the user never clicked the confirmation link and
+        // the 72-hour window has passed. Safe to delete — no confirmedAt was set.
+        const expiredUnconfirmedCutoff = new Date(Date.now() - 72 * 60 * 60 * 1000)
+        const purgeResult = await prisma.subscriber.deleteMany({
+            where: {
+                active: false,
+                confirmedAt: null,
+                tokenExpiresAt: { not: null, lte: expiredUnconfirmedCutoff },
+            },
+        })
+        unconfirmedPurged = purgeResult.count
+        if (unconfirmedPurged > 0) {
+            logger.info('suppression-cleanup', `Purged ${unconfirmedPurged} expired unconfirmed subscriber(s)`)
+        }
+
+        logger.info('suppression-cleanup', `Cron: lifted ${expiredLifted} expired, reactivated ${subscribersReactivated} subscribers, pruned ${bounceEventsPruned} old bounce events, purged ${unconfirmedPurged} unconfirmed`)
 
         return NextResponse.json({
             ok: true,
             expiredLifted,
             subscribersReactivated,
             bounceEventsPruned,
+            unconfirmedPurged,
         })
     } catch (err) {
         logger.error('suppression-cleanup', 'Cron failed', { error: err as Error })
