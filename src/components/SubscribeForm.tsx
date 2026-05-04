@@ -3,60 +3,15 @@
 import { useState, useRef, useEffect, FormEvent } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 
-// Turnstile site key (public)
-const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
-
 export default function SubscribeForm() {
     const t = useTranslations('footer')
     const locale = useLocale()
     const [email, setEmail] = useState('')
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'pending' | 'error'>('idle')
-    const [turnstileToken, setTurnstileToken] = useState('')
-    const turnstileRef = useRef<HTMLDivElement>(null)
     const loadedAtRef = useRef(0) // time-delay bot check — set on mount via useEffect (can't call Date.now() in render body)
 
     // Capture mount timestamp for time-delay bot check
     useEffect(() => { loadedAtRef.current = Date.now() }, [])
-
-    // Load Turnstile widget
-    useEffect(() => {
-        if (!TURNSTILE_SITE_KEY || !turnstileRef.current) return
-
-        // Load the Turnstile script if not already loaded
-        const existingScript = document.querySelector('script[src*="turnstile"]')
-        if (!existingScript) {
-            const script = document.createElement('script')
-            script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
-            script.async = true
-            script.defer = true
-            script.onload = () => renderWidget()
-            script.onerror = () => { /* widget failed to load — button stays enabled */ }
-            document.head.appendChild(script)
-        } else {
-            // Script already loaded, render widget
-            renderWidget()
-        }
-
-        function renderWidget() {
-            if (!(window as unknown as Record<string, unknown>).turnstile || !turnstileRef.current) {
-                // Wait for Turnstile to initialize
-                setTimeout(renderWidget, 200)
-                return
-            }
-            const ts = (window as unknown as { turnstile: { render: (el: HTMLElement, opts: Record<string, unknown>) => void } }).turnstile
-            // Clear any previous widget
-            turnstileRef.current.innerHTML = ''
-            ts.render(turnstileRef.current, {
-                sitekey: TURNSTILE_SITE_KEY,
-                callback: (token: string) => setTurnstileToken(token),
-                'expired-callback': () => setTurnstileToken(''),
-                'error-callback': () => { /* widget error — button stays enabled */ },
-                theme: 'dark',
-                size: 'invisible',       // auto-executes; no user interaction needed
-                execution: 'render',     // fire immediately on render
-            })
-        }
-    }, [])
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
@@ -69,7 +24,7 @@ export default function SubscribeForm() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, locale, website: '', turnstileToken, loadedAt: loadedAtRef.current }),
+                body: JSON.stringify({ email, locale, website: '', loadedAt: loadedAtRef.current }),
             })
             if (res.ok) {
                 const data = await res.json()
@@ -192,17 +147,13 @@ export default function SubscribeForm() {
                 />
                 <button
                     type="submit"
-                    disabled={status === 'sending' || (!!TURNSTILE_SITE_KEY && !turnstileToken)}
+                    disabled={status === 'sending'}
                     className="btn btn-primary"
-                    style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.5rem', fontSize: '0.85rem', flexShrink: 0, opacity: (!!TURNSTILE_SITE_KEY && !turnstileToken) ? 0.6 : 1, transition: 'opacity 0.2s' }}
+                    style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.5rem', fontSize: '0.85rem', flexShrink: 0 }}
                 >
-                    {status === 'sending' ? '...' : (!!TURNSTILE_SITE_KEY && !turnstileToken) ? '...' : t('subscribe')}
+                    {status === 'sending' ? '...' : t('subscribe')}
                 </button>
             </div>
-            {/* Turnstile — invisible mode, auto-executes, no visible widget */}
-            {TURNSTILE_SITE_KEY && (
-                <div ref={turnstileRef} style={{ display: 'none' }} />
-            )}
         </form>
     )
 }

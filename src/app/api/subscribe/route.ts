@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
         }
 
-        const { email, name, locale, website, turnstileToken, loadedAt } = await request.json()
+        const { email, name, locale, website, loadedAt } = await request.json()
 
         // ── Time-delay check: bots submit in <500ms; real users take ≥2s ──────
         if (typeof loadedAt === 'number' && Date.now() - loadedAt < 2000) {
@@ -59,36 +59,6 @@ export async function POST(request: NextRequest) {
 
         // Honeypot: bots fill this hidden field; humans never see it
         if (website) return NextResponse.json({ success: true })
-
-        // ── Cloudflare Turnstile verification ─────────────────────────────────
-        // Validate if token is present. If missing (widget didn't load), log warning
-        // but allow — other protections (rate limit, honeypot, bot score) still apply.
-        const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
-        if (turnstileSecret && turnstileToken) {
-            try {
-                const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        secret: turnstileSecret,
-                        response: turnstileToken,
-                        remoteip: ip,
-                    }),
-                })
-                const verifyData = await verifyRes.json()
-                if (!verifyData.success) {
-                    console.warn('[subscribe] Turnstile verification failed:', verifyData)
-                    return NextResponse.json({ error: 'Bot verification failed. Please try again.' }, { status: 403 })
-                }
-            } catch (err) {
-                console.error('[subscribe] Turnstile verify error:', err)
-                // Fail open — don't block if Cloudflare is down
-            }
-        } else if (turnstileSecret && !turnstileToken) {
-            // No token — bot skipped the CAPTCHA widget entirely. Block it.
-            console.warn(`[subscribe] BLOCKED — no Turnstile token from IP ${ip}`)
-            return NextResponse.json({ error: 'Verification required. Please refresh and try again.' }, { status: 403 })
-        }
 
         if (!email || typeof email !== 'string') {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 })
