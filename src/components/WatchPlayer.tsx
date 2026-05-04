@@ -461,7 +461,15 @@ export default function WatchPlayer({
     useEffect(() => {
         fetch(`/api/notify-me/cta/${project.id}`)
             .then(r => r.json())
-            .then(data => { if (data.cta) setCtaConfig(data.cta) })
+            .then(data => {
+                if (data.cta) {
+                    // Suppress if the user already subscribed to this specific CTA
+                    // (keyed by signupTag — a new CTA from admin has a new tag, so it shows again)
+                    const alreadyDone = typeof window !== 'undefined'
+                        && localStorage.getItem(`nm_done_${data.cta.signupTag}`) === '1'
+                    if (!alreadyDone) setCtaConfig(data.cta)
+                }
+            })
             .catch(() => {})
     }, [project.id])
 
@@ -1450,7 +1458,15 @@ export default function WatchPlayer({
                                         signupTag={ctaConfig.signupTag}
                                         visible={showNotifyModal}
                                         onClose={() => { setShowNotifyModal(false); endCardDismissedRef.current = true }}
-                                        onSuccess={() => { setShowNotifyModal(false); setShowNotifyConfirm(true) }}
+                                        onSuccess={() => {
+                                            // Mark this signupTag as done in localStorage so we never show it again
+                                            if (ctaConfig?.signupTag) {
+                                                try { localStorage.setItem(`nm_done_${ctaConfig.signupTag}`, '1') } catch { /* private browsing */ }
+                                            }
+                                            setShowNotifyModal(false)
+                                            setShowNotifyConfirm(true)
+                                            endCardDismissedRef.current = true
+                                        }}
                                     />
                                 )}
                                 {localCta.confirmation && (
@@ -1475,9 +1491,9 @@ export default function WatchPlayer({
                                 position: 'absolute', bottom: 0, left: 0, right: 0,
                                 background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
                                 padding: 'var(--space-2xl) var(--space-md) var(--space-sm)',
-                                opacity: showControls ? 1 : 0,
+                                opacity: (showControls && !showEndCard && !showNotifyModal && !showNotifyConfirm) ? 1 : 0,
                                 transition: 'opacity 0.3s',
-                                pointerEvents: showControls ? 'auto' : 'none',
+                                pointerEvents: (showControls && !showEndCard && !showNotifyModal && !showNotifyConfirm) ? 'auto' : 'none',
                                 zIndex: 10,
                                 borderRadius: isFullscreen ? 0 : '0 0 var(--radius-xl) var(--radius-xl)',
                             }}
