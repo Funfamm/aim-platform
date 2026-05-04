@@ -57,6 +57,7 @@ export default function AdminSubscribersPage() {
     const [botSuspectsLoading, setBotSuspectsLoading] = useState(false)
     const [selectedBotIds, setSelectedBotIds]   = useState<Set<string>>(new Set())
     const [botDeleting, setBotDeleting]         = useState(false)
+    const [botScoreFilter, setBotScoreFilter]   = useState(60) // threshold for bulk deselect
 
     const showToast = (msg: string) => {
         setToast(msg)
@@ -449,7 +450,7 @@ export default function AdminSubscribersPage() {
                                     {botSuspectsLoading ? 'Loading suspects…' : `${botSuspects.length} suspect${botSuspects.length !== 1 ? 's' : ''} found (score ≥ 40)`}
                                 </span>
                             </div>
-                            <div style={{ display: 'flex', gap: '8px' }}>
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                                 <button
                                     onClick={() => { setSelectedBotIds(new Set(botSuspects.map(s => s.id))) }}
                                     style={{ padding: '4px 10px', fontSize: '0.7rem', cursor: 'pointer', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
@@ -458,6 +459,37 @@ export default function AdminSubscribersPage() {
                                     onClick={() => setSelectedBotIds(new Set())}
                                     style={{ padding: '4px 10px', fontSize: '0.7rem', cursor: 'pointer', borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
                                 >Deselect All</button>
+                                {/* ── Bulk deselect by score ── */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '8px' }}>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>Deselect score &lt;</span>
+                                    <select
+                                        value={botScoreFilter}
+                                        onChange={e => setBotScoreFilter(Number(e.target.value))}
+                                        style={{
+                                            padding: '2px 6px', fontSize: '0.7rem', cursor: 'pointer',
+                                            borderRadius: 'var(--radius-md)', background: 'rgba(255,255,255,0.06)',
+                                            border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-secondary)',
+                                            outline: 'none',
+                                        }}
+                                    >
+                                        {[45, 50, 60, 70, 80].map(v => (
+                                            <option key={v} value={v}>{v}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={() => {
+                                            const next = new Set(selectedBotIds)
+                                            botSuspects.forEach(s => { if (s.botScore < botScoreFilter) next.delete(s.id) })
+                                            setSelectedBotIds(next)
+                                        }}
+                                        style={{
+                                            padding: '4px 10px', fontSize: '0.7rem', cursor: 'pointer',
+                                            borderRadius: 'var(--radius-md)', background: 'rgba(245,158,11,0.08)',
+                                            border: '1px solid rgba(245,158,11,0.25)', color: '#f59e0b',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >Apply</button>
+                                </div>
                                 <button
                                     onClick={confirmBotDelete}
                                     disabled={botDeleting || selectedBotIds.size === 0}
