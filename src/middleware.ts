@@ -18,6 +18,15 @@ function applySecurityHeaders(response: NextResponse): NextResponse {
 }
 
 export function middleware(request: NextRequest) {
+  // ── Canonical domain: www → non-www (308 permanent) ──────────────────────
+  // Must be first — before locale routing, CSRF, or any cookie logic.
+  // Prevents OAuth state-cookie mismatches when users arrive on www.*
+  const host = request.headers.get('host') || ''
+  if (host.startsWith('www.')) {
+    const canonical = `https://impactaistudio.com${request.nextUrl.pathname}${request.nextUrl.search}`
+    return NextResponse.redirect(canonical, { status: 308 })
+  }
+
   const { pathname } = request.nextUrl;
 
   // API routes: security headers only, skip locale handling & CSRF cookie

@@ -104,7 +104,17 @@ const nextConfig: NextConfig = {
     ],
   },
   async redirects() {
-    return [];
+    return [
+      // Canonical domain enforcement: www → non-www (permanent, preserves method)
+      // This runs before any app code, preventing OAuth state cookie mismatches
+      // caused by cookies being scoped to impactaistudio.com not www.impactaistudio.com
+      {
+        source: '/:path*',
+        has: [{ type: 'host', value: 'www.impactaistudio.com' }],
+        destination: 'https://impactaistudio.com/:path*',
+        permanent: true, // 308 — preserves request method (important for OAuth POST flows)
+      },
+    ];
   },
   async headers() {
     return [
