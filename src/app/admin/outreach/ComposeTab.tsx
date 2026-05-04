@@ -243,6 +243,7 @@ export default function ComposeTab({ initialData }: ComposeTabProps) {
     async function handleSend(e?: React.FormEvent) {
         e?.preventDefault()
         if (!canSend) return
+        if (scheduleMode === 'later' && !scheduledAt) return  // prevent form-submit bypass
         setSending(true); setResult(null)
 
         // Convert local datetime-local string → UTC ISO string for API
