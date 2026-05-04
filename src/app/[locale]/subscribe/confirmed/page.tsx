@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useLocale } from 'next-intl'
@@ -100,7 +101,7 @@ function ExpiredPanel({ emailParam }: { emailParam: string }) {
     )
 }
 
-export default function SubscribeConfirmedPage() {
+function ConfirmedInner() {
     const searchParams = useSearchParams()
     const locale = useLocale()
     const status = (searchParams.get('status') || 'invalid') as 'success' | 'invalid' | 'error' | 'expired'
@@ -167,5 +168,13 @@ export default function SubscribeConfirmedPage() {
             </main>
             <Footer />
         </>
+    )
+}
+
+export default function SubscribeConfirmedPage() {
+    return (
+        <Suspense fallback={<div style={{ minHeight: '100vh' }} />}>
+            <ConfirmedInner />
+        </Suspense>
     )
 }
