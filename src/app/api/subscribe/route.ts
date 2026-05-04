@@ -17,15 +17,21 @@ const BOT_DISPOSABLE_DOMAINS = new Set([
 ])
 const BOT_SUSPECT_COUNTRIES = new Set(['RU', 'CN', 'VN', 'BD', 'PK', 'IN', 'BR', 'ID', 'NG'])
 
-function calcSubscribeBotScore(email: string, name: string | null, country: string | null, recentCountryCount: number): number {
+interface BotScoreResult {
+    score: number
+    breakdown: Record<string, number>
+}
+
+function calcSubscribeBotScore(email: string, name: string | null, country: string | null, recentCountryCount: number): BotScoreResult {
+    const breakdown: Record<string, number> = {}
     let score = 0
-    if (!name) score += 20
+    if (!name) { breakdown.noName = 20; score += 20 }
     const domain = email.split('@')[1]?.toLowerCase()
-    if (domain && BOT_DISPOSABLE_DOMAINS.has(domain)) score += 30
-    if (country && BOT_SUSPECT_COUNTRIES.has(country)) score += 25
-    if (recentCountryCount >= 10) score += 25
-    else if (recentCountryCount >= 5) score += 15
-    return Math.min(score, 100)
+    if (domain && BOT_DISPOSABLE_DOMAINS.has(domain)) { breakdown.disposableDomain = 30; score += 30 }
+    if (country && BOT_SUSPECT_COUNTRIES.has(country)) { breakdown.suspectCountry = 25; score += 25 }
+    if (recentCountryCount >= 10) { breakdown.countrySurge = 25; score += 25 }
+    else if (recentCountryCount >= 5) { breakdown.countrySurge = 15; score += 15 }
+    return { score: Math.min(score, 100), breakdown }
 }
 
 // Simple in-memory rate limiter: max 3 subscribe attempts per IP per hour
@@ -40,6 +46,16 @@ function isRateLimited(ip: string): boolean {
     ipAttempts.set(ip, attempts)
     return false
 }
+
+// ── Housekeeping: purge stale IP entries every 30 min to prevent memory growth ──
+setInterval(() => {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000 // older than 24 hours
+    for (const [ip, timestamps] of ipAttempts.entries()) {
+        const fresh = timestamps.filter(t => t > cutoff)
+        if (fresh.length === 0) ipAttempts.delete(ip)
+        else ipAttempts.set(ip, fresh)
+    }
+}, 30 * 60 * 1000)
 
 export async function POST(request: NextRequest) {
     try {
@@ -167,16 +183,21 @@ export async function POST(request: NextRequest) {
         const recentCountryCount = country ? await db.subscriber.count({
             where: { country, subscribedAt: { gte: oneHourAgo } },
         }) : 0
-        const botScore = calcSubscribeBotScore(normalizedEmail, name || null, country || null, recentCountryCount)
+        const { score: botScore, breakdown } = calcSubscribeBotScore(normalizedEmail, name || null, country || null, recentCountryCount)
+        const breakdownStr = Object.entries(breakdown).map(([k, v]) => `${k}=${v}`).join(', ')
 
-        // ── Auto-suppress high-risk bots before sending any email ─────────────
-        if (botScore >= 70) {
+        // ── Auto-suppress high-risk bots (score ≥ 80) ─────────────────────────
+        if (botScore >= 80) {
             const existingUser = await db.user.findFirst({ where: { email: normalizedEmail }, select: { id: true } })
             if (!existingUser) {
-                await suppressEmail(normalizedEmail, 'bot', `Auto-detected at subscribe: score ${botScore}`, 'subscribe')
-                console.warn(`[subscribe] HIGH-RISK BOT suppressed: ${normalizedEmail} (score=${botScore}, country=${country})`)
+                await suppressEmail(normalizedEmail, 'bot', `Auto-detected at subscribe: score ${botScore} [${breakdownStr}]`, 'subscribe')
+                console.warn(`[subscribe] HIGH-RISK BOT suppressed: ${normalizedEmail} (score=${botScore}, country=${country}, breakdown: ${breakdownStr})`)
                 return NextResponse.json({ success: true, pending: true }) // silent fake success
             }
+        }
+        // ── Soft-fail tier (70–79): log warning but allow through double opt-in ──
+        if (botScore >= 70) {
+            console.warn(`[subscribe] BORDERLINE risk: ${normalizedEmail} (score=${botScore}, country=${country}, breakdown: ${breakdownStr}) — allowing through double opt-in`)
         }
 
         const confirmToken    = crypto.randomUUID()

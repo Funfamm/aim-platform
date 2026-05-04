@@ -15,6 +15,7 @@ export default function SubscribePage() {
     const t = useTranslations('subscribe')
     const locale = useLocale()
     const [email, setEmail] = useState('')
+    const [name, setName] = useState('')
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [bgImages, setBgImages] = useState<string[]>(DEFAULT_IMAGES)
     const [currentBg, setCurrentBg] = useState(0)
@@ -44,7 +45,7 @@ export default function SubscribePage() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, locale }),
+                body: JSON.stringify({ email, name: name.trim() || undefined, locale }),
             })
             if (res.ok) { setStatus('sent'); setEmail('') }
             else setStatus('error')
@@ -127,6 +128,17 @@ export default function SubscribePage() {
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSubmit}>
+                                        <input
+                                            type="text" value={name} onChange={(e) => setName(e.target.value)}
+                                            placeholder="Your name (optional — for a personalized welcome)"
+                                            maxLength={80}
+                                            style={{
+                                                width: '100%', padding: '0.75rem 1rem', marginBottom: 'var(--space-sm)',
+                                                background: 'rgba(5,5,8,0.8)', border: '1px solid var(--border-subtle)',
+                                                borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                                                fontSize: '0.9rem', outline: 'none',
+                                            }}
+                                        />
                                         <input
                                             type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                                             required placeholder={t('emailPlaceholder')}
