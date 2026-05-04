@@ -234,6 +234,7 @@ model FilmSubtitle {
   qcIssues         String? // JSON: QCResult[] — Netflix-spec checks on English track
   generatedWith    String? // key label used for translation e.g. "My Gemini Key 1"
   transcribedWith  String? // ASR model used e.g. "whisper-medium"
+  subtitlesPublic  Boolean  @default(false) // per-track visibility — admin controls per movie/trailer/episode
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 

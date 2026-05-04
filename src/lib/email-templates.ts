@@ -1021,6 +1021,37 @@ export function applicationWithdrawalEmail(name: string, roleName: string, casti
 
 
 /** Sent to all opted-in users for platform announcements */
+/**
+ * Convert plain-text body with line breaks + basic markdown into email-safe HTML.
+ * - Double newlines (\n\n) → separate <p> tags
+ * - Single newlines (\n) within a paragraph → <br> tags
+ * - **bold** → <strong>
+ * - *italic* → <em>
+ * - [text](url) → <a href>
+ */
+function formatBodyText(text: string): string {
+    if (!text) return ''
+    // Process markdown BEFORE splitting so markers aren't broken across paragraphs
+    let processed = text
+        // **bold** (must come before single *)
+        .replace(/\*\*(.+?)\*\*/g, `<strong>$1</strong>`)
+        // *italic*
+        .replace(/(?<!\*)\*([^*]+?)\*(?!\*)/g, `<em>$1</em>`)
+        // [link text](url)
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, `<a href="$2" style="color:${BRAND_COLOR};text-decoration:underline;">$1</a>`)
+    // Split on double newlines → paragraphs
+    const paragraphs = processed.split(/\n\n+/)
+    return paragraphs
+        .map(p => p.trim())
+        .filter(Boolean)
+        .map(p => {
+            // Single newlines within a paragraph → <br>
+            const withBreaks = p.replace(/\n/g, '<br>')
+            return `<p style="margin: 0 0 16px; font-size: 15px; color: ${TEXT_PRIMARY}; line-height: 1.7;">${withBreaks}</p>`
+        })
+        .join('\n')
+}
+
 export function announcementEmail(
     title: string,
     message: string,
@@ -1043,7 +1074,7 @@ export function announcementEmail(
         ? (link.startsWith('http') ? link : `${siteUrl || 'https://impactaistudio.com'}${link}`)
         : siteUrl || 'https://impactaistudio.com'
     const ctaText      = (ctaOverride?.text || i18n?.buttonText) ?? (link ? 'View Announcement \u2192' : 'Visit AIM Studio \u2192')
-    const badge        = i18n?.badgeText   ?? 'Platform Announcement'
+    const badge        = i18n?.badgeText   ?? 'FROM THE STUDIO'
     const footerOptIn  = i18n?.footerOptIn ?? "You're receiving this because you opted in to platform announcements."
     const managePrefs  = i18n?.managePrefs ?? 'Manage preferences'
     // Banner image — only https URLs are trusted
@@ -1056,16 +1087,17 @@ export function announcementEmail(
     const bodyBlock    = safeBody ? `<div style="margin:16px 0;font-size:15px;color:#c9c7c4;line-height:1.75;">${safeBody}</div>` : ''
     // Use custom-color button when ctaOverride is provided
     const ctaButton    = ctaOverride?.color ? colorButton(ctaText, ctaUrl, ctaOverride.color) : button(ctaText, ctaUrl)
+    // Format the message body — preserve line breaks + basic markdown
+    const formattedMessage = formatBodyText(message)
     return emailWrapper(`
         <div style="text-align:center;padding:16px 0 24px;">
-            <div style="font-size:52px;margin-bottom:12px;">📣</div>
-            <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid #8b5cf6;">
-                <span style="font-size:12px;font-weight:700;color:#8b5cf6;letter-spacing:1.5px;text-transform:uppercase;">${badge}</span>
+            <div style="display:inline-block;padding:6px 18px;background:${BG_DARK};border-radius:20px;border:1px solid #D4AF37;">
+                <span style="font-size:12px;font-weight:700;color:#D4AF37;letter-spacing:1.5px;text-transform:uppercase;">${badge}</span>
             </div>
         </div>
         ${bannerBlock}
         ${heading(title)}
-        ${paragraph(message)}
+        ${formattedMessage}
         ${bodyBlock}
         ${ctaButton}
         ${divider()}

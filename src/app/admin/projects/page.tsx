@@ -113,6 +113,8 @@ export default function AdminProjectsPage() {
     const [subtitlePhase, setSubtitlePhase] = useState<Record<string, 'transcribing' | 'translating' | 'done' | 'error' | null>>({})
     const [translationCount, setTranslationCount] = useState<Record<string, number>>({})
     const [translateStatus, setTranslateStatus] = useState<Record<string, string>>({})
+    // Per-track subtitle visibility (keyed by stateKey = sk(pid, tab))
+    const [subtitleVisibility, setSubtitleVisibility] = useState<Record<string, boolean>>({})
     // Server-side subtitle job state (faster-whisper worker)
     type ServerJobStatus = 'idle' | 'queued' | 'processing' | 'ready' | 'failed'
     const [serverJobId, setServerJobId] = useState<Record<string, string | null>>({})
@@ -246,7 +248,7 @@ export default function AdminProjectsPage() {
                         const aqQs = episodeId ? `projectId=${p.id}&mediaType=episode&episodeId=${episodeId}` : `projectId=${p.id}&mediaType=${mediaType}`
                         fetch(`/api/admin/subtitles?${aqQs}`)
                             .then(r => r.ok ? r.json() : {})
-                            .then((res: { subtitle?: { segments?: string; translations?: string; translateStatus?: string } }) => {
+                            .then((res: { subtitle?: { segments?: string; translations?: string; translateStatus?: string; subtitlesPublic?: boolean } }) => {
                                 if (res.subtitle?.segments) {
                                     setSubtitlePhase(s => ({ ...s, [key]: s[key] || 'done' }))
                                     let adminCount = 1
@@ -259,6 +261,10 @@ export default function AdminProjectsPage() {
                                         setTranslateStatus(s => ({ ...s, [key]: res.subtitle!.translateStatus! }))
                                     }
                                     setSubtitleStatus(s => ({ ...s, [key]: s[key] || `✓ ${adminCount} lang` }))
+                                    // Load per-track visibility
+                                    if (res.subtitle.subtitlesPublic !== undefined) {
+                                        setSubtitleVisibility(s => ({ ...s, [key]: res.subtitle!.subtitlesPublic! }))
+                                    }
                                 }
                             })
                             .catch(() => {})
@@ -1880,19 +1886,54 @@ export default function AdminProjectsPage() {
                                                     : isPartial ? `${count} of ${TOTAL_SUBTITLE_LANGS} languages translated. Click CC to translate the remaining — already translated languages are preserved.`
                                                     : 'Generate multi-language subtitles for this film. Click CC to auto-transcribe and translate, or upload an existing SRT/VTT file.'}
                                             </div>
-                                            {/* Subtitles public toggle */}
-                                            <label style={{
-                                                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                                                cursor: 'pointer', fontSize: '0.85rem', marginBottom: 'var(--space-md)',
-                                                color: form.subtitlesPublic ? '#34d399' : 'var(--text-secondary)',
-                                                fontWeight: form.subtitlesPublic ? 700 : 400,
-                                                transition: 'all 0.2s',
-                                            }}>
-                                                <input type="checkbox" checked={form.subtitlesPublic}
-                                                    onChange={e => updateField('subtitlesPublic', e.target.checked)}
-                                                    style={{ width: '18px', height: '18px', accentColor: '#34d399' }} />
-                                                {form.subtitlesPublic ? '🌐 Subtitles visible to users' : '🔒 Subtitles hidden from users'}
-                                            </label>
+                                            {/* Per-track subtitle visibility toggle */}
+                                            {(() => {
+                                                const isVisible = subtitleVisibility[stateKey] ?? false
+                                                const [toggling, setToggling] = [false, (_: boolean) => {}] // placeholder — using optimistic update
+                                                void toggling; void setToggling
+                                                const handleToggle = async () => {
+                                                    const next = !isVisible
+                                                    // Optimistic update
+                                                    setSubtitleVisibility(s => ({ ...s, [stateKey]: next }))
+                                                    try {
+                                                        await fetch('/api/admin/subtitles/visibility', {
+                                                            method: 'PATCH',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({
+                                                                projectId: pid,
+                                                                mediaType: activeMediaType === 'episode' ? 'episode' : activeMediaType,
+                                                                episodeId: activeEpisodeId ?? null,
+                                                                subtitlesPublic: next,
+                                                            }),
+                                                        })
+                                                    } catch {
+                                                        // Revert on failure
+                                                        setSubtitleVisibility(s => ({ ...s, [stateKey]: isVisible }))
+                                                    }
+                                                }
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleToggle}
+                                                        style={{
+                                                            display: 'flex', alignItems: 'center', gap: '8px',
+                                                            padding: '6px 14px', borderRadius: '8px', cursor: 'pointer',
+                                                            fontSize: '0.78rem', fontWeight: 700, marginBottom: 'var(--space-md)',
+                                                            background: isVisible ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.04)',
+                                                            border: `1px solid ${isVisible ? 'rgba(52,211,153,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                                                            color: isVisible ? '#34d399' : 'var(--text-tertiary)',
+                                                            transition: 'all 0.2s',
+                                                        }}
+                                                        title={isVisible ? 'Click to hide subtitles from users for this video' : 'Click to make subtitles visible to users for this video'}
+                                                    >
+                                                        <span style={{ fontSize: '1rem' }}>{isVisible ? '🌐' : '🔒'}</span>
+                                                        {isVisible ? 'Subtitles visible to users' : 'Subtitles hidden from users'}
+                                                        <span style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 400 }}>
+                                                            ({activeTab === 'movie' ? 'Movie' : activeTab === 'trailer' ? 'Trailer' : `S${epList.find(e => e.id === activeEpisodeId)?.season ?? '?'}E${epList.find(e => e.id === activeEpisodeId)?.number ?? '?'}`})
+                                                        </span>
+                                                    </button>
+                                                )
+                                            })()}
                                             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: 'var(--space-md)' }}>
                                                 {/* ── Server Worker Button (recommended) ── */}
                                                 {(() => {

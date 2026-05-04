@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { segmentsToVtt, getVttUrl } from '@/lib/vtt-storage'
 import { findSubtitle } from '@/lib/subtitle-repo'
-import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
 
@@ -17,25 +16,22 @@ export async function GET(
     const mediaType = searchParams.get('mediaType') || 'movie'
     const format = searchParams.get('format') || 'json'
 
-    // ── Visibility gate: only serve subtitles if admin toggled them public ────
-    const project = await prisma.project.findUnique({
-        where: { id: projectId },
-        select: { subtitlesPublic: true },
-    })
-    if (project && !project.subtitlesPublic) {
-        // Allow admins to preview subtitles even when hidden
-        const session = await getUserSession()
-        if (!session?.userId || !hasAdminRole(session.role)) {
-            return NextResponse.json({ segments: null, available: [] })
-        }
-    }
-
     // ── Repository lookup — no direct Prisma dependency (DIP) ─────────────────
     const subtitle = await findSubtitle(projectId, episodeId, mediaType)
 
     if (!subtitle) {
         return NextResponse.json({ segments: null, available: [] })
     }
+
+    // ── Per-track visibility gate: each movie/trailer/episode controls its own ─
+    if (!subtitle.subtitlesPublic) {
+        // Admins can always preview even when hidden from public
+        const session = await getUserSession()
+        if (!session?.userId || !hasAdminRole(session.role)) {
+            return NextResponse.json({ segments: null, available: [] })
+        }
+    }
+
 
     // Parse the stored data
     let segments: { start: number; end: number; text: string }[] = []

@@ -678,7 +678,7 @@ export async function notifyAnnouncement(
         const fieldsToTranslate: Record<string, string> = {
             title,
             message,
-            badgeText: 'Platform Announcement',
+            badgeText: 'FROM THE STUDIO',
             buttonText: link ? 'View Announcement →' : 'View in Notifications →',
             footerOptIn: "You're receiving this because you opted in to platform announcements.",
             managePrefs: 'Manage preferences',
