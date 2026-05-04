@@ -60,11 +60,12 @@ export async function POST(request: NextRequest) {
         const confirmUrl = `${siteUrl}/api/subscribe/confirm?token=${confirmToken}`
         const locale = subscriber.locale || 'en'
 
-        sendTransactionalEmail({
+        sendEmail({
             to: normalized,
             subject: 'Confirm your AIM Studio subscription 🎬',
             html: await subscribeConfirmation(subscriber.name || undefined, siteUrl, confirmUrl, locale),
-            type: 'subscribe',
+            type: 'authentication',
+            isTransactional: true,
         }).catch(err => console.error('[resend-confirm] Email failed:', err))
 
         return NextResponse.json({ success: true })

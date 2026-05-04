@@ -12,7 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { sendTransactionalEmail } from '@/lib/email-router'
+import { sendEmail } from '@/lib/mailer'
 import { subscribeWelcomeWithOverrides } from '@/lib/email-templates'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
@@ -147,11 +147,12 @@ export async function POST(request: NextRequest) {
 
         // ── Send welcome email ────────────────────────────────────────────────
         const locale = subscriber.locale || 'en'
-        sendTransactionalEmail({
+        sendEmail({
             to: subscriber.email,
             subject: 'Welcome to AIM Studio! 🎬',
             html: await subscribeWelcomeWithOverrides(subscriber.name || undefined, siteUrl, locale),
-            type: 'subscribe',
+            type: 'authentication',
+            isTransactional: true,
         }).catch(err => console.error('[subscribe/confirm] Welcome email failed:', err))
 
         return NextResponse.redirect(`${siteUrl}/en/subscribe/confirmed?status=success`)
