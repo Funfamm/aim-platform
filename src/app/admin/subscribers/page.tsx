@@ -463,7 +463,7 @@ export default function AdminSubscribersPage() {
                                 >Deselect All</button>
                                 {/* ── Bulk deselect by score ── */}
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '8px' }}>
-                                    <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>Deselect score &lt;</span>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>Keep score ≥</span>
                                     <select
                                         value={botScoreFilter}
                                         onChange={e => setBotScoreFilter(Number(e.target.value))}
@@ -474,15 +474,26 @@ export default function AdminSubscribersPage() {
                                             outline: 'none',
                                         }}
                                     >
-                                        {[45, 50, 60, 70, 80].map(v => (
+                                        {[40, 45, 50, 60, 70, 80].map(v => (
                                             <option key={v} value={v}>{v}</option>
                                         ))}
                                     </select>
                                     <button
                                         onClick={() => {
                                             const next = new Set(selectedBotIds)
-                                            botSuspects.forEach(s => { if (s.botScore < botScoreFilter) next.delete(s.id) })
+                                            let deselected = 0
+                                            botSuspects.forEach(s => {
+                                                if (s.botScore < botScoreFilter) {
+                                                    next.delete(s.id)
+                                                    deselected++
+                                                }
+                                            })
                                             setSelectedBotIds(next)
+                                            if (deselected > 0) {
+                                                showToast(`✅ Kept ${next.size} suspects with score ≥ ${botScoreFilter} — deselected ${deselected}`)
+                                            } else {
+                                                showToast(`ℹ️ All ${next.size} selected suspects already have score ≥ ${botScoreFilter}`)
+                                            }
                                         }}
                                         style={{
                                             padding: '4px 10px', fontSize: '0.7rem', cursor: 'pointer',
