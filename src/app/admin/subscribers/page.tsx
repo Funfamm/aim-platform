@@ -399,48 +399,97 @@ export default function AdminSubscribersPage() {
                     </div>
                 )}
 
-                {/* Stats */}
-                {/* Subscriber stats */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
-                    {[
-                        { label: 'Total', value: stats.total, color: '#d4a853', filter: 'all' },
-                        { label: '⏳ Pending Review', value: stats.pendingReview, color: '#f59e0b', filter: 'pending_review' },
-                        { label: 'Active',   value: stats.active,   color: '#10b981', filter: 'active' },
-                        { label: 'Inactive', value: stats.inactive, color: '#6b7280', filter: 'inactive' },
-                        { label: 'Failed Sends', value: stats.failed, color: '#ef4444', filter: 'failed' },
-                        { label: '🤖 Bot Risk (High)', value: botStats.highRisk, color: '#dc2626', filter: 'suspect_bot' },
-                    ].map(s => (
-                        <div key={s.label} className="admin-card" style={{
-                            padding: 'var(--space-lg)', textAlign: 'center', cursor: 'pointer',
-                            border: status === s.filter ? `1px solid ${s.color}44` : undefined,
-                            background: status === s.filter ? `${s.color}08` : undefined,
-                            transition: 'all 0.15s',
-                        }}
-                            onClick={() => setStatus(s.filter)}
-                        >
-                            <div style={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value.toLocaleString()}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
-                        </div>
-                    ))}
-                </div>
+                {/* ── Overview Dashboard ── */}
+                <div className="admin-card" style={{ marginBottom: 'var(--space-md)', overflow: 'hidden' }}>
 
-                {/* Country breakdown — only show if there are multiple countries */}
-                {botStats.countryBreakdown.length > 1 && (
-                    <div className="admin-card" style={{ padding: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '8px' }}>Top Countries</div>
-                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                            {botStats.countryBreakdown.map(c => (
-                                <span key={c.country} style={{
-                                    padding: '4px 10px', borderRadius: '99px', fontSize: '0.72rem', fontWeight: 600,
-                                    background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border-subtle)',
-                                    color: 'var(--text-secondary)',
-                                }}>
-                                    {c.country} · {c.count}
-                                </span>
-                            ))}
-                        </div>
+                    {/* Row 1 — Subscriber health: 6 clickable stat cells */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)' }}>
+                        {[
+                            { label: 'Total',          value: stats.total,          color: '#d4a853', filter: 'all' },
+                            { label: 'Pending Review',  value: stats.pendingReview,  color: '#f59e0b', filter: 'pending_review' },
+                            { label: 'Active',          value: stats.active,         color: '#10b981', filter: 'active' },
+                            { label: 'Inactive',        value: stats.inactive,       color: '#6b7280', filter: 'inactive' },
+                            { label: 'Failed Sends',    value: stats.failed,         color: '#ef4444', filter: 'failed' },
+                            { label: 'Bot Risk',        value: botStats.highRisk,    color: '#dc2626', filter: 'suspect_bot' },
+                        ].map((s, i) => (
+                            <div
+                                key={s.label}
+                                onClick={() => setStatus(s.filter)}
+                                style={{
+                                    padding: '18px 20px 15px',
+                                    cursor: 'pointer',
+                                    borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                                    borderTop: `2px solid ${status === s.filter ? s.color : 'transparent'}`,
+                                    background: status === s.filter ? `${s.color}09` : 'transparent',
+                                    transition: 'background 0.15s, border-color 0.15s',
+                                }}
+                            >
+                                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>
+                                    {s.value.toLocaleString()}
+                                </div>
+                                <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-tertiary)', marginTop: '6px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                    {s.label}
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                )}
+
+                    {/* Row 2 — Conversion · Survey · Countries */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+
+                        {/* Conversion */}
+                        <div style={{ padding: '12px 20px 14px', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: '10px' }}>Conversion</div>
+                            <div style={{ display: 'flex', gap: '28px' }}>
+                                {[
+                                    { label: 'Registered', value: conversion.converted.toLocaleString(), color: '#8b5cf6', filter: 'converted' },
+                                    { label: 'Conv. Rate',  value: `${conversion.conversionRate}%`,       color: '#06b6d4', filter: '' },
+                                ].map(s => (
+                                    <div key={s.label} onClick={() => s.filter && setStatus(s.filter)} style={{ cursor: s.filter ? 'pointer' : 'default' }}>
+                                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-tertiary)', marginTop: '4px', letterSpacing: '0.07em', textTransform: 'uppercase' }}>{s.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Survey */}
+                        <div style={{ padding: '12px 20px 14px', borderRight: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: '10px' }}>Survey</div>
+                            <div style={{ display: 'flex', gap: '28px' }}>
+                                {[
+                                    { label: 'Sent',       value: stats.surveySent.toLocaleString(),                                                                                     color: '#3b82f6', filter: 'survey_sent' },
+                                    { label: 'Responded',  value: `${stats.surveyResponded}${stats.surveySent > 0 ? ` (${Math.round(stats.surveyResponded / stats.surveySent * 100)}%)` : ''}`, color: '#10b981', filter: 'survey_responded' },
+                                ].map(s => (
+                                    <div key={s.label} onClick={() => setStatus(s.filter)} style={{ cursor: 'pointer' }}>
+                                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: s.color, lineHeight: 1 }}>{s.value}</div>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-tertiary)', marginTop: '4px', letterSpacing: '0.07em', textTransform: 'uppercase' }}>{s.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Top Countries */}
+                        <div style={{ padding: '12px 20px 14px' }}>
+                            <div style={{ fontSize: '0.58rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', marginBottom: '10px' }}>Top Countries</div>
+                            {botStats.countryBreakdown.length > 0 ? (
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    {botStats.countryBreakdown.slice(0, 6).map(c => (
+                                        <div key={c.country} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.68rem' }}>
+                                            <span style={{ padding: '2px 8px', borderRadius: '4px', fontWeight: 700, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: 'var(--text-secondary)', letterSpacing: '0.04em' }}>
+                                                {c.country}
+                                            </span>
+                                            <span style={{ color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.66rem' }}>{c.count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>—</span>
+                            )}
+                        </div>
+
+                    </div>
+                </div>
 
                 {/* ── Bot Cleanup Panel ── */}
                 {botPanelOpen && (
@@ -567,28 +616,6 @@ export default function AdminSubscribersPage() {
                     </div>
                 )}
 
-                {/* Conversion reporting */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--space-md)', marginBottom: 'var(--space-xl)' }}>
-                    {[
-                        { label: 'Converted', value: conversion.converted, color: '#8b5cf6', suffix: '', filter: 'converted' },
-                        { label: 'Conversion Rate', value: conversion.conversionRate, color: '#06b6d4', suffix: '%', filter: '' },
-                        { label: 'Survey Sent', value: stats.surveySent, color: '#3b82f6', suffix: '', filter: 'survey_sent' },
-                        { label: 'Responded', value: stats.surveyResponded, color: '#10b981', suffix: stats.surveySent > 0 ? ` (${Math.round(stats.surveyResponded / stats.surveySent * 100)}%)` : '', filter: 'survey_responded' },
-                    ].map(s => (
-                        <div key={s.label} className="admin-card" style={{
-                            padding: 'var(--space-lg)', textAlign: 'center',
-                            cursor: s.filter ? 'pointer' : 'default',
-                            border: s.filter && status === s.filter ? `1px solid ${s.color}44` : undefined,
-                            background: s.filter && status === s.filter ? `${s.color}08` : undefined,
-                            transition: 'all 0.15s',
-                        }}
-                            onClick={() => s.filter && setStatus(s.filter)}
-                        >
-                            <div style={{ fontSize: '2rem', fontWeight: 800, color: s.color }}>{s.value.toLocaleString()}{s.suffix}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{s.label}</div>
-                        </div>
-                    ))}
-                </div>
 
                 {/* Conversion Campaign */}
                 <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-lg)', border: '1px solid rgba(139,92,246,0.2)', background: 'rgba(139,92,246,0.04)' }}>
