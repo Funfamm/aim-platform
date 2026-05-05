@@ -845,8 +845,36 @@ export default function AdminSubscribersPage() {
                                             style={{ accentColor: 'var(--accent-gold)', cursor: 'pointer' }}
                                         />
                                     </th>
-                                    {['Email', 'Name', 'Country', 'Status', 'Bot Risk', 'Converted', 'Survey', 'Subscribed', 'Fails'].map(h => (
-                                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>{h}</th>
+                                    {/* Email — not filterable */}
+                                    <th style={{ padding: '10px 14px', textAlign: 'left', fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-tertiary)' }}>Email</th>
+                                    {/* Country — sort toggle */}
+                                    {([
+                                        { label: 'Country',    isActive: sort === 'country',         onClick: () => setSort(sort === 'country' ? 'newest' : 'country') },
+                                        { label: 'Status',     isActive: status === 'active' || status === 'inactive' || status === 'pending_review', onClick: () => setStatus(status === 'active' ? 'inactive' : status === 'inactive' ? 'pending_review' : status === 'pending_review' ? 'all' : 'active') },
+                                        { label: 'Bot Risk',   isActive: status === 'suspect_bot',   onClick: () => setStatus(status === 'suspect_bot' ? 'all' : 'suspect_bot') },
+                                        { label: 'Converted',  isActive: status === 'converted',     onClick: () => setStatus(status === 'converted'    ? 'all' : 'converted') },
+                                        { label: 'Survey',     isActive: status === 'survey_sent' || status === 'survey_responded', onClick: () => setStatus(status === 'survey_sent' ? 'survey_responded' : status === 'survey_responded' ? 'all' : 'survey_sent') },
+                                        { label: 'Subscribed', isActive: sort === 'newest' || sort === 'oldest', onClick: () => setSort(sort === 'newest' ? 'oldest' : 'newest') },
+                                        { label: 'Fails',      isActive: status === 'failed' || sort === 'fails', onClick: () => { if (status !== 'failed') { setStatus('failed') } else { setStatus('all'); setSort('fails') } } },
+                                    ] as { label: string; isActive: boolean; onClick: () => void }[]).map(col => (
+                                        <th
+                                            key={col.label}
+                                            onClick={col.onClick}
+                                            title={`Filter by ${col.label}`}
+                                            style={{
+                                                padding: '10px 14px', textAlign: 'left',
+                                                fontSize: '0.65rem', fontWeight: 700,
+                                                textTransform: 'uppercase', letterSpacing: '0.08em',
+                                                cursor: 'pointer', userSelect: 'none',
+                                                color: col.isActive ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                                                borderBottom: col.isActive ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                                transition: 'color 0.15s, border-color 0.15s',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {col.label}
+                                            {col.isActive && <span style={{ marginLeft: '4px', opacity: 0.7 }}>▼</span>}
+                                        </th>
                                     ))}
                                 </tr>
                             </thead>
@@ -869,9 +897,6 @@ export default function AdminSubscribersPage() {
                                         </td>
                                         <td style={{ padding: '10px 14px' }}>
                                             <span style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>{sub.email}</span>
-                                        </td>
-                                        <td style={{ padding: '10px 14px' }}>
-                                            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{sub.name || <span style={{ color: 'var(--text-tertiary)', fontStyle: 'italic' }}>—</span>}</span>
                                         </td>
                                         {/* Country */}
                                         <td style={{ padding: '10px 14px' }}>

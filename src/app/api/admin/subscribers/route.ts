@@ -59,9 +59,10 @@ export async function GET(req: Request) {
         where.confirmedAt = null
     }
 
-    const orderBy = sort === 'oldest' ? { subscribedAt: 'asc' }
-                  : sort === 'name'   ? { email: 'asc' }
-                  : sort === 'fails'  ? { subscribedAt: 'desc' }  // sort by newest (fail count is enriched, not in DB)
+    const orderBy = sort === 'oldest'  ? { subscribedAt: 'asc' }
+                  : sort === 'name'    ? { email: 'asc' }
+                  : sort === 'country' ? { country: 'asc' }
+                  : sort === 'fails'   ? { subscribedAt: 'desc' }  // sort by newest (fail count is enriched, not in DB)
                   : { subscribedAt: 'desc' }
 
     // Count failed sends per subscriber email (from EmailLog)
