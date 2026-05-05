@@ -58,6 +58,7 @@ export default function AdminSubscribersPage() {
     const [selectedBotIds, setSelectedBotIds]   = useState<Set<string>>(new Set())
     const [botDeleting, setBotDeleting]         = useState(false)
     const [botScoreFilter, setBotScoreFilter]   = useState(60) // threshold for bulk deselect
+    const [autoDeleting, setAutoDeleting]       = useState(false)
 
     const showToast = (msg: string) => {
         setToast(msg)
@@ -237,6 +238,38 @@ export default function AdminSubscribersPage() {
         setBotDeleting(false)
     }
 
+    const autoDeleteAllBots = async () => {
+        // Step 1: fetch count so confirmation shows the real number
+        const previewRes = await fetch('/api/admin/subscribers/bot-suspects?threshold=80&limit=1')
+        const preview = previewRes.ok ? await previewRes.json() : null
+        const count: number = preview?.total ?? 0
+        if (count === 0) {
+            showToast('✅ No subscribers with botScore ≥ 80 found')
+            return
+        }
+        if (!confirm(
+            `Permanently delete ALL ${count} subscriber${count !== 1 ? 's' : ''} with botScore ≥ 80?\n\n` +
+            'This cannot be undone.'
+        )) return
+        setAutoDeleting(true)
+        try {
+            const res = await fetch('/api/admin/subscribers/delete-high-risk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ threshold: 80 }),
+            })
+            const data = await res.json()
+            if (res.ok) {
+                showToast(`🤖 Auto-deleted ${data.deleted} high-risk bot subscriber${data.deleted !== 1 ? 's' : ''}`)
+                await fetchData(1)
+            } else {
+                showToast(`❌ ${data.error || 'Auto-delete failed'}`)
+            }
+        } catch {
+            showToast('❌ Auto-delete failed — network error')
+        }
+        setAutoDeleting(false)
+    }
 
     const exportCsv = () => {
         const params = new URLSearchParams({ format: 'csv', sort, status })
@@ -374,6 +407,21 @@ export default function AdminSubscribersPage() {
                             }}
                         >
                             {botSuspectsLoading ? '⏳ Loading…' : '🤖 Bot Cleanup'}
+                        </button>
+                        <button
+                            type="button"
+                            id="auto-delete-bots-btn"
+                            onClick={autoDeleteAllBots}
+                            disabled={autoDeleting}
+                            style={{
+                                padding: '6px 14px', borderRadius: 'var(--radius-md)',
+                                fontSize: '0.78rem', fontWeight: 600, cursor: autoDeleting ? 'not-allowed' : 'pointer',
+                                background: 'rgba(220,38,38,0.08)', border: '1px solid rgba(220,38,38,0.25)',
+                                color: '#dc2626', opacity: autoDeleting ? 0.5 : 1, transition: 'all 0.15s',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            {autoDeleting ? '⏳ Deleting…' : '⚡ Auto-Delete ≥80'}
                         </button>
                         <button
                             type="button"

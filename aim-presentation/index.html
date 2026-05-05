@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>AIM Platform — Project Presentation 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══ SLIDE 1: COVER ═══ -->
+<section class="slide slide-cover" id="slide-cover">
+    <div class="cover-badge">AIM STUDIO</div>
+    <h1 class="cover-title">AIM Platform</h1>
+    <p class="cover-sub">Full-Stack Film Distribution &amp; Community Platform</p>
+    <div class="cover-meta">
+        <span>Software Engineering Capstone — 2026</span>
+        <span class="gold">Presented by Maxwell Onyeka</span>
+    </div>
+    <div class="cover-tagline">Don't look away.</div>
+</section>
+
+<!-- ═══ SLIDE 2: PURPOSE ═══ -->
+<section class="slide" id="slide-purpose">
+    <h2 class="slide-number">01</h2>
+    <h3 class="slide-title">Purpose of the Application</h3>
+    <div class="content-block">
+        <p class="purpose-text">
+            AIM Studio is an <em class="gold">AI-powered cinema platform</em> that produces emotional, character-driven films, casts community members into productions, and trains aspiring filmmakers in AI storytelling. We make films about <em class="gold">sacrifice, regret, and the moments that matter</em> — using AI not to replace cinema but to enable stories that wouldn't otherwise get told.
+        </p>
+        <p class="purpose-text" style="margin-top:16px">
+            The platform supports three audience pathways: <em class="gold">watching</em>, <em class="gold">auditioning</em>, and <em class="gold">learning</em> — each with its own infrastructure, from film distribution and subtitle localization to casting pipelines with AI-assisted scoring and a full training academy.
+        </p>
+    </div>
+</section>
+
+<!-- ═══ SLIDE 3: TECHNOLOGIES ═══ -->
+<section class="slide" id="slide-tech">
+    <h2 class="slide-number">02</h2>
+    <h3 class="slide-title">Technologies Used</h3>
+    <div class="tech-grid" id="tech-grid"></div>
+</section>
+
+<!-- ═══ SLIDE 4: SYSTEM REQUIREMENTS ═══ -->
+<section class="slide" id="slide-sysreq">
+    <h2 class="slide-number">03</h2>
+    <h3 class="slide-title">System Requirements</h3>
+    <table class="data-table" id="sysreq-table">
+        <thead><tr><th>Category</th><th>Requirement</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</section>
+
+<!-- ═══ SLIDE 5: PHASES ═══ -->
+<section class="slide" id="slide-phases">
+    <h2 class="slide-number">04</h2>
+    <h3 class="slide-title">Phases of Development</h3>
+    <div class="phases-list" id="phases-list"></div>
+</section>
+
+<!-- ═══ SLIDE 6: UML CLASS DIAGRAM ═══ -->
+<section class="slide slide-diagram" id="slide-uml">
+    <h2 class="slide-number">05</h2>
+    <h3 class="slide-title">UML Class Diagram</h3>
+    <p class="diagram-note">Derived from the Prisma ORM schema — 71 models, key entities shown</p>
+    <pre class="mermaid">
+classDiagram
+    class User {
+        +String id
+        +String name
+        +String email
+        +String role
+        +Boolean emailVerified
+        +String preferredLanguage
+    }
+    class Project {
+        +String id
+        +String title
+        +String slug
+        +String status
+        +Boolean published
+        +Int viewCount
+    }
+    class CastingCall {
+        +String id
+        +String title
+        +String status
+        +DateTime deadline
+    }
+    class Application {
+        +String id
+        +String status
+        +Int aiScore
+        +String auditState
+    }
+    class Subscriber {
+        +String id
+        +String email
+        +Boolean active
+        +Int botScore
+    }
+    class EmailLog {
+        +String id
+        +String to
+        +String transport
+        +Boolean success
+        +String bounceCategory
+        +DateTime deliveredAt
+    }
+    class EmailQueue {
+        +String id
+        +String status
+        +Int priority
+        +Int attempts
+    }
+    class EmailSuppression {
+        +String email
+        +String reason
+        +DateTime expiresAt
+    }
+    class CtaConfiguration {
+        +String id
+        +String projectSlug
+        +String phase
+        +Boolean active
+    }
+    class NotificationSignup {
+        +String id
+        +String email
+        +Boolean notified
+    }
+    class Episode {
+        +String id
+        +Int episodeNumber
+        +String title
+    }
+    class FilmSubtitle {
+        +String id
+        +String language
+        +String status
+    }
+
+    User "1" --> "*" Application : submits
+    User "1" --> "*" Project : owns
+    Project "1" --> "*" CastingCall : has
+    Project "1" --> "*" Episode : contains
+    Project "1" --> "*" FilmSubtitle : has
+    CastingCall "1" --> "*" Application : receives
+    CtaConfiguration "1" --> "*" NotificationSignup : collects
+    EmailQueue ..> EmailLog : produces
+    EmailLog ..> EmailSuppression : triggers
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 7a: ER — Core Domain ═══ -->
+<section class="slide slide-diagram" id="slide-er1">
+    <h2 class="slide-number">06a</h2>
+    <h3 class="slide-title">ER Diagram — Core Domain</h3>
+    <p class="diagram-note">Users, projects, casting calls, and applications</p>
+    <pre class="mermaid">
+erDiagram
+    User ||--o{ Application : submits
+    User ||--o{ WatchHistory : watches
+    User ||--o{ Watchlist : bookmarks
+    User ||--o{ Comment : writes
+    User ||--o{ Enrollment : enrolls
+
+    Project ||--o{ CastingCall : has
+    Project ||--o{ Episode : contains
+    Project ||--o{ WatchHistory : tracked_by
+    Project ||--o{ Comment : has
+    Project ||--o{ Donation : receives
+
+    CastingCall ||--o{ Application : receives
+    Application ||--o{ ApplicationNotification : triggers
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 7b: ER — Content & Learning ═══ -->
+<section class="slide slide-diagram" id="slide-er2">
+    <h2 class="slide-number">06b</h2>
+    <h3 class="slide-title">ER Diagram — Content & Learning</h3>
+    <p class="diagram-note">Film subtitles, live events, courses, and surveys</p>
+    <pre class="mermaid">
+erDiagram
+    Project ||--o{ FilmSubtitle : has
+    Project ||--o{ FilmCast : credits
+    FilmSubtitle ||--o{ SubtitleRevision : versioned_by
+
+    LiveEvent ||--o{ EventInvite : invites
+
+    Course ||--o{ CourseModule : contains
+    CourseModule ||--o{ Lesson : contains
+    Lesson ||--o{ LessonProgress : tracks
+
+    Survey ||--o{ SurveyResponse : collects
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 7c: ER — Notifications & Email ═══ -->
+<section class="slide slide-diagram" id="slide-er3">
+    <h2 class="slide-number">06c</h2>
+    <h3 class="slide-title">ER Diagram — Notifications & Email</h3>
+    <p class="diagram-note">Subscriber lifecycle, notification signups, and email delivery pipeline</p>
+    <pre class="mermaid">
+erDiagram
+    User ||--o{ UserNotification : receives
+    CtaConfiguration ||--o{ NotificationSignup : collects
+
+    Subscriber ||--o{ EmailBounceEvent : triggers
+    Subscriber {
+        string email
+        boolean active
+        int botScore
+        datetime confirmedAt
+        datetime suppressedAt
+    }
+
+    EmailQueue ||--o{ EmailLog : produces
+    EmailQueue {
+        string status
+        int priority
+        string campaignId
+    }
+
+    EmailLog ||--o{ EmailBounceEvent : records
+    EmailLog {
+        string transport
+        boolean success
+        string bounceCategory
+        datetime deliveredAt
+        datetime clickedAt
+    }
+
+    EmailBounceEvent ||--o{ EmailSuppression : enforces
+    EmailBounceEvent {
+        string email
+        string bounceType
+        string source
+    }
+
+    EmailSuppression {
+        string email
+        string reason
+        datetime expiresAt
+    }
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 8: USE CASE DIAGRAM ═══ -->
+<section class="slide slide-diagram" id="slide-usecase">
+    <h2 class="slide-number">07</h2>
+    <h3 class="slide-title">Use Case Diagram</h3>
+    <p class="diagram-note">Actors and their interactions with the platform</p>
+    <pre class="mermaid">
+graph LR
+    subgraph Actors
+        V["🌐 Visitor"]
+        S["📧 Subscriber"]
+        M["🎬 Member"]
+        A["🔑 Admin"]
+    end
+    subgraph "Public Actions"
+        BF["Browse Films"]
+        VT["View Trailers"]
+        SF["Submit Subscribe Form"]
+        VC["View Casting Calls"]
+        CA["Submit Casting Application"]
+    end
+    subgraph "Member Actions"
+        AUTH["Authenticate (Email / Google)"]
+        WF["Watch Films"]
+        AUD["Audition (Upload Media)"]
+        WL["Manage Watchlist"]
+        WH["View Watch History"]
+        NP["Notification Preferences"]
+    end
+    subgraph "Admin Actions"
+        MP["Manage Projects (Publish / Schedule)"]
+        MC["Manage Casting Calls"]
+        AS["Approve Subscribers"]
+        SA["Send Announcements"]
+        VA["View Analytics Dashboard"]
+        ES["Manage Email Suppression"]
+        SS["Configure Site Settings"]
+    end
+    V --> BF
+    V --> VT
+    V --> SF
+    V --> VC
+    V --> CA
+    S --> SF
+    M --> AUTH
+    M --> WF
+    M --> AUD
+    M --> WL
+    M --> WH
+    M --> NP
+    A --> MP
+    A --> MC
+    A --> AS
+    A --> SA
+    A --> VA
+    A --> ES
+    A --> SS
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 9a: DFD — Subscribe Flow ═══ -->
+<section class="slide slide-diagram" id="slide-dfd1">
+    <h2 class="slide-number">08a</h2>
+    <h3 class="slide-title">Data Flow — Subscribe Capture</h3>
+    <p class="diagram-note">Silent capture with bot detection and manual admin approval</p>
+    <pre class="mermaid">
+graph TD
+    V1["🌐 Visitor"] -->|submits form| F1["Subscribe API"]
+    F1 -->|honeypot + timing checks| BC["Bot Scoring Engine"]
+    BC -->|score < 70| DB1[("Database: Subscriber\nactive: false\nbotScore: computed")]
+    BC -->|score >= 70| REJECT["❌ Silent Reject"]
+    DB1 -->|appears in| AD1["Admin Dashboard\n(pending tab)"]
+    AD1 -->|reviews bot score + country| DECIDE{"Approve?"}
+    DECIDE -->|yes| ACTIVE[("Subscriber\nactive: true")]
+    DECIDE -->|no| DEL["🗑 Delete"]
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 9b: DFD — Account Creation ═══ -->
+<section class="slide slide-diagram" id="slide-dfd2">
+    <h2 class="slide-number">08b</h2>
+    <h3 class="slide-title">Data Flow — Account Creation</h3>
+    <p class="diagram-note">Email verification via Gmail SMTP</p>
+    <pre class="mermaid">
+graph TD
+    V2["🌐 Visitor"] -->|fills registration form| F2["Register API"]
+    F2 -->|creates user| DB2[("Database: User\nemailVerified: false")]
+    F2 -->|generates 6-digit code| CODE["Verification Code"]
+    CODE -->|sends via| SMTP["Gmail SMTP"]
+    SMTP -->|email with code| V2
+    V2 -->|enters code| F3["Verify API"]
+    F3 -->|validates code + expiry| CHECK{"Valid?"}
+    CHECK -->|yes| VERIFIED[("User\nemailVerified: true")]
+    CHECK -->|no| ERR["❌ Invalid / Expired"]
+    VERIFIED -->|triggers| WELCOME["Welcome Email"]
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 9c: DFD — Google OAuth ═══ -->
+<section class="slide slide-diagram" id="slide-dfd3">
+    <h2 class="slide-number">08c</h2>
+    <h3 class="slide-title">Data Flow — Google OAuth</h3>
+    <p class="diagram-note">Single sign-on with automatic account provisioning</p>
+    <pre class="mermaid">
+graph TD
+    V3["🎬 User"] -->|clicks 'Sign in with Google'| G1["Google OAuth Server"]
+    G1 -->|redirects with auth code| CB["Callback API"]
+    CB -->|exchanges code for tokens| G1
+    CB -->|extracts email + profile| LOOKUP{"User exists?"}
+    LOOKUP -->|yes| EXISTING[("Existing User")]
+    LOOKUP -->|no| CREATE[("New User\ngoogleId linked")]
+    EXISTING --> JWT["JWT Token (JOSE)"]
+    CREATE --> JWT
+    JWT -->|set httpOnly cookie| CK["🔒 Secure Cookie"]
+    CK -->|authenticated session| DASH["Dashboard"]
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 9d: DFD — Email Broadcast ═══ -->
+<section class="slide slide-diagram" id="slide-dfd4">
+    <h2 class="slide-number">08d</h2>
+    <h3 class="slide-title">Data Flow — Email Broadcast Pipeline</h3>
+    <p class="diagram-note">Multi-transport with deliverability tracking</p>
+    <pre class="mermaid">
+graph TD
+    A1["🔑 Admin"] -->|triggers broadcast| EQ[("EmailQueue\npriority: 0-3")]
+    EQ -->|cron every 1 min| WK["Email Worker"]
+    WK -->|checks| SUP[("Suppression List")]
+    SUP -->|suppressed| SKIP["⏭ Skip"]
+    SUP -->|clear| TR{"Transport Selector"}
+    TR -->|transactional| GRAPH["Microsoft Graph"]
+    TR -->|bulk| ACS["Azure Comm. Services"]
+    TR -->|fallback| SMTP2["Gmail SMTP"]
+    GRAPH --> EL[("EmailLog\nsuccess + trackingId")]
+    ACS --> EL
+    SMTP2 --> EL
+    ACS -->|Event Grid webhook| WH1["Webhook Handler"]
+    WH1 -->|Delivered event| DEL_OK["✅ deliveredAt stamped"]
+    WH1 -->|Bounce event| BOUNCE["❌ bounceCategory + suppression"]
+    </pre>
+</section>
+
+<!-- ═══ SLIDE 10: TEST CASES ═══ -->
+<section class="slide" id="slide-tests">
+    <h2 class="slide-number">09</h2>
+    <h3 class="slide-title">Test Case Grid</h3>
+    <div style="overflow-x:auto;max-width:100%">
+        <table class="test-table" id="test-table">
+            <thead><tr><th>ID</th><th>Description</th><th>Expected Result</th><th>Actual Result</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ═══ SLIDE 11: CLOSING ═══ -->
+<section class="slide slide-cover" id="slide-closing">
+    <img src="logo.png" alt="AIM Studio" style="width:160px;height:auto;margin-bottom:24px;border-radius:12px;opacity:0.95">
+    <div class="cover-badge">AIM STUDIO</div>
+    <p class="closing-tagline">Don't look away.</p>
+    <p style="margin:24px 0 12px"><a href="https://impactaistudio.com" target="_blank" style="color:#e4b95a;font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:600;text-decoration:none;border:1px solid rgba(228,185,90,0.3);padding:10px 28px;border-radius:999px;transition:all 0.2s" onmouseover="this.style.background='rgba(228,185,90,0.12)'" onmouseout="this.style.background='none'">impactaistudio.com →</a></p>
+    <p class="closing-sub">Thank you.</p>
+</section>
+
+<!-- Navigation dots -->
+<nav class="slide-nav" id="slide-nav"></nav>
+
+<script src="data.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    mermaid.initialize({ theme:'dark', themeVariables:{ primaryColor:'#e4b95a', primaryTextColor:'#f3efe8', lineColor:'#e4b95a', secondaryColor:'#181c28' }});
+
+    // Tech grid
+    const tg = document.getElementById('tech-grid');
+    TECH.forEach(t => { tg.innerHTML += `<div class="tech-card"><div class="tech-layer">${t[0]}</div><div class="tech-value">${t[1]}</div></div>`; });
+
+    // System requirements
+    const sr = document.querySelector('#sysreq-table tbody');
+    SYSREQ.forEach(r => { sr.innerHTML += `<tr><td class="gold">${r[0]}</td><td>${r[1]}</td></tr>`; });
+
+    // Phases
+    const pl = document.getElementById('phases-list');
+    PHASES.forEach(p => { pl.innerHTML += `<div class="phase-card"><div class="phase-num">Phase ${p[0]}</div><div class="phase-name">${p[1]}</div><div class="phase-desc">${p[2]}</div></div>`; });
+
+    // Test cases
+    const tb = document.querySelector('#test-table tbody');
+    TESTS.forEach(t => {
+        const cls = t[4]==='Pass'?'status-pass':t[4]==='Known Limitation'?'status-known':'status-fail';
+        tb.innerHTML += `<tr><td class="gold" style="font-weight:700;white-space:nowrap">${t[0]}</td><td>${t[1]}</td><td>${t[2]}</td><td>${t[3]}</td><td class="${cls}">${t[4]}</td></tr>`;
+    });
+
+    // Nav dots
+    const nav = document.getElementById('slide-nav');
+    const ids = ['cover','purpose','tech','sysreq','phases','uml','er1','er2','er3','usecase','dfd1','dfd2','dfd3','dfd4','tests','closing'];
+    ids.forEach(id => { nav.innerHTML += `<a href="#slide-${id}" class="nav-dot" title="${id}"></a>`; });
+});
+</script>
+</body>
+</html>

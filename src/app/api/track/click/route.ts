@@ -37,11 +37,11 @@ export async function GET(request: NextRequest) {
 
     // Stamp clickedAt asynchronously — never block the redirect on DB latency
     if (id) {
-        prisma.emailLog.updateMany({
-            where: { id, clickedAt: null },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            data: { clickedAt: new Date() } as any,
-        }).catch(() => { /* non-critical */ })
+        // Only stamp on first click (idempotent) — use $executeRaw to avoid type issues with nullable DateTime filter
+        prisma.$executeRawUnsafe(
+            `UPDATE "EmailLog" SET "clickedAt" = NOW() WHERE "id" = $1 AND "clickedAt" IS NULL`,
+            id
+        ).catch(() => { /* non-critical */ })
     }
 
     return NextResponse.redirect(destination, { status: 302 })

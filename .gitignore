@@ -3,6 +3,8 @@
 # dependencies
 /node_modules
 workers/**/node_modules
+aim-presentation/node_modules
+aim-presentation/package-lock.json
 /.pnp
 .pnp.*
 .yarn/*

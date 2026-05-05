@@ -32,6 +32,14 @@
     {
       "path": "/api/cron/process-gmail-bounces",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/process-graph-bounces",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/delete-high-bot-subscribers",
+      "schedule": "0 2 * * *"
     }
   ],
   "functions": {

@@ -648,7 +648,20 @@ model EmailLog {
   @@index([clickedAt])
 }
 
+model DeletedSubscriberLog {
+  id          String   @id @default(cuid())
+  email       String
+  botScore    Int
+  reason      String   // "auto_cron" | "admin_bulk"
+  adminUserId String?  // null when deleted by cron
+  deletedAt   DateTime @default(now())
+
+  @@index([deletedAt])
+  @@index([email])
+}
+
 model EmailQueue {
+
   id           String    @id @default(cuid())
   to           String // recipient email
   subject      String

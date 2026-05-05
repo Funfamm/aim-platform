@@ -1,0 +1,122 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; scroll-snap-type:y mandatory; }
+body { background:#0d0f14; color:#f3efe8; font-family:'Outfit',sans-serif; overflow-x:hidden; }
+
+.slide {
+    min-height:100vh; padding:60px 80px;
+    scroll-snap-align:start;
+    display:flex; flex-direction:column; justify-content:center;
+    border-bottom:1px solid rgba(228,185,90,0.08);
+    position:relative;
+}
+.slide-cover {
+    align-items:center; text-align:center;
+    background:radial-gradient(ellipse at 50% 30%, rgba(228,185,90,0.06) 0%, transparent 70%);
+}
+.cover-badge {
+    font-family:'Inter',sans-serif; font-size:0.75rem; font-weight:700;
+    letter-spacing:0.35em; color:#e4b95a; margin-bottom:24px;
+    border:1px solid rgba(228,185,90,0.25); padding:6px 20px; border-radius:999px;
+}
+.cover-title {
+    font-family:'Playfair Display',serif; font-size:4.5rem; font-weight:700;
+    margin-bottom:12px;
+    background:linear-gradient(135deg,#f5dfa0,#e4b95a,#b8922e);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+    background-clip:text;
+}
+.cover-sub { font-size:1.35rem; color:#b0a998; margin-bottom:32px; font-weight:300; }
+.cover-meta { display:flex; gap:24px; font-size:0.85rem; color:#b0a998; }
+.cover-tagline {
+    margin-top:48px; font-family:'Playfair Display',serif;
+    font-style:italic; font-size:1.1rem; color:rgba(228,185,90,0.5);
+}
+.closing-tagline {
+    font-family:'Playfair Display',serif; font-style:italic;
+    font-size:3rem; color:#e4b95a; margin-bottom:16px;
+}
+.closing-sub { font-size:1.2rem; color:#b0a998; }
+
+.slide-number {
+    font-family:'Playfair Display',serif; font-size:4rem; font-weight:700;
+    color:rgba(228,185,90,0.12); position:absolute; top:40px; right:60px;
+}
+.slide-title {
+    font-family:'Playfair Display',serif; font-size:2.2rem; font-weight:700;
+    color:#e4b95a; margin-bottom:32px;
+}
+.gold { color:#e4b95a; font-style:italic; }
+
+.content-block {
+    background:rgba(24,28,40,0.6); border:1px solid rgba(228,185,90,0.1);
+    border-radius:12px; padding:32px 40px; max-width:900px;
+}
+.purpose-text { font-size:1.15rem; line-height:1.9; color:#f3efe8; }
+.diagram-note { font-size:0.85rem; color:#b0a998; margin-bottom:20px; }
+
+/* Phases */
+.phases-list { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; max-width:1000px; }
+.phase-card {
+    background:rgba(24,28,40,0.7); border:1px solid rgba(228,185,90,0.1);
+    border-radius:10px; padding:20px 24px; border-left:3px solid #e4b95a;
+}
+.phase-num { font-size:0.65rem; font-weight:700; letter-spacing:0.12em; color:#e4b95a; text-transform:uppercase; margin-bottom:4px; }
+.phase-name { font-size:1.05rem; font-weight:700; color:#f3efe8; margin-bottom:6px; }
+.phase-desc { font-size:0.85rem; color:#b0a998; line-height:1.7; }
+
+/* Tech grid */
+.tech-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; max-width:1100px; }
+.tech-card {
+    background:rgba(24,28,40,0.7); border:1px solid rgba(228,185,90,0.08);
+    border-radius:10px; padding:16px 20px; transition:border-color 0.2s;
+}
+.tech-card:hover { border-color:rgba(228,185,90,0.3); }
+.tech-layer { font-size:0.7rem; font-weight:700; letter-spacing:0.1em; color:#e4b95a; text-transform:uppercase; margin-bottom:4px; }
+.tech-value { font-size:0.95rem; color:#f3efe8; }
+
+/* Data table */
+.data-table { width:100%; max-width:900px; border-collapse:collapse; }
+.data-table th {
+    text-align:left; padding:10px 16px; font-size:0.7rem; font-weight:700;
+    letter-spacing:0.1em; text-transform:uppercase; color:#e4b95a;
+    border-bottom:2px solid rgba(228,185,90,0.2);
+}
+.data-table td { padding:10px 16px; font-size:0.9rem; border-bottom:1px solid rgba(255,255,255,0.04); }
+.data-table tr:hover td { background:rgba(228,185,90,0.03); }
+
+/* Test table */
+.test-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+.test-table th {
+    text-align:left; padding:8px 12px; font-size:0.65rem; font-weight:700;
+    letter-spacing:0.08em; text-transform:uppercase; color:#e4b95a;
+    border-bottom:2px solid rgba(228,185,90,0.2); white-space:nowrap;
+}
+.test-table td { padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); vertical-align:top; }
+.test-table tr:hover td { background:rgba(228,185,90,0.03); }
+.status-pass { color:#4ade80; font-weight:600; }
+.status-fail { color:#f87171; font-weight:600; }
+.status-known { color:#fbbf24; font-weight:600; }
+
+/* Mermaid */
+.slide-diagram { padding-bottom:60px; min-height:100vh; justify-content:flex-start; padding-top:60px; }
+.mermaid { max-width:100%; overflow-x:auto; }
+.mermaid svg { min-height:500px; width:100% !important; max-width:1300px; }
+
+/* Nav dots */
+.slide-nav {
+    position:fixed; right:20px; top:50%; transform:translateY(-50%);
+    display:flex; flex-direction:column; gap:8px; z-index:100;
+}
+.nav-dot {
+    width:8px; height:8px; border-radius:50%;
+    background:rgba(228,185,90,0.2); border:1px solid rgba(228,185,90,0.3);
+    transition:all 0.2s; display:block;
+}
+.nav-dot:hover { background:#e4b95a; transform:scale(1.4); }
+
+@media (max-width:900px) {
+    .slide { padding:40px 24px; }
+    .tech-grid { grid-template-columns:1fr 1fr; }
+    .phases-list { grid-template-columns:1fr; }
+    .cover-title { font-size:2.8rem; }
+}
