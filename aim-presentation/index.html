@@ -18,8 +18,8 @@
     <h1 class="cover-title">AIM Platform</h1>
     <p class="cover-sub">Full-Stack Film Distribution &amp; Community Platform</p>
     <div class="cover-meta">
-        <span>Software Engineering Capstone — 2026</span>
-        <span class="gold">Presented by Maxwell Onyeka</span>
+        <span>26SP-COMP-296-801RL &mdash; Advanced Software Project</span>
+        <span class="gold">Samuel Aderemi &nbsp;|&nbsp; Prof. Bryan Festa</span>
     </div>
     <div class="cover-tagline">Don't look away.</div>
 </section>
@@ -519,10 +519,45 @@ document.addEventListener('DOMContentLoaded', () => {
         tb.innerHTML += `<tr><td class="gold" style="font-weight:700;white-space:nowrap">${t[0]}</td><td>${t[1]}</td><td>${t[2]}</td><td>${t[3]}</td><td class="${cls}">${t[4]}</td></tr>`;
     });
 
-    // Nav dots
+    // ── Nav dots ─────────────────────────────────────────────────────────────
     const nav = document.getElementById('slide-nav');
     const ids = ['cover','purpose','tech','sysreq','phases','uml','er1','er2','er3','usecase','dfd1','dfd2','dfd3','dfd4','localisation','subtitle','tests','closing'];
-    ids.forEach(id => { nav.innerHTML += `<a href="#slide-${id}" class="nav-dot" title="${id}"></a>`; });
+
+    ids.forEach(id => {
+        const a = document.createElement('a');
+        a.className = 'nav-dot';
+        a.title = id;
+        a.href = '#';
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            const target = document.getElementById('slide-' + id);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+        nav.appendChild(a);
+    });
+
+    // ── Intersection Observer: fade-in + active dot ───────────────────────────
+    const slides = Array.from(document.querySelectorAll('.slide'));
+    const dots   = Array.from(nav.querySelectorAll('.nav-dot'));
+
+    const observer = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+            // Fade in when entering viewport
+            if (entry.isIntersecting) {
+                entry.target.classList.add('in-view');
+            }
+            // Update active dot
+            const idx = slides.indexOf(entry.target);
+            if (idx !== -1 && dots[idx]) {
+                if (entry.isIntersecting) {
+                    dots.forEach(d => d.classList.remove('active'));
+                    dots[idx].classList.add('active');
+                }
+            }
+        });
+    }, { threshold: 0.35 });
+
+    slides.forEach(s => observer.observe(s));
 });
 </script>
 </body>
