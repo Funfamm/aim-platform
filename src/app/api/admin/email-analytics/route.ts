@@ -57,17 +57,25 @@ export async function GET(request: Request) {
 
     // ── Core Stats (all time + period) ────────────────────────────────────
     const [
-        totalSent, totalSuccess, totalFailed, totalOpened,
-        periodSent, periodSuccess, periodFailed, periodOpened,
+        totalSent, totalSuccess, totalFailed, totalOpened, totalDelivered, totalClicked,
+        periodSent, periodSuccess, periodFailed, periodOpened, periodDelivered, periodClicked,
     ] = await Promise.all([
         prisma.emailLog.count(),
         prisma.emailLog.count({ where: { success: true } }),
         prisma.emailLog.count({ where: { success: false } }),
         prisma.emailLog.count({ where: { openedAt: { not: null } } }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma.emailLog as any).count({ where: { deliveredAt: { not: null } } }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma.emailLog as any).count({ where: { clickedAt: { not: null } } }),
         prisma.emailLog.count({ where: { sentAt: { gte: periodStart } } }),
         prisma.emailLog.count({ where: { sentAt: { gte: periodStart }, success: true } }),
         prisma.emailLog.count({ where: { sentAt: { gte: periodStart }, success: false } }),
         prisma.emailLog.count({ where: { sentAt: { gte: periodStart }, openedAt: { not: null } } }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma.emailLog as any).count({ where: { sentAt: { gte: periodStart }, deliveredAt: { not: null } } }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma.emailLog as any).count({ where: { sentAt: { gte: periodStart }, clickedAt: { not: null } } }),
     ])
 
     // ── Bounce breakdown (period) ─────────────────────────────────────────
@@ -170,6 +178,8 @@ export async function GET(request: Request) {
                 bounceCategory: true,
                 sentAt: true,
                 openedAt: true,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ...({ deliveredAt: true, clickedAt: true } as any),
             },
         }),
         prisma.emailLog.count({ where: logWhere }),
@@ -197,8 +207,12 @@ export async function GET(request: Request) {
             totalSuccess,
             totalFailed,
             totalOpened,
+            totalDelivered,
+            totalClicked,
             successRate: totalSent > 0 ? Math.round((totalSuccess / totalSent) * 10000) / 100 : 0,
-            openRate: totalSuccess > 0 ? Math.round((totalOpened / totalSuccess) * 10000) / 100 : 0,
+            openRate: totalDelivered > 0 ? Math.round((totalOpened / totalDelivered) * 10000) / 100
+                    : totalSuccess > 0   ? Math.round((totalOpened / totalSuccess) * 10000) / 100 : 0,
+            clickRate: totalDelivered > 0 ? Math.round((totalClicked / totalDelivered) * 10000) / 100 : 0,
         },
         periodStats: {
             days: periodDays,
@@ -206,8 +220,12 @@ export async function GET(request: Request) {
             success: periodSuccess,
             failed: periodFailed,
             opened: periodOpened,
+            delivered: periodDelivered,
+            clicked: periodClicked,
             successRate: periodSent > 0 ? Math.round((periodSuccess / periodSent) * 10000) / 100 : 0,
-            openRate: periodSuccess > 0 ? Math.round((periodOpened / periodSuccess) * 10000) / 100 : 0,
+            openRate: periodDelivered > 0 ? Math.round((periodOpened / periodDelivered) * 10000) / 100
+                    : periodSuccess > 0   ? Math.round((periodOpened / periodSuccess) * 10000) / 100 : 0,
+            clickRate: periodDelivered > 0 ? Math.round((periodClicked / periodDelivered) * 10000) / 100 : 0,
         },
         bounceStats,
         typeBreakdown: typeBreakdown.map(t => ({ type: t.type, count: t._count })),

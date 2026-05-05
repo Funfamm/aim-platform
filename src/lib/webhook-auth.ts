@@ -55,28 +55,27 @@ export function verifyAcsWebhookSignature(req: NextRequest, body: string): boole
     }
 }
 
-// ── Normalized Bounce Event ────────────────────────────────────────────────
+// ── Normalized ACS Event ───────────────────────────────────────────────────
 
-export interface NormalizedBounceEvent {
-    email: string
-    bounceType: 'hard_bounce' | 'soft_bounce' | 'complaint'
-    detail: string
-}
+export type NormalizedAcsEvent =
+    | { kind: 'bounce';    email: string; bounceType: 'hard_bounce' | 'soft_bounce' | 'complaint'; detail: string }
+    | { kind: 'delivered'; email: string }
 
 /**
- * Normalize an ACS Event Grid event into our internal bounce format.
+ * Normalize an ACS Event Grid event into our internal event format.
  *
  * ACS EventGrid EmailDeliveryReportReceived events have:
- *   - status: 'Delivered' | 'Bounced' | 'FilteredSpam' | 'Quarantined' | 'Suppressed'
+ *   - status: 'Delivered' | 'Bounced' | 'FilteredSpam' | 'Quarantined' | 'Suppressed' | 'Expanded'
  *   - deliveryStatusDetails: SMTP response details (may contain 5.x.x codes)
  *   - recipient: the email address
  *
  * Classification:
- *   - Bounced → hard_bounce (safest default — ACS already retried transient failures)
- *   - FilteredSpam → complaint
+ *   - Delivered / Expanded → { kind: 'delivered' }  → stamps deliveredAt on EmailLog
+ *   - Bounced             → hard_bounce (ACS already retried transient failures)
+ *   - FilteredSpam        → complaint
  *   - Quarantined/Suppressed → hard_bounce
  */
-export function normalizeAcsEvent(event: Record<string, unknown>): NormalizedBounceEvent | null {
+export function normalizeAcsEvent(event: Record<string, unknown>): NormalizedAcsEvent | null {
     const eventType = event.eventType as string | undefined
     if (eventType !== 'Microsoft.Communication.EmailDeliveryReportReceived') return null
 
@@ -90,13 +89,18 @@ export function normalizeAcsEvent(event: Record<string, unknown>): NormalizedBou
 
     if (!recipient || !status) return null
 
-    // Only process failure statuses
     switch (status) {
+        // ── Delivery confirmations ────────────────────────────────────────
+        case 'Delivered':
+        case 'Expanded':
+            return { kind: 'delivered', email: recipient.toLowerCase() }
+
+        // ── Bounce events ─────────────────────────────────────────────────
         case 'Bounced': {
-            // Parse deliveryStatusDetails for 5.x.x patterns (permanent failures)
             // ACS has already retried transient failures, so most "Bounced" are permanent
             const isDefinitelySoft = /^4\.\d+\.\d+/.test(details)
             return {
+                kind: 'bounce',
                 email: recipient.toLowerCase(),
                 bounceType: isDefinitelySoft ? 'soft_bounce' : 'hard_bounce',
                 detail: `ACS Bounced: ${details || 'no details'}`,
@@ -104,6 +108,7 @@ export function normalizeAcsEvent(event: Record<string, unknown>): NormalizedBou
         }
         case 'FilteredSpam':
             return {
+                kind: 'bounce',
                 email: recipient.toLowerCase(),
                 bounceType: 'complaint',
                 detail: `ACS FilteredSpam — treated as complaint: ${details}`,
@@ -111,12 +116,12 @@ export function normalizeAcsEvent(event: Record<string, unknown>): NormalizedBou
         case 'Quarantined':
         case 'Suppressed':
             return {
+                kind: 'bounce',
                 email: recipient.toLowerCase(),
                 bounceType: 'hard_bounce',
                 detail: `ACS ${status}: ${details || 'no details'}`,
             }
         default:
-            // Delivered, Expanded, etc. — not a bounce
             return null
     }
 }
