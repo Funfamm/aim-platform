@@ -392,6 +392,85 @@ graph TD
     </pre>
 </section>
 
+<!-- ═══ SLIDE 09: LOCALISATION ═══ -->
+<section class="slide" id="slide-localisation">
+    <h2 class="slide-number">09</h2>
+    <h3 class="slide-title">Localisation &amp; Language Support</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;margin-top:8px">
+
+        <!-- UI Languages -->
+        <div>
+            <p class="diagram-note" style="margin-bottom:18px">Platform UI — 11 languages via next-intl</p>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">EN</div><div class="tech-value">English</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">ES</div><div class="tech-value">Español</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">FR</div><div class="tech-value">Français</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">DE</div><div class="tech-value">Deutsch</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">PT</div><div class="tech-value">Português</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">RU</div><div class="tech-value">Русский</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">ZH</div><div class="tech-value">中文</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">AR</div><div class="tech-value">العربية</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">JA</div><div class="tech-value">日本語</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">KO</div><div class="tech-value">한국어</div></div>
+                <div class="tech-card" style="padding:14px 10px;text-align:center"><div class="tech-layer">HI</div><div class="tech-value">हिन्दी</div></div>
+            </div>
+        </div>
+
+        <!-- Subtitle target langs -->
+        <div>
+            <p class="diagram-note" style="margin-bottom:18px">Film Subtitles — 10 translation targets</p>
+            <div style="display:flex;flex-direction:column;gap:10px">
+                <div class="phase-card" style="padding:14px 18px">
+                    <div class="phase-name">Source Detection</div>
+                    <div class="phase-desc">Whisper auto-detects spoken language (English, Spanish, French …)</div>
+                </div>
+                <div class="phase-card" style="padding:14px 18px">
+                    <div class="phase-name">Translation Engine</div>
+                    <div class="phase-desc">Gemini 1.5 Flash — 500-segment chunks — cinema-grade prompt</div>
+                </div>
+                <div class="phase-card" style="padding:14px 18px">
+                    <div class="phase-name">Output Targets</div>
+                    <div class="phase-desc">ES · FR · DE · PT · RU · ZH · AR · JA · KO · HI — stored as WebVTT</div>
+                </div>
+                <div class="phase-card" style="padding:14px 18px">
+                    <div class="phase-name">Delivery</div>
+                    <div class="phase-desc">Admin-toggled public visibility per language per film</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ SLIDE 09b: SUBTITLE PIPELINE ═══ -->
+<section class="slide slide-diagram" id="slide-subtitle">
+    <h2 class="slide-number">09b</h2>
+    <h3 class="slide-title">Subtitle Pipeline — End to End</h3>
+    <p class="diagram-note">Faster-Whisper worker → Gemini translation → versioned WebVTT → public player</p>
+    <pre class="mermaid">
+graph TD
+    ADM["🔑 Admin"] -->|uploads film URL| GATE{"Streaming host\nblocked?"}
+    GATE -->|yes| MANUAL["📤 Manual VTT Upload"]
+    GATE -->|no| ENQUEUE["SubtitleJob: queued"]
+    ENQUEUE --> WK["PM2 Worker\n(faster-whisper)"]
+    WK -->|transcribes audio| VTT["English WebVTT\n+ segment timestamps"]
+    VTT -->|callback API| DB1[("FilmSubtitle\nlang=en, status=ready")]
+    VTT -->|triggers| TR["Translation Queue"]
+    TR -->|Gemini 1.5 Flash\n500-seg chunks| ES["ES"]
+    TR --> FR["FR"]
+    TR --> DE["DE"]
+    TR --> PT["PT"]
+    TR --> RU["RU"]
+    TR --> ZH["ZH"]
+    TR --> AR["AR"]
+    TR --> JA["JA"]
+    TR --> KO["KO"]
+    TR --> HI["HI"]
+    ES & FR & DE & PT & RU & ZH & AR & JA & KO & HI --> DB2[("FilmSubtitle\nper-lang rows")]
+    DB2 -->|admin toggles subtitlesPublic| PUB["Public Player\n(track switcher)"]
+    MANUAL --> DB1
+    </pre>
+</section>
+
 <!-- ═══ SLIDE 10: TEST CASES ═══ -->
 <section class="slide" id="slide-tests">
     <h2 class="slide-number">09</h2>
@@ -442,7 +521,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Nav dots
     const nav = document.getElementById('slide-nav');
-    const ids = ['cover','purpose','tech','sysreq','phases','uml','er1','er2','er3','usecase','dfd1','dfd2','dfd3','dfd4','tests','closing'];
+    const ids = ['cover','purpose','tech','sysreq','phases','uml','er1','er2','er3','usecase','dfd1','dfd2','dfd3','dfd4','localisation','subtitle','tests','closing'];
     ids.forEach(id => { nav.innerHTML += `<a href="#slide-${id}" class="nav-dot" title="${id}"></a>`; });
 });
 </script>
