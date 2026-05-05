@@ -239,8 +239,9 @@ export async function POST(request: NextRequest) {
             }
 
             console.info(`[subscribe] Silent capture (manual_approval): ${normalizedEmail} — botScore=${botScore}${breakdownStr ? ` [${breakdownStr}]` : ''}`)
-            // Return same response as double-opt-in pending — UI shows "check your email" but no email is sent
-            return NextResponse.json({ success: true, pending: true })
+            // Return `welcomed` so the UI skips the "check inbox" state and goes straight
+            // to the Create Account CTA — no email is sent in manual_approval mode.
+            return NextResponse.json({ success: true, welcomed: true })
         }
 
         // ── DOUBLE OPT-IN MODE ───────────────────────────────────────────────

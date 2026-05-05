@@ -28,7 +28,9 @@ export default function SubscribeForm() {
             })
             if (res.ok) {
                 const data = await res.json()
-                setStatus(data.pending ? 'pending' : 'sent')
+                // `welcomed` = manual_approval silent capture → go to 'sent' (Create Account CTA)
+                // `pending`  = double opt-in → "Check your inbox"
+                setStatus(data.welcomed ? 'sent' : data.pending ? 'pending' : 'sent')
                 setEmail('')
             } else {
                 setStatus('error')
