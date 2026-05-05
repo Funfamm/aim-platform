@@ -52,8 +52,12 @@ export async function GET(req: Request) {
             { name:  { contains: search, mode: 'insensitive' } },
         ]
     }
-    if (status === 'active')   where.active = true
-    if (status === 'inactive') where.active = false
+    if (status === 'active')        where.active = true
+    if (status === 'inactive')       where.active = false
+    if (status === 'pending_review') {
+        where.active = false
+        where.confirmedAt = null
+    }
 
     const orderBy = sort === 'oldest' ? { subscribedAt: 'asc' }
                   : sort === 'name'   ? { email: 'asc' }
@@ -161,10 +165,11 @@ export async function GET(req: Request) {
         where.subscribedAt = { gte: monthStart }
     }
 
-    const [total, active, inactive] = await Promise.all([
+    const [total, active, inactive, pendingReview] = await Promise.all([
         db.subscriber.count(),
         db.subscriber.count({ where: { active: true } }),
         db.subscriber.count({ where: { active: false } }),
+        db.subscriber.count({ where: { active: false, confirmedAt: null } }),
     ])
     const failedCount = await db.subscriber.count({
         where: { email: { in: failedEmails.length > 0 ? failedEmails : ['__none__'] } },
@@ -297,7 +302,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
         subscribers: enriched,
-        stats: { total, active, inactive, failed: failedCount, surveySent: surveySentSet.size, surveyResponded: surveyRespondedSet.size },
+        stats: { total, active, inactive, pendingReview, failed: failedCount, surveySent: surveySentSet.size, surveyResponded: surveyRespondedSet.size },
         botStats: { highRisk: highRiskCount, medRisk: medRiskCount, countryBreakdown },
         conversion: {
             totalSubscribers: total,
@@ -322,8 +327,16 @@ export async function PATCH(req: Request) {
     const { ids, active }: { ids: string[]; active: boolean } = await req.json()
     if (!Array.isArray(ids) || ids.length === 0) return NextResponse.json({ error: 'No IDs provided' }, { status: 400 })
 
+    // When approving (active: true), stamp confirmedAt and clear pending tokens
+    const data: Record<string, unknown> = { active }
+    if (active === true) {
+        data.confirmedAt = new Date()
+        data.confirmToken = null
+        data.tokenExpiresAt = null
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = await (prisma as any).subscriber.updateMany({ where: { id: { in: ids } }, data: { active } })
+    const result = await (prisma as any).subscriber.updateMany({ where: { id: { in: ids } }, data })
     return NextResponse.json({ updated: result.count })
 }
 

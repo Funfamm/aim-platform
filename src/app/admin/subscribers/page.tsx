@@ -24,7 +24,7 @@ interface Subscriber {
     surveyResponded: boolean
 }
 interface Pagination { page: number; limit: number; total: number; totalPages: number }
-interface Stats { total: number; active: number; inactive: number; failed: number; surveySent: number; surveyResponded: number }
+interface Stats { total: number; active: number; inactive: number; pendingReview: number; failed: number; surveySent: number; surveyResponded: number }
 interface BotStats { highRisk: number; medRisk: number; countryBreakdown: { country: string; count: number }[] }
 interface Conversion {
     totalSubscribers: number; totalUsers: number; converted: number
@@ -35,12 +35,12 @@ interface Conversion {
 export default function AdminSubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([])
     const [pagination, setPagination]   = useState<Pagination>({ page: 1, limit: 50, total: 0, totalPages: 0 })
-    const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0, failed: 0, surveySent: 0, surveyResponded: 0 })
+    const [stats, setStats]             = useState<Stats>({ total: 0, active: 0, inactive: 0, pendingReview: 0, failed: 0, surveySent: 0, surveyResponded: 0 })
     const [botStats, setBotStats]       = useState<BotStats>({ highRisk: 0, medRisk: 0, countryBreakdown: [] })
     const [conversion, setConversion]   = useState<Conversion>({ totalSubscribers: 0, totalUsers: 0, converted: 0, conversionRate: 0, subscriberOnly: 0, userOnly: 0, overlap: 0, newConversionsThisMonth: 0 })
     const [loading, setLoading]         = useState(true)
     const [search, setSearch]           = useState('')
-    const [status, setStatus]           = useState('all')
+    const [status, setStatus]           = useState('pending_review')
     const [sort, setSort]               = useState('newest')
     const [selected, setSelected]       = useState<Set<string>>(new Set())
     const [actionLoading, setActionLoading] = useState(false)
@@ -404,6 +404,7 @@ export default function AdminSubscribersPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 'var(--space-md)', marginBottom: 'var(--space-md)' }}>
                     {[
                         { label: 'Total', value: stats.total, color: '#d4a853', filter: 'all' },
+                        { label: '⏳ Pending Review', value: stats.pendingReview, color: '#f59e0b', filter: 'pending_review' },
                         { label: 'Active',   value: stats.active,   color: '#10b981', filter: 'active' },
                         { label: 'Inactive', value: stats.inactive, color: '#6b7280', filter: 'inactive' },
                         { label: 'Failed Sends', value: stats.failed, color: '#ef4444', filter: 'failed' },
@@ -652,6 +653,9 @@ export default function AdminSubscribersPage() {
                             <label style={labelStyle}>Status</label>
                             <select style={selectStyle} value={status} onChange={e => setStatus(e.target.value)}>
                                 <option value="all">All</option>
+                                <optgroup label="Review">
+                                    <option value="pending_review">⏳ Pending Review</option>
+                                </optgroup>
                                 <optgroup label="Subscription">
                                     <option value="active">● Active</option>
                                     <option value="inactive">○ Inactive</option>
@@ -715,7 +719,7 @@ export default function AdminSubscribersPage() {
                         </span>
                         <button type="button" disabled={actionLoading} onClick={() => bulkSetActive(true)}
                             style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
-                            ✓ Activate
+                            ✅ Approve
                         </button>
                         <button type="button" disabled={actionLoading} onClick={() => bulkSetActive(false)}
                             style={{ padding: '4px 12px', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', background: 'rgba(107,114,128,0.1)', border: '1px solid rgba(107,114,128,0.3)', color: '#9ca3af' }}>

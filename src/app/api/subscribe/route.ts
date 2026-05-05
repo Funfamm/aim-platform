@@ -58,6 +58,19 @@ setInterval(() => {
     }
 }, 30 * 60 * 1000)
 
+// ── Fetch subscriber mode from SiteSettings (cached per-request) ───────────
+async function getSubscriberMode(): Promise<'manual_approval' | 'double_opt_in'> {
+    try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const settings = await (prisma.siteSettings as any).findFirst({
+            select: { subscriberMode: true },
+        })
+        return (settings?.subscriberMode === 'double_opt_in') ? 'double_opt_in' : 'manual_approval'
+    } catch {
+        return 'manual_approval' // safe default
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -122,6 +135,9 @@ export async function POST(request: NextRequest) {
         const userLocale = locale || 'en'
         const country = request.headers.get('x-vercel-ip-country') || undefined
 
+        // ── Determine subscribe mode ───────────────────────────────────────
+        const subscriberMode = await getSubscriberMode()
+
         // ── Check existing subscription state ─────────────────────────────────
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = prisma as any
@@ -135,8 +151,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, alreadySubscribed: true })
         }
 
-        // Case 2: Was previously unsubscribed (confirmed once, now inactive) — reactivate + welcome back
-        // Returning subscribers skip double opt-in since they already confirmed once
+        // Case 2: Was previously approved/confirmed, now inactive — reactivate
         if (existing && existing.confirmedAt) {
             // ── Suppression check: prevent re-subscribing addresses with permanent delivery issues ──
             const suppression = await prisma.emailSuppression.findFirst({
@@ -144,23 +159,19 @@ export async function POST(request: NextRequest) {
                     email: normalizedEmail,
                     removedAt: null,
                     OR: [
-                        { expiresAt: null },           // Permanent suppressions
-                        { expiresAt: { gt: new Date() } }, // Not-yet-expired temp suppressions
+                        { expiresAt: null },
+                        { expiresAt: { gt: new Date() } },
                     ],
                 },
             })
 
             if (suppression) {
                 if (suppression.reason === 'hard_bounce' || suppression.reason === 'complaint') {
-                    // Permanent delivery issues — block re-subscription
                     return NextResponse.json({
                         error: 'This email address has delivery issues. Please use a different email or contact support.',
                         blocked: true,
                     }, { status: 400 })
                 }
-
-                // Unsubscribe or soft_bounce — lift suppression
-                // liftSuppression() handles BOTH suppression removal AND sets Subscriber.active = true
                 const { liftSuppression } = await import('@/lib/suppression')
                 await liftSuppression(normalizedEmail, 'system:resubscribe')
             }
@@ -169,23 +180,71 @@ export async function POST(request: NextRequest) {
                 where: { email: normalizedEmail },
                 data: { active: true, ...(name ? { name } : {}), ...(country ? { country } : {}), locale: userLocale, confirmToken: null },
             })
-            sendTransactionalEmail({
-                to: normalizedEmail,
-                subject: et('subscribeWelcomeBack', userLocale, 'subject') || 'Welcome back to AIM Studio! 🎬',
-                html: await subscribeWelcomeBackWithOverrides(name || undefined, siteUrl, userLocale),
-                type: 'subscribe',
-            }).catch(err => console.error('[subscribe] Welcome-back email failed:', err))
+
+            // Only send welcome-back email in double_opt_in mode
+            if (subscriberMode === 'double_opt_in') {
+                sendTransactionalEmail({
+                    to: normalizedEmail,
+                    subject: et('subscribeWelcomeBack', userLocale, 'subject') || 'Welcome back to AIM Studio! 🎬',
+                    html: await subscribeWelcomeBackWithOverrides(name || undefined, siteUrl, userLocale),
+                    type: 'subscribe',
+                }).catch(err => console.error('[subscribe] Welcome-back email failed:', err))
+            }
+
             return NextResponse.json({ success: true, welcomed: true })
         }
 
-        // Case 3: New subscriber OR pending (never confirmed) — double opt-in
         // ── Bot detection: compute score before writing subscriber ────────────
+        // Runs in ALL modes — feeds botScore for admin Bot Cleanup review
         const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
         const recentCountryCount = country ? await db.subscriber.count({
             where: { country, subscribedAt: { gte: oneHourAgo } },
         }) : 0
         const { score: botScore, breakdown } = calcSubscribeBotScore(normalizedEmail, name || null, country || null, recentCountryCount)
         const breakdownStr = Object.entries(breakdown).map(([k, v]) => `${k}=${v}`).join(', ')
+
+        if (subscriberMode === 'manual_approval') {
+            // ── MANUAL APPROVAL MODE ─────────────────────────────────────────
+            // Silent capture: write subscriber with active: false, NO token, NO email.
+            // Bot scoring is recorded for admin review — but we do NOT auto-suppress.
+            // Admin uses Bot Cleanup to review and delete suspects.
+            // High-score bots still land in the DB so admin can see the full picture.
+
+            if (existing && !existing.confirmedAt) {
+                // Pending (previously created) — refresh bot score + name/country
+                await db.subscriber.update({
+                    where: { email: normalizedEmail },
+                    data: {
+                        locale: userLocale,
+                        botScore,
+                        ...(name ? { name } : {}),
+                        ...(country ? { country } : {}),
+                    },
+                })
+            } else {
+                // Brand new subscriber — create as inactive, awaiting manual approval
+                await db.subscriber.create({
+                    data: {
+                        email: normalizedEmail,
+                        name: name || null,
+                        active: false,
+                        confirmedAt: null,
+                        confirmToken: null,
+                        tokenExpiresAt: null,
+                        locale: userLocale,
+                        botScore,
+                        ...(country ? { country } : {}),
+                    },
+                })
+            }
+
+            console.info(`[subscribe] Silent capture (manual_approval): ${normalizedEmail} — botScore=${botScore}${breakdownStr ? ` [${breakdownStr}]` : ''}`)
+            // Return same response as double-opt-in pending — UI shows "check your email" but no email is sent
+            return NextResponse.json({ success: true, pending: true })
+        }
+
+        // ── DOUBLE OPT-IN MODE ───────────────────────────────────────────────
+        // Legacy path — preserved for when we flip back to automated mode at scale.
 
         // ── Auto-suppress high-risk bots (score ≥ 80) ─────────────────────────
         if (botScore >= 80) {

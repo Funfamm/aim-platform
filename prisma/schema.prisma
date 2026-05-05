@@ -490,6 +490,8 @@ model SiteSettings {
   upcomingPageData              String? // JSON: hero title, accent, description
   footerPageData                String? // JSON: tagline override, brand signature
   joinCtaData                   String? // JSON: eyebrow, title, accent, body, button labels
+  // Subscriber capture mode
+  subscriberMode                String         @default("manual_approval") // 'manual_approval' | 'double_opt_in'
 }
 
 model PasswordHistory {
