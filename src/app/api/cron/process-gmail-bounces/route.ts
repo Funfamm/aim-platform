@@ -17,7 +17,7 @@
  *   4. Copy the refresh_token output into GMAIL_REFRESH_TOKEN env var
  *
  * Cron schedule (Vercel cron.json): every 15 minutes
- *   { "path": "/api/cron/process-gmail-bounces", "schedule": "*/15 * * * *" }
+ *   { "path": "/api/cron/process-gmail-bounces", "schedule": "*\/15 * * * *" }
  *
  * Security: Protected by CRON_SECRET header (matches CRON_SECRET env var).
  */
