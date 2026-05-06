@@ -231,6 +231,21 @@ export async function GET(req: Request) {
         // New device detection + branded email alert (fire-and-forget)
         void handleDeviceFingerprint(req, user.id, user.name, user.email, tokenVersion).catch(() => {})
 
+        // ── Visitor Intelligence: log this login event ──────────────────────────
+        void (prisma as any).loginEvent.create({
+            data: {
+                userId: user.id,
+                method: 'google',
+                ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+                userAgent: req.headers.get('user-agent')?.slice(0, 500) || null,
+                country: req.headers.get('x-vercel-ip-country') || null,
+            },
+        }).catch(() => {})
+        void (prisma as any).user.update({
+            where: { id: user.id },
+            data: { loginMethod: 'google' },
+        }).catch(() => {})
+
         // Redirect to where the user was trying to go, or dashboard
         // Build a locale-aware path so the user lands in their preferred language.
         const returnTo = cookieStore.get('oauth_return_to')?.value || '/'

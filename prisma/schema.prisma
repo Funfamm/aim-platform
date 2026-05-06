@@ -42,6 +42,7 @@ model User {
   themeMode               String                      @default("dark")
   mediaProfile            Json? // { front_headshot, side_profile, full_body, expression, optional_1, optional_2, voiceRecording }
   country                 String? // ISO 3166-1 alpha-2 (e.g. "NG", "US") — auto-detected on registration
+  loginMethod             String? // last auth method: 'credentials' | 'google' | 'apple'
   applications            Application[]
   donations               Donation[]
   enrollments             Enrollment[]
@@ -898,18 +899,38 @@ model ScriptAnalysis {
 }
 
 model PageView {
-  id        String   @id @default(cuid())
-  path      String
-  userId    String?
-  userAgent String?
-  referrer  String?
-  device    String?
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  path       String
+  userId     String?
+  userAgent  String?
+  referrer   String?
+  device     String?
+  country    String?          // ISO-3166-1 alpha-2 from x-vercel-ip-country
+  sessionId  String?          // anonymous session UUID (aim_sid cookie)
+  durationMs Int?             // time on page in milliseconds (sent on unload)
+  event      String?          // tagged event: 'visit'|'apply_start'|'apply_submit'|'search'|etc.
+  createdAt  DateTime @default(now())
 
   @@index([createdAt])
   @@index([path])
   @@index([userId])
   @@index([device])
+  @@index([sessionId])
+  @@index([country])
+}
+
+model LoginEvent {
+  id          String   @id @default(cuid())
+  userId      String
+  method      String   // 'credentials' | 'google' | 'apple'
+  ip          String?
+  userAgent   String?
+  country     String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([method])
 }
 
 model FilmView {

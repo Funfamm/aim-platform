@@ -96,6 +96,21 @@ export async function POST(req: Request) {
         const refresh = await createRefreshToken(tokenPayload)
         await setUserCookie(token, refresh)
 
+        // ── Visitor Intelligence: log this login event ──────────────────────────
+        void (prisma as any).loginEvent.create({
+            data: {
+                userId: user.id,
+                method: 'apple',
+                ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+                userAgent: req.headers.get('user-agent')?.slice(0, 500) || null,
+                country: req.headers.get('x-vercel-ip-country') || null,
+            },
+        }).catch(() => {})
+        void (prisma as any).user.update({
+            where: { id: user.id },
+            data: { loginMethod: 'apple' },
+        }).catch(() => {})
+
         return NextResponse.redirect(new URL('/', req.url))
     } catch {
         return NextResponse.redirect(new URL('/login?error=apple_failed', req.url))

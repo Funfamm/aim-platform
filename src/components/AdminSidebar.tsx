@@ -10,6 +10,7 @@ const DEFAULT_WIDTH = 260
 
 const NAV_ITEMS = [
     { href: '/admin/analytics', label: '📊 Analytics' },
+    { href: '/admin/visitor-intelligence', label: '🔍 Visitor Intel' },
     { href: '/admin/projects', label: '🎬 Projects' },
     { href: '/admin/movie-rolls', label: '🎞️ Movie Rolls' },
     { href: '/admin/casting', label: '🎭 Casting' },

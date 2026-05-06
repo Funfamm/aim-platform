@@ -167,6 +167,21 @@ export async function POST(request: Request) {
 
         recordAuthSuccess(user.role)
 
+        // ── Visitor Intelligence: log this login event ─────────────────────────
+        void (prisma as any).loginEvent.create({
+            data: {
+                userId: user.id,
+                method: 'credentials',
+                ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+                userAgent: request.headers.get('user-agent')?.slice(0, 500) || null,
+                country: request.headers.get('x-vercel-ip-country') || null,
+            },
+        }).catch(() => {})
+        void (prisma as any).user.update({
+            where: { id: user.id },
+            data: { loginMethod: 'credentials' },
+        }).catch(() => {})
+
         const redirectTo = (['admin', 'superadmin'].includes(user.role)) ? '/admin' : '/'
 
         // If the user logged in from a non-English locale page and their
