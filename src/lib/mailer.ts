@@ -204,6 +204,12 @@ async function getMailConfig(): Promise<MailConfig | null> {
 export function invalidateMailerCache() {
     cachedConfig = null
     cacheTime = 0
+    // Also close pooled SMTP transport so new credentials take effect
+    if (cachedSmtpTransport) {
+        cachedSmtpTransport.close()
+        cachedSmtpTransport = null
+        smtpTransportKey = ''
+    }
 }
 
 /**
@@ -286,13 +292,40 @@ async function sendViaGraph(config: MailConfig, options: EmailOptions, extraHead
     }
 }
 
-async function sendViaSMTP(config: MailConfig, options: EmailOptions, extraHeaders?: Record<string, string>): Promise<void> {
-    const transporter = nodemailer.createTransport({
+// ── Cached SMTP transport (connection pooling) ─────────────────────────────
+// Gmail (and most SMTP servers) rate-limit LOGIN attempts. Creating a new
+// transport per send causes N simultaneous AUTH handshakes, which quickly
+// triggers "454 4.7.0 Too many login attempts". A pooled transport reuses
+// a single authenticated connection across all sends in a batch.
+let cachedSmtpTransport: nodemailer.Transporter | null = null
+let smtpTransportKey = ''  // serialised config for invalidation
+
+function getSmtpTransport(config: MailConfig): nodemailer.Transporter {
+    const key = `${config.smtpHost}:${config.smtpPort}:${config.smtpUser}:${config.smtpSecure}`
+    if (cachedSmtpTransport && smtpTransportKey === key) {
+        return cachedSmtpTransport
+    }
+    // Close old transport if config changed
+    if (cachedSmtpTransport) {
+        cachedSmtpTransport.close()
+    }
+    cachedSmtpTransport = nodemailer.createTransport({
         host: config.smtpHost,
         port: config.smtpPort,
         secure: config.smtpSecure, // true = SSL 465, false = STARTTLS 587
         auth: { user: config.smtpUser, pass: config.smtpPass },
+        pool: true,          // ← KEY: reuse connections
+        maxConnections: 3,   // max parallel SMTP connections
+        maxMessages: 50,     // messages per connection before reconnect
+        rateDelta: 2000,     // 1 message every 2s per connection
+        rateLimit: 5,        // global: max 5 messages per rateDelta
     })
+    smtpTransportKey = key
+    return cachedSmtpTransport
+}
+
+async function sendViaSMTP(config: MailConfig, options: EmailOptions, extraHeaders?: Record<string, string>): Promise<void> {
+    const transporter = getSmtpTransport(config)
     await transporter.sendMail({
         from: `"${config.fromName}" <${config.fromEmail}>`,
         to: options.to,

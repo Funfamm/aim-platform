@@ -27,9 +27,10 @@ import { buildUnsubscribeUrl } from '@/lib/unsubscribe-token'
 import crypto from 'crypto'
 
 // ── Configuration ──────────────────────────────────────────────────────────
-const BATCH_SIZE = 20           // emails per batch (ACS fire-and-forget: ~1-2s per send)
-const BATCH_DELAY_MS = 1000    // 1s between batches — gentle pacing
+const BATCH_SIZE = 10           // emails per batch — reduced to avoid SMTP rate limits
+const BATCH_DELAY_MS = 2000    // 2s between batches
 const MAX_PER_RUN = 200         // max emails per cron run (maxDuration: 300s)
+const BATCH_CONCURRENCY = 3    // max concurrent sends per batch (prevents SMTP hammering)
 
 const MAX_RUNTIME_MS = 280000  // stop claiming new batches after 280s (leave 20s buffer from 300s maxDuration)
 
@@ -125,9 +126,14 @@ export async function GET(request: Request) {
 
             if (claimed.length === 0) break  // queue is empty
 
-            // Process the claimed batch concurrently
-            const results = await Promise.allSettled(
-                claimed.map(async (job) => {
+            // Process the claimed batch with controlled concurrency
+            // Running all 20 jobs concurrently causes SMTP hammering (454/421 errors).
+            // Process BATCH_CONCURRENCY jobs at a time with a small gap between each.
+            const results: PromiseSettledResult<void>[] = []
+            for (let i = 0; i < claimed.length; i += BATCH_CONCURRENCY) {
+                const slice = claimed.slice(i, i + BATCH_CONCURRENCY)
+                const sliceResults = await Promise.allSettled(
+                    slice.map(async (job) => {
                     try {
                         // Suppression gate — skip if address was suppressed after enqueue
                         const suppressReason = await isEmailSuppressed(job.to)
@@ -258,7 +264,11 @@ export async function GET(request: Request) {
                         await handleJobFailure(db, job, err)
                     }
                 })
-            )
+                )
+                results.push(...sliceResults)
+                // Small gap between concurrency slices to ease SMTP server pressure
+                if (i + BATCH_CONCURRENCY < claimed.length) await sleep(500)
+            }
 
             processed += claimed.length
 
@@ -334,8 +344,30 @@ async function handleJobFailure(
     const newAttempts = job.attempts + 1
     const errorMsg = err instanceof Error ? err.message.slice(0, 500) : String(err).slice(0, 500)
 
-    // Check if this is a Graph 429 throttle (error message carries retry info)
-    const isThrottle = errorMsg.includes('429') || errorMsg.includes('throttle')
+    // ── Transient server throttle detection ───────────────────────────────────
+    // Graph 429 + Gmail SMTP 421 (temp system problem) + 454 (too many logins)
+    // are all server-side rate limits — NOT real delivery failures.
+    // Re-queue with delay WITHOUT incrementing attempts so we don't permanently
+    // fail legitimate emails due to SMTP rate limiting.
+    const isThrottle = errorMsg.includes('429') || errorMsg.includes('throttle') ||
+        errorMsg.includes('421') || errorMsg.includes('454') ||
+        errorMsg.toLowerCase().includes('too many login') ||
+        errorMsg.toLowerCase().includes('temporary system problem')
+
+    // For pure throttle errors, re-queue without burning an attempt
+    if (isThrottle) {
+        const retryMatch = errorMsg.match(/retry after (\d+)ms/i)
+        const delayMs = retryMatch ? parseInt(retryMatch[1], 10) : 60_000  // default 60s for SMTP throttles
+        const nextRunAt = new Date(Date.now() + Math.max(delayMs, 30_000))
+        await db.emailQueue.update({
+            where: { id: job.id },
+            data: { status: 'pending', error: errorMsg, nextRunAt },
+            // NOTE: attempts NOT incremented — throttle is not a send failure
+        })
+        logger.warn('email-worker', `Job ${job.id} THROTTLED (${errorMsg.slice(0, 60)}...), re-queued for ${nextRunAt.toISOString()} (no attempt burned)`)
+        return
+    }
+
 
     if (newAttempts >= job.maxAttempts) {
         // ── Exhausted: mark as permanently failed ──────────────────────────
@@ -349,36 +381,23 @@ async function handleJobFailure(
         })
         logger.error('email-worker', `Job ${job.id} permanently failed after ${newAttempts} attempts: ${job.to} — ${job.subject}`)
     } else {
-        // ── Schedule retry with appropriate delay ──────────────────────────
-        let delayMs: number
-
-        if (isThrottle) {
-            // Graph 429 → respect server guidance (extract from error or default 30s)
-            const retryMatch = errorMsg.match(/retry after (\d+)ms/i)
-            delayMs = retryMatch ? parseInt(retryMatch[1], 10) : 30_000
-            delayMs = Math.max(delayMs, 5_000)  // floor at 5s
-        } else {
-            // Other errors → exponential backoff: 30s, 60s, 120s
-            delayMs = 30_000 * Math.pow(2, newAttempts - 1)
-        }
-
+        // ── Schedule retry with exponential backoff: 30s, 60s, 120s ──────
+        const delayMs = 30_000 * Math.pow(2, newAttempts - 1)
         const nextRunAt = new Date(Date.now() + delayMs)
 
         await db.emailQueue.update({
             where: { id: job.id },
             data: {
-                status: 'pending',     // back to pending for next worker run
+                status: 'pending',
                 attempts: newAttempts,
                 error: errorMsg,
                 nextRunAt,
             },
         })
-        logger.warn('email-worker', `Job ${job.id} attempt ${newAttempts}/${job.maxAttempts} failed${isThrottle ? ' (429 throttled)' : ''}, retry at ${nextRunAt.toISOString()} (${delayMs}ms)`)
+        logger.warn('email-worker', `Job ${job.id} attempt ${newAttempts}/${job.maxAttempts} failed, retry at ${nextRunAt.toISOString()} (${delayMs}ms)`)
     }
 
-    // Track bounce via suppression engine (replaces old manual subscriber deactivation)
-    if (!isThrottle) {
-        const bounceCategory = classifyBounceError(errorMsg)
-        await recordBounce(job.to, bounceCategory, errorMsg, 'worker').catch(() => { /* non-critical */ })
-    }
+    // Track bounce via suppression engine
+    const bounceCategory = classifyBounceError(errorMsg)
+    await recordBounce(job.to, bounceCategory, errorMsg, 'worker').catch(() => { /* non-critical */ })
 }
