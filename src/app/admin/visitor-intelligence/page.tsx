@@ -95,6 +95,7 @@ export default function VisitorIntelligencePage() {
     const [loading, setLoading] = useState(true)
     const [error, setError]     = useState('')
     const [mounted, setMounted] = useState(false)
+    const [feedOpen, setFeedOpen] = useState(true)
     useEffect(() => { setMounted(true) }, [])
 
     // Session explorer modal
@@ -311,13 +312,17 @@ export default function VisitorIntelligencePage() {
                 {!loading && !error && data && (<>
                 <div style={{ ...card, padding: 0, overflow: 'hidden', marginBottom: '24px' }}>
 
-                    {/* Feed header */}
-                    <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '14px 20px',
-                        borderBottom: '1px solid var(--border-subtle)',
-                        background: 'rgba(59,130,246,0.03)',
-                    }}>
+                    {/* Feed header — clickable to collapse */}
+                    <div
+                        onClick={() => setFeedOpen(p => !p)}
+                        style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: '14px 20px',
+                            borderBottom: feedOpen ? '1px solid var(--border-subtle)' : 'none',
+                            background: 'rgba(59,130,246,0.03)',
+                            cursor: 'pointer', userSelect: 'none',
+                        }}
+                    >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <span style={{
                                 width: '8px', height: '8px', borderRadius: '50%',
@@ -334,16 +339,18 @@ export default function VisitorIntelligencePage() {
                             }}>
                                 last {data.feed.length} events · 15s refresh
                             </span>
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: feedOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▼</span>
                         </div>
                         <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
-                            Click session ID to explore full journey
+                            {feedOpen ? 'Click session ID to explore full journey' : `${data.feed.length} events — click to expand`}
                         </div>
                     </div>
 
-                    {/* Column headers */}
+                    {/* Column headers + feed rows — collapseable */}
+                    {feedOpen && (<>
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: '28px 180px 1fr 80px 90px 80px 90px 120px',
+                        gridTemplateColumns: '28px 160px 80px 1fr 80px 90px 80px 90px 120px',
                         gap: '8px', padding: '8px 20px',
                         borderBottom: '1px solid rgba(255,255,255,0.04)',
                         fontSize: '0.6rem', color: 'var(--text-tertiary)',
@@ -351,6 +358,7 @@ export default function VisitorIntelligencePage() {
                     }}>
                         <span></span>
                         <span>Identity</span>
+                        <span>Auth</span>
                         <span>Page</span>
                         <span>Device</span>
                         <span>Country</span>
@@ -374,7 +382,7 @@ export default function VisitorIntelligencePage() {
                                     className="vi-feed-row"
                                     style={{
                                         display: 'grid',
-                                        gridTemplateColumns: '28px 180px 1fr 80px 90px 80px 90px 120px',
+                                        gridTemplateColumns: '28px 160px 80px 1fr 80px 90px 80px 90px 120px',
                                         gap: '8px', padding: '10px 20px',
                                         borderBottom: '1px solid rgba(255,255,255,0.03)',
                                         alignItems: 'center',
@@ -420,14 +428,33 @@ export default function VisitorIntelligencePage() {
                                                         background: roleColor + '22', color: roleColor,
                                                         fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em',
                                                     }}>{row.identity.role}</span>
-                                                    {row.identity.loginMethod && (
-                                                        <span title={row.identity.loginMethod} style={{ fontSize: '0.7rem' }}>
-                                                            {METHOD_ICONS[row.identity.loginMethod] || '🔑'}
-                                                        </span>
-                                                    )}
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+
+                                    {/* Auth method column */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        {row.identity?.loginMethod ? (
+                                            <span style={{
+                                                fontSize: '0.58rem', padding: '2px 7px', borderRadius: '4px',
+                                                fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px',
+                                                background: row.identity.loginMethod === 'google' ? 'rgba(66,133,244,0.12)'
+                                                    : row.identity.loginMethod === 'apple' ? 'rgba(255,255,255,0.08)'
+                                                    : 'rgba(234,179,8,0.12)',
+                                                color: row.identity.loginMethod === 'google' ? '#60a5fa'
+                                                    : row.identity.loginMethod === 'apple' ? '#e2e8f0'
+                                                    : '#eab308',
+                                            }}>
+                                                {METHOD_ICONS[row.identity.loginMethod] || '🔑'}
+                                                {row.identity.loginMethod === 'google' ? 'Google'
+                                                    : row.identity.loginMethod === 'apple' ? 'Apple'
+                                                    : row.identity.loginMethod === 'credentials' ? 'Email'
+                                                    : row.identity.loginMethod}
+                                            </span>
+                                        ) : (
+                                            <span style={{ fontSize: '0.58rem', color: 'rgba(255,255,255,0.2)', fontStyle: 'italic' }}>Guest</span>
+                                        )}
                                     </div>
 
                                     {/* Page path */}
@@ -499,6 +526,7 @@ export default function VisitorIntelligencePage() {
                             )
                         })
                     )}
+                    </>)}
                 </div>
 
                 {/* ══════════════════════════════════════════════

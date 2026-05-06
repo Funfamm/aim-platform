@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react'
 export default function AnalyticsTracker() {
     const pathname = usePathname()
     const lastTracked = useRef('')
-    const pageStartTime = useRef<number>(Date.now())
+    const pageStartTime = useRef<number>(0)
 
     useEffect(() => {
         // Don't track admin pages or API routes
