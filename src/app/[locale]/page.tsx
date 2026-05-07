@@ -10,7 +10,7 @@ import SponsorBannerSection from '@/components/SponsorBannerSection'
 import ThreeWaysIn from '@/components/ThreeWaysIn'
 import { prisma } from '@/lib/db'
 import { sanitizeBigInt } from '@/lib/serializer'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, setRequestLocale } from 'next-intl/server'
 
 // ISR: regenerate at most every 300 seconds.
 // force-dynamic was removed from [locale]/layout.tsx so this now takes effect.
@@ -20,6 +20,12 @@ export const revalidate = 300
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
+  // Tell next-intl which locale this render is for, so getTranslations() and
+  // getMessages() can resolve statically without reading headers() internally.
+  // Without this call, next-intl reads the x-next-intl-locale request header,
+  // which opts the page into dynamic rendering and overrides revalidate = 300.
+  // See: https://next-intl.dev/docs/routing/setup#static-rendering
+  setRequestLocale(locale)
   // Helper to retry a Prisma query once if it fails due to a transient DB error.
   const safeQuery = async (fn: () => Promise<any>, retries = 1, delayMs = 500): Promise<any> => {
     try {

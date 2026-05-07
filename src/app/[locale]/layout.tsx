@@ -1,5 +1,5 @@
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing, locales } from '@/i18n/routing';
 import { AuthProvider } from "@/components/AuthProvider";
@@ -53,6 +53,10 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }>) {
   const { locale } = await params;
+
+  // Enable static rendering for all next-intl server APIs in this route segment.
+  // Must be called before getMessages() and any getTranslations() calls.
+  setRequestLocale(locale);
 
   // Validate locale
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
