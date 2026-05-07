@@ -181,7 +181,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                         position: 'fixed', inset: 0, zIndex: 0,
                         backgroundImage: `url(${src})`,
                         backgroundSize: 'cover', backgroundPosition: 'center',
-                        filter: 'brightness(0.6) saturate(0.85)',
+                        filter: 'brightness(0.85)',
                         opacity: currentBg === i ? 1 : 0,
                         transition: 'opacity 1.5s ease-in-out',
                     }} />
@@ -189,7 +189,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                 {/* Dark overlay for text readability */}
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 1,
-                    background: 'linear-gradient(to bottom, rgba(13,15,20,0.2) 0%, rgba(13,15,20,0.45) 50%, rgba(13,15,20,0.7) 100%)',
+                    background: 'linear-gradient(to bottom, rgba(13,15,20,0.05) 0%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.55) 100%)',
                     pointerEvents: 'none',
                 }} />
             </>

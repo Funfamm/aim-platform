@@ -162,7 +162,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           right: 'auto',
           width: '100vw',
           marginLeft: '-50vw',
-          background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
+          background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.5) 15%, rgba(13,15,20,0.88) 30%, var(--bg-primary) 55%)',
           pointerEvents: 'none',
           zIndex: 0,
         }} />
