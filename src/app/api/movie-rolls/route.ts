@@ -40,6 +40,7 @@ export async function GET(req: Request) {
             status: true,
             projectType: true,
             coverImage: true,
+            mobileCoverImage: true,
             trailerUrl: true,
             filmUrl: true,
             featured: true,

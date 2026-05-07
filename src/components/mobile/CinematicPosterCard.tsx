@@ -12,6 +12,7 @@ interface PosterProject {
     tagline: string | null
     genre: string | null
     coverImage: string | null
+    mobileCoverImage: string | null  // 9:16 portrait — preferred on mobile; falls back to coverImage
     trailerUrl: string | null
     translations: string | null
 }
@@ -55,12 +56,12 @@ export default function CinematicPosterCard({ project, locale, priority = false 
             <div style={{
                 position: 'relative',
                 width: '100%',
-                aspectRatio: '3/4',
+                aspectRatio: '9/16',
                 background: '#0a0a12',
             }}>
-                {project.coverImage && (
+                {(project.mobileCoverImage || project.coverImage) && (
                     <img
-                        src={project.coverImage}
+                        src={project.mobileCoverImage || project.coverImage!}
                         alt={loc.title}
                         loading={priority ? 'eager' : 'lazy'}
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment

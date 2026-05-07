@@ -36,6 +36,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             ...('publishNotifyGroups' in body && { publishNotifyGroups: body.publishNotifyGroups || null }),
             ...(body.sortOrder !== undefined && { sortOrder: body.sortOrder }),
             ...(body.coverImage !== undefined && { coverImage: body.coverImage || null }),
+            ...(body.mobileCoverImage !== undefined && { mobileCoverImage: body.mobileCoverImage || null }),
             ...(body.trailerUrl !== undefined && { trailerUrl: body.trailerUrl || null }),
             ...(body.filmUrl !== undefined && { filmUrl: body.filmUrl || null }),
             ...(body.projectType !== undefined && { projectType: body.projectType }),

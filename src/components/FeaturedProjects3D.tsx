@@ -15,6 +15,7 @@ interface ProjectData {
     tagline: string
     genre: string | null
     coverImage: string | null
+    mobileCoverImage: string | null
     trailerUrl: string | null
     translations: string | null
 }

@@ -74,6 +74,7 @@ model Project {
   status              String         @default("upcoming")
   projectType         String         @default("movie")
   coverImage          String?
+  mobileCoverImage    String?  // 9:16 portrait crop — shown on mobile poster strips
   trailerUrl          String?
   filmUrl             String?
   genre               String?

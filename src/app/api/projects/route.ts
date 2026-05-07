@@ -15,6 +15,7 @@ const CARD_SELECT = {
     status: true,
     projectType: true,
     coverImage: true,
+    mobileCoverImage: true,
     trailerUrl: true,
     filmUrl: true,
     featured: true,

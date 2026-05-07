@@ -14,6 +14,7 @@ export interface ProjectCard {
     status: string
     projectType: string
     coverImage: string | null
+    mobileCoverImage?: string | null  // 9:16 portrait — preferred on mobile
     trailerUrl: string | null
     filmUrl: string | null
     featured: boolean
@@ -99,9 +100,9 @@ export default function MovieCard({ project, locale, snapAlign, onHover, onHover
                     ? 'transparent'
                     : 'linear-gradient(135deg, rgba(212,168,83,0.04), rgba(139,92,246,0.04))',
             }}>
-                {project.coverImage && !imgError && (
+                {(project.mobileCoverImage || project.coverImage) && !imgError && (
                     <img
-                        src={project.coverImage}
+                        src={project.mobileCoverImage || project.coverImage!}
                         alt={loc.title}
                         loading="lazy"
                         decoding="async"
@@ -119,7 +120,7 @@ export default function MovieCard({ project, locale, snapAlign, onHover, onHover
                         draggable={false}
                     />
                 )}
-                {(!project.coverImage || imgError) && (
+                {(!project.mobileCoverImage && !project.coverImage || imgError) && (
                     <div style={{
                         position: 'absolute', inset: 0,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -19,7 +19,7 @@ import { readSSEStream } from '@/lib/sse-reader'
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
-    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null
+    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null; mobileCoverImage: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
     gallery: string | null; credits: string | null; sponsorData: string | null
     viewCount: number
@@ -29,7 +29,7 @@ type Project = {
 type FormData = {
     title: string; slug: string; tagline: string; description: string
     status: string; genre: string; year: string; duration: string
-    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string; coverImage: string
+    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string; coverImage: string; mobileCoverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
 }
@@ -37,7 +37,7 @@ type FormData = {
 const EMPTY_FORM: FormData = {
     title: '', slug: '', tagline: '', description: '',
     status: 'upcoming', genre: '', year: '', duration: '',
-    featured: false, published: false, subtitlesPublic: false, publishAt: '', coverImage: '',
+    featured: false, published: false, subtitlesPublic: false, publishAt: '', coverImage: '', mobileCoverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
 }
@@ -316,6 +316,7 @@ export default function AdminProjectsPage() {
             subtitlesPublic: p.subtitlesPublic ?? false,
             publishAt: p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : '',
             coverImage: p.coverImage || '',
+            mobileCoverImage: (p as typeof p & { mobileCoverImage?: string | null }).mobileCoverImage || '',
             trailerUrl: p.trailerUrl || '',
             filmUrl: p.filmUrl || '',
             projectType: p.projectType || 'movie',
@@ -1612,7 +1613,8 @@ export default function AdminProjectsPage() {
                                     <SectionHeader id="media" emoji="🎬" title="Media & Content" />
                                     {openSections.media && (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
-                                <FileUploader label="Cover Image" accept="image/*" category="covers" currentUrl={form.coverImage} onUpload={url => updateField('coverImage', url)} maxSizeMB={10} compact />
+                                <FileUploader label="🖼️ Desktop Cover (16:9)  — landscape, shown on desktop grid &amp; project detail" accept="image/*" category="covers" currentUrl={form.coverImage} onUpload={url => updateField('coverImage', url)} maxSizeMB={10} compact />
+                                <FileUploader label="📱 Mobile Poster (9:16)  — portrait 900×1600px, shown on mobile strips. Falls back to desktop cover if empty." accept="image/*" category="covers" currentUrl={form.mobileCoverImage} onUpload={url => updateField('mobileCoverImage', url)} maxSizeMB={10} compact />
                                 <div className="admin-form-grid">
                                     <div>
                                             <label className="admin-label">Project Type</label>

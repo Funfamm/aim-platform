@@ -228,6 +228,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             tagline: p.tagline,
             genre: p.genre,
             coverImage: p.coverImage,
+            mobileCoverImage: p.mobileCoverImage,
             trailerUrl: p.trailerUrl,
             translations: p.translations,
           }))}
