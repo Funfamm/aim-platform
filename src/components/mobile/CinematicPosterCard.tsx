@@ -56,18 +56,16 @@ export default function CinematicPosterCard({ project, locale, priority = false 
             <div style={{
                 position: 'relative',
                 width: '100%',
-                aspectRatio: '9/16',
+                aspectRatio: '3/4',
                 background: '#0a0a12',
             }}>
                 {(project.mobileCoverImage || project.coverImage) && (
                     <img
                         src={project.mobileCoverImage || project.coverImage!}
                         alt={loc.title}
-                        loading={priority ? 'eager' : 'lazy'}
-                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                        // @ts-ignore — fetchpriority is valid HTML but not yet in React types
-                        fetchpriority={priority ? 'high' : 'auto'}
-                        decoding={priority ? 'sync' : 'async'}
+                        loading="lazy"
+                        decoding="async"
+                        sizes="180px"
                         onLoad={() => setImgLoaded(true)}
                         style={{
                             position: 'absolute',
