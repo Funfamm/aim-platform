@@ -44,17 +44,29 @@ export function middleware(request: NextRequest) {
   // Two cookies were blocking Vercel edge caching:
   //   1. csrf_token — moved to lazy /api/csrf fetch in AuthProvider
   //   2. NEXT_LOCALE — next-intl v4 writes this via response.cookies.set()
-  //      even with localeDetection: false. We delete it from response.cookies
-  //      before the Edge runtime serializes it to Set-Cookie headers.
-  //      Locale is communicated via URL prefix (/es/casting) and client-side
-  //      localStorage ('aim_locale_chosen') instead.
-  const response = intlMiddleware(request);
-  // Delete the NEXT_LOCALE cookie next-intl set so it is never serialized
-  // into a Set-Cookie header. Must use response.cookies.delete(), not
-  // response.headers.delete('set-cookie') — the Edge runtime serializes
-  // response.cookies AFTER middleware returns, bypassing header mutations.
-  response.cookies.delete('NEXT_LOCALE');
-  return applySecurityHeaders(response);
+  //      even with localeDetection: false.
+  //
+  // Both response.headers.delete('set-cookie') and response.cookies.delete()
+  // fail — the Edge runtime serializes response.cookies AFTER middleware returns,
+  // re-adding the Set-Cookie header. The only reliable fix is to reconstruct the
+  // response from scratch, copying all headers except set-cookie, so the Edge
+  // runtime has no cookie store entry to serialize.
+  const intlResponse = intlMiddleware(request);
+
+  // Build a clean response — same status + body intent, but no Set-Cookie.
+  const cleanResponse = new NextResponse(null, {
+    status: intlResponse.status,
+    statusText: intlResponse.statusText,
+  });
+
+  // Copy every header except set-cookie from the intlMiddleware response.
+  intlResponse.headers.forEach((value, key) => {
+    if (key.toLowerCase() !== 'set-cookie') {
+      cleanResponse.headers.set(key, value);
+    }
+  });
+
+  return applySecurityHeaders(cleanResponse);
 }
 
 export const config = {
