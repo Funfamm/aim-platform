@@ -10,6 +10,10 @@ interface SiteSettings {
   donationsEnabled?: boolean;
   searchBetaEnabled?: boolean;
   sponsorsPageEnabled?: boolean;
+  // Trailer access control — gated client-side on the homepage poster cards.
+  // Defaults to true (matches DB schema default), so trailers are visible
+  // until the fetch confirms otherwise. API already returns this field.
+  allowPublicTrailers?: boolean;
 }
 
 interface SiteSettingsContextValue {
@@ -27,6 +31,8 @@ const STABLE_DEFAULTS: SiteSettings = {
   donationsEnabled: false,
   searchBetaEnabled: false,
   sponsorsPageEnabled: false,
+  // Default true — matches DB schema. Trailers show until fetch says otherwise.
+  allowPublicTrailers: true,
 };
 
 const CACHE_KEY = 'aim_site_settings_v1';

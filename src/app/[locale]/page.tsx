@@ -10,12 +10,14 @@ import ScrollReveal3D from '@/components/ScrollReveal3D'
 import SponsorBannerSection from '@/components/SponsorBannerSection'
 import ThreeWaysIn from '@/components/ThreeWaysIn'
 import { prisma } from '@/lib/db'
-import { getUserSession } from '@/lib/auth'
 import { sanitizeBigInt } from '@/lib/serializer'
 import { getTranslations } from 'next-intl/server'
 
-// ISR: regenerate at most every 60 seconds
-export const revalidate = 60
+// ISR: regenerate at most every 300 seconds.
+// force-dynamic was removed from [locale]/layout.tsx so this now takes effect.
+// Mutations (publish project, update settings, update sponsors) call
+// revalidatePath('/') to invalidate the cache immediately on content changes.
+export const revalidate = 300
 
 /** Detect mobile from User-Agent on the server so SSR renders the correct
  *  branch of FeaturedProjects3D. Eliminates the client-side hydration flip
@@ -90,12 +92,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       }),
     ])
   );
-
-  // Enforce trailer access control
-  const session = await getUserSession()
-  const isLoggedIn = !!session?.userId
-  const showTrailer = (siteSettings?.allowPublicTrailers !== false) || isLoggedIn
-
   // Resolve localized sponsor descriptions
   const localizedSponsors = homeSponsors.map((s: { id: string; name: string; logoUrl: string | null; bannerUrl: string | null; website: string | null; tier: string; description: string | null; descriptionI18n: unknown; bannerDurationHours: number }) => {
     const i18n = s.descriptionI18n as Record<string, string> | null
@@ -228,7 +224,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             tagline: p.tagline,
             genre: p.genre,
             coverImage: p.coverImage,
-            trailerUrl: showTrailer ? p.trailerUrl : null,
+            trailerUrl: p.trailerUrl,
             translations: p.translations,
           }))}
             isMobileHint={isMobileServer}

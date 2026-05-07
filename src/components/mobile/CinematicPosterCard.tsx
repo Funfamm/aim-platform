@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { getLocalizedProject } from '@/lib/localize'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
 
 interface PosterProject {
     id: string
@@ -28,6 +29,8 @@ interface CinematicPosterCardProps {
 export default function CinematicPosterCard({ project, locale }: CinematicPosterCardProps) {
     const [imgLoaded, setImgLoaded] = useState(false)
     const loc = getLocalizedProject(project, locale)
+    const { settings } = useSiteSettings()
+    const showTrailer = settings.allowPublicTrailers !== false
 
     return (
         <Link
@@ -91,7 +94,7 @@ export default function CinematicPosterCard({ project, locale }: CinematicPoster
                 }} />
 
                 {/* Play indicator for trailers */}
-                {project.trailerUrl && (
+                {project.trailerUrl && showTrailer && (
                     <div style={{
                         position: 'absolute',
                         top: '50%', left: '50%',

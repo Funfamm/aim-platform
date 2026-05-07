@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
+import { revalidatePath } from 'next/cache'
 
 // GET — list all sponsors
 export async function GET() {
@@ -90,6 +91,9 @@ export async function POST(request: NextRequest) {
                 }
             )
         }
+
+        // Bust homepage ISR cache — sponsor list is rendered in SponsorBannerSection
+        revalidatePath('/', 'layout')
 
         return NextResponse.json(sponsor)
     } catch (err) {

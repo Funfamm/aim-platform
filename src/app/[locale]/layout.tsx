@@ -16,7 +16,11 @@ import type { Metadata } from 'next';
 
 const RTL_LOCALES = ['ar', 'he', 'fa', 'ur'];
 
-export const dynamic = 'force-dynamic'
+// NOTE: No force-dynamic here — all layout components (AuthProvider, Navbar,
+// SiteSettingsWrapper) are 'use client' and fetch via useEffect. The layout
+// itself performs zero cookie/session reads during SSR. Each child page controls
+// its own caching strategy independently (revalidate, force-dynamic, etc.).
+
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://impactaistudio.com').replace(/\/$/, '')
 

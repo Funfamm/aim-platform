@@ -6,6 +6,7 @@ import CinematicPosterCard from './mobile/CinematicPosterCard'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
 
 interface ProjectData {
     id: string
@@ -21,6 +22,10 @@ interface ProjectData {
 export default function FeaturedProjects3D({ projects, isMobileHint = false }: { projects: ProjectData[], isMobileHint?: boolean }) {
     const t = useTranslations('works')
     const locale = useLocale()
+    const { settings } = useSiteSettings()
+    // allowPublicTrailers defaults to true — trailers visible until fetch says otherwise.
+    // This was previously gated server-side (preventing ISR caching). Now fully client-side.
+    const showTrailer = settings.allowPublicTrailers !== false
     // isMobileHint is the server-detected value — used as initialValue so SSR
     // and the first client render agree, preventing the hydration flip that
     // caused double image downloads + LCP repaint delay.
@@ -77,7 +82,7 @@ export default function FeaturedProjects3D({ projects, isMobileHint = false }: {
                             }}
                         />
                         <div className="project-card-overlay" />
-                        {project.trailerUrl && (
+                        {project.trailerUrl && showTrailer && (
                             <div className="project-card-play">
                                 <svg viewBox="0 0 24 24">
                                     <polygon points="5,3 19,12 5,21" />
@@ -88,7 +93,7 @@ export default function FeaturedProjects3D({ projects, isMobileHint = false }: {
                             <span className="project-card-genre">{loc.genre}</span>
                             <h3>{loc.title}</h3>
                             <p>{loc.tagline}</p>
-                            {project.trailerUrl && (
+                            {project.trailerUrl && showTrailer && (
                                 <span style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '4px',
                                     fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.08em',

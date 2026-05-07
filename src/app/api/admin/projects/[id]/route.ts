@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { translateAndSave } from '@/lib/translate'
 import { notifyContentPublish } from '@/lib/notifications'
+import { revalidatePath } from 'next/cache'
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
@@ -103,6 +104,21 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         }
     }
 
+    // Bust the homepage ISR cache any time a project’s public-facing state changes:
+    // published toggle, featured toggle, sort order, cover image, trailer, or title.
+    const affectsHomepage = (
+        body.published !== undefined ||
+        body.featured !== undefined ||
+        body.sortOrder !== undefined ||
+        body.coverImage !== undefined ||
+        body.trailerUrl !== undefined ||
+        body.title !== undefined ||
+        body.slug !== undefined
+    )
+    if (affectsHomepage) {
+        revalidatePath('/', 'layout')
+    }
+
     return NextResponse.json(project)
 }
 
@@ -112,6 +128,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const { id } = await params
 
     await prisma.project.delete({ where: { id } })
+
+    // Bust homepage cache — a deleted project may have been featured
+    revalidatePath('/', 'layout')
 
     return NextResponse.json({ success: true })
 }

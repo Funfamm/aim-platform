@@ -6,6 +6,7 @@ import { encrypt } from '@/lib/secure'
 import { invalidateMailerCache } from '@/lib/mailer'
 import { invalidateAcsClient } from '@/lib/acs-email'
 import { logger } from '@/lib/logger'
+import { revalidatePath } from 'next/cache'
 
 import { logAdminAction } from '@/lib/audit-log'
 
@@ -165,6 +166,9 @@ export async function PUT(req: Request) {
         invalidateSettings()
         invalidateMailerCache()
         invalidateAcsClient()
+        // Bust the homepage ISR cache — settings affect hero CTA text,
+        // sponsor display, section visibility, allowPublicTrailers, etc.
+        revalidatePath('/', 'layout')
 
         logAdminAction({
             actor: session.userId,
