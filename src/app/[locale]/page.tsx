@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { headers } from 'next/headers'
 import Footer from '@/components/Footer'
 import HomeHero from '@/components/HomeHero'
 import Scene3DClient from '@/components/Scene3DClient'
@@ -19,21 +18,8 @@ import { getTranslations } from 'next-intl/server'
 // revalidatePath('/') to invalidate the cache immediately on content changes.
 export const revalidate = 300
 
-/** Detect mobile from User-Agent on the server so SSR renders the correct
- *  branch of FeaturedProjects3D. Eliminates the client-side hydration flip
- *  that previously caused double image downloads + a main-thread repaint
- *  that delayed the LCP h1 by ~4.9s. */
-function detectMobileUA(ua: string | null): boolean {
-  if (!ua) return false
-  return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua)
-}
-
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  // Server-side mobile detection — eliminates client-side hydration flip in FeaturedProjects3D
-  const headersList = await headers()
-  const ua = headersList.get('user-agent')
-  const isMobileServer = detectMobileUA(ua)
   // Helper to retry a Prisma query once if it fails due to a transient DB error.
   const safeQuery = async (fn: () => Promise<any>, retries = 1, delayMs = 500): Promise<any> => {
     try {
@@ -145,7 +131,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         heroTitle={hpd.heroTitle || undefined}
         heroCta={hpd.heroCta || undefined}
         heroCtaCasting={hpd.heroCtaCasting || undefined}
-        isMobileHint={isMobileServer}
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}
@@ -229,7 +214,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             trailerUrl: p.trailerUrl,
             translations: p.translations,
           }))}
-            isMobileHint={isMobileServer}
           />
 
 
