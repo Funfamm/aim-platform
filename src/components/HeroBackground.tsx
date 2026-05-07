@@ -48,20 +48,31 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     const videoBRef = useRef<HTMLVideoElement>(null)
     const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    // ── Fetch both images and videos, filtered by device target ──
+    // ── Fetch images (background + hero-image) and videos (hero-video), filtered by device target ──
     useEffect(() => {
-        // Fetch background images
-        fetch(`/api/admin/media?type=background&page=${page}`)
-            .then(r => r.json())
-            .then((data: BgImage[]) => {
-                if (Array.isArray(data)) {
-                    const filtered = data.filter(m => matchesTarget(m.target, isMobile))
-                    setBgImages(filtered.map(m => m.url))
-                }
-            })
-            .catch(() => { })
+        // Background images — single page, no comma-separated logic needed
+        const imageFetches = [
+            fetch(`/api/admin/media?type=background&page=${page}`)
+                .then(r => r.json())
+                .catch(() => []),
+            // Hero-images use same multi-page comma logic as hero-video
+            fetch(`/api/admin/media?type=hero-image&page=${page}`)
+                .then(r => r.json())
+                .catch(() => []),
+        ]
 
-        // Fetch hero videos
+        Promise.all(imageFetches).then(([bgData, heroImgData]) => {
+            const combined = [
+                ...(Array.isArray(bgData) ? bgData : []),
+                ...(Array.isArray(heroImgData) ? heroImgData : []),
+            ]
+            const filtered = combined
+                .filter(m => matchesTarget(m.target, isMobile))
+                .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            setBgImages(filtered.map(m => m.url))
+        })
+
+        // Hero videos
         fetch(`/api/admin/media?type=hero-video&page=${page}`)
             .then(r => r.json())
             .then((data: HeroVideo[]) => {

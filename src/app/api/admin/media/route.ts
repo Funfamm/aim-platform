@@ -18,9 +18,10 @@ export async function GET(req: NextRequest) {
     if (!isAdmin) where.active = true
     if (type) where.type = type
 
-    // Hero videos use comma-separated page values (e.g. "all", "casting,upcoming")
+    // Both hero-video and hero-image use comma-separated page values (e.g. "all", "casting,upcoming")
     // so we need OR logic: match 'all' OR any that contain the requested page
-    if (page && type === 'hero-video') {
+    const isHeroSlot = type === 'hero-video' || type === 'hero-image'
+    if (page && isHeroSlot) {
         where.OR = [
             { page: 'all' },
             { page: { contains: page } },
@@ -35,9 +36,9 @@ export async function GET(req: NextRequest) {
         take: 200,
     })
 
-    // For hero-video with a specific page, post-filter to handle edge cases
+    // For hero-video / hero-image with a specific page, post-filter to handle edge cases
     // e.g. "casting" should not match "forecasting" in comma-separated values
-    if (page && type === 'hero-video') {
+    if (page && isHeroSlot) {
         const filtered = media.filter((m: { page: string }) => {
             if (m.page === 'all') return true
             const pages = m.page.split(',').map(p => p.trim())

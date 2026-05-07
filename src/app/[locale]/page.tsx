@@ -145,6 +145,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         heroTitle={hpd.heroTitle || undefined}
         heroCta={hpd.heroCta || undefined}
         heroCtaCasting={hpd.heroCtaCasting || undefined}
+        isMobileHint={isMobileServer}
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}

@@ -43,12 +43,13 @@ const HERO_PAGES = [
 ]
 
 const MEDIA_TYPES = [
-    { value: 'background',  label: 'Background',   icon: '🎨' },
-    { value: 'image',       label: 'Image',         icon: '🖼️' },
-    { value: 'video',       label: 'Video',         icon: '📹' },
-    { value: 'gallery',     label: 'Gallery',       icon: '🗃️' },
-    { value: 'hero',        label: 'Hero (Page)',    icon: '⭐' },
-    { value: 'hero-video',  label: 'Hero Video',    icon: '🎥' },
+    { value: 'background',  label: 'Background',      icon: '🎨' },
+    { value: 'image',       label: 'Image',            icon: '🖼️' },
+    { value: 'video',       label: 'Video',            icon: '📹' },
+    { value: 'gallery',     label: 'Gallery',          icon: '🗃️' },
+    { value: 'hero',        label: 'Hero (Page)',       icon: '⭐' },
+    { value: 'hero-image',  label: 'Hero Image',       icon: '🌅' },
+    { value: 'hero-video',  label: 'Hero Video',       icon: '🎥' },
 ]
 
 const EMPTY_FORM = {
@@ -110,7 +111,10 @@ export default function AdminMediaPage() {
 
     // ─── Form helpers ─────────────────────────────────────────────────────────
 
+    // Both hero-image and hero-video use multi-page assignment
     const isHeroVideo = form.type === 'hero-video'
+    const isHeroImage = form.type === 'hero-image'
+    const isHeroSlot  = isHeroVideo || isHeroImage
 
     const openNew = () => {
         const nextSort = items.length > 0 ? Math.max(...items.map(m => m.sortOrder)) + 1 : 1
@@ -121,11 +125,11 @@ export default function AdminMediaPage() {
     }
 
     const openEdit = (item: MediaItem) => {
-        const pages = item.type === 'hero-video'
+        const pages = isHeroSlot
             ? (item.page || 'all').split(',').filter(Boolean)
             : ['all']
         setForm({
-            page:      item.type !== 'hero-video' ? item.page : 'home',
+            page:      !isHeroSlot ? item.page : 'home',
             pages,
             type:      item.type,
             title:     item.title || '',
@@ -203,7 +207,7 @@ export default function AdminMediaPage() {
         // Unified payload — target and duration are always included for all types.
         // The API and PageMedia schema support both fields for every media type.
         const payload = {
-            page: isHeroVideo ? form.pages.join(',') : form.page,
+            page: isHeroSlot ? form.pages.join(',') : form.page,
             type: form.type,
             title: form.title,
             url: form.url,
@@ -378,9 +382,9 @@ export default function AdminMediaPage() {
 
                             {/* Row 2: Page assignment */}
                             <div style={{ marginBottom: 'var(--space-sm)' }}>
-                                {isHeroVideo ? (
+                                    {isHeroSlot ? (
                                     <>
-                                        <label style={labelSt}>Show On Pages (Hero Video)</label>
+                                        <label style={labelSt}>Show On Pages ({isHeroVideo ? 'Hero Video' : 'Hero Image'})</label>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '3px' }}>
                                             {HERO_PAGES.map(p => (
                                                 <button key={p.value} type="button" onClick={() => toggleHeroPage(p.value)} style={pillBtn(form.pages.includes(p.value))}>
@@ -558,7 +562,7 @@ export default function AdminMediaPage() {
 
                                     {/* Page */}
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3px' }}>
-                                        {item.type === 'hero-video'
+                                        {isHeroSlot || item.type === 'hero-image'
                                             ? getPagePills(item.page).map((p, i) => (
                                                 <span key={i} style={{ fontSize: '0.52rem', padding: '1px 5px', borderRadius: 'var(--radius-full)', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.12)', color: 'var(--accent-gold)', fontWeight: 600 }}>{p}</span>
                                             ))
@@ -618,7 +622,8 @@ export default function AdminMediaPage() {
                 }}>
                     <strong style={{ color: 'var(--accent-gold)' }}>💡</strong>{' '}
                     Drag &amp; drop any image or video to upload · Hover video previews to play · Hidden items are preserved but not shown on the frontend ·{' '}
-                    Hero Videos display as full-screen background loops on the selected pages
+                    Drag &amp; drop any image or video to upload · Hover video previews to play · Hidden items are preserved but not shown on the frontend ·{' '}
+                    <strong>Hero Image</strong> and <strong>Hero Video</strong> display as full-screen backgrounds on the selected pages, with Hero Image taking priority over video when both are active.
                 </div>
             </main>
         </div>
