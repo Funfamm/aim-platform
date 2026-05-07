@@ -3,10 +3,7 @@ import dynamic from 'next/dynamic'
 import { headers } from 'next/headers'
 import Footer from '@/components/Footer'
 import HomeHero from '@/components/HomeHero'
-// Scene3D (Three.js particles) — deferred: never contributes to LCP/FCP.
-// ssr:false prevents SSR pre-render; loading:null avoids placeholder flicker.
-// Three.js parses only after hydration is complete, off the critical path.
-const Scene3D = dynamic(() => import('@/components/Scene3D'), { ssr: false, loading: () => null })
+import Scene3DClient from '@/components/Scene3DClient'
 const FeaturedProjects3D = dynamic(() => import('@/components/FeaturedProjects3D'))
 const RollRow = dynamic(() => import('@/components/mobile/RollRow'))
 import ScrollReveal3D from '@/components/ScrollReveal3D'
@@ -134,7 +131,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <main id="main-content">
-      <Scene3D />
+      <Scene3DClient />
 <div id="hero-anchor" />
 
       <HomeHero
