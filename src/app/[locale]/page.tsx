@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
+import { headers } from 'next/headers'
 import Footer from '@/components/Footer'
 import HomeHero from '@/components/HomeHero'
 const Scene3D = dynamic(() => import('@/components/Scene3D'))
@@ -16,8 +17,21 @@ import { getTranslations } from 'next-intl/server'
 // ISR: regenerate at most every 60 seconds
 export const revalidate = 60
 
+/** Detect mobile from User-Agent on the server so SSR renders the correct
+ *  branch of FeaturedProjects3D. Eliminates the client-side hydration flip
+ *  that previously caused double image downloads + a main-thread repaint
+ *  that delayed the LCP h1 by ~4.9s. */
+function detectMobileUA(ua: string | null): boolean {
+  if (!ua) return false
+  return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua)
+}
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
+  // Server-side mobile detection — eliminates client-side hydration flip in FeaturedProjects3D
+  const headersList = await headers()
+  const ua = headersList.get('user-agent')
+  const isMobileServer = detectMobileUA(ua)
   // Helper to retry a Prisma query once if it fails due to a transient DB error.
   const safeQuery = async (fn: () => Promise<any>, retries = 1, delayMs = 500): Promise<any> => {
     try {
@@ -206,7 +220,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </p>
           </div>
 
-          <FeaturedProjects3D projects={featuredProjects.map((p: typeof featuredProjects[number]) => ({
+          <FeaturedProjects3D
+            projects={featuredProjects.map((p: typeof featuredProjects[number]) => ({
             id: p.id,
             title: p.title,
             slug: p.slug,
@@ -215,7 +230,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             coverImage: p.coverImage,
             trailerUrl: showTrailer ? p.trailerUrl : null,
             translations: p.translations,
-          }))} />
+          }))}
+            isMobileHint={isMobileServer}
+          />
 
 
           <div style={{ textAlign: 'center', marginTop: 'var(--space-lg)', marginBottom: 'var(--space-2xl)' }}>

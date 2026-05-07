@@ -18,10 +18,13 @@ interface ProjectData {
     translations: string | null
 }
 
-export default function FeaturedProjects3D({ projects }: { projects: ProjectData[] }) {
+export default function FeaturedProjects3D({ projects, isMobileHint = false }: { projects: ProjectData[], isMobileHint?: boolean }) {
     const t = useTranslations('works')
     const locale = useLocale()
-    const isMobile = useIsMobile()
+    // isMobileHint is the server-detected value — used as initialValue so SSR
+    // and the first client render agree, preventing the hydration flip that
+    // caused double image downloads + LCP repaint delay.
+    const isMobile = useIsMobile(isMobileHint)
 
     // ── Mobile: cinematic poster strip — large, minimal, image-forward ──
     if (isMobile) {

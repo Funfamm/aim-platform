@@ -12,9 +12,14 @@ import { useState, useEffect } from 'react'
  * because browser chrome reduces innerHeight below 768. We now also check
  * screen.width — if the physical screen is ≥1024px wide, it's a laptop
  * with a touchscreen, not a phone/tablet.
+ *
+ * @param initialValue - Server-detected mobile hint. When provided, the hook
+ *   starts with this value so the first client render matches SSR HTML,
+ *   preventing the hydration flip that causes double image downloads and
+ *   the LCP repaint delay it causes.
  */
-export function useIsMobile() {
-    const [isMobile, setIsMobile] = useState(false)
+export function useIsMobile(initialValue = false) {
+    const [isMobile, setIsMobile] = useState(initialValue)
     useEffect(() => {
         const check = () => {
             const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0
