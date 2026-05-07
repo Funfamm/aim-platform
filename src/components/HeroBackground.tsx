@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import NextImage from 'next/image'
 
 interface HeroVideo {
     id: string
@@ -177,14 +178,33 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
         return (
             <>
                 {bgImages.map((src, i) => (
+                    // Wrapper must be position:fixed for <Image fill> to work correctly.
+                    // Opacity transition drives the slideshow crossfade.
                     <div key={src} className={className} style={{
                         position: 'fixed', inset: 0, zIndex: 0,
-                        backgroundImage: `url(${src})`,
-                        backgroundSize: 'cover', backgroundPosition: 'center',
-                        filter: 'brightness(0.85)',
                         opacity: currentBg === i ? 1 : 0,
                         transition: 'opacity 1.5s ease-in-out',
-                    }} />
+                    }}>
+                        {/* Route through Next.js image optimizer → AVIF/WebP, correct srcset,
+                            immutable Cache-Control. Raw R2 PNG (~950 KB) becomes ~90–150 KB AVIF. */}
+                        <NextImage
+                            src={src}
+                            alt=""
+                            fill
+                            // i===0: adds <link rel="preload"> + fetchpriority=high → directly reduces LCP.
+                            // i>0:   loading="eager" prevents lazy-deferral so secondary slideshow images
+                            //        download before the 6s crossfade timer fires, avoiding fade-to-blank.
+                            priority={i === 0}
+                            loading={i === 0 ? undefined : 'eager'}
+                            sizes="100vw"
+                            quality={80}
+                            style={{
+                                objectFit: 'cover',
+                                objectPosition: 'center',
+                                filter: 'brightness(0.85)',
+                            }}
+                        />
+                    </div>
                 ))}
                 {/* Dark overlay for text readability */}
                 <div style={{
