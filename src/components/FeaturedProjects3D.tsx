@@ -47,11 +47,12 @@ export default function FeaturedProjects3D({ projects, isMobileHint = false }: {
                         padding: '12px 16px 20px',
                     }}
                 >
-                    {projects.map(project => (
+                    {projects.map((project, idx) => (
                         <div key={project.id} style={{ flexShrink: 0 }}>
                             <CinematicPosterCard
                                 project={project}
                                 locale={locale}
+                                priority={idx < 2}
                             />
                         </div>
                     ))}

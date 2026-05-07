@@ -119,7 +119,7 @@ export default function HomeHero({
                         {heroLabel || t('label')}
                     </span>
 
-                    <h1 className="animate-fade-in-up delay-1" style={{
+                    <h1 className="animate-fade-in-up" style={{
                         fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
                         marginBottom: 'var(--space-md)',
                         fontWeight: 800,

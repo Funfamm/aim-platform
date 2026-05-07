@@ -95,12 +95,19 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    unoptimized: true,
+    // unoptimized was true — re-enabled for Vercel Pro (5,000 source images/month).
+    // Next.js will now serve WebP/AVIF automatically at the correct srcset sizes,
+    // eliminating raw PNG payloads (notify-bg-2.png was 6.2 MB unoptimized).
+    formats: ['image/avif', 'image/webp'],
+    deviceSizes: [390, 430, 768, 1080, 1280, 1920],
+    imageSizes: [64, 128, 180, 256, 384],
     remotePatterns: [
       { protocol: 'https', hostname: '**.amazonaws.com' },
       { protocol: 'https', hostname: '**.cloudinary.com' },
       { protocol: 'https', hostname: '**.unsplash.com' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: '**.r2.dev' },
+      { protocol: 'https', hostname: '**.r2.cloudflarestorage.com' },
     ],
   },
   async redirects() {

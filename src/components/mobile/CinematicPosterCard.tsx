@@ -19,6 +19,8 @@ interface PosterProject {
 interface CinematicPosterCardProps {
     project: PosterProject
     locale: string
+    /** When true: sets loading=eager + fetchpriority=high (use for above-fold cards, i.e. index 0-1) */
+    priority?: boolean
 }
 
 /**
@@ -26,7 +28,7 @@ interface CinematicPosterCardProps {
  * Large, image-forward, minimal text — designed to make a strong first impression.
  * No badges, no genre tags, no action buttons. Just tap to explore.
  */
-export default function CinematicPosterCard({ project, locale }: CinematicPosterCardProps) {
+export default function CinematicPosterCard({ project, locale, priority = false }: CinematicPosterCardProps) {
     const [imgLoaded, setImgLoaded] = useState(false)
     const loc = getLocalizedProject(project, locale)
     const { settings } = useSiteSettings()
@@ -60,7 +62,11 @@ export default function CinematicPosterCard({ project, locale }: CinematicPoster
                     <img
                         src={project.coverImage}
                         alt={loc.title}
-                        loading="lazy"
+                        loading={priority ? 'eager' : 'lazy'}
+                        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                        // @ts-ignore — fetchpriority is valid HTML but not yet in React types
+                        fetchpriority={priority ? 'high' : 'auto'}
+                        decoding={priority ? 'sync' : 'async'}
                         onLoad={() => setImgLoaded(true)}
                         style={{
                             position: 'absolute',
