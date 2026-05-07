@@ -40,11 +40,17 @@ export function middleware(request: NextRequest) {
     return applySecurityHeaders(response);
   }
 
-  // All other routes: next-intl locale detection + security headers
-  // CSRF cookie is no longer set here — it is issued lazily via /api/csrf
-  // (fetched by AuthProvider on app mount) to avoid Set-Cookie blocking
-  // Vercel edge caching. The login route still sets it on successful auth.
+  // All other routes: next-intl locale routing + security headers.
+  // Two cookies were blocking Vercel edge caching:
+  //   1. csrf_token — moved to lazy /api/csrf fetch in AuthProvider
+  //   2. NEXT_LOCALE — next-intl writes this unconditionally even with
+  //      localeDetection: false. We strip all Set-Cookie from intlMiddleware's
+  //      response so no cookie reaches the CDN. Locale is communicated via URL
+  //      prefix (/es/casting) and client-side localStorage ('aim_locale_chosen').
   const response = intlMiddleware(request);
+  // Strip any Set-Cookie headers next-intl wrote (NEXT_LOCALE, etc.)
+  // so the CDN sees a clean, cookie-free response it can cache.
+  response.headers.delete('set-cookie');
   return applySecurityHeaders(response);
 }
 
