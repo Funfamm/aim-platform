@@ -43,14 +43,17 @@ export function middleware(request: NextRequest) {
   // All other routes: next-intl locale routing + security headers.
   // Two cookies were blocking Vercel edge caching:
   //   1. csrf_token — moved to lazy /api/csrf fetch in AuthProvider
-  //   2. NEXT_LOCALE — next-intl writes this unconditionally even with
-  //      localeDetection: false. We strip all Set-Cookie from intlMiddleware's
-  //      response so no cookie reaches the CDN. Locale is communicated via URL
-  //      prefix (/es/casting) and client-side localStorage ('aim_locale_chosen').
+  //   2. NEXT_LOCALE — next-intl v4 writes this via response.cookies.set()
+  //      even with localeDetection: false. We delete it from response.cookies
+  //      before the Edge runtime serializes it to Set-Cookie headers.
+  //      Locale is communicated via URL prefix (/es/casting) and client-side
+  //      localStorage ('aim_locale_chosen') instead.
   const response = intlMiddleware(request);
-  // Strip any Set-Cookie headers next-intl wrote (NEXT_LOCALE, etc.)
-  // so the CDN sees a clean, cookie-free response it can cache.
-  response.headers.delete('set-cookie');
+  // Delete the NEXT_LOCALE cookie next-intl set so it is never serialized
+  // into a Set-Cookie header. Must use response.cookies.delete(), not
+  // response.headers.delete('set-cookie') — the Edge runtime serializes
+  // response.cookies AFTER middleware returns, bypassing header mutations.
+  response.cookies.delete('NEXT_LOCALE');
   return applySecurityHeaders(response);
 }
 
