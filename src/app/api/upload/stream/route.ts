@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
             Body: buffer,
             ContentType: fileType,
             ContentLength: buffer.byteLength,
+            CacheControl: 'public, max-age=31536000, immutable',
         });
 
         await client.send(command);

@@ -50,6 +50,11 @@ export async function uploadBufferToR2(
     Key: key,
     Body: buffer,
     ContentType: mimeType,
+    // Cache-Control: serve with a 1-year immutable header so browsers and CDNs
+    // cache these assets without re-validating. All uploads use content-addressed
+    // or timestamped keys, so there is no stale-content risk.
+    // Lighthouse 'Use efficient cache lifetimes' opportunity: 1,978 KiB savings.
+    CacheControl: 'public, max-age=31536000, immutable',
   });
 
   await client.send(command);

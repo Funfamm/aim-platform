@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
             Bucket: BUCKET,
             Key: r2Key,
             ContentType: fileType,
+            CacheControl: 'public, max-age=31536000, immutable',
         })
 
         const result = await s3.send(command)
