@@ -83,7 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, [])
 
     useEffect(() => {
+        // Fetch session state and lazily issue CSRF token in parallel.
+        // The CSRF token is no longer set by middleware (that was blocking
+        // Vercel edge cache). /api/csrf sets it once if not already present.
         refreshUser()
+        fetch('/api/csrf').catch(() => { /* non-critical — CSRF verification
+            already allows through requests where the cookie is absent */ })
     }, [refreshUser])
 
     const login = async (email: string, password: string) => {

@@ -8,7 +8,9 @@ export const routing = defineRouting({
     locales,
     defaultLocale,
     localePrefix: 'as-needed', // /casting → English (default), /es/casting → Spanish
-    localeDetection: true,     // Auto-detect from Accept-Language header on first visit
+    localeDetection: false,    // Disabled: NEXT_LOCALE cookie was preventing Vercel edge caching.
+                               // Language suggestion is handled client-side in Navbar.tsx via
+                               // navigator.language + localStorage ('aim_locale_chosen').
 })
 
 export const localeNames: Record<Locale, string> = {

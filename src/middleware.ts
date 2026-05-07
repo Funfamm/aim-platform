@@ -2,7 +2,6 @@ import createMiddleware from 'next-intl/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
-import { generateCsrfToken, setCsrfCookie, CSRF_COOKIE_NAME } from './lib/csrf';
 import { getSecurityHeaders } from './lib/security';
 
 // next-intl locale routing middleware
@@ -37,16 +36,15 @@ export function middleware(request: NextRequest) {
 
   // Admin routes: skip locale handling (admin is NOT under [locale])
   if (pathname.startsWith('/admin')) {
-    const existing = request.cookies.get(CSRF_COOKIE_NAME)?.value;
     const response = NextResponse.next();
-    if (!existing) setCsrfCookie(response, generateCsrfToken());
     return applySecurityHeaders(response);
   }
 
-  // All other routes: next-intl locale detection + CSRF cookie + security headers
-  const existing = request.cookies.get(CSRF_COOKIE_NAME)?.value;
+  // All other routes: next-intl locale detection + security headers
+  // CSRF cookie is no longer set here — it is issued lazily via /api/csrf
+  // (fetched by AuthProvider on app mount) to avoid Set-Cookie blocking
+  // Vercel edge caching. The login route still sets it on successful auth.
   const response = intlMiddleware(request);
-  if (!existing) setCsrfCookie(response, generateCsrfToken());
   return applySecurityHeaders(response);
 }
 
