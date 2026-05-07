@@ -1,8 +1,35 @@
 import type { Metadata, Viewport } from "next";
+import { Outfit, Inter, Playfair_Display } from 'next/font/google';
 import "./globals.css";
 import { getCachedSettings } from "@/lib/cached-settings";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { CsrfProvider } from "@/components/CsrfProvider";
+
+// ── Google Fonts via next/font ──────────────────────────────────────────────
+// next/font self-hosts fonts on the same origin, injects preload <link> tags
+// at build time, and eliminates the 750ms render-blocking googleapis.com request.
+// Only weights actually used in the codebase are included (audited 2026-05-07).
+const outfit = Outfit({
+  subsets: ['latin'],
+  weight: ['500', '600', '700', '800'],
+  display: 'swap',
+  variable: '--font-display',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-body',
+})
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  style: ['italic'],
+  display: 'swap',
+  variable: '--font-serif',
+})
 
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -52,7 +79,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${outfit.variable} ${inter.variable} ${playfair.variable}`}>
       <head>
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
