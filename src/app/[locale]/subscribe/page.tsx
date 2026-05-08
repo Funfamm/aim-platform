@@ -1,9 +1,12 @@
 'use client'
 
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, useRef, useEffect, FormEvent } from 'react'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
+import { Turnstile } from '@marsidev/react-turnstile'
+
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 const DEFAULT_IMAGES = [
     '/images/notify-bg-1.png',
@@ -19,6 +22,16 @@ export default function SubscribePage() {
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
     const [bgImages, setBgImages] = useState<string[]>(DEFAULT_IMAGES)
     const [currentBg, setCurrentBg] = useState(0)
+    const [token, setToken] = useState('')
+    const [widgetError, setWidgetError] = useState(false)
+    const loadedAtRef = useRef(0)
+
+    // Capture mount time for time-delay bot check (was previously missing from this page)
+    useEffect(() => { loadedAtRef.current = Date.now() }, [])
+
+    const siteKeyConfigured = !!SITE_KEY
+    const isVerifying = siteKeyConfigured && !token && !widgetError
+    const isDisabled = status === 'sending' || isVerifying || widgetError
 
     useEffect(() => {
         fetch('/api/admin/media?page=subscribe')
@@ -45,7 +58,13 @@ export default function SubscribePage() {
             const res = await fetch('/api/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, name: name.trim() || undefined, locale }),
+                body: JSON.stringify({
+                    email,
+                    name: name.trim() || undefined,
+                    locale,
+                    loadedAt: loadedAtRef.current,
+                    turnstileToken: token,
+                }),
             })
             if (res.ok) { setStatus('sent'); setEmail('') }
             else setStatus('error')
@@ -154,11 +173,31 @@ export default function SubscribePage() {
                                                 {t('error')}
                                             </p>
                                         )}
-                                        <button type="submit" disabled={status === 'sending'} className="btn btn-primary"
-                                            style={{ width: '100%', padding: '0.8rem', fontWeight: 700 }}>
-                                            {status === 'sending' ? t('submitting') : t('submitBtn')}
+                                        {widgetError && (
+                                            <p style={{ color: '#f59e0b', fontSize: '0.82rem', marginBottom: 'var(--space-sm)', lineHeight: 1.5 }}>
+                                                ⚠️ Verification failed. Please disable your ad blocker, refresh the page, or try a different browser.
+                                            </p>
+                                        )}
+                                        <button
+                                            type="submit"
+                                            disabled={isDisabled}
+                                            className="btn btn-primary"
+                                            style={{ width: '100%', padding: '0.8rem', fontWeight: 700, opacity: isDisabled ? 0.55 : 1, transition: 'opacity 0.2s' }}
+                                        >
+                                            {status === 'sending' ? t('submitting') : isVerifying ? 'Verifying…' : t('submitBtn')}
                                         </button>
 
+                                        {/* Turnstile — invisible mode, auto-executes on render */}
+                                        {siteKeyConfigured && (
+                                            <Turnstile
+                                                siteKey={SITE_KEY}
+                                                options={{ theme: 'dark', size: 'invisible', execution: 'render', retry: 'auto' }}
+                                                onSuccess={(tk) => { setToken(tk); setWidgetError(false) }}
+                                                onExpire={() => setToken('')}
+                                                onError={() => setWidgetError(true)}
+                                                style={{ display: 'none' }}
+                                            />
+                                        )}
                                     </form>
                                 )}
                             </div>

@@ -42,6 +42,7 @@
     "@huggingface/transformers": "^3.8.1",
     "@livekit/components-core": "^0.12.13",
     "@livekit/components-react": "^2.9.20",
+    "@marsidev/react-turnstile": "^1.5.2",
     "@prisma/client": "^6.19.2",
     "@sentry/nextjs": "^9.9.0",
     "@swc/helpers": "^0.5.19",
