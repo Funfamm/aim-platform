@@ -8,32 +8,8 @@ import { t as et } from '@/lib/email-i18n'
 import { suppressEmail } from '@/lib/suppression'
 import crypto from 'crypto'
 
-// ── Bot Detection (same signals as admin subscriber panel) ─────────────────
-const BOT_DISPOSABLE_DOMAINS = new Set([
-    'emailax.pro', 'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
-    'yopmail.com', 'trashmail.com', 'fakeinbox.com', 'sharklasers.com', 'dispostable.com',
-    'mailnesia.com', 'tempail.com', 'temp-mail.org', 'mohmal.com', 'emailondeck.com',
-    'getnada.com', '10minutemail.com', 'minutemail.com', 'maildrop.cc', 'mailcatch.com',
-    'discard.email', 'tempr.email', 'temp-mail.io', 'guerrillamailblock.com', 'grr.la',
-])
-const BOT_SUSPECT_COUNTRIES = new Set(['RU', 'CN', 'VN', 'BD', 'PK', 'IN', 'BR', 'ID', 'NG'])
-
-interface BotScoreResult {
-    score: number
-    breakdown: Record<string, number>
-}
-
-function calcSubscribeBotScore(email: string, name: string | null, country: string | null, recentCountryCount: number): BotScoreResult {
-    const breakdown: Record<string, number> = {}
-    let score = 0
-    if (!name) { breakdown.noName = 20; score += 20 }
-    const domain = email.split('@')[1]?.toLowerCase()
-    if (domain && BOT_DISPOSABLE_DOMAINS.has(domain)) { breakdown.disposableDomain = 30; score += 30 }
-    if (country && BOT_SUSPECT_COUNTRIES.has(country)) { breakdown.suspectCountry = 25; score += 25 }
-    if (recentCountryCount >= 10) { breakdown.countrySurge = 25; score += 25 }
-    else if (recentCountryCount >= 5) { breakdown.countrySurge = 15; score += 15 }
-    return { score: Math.min(score, 100), breakdown }
-}
+// ── Bot Detection — unified scoring from shared module ──────────────────────
+import { calcBotScore } from '@/lib/botScore'
 
 // Simple in-memory rate limiter: max 3 subscribe attempts per IP per hour
 const ipAttempts = new Map<string, number[]>()
@@ -228,7 +204,12 @@ export async function POST(request: NextRequest) {
         const recentCountryCount = country ? await db.subscriber.count({
             where: { country, subscribedAt: { gte: oneHourAgo } },
         }) : 0
-        const { score: botScore, breakdown } = calcSubscribeBotScore(normalizedEmail, name || null, country || null, recentCountryCount)
+        const { score: botScore, breakdown } = calcBotScore(
+            { email: normalizedEmail, name: name || null, country: country || null },
+            false, // new subscriber — has never opened an email yet
+            recentCountryCount,
+        )
+
         const breakdownStr = Object.entries(breakdown).map(([k, v]) => `${k}=${v}`).join(', ')
 
         if (subscriberMode === 'manual_approval') {

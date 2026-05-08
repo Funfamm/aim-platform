@@ -662,6 +662,20 @@ model DeletedSubscriberLog {
   @@index([email])
 }
 
+model BotScoreLog {
+  id           String   @id @default(cuid())
+  subscriberId String
+  email        String
+  oldScore     Int
+  newScore     Int
+  reason       String   // "backfill" | "email_open" | "rescore"
+  createdAt    DateTime @default(now())
+
+  @@index([subscriberId])
+  @@index([email])
+  @@index([createdAt])
+}
+
 model EmailQueue {
 
   id           String    @id @default(cuid())

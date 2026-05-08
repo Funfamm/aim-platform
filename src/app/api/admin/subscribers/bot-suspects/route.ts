@@ -11,34 +11,7 @@ import { NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-const DISPOSABLE_DOMAINS = new Set([
-    'emailax.pro', 'tempmail.com', 'throwaway.email', 'guerrillamail.com', 'mailinator.com',
-    'yopmail.com', 'trashmail.com', 'fakeinbox.com', 'sharklasers.com', 'dispostable.com',
-    'mailnesia.com', 'tempail.com', 'temp-mail.org', 'mohmal.com', 'emailondeck.com',
-    'getnada.com', '10minutemail.com', 'minutemail.com', 'maildrop.cc', 'mailcatch.com',
-    'discard.email', 'tempr.email', 'temp-mail.io', 'guerrillamailblock.com', 'grr.la',
-])
-const SUSPECT_COUNTRIES = new Set(['RU', 'CN', 'VN', 'BD', 'PK', 'IN', 'BR', 'ID', 'NG'])
-const BOT_EMAIL_PATTERN = /^[a-z]{5,}\d{5,}@/i
-
-function getBotFlags(sub: {
-    email: string
-    name: string | null
-    country: string | null
-    botScore: number
-    hasOpened: boolean
-}): string[] {
-    const flags: string[] = []
-    const domain = sub.email.split('@')[1]?.toLowerCase()
-    if (domain && DISPOSABLE_DOMAINS.has(domain)) flags.push('Disposable domain')
-    if (!sub.name) flags.push('No name provided')
-    if (sub.country && SUSPECT_COUNTRIES.has(sub.country)) flags.push(`High-risk country (${sub.country})`)
-    if (!sub.hasOpened) flags.push('Never opened any email')
-    if (BOT_EMAIL_PATTERN.test(sub.email)) flags.push('Bot-pattern email address')
-    if (sub.botScore >= 70) flags.push(`High bot score (${sub.botScore}/100)`)
-    else if (sub.botScore >= 40) flags.push(`Medium bot score (${sub.botScore}/100)`)
-    return flags
-}
+import { getBotFlags, BOT_EMAIL_PATTERN } from '@/lib/botScore'
 
 export async function GET(req: Request) {
     try { await requireAdmin() } catch { return NextResponse.json({ error: 'Forbidden' }, { status: 403 }) }
@@ -104,6 +77,26 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ dryRun: true, count })
     }
 
+    // Fetch subscribers before deletion so we can write the audit log
+    const toDelete = await db.subscriber.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, email: true, botScore: true },
+    }) as { id: string; email: string; botScore: number }[]
+
     const result = await db.subscriber.deleteMany({ where: { id: { in: ids } } })
+
+    // ── Audit log — write to DeletedSubscriberLog (reason: admin_panel) ──────
+    // Mirrors the cron's auto_cron entries. Gives admins a recoverable audit trail.
+    if (toDelete.length > 0) {
+        await db.deletedSubscriberLog.createMany({
+            data: toDelete.map((s: { email: string; botScore: number }) => ({
+                email: s.email,
+                botScore: s.botScore,
+                reason: 'admin_panel',
+                deletedAt: new Date(),
+            })),
+        })
+    }
+
     return NextResponse.json({ deleted: result.count })
 }
