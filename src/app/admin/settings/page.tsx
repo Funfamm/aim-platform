@@ -10,6 +10,7 @@ type SocialLinks = { youtube: string; instagram: string; tiktok: string; x: stri
 
 type AboutPageData = {
     heroSubtitle: string
+    manifestoP1: string; manifestoP2: string
     philosophyQuote: string; philosophyAuthor: string; philosophyRole: string
     stat1Value: number; stat1Label: string; stat2Value: number; stat2Label: string
     stat3Value: number; stat3Label: string; stat4Value: number; stat4Label: string
@@ -24,7 +25,8 @@ type AboutPageData = {
 }
 
 const EMPTY_ABOUT: AboutPageData = {
-    heroSubtitle: '', philosophyQuote: '', philosophyAuthor: '', philosophyRole: '',
+    heroSubtitle: '', manifestoP1: '', manifestoP2: '',
+    philosophyQuote: '', philosophyAuthor: '', philosophyRole: '',
     stat1Value: 0, stat1Label: '', stat2Value: 0, stat2Label: '',
     stat3Value: 0, stat3Label: '', stat4Value: 0, stat4Label: '',
     milestone1Year: '', milestone1Title: '', milestone1Desc: '',
@@ -1561,6 +1563,23 @@ export default function AdminSettingsPage() {
                                                 <label className="admin-label" style={{ margin: 0, marginBottom: '6px' }}>Mission Statement</label>
                                                 <textarea className="admin-textarea" rows={3} value={settings.mission} onChange={e => update('mission', e.target.value)} placeholder="Leave empty to use translation" />
                                                 <div style={hintStyle}>Displayed in the Mission card on the About page.</div>
+                                            </div>
+                                        </div>
+
+                                        {/* ── Manifesto Card ── */}
+                                        {sectionHeader('✍️', 'Manifesto Card', 'The bold brand statement card shown right below the hero. Two paragraphs.')}
+                                        <div className="admin-form-stack">
+                                            <div>
+                                                <label className="admin-label">Paragraph 1 <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(opening statement)</span></label>
+                                                <textarea className="admin-textarea" rows={3} value={apd.manifestoP1} onChange={e => ua('manifestoP1', e.target.value)}
+                                                    placeholder="AIM Studio tells stories about sacrifice, regret, and the people who refused to look away." />
+                                                <div style={hintStyle}>Short, punchy opening line. Displayed in large italic text.</div>
+                                            </div>
+                                            <div>
+                                                <label className="admin-label">Paragraph 2 <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(the why)</span></label>
+                                                <textarea className="admin-textarea" rows={3} value={apd.manifestoP2} onChange={e => ua('manifestoP2', e.target.value)}
+                                                    placeholder="We make these films with AI - not because the technology is the point..." />
+                                                <div style={hintStyle}>Explains the studio's approach. Displayed below the opening line.</div>
                                             </div>
                                         </div>
 

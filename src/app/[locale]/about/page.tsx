@@ -180,6 +180,90 @@ export default async function AboutPage() {
                     </div>
                 </section>
 
+                {/* ═══════════════════ MANIFESTO CARD ═══════════════════ */}
+                <section style={{ padding: '0 0 var(--space-2xl)', position: 'relative' }}>
+                    <div className="container" style={{ maxWidth: '860px' }}>
+                        <ScrollReveal3D direction="up" distance={40} delay={100}>
+                            <div style={{
+                                position: 'relative',
+                                background: 'rgba(13,15,20,0.72)',
+                                backdropFilter: 'blur(40px)',
+                                WebkitBackdropFilter: 'blur(40px)',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 'var(--radius-xl)',
+                                padding: 'clamp(2rem, 5vw, 3.5rem) clamp(1.5rem, 5vw, 3.5rem)',
+                                overflow: 'hidden',
+                            }}>
+                                {/* Gold left-edge accent bar */}
+                                <div style={{
+                                    position: 'absolute', top: 0, left: 0,
+                                    width: '4px', height: '100%',
+                                    background: 'linear-gradient(to bottom, var(--accent-gold), rgba(212,168,83,0.15))',
+                                    borderRadius: '4px 0 0 4px',
+                                }} />
+
+                                {/* Top shimmer line */}
+                                <div style={{
+                                    position: 'absolute', top: 0, left: '15%', right: '15%', height: '1px',
+                                    background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.25), transparent)',
+                                }} />
+
+                                {/* Decorative oversized quote mark */}
+                                <div style={{
+                                    position: 'absolute', top: '-10px', right: '30px',
+                                    fontSize: '9rem', lineHeight: 1,
+                                    color: 'rgba(212,168,83,0.05)',
+                                    fontFamily: 'Georgia, serif',
+                                    fontWeight: 700,
+                                    pointerEvents: 'none',
+                                    userSelect: 'none',
+                                }}>"</div>
+
+                                {/* Studio label */}
+                                <div style={{
+                                    fontSize: '0.6rem', fontWeight: 700,
+                                    letterSpacing: '0.2em', textTransform: 'uppercase' as const,
+                                    color: 'rgba(212,168,83,0.6)',
+                                    marginBottom: 'var(--space-lg)',
+                                }}>AIM Studio — Brand Statement</div>
+
+                                {/* Paragraph 1 — large italic opening */}
+                                <p style={{
+                                    fontSize: 'clamp(1.05rem, 2.8vw, 1.5rem)',
+                                    fontFamily: '"Playfair Display", Georgia, serif',
+                                    fontStyle: 'italic',
+                                    fontWeight: 600,
+                                    lineHeight: 1.5,
+                                    color: 'var(--text-primary)',
+                                    marginBottom: 'var(--space-xl)',
+                                    letterSpacing: '0.01em',
+                                }}>
+                                    {apd.manifestoP1 || 'AIM Studio tells stories about sacrifice, regret, and the people who refused to look away.'}
+                                </p>
+
+                                {/* Thin gold divider */}
+                                <div style={{
+                                    width: '48px', height: '2px',
+                                    background: 'linear-gradient(90deg, var(--accent-gold), rgba(212,168,83,0.3))',
+                                    borderRadius: '2px',
+                                    marginBottom: 'var(--space-xl)',
+                                }} />
+
+                                {/* Paragraph 2 — the why */}
+                                <p style={{
+                                    fontSize: 'clamp(0.88rem, 1.8vw, 1rem)',
+                                    lineHeight: 1.85,
+                                    color: 'var(--text-secondary)',
+                                    maxWidth: '680px',
+                                    margin: 0,
+                                }}>
+                                    {apd.manifestoP2 || 'We make these films with AI — not because the technology is the point, but because it\'s the only way a studio our size could tell stories this big. The tools are new. The feelings are old as anyone\'s family.'}
+                                </p>
+                            </div>
+                        </ScrollReveal3D>
+                    </div>
+                </section>
+
                 {/* ═══════════════════ STATS BAR ═══════════════════ */}
                 <section style={{ padding: 'var(--space-lg) 0 var(--space-3xl)', position: 'relative' }}>
                     <div className="container" style={{ maxWidth: '900px' }}>
