@@ -179,28 +179,29 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
             <>
                 {bgImages.map((src, i) => (
                     // Wrapper must be position:fixed for <Image fill> to work correctly.
-                    // Opacity transition drives the slideshow crossfade.
+                    // overflow:hidden + maxWidth:100vw prevent the fixed layer from causing
+                    // a horizontal scrollbar on mobile portrait viewports.
                     <div key={src} className={className} style={{
                         position: 'fixed', inset: 0, zIndex: 0,
+                        maxWidth: '100vw', overflow: 'hidden',
                         opacity: currentBg === i ? 1 : 0,
                         transition: 'opacity 1.5s ease-in-out',
                     }}>
                         {/* Route through Next.js image optimizer → AVIF/WebP, correct srcset,
-                            immutable Cache-Control. Raw R2 PNG (~950 KB) becomes ~90–150 KB AVIF. */}
+                            immutable Cache-Control. Raw R2 PNG (~950 KB) becomes ~90–150 KB AVIF.
+                            On mobile portrait, objectPosition:'center top' keeps the subject of
+                            landscape images visible instead of cropping to the middle. */}
                         <NextImage
                             src={src}
                             alt=""
                             fill
-                            // i===0: adds <link rel="preload"> + fetchpriority=high → directly reduces LCP.
-                            // i>0:   loading="eager" prevents lazy-deferral so secondary slideshow images
-                            //        download before the 6s crossfade timer fires, avoiding fade-to-blank.
                             priority={i === 0}
                             loading={i === 0 ? undefined : 'eager'}
                             sizes="100vw"
                             quality={80}
                             style={{
                                 objectFit: 'cover',
-                                objectPosition: 'center',
+                                objectPosition: isMobile ? 'center top' : 'center center',
                                 filter: 'brightness(0.85)',
                             }}
                         />
@@ -209,6 +210,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                 {/* Dark overlay for text readability */}
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 1,
+                    maxWidth: '100vw', overflow: 'hidden',
                     background: 'linear-gradient(to bottom, rgba(13,15,20,0.05) 0%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.55) 100%)',
                     pointerEvents: 'none',
                 }} />
@@ -221,7 +223,8 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
         <div className={className} style={{
             position: 'fixed',
             top: 0, left: 0,
-            width: '100%', height: '100dvh',
+            width: '100%', maxWidth: '100vw', height: '100dvh',
+            overflow: 'hidden',
             zIndex: 0,
             background: '#0d0f14',
         }}>

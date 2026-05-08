@@ -3,10 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Scene3D from '@/components/Scene3D'
+import HeroBackground from '@/components/HeroBackground'
 import CastingRoleCard from '@/components/casting/CastingRoleCard'
 import EncouragementSection from '@/components/casting/EncouragementSection'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface HeroVideoItem {
     id: string
@@ -41,94 +43,22 @@ interface CastingCall {
 }
 
 export default function CastingPageClient({ castingCalls, appliedMap = {} }: { castingCalls: CastingCall[]; appliedMap?: Record<string, string> }) {
-    // Hero videos — dual-slot crossfade
-    const [heroVideos, setHeroVideos] = useState<HeroVideoItem[]>([])
+    // Hero background state — driven by HeroBackground via callbacks
     const [currentVideoIdx, setCurrentVideoIdx] = useState(0)
-    const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
+    const [videoCount, setVideoCount] = useState(0)
+    const jumpToVideoRef = useRef<((idx: number) => void) | null>(null)
     const [mounted, setMounted] = useState(false)
-    const videoARef = useRef<HTMLVideoElement>(null)
-    const videoBRef = useRef<HTMLVideoElement>(null)
-    const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const isMobile = useIsMobile()
     const t = useTranslations('casting')
     const locale = useLocale()
 
     // Page-entry fade-in
     useEffect(() => { setMounted(true) }, [])
 
-
-    // Fetch hero videos
-    useEffect(() => {
-        fetch('/api/admin/media?type=hero-video&page=casting')
-            .then(r => r.json())
-            .then((data: HeroVideoItem[]) => {
-                if (data.length > 0) setHeroVideos(data)
-            })
-            .catch(() => { })
-    }, [])
-
-    // Start first video once loaded
-    useEffect(() => {
-        if (heroVideos.length === 0) return
-        const videoA = videoARef.current
-        if (!videoA) return
-
-        videoA.src = heroVideos[0].url
-        videoA.load()
-        videoA.play().catch(() => { })
-        setActiveSlot('A')
-
-        const durationMs = (heroVideos[0].duration || 10) * 1000
-        videoTimerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
-
-        return () => {
-            if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [heroVideos])
-
-    // Crossfade: preload next video in inactive slot, then swap
-    const crossfadeToNext = useCallback((prevIdx: number) => {
-        if (heroVideos.length <= 1) return
-
-        const nextIdx = (prevIdx + 1) % heroVideos.length
-        setCurrentVideoIdx(nextIdx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = heroVideos[nextIdx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        const durationMs = (heroVideos[nextIdx].duration || 10) * 1000
-        if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
-        videoTimerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
-    }, [heroVideos])
-
-    // Manual dot click
-    const jumpToVideo = useCallback((idx: number) => {
-        if (idx === currentVideoIdx) return
+    const handleVideoChange = useCallback((idx: number, total: number) => {
         setCurrentVideoIdx(idx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = heroVideos[idx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        const durationMs = (heroVideos[idx].duration || 10) * 1000
-        if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
-        videoTimerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
-    }, [currentVideoIdx, heroVideos, crossfadeToNext])
+        setVideoCount(total)
+    }, [])
 
     // Group by project
     const grouped = castingCalls.reduce((acc, call) => {
@@ -151,52 +81,15 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
             opacity: mounted ? 1 : 0,
             transition: 'opacity 0.4s ease',
         }}>
-            {/* 3D Particle Background */}
-            <Scene3D />
+            {/* ═══ HERO BACKGROUND — images (priority) or videos (fallback), multi-image rotation ═══ */}
+            <HeroBackground
+                page="casting"
+                isMobile={isMobile}
+                onVideoChange={handleVideoChange}
+                jumpToVideoRef={jumpToVideoRef}
+            />
 
-            {/* ═══ FIXED VIDEO BACKGROUND — always rendered, dark base + crossfading video slots ═══ */}
-            <div style={{
-                position: 'fixed',
-                top: 0, left: 0,
-                width: '100%', height: '100dvh',
-                zIndex: 0,
-                background: '#0d0f14',
-            }}>
-                <video
-                    ref={videoARef}
-                    autoPlay muted playsInline loop
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: heroVideos.length > 0 && activeSlot === 'A' ? 1 : 0,
-                        transition: 'opacity 1.2s ease-in-out',
-                        zIndex: activeSlot === 'A' ? 1 : 0,
-                    }}
-                />
-                <video
-                    ref={videoBRef}
-                    autoPlay muted playsInline loop
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: heroVideos.length > 0 && activeSlot === 'B' ? 1 : 0,
-                        transition: 'opacity 1.2s ease-in-out',
-                        zIndex: activeSlot === 'B' ? 1 : 0,
-                    }}
-                />
-            </div>
-
-            {/* ═══ SINGLE FIXED GRADIENT OVERLAY — covers the entire viewport over the video ═══ */}
+            {/* ═══ SINGLE FIXED GRADIENT OVERLAY — covers the entire viewport over the background ═══ */}
             <div style={{
                 position: 'fixed',
                 top: 0, left: 0,
@@ -341,12 +234,12 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         </a>
 
                         {/* Video indicator dots */}
-                        {heroVideos.length > 1 && (
+                        {videoCount > 1 && (
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
-                                {heroVideos.map((_, i) => (
+                                {Array.from({ length: videoCount }, (_, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => jumpToVideo(i)}
+                                        onClick={() => jumpToVideoRef.current?.(i)}
                                         style={{
                                             width: currentVideoIdx === i ? '28px' : '6px',
                                             height: '6px',

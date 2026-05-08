@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import Scene3D from '@/components/Scene3D'
+import HeroBackground from '@/components/HeroBackground'
 import CastingCard from '@/components/mobile/CastingCard'
 import { useTranslations, useLocale } from 'next-intl'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -49,96 +50,18 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
     })()
 
     const isMobile = useIsMobile()
-    const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
-    const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
+    const [videoCount, setVideoCount] = useState(0)
+    const jumpToVideoRef = useRef<((idx: number) => void) | null>(null)
     const [mounted, setMounted] = useState(false)
-    const videoARef = useRef<HTMLVideoElement>(null)
-    const videoBRef = useRef<HTMLVideoElement>(null)
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Page-entry fade-in
     useEffect(() => { setMounted(true) }, [])
 
-    // Fetch videos from admin-controlled API
-    useEffect(() => {
-        fetch('/api/admin/media?type=hero-video&page=upcoming')
-            .then(r => r.json())
-            .then((data: HeroVideo[]) => {
-                if (data.length > 0) setVideos(data)
-            })
-            .catch(() => { })
-    }, [])
-
-    // Start the first video once loaded
-    useEffect(() => {
-        if (videos.length === 0) return
-        const videoA = videoARef.current
-        if (!videoA) return
-
-        videoA.src = videos[0].url
-        videoA.load()
-        videoA.play().catch(() => { })
-        setActiveSlot('A')
-
-        // Schedule crossfade to next video (if multiple)
-        if (videos.length > 1) {
-            const durationMs = (videos[0].duration || 10) * 1000
-            timerRef.current = setTimeout(() => crossfadeToNext(0), durationMs)
-        }
-
-        return () => {
-            if (timerRef.current) clearTimeout(timerRef.current)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videos])
-
-    // Crossfade: preload next video in inactive slot, then swap
-    const crossfadeToNext = useCallback((prevIdx: number) => {
-        if (videos.length <= 1) return
-
-        const nextIdx = (prevIdx + 1) % videos.length
-        setCurrentIdx(nextIdx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = videos[nextIdx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        const durationMs = (videos[nextIdx].duration || 10) * 1000
-        if (timerRef.current) clearTimeout(timerRef.current)
-        timerRef.current = setTimeout(() => crossfadeToNext(nextIdx), durationMs)
-    }, [videos])
-
-    // Manual dot click
-    const jumpToVideo = useCallback((idx: number) => {
-        if (idx === currentIdx) return
+    const handleVideoChange = useCallback((idx: number, total: number) => {
         setCurrentIdx(idx)
-
-        setActiveSlot(prev => {
-            const nextSlot = prev === 'A' ? 'B' : 'A'
-            const nextVideo = nextSlot === 'A' ? videoARef.current : videoBRef.current
-            if (nextVideo) {
-                nextVideo.src = videos[idx].url
-                nextVideo.load()
-                nextVideo.play().catch(() => { })
-            }
-            return nextSlot
-        })
-
-        // Reschedule auto-rotation from this video
-        if (videos.length > 1) {
-            const durationMs = (videos[idx].duration || 10) * 1000
-            if (timerRef.current) clearTimeout(timerRef.current)
-            timerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
-        }
-    }, [currentIdx, videos, crossfadeToNext])
+        setVideoCount(total)
+    }, [])
 
     if (projects.length === 0) {
         return (
@@ -149,41 +72,15 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
             }}>
                 <Scene3D />
 
-                {/* ═══ FIXED VIDEO BACKGROUND ═══ */}
-                <div style={{
-                    position: 'fixed',
-                    top: 0, left: 0,
-                    width: '100%', height: '100dvh',
-                    zIndex: 0,
-                    background: '#0d0f14',
-                }}>
-                    <video
-                        ref={videoARef}
-                        autoPlay muted playsInline loop
-                        controlsList="nodownload"
-                        onContextMenu={(e) => e.preventDefault()}
-                        style={{
-                            position: 'absolute', inset: 0,
-                            width: '100%', height: '100%', objectFit: 'cover',
-                            opacity: videos.length > 0 && activeSlot === 'A' ? 1 : 0,
-                            transition: 'opacity 1.2s ease-in-out',
-                        }}
-                    />
-                    <video
-                        ref={videoBRef}
-                        autoPlay muted playsInline loop
-                        controlsList="nodownload"
-                        onContextMenu={(e) => e.preventDefault()}
-                        style={{
-                            position: 'absolute', inset: 0,
-                            width: '100%', height: '100%', objectFit: 'cover',
-                            opacity: videos.length > 0 && activeSlot === 'B' ? 1 : 0,
-                            transition: 'opacity 1.2s ease-in-out',
-                        }}
-                    />
-                </div>
+                {/* ═══ FIXED BACKGROUND — images (priority) or videos (fallback), multi-rotation ═══ */}
+                <HeroBackground
+                    page="upcoming"
+                    isMobile={isMobile}
+                    onVideoChange={handleVideoChange}
+                    jumpToVideoRef={jumpToVideoRef}
+                />
 
-                {/* ═══ GRADIENT OVERLAY ═══ */}
+                {/* ═══ GRADIENT OVERLAY ═══ */}}
                 <div style={{
                     position: 'fixed',
                     top: 0, left: 0,
@@ -244,12 +141,12 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
 
 
                         {/* Video indicator dots */}
-                        {videos.length > 1 && (
+                        {videoCount > 1 && (
                             <div style={{ display: 'flex', gap: '6px', marginTop: 'var(--space-xs)' }}>
-                                {videos.map((_, i) => (
+                                {Array.from({ length: videoCount }, (_, i) => (
                                     <button
                                         key={i}
-                                        onClick={() => jumpToVideo(i)}
+                                        onClick={() => jumpToVideoRef.current?.(i)}
                                         style={{
                                             width: currentIdx === i ? '24px' : '6px', height: '6px',
                                             borderRadius: 'var(--radius-full)', border: 'none', padding: 0,
@@ -276,39 +173,13 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
         }}>
             <Scene3D />
 
-            {/* ═══ FIXED VIDEO BACKGROUND — always rendered ═══ */}
-            <div style={{
-                position: 'fixed',
-                top: 0, left: 0,
-                width: '100%', height: '100dvh',
-                zIndex: 0,
-                background: '#0d0f14',
-            }}>
-                <video
-                    ref={videoARef}
-                    autoPlay muted playsInline loop
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                        position: 'absolute', inset: 0,
-                        width: '100%', height: '100%', objectFit: 'cover',
-                        opacity: videos.length > 0 && activeSlot === 'A' ? 1 : 0,
-                        transition: 'opacity 1.2s ease-in-out',
-                    }}
-                />
-                <video
-                    ref={videoBRef}
-                    autoPlay muted playsInline loop
-                    controlsList="nodownload"
-                    onContextMenu={(e) => e.preventDefault()}
-                    style={{
-                        position: 'absolute', inset: 0,
-                        width: '100%', height: '100%', objectFit: 'cover',
-                        opacity: videos.length > 0 && activeSlot === 'B' ? 1 : 0,
-                        transition: 'opacity 1.2s ease-in-out',
-                    }}
-                />
-            </div>
+            {/* ═══ FIXED BACKGROUND — images (priority) or videos (fallback), multi-rotation ═══ */}
+            <HeroBackground
+                page="upcoming"
+                isMobile={isMobile}
+                onVideoChange={handleVideoChange}
+                jumpToVideoRef={jumpToVideoRef}
+            />
 
             {/* ═══ SINGLE FIXED GRADIENT OVERLAY ═══ */}
             <div style={{
@@ -433,12 +304,12 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
                     </a>
 
                     {/* Video indicator dots */}
-                    {videos.length > 1 && (
+                    {videoCount > 1 && (
                         <div style={{ display: 'flex', gap: '6px', marginTop: 'var(--space-xs)' }}>
-                            {videos.map((_, i) => (
+                            {Array.from({ length: videoCount }, (_, i) => (
                                 <button
                                     key={i}
-                                    onClick={() => jumpToVideo(i)}
+                                    onClick={() => jumpToVideoRef.current?.(i)}
                                     style={{
                                         width: currentIdx === i ? '24px' : '6px', height: '6px',
                                         borderRadius: 'var(--radius-full)', border: 'none', padding: 0,

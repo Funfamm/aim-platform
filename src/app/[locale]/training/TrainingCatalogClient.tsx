@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import HeroBackground from '@/components/HeroBackground'
 import { useTranslations, useLocale } from 'next-intl'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 type HeroVideoItem = { id: string; url: string; duration: number; active: boolean }
 
@@ -45,36 +47,8 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
         return `${m}m`
     }
 
-    const [heroVideos, setHeroVideos] = useState<HeroVideoItem[]>([])
-    const [currentVideoIdx, setCurrentVideoIdx] = useState(0)
-    const heroVideoRef = useRef<HTMLVideoElement>(null)
-    const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const isMobile = useIsMobile()
     const [activeFilter, setActiveFilter] = useState<string>('all')
-
-    useEffect(() => {
-        fetch('/api/admin/media?type=hero-video&page=training')
-            .then(r => r.json())
-            .then((data: HeroVideoItem[]) => { if (data.length > 0) setHeroVideos(data) })
-            .catch(() => {})
-    }, [])
-
-    const cycleHeroVideo = useCallback(() => {
-        if (heroVideos.length <= 1) return
-        setCurrentVideoIdx(prev => (prev + 1) % heroVideos.length)
-    }, [heroVideos.length])
-
-    useEffect(() => {
-        if (heroVideos.length === 0) return
-        const video = heroVideoRef.current
-        if (!video) return
-        video.src = heroVideos[currentVideoIdx].url
-        video.load()
-        video.play().catch(() => {})
-        const durationMs = (heroVideos[currentVideoIdx].duration || 10) * 1000
-        if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
-        videoTimerRef.current = setTimeout(cycleHeroVideo, durationMs)
-        return () => { if (videoTimerRef.current) clearTimeout(videoTimerRef.current) }
-    }, [currentVideoIdx, heroVideos, cycleHeroVideo])
 
     const tr = (translations: string | null, field: string, fallback: string) => {
         if (!translations || locale === 'en') return fallback
@@ -117,18 +91,11 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                 .filter-pill:hover { opacity: 0.9; }
             `}</style>
 
-            {/* ─── Fixed video background ─── */}
-            {heroVideos.length > 0 && (
-                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: 0, background: '#0d0f14' }}>
-                    <video
-                        ref={heroVideoRef}
-                        autoPlay muted loop playsInline
-                        controlsList="nodownload"
-                        onContextMenu={e => e.preventDefault()}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                    />
-                </div>
-            )}
+            {/* ─── Hero background: images (priority, 6s rotation) or video fallback ─── */}
+            <HeroBackground
+                page="training"
+                isMobile={isMobile}
+            />
 
             {/* ─── Fixed gradient overlay ─── */}
             <div style={{
