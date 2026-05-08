@@ -123,6 +123,7 @@ export async function PUT(req: Request) {
             // Log retention
             logRetentionDays: body.logRetentionDays ?? 90,
             // Page content (admin CMS)
+            aboutPageData: body.aboutPageData || null,
             homePageData: body.homePageData || null,
             worksPageData: body.worksPageData || null,
             upcomingPageData: body.upcomingPageData || null,
@@ -166,9 +167,9 @@ export async function PUT(req: Request) {
         invalidateSettings()
         invalidateMailerCache()
         invalidateAcsClient()
-        // Bust the homepage ISR cache — settings affect hero CTA text,
-        // sponsor display, section visibility, allowPublicTrailers, etc.
+        // Bust ISR caches — settings affect multiple pages
         revalidatePath('/', 'layout')
+        revalidatePath('/about', 'page')
 
         logAdminAction({
             actor: session.userId,
