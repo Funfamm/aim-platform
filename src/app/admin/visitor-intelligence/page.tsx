@@ -25,19 +25,25 @@ interface FeedItem {
     } | null
 }
 
+interface LoginEntry {
+    userId: string | null
+    method: string
+    country: string | null
+    lastLogin: string
+    loginCount: number
+    loginHistory: { id: string; createdAt: string; country: string | null; method: string }[]
+    user: { name: string; email: string; role: string } | null
+}
 interface ViData {
     feed: FeedItem[]
     realTime: { onlineNow: number; loggedInNow: number; guestsNow: number }
+    onlineSessions: string[]
     geo: { country: string; count: number }[]
     topPages: { path: string; views: number; avgDurationMs: number | null }[]
-    authMethods: { method: string; count: number }[]
-    recentLogins: {
-        id: string
-        method: string
-        country: string | null
-        createdAt: string
-        user: { name: string; email: string; role: string } | null
-    }[]
+    authMethodsToday: { method: string; uniqueUsers: number }[]
+    authMethodsWeek:  { method: string; uniqueUsers: number }[]
+    authMethodsMonth: { method: string; uniqueUsers: number }[]
+    recentLogins: LoginEntry[]
     funnel: { step: string; count: number; pct: number }[]
     hourlyViews: number[]
     retentionWarning: number
@@ -64,8 +70,25 @@ const COUNTRY_FLAGS: Record<string, string> = {
     US:'🇺🇸', GB:'🇬🇧', CA:'🇨🇦', AU:'🇦🇺', NG:'🇳🇬', GH:'🇬🇭', ZA:'🇿🇦',
     IN:'🇮🇳', DE:'🇩🇪', FR:'🇫🇷', BR:'🇧🇷', MX:'🇲🇽', JP:'🇯🇵', CN:'🇨🇳',
     KE:'🇰🇪', EG:'🇪🇬', RU:'🇷🇺', PK:'🇵🇰', ID:'🇮🇩', TR:'🇹🇷',
+    AE:'🇦🇪', SA:'🇸🇦', QA:'🇶🇦', CI:'🇨🇮', SN:'🇸🇳', CM:'🇨🇲', ZW:'🇿🇼',
+    PR:'🇵🇷', DO:'🇩🇴', JM:'🇯🇲', AR:'🇦🇷', CO:'🇨🇴', CL:'🇨🇱', PE:'🇵🇪',
+    IT:'🇮🇹', ES:'🇪🇸', NL:'🇳🇱', SE:'🇸🇪', PL:'🇵🇱', UA:'🇺🇦', KR:'🇰🇷',
+    PH:'🇵🇭', VN:'🇻🇳', TH:'🇹🇭', MY:'🇲🇾', NZ:'🇳🇿', ET:'🇪🇹', TZ:'🇹🇿',
 }
-const flag = (c: string | null) => (c && COUNTRY_FLAGS[c]) ? COUNTRY_FLAGS[c] : (c || '🌐')
+const COUNTRY_NAMES: Record<string, string> = {
+    US:'United States', GB:'United Kingdom', CA:'Canada', AU:'Australia',
+    NG:'Nigeria', GH:'Ghana', ZA:'South Africa', KE:'Kenya', EG:'Egypt',
+    CI:"Côte d'Ivoire", SN:'Senegal', TZ:'Tanzania', CM:'Cameroon', ZW:'Zimbabwe', ET:'Ethiopia',
+    IN:'India', CN:'China', JP:'Japan', KR:'South Korea', PK:'Pakistan',
+    ID:'Indonesia', PH:'Philippines', VN:'Vietnam', TH:'Thailand', MY:'Malaysia',
+    DE:'Germany', FR:'France', IT:'Italy', ES:'Spain', NL:'Netherlands',
+    SE:'Sweden', PL:'Poland', UA:'Ukraine', RU:'Russia', TR:'Turkey',
+    BR:'Brazil', MX:'Mexico', AR:'Argentina', CO:'Colombia', CL:'Chile', PE:'Peru',
+    PR:'Puerto Rico', DO:'Dominican Republic', JM:'Jamaica',
+    AE:'United Arab Emirates', SA:'Saudi Arabia', QA:'Qatar', NZ:'New Zealand',
+}
+const flag  = (c: string | null) => (c && COUNTRY_FLAGS[c]) ? COUNTRY_FLAGS[c] : (c || '🌐')
+const cName = (c: string | null) => (c && COUNTRY_NAMES[c]) ? COUNTRY_NAMES[c] : (c || 'Unknown')
 
 const METHOD_ICONS: Record<string, string> = {
     google: '🔵', credentials: '🔑', apple: '🍎',
@@ -96,6 +119,14 @@ export default function VisitorIntelligencePage() {
     const [error, setError]     = useState('')
     const [mounted, setMounted] = useState(false)
     const [feedOpen, setFeedOpen] = useState(true)
+    const [groupFeed, setGroupFeed] = useState(false)
+    const [expandedFeedUser, setExpandedFeedUser] = useState<string | null>(null)
+    const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+    const toggle  = (key: string) => setCollapsed(p => ({ ...p, [key]: !p[key] }))
+    const isOpen  = (key: string) => !collapsed[key]
+    const [authPeriod, setAuthPeriod] = useState<'today'|'week'|'month'>('month')
+    const [expandedLogin, setExpandedLogin] = useState<string | null>(null)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setMounted(true) }, [])
 
     // Session explorer modal
@@ -341,62 +372,38 @@ export default function VisitorIntelligencePage() {
                             </span>
                             <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: feedOpen ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▼</span>
                         </div>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
-                            {feedOpen ? 'Click session ID to explore full journey' : `${data.feed.length} events — click to expand`}
+                        {/* Group-by-user toggle — click doesn't bubble to collapse */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} onClick={e => e.stopPropagation()}>
+                            <button onClick={() => { setGroupFeed(g => !g); setExpandedFeedUser(null) }} style={{
+                                padding: '4px 12px', borderRadius: '99px', border: 'none', cursor: 'pointer',
+                                fontSize: '0.63rem', fontWeight: 700,
+                                background: groupFeed ? 'var(--accent-gold)' : 'rgba(255,255,255,0.07)',
+                                color: groupFeed ? '#000' : 'var(--text-tertiary)',
+                                transition: 'all 0.15s',
+                            }}>{groupFeed ? '👤 Grouped' : '📋 All Events'}</button>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>
+                                {feedOpen ? (groupFeed ? 'Click user to expand pages' : 'Click session ID to explore full journey') : `${data.feed.length} events — click to expand`}
+                            </span>
                         </div>
                     </div>
 
-                    {/* Column headers + feed rows — collapseable */}
                     {feedOpen && (<>
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '28px 160px 80px 1fr 80px 90px 80px 90px 120px',
-                        gap: '8px', padding: '8px 20px',
-                        borderBottom: '1px solid rgba(255,255,255,0.04)',
-                        fontSize: '0.6rem', color: 'var(--text-tertiary)',
-                        fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
-                    }}>
-                        <span></span>
-                        <span>Identity</span>
-                        <span>Auth</span>
-                        <span>Page</span>
-                        <span>Device</span>
-                        <span>Country</span>
-                        <span>Duration</span>
-                        <span>Event</span>
-                        <span>Time · Session</span>
-                    </div>
 
-                    {/* Feed rows */}
-                    {data.feed.length === 0 ? (
-                        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.82rem' }}>
-                            No activity recorded yet. Visits will appear here in real-time.
-                        </div>
-                    ) : (
-                        data.feed.map((row, i) => {
-                            const isLoggedIn = !!row.identity
-                            const roleColor = row.identity ? (ROLE_COLORS[row.identity.role] || '#6b7280') : '#6b7280'
-                            return (
-                                <div
-                                    key={row.id}
-                                    className="vi-feed-row"
-                                    style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '28px 160px 80px 1fr 80px 90px 80px 90px 120px',
-                                        gap: '8px', padding: '10px 20px',
-                                        borderBottom: '1px solid rgba(255,255,255,0.03)',
-                                        alignItems: 'center',
-                                        animation: `viSlideIn 0.3s ease ${Math.min(i * 30, 300)}ms both`,
-                                        cursor: 'default',
-                                        transition: 'background 0.15s',
-                                    }}
-                                >
-                                    {/* Online dot */}
-                                    <div style={{
-                                        width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0,
-                                        background: isLoggedIn ? '#22c55e' : '#60a5fa',
-                                        boxShadow: isLoggedIn ? '0 0 6px rgba(34,197,94,0.5)' : '0 0 6px rgba(96,165,250,0.4)',
-                                    }} />
+                    {/* ── FLAT view ── */}
+                    {!groupFeed && (<>
+                    <div style={{ display: 'grid', gridTemplateColumns: '28px 160px 80px 1fr 80px 90px 80px 90px 120px', gap: '8px', padding: '8px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', fontSize: '0.6rem', color: 'var(--text-tertiary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        <span></span><span>Identity</span><span>Auth</span><span>Page</span><span>Device</span><span>Country</span><span>Duration</span><span>Event</span><span>Time · Session</span>
+                    </div>
+                    {data.feed.length === 0
+                        ? <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.82rem' }}>No activity yet.</div>
+                        : data.feed.map((row, i) => {
+                        const isLoggedIn = !!row.identity
+                        const roleColor = row.identity ? (ROLE_COLORS[row.identity.role] || '#6b7280') : '#6b7280'
+                        const isOnline = !!row.sessionId && (data.onlineSessions || []).includes(row.sessionId)
+                        return (
+                            <div key={row.id} className="vi-feed-row" style={{ display: 'grid', gridTemplateColumns: '28px 160px 80px 1fr 80px 90px 80px 90px 120px', gap: '8px', padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.03)', alignItems: 'center', animation: `viSlideIn 0.3s ease ${Math.min(i * 30, 300)}ms both`, cursor: 'default', transition: 'background 0.15s' }}>
+                                {/* Presence dot — green only if session active last 5 min */}
+                                <div style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: isOnline ? '#22c55e' : 'rgba(255,255,255,0.15)', boxShadow: isOnline ? '0 0 6px rgba(34,197,94,0.5)' : 'none', animation: isOnline ? 'viPulse 2s ease-in-out infinite' : 'none' }} />
 
                                     {/* Identity */}
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
@@ -524,8 +531,69 @@ export default function VisitorIntelligencePage() {
                                     </div>
                                 </div>
                             )
-                        })
-                    )}
+                        })}
+                    </>)}
+
+                    {/* ── GROUPED view ── one row per unique user */}
+                    {groupFeed && (() => {
+                        const groups = new Map<string, { key: string; identity: FeedItem['identity']; rows: FeedItem[] }>()
+                        for (const row of data.feed) {
+                            const key = row.identity?.name ?? (row.sessionId?.slice(0, 8) ?? 'anon')
+                            if (!groups.has(key)) groups.set(key, { key, identity: row.identity, rows: [] })
+                            groups.get(key)!.rows.push(row)
+                        }
+                        const grouped = Array.from(groups.values())
+                        return grouped.length === 0
+                            ? <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.82rem' }}>No activity yet.</div>
+                            : grouped.map(group => {
+                                const isLoggedIn = !!group.identity
+                                const roleColor = group.identity ? (ROLE_COLORS[group.identity.role] || '#6b7280') : '#6b7280'
+                                const isExpanded = expandedFeedUser === group.key
+                                const latestRow = group.rows[0]
+                                const isOnline = !!latestRow.sessionId && (data.onlineSessions || []).includes(latestRow.sessionId)
+                                return (
+                                    <div key={group.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                        <div className="vi-feed-row" onClick={() => setExpandedFeedUser(isExpanded ? null : group.key)}
+                                            style={{ display: 'grid', gridTemplateColumns: '28px 1fr 80px 1fr 80px 90px 80px 22px', gap: '8px', padding: '11px 20px', alignItems: 'center', cursor: 'pointer', transition: 'background 0.15s' }}>
+                                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, background: isOnline ? '#22c55e' : 'rgba(255,255,255,0.15)', boxShadow: isOnline ? '0 0 6px rgba(34,197,94,0.5)' : 'none', animation: isOnline ? 'viPulse 2s ease-in-out infinite' : 'none' }} />
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                <div style={{ width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0, background: isLoggedIn ? `linear-gradient(135deg, ${roleColor}33, ${roleColor}22)` : 'rgba(96,165,250,0.1)', border: `1px solid ${isLoggedIn ? roleColor + '44' : 'rgba(96,165,250,0.2)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.62rem', fontWeight: 800, color: isLoggedIn ? roleColor : '#60a5fa' }}>
+                                                    {group.identity ? group.identity.initials : '?'}
+                                                </div>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: isLoggedIn ? 'var(--text-primary)' : 'var(--text-tertiary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{group.identity ? group.identity.name : 'Anonymous'}</div>
+                                                    {group.identity && <span style={{ fontSize: '0.55rem', padding: '1px 5px', borderRadius: '4px', background: roleColor + '22', color: roleColor, fontWeight: 700, textTransform: 'uppercase' }}>{group.identity.role}</span>}
+                                                </div>
+                                            </div>
+                                            <div style={{ padding: '2px 8px', borderRadius: '99px', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.2)', fontSize: '0.63rem', fontWeight: 700, color: '#60a5fa', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                                                {group.rows.length} page{group.rows.length !== 1 ? 's' : ''}
+                                            </div>
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'monospace' }} title={latestRow.path}>{latestRow.path}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>{DEVICE_ICONS[latestRow.device || ''] || '🖥️'}</div>
+                                            <div style={{ fontSize: '0.75rem', textAlign: 'center' }}>{flag(latestRow.country)} {latestRow.country || '—'}</div>
+                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', textAlign: 'right' }}>{mounted ? getRelativeTime(latestRow.createdAt) : '—'}</div>
+                                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+                                        </div>
+                                        {isExpanded && (
+                                            <div style={{ background: 'rgba(59,130,246,0.03)', borderTop: '1px solid rgba(59,130,246,0.08)' }}>
+                                                <div style={{ padding: '6px 20px 4px 56px', fontSize: '0.6rem', color: 'var(--text-tertiary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>All Page Visits ({group.rows.length})</div>
+                                                {group.rows.map((row, ri) => (
+                                                    <div key={row.id} style={{ display: 'grid', gridTemplateColumns: '20px 1fr 60px 80px 80px 90px 120px', gap: '8px', padding: '7px 20px 7px 56px', borderTop: '1px solid rgba(255,255,255,0.02)', alignItems: 'center' }}>
+                                                        <span style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>#{ri + 1}</span>
+                                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'monospace' }} title={row.path}>{row.path}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>{DEVICE_ICONS[row.device || ''] || '🖥️'}</div>
+                                                        <div style={{ fontSize: '0.72rem', textAlign: 'center' }}>{flag(row.country)} {row.country || '—'}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: row.durationMs ? '#60a5fa' : 'var(--text-tertiary)', fontFamily: 'monospace', textAlign: 'center' }}>{formatDuration(row.durationMs)}</div>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textAlign: 'right' }}>{mounted ? getRelativeTime(row.createdAt) : '—'}</div>
+                                                        <div style={{ textAlign: 'right' }}>{row.sessionId && <button className="vi-session-btn" onClick={() => openSession(row.sessionId)} style={{ background: 'none', border: 'none', padding: 0, fontSize: '0.58rem', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', fontFamily: 'monospace', whiteSpace: 'nowrap', transition: 'color 0.15s' }}>{row.sessionId.slice(0, 8)}…</button>}</div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })
+                    })()}
                     </>)}
                 </div>
 
@@ -548,7 +616,7 @@ export default function VisitorIntelligencePage() {
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
                                         <span style={{ fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <span style={{ fontSize: '1rem' }}>{flag(g.country)}</span>
-                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{g.country}</span>
+                                            <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{cName(g.country)}</span>
                                         </span>
                                         <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', fontWeight: 700 }}>{g.count.toLocaleString()}</span>
                                     </div>
@@ -565,56 +633,45 @@ export default function VisitorIntelligencePage() {
                         })()}
                     </div>
 
-                    {/* Auth Method Distribution */}
-                    <div style={{ ...card }}>
-                        <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)', marginBottom: '16px' }}>
-                            🔐 Auth Method Distribution <span style={{ fontWeight: 400, color: 'var(--text-tertiary)' }}>(last 30d)</span>
-                        </div>
-                        {data.authMethods.length === 0 ? (
-                            <div style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', textAlign: 'center', padding: '20px' }}>
-                                No login events yet — data populates as users sign in
+                    {/* Auth Method Distribution — collapsible + period tabs */}
+                    <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+                        <div onClick={() => toggle('auth')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', cursor: 'pointer', userSelect: 'none', borderBottom: isOpen('auth') ? '1px solid var(--border-subtle)' : 'none', background: 'rgba(212,168,83,0.02)' }}>
+                            <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)' }}>🔐 Auth Method Distribution</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }} onClick={e => e.stopPropagation()}>
+                                {(['today','week','month'] as const).map(p => (
+                                    <button key={p} onClick={() => setAuthPeriod(p)} style={{ padding: '3px 10px', borderRadius: '99px', border: 'none', cursor: 'pointer', fontSize: '0.6rem', fontWeight: 700, background: authPeriod === p ? 'var(--accent-gold)' : 'rgba(255,255,255,0.07)', color: authPeriod === p ? '#000' : 'var(--text-tertiary)', transition: 'all 0.15s' }}>{p === 'today' ? 'Today' : p === 'week' ? 'This Week' : '30 Days'}</button>
+                                ))}
+                                <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: isOpen('auth') ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▼</span>
                             </div>
-                        ) : (() => {
-                            const total = data.authMethods.reduce((s, m) => s + m.count, 0)
-                            const METHOD_COLORS: Record<string, string> = {
-                                google: '#4285f4', credentials: '#f59e0b', apple: '#e5e7eb',
-                            }
+                        </div>
+                        {isOpen('auth') && (() => {
+                            const methods = authPeriod === 'today' ? (data.authMethodsToday || []) : authPeriod === 'week' ? (data.authMethodsWeek || []) : (data.authMethodsMonth || [])
+                            if (methods.length === 0) return <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>No login events in this period</div>
+                            const total = methods.reduce((s, m) => s + m.uniqueUsers, 0)
+                            const MC: Record<string, string> = { google: '#4285f4', credentials: '#f59e0b', apple: '#e5e7eb' }
                             return (
-                                <>
-                                    {/* Big donut-style summary */}
+                                <div style={{ padding: '16px 20px' }}>
                                     <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                                        {data.authMethods.map(m => {
-                                            const pct = total > 0 ? Math.round((m.count / total) * 100) : 0
-                                            const color = METHOD_COLORS[m.method] || '#6b7280'
+                                        {methods.map(m => {
+                                            const pct = total > 0 ? Math.round((m.uniqueUsers / total) * 100) : 0
+                                            const color = MC[m.method] || '#6b7280'
                                             return (
-                                                <div key={m.method} style={{
-                                                    flex: 1, minWidth: '80px',
-                                                    padding: '14px 12px',
-                                                    borderRadius: '12px',
-                                                    background: color + '10',
-                                                    border: `1px solid ${color}30`,
-                                                    textAlign: 'center',
-                                                }}>
-                                                    <div style={{ fontSize: '1.4rem', marginBottom: '4px' }}>
-                                                        {METHOD_ICONS[m.method] || '🔑'}
-                                                    </div>
+                                                <div key={m.method} style={{ flex: 1, minWidth: '80px', padding: '14px 12px', borderRadius: '12px', background: color + '10', border: `1px solid ${color}30`, textAlign: 'center' }}>
+                                                    <div style={{ fontSize: '1.4rem', marginBottom: '4px' }}>{METHOD_ICONS[m.method] || '🔑'}</div>
                                                     <div style={{ fontSize: '1.3rem', fontWeight: 900, color, lineHeight: 1 }}>{pct}%</div>
                                                     <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '3px', textTransform: 'capitalize' }}>{m.method}</div>
-                                                    <div style={{ fontSize: '0.65rem', color, fontWeight: 600, marginTop: '2px' }}>{m.count.toLocaleString()} logins</div>
+                                                    <div style={{ fontSize: '0.65rem', color, fontWeight: 600, marginTop: '2px' }}>{m.uniqueUsers.toLocaleString()} users</div>
                                                 </div>
                                             )
                                         })}
                                     </div>
-                                    {/* Bar breakdown */}
-                                    {data.authMethods.map(m => {
-                                        const pct = total > 0 ? Math.round((m.count / total) * 100) : 0
-                                        const color = METHOD_COLORS[m.method] || '#6b7280'
+                                    {methods.map(m => {
+                                        const pct = total > 0 ? Math.round((m.uniqueUsers / total) * 100) : 0
+                                        const color = MC[m.method] || '#6b7280'
                                         return (
                                             <div key={m.method} style={{ marginBottom: '8px' }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                                                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>
-                                                        {METHOD_ICONS[m.method]} {m.method}
-                                                    </span>
+                                                    <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{METHOD_ICONS[m.method]} {m.method}</span>
                                                     <span style={{ fontSize: '0.7rem', color, fontWeight: 700 }}>{pct}%</span>
                                                 </div>
                                                 <div style={{ height: '5px', borderRadius: '99px', background: 'rgba(255,255,255,0.05)' }}>
@@ -623,10 +680,8 @@ export default function VisitorIntelligencePage() {
                                             </div>
                                         )
                                     })}
-                                    <div style={{ marginTop: '12px', fontSize: '0.65rem', color: 'var(--text-tertiary)', textAlign: 'right' }}>
-                                        {total.toLocaleString()} total login events tracked
-                                    </div>
-                                </>
+                                    <div style={{ marginTop: '12px', fontSize: '0.65rem', color: 'var(--text-tertiary)', textAlign: 'right' }}>{total.toLocaleString()} unique users</div>
+                                </div>
                             )
                         })()}
                     </div>
@@ -748,70 +803,61 @@ export default function VisitorIntelligencePage() {
                 ══════════════════════════════════════════════ */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '32px' }}>
 
-                    {/* Login Audit */}
+                    {/* Login Audit — unique users, collapsible, expandable history */}
                     <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
-                        <div style={{
-                            padding: '14px 20px', borderBottom: '1px solid var(--border-subtle)',
-                            fontSize: '0.68rem', fontWeight: 700,
-                            textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)',
-                        }}>
-                            🔒 Recent Login Events
-                        </div>
-                        {data.recentLogins.length === 0 ? (
-                            <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
-                                No login events yet — populates as users sign in
+                        <div onClick={() => toggle('logins')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', cursor: 'pointer', userSelect: 'none', borderBottom: isOpen('logins') ? '1px solid var(--border-subtle)' : 'none', background: 'rgba(212,168,83,0.02)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-gold)' }}>🔒 Recent Login Events</span>
+                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)' }}>({data.recentLogins.length} unique users)</span>
                             </div>
-                        ) : data.recentLogins.map((login) => {
-                            const METHOD_COLORS: Record<string, string> = { google: '#4285f4', credentials: '#f59e0b', apple: '#e5e7eb' }
-                            const color = METHOD_COLORS[login.method] || '#6b7280'
-                            const roleColor = login.user ? (ROLE_COLORS[login.user.role] || '#6b7280') : '#6b7280'
-                            return (
-                                <div key={login.id} style={{
-                                    display: 'grid', gridTemplateColumns: '32px 1fr 60px 80px',
-                                    alignItems: 'center', gap: '10px',
-                                    padding: '9px 20px', borderBottom: '1px solid rgba(255,255,255,0.03)',
-                                }}>
-                                    {/* Auth method icon */}
-                                    <div style={{
-                                        width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0,
-                                        background: color + '15', border: `1px solid ${color}30`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem',
-                                    }}>
-                                        {METHOD_ICONS[login.method] || '🔑'}
-                                    </div>
-                                    {/* User info */}
-                                    <div style={{ minWidth: 0 }}>
-                                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            {login.user?.name || 'Unknown'}
+                            <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: isOpen('logins') ? 'rotate(0deg)' : 'rotate(-90deg)' }}>▼</span>
+                        </div>
+                        {isOpen('logins') && (data.recentLogins.length === 0
+                            ? <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>No login events yet</div>
+                            : data.recentLogins.map((login, idx) => {
+                                const MC: Record<string, string> = { google: '#4285f4', credentials: '#f59e0b', apple: '#e5e7eb' }
+                                const color = MC[login.method] || '#6b7280'
+                                const roleColor = login.user ? (ROLE_COLORS[login.user.role] || '#6b7280') : '#6b7280'
+                                const rowKey = login.userId || `anon-${idx}`
+                                const isExpanded = expandedLogin === rowKey
+                                return (
+                                    <div key={rowKey} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                        <div className="vi-feed-row" onClick={() => setExpandedLogin(isExpanded ? null : rowKey)}
+                                            style={{ display: 'grid', gridTemplateColumns: '32px 1fr auto 90px 22px', alignItems: 'center', gap: '10px', padding: '10px 20px', cursor: 'pointer', transition: 'background 0.15s' }}>
+                                            <div style={{ width: '28px', height: '28px', borderRadius: '8px', flexShrink: 0, background: color + '15', border: `1px solid ${color}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem' }}>
+                                                {METHOD_ICONS[login.method] || '🔑'}
+                                            </div>
+                                            <div style={{ minWidth: 0 }}>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{login.user?.name || 'Unknown'}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px', flexWrap: 'wrap' }}>
+                                                    {login.user && <span style={{ fontSize: '0.52rem', padding: '1px 5px', borderRadius: '4px', background: roleColor + '22', color: roleColor, fontWeight: 700, textTransform: 'uppercase' }}>{login.user.role}</span>}
+                                                    <span style={{ fontSize: '0.62rem', color, fontWeight: 600, textTransform: 'capitalize' }}>via {login.method}</span>
+                                                    {login.country && <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)' }}>{flag(login.country)} {cName(login.country)}</span>}
+                                                </div>
+                                            </div>
+                                            <div style={{ padding: '2px 8px', borderRadius: '99px', background: login.loginCount > 1 ? 'rgba(212,168,83,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${login.loginCount > 1 ? 'rgba(212,168,83,0.3)' : 'rgba(255,255,255,0.07)'}`, fontSize: '0.63rem', fontWeight: 700, color: login.loginCount > 1 ? 'var(--accent-gold)' : 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
+                                                {login.loginCount}× login{login.loginCount !== 1 ? 's' : ''}
+                                            </div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textAlign: 'right' }}>{mounted ? getRelativeTime(login.lastLogin) : '—'}</div>
+                                            <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                                            {login.user && (
-                                                <span style={{
-                                                    fontSize: '0.52rem', padding: '1px 5px', borderRadius: '4px',
-                                                    background: roleColor + '22', color: roleColor,
-                                                    fontWeight: 700, textTransform: 'uppercase',
-                                                }}>{login.user.role}</span>
-                                            )}
-                                            <span style={{ fontSize: '0.62rem', color, fontWeight: 600, textTransform: 'capitalize' }}>
-                                                via {login.method}
-                                            </span>
-                                            {login.country && (
-                                                <span style={{ fontSize: '0.68rem' }}>{flag(login.country)}</span>
-                                            )}
-                                        </div>
+                                        {isExpanded && login.loginHistory && (
+                                            <div style={{ padding: '6px 20px 12px 64px', background: 'rgba(255,255,255,0.015)' }}>
+                                                <div style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Login History ({login.loginHistory.length})</div>
+                                                {login.loginHistory.map((h, hi) => (
+                                                    <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '3px 0', borderBottom: hi < login.loginHistory.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
+                                                        <span style={{ fontSize: '0.58rem', color: 'var(--text-tertiary)', fontFamily: 'monospace', minWidth: '18px' }}>#{hi + 1}</span>
+                                                        <span style={{ fontSize: '0.63rem', fontWeight: 600, color: MC[h.method] || '#6b7280', textTransform: 'capitalize' }}>{METHOD_ICONS[h.method]} {h.method}</span>
+                                                        {h.country && <span style={{ fontSize: '0.63rem', color: 'var(--text-tertiary)' }}>{flag(h.country)} {cName(h.country)}</span>}
+                                                        <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', marginLeft: 'auto' }}>{mounted ? getRelativeTime(h.createdAt) : '—'}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                    {/* Country */}
-                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', textAlign: 'center' }}>
-                                        {login.country || '—'}
-                                    </div>
-                                    {/* Time */}
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', textAlign: 'right' }}>
-                                        {mounted ? getRelativeTime(login.createdAt) : '—'}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
+                                )
+                            })
+                        )}
 
                     {/* Hourly Heatmap */}
                     <div style={{ ...card }}>
