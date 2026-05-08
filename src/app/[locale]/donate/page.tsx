@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import NextImage from 'next/image'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
@@ -262,16 +263,29 @@ export default function DonatePage() {
     return (
         <>
 <main id="main-content" style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-                {/* Background images from DB */}
+                {/* Background images — routed through Next.js optimizer (AVIF/WebP + immutable cache) */}
                 {mounted && bgImages.map((src, i) => (
+                    // position:fixed wrapper required for <Image fill> to work correctly.
                     <div key={src} style={{
                         position: 'fixed', inset: 0, zIndex: 0,
-                        backgroundImage: `url(${src})`,
-                        backgroundSize: 'cover', backgroundPosition: 'center',
-                        filter: 'brightness(0.75) saturate(0.9)',
                         opacity: currentBg === i ? 1 : 0,
                         transition: 'opacity 1.5s ease-in-out',
-                    }} />
+                    }}>
+                        <NextImage
+                            src={src}
+                            alt=""
+                            fill
+                            priority={i === 0}
+                            loading={i === 0 ? undefined : 'eager'}
+                            sizes="100vw"
+                            quality={80}
+                            style={{
+                                objectFit: 'cover',
+                                objectPosition: 'center',
+                                filter: 'brightness(0.75) saturate(0.9)',
+                            }}
+                        />
+                    </div>
                 ))}
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 1,

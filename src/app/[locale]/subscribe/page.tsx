@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
+import NextImage from 'next/image'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
@@ -74,16 +75,29 @@ export default function SubscribePage() {
     return (
         <>
 <main id="main-content" style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
-                {/* Rotating background images from DB */}
+                {/* Rotating background images — routed through Next.js optimizer (AVIF/WebP + immutable cache) */}
                 {bgImages.map((src, i) => (
+                    // position:fixed wrapper required for <Image fill> to work correctly.
                     <div key={src} style={{
                         position: 'fixed', inset: 0, zIndex: 0,
-                        backgroundImage: `url(${src})`,
-                        backgroundSize: 'cover', backgroundPosition: 'center',
-                        filter: 'brightness(0.75) saturate(0.85)',
                         opacity: currentBg === i ? 1 : 0,
                         transition: 'opacity 1.5s ease-in-out',
-                    }} />
+                    }}>
+                        <NextImage
+                            src={src}
+                            alt=""
+                            fill
+                            priority={i === 0}
+                            loading={i === 0 ? undefined : 'eager'}
+                            sizes="100vw"
+                            quality={80}
+                            style={{
+                                objectFit: 'cover',
+                                objectPosition: 'center',
+                                filter: 'brightness(0.75) saturate(0.85)',
+                            }}
+                        />
+                    </div>
                 ))}
                 <div style={{
                     position: 'fixed', inset: 0, zIndex: 1,

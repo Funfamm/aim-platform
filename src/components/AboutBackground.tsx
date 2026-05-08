@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import NextImage from 'next/image'
 
 export default function AboutBackground({ bgUrls }: { bgUrls: string[] }) {
     const [currentBg, setCurrentBg] = useState(0)
@@ -30,14 +31,31 @@ export default function AboutBackground({ bgUrls }: { bgUrls: string[] }) {
     return (
         <>
             {bgUrls.map((src, i) => (
+                // position:fixed wrapper required for <Image fill> to work correctly.
+                // Opacity crossfade drives the slideshow rotation.
                 <div key={src} style={{
                     position: 'fixed', inset: 0, zIndex: 0,
-                    backgroundImage: `url(${src})`,
-                    backgroundSize: 'cover', backgroundPosition: 'center',
-                    filter: 'brightness(0.6) saturate(0.85)',
                     opacity: currentBg === i ? 1 : 0,
                     transition: 'opacity 1.5s ease-in-out',
-                }} />
+                }}>
+                    {/* Routes through Next.js optimizer → AVIF/WebP, correct srcset, immutable cache.
+                        priority on first image adds <link rel="preload"> for LCP.
+                        loading="eager" on subsequent images prevents fade-to-blank during rotation. */}
+                    <NextImage
+                        src={src}
+                        alt=""
+                        fill
+                        priority={i === 0}
+                        loading={i === 0 ? undefined : 'eager'}
+                        sizes="100vw"
+                        quality={80}
+                        style={{
+                            objectFit: 'cover',
+                            objectPosition: 'center',
+                            filter: 'brightness(0.6) saturate(0.85)',
+                        }}
+                    />
+                </div>
             ))}
             {/* Dark overlay for text readability */}
             <div style={{
