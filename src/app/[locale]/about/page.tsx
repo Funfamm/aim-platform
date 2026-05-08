@@ -92,6 +92,7 @@ export default async function AboutPage() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    userSelect: 'none',
                 }}>
                     {/* Floating orbs */}
                     <div style={{

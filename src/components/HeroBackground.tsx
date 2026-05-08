@@ -45,6 +45,9 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     // ── Image state ──
     const [bgImages, setBgImages] = useState<string[]>([])
     const [currentBg, setCurrentBg] = useState(0)
+    // Raw (unfiltered) media stored so we can re-filter without re-fetching
+    const rawImagesRef = useRef<{ url: string; target?: string; sortOrder?: number }[]>([])
+    const rawVideosRef = useRef<HeroVideo[]>([])
 
     // ── Video state ──
     const [videos, setVideos] = useState<HeroVideo[]>([])
@@ -57,41 +60,49 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     const videoBRef = useRef<HTMLVideoElement>(null)
     const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    // ── Fetch images (background + hero-image) and videos (hero-video), filtered by device target ──
+    // ── Fetch ALL media once (page changes only) ──
     useEffect(() => {
-        // Background images — single page, no comma-separated logic needed
         const imageFetches = [
-            fetch(`/api/admin/media?type=background&page=${page}`)
-                .then(r => r.json())
-                .catch(() => []),
-            // Hero-images use same multi-page comma logic as hero-video
-            fetch(`/api/admin/media?type=hero-image&page=${page}`)
-                .then(r => r.json())
-                .catch(() => []),
+            fetch(`/api/admin/media?type=background&page=${page}`).then(r => r.json()).catch(() => []),
+            fetch(`/api/admin/media?type=hero-image&page=${page}`).then(r => r.json()).catch(() => []),
         ]
-
         Promise.all(imageFetches).then(([bgData, heroImgData]) => {
             const combined = [
                 ...(Array.isArray(bgData) ? bgData : []),
                 ...(Array.isArray(heroImgData) ? heroImgData : []),
             ]
-            const filtered = combined
-                .filter(m => matchesTarget(m.target, isMobileDevice))
-                .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            rawImagesRef.current = combined.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            // Apply device filter immediately
+            const filtered = rawImagesRef.current.filter(m => matchesTarget(m.target, isMobileDevice))
             setBgImages(filtered.map(m => m.url))
+            setCurrentBg(0)
         })
 
-        // Hero videos
         fetch(`/api/admin/media?type=hero-video&page=${page}`)
             .then(r => r.json())
             .then((data: HeroVideo[]) => {
                 if (Array.isArray(data)) {
+                    rawVideosRef.current = data
                     const filtered = data.filter(m => matchesTarget(m.target, isMobileDevice))
                     setVideos(filtered)
                 }
             })
-            .catch(() => { })
-    }, [page, isMobileDevice])
+            .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page]) // ← ONLY re-fetch when page changes, NOT when isMobileDevice changes
+
+    // ── Re-filter already-fetched media when device type changes ──
+    useEffect(() => {
+        if (rawImagesRef.current.length > 0) {
+            const filtered = rawImagesRef.current.filter(m => matchesTarget(m.target, isMobileDevice))
+            setBgImages(filtered.map(m => m.url))
+            setCurrentBg(0)
+        }
+        if (rawVideosRef.current.length > 0) {
+            const filtered = rawVideosRef.current.filter(m => matchesTarget(m.target, isMobileDevice))
+            setVideos(filtered)
+        }
+    }, [isMobileDevice])
 
     // ── Image slideshow timer ──
     useEffect(() => {
