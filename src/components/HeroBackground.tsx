@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import NextImage from 'next/image'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface HeroVideo {
     id: string
@@ -37,6 +38,10 @@ function matchesTarget(target: string | undefined, isMobile: boolean): boolean {
 }
 
 export default function HeroBackground({ page, isMobile, poster, className, onVideoChange, jumpToVideoRef }: HeroBackgroundProps) {
+    // Detect mobile internally so the fetch effect always uses the correct
+    // device state — avoids the timing gap where the prop was still `false`
+    // on the first render while useIsMobile had not yet fired in the parent.
+    const isMobileDevice = useIsMobile(isMobile)
     // ── Image state ──
     const [bgImages, setBgImages] = useState<string[]>([])
     const [currentBg, setCurrentBg] = useState(0)
@@ -45,6 +50,9 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     const [videos, setVideos] = useState<HeroVideo[]>([])
     const [currentIdx, setCurrentIdx] = useState(0)
     const [activeSlot, setActiveSlot] = useState<'A' | 'B'>('A')
+    // videoReady: true once the first video frame is available → disables the
+    // initial opacity transition so the video snaps in without a black fade.
+    const [videoReady, setVideoReady] = useState(false)
     const videoARef = useRef<HTMLVideoElement>(null)
     const videoBRef = useRef<HTMLVideoElement>(null)
     const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -68,7 +76,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                 ...(Array.isArray(heroImgData) ? heroImgData : []),
             ]
             const filtered = combined
-                .filter(m => matchesTarget(m.target, isMobile))
+                .filter(m => matchesTarget(m.target, isMobileDevice))
                 .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
             setBgImages(filtered.map(m => m.url))
         })
@@ -78,12 +86,12 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
             .then(r => r.json())
             .then((data: HeroVideo[]) => {
                 if (Array.isArray(data)) {
-                    const filtered = data.filter(m => matchesTarget(m.target, isMobile))
+                    const filtered = data.filter(m => matchesTarget(m.target, isMobileDevice))
                     setVideos(filtered)
                 }
             })
             .catch(() => { })
-    }, [page, isMobile])
+    }, [page, isMobileDevice])
 
     // ── Image slideshow timer ──
     useEffect(() => {
@@ -243,6 +251,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                 autoPlay muted playsInline loop
                 controlsList="nodownload"
                 onContextMenu={(e) => e.preventDefault()}
+                onCanPlay={() => setVideoReady(true)}
                 poster={poster}
                 style={{
                     position: 'absolute',
@@ -250,7 +259,9 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                     width: '100%', height: '100%',
                     objectFit: 'cover',
                     opacity: videos.length > 0 && activeSlot === 'A' ? 1 : 0,
-                    transition: 'opacity 1.2s ease-in-out',
+                    // No transition on first appearance — prevents fade-from-black.
+                    // Once videoReady, crossfades between slots use smooth 1.2s.
+                    transition: videoReady ? 'opacity 1.2s ease-in-out' : 'none',
                     zIndex: activeSlot === 'A' ? 1 : 0,
                 }}
             />

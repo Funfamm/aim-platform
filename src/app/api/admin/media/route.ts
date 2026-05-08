@@ -18,16 +18,16 @@ export async function GET(req: NextRequest) {
     if (!isAdmin) where.active = true
     if (type) where.type = type
 
-    // Both hero-video and hero-image use comma-separated page values (e.g. "all", "casting,upcoming")
-    // so we need OR logic: match 'all' OR any that contain the requested page
-    const isHeroSlot = type === 'hero-video' || type === 'hero-image'
-    if (page && isHeroSlot) {
+    // All types now support comma-separated page values so admins can assign
+    // a single asset to multiple pages from the Media Manager.
+    // Use OR logic: match 'all' OR any record whose page field contains the
+    // requested page. A post-filter step then eliminates false-positives
+    // (e.g. "casting" inside "forecasting").
+    if (page) {
         where.OR = [
             { page: 'all' },
             { page: { contains: page } },
         ]
-    } else if (page) {
-        where.page = page
     }
 
     const media = await prisma.pageMedia.findMany({
@@ -36,12 +36,11 @@ export async function GET(req: NextRequest) {
         take: 200,
     })
 
-    // For hero-video / hero-image with a specific page, post-filter to handle edge cases
-    // e.g. "casting" should not match "forecasting" in comma-separated values
-    if (page && isHeroSlot) {
+    // Post-filter: split comma-separated page lists and check exact membership.
+    if (page) {
         const filtered = media.filter((m: { page: string }) => {
             if (m.page === 'all') return true
-            const pages = m.page.split(',').map(p => p.trim())
+            const pages = m.page.split(',').map((p: string) => p.trim())
             return pages.includes(page)
         })
         return NextResponse.json(filtered)

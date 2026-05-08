@@ -53,6 +53,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
     const locale = useLocale()
 
     // Page-entry fade-in
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setMounted(true) }, [])
 
     const handleVideoChange = useCallback((idx: number, total: number) => {

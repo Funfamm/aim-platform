@@ -56,6 +56,7 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
     const [mounted, setMounted] = useState(false)
 
     // Page-entry fade-in
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => { setMounted(true) }, [])
 
     const handleVideoChange = useCallback((idx: number, total: number) => {

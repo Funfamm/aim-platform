@@ -32,14 +32,17 @@ const PAGES = [
     { value: 'contact',   label: 'Contact' },
 ]
 
-const HERO_PAGES = [
-    { value: 'all',      label: '🌐 All Pages',  short: 'All' },
-    { value: 'home',     label: '🏠 Homepage',   short: 'Home' },
-    { value: 'works',    label: '🎬 Works',       short: 'Works' },
-    { value: 'casting',  label: '🎭 Casting',     short: 'Casting' },
-    { value: 'upcoming', label: '📅 Upcoming',    short: 'Upcoming' },
-    { value: 'training', label: '🎓 Training',    short: 'Training' },
-    { value: 'scripts',  label: '✍️ Scripts',     short: 'Scripts' },
+const ALL_PAGES = [
+    { value: 'all',       label: '🌐 All Pages',  short: 'All' },
+    { value: 'home',      label: '🏠 Homepage',   short: 'Home' },
+    { value: 'works',     label: '🎬 Works',       short: 'Works' },
+    { value: 'casting',   label: '🎭 Casting',     short: 'Casting' },
+    { value: 'upcoming',  label: '📅 Upcoming',    short: 'Upcoming' },
+    { value: 'training',  label: '🎓 Training',    short: 'Training' },
+    { value: 'scripts',   label: '✍️ Scripts',     short: 'Scripts' },
+    { value: 'about',     label: '📖 About',       short: 'About' },
+    { value: 'donate',    label: '💝 Donate',      short: 'Donate' },
+    { value: 'subscribe', label: '🔔 Subscribe',   short: 'Subscribe' },
 ]
 
 const MEDIA_TYPES = [
@@ -125,11 +128,11 @@ export default function AdminMediaPage() {
     }
 
     const openEdit = (item: MediaItem) => {
-        const pages = isHeroSlot
-            ? (item.page || 'all').split(',').filter(Boolean)
-            : ['all']
+        // Always parse pages from the stored comma-separated value.
+        // Previously used form.type (stale) to decide — now always uses item.page.
+        const pages = (item.page || 'all').split(',').map(p => p.trim()).filter(Boolean)
         setForm({
-            page:      !isHeroSlot ? item.page : 'home',
+            page:      'home', // kept for compatibility, not used in save
             pages,
             type:      item.type,
             title:     item.title || '',
@@ -204,10 +207,9 @@ export default function AdminMediaPage() {
         e.preventDefault()
         if (!form.url) return
         setSaving(true)
-        // Unified payload — target and duration are always included for all types.
-        // The API and PageMedia schema support both fields for every media type.
+        // Always save comma-separated pages — all types now support multi-page assignment.
         const payload = {
-            page: isHeroSlot ? form.pages.join(',') : form.page,
+            page: form.pages.join(','),
             type: form.type,
             title: form.title,
             url: form.url,
@@ -268,7 +270,8 @@ export default function AdminMediaPage() {
     const getTypeIcon = (t: string) => MEDIA_TYPES.find(x => x.value === t)?.icon ?? '📄'
     const getTypeLabel = (t: string) => MEDIA_TYPES.find(x => x.value === t)?.label ?? t
     const getPagePills = (page: string) =>
-        page.split(',').filter(Boolean).map(p => HERO_PAGES.find(h => h.value === p)?.short ?? p)
+        (page || 'all').split(',').map(p => p.trim()).filter(Boolean)
+            .map(p => ALL_PAGES.find(h => h.value === p)?.short ?? p)
 
     // ─── Styles ───────────────────────────────────────────────────────────────
 
@@ -380,27 +383,16 @@ export default function AdminMediaPage() {
                                 </div>
                             </div>
 
-                            {/* Row 2: Page assignment */}
+                            {/* Row 2: Page assignment — pill toggles for ALL types */}
                             <div style={{ marginBottom: 'var(--space-sm)' }}>
-                                    {isHeroSlot ? (
-                                    <>
-                                        <label style={labelSt}>Show On Pages ({isHeroVideo ? 'Hero Video' : 'Hero Image'})</label>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '3px' }}>
-                                            {HERO_PAGES.map(p => (
-                                                <button key={p.value} type="button" onClick={() => toggleHeroPage(p.value)} style={pillBtn(form.pages.includes(p.value))}>
-                                                    {p.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <label style={labelSt}>Assign to Page</label>
-                                        <select value={form.page} onChange={e => setForm(f => ({ ...f, page: e.target.value }))} style={{ ...inputSt, cursor: 'pointer' }}>
-                                            {PAGES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                                        </select>
-                                    </>
-                                )}
+                                <label style={labelSt}>Show On Pages</label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '3px' }}>
+                                    {ALL_PAGES.map(p => (
+                                        <button key={p.value} type="button" onClick={() => toggleHeroPage(p.value)} style={pillBtn(form.pages.includes(p.value))}>
+                                            {p.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Row 3: Title */}

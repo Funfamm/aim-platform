@@ -10,6 +10,7 @@ import BackButton from '@/components/BackButton'
 import WatchPlayer from '@/components/WatchPlayer'
 import ShareButtons from '@/components/share/ShareButtons'
 import CommentSection from '@/components/comments/CommentSection'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface CastingCall {
     id: string
@@ -101,7 +102,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
         return []
     })()
 
-    const [isMobile, setIsMobile] = useState(false)
+    const isMobile = useIsMobile()
     const [currentMobileBg, setCurrentMobileBg] = useState(0)
 
     // Parse translations for current locale
@@ -115,13 +116,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
     const genre = tr?.genre || project.genre
 
     // Check user session + watchlist status
-    useEffect(() => {
-        // Detect mobile once mounted
-        setIsMobile(window.innerWidth < 768)
-        const onResize = () => setIsMobile(window.innerWidth < 768)
-        window.addEventListener('resize', onResize)
-        return () => window.removeEventListener('resize', onResize)
-    }, [])
+
 
     // Rotate mobile slides every 6 s
     useEffect(() => {
