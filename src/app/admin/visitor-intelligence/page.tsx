@@ -340,7 +340,7 @@ export default function VisitorIntelligencePage() {
                 {/* ══════════════════════════════════════════════
                     PART 2 — LIVE ACTIVITY FEED
                 ══════════════════════════════════════════════ */}
-                {!loading && !error && data && (<>
+                {!loading && !error && data && <>
                 <div style={{ ...card, padding: 0, overflow: 'hidden', marginBottom: '24px' }}>
 
                     {/* Feed header — clickable to collapse */}
@@ -858,6 +858,7 @@ export default function VisitorIntelligencePage() {
                                 )
                             })
                         )}
+                    </div>
 
                     {/* Hourly Heatmap */}
                     <div style={{ ...card }}>
@@ -1071,7 +1072,7 @@ export default function VisitorIntelligencePage() {
                     </div>
                 )}
 
-                </> )}
+                </>}
 
             </main>
         </div>
