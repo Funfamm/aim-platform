@@ -908,8 +908,7 @@ export default function VisitorIntelligencePage() {
                     </div>
                 </div>
 
-                {/* close data guard */}
-                </>) }
+
 
                 {/* ══════════════════════════════════════════════
                     SESSION EXPLORER MODAL (full journey)
@@ -1071,6 +1070,8 @@ export default function VisitorIntelligencePage() {
                         </div>
                     </div>
                 )}
+
+                </> )}
 
             </main>
         </div>
