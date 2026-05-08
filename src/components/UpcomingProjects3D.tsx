@@ -80,7 +80,7 @@ export default function UpcomingProjects3D({ projects, overrides }: { projects: 
                     jumpToVideoRef={jumpToVideoRef}
                 />
 
-                {/* ═══ GRADIENT OVERLAY ═══ */}}
+                {/* ═══ GRADIENT OVERLAY ═══ */}
                 <div style={{
                     position: 'fixed',
                     top: 0, left: 0,
