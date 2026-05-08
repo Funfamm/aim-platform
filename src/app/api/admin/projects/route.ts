@@ -13,7 +13,7 @@ export async function GET() {
         select: {
             id: true, title: true, slug: true, tagline: true, description: true,
             status: true, genre: true, year: true, duration: true,
-            featured: true, published: true, subtitlesPublic: true, sortOrder: true, coverImage: true, mobileCoverImage: true,
+            featured: true, published: true, subtitlesPublic: true, sortOrder: true, coverImage: true, mobileCoverImage: true, mobileGallery: true,
             trailerUrl: true, filmUrl: true, projectType: true,
             gallery: true, credits: true, sponsorData: true,
             viewCount: true,
@@ -63,6 +63,7 @@ export async function POST(req: Request) {
             sortOrder: (maxOrder._max.sortOrder || 0) + 1,
             coverImage: body.coverImage || null,
             mobileCoverImage: body.mobileCoverImage || null,
+            mobileGallery: body.mobileGallery || null,
             trailerUrl: body.trailerUrl || null,
             filmUrl: body.filmUrl || null,
             projectType: body.projectType || 'movie',

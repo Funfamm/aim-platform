@@ -75,6 +75,7 @@ model Project {
   projectType         String         @default("movie")
   coverImage          String?
   mobileCoverImage    String?  // 9:16 portrait crop — shown on mobile poster strips
+  mobileGallery       String?  // newline-separated R2 URLs: multiple 9:16 images rotated on movie detail page on mobile
   trailerUrl          String?
   filmUrl             String?
   genre               String?

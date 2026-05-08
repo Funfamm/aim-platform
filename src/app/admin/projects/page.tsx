@@ -19,7 +19,7 @@ import { readSSEStream } from '@/lib/sse-reader'
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
-    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null; mobileCoverImage: string | null
+    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null; mobileCoverImage: string | null; mobileGallery: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
     gallery: string | null; credits: string | null; sponsorData: string | null
     viewCount: number
@@ -29,7 +29,7 @@ type Project = {
 type FormData = {
     title: string; slug: string; tagline: string; description: string
     status: string; genre: string; year: string; duration: string
-    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string; coverImage: string; mobileCoverImage: string
+    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string; coverImage: string; mobileCoverImage: string; mobileGallery: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
 }
@@ -37,7 +37,7 @@ type FormData = {
 const EMPTY_FORM: FormData = {
     title: '', slug: '', tagline: '', description: '',
     status: 'upcoming', genre: '', year: '', duration: '',
-    featured: false, published: false, subtitlesPublic: false, publishAt: '', coverImage: '', mobileCoverImage: '',
+    featured: false, published: false, subtitlesPublic: false, publishAt: '', coverImage: '', mobileCoverImage: '', mobileGallery: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
 }
@@ -317,6 +317,7 @@ export default function AdminProjectsPage() {
             publishAt: p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : '',
             coverImage: p.coverImage || '',
             mobileCoverImage: (p as typeof p & { mobileCoverImage?: string | null }).mobileCoverImage || '',
+            mobileGallery: (p as typeof p & { mobileGallery?: string | null }).mobileGallery || '',
             trailerUrl: p.trailerUrl || '',
             filmUrl: p.filmUrl || '',
             projectType: p.projectType || 'movie',
@@ -1615,6 +1616,48 @@ export default function AdminProjectsPage() {
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
                                 <FileUploader label="🖼️ Desktop Cover (16:9)  — landscape, shown on desktop grid &amp; project detail" accept="image/*" category="covers" currentUrl={form.coverImage} onUpload={url => updateField('coverImage', url)} maxSizeMB={10} compact />
                                 <FileUploader label="📱 Mobile Poster (9:16)  — portrait 900×1600px, shown on mobile strips. Falls back to desktop cover if empty." accept="image/*" category="covers" currentUrl={form.mobileCoverImage} onUpload={url => updateField('mobileCoverImage', url)} maxSizeMB={10} compact />
+
+                                {/* ── Mobile Gallery — multiple portrait images rotated on movie detail page ── */}
+                                <div style={{ borderRadius: 'var(--radius-md)', border: '1px solid rgba(212,168,83,0.15)', background: 'rgba(212,168,83,0.03)', padding: 'var(--space-md)' }}>
+                                    <label className="admin-label" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-xs)' }}>
+                                        📱🎞️ Mobile Gallery
+                                        <span style={{ fontSize: '0.65rem', fontWeight: 400, color: 'var(--text-tertiary)', textTransform: 'none', letterSpacing: 0 }}>
+                                            — multiple 9:16 portrait images rotated on the movie detail page (mobile only). One URL per line.
+                                        </span>
+                                    </label>
+                                    <textarea
+                                        className="admin-textarea"
+                                        rows={4}
+                                        placeholder={"https://cdn.example.com/mobile-poster-1.jpg\nhttps://cdn.example.com/mobile-poster-2.jpg\nhttps://cdn.example.com/mobile-poster-3.jpg"}
+                                        value={form.mobileGallery || ''}
+                                        onChange={e => updateField('mobileGallery', e.target.value)}
+                                        style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                                    />
+                                    <p style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '6px', lineHeight: 1.5 }}>
+                                        💡 Upload images via R2 Upload, then paste the URLs here. They rotate every 6 s on mobile with gold dot indicators. If empty, falls back to Mobile Poster above.
+                                    </p>
+                                    {/* Live preview of entered URLs */}
+                                    {form.mobileGallery && (
+                                        <div style={{ display: 'flex', gap: '8px', marginTop: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                                            {form.mobileGallery.split('\n').map(u => u.trim()).filter(Boolean).map((url, i) => (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    key={i}
+                                                    src={url}
+                                                    alt={`Mobile slide ${i + 1}`}
+                                                    style={{
+                                                        height: '72px',
+                                                        width: '40px',
+                                                        objectFit: 'cover',
+                                                        borderRadius: '6px',
+                                                        border: '1px solid rgba(212,168,83,0.25)',
+                                                        flexShrink: 0,
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
                                 <div className="admin-form-grid">
                                     <div>
                                             <label className="admin-label">Project Type</label>

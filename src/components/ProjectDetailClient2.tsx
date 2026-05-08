@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react'
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 
@@ -40,6 +41,8 @@ interface ProjectData {
     status: string
     projectType: string
     coverImage: string | null
+    mobileCoverImage: string | null
+    mobileGallery: string | null
     trailerUrl: string | null
     filmUrl: string | null
     genre: string | null
@@ -83,6 +86,24 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
     const statusLabel = t(statusLabelKeys[project.status] || 'comingSoon')
     const status = { label: statusLabel, ...colors }
 
+    // ── Mobile hero slideshow ────────────────────────────────────────────────
+    // Build the ordered list of portrait slides for mobile:
+    //   1. All mobileGallery images (uploaded by admin)
+    //   2. Fallback to mobileCoverImage if no gallery
+    //   3. Fallback to coverImage as last resort
+    const mobileSlides = (() => {
+        const gallery = project.mobileGallery
+            ? project.mobileGallery.split('\n').map(u => u.trim()).filter(Boolean)
+            : []
+        if (gallery.length > 0) return gallery
+        if (project.mobileCoverImage) return [project.mobileCoverImage]
+        if (project.coverImage) return [project.coverImage]
+        return []
+    })()
+
+    const [isMobile, setIsMobile] = useState(false)
+    const [currentMobileBg, setCurrentMobileBg] = useState(0)
+
     // Parse translations for current locale
     const tr = (() => {
         if (locale === 'en' || !project.translations) return null
@@ -92,6 +113,22 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
     const tagline = tr?.tagline || project.tagline
     const description = tr?.description || project.description
     const genre = tr?.genre || project.genre
+
+    // Check user session + watchlist status
+    useEffect(() => {
+        // Detect mobile once mounted
+        setIsMobile(window.innerWidth < 768)
+        const onResize = () => setIsMobile(window.innerWidth < 768)
+        window.addEventListener('resize', onResize)
+        return () => window.removeEventListener('resize', onResize)
+    }, [])
+
+    // Rotate mobile slides every 6 s
+    useEffect(() => {
+        if (!isMobile || mobileSlides.length <= 1) return
+        const timer = setInterval(() => setCurrentMobileBg(p => (p + 1) % mobileSlides.length), 6000)
+        return () => clearInterval(timer)
+    }, [isMobile, mobileSlides.length])
 
     // Check user session + watchlist status
     useEffect(() => {
@@ -193,18 +230,69 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                 display: 'flex',
                 alignItems: 'flex-end',
             }}>
-                {/* Background poster */}
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    backgroundImage: project.coverImage
-                        ? `url(${project.coverImage})`
-                        : 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center top',
-                    transform: 'scale(1.05)',
-                    filter: 'brightness(0.8) contrast(1.1)',
-                }} />
+                {/* ── MOBILE: portrait slides via Next.js optimizer ── */}
+                {isMobile && mobileSlides.length > 0 && mobileSlides.map((src, i) => (
+                    <div key={src} style={{
+                        position: 'absolute', inset: 0,
+                        opacity: currentMobileBg === i ? 1 : 0,
+                        transition: 'opacity 1.5s ease-in-out',
+                        zIndex: 0,
+                    }}>
+                        {/* priority on first slide adds <link rel=preload> for LCP.
+                            loading='eager' on subsequent slides prevents flash-to-blank. */}
+                        <NextImage
+                            src={src}
+                            alt=""
+                            fill
+                            priority={i === 0}
+                            loading={i === 0 ? undefined : 'eager'}
+                            sizes="100vw"
+                            quality={80}
+                            style={{
+                                objectFit: 'cover',
+                                objectPosition: 'center top',
+                                filter: 'brightness(0.8) contrast(1.1)',
+                                transform: 'scale(1.05)',
+                            }}
+                        />
+                    </div>
+                ))}
+                {/* Fallback gradient when no mobile images are available */}
+                {isMobile && mobileSlides.length === 0 && (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 0,
+                        background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))',
+                    }} />
+                )}
+
+                {/* ── DESKTOP: landscape coverImage via Next.js optimizer ── */}
+                {!isMobile && (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 0,
+                        transform: 'scale(1.05)',
+                    }}>
+                        {project.coverImage ? (
+                            <NextImage
+                                src={project.coverImage}
+                                alt=""
+                                fill
+                                priority
+                                sizes="100vw"
+                                quality={85}
+                                style={{
+                                    objectFit: 'cover',
+                                    objectPosition: 'center top',
+                                    filter: 'brightness(0.8) contrast(1.1)',
+                                }}
+                            />
+                        ) : (
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))',
+                            }} />
+                        )}
+                    </div>
+                )}
 
                 {/* Gradient overlays for text readability */}
                 <div style={{
@@ -423,6 +511,38 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                     </div>
                 </div>
 
+                {/* Mobile slideshow dot indicators */}
+                {isMobile && mobileSlides.length > 1 && (
+                    <div style={{
+                        position: 'absolute',
+                        bottom: '12px',
+                        right: '16px',
+                        zIndex: 10,
+                        display: 'flex',
+                        gap: '6px',
+                        alignItems: 'center',
+                    }}>
+                        {mobileSlides.map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setCurrentMobileBg(i)}
+                                aria-label={`Slide ${i + 1}`}
+                                style={{
+                                    width: currentMobileBg === i ? '20px' : '6px',
+                                    height: '6px',
+                                    borderRadius: 'var(--radius-full)',
+                                    background: currentMobileBg === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.35)',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: 0,
+                                    transition: 'all 0.4s ease',
+                                    flexShrink: 0,
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
+
                 {/* Bottom decorative line */}
                 <div style={{
                     position: 'absolute',
@@ -430,6 +550,7 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
                     background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.2), transparent)',
                 }} />
             </section>
+
 
             {/* ═══ TRAILER SECTION ═══ */}
             {(project.trailerUrl || hasTrailer) && (
