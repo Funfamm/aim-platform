@@ -4,10 +4,9 @@ import { prisma } from '@/lib/db'
 
 const RETENTION_DAYS = 90
 
-function aggregateByMethod(events: { method: string; userId: string | null }[]) {
+function aggregateByMethod(events: { method: string; userId: string }[]) {
     const map = new Map<string, Set<string>>()
     for (const e of events) {
-        if (!e.userId) continue
         if (!map.has(e.method)) map.set(e.method, new Set())
         map.get(e.method)!.add(e.userId)
     }
@@ -51,9 +50,9 @@ export async function GET(req: Request) {
             select: { id: true, userId: true, method: true, country: true, createdAt: true },
         }).catch(() => []),
         // Auth methods: unique users per period
-        db.loginEvent.findMany({ where: { createdAt: { gte: today }, userId: { not: null } }, select: { method: true, userId: true } }).catch(() => []),
-        db.loginEvent.findMany({ where: { createdAt: { gte: week  }, userId: { not: null } }, select: { method: true, userId: true } }).catch(() => []),
-        db.loginEvent.findMany({ where: { createdAt: { gte: month }, userId: { not: null } }, select: { method: true, userId: true } }).catch(() => []),
+        db.loginEvent.findMany({ where: { createdAt: { gte: today } }, select: { method: true, userId: true } }).catch(() => []),
+        db.loginEvent.findMany({ where: { createdAt: { gte: week  } }, select: { method: true, userId: true } }).catch(() => []),
+        db.loginEvent.findMany({ where: { createdAt: { gte: month } }, select: { method: true, userId: true } }).catch(() => []),
         db.pageView.findMany({ where: { createdAt: { gte: month } }, distinct: ['sessionId'], select: { sessionId: true } }),
         db.pageView.findMany({ where: { createdAt: { gte: month }, path: { startsWith: '/casting' } }, distinct: ['sessionId'], select: { sessionId: true } }),
         db.pageView.findMany({ where: { createdAt: { gte: month }, event: 'apply_start' }, distinct: ['sessionId'], select: { sessionId: true } }),
