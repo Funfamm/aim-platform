@@ -5,19 +5,16 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
 type Stage = 'idle' | 'exit' | 'enter'
-type Direction = 'forward' | 'back'
 
-const DURATION_EXIT  = 100  // ms — old page exits
-const DURATION_ENTER = 280  // ms — new page enters (iOS-feel spring)
-const EASING_ENTER   = 'cubic-bezier(0.22, 1, 0.36, 1)' // iOS standard spring
+const DURATION_EXIT  = 120  // ms — old page fades out
+const DURATION_ENTER = 220  // ms — new page fades in
 
 export default function PageTransition({ children }: { children: React.ReactNode }) {
     const pathname = usePathname()
     const isMobile = useIsMobile()
 
     const [displayChildren, setDisplayChildren] = useState(children)
-    const [stage,     setStage]     = useState<Stage>('idle')
-    const [direction, setDirection] = useState<Direction>('forward')
+    const [stage, setStage] = useState<Stage>('idle')
 
     const prevPathname = useRef(pathname)
     const prevIdx      = useRef<number>(
@@ -28,7 +25,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
     // Track whether the mobile check has ever resolved to true.
     // This ref prevents the animation from firing before useIsMobile's
     // useEffect has run — avoiding the hydration race that caused the
-    // client-side crash on mobilev login navigation.
+    // client-side crash on mobile login navigation.
     const isMobileResolvedRef = useRef(false)
     useEffect(() => {
         if (isMobile) isMobileResolvedRef.current = true
@@ -44,9 +41,8 @@ export default function PageTransition({ children }: { children: React.ReactNode
             return
         }
 
-        // Detect direction via history idx (populated by Next.js App Router)
+        // Track history index (for future use)
         const currentIdx = window.history.state?.idx ?? prevIdx.current + 1
-        const dir: Direction = currentIdx >= prevIdx.current ? 'forward' : 'back'
         prevIdx.current = currentIdx
 
         // If we haven't confirmed we're on mobile yet (e.g. first render,
@@ -58,8 +54,7 @@ export default function PageTransition({ children }: { children: React.ReactNode
         }
 
         // Auth-related redirects (login, register, verify, forgot-password)
-        // should feel instant — no slide animation, just a fast crossfade.
-        // The slide animation on these routes makes redirects feel glitchy.
+        // should feel instant — no crossfade, just swap.
         const authRoutes = ['/login', '/register', '/verify-email', '/forgot-password']
         const isAuthTransition = authRoutes.some(r => pathname.includes(r) || prevPathname.current.includes(r))
         if (isAuthTransition) {
@@ -68,8 +63,15 @@ export default function PageTransition({ children }: { children: React.ReactNode
             return
         }
 
-        // Mobile confirmed: slide exit → enter
-        setDirection(dir)
+        // ── OPACITY-ONLY crossfade ──────────────────────────────────────
+        // IMPORTANT: We must NOT use CSS `transform` during page transitions.
+        // Any transform (even translateX(0)) creates a new containing block,
+        // which reparents all position:fixed children (hero backgrounds,
+        // video overlays, gradient layers) from the viewport into this div.
+        // On the homepage especially, this causes the fixed background to
+        // "jump" with the slide animation — the glitch the user sees.
+        // Opacity-only crossfade avoids this entirely while still feeling
+        // smooth and intentional.
         setStage('exit')
         clearTimer()
 
@@ -95,34 +97,28 @@ export default function PageTransition({ children }: { children: React.ReactNode
         // pathname change (the root cause of the mobile login crash).
         if (!isMobile) return {};
 
-        // When idle we avoid any transform so that position:sticky works.
+        // When idle — neutral wrapper, no transform, position:fixed works normally.
         if (stage === 'idle') return {
             opacity: 1,
-            willChange: 'auto',
         };
+
         if (stage === 'exit') return {
-            transform: direction === 'forward' ? 'translateX(-8px)' : 'translateX(8px)',
             opacity: 0,
-            transition: `transform ${DURATION_EXIT}ms ease-in, opacity ${DURATION_EXIT}ms ease-in`,
-            willChange: 'transform, opacity',
+            transition: `opacity ${DURATION_EXIT}ms ease-in`,
         }
-        // enter — @keyframes slideInRight/slideInLeft defined in globals.css
+
+        // enter — fade in
         return {
-            transform: 'translateX(0)',
             opacity: 1,
-            transition: `transform ${DURATION_ENTER}ms ${EASING_ENTER}, opacity ${DURATION_ENTER}ms ${EASING_ENTER}`,
-            willChange: 'transform, opacity',
-            animation: `${direction === 'forward' ? 'slideInRight' : 'slideInLeft'} ${DURATION_ENTER}ms ${EASING_ENTER} both`,
+            transition: `opacity ${DURATION_ENTER}ms ease-out`,
         }
     }
 
     // ALWAYS render the same <div> element — never swap to a fragment.
     // Changing the root element type during a concurrent state update causes
     // React to throw a client-side exception on mobile devices.
-    // Apply overflow:hidden only while animating; idle state must be neutral for sticky.
-    const isAnimating = stage !== 'idle';
     return (
-        <div style={{ minHeight: '100dvh', overflow: isAnimating ? 'hidden' : undefined, ...getStyle() }}>
+        <div style={{ minHeight: '100dvh', ...getStyle() }}>
             {displayChildren}
         </div>
     );

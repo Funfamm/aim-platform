@@ -42,6 +42,15 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     // device state — avoids the timing gap where the prop was still `false`
     // on the first render while useIsMobile had not yet fired in the parent.
     const isMobileDevice = useIsMobile(isMobile)
+
+    // Keep a ref that always reflects the latest isMobileDevice value.
+    // The fetch effect's async .then() callback would otherwise capture a
+    // stale closure value — if useIsMobile resolves to `true` before the
+    // fetch completes, the callback still used the old `false`, causing
+    // desktop videos to show on mobile instead of the assigned mobile images.
+    const isMobileRef = useRef(isMobileDevice)
+    useEffect(() => { isMobileRef.current = isMobileDevice }, [isMobileDevice])
+
     // ── Image state ──
     const [bgImages, setBgImages] = useState<string[]>([])
     const [currentBg, setCurrentBg] = useState(0)
@@ -72,8 +81,8 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                 ...(Array.isArray(heroImgData) ? heroImgData : []),
             ]
             rawImagesRef.current = combined.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-            // Apply device filter immediately
-            const filtered = rawImagesRef.current.filter(m => matchesTarget(m.target, isMobileDevice))
+            // Read latest device state via ref — NOT the stale closure value
+            const filtered = rawImagesRef.current.filter(m => matchesTarget(m.target, isMobileRef.current))
             setBgImages(filtered.map(m => m.url))
             setCurrentBg(0)
         })
@@ -83,7 +92,8 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
             .then((data: HeroVideo[]) => {
                 if (Array.isArray(data)) {
                     rawVideosRef.current = data
-                    const filtered = data.filter(m => matchesTarget(m.target, isMobileDevice))
+                    // Read latest device state via ref — NOT the stale closure value
+                    const filtered = data.filter(m => matchesTarget(m.target, isMobileRef.current))
                     setVideos(filtered)
                 }
             })
