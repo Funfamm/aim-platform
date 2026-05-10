@@ -6,8 +6,9 @@ Sentry.init({
   environment: process.env.NODE_ENV ?? 'development',
   release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
 
-  // Performance: capture 10% of traces in production, 100% in development
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+  // Performance: 20% in production so LCP/FCP/TTFB pageload spans are visible
+  // Seer confirmed 0 frontend pageload spans at 10% — raised to 20%
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
 
   // Session replay: 10% of sessions, 100% of sessions with errors
   replaysSessionSampleRate: 0.1,
@@ -25,6 +26,9 @@ Sentry.init({
       formTitle: 'Report an Issue',
     }),
   ],
+
+  // Enable Sentry Logs — pipes logger.info/warn calls into Explore > Logs
+  _experiments: { enableLogs: true },
 
   // Filter out non-critical / network noise before sending to Sentry
   beforeSend(event) {

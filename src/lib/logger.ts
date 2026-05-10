@@ -107,18 +107,29 @@ export const logger = {
         // Sentry — fire-and-forget, never blocks the request
         getSentry().then((Sentry) => {
             if (!Sentry) return
-            Sentry.withScope((scope) => {
-                scope.setTag('source', source)
-                if (opts?.userId) scope.setUser({ id: opts.userId })
-                if (opts?.meta) scope.setExtras(opts.meta as Record<string, unknown>)
-                if (opts?.ip) scope.setTag('ip', opts.ip)
+            // Sentry Logs — appears in Explore > Logs with source/userId/meta attributes
+        const sentryLogger = (Sentry as any).logger
+        if (sentryLogger?.error) {
+          sentryLogger.error(`${source}: ${message}`, {
+            source,
+            userId: opts?.userId,
+            ...opts?.meta,
+          })
+        }
 
-                if (opts?.error instanceof Error) {
-                    Sentry.captureException(opts.error)
-                } else {
-                    Sentry.captureMessage(`${source}: ${message}`, 'error')
-                }
-            })
+        // Also capture as an Issue for alerting
+        Sentry.withScope((scope) => {
+          scope.setTag('source', source)
+          if (opts?.userId) scope.setUser({ id: opts.userId })
+          if (opts?.meta) scope.setExtras(opts.meta as Record<string, unknown>)
+          if (opts?.ip) scope.setTag('ip', opts.ip)
+
+          if (opts?.error instanceof Error) {
+            Sentry.captureException(opts.error)
+          } else {
+            Sentry.captureMessage(`${source}: ${message}`, 'error')
+          }
+        })
         }).catch(() => { /* Sentry unavailable */ })
 
         return entry
@@ -144,12 +155,13 @@ export const logger = {
         // Add as a Sentry breadcrumb (appears in context of subsequent errors)
         getSentry().then((Sentry) => {
             if (!Sentry) return
-            Sentry.addBreadcrumb({
-                category: source,
-                message,
-                level: 'warning',
-                data: meta,
-            })
+            // Sentry Logs — warn appears in Explore > Logs
+        const sentryLogger = (Sentry as any).logger
+        if (sentryLogger?.warn) {
+          sentryLogger.warn(`${source}: ${message}`, { source, ...meta })
+        } else {
+          Sentry.addBreadcrumb({ category: source, message, level: 'warning', data: meta })
+        }
         }).catch(() => { /* Sentry unavailable */ })
 
         return entry
@@ -172,12 +184,13 @@ export const logger = {
         // Add as a Sentry breadcrumb for timeline context
         getSentry().then((Sentry) => {
             if (!Sentry) return
-            Sentry.addBreadcrumb({
-                category: source,
-                message,
-                level: 'info',
-                data: meta,
-            })
+            // Sentry Logs — info appears in Explore > Logs
+        const sentryLogger = (Sentry as any).logger
+        if (sentryLogger?.info) {
+          sentryLogger.info(`${source}: ${message}`, { source, ...meta })
+        } else {
+          Sentry.addBreadcrumb({ category: source, message, level: 'info', data: meta })
+        }
         }).catch(() => { /* Sentry unavailable */ })
 
         return entry

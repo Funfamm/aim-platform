@@ -30,4 +30,7 @@ Sentry.init({
     }
     return event
   },
+
+  // Enable Sentry Logs — server-side logger.info/warn visible in Explore > Logs
+  _experiments: { enableLogs: true },
 });
