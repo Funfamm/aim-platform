@@ -1,15 +1,13 @@
 import { redirect, notFound } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import nextDynamic from 'next/dynamic'
 import Footer from '@/components/Footer'
 import CastShowcase from '@/components/CastShowcase'
 import BackButton from '@/components/BackButton'
 import { getLocale } from 'next-intl/server'
 
-// ssr:false — WatchPlayer uses browser video APIs (HLS.js, fullscreen, etc.)
-// Server-rendering it caused React error #418 (hydration mismatch) on iOS/Edge.
-const WatchPlayer = nextDynamic(() => import('@/components/WatchPlayer'), { ssr: false })
+// Client wrapper for WatchPlayer to avoid SSR restriction.
+import WatchPlayerClient from '@/components/WatchPlayerClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -131,7 +129,7 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
     return (
         <>
             <BackButton fallbackHref={`/works/${slug}`} labelKey="backToProject" variant="overlay" />
-            <WatchPlayer project={serializedProject} userPreferredLang={userPreferredLang} />
+            <WatchPlayerClient project={serializedProject} userPreferredLang={userPreferredLang} />
             {serializedCast.length > 0 && (
                 <CastShowcase
                     cast={serializedCast}
