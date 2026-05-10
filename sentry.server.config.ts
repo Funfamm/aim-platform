@@ -33,6 +33,12 @@ Sentry.init({
 
   // Filter out noisy non-actionable errors
   beforeSend(event) {
+    // P2002 = unique constraint violation (e.g. duplicate slug) — user input error, not a system error
+    const isP2002 = event.exception?.values?.some(v =>
+      v.value?.includes('Unique constraint failed')
+    )
+    if (isP2002) return null
+
     // Skip connection pool timeouts that are transient — already alerted via DB metrics
     if (event.exception?.values?.some(v =>
       v.value?.includes('connection pool') ||
