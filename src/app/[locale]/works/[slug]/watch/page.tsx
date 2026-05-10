@@ -1,17 +1,26 @@
 import { redirect, notFound } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import dynamic from 'next/dynamic'
 import Footer from '@/components/Footer'
-import WatchPlayer from '@/components/WatchPlayer'
 import CastShowcase from '@/components/CastShowcase'
 import BackButton from '@/components/BackButton'
 import { getLocale } from 'next-intl/server'
+
+// ssr:false — WatchPlayer uses browser video APIs (HLS.js, fullscreen, etc.)
+// Server-rendering it caused React error #418 (hydration mismatch) on iOS/Edge.
+const WatchPlayer = dynamic(() => import('@/components/WatchPlayer'), { ssr: false })
 
 export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
-    const project = await prisma.project.findUnique({ where: { slug } })
+    // Select only the fields needed for metadata — avoids fetching large JSON columns
+    // (translations, credits, gallery) which was causing 1678ms Prisma queries.
+    const project = await prisma.project.findUnique({
+        where: { slug },
+        select: { title: true, description: true },
+    })
     if (!project) return { title: 'Not Found' }
     return {
         title: `Watch ${project.title} | AIM Studio`,

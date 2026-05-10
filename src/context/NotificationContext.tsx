@@ -100,13 +100,16 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     const markAllRead = useCallback(() => setUnreadCount(0), [])
     const clearNewNotification = useCallback(() => setNewNotification(null), [])
 
-    // Poll every 15s when logged in
+    // Poll every 60s when logged in.
+    // 15s was too aggressive — Sentry traced 13 calls in one watch-page session.
+    // Pause entirely on watch pages: user is watching content, not awaiting notifications.
+    const isWatchPage = pathname?.includes('/watch') ?? false
     useEffect(() => {
-        if (!user) { queueMicrotask(() => setUnreadCount(0)); return }
+        if (!user || isWatchPage) { queueMicrotask(() => setUnreadCount(0)); return }
         queueMicrotask(() => refresh())
-        const id = setInterval(refresh, 15_000)
+        const id = setInterval(refresh, 60_000)
         return () => clearInterval(id)
-    }, [user, refresh])
+    }, [user, refresh, isWatchPage])
 
     return (
         <NotificationContext.Provider value={{ unreadCount, refresh, markAllRead, newNotification, clearNewNotification }}>
