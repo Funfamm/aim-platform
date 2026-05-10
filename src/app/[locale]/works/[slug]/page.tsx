@@ -6,7 +6,9 @@ import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { cache } from 'react'
 
-export const revalidate = 60
+// 1 hour — admin updates call revalidatePath() immediately, no need to regenerate every 60s.
+// Most visitors hit the pre-built cache and get the page instantly.
+export const revalidate = 3600
 
 // Cache project query to share between generateMetadata and page render
 const getProject = cache(async (slug: string) => {
@@ -54,12 +56,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
-    const project = await getProject(slug)
+
+    // Run all 3 DB calls in parallel — previously sequential, costing ~150ms extra per ISR hit
+    const [project, session, siteSettings] = await Promise.all([
+        getProject(slug),
+        getUserSession(),
+        prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true } }).catch(() => null),
+    ])
 
     if (!project) notFound()
 
-    // Fetch session early — needed for both the admin preview bypass and trailer logic
-    const session = await getUserSession()
     const isLoggedIn = !!session?.userId
 
     // Block direct access to unpublished projects — admins can preview
@@ -69,12 +75,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     }
 
     // Enforce trailer access — trailers are locked behind login (same as films)
-    let siteAllowTrailers = true
-    try {
-        const ss = await prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true } })
-        if (ss) siteAllowTrailers = ss.allowPublicTrailers
-    } catch { /* schema drift safe */ }
-    // Logged-in users always see trailers; logged-out users only if public trailers are allowed
+    const siteAllowTrailers = siteSettings?.allowPublicTrailers ?? true
     const showTrailer = siteAllowTrailers || isLoggedIn
 
     // Serialize dates for client component
