@@ -46,5 +46,6 @@ export async function register() {
 }
 
 // Automatically captures ALL unhandled server-side request errors (App Router).
-// Required by @sentry/nextjs >= 8.28.0 — skill guide mandates this export.
-export { onRequestError } from '@sentry/nextjs'
+// captureRequestError is the v9 equivalent — onRequestError is the Next.js instrumentation hook name.
+import { captureRequestError } from '@sentry/nextjs'
+export const onRequestError = captureRequestError
