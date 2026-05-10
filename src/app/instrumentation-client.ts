@@ -13,6 +13,15 @@ Sentry.init({
   // Seer confirmed 0 frontend pageload spans at 10% — raised to 20%
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
 
+  // Propagate trace headers to these services so browser→server→external spans connect
+  tracePropagationTargets: [
+    'localhost',
+    /^https:\/\/impactaistudio\.com/,
+    /^https:\/\/graph\.microsoft\.com/,
+    /^https:\/\/.*\.r2\.cloudflarestorage\.com/,
+    /^https:\/\/.*\.livekit\.cloud/,
+  ],
+
   // Session replay: 10% of sessions, 100% of sessions with errors
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,

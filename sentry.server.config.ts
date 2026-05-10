@@ -6,8 +6,13 @@ Sentry.init({
   environment: process.env.NODE_ENV ?? 'development',
   release: process.env.VERCEL_GIT_COMMIT_SHA,
 
-  // Capture 20% of traces in production — enough for meaningful data without quota burn
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  // Smart sampling per route — cron routes fire every 15min so 5% is plenty;
+  // admin routes get 30% for deeper visibility; user-facing pages at 20%
+  tracesSampler: ({ name }: { name: string }) => {
+    if (name.includes('/api/cron/')) return process.env.NODE_ENV === 'production' ? 0.05 : 1.0
+    if (name.includes('/api/admin/')) return process.env.NODE_ENV === 'production' ? 0.3 : 1.0
+    return process.env.NODE_ENV === 'production' ? 0.2 : 1.0
+  },
 
   // CPU profiling: 10% of sampled traces get full profiles
   profilesSampleRate: 0.1,
