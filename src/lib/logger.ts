@@ -108,7 +108,7 @@ export const logger = {
         getSentry().then((Sentry) => {
             if (!Sentry) return
             // Sentry Logs — appears in Explore > Logs with source/userId/meta attributes
-        const sentryLogger = (Sentry as any).logger
+        const sentryLogger = Sentry.logger
         if (sentryLogger?.error) {
           sentryLogger.error(`${source}: ${message}`, {
             source,
@@ -156,7 +156,7 @@ export const logger = {
         getSentry().then((Sentry) => {
             if (!Sentry) return
             // Sentry Logs — warn appears in Explore > Logs
-        const sentryLogger = (Sentry as any).logger
+        const sentryLogger = Sentry.logger
         if (sentryLogger?.warn) {
           sentryLogger.warn(`${source}: ${message}`, { source, ...meta })
         } else {
@@ -185,7 +185,7 @@ export const logger = {
         getSentry().then((Sentry) => {
             if (!Sentry) return
             // Sentry Logs — info appears in Explore > Logs
-        const sentryLogger = (Sentry as any).logger
+        const sentryLogger = Sentry.logger
         if (sentryLogger?.info) {
           sentryLogger.info(`${source}: ${message}`, { source, ...meta })
         } else {

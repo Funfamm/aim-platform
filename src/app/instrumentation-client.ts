@@ -6,6 +6,9 @@ Sentry.init({
   environment: process.env.NODE_ENV ?? 'development',
   release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
 
+  // Include IP and user data in events
+  sendDefaultPii: true,
+
   // Performance: 20% in production so LCP/FCP/TTFB pageload spans are visible
   // Seer confirmed 0 frontend pageload spans at 10% — raised to 20%
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
@@ -13,6 +16,9 @@ Sentry.init({
   // Session replay: 10% of sessions, 100% of sessions with errors
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
+
+  // Enable Sentry Logs — pipes logger.info/warn calls into Explore > Logs
+  enableLogs: true,
 
   integrations: [
     Sentry.replayIntegration(),
@@ -26,9 +32,6 @@ Sentry.init({
       formTitle: 'Report an Issue',
     }),
   ],
-
-  // Enable Sentry Logs — pipes logger.info/warn calls into Explore > Logs
-  _experiments: { enableLogs: true },
 
   // Filter out non-critical / network noise before sending to Sentry
   beforeSend(event) {
@@ -44,3 +47,7 @@ Sentry.init({
     return event
   },
 });
+
+// Hook into App Router navigation transitions — captures route change spans
+// so Sentry shows navigation timing alongside pageload spans
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

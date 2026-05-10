@@ -12,6 +12,15 @@ Sentry.init({
   // CPU profiling: 10% of sampled traces get full profiles
   profilesSampleRate: 0.1,
 
+  // Include IP, request headers, and user data in events
+  sendDefaultPii: true,
+
+  // Attach local variable values to stack frames — makes errors much easier to debug
+  includeLocalVariables: true,
+
+  // Enable Sentry Logs — server-side logger.info/warn visible in Explore > Logs
+  enableLogs: true,
+
   integrations: [
     // Track slow Prisma queries as spans
     Sentry.prismaIntegration(),
@@ -30,7 +39,4 @@ Sentry.init({
     }
     return event
   },
-
-  // Enable Sentry Logs — server-side logger.info/warn visible in Explore > Logs
-  _experiments: { enableLogs: true },
 });

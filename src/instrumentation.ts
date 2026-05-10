@@ -44,3 +44,7 @@ export async function register() {
     await import('../sentry.edge.config')
   }
 }
+
+// Automatically captures ALL unhandled server-side request errors (App Router).
+// Required by @sentry/nextjs >= 8.28.0 — skill guide mandates this export.
+export { onRequestError } from '@sentry/nextjs'

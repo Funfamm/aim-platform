@@ -175,11 +175,10 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(withNextIntl(nextConfig), {
   org: 'aim-platform',
   project: 'javascript-nextjs',
-  silent: false,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  widenClientFileUpload: true,
+  tunnelRoute: '/api/st',
+  silent: !process.env.CI,
   disableLogger: false,
   telemetry: false,
-  sourcemaps: {
-    disable: false,
-  },
-  tunnelRoute: '/api/st',
-});
+});
