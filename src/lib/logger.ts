@@ -1,11 +1,9 @@
 /**
- * Structured Error Logger
+ * Structured Error Logger — Sentry-integrated
  *
- * File-based error logging with structured JSON output.
- * No Sentry required — errors are written to a local log file
- * and queryable via the admin API.
- *
- * In production, swap this for a real service (Sentry, LogRocket, etc.)
+ * Every logger.error() call now also fires Sentry.captureException/captureMessage,
+ * so ALL application errors surface in the Sentry Issues dashboard with full context.
+ * logger.warn() adds a Sentry breadcrumb for timeline context on subsequent errors.
  */
 
 import fs from 'fs'
@@ -71,6 +69,15 @@ function writeToFile(entry: LogEntry) {
     }
 }
 
+/** Lazily get Sentry without hard dependency — safe in edge/client environments */
+async function getSentry() {
+    try {
+        return await import('@sentry/nextjs')
+    } catch {
+        return null
+    }
+}
+
 export const logger = {
     error(source: string, message: string, opts?: { error?: unknown; meta?: Record<string, unknown>; userId?: string; ip?: string }) {
         const entry: LogEntry = {
@@ -97,6 +104,23 @@ export const logger = {
         // File output
         writeToFile(entry)
 
+        // Sentry — fire-and-forget, never blocks the request
+        getSentry().then((Sentry) => {
+            if (!Sentry) return
+            Sentry.withScope((scope) => {
+                scope.setTag('source', source)
+                if (opts?.userId) scope.setUser({ id: opts.userId })
+                if (opts?.meta) scope.setExtras(opts.meta as Record<string, unknown>)
+                if (opts?.ip) scope.setTag('ip', opts.ip)
+
+                if (opts?.error instanceof Error) {
+                    Sentry.captureException(opts.error)
+                } else {
+                    Sentry.captureMessage(`${source}: ${message}`, 'error')
+                }
+            })
+        }).catch(() => { /* Sentry unavailable */ })
+
         return entry
     },
 
@@ -117,6 +141,17 @@ export const logger = {
         }
         writeToFile(entry)
 
+        // Add as a Sentry breadcrumb (appears in context of subsequent errors)
+        getSentry().then((Sentry) => {
+            if (!Sentry) return
+            Sentry.addBreadcrumb({
+                category: source,
+                message,
+                level: 'warning',
+                data: meta,
+            })
+        }).catch(() => { /* Sentry unavailable */ })
+
         return entry
     },
 
@@ -133,6 +168,17 @@ export const logger = {
         console.log(`[INFO] ${source}: ${message}`)
         // Only write to file, don't clutter in-memory buffer with info logs
         writeToFile(entry)
+
+        // Add as a Sentry breadcrumb for timeline context
+        getSentry().then((Sentry) => {
+            if (!Sentry) return
+            Sentry.addBreadcrumb({
+                category: source,
+                message,
+                level: 'info',
+                data: meta,
+            })
+        }).catch(() => { /* Sentry unavailable */ })
 
         return entry
     },

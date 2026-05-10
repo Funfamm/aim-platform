@@ -30,7 +30,7 @@ config({ path: resolve(projectRoot, '.env') })
 const PRODUCTION_HOST_PATTERNS = [
   '.neon.tech',           // Neon PostgreSQL
   '.supabase.co',         // Supabase
-  '.render.com',          // Render managed PG
+  '.render.com',          // Render (legacy — no longer used)
   '.railway.app',         // Railway
   '.planetscale.com',     // PlanetScale
   '.amazonaws.com',       // AWS RDS
@@ -99,7 +99,7 @@ if (isProduction && isDestructive && !isSafe) {
   console.error('║  To fix this:                                                  ║')
   console.error('║  1. Update .env to use your DEV database URL                   ║')
   console.error('║  2. Or create a Neon dev branch for safe development           ║')
-  console.error('║  3. Keep production URLs only in Render env vars               ║')
+  console.error('║  3. Keep production URLs only in Vercel env vars               ║')
   console.error('║                                                                ║')
   console.error('║  For production migrations, use:  npm run db:deploy            ║')
   console.error('║  (This runs prisma migrate deploy — safe & non-destructive)    ║')

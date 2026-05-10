@@ -5,19 +5,19 @@ import { withSentryConfig } from '@sentry/nextjs';
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
-  // NOTE: 'standalone' output removed â€” it is for Docker/Render only.
+  // NOTE: 'standalone' output removed Ã¢â‚¬â€ it is for Docker/Render only.
   // Vercel handles bundling natively; standalone mode causes >250MB function sizes.
   productionBrowserSourceMaps: false,
 
   serverExternalPackages: [
-    // Prisma â€” needs native binaries, must stay external
+    // Prisma Ã¢â‚¬â€ needs native binaries, must stay external
     '@prisma/client',
     '.prisma/client',
-    // Heavy ML/WASM libraries â€” client-only, must NOT be bundled into server functions
+    // Heavy ML/WASM libraries Ã¢â‚¬â€ client-only, must NOT be bundled into server functions
     '@huggingface/transformers',
     '@ffmpeg/ffmpeg',
     '@ffmpeg/util',
-    // Redis / queue â€” server-only but very large
+    // Redis / queue Ã¢â‚¬â€ server-only but very large
     'bullmq',
     'ioredis',
     // Misc server packages
@@ -31,14 +31,14 @@ const nextConfig: NextConfig = {
 
   // outputFileTracingExcludes: Tells Vercel's file tracer to PHYSICALLY exclude
   // these packages from the deployment bundle. serverExternalPackages alone is
-  // not enough â€” Vercel still traces and includes the files. This is the real fix
+  // not enough Ã¢â‚¬â€ Vercel still traces and includes the files. This is the real fix
   // for the 250MB serverless function size limit.
   outputFileTracingExcludes: {
     '*': [
       // #1 OFFENDER: ONNX Runtime native binaries (404 MB in build log!)
       'node_modules/onnxruntime-node/**',
       'node_modules/onnxruntime-web/**',
-      // ML framework â€” references onnxruntime, must be excluded too (~3MB JS)
+      // ML framework Ã¢â‚¬â€ references onnxruntime, must be excluded too (~3MB JS)
       'node_modules/@huggingface/transformers/**',
       // Sharp native image processing binaries (32 MB in build log)
       'node_modules/@img/**',
@@ -74,7 +74,7 @@ const nextConfig: NextConfig = {
     if (isServer) {
       // NOTE: @ffmpeg/ffmpeg and @ffmpeg/util are listed in serverExternalPackages above,
       // which is enough to keep them out of the SSR bundle.  Do NOT also alias them to
-      // `false` here — that prevents Node from resolving them at runtime when the client
+      // `false` here â€” that prevents Node from resolving them at runtime when the client
       // component is pre-rendered, which causes ERR_MODULE_NOT_FOUND on Vercel.
     }
 
@@ -95,7 +95,7 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    // unoptimized was true — re-enabled for Vercel Pro (5,000 source images/month).
+    // unoptimized was true â€” re-enabled for Vercel Pro (5,000 source images/month).
     // Next.js will now serve WebP/AVIF automatically at the correct srcset sizes,
     // eliminating raw PNG payloads (notify-bg-2.png was 6.2 MB unoptimized).
     formats: ['image/avif', 'image/webp'],
@@ -112,14 +112,14 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      // Canonical domain enforcement: www → non-www (permanent, preserves method)
+      // Canonical domain enforcement: www â†’ non-www (permanent, preserves method)
       // This runs before any app code, preventing OAuth state cookie mismatches
       // caused by cookies being scoped to impactaistudio.com not www.impactaistudio.com
       {
         source: '/:path*',
         has: [{ type: 'host', value: 'www.impactaistudio.com' }],
         destination: 'https://impactaistudio.com/:path*',
-        permanent: true, // 308 — preserves request method (important for OAuth POST flows)
+        permanent: true, // 308 â€” preserves request method (important for OAuth POST flows)
       },
     ];
   },
@@ -132,10 +132,10 @@ const nextConfig: NextConfig = {
           { key: 'Permissions-Policy', value: 'camera=*, microphone=*, display-capture=(self)' },
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
-          // New â€” transport security
+          // New Ã¢â‚¬â€ transport security
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          // New â€” Content Security Policy
+          // New Ã¢â‚¬â€ Content Security Policy
           {
             key: 'Content-Security-Policy',
             value: [
@@ -173,12 +173,13 @@ const nextConfig: NextConfig = {
 };
 
 export default withSentryConfig(withNextIntl(nextConfig), {
-  // Suppress auth token warnings during build (no Sentry org set up yet)
-  silent: true,
-  disableLogger: true,
+  org: 'aim-platform',
+  project: 'aim-platform',
+  silent: false,
+  disableLogger: false,
   telemetry: false,
-  // Disable source map uploads â€” no SENTRY_AUTH_TOKEN in CI
   sourcemaps: {
-    disable: true,
+    disable: false,
   },
+  tunnelRoute: '/api/st',
 });

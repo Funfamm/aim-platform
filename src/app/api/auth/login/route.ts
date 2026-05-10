@@ -11,6 +11,8 @@ import { recordAuthSuccess, recordAuthFailure } from '@/lib/metrics'
 import { readInviteCookie } from '@/lib/invite-cookie'
 import { sendTransactionalEmail } from '@/lib/email-router'
 import { accountLockedEmail } from '@/lib/email-templates'
+import { setSentryUser } from '@/lib/sentry-user-context'
+import { trackAuthEvent } from '@/lib/analytics/sentry-events'
 
 export async function POST(request: Request) {
     const blocked = authLimiter.check(request)
@@ -74,6 +76,7 @@ export async function POST(request: Request) {
         const valid = await compare(password, user.passwordHash)
         if (!valid) {
             recordAuthFailure('invalid_credentials')
+            trackAuthEvent('login_failed', 'credentials')
             const MAX_ATTEMPTS = 5
             const LOCKOUT_MINUTES = 60
             const newAttempts = (user.failedLoginAttempts ?? 0) + 1
@@ -166,6 +169,8 @@ export async function POST(request: Request) {
         void handleDeviceFingerprint(request, user.id, user.name, user.email, tokenVersion).catch(() => {})
 
         recordAuthSuccess(user.role)
+        setSentryUser({ id: user.id, email: user.email, role: user.role })
+        trackAuthEvent('login', 'credentials')
 
         // ── Visitor Intelligence: log this login event ─────────────────────────
         void (prisma as any).loginEvent.create({
