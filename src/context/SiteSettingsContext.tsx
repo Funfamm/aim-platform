@@ -66,8 +66,11 @@ const SiteSettingsContext = createContext<SiteSettingsContextValue>({
 });
 
 export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
-  // Initialise from cache instantly (no null flash), fallback to stable defaults.
-  const [settings, setSettings] = useState<SiteSettings>(() => readCache() ?? STABLE_DEFAULTS);
+  // Always start with STABLE_DEFAULTS — same value server and client use on first render.
+  // Reading localStorage in the useState initializer was causing React error #418:
+  // server renders with STABLE_DEFAULTS, but returning clients rendered with cached
+  // settings (e.g. castingCallsEnabled: true), producing different Navbar HTML.
+  const [settings, setSettings] = useState<SiteSettings>(STABLE_DEFAULTS)
 
   const fetchSettings = useCallback(() => {
     fetch('/api/site-settings')
@@ -87,6 +90,10 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchSettings]);
 
   useEffect(() => {
+    // Apply cached settings immediately after hydration to avoid flash,
+    // then fetch fresh data to stay up to date.
+    const cached = readCache()
+    if (cached) setSettings(cached)
     fetchSettings();
     // Listen for storage events so admin saves in other tabs apply immediately
     const handleStorage = (e: StorageEvent) => {
