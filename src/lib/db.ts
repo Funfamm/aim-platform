@@ -26,12 +26,16 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 function buildDatasourceUrl(): string | undefined {
     const url = process.env.DATABASE_URL
     if (!url) return undefined
-    // Append pool settings if not already present
+    // Append pool settings if not already present.
+    // On Vercel serverless: connection_limit=1 because each function invocation
+    // handles exactly one request — claiming 10 connections per invocation exhausts
+    // the Neon pool when multiple functions run concurrently (confirmed cause of
+    // "Timed out fetching a new connection" errors on the works page).
     const sep = url.includes('?') ? '&' : '?'
     const extras: string[] = []
-    if (!url.includes('connect_timeout')) extras.push('connect_timeout=15')
-    if (!url.includes('pool_timeout'))    extras.push('pool_timeout=15')
-    if (!url.includes('connection_limit')) extras.push('connection_limit=10')
+    if (!url.includes('connect_timeout')) extras.push('connect_timeout=10')
+    if (!url.includes('pool_timeout'))    extras.push('pool_timeout=20')
+    if (!url.includes('connection_limit')) extras.push('connection_limit=1')
     return extras.length > 0 ? `${url}${sep}${extras.join('&')}` : url
 }
 
