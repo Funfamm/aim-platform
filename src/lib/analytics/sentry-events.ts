@@ -1,8 +1,8 @@
 /**
  * Sentry Engagement Events
  * ------------------------
- * Custom Sentry spans and measurements for key engagement flows.
- * These appear in Sentry Performance and can be used to build custom dashboards.
+ * Custom Sentry breadcrumbs and spans for key engagement flows.
+ * These appear in Sentry's Issues timeline and Session Replays.
  *
  * Usage:
  *   import { trackVideoPlay } from '@/lib/analytics/sentry-events'
@@ -18,15 +18,15 @@ export function trackVideoPlay(opts: { projectId: string; title: string; type?: 
         level: 'info',
         data: opts,
     })
-    Sentry.metrics.increment('video.play', 1, {
-        tags: { project_id: opts.projectId, type: opts.type ?? 'unknown' },
-    })
 }
 
 /** Track video completion (watched >90%) */
 export function trackVideoComplete(opts: { projectId: string; title: string }) {
-    Sentry.metrics.increment('video.complete', 1, {
-        tags: { project_id: opts.projectId },
+    Sentry.addBreadcrumb({
+        category: 'engagement.video',
+        message: `Video complete: ${opts.title}`,
+        level: 'info',
+        data: opts,
     })
 }
 
@@ -38,9 +38,6 @@ export function trackAuthEvent(type: 'login' | 'register' | 'logout' | 'login_fa
         level: type === 'login_failed' ? 'warning' : 'info',
         data: { method },
     })
-    Sentry.metrics.increment(`auth.${type}`, 1, {
-        tags: { method: method ?? 'unknown' },
-    })
 }
 
 /** Track donation/payment events */
@@ -51,15 +48,6 @@ export function trackDonation(opts: { amount: number; currency: string; status: 
         level: opts.status === 'failed' ? 'error' : 'info',
         data: opts,
     })
-    Sentry.metrics.increment(`donation.${opts.status}`, 1, {
-        tags: { currency: opts.currency },
-    })
-    if (opts.status === 'completed') {
-        Sentry.metrics.distribution('donation.amount', opts.amount, {
-            unit: 'none',
-            tags: { currency: opts.currency },
-        })
-    }
 }
 
 /** Track casting submission */
@@ -70,14 +58,14 @@ export function trackCastingSubmit(opts: { callId: string; status: 'submitted' |
         level: opts.status === 'failed' ? 'error' : 'info',
         data: opts,
     })
-    Sentry.metrics.increment(`casting.${opts.status}`, 1, {
-        tags: { call_id: opts.callId },
-    })
 }
 
 /** Track subscription sign-ups */
 export function trackSubscription(opts: { status: 'subscribed' | 'unsubscribed' | 'failed'; source?: string }) {
-    Sentry.metrics.increment(`subscription.${opts.status}`, 1, {
-        tags: { source: opts.source ?? 'unknown' },
+    Sentry.addBreadcrumb({
+        category: 'engagement.subscription',
+        message: `Subscription ${opts.status}`,
+        level: 'info',
+        data: opts,
     })
 }
