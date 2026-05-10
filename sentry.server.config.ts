@@ -39,14 +39,20 @@ Sentry.init({
     )
     if (isP2002) return null
 
+    // Neon cold start — transient; group into one issue rather than spamming
+    const isNeonColdStart = event.exception?.values?.some(v =>
+      v.value?.includes("Can't reach database server")
+    )
+
     // Skip connection pool timeouts that are transient — already alerted via DB metrics
-    if (event.exception?.values?.some(v =>
+    const isTransientInfra = event.exception?.values?.some(v =>
       v.value?.includes('connection pool') ||
       v.value?.includes('Too many login attempts') ||
       v.value?.includes('Temporary System Problem')
-    )) {
-      // Still send but with low priority fingerprint
-      event.fingerprint = ['transient-infrastructure', event.exception.values[0]?.type ?? 'unknown']
+    )
+
+    if (isNeonColdStart || isTransientInfra) {
+      event.fingerprint = ['transient-infrastructure', event.exception?.values?.[0]?.type ?? 'unknown']
     }
     return event
   },

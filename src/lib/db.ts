@@ -33,7 +33,9 @@ function buildDatasourceUrl(): string | undefined {
     // "Timed out fetching a new connection" errors on the works page).
     const sep = url.includes('?') ? '&' : '?'
     const extras: string[] = []
-    if (!url.includes('connect_timeout')) extras.push('connect_timeout=10')
+    // 20s — Neon free/launch tier takes 10-15s to wake from cold start.
+    // At 10s we were racing the wakeup and losing, causing 'Can\'t reach database server'.
+    if (!url.includes('connect_timeout')) extras.push('connect_timeout=20')
     if (!url.includes('pool_timeout'))    extras.push('pool_timeout=20')
     if (!url.includes('connection_limit')) extras.push('connection_limit=1')
     return extras.length > 0 ? `${url}${sep}${extras.join('&')}` : url
