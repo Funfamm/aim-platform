@@ -43,6 +43,10 @@ function buildConnection() {
         port: parseInt(parsedUrl.port || '6379', 10),
         ...(parsedUrl.password ? { password: decodeURIComponent(parsedUrl.password) } : {}),
         ...(isTls ? { tls: {} } : {}),
+        // Required for BullMQ: never retry individual commands (BullMQ manages retries itself)
+        maxRetriesPerRequest: null,
+        // Required for Upstash: it doesn't support Redis READYCHECK command
+        enableReadyCheck: false,
     }
 }
 
