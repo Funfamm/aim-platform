@@ -14,6 +14,11 @@ interface SiteSettings {
   // Defaults to true (matches DB schema default), so trailers are visible
   // until the fetch confirms otherwise. API already returns this field.
   allowPublicTrailers?: boolean;
+  // Footer-specific fields — exposed here so Footer.tsx reads from context
+  // instead of making a redundant /api/site-settings fetch.
+  socialLinks?: string
+  footerPageData?: string
+  tagline?: string
 }
 
 interface SiteSettingsContextValue {

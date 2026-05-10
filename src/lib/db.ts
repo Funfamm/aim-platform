@@ -48,5 +48,8 @@ export const prisma =
         datasourceUrl: buildDatasourceUrl(),
     })
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Always store in globalThis so warm serverless invocations reuse the client.
+// The !== 'production' guard was wrong: it prevented caching in prod, forcing
+// Prisma to re-run detect_platform (311-436ms) + load_engine on every warm request.
+globalForPrisma.prisma = prisma
 

@@ -1,52 +1,41 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import SubscribeForm from './SubscribeForm'
 import { useTranslations, useLocale } from 'next-intl'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
 
 interface FooterSponsor {
     id: string; name: string; logoUrl: string | null; website: string | null; tier: string
 }
 
 export default function Footer() {
-    const [brand, setBrand] = useState<{
-        name: string;
-        social: { youtube: string; instagram: string; x: string };
-        taglineOverride?: string;
-        brandSignature?: string;
-    }>({ name: 'AIM Studio', social: { youtube: '', instagram: '', x: '' } })
-
+    const { settings } = useSiteSettings()
     const [footerSponsors, setFooterSponsors] = useState<FooterSponsor[]>([])
     const t = useTranslations('footer')
     const locale = useLocale()
 
-    useEffect(() => {
-        fetch('/api/site-settings')
-            .then(r => r.json())
-            .then(data => {
-                const name = data.siteName || 'AIM Studio'
-                let social = { youtube: '', instagram: '', x: '' }
-                try { social = { ...social, ...JSON.parse(data.socialLinks || '{}') } } catch { /* */ }
+    // Derive brand data from context — no extra fetch needed.
+    // SiteSettingsContext already fetches /api/site-settings at layout level.
+    const brand = useMemo(() => {
+        const name = settings.siteName || 'AIM Studio'
+        let social = { youtube: '', instagram: '', x: '' }
+        try { social = { ...social, ...JSON.parse(settings.socialLinks || '{}') } } catch { /* */ }
 
-                // Parse footer overrides
-                let fpd = null
-                if (data.footerPageData) {
-                    try {
-                        const parsed = JSON.parse(data.footerPageData)
-                        if (locale !== 'en' && parsed.translations?.[locale]) {
-                            fpd = { ...parsed, ...parsed.translations[locale] }
-                        } else {
-                            fpd = parsed
-                        }
-                    } catch { /* */ }
+        let fpd: { taglineOverride?: string; brandSignature?: string } | null = null
+        if (settings.footerPageData) {
+            try {
+                const parsed = JSON.parse(settings.footerPageData)
+                if (locale !== 'en' && parsed.translations?.[locale]) {
+                    fpd = { ...parsed, ...parsed.translations[locale] }
+                } else {
+                    fpd = parsed
                 }
-
-                setBrand({ name, social, ...fpd })
-            })
-
-            .catch(() => { /* */ })
-    }, [])
+            } catch { /* */ }
+        }
+        return { name, social, ...fpd }
+    }, [settings, locale])
 
     useEffect(() => {
         fetch(`/api/sponsors?location=footer&locale=${locale}`)
