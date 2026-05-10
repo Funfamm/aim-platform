@@ -223,7 +223,23 @@ export async function GET(request: NextRequest) {
             failed: failedCount,
         })
     } catch (err) {
+        const message = String(err)
+        // Detect the specific Azure permission error so Sentry alerts are actionable
+        if (message.includes('ErrorAccessDenied') || message.includes('403')) {
+            logger.error('cron/graph-bounces', 'Graph API 403 — Mail.Read application permission not granted or not admin-consented', {
+                error: err as Error,
+                meta: {
+                    fix: 'Azure Portal → App registrations → API permissions → Add Mail.Read (Application) → Grant admin consent',
+                    mailbox: getSenderMailbox(),
+                },
+            })
+            return NextResponse.json({
+                error: 'Graph API access denied',
+                fix: 'Add Mail.Read application permission to the Azure AD app registration and grant admin consent.',
+                mailbox: getSenderMailbox(),
+            }, { status: 403 })
+        }
         logger.error('cron/graph-bounces', 'Graph NDR polling failed', { error: err as Error })
-        return NextResponse.json({ error: 'Internal error', detail: String(err) }, { status: 500 })
+        return NextResponse.json({ error: 'Internal error', detail: message }, { status: 500 })
     }
 }
