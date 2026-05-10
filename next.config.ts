@@ -174,7 +174,7 @@ const nextConfig: NextConfig = {
 
 export default withSentryConfig(withNextIntl(nextConfig), {
   org: 'aim-platform',
-  project: 'aim-platform',
+  project: 'javascript-nextjs',
   silent: false,
   disableLogger: false,
   telemetry: false,
