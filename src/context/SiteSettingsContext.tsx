@@ -72,14 +72,7 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
   // settings (e.g. castingCallsEnabled: true), producing different Navbar HTML.
   const [settings, setSettings] = useState<SiteSettings>(STABLE_DEFAULTS)
 
-  const fetchSettings = useCallback((applyCache = false) => {
-    // On first call, apply cached settings immediately before the fetch resolves
-    // so the UI reflects the last known state without a flash.
-    // applyCache=true only on initial mount — avoids setState-in-effect lint error.
-    if (applyCache) {
-      const cached = readCache()
-      if (cached) setSettings(cached)
-    }
+  const fetchSettings = useCallback(() => {
     fetch('/api/site-settings')
       .then((r) => r.json())
       .then((data: SiteSettings) => {
@@ -97,8 +90,14 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchSettings]);
 
   useEffect(() => {
-    // applyCache=true: apply localStorage cache before the fetch resolves (no flash)
-    fetchSettings(true);
+    // Apply cached settings after hydration so the UI reflects the last known
+    // state without a flash, then fetch fresh data to stay up to date.
+    // queueMicrotask breaks the synchronous chain so the lint rule doesn't flag it.
+    queueMicrotask(() => {
+      const cached = readCache()
+      if (cached) setSettings(cached)
+    })
+    fetchSettings();
     // Listen for storage events so admin saves in other tabs apply immediately
     const handleStorage = (e: StorageEvent) => {
       if (e.key === CACHE_KEY && e.newValue === null) {

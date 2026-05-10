@@ -20,7 +20,7 @@ interface Episode {
     description?: string | null; thumbnail?: string | null
     translations?: string | null
 }
-interface WatchProject {
+export interface WatchProject {
     id: string; title: string; slug: string; tagline: string
     description: string; genre: string | null; year: string | null
     duration: string | null; coverImage: string | null
