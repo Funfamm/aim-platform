@@ -1,7 +1,7 @@
 import { redirect, notFound } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import dynamic from 'next/dynamic'
+import nextDynamic from 'next/dynamic'
 import Footer from '@/components/Footer'
 import CastShowcase from '@/components/CastShowcase'
 import BackButton from '@/components/BackButton'
@@ -9,7 +9,7 @@ import { getLocale } from 'next-intl/server'
 
 // ssr:false — WatchPlayer uses browser video APIs (HLS.js, fullscreen, etc.)
 // Server-rendering it caused React error #418 (hydration mismatch) on iOS/Edge.
-const WatchPlayer = dynamic(() => import('@/components/WatchPlayer'), { ssr: false })
+const WatchPlayer = nextDynamic(() => import('@/components/WatchPlayer'), { ssr: false })
 
 export const dynamic = 'force-dynamic'
 
