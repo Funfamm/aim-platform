@@ -196,11 +196,16 @@ export function startNotificationWorker() {
         }
     })
 
-    // Suppress ioredis ETIMEDOUT errors that spam Sentry on Vercel serverless.
+    // Suppress ioredis connection errors that spam Sentry on Vercel serverless.
     // These are transient — the worker reconnects automatically on the next invocation.
     worker.on('error', (err) => {
         const msg = (err as Error).message || ''
-        if (msg.includes('ETIMEDOUT') || msg.includes('ECONNREFUSED') || msg.includes('ECONNRESET')) {
+        if (
+            msg.includes('ETIMEDOUT') ||
+            msg.includes('ECONNREFUSED') ||
+            msg.includes('ECONNRESET') ||
+            msg.includes('Connection is closed')
+        ) {
             logger.warn('notificationQueue', `Redis connection error (transient): ${msg}`)
         } else {
             logger.error('notificationQueue', `Worker error: ${msg}`, { error: err })

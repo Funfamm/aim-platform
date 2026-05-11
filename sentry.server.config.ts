@@ -48,7 +48,9 @@ Sentry.init({
     const isTransientInfra = event.exception?.values?.some(v =>
       v.value?.includes('connection pool') ||
       v.value?.includes('Too many login attempts') ||
-      v.value?.includes('Temporary System Problem')
+      v.value?.includes('Temporary System Problem') ||
+      v.value?.includes('Connection is closed') ||
+      v.value?.includes('connect ETIMEDOUT')
     )
 
     if (isNeonColdStart || isTransientInfra) {
