@@ -39,16 +39,18 @@ async function fetchAboutStats() {
 }
 
 export default async function AboutPage() {
-    let settings = null
-    try { settings = await prisma.siteSettings.findFirst() as any } catch { /* schema drift */ }
-    const session = await getUserSession()
+    // Parallelize all data fetching — previously these ran sequentially,
+    // adding ~400-600ms per call. Now wall-clock time = slowest single call.
+    const [settings, session, stats, pageMedia] = await Promise.all([
+        prisma.siteSettings.findFirst().catch(() => null) as Promise<any>,
+        getUserSession(),
+        fetchAboutStats(),
+        prisma.pageMedia.findMany({
+            where: { page: 'about', type: 'background', active: true },
+            orderBy: { sortOrder: 'asc' },
+        }),
+    ])
     const isLoggedIn = !!session?.userId
-    const stats = await fetchAboutStats()
-
-    const pageMedia = await prisma.pageMedia.findMany({
-        where: { page: 'about', type: 'background', active: true },
-        orderBy: { sortOrder: 'asc' },
-    })
     const bgUrls = pageMedia.map(m => m.url)
 
     const t = await getTranslations('about')
