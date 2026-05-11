@@ -49,11 +49,13 @@ export default function NotifyMeEndCard({
     config,
     onNotifyClick,
     onWatchNow,
+    onDismiss,
     visible,
 }: {
     config: CtaConfig
     onNotifyClick: () => void
     onWatchNow?: () => void
+    onDismiss?: () => void
     visible: boolean
 }) {
     const [animateIn, setAnimateIn] = useState(false)
@@ -102,7 +104,36 @@ export default function NotifyMeEndCard({
             }}
             onClick={e => e.stopPropagation()}
         >
-            {/* Eyebrow */}
+            {/* Dismiss button — lets user close the end card and resume controls */}
+            {onDismiss && (
+                <button
+                    onClick={onDismiss}
+                    aria-label="Dismiss"
+                    style={{
+                        position: 'absolute', top: '16px', right: '16px',
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '50%',
+                        width: '36px', height: '36px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'rgba(255,255,255,0.7)',
+                        cursor: 'pointer',
+                        fontSize: '18px',
+                        transition: 'background 0.2s, color 0.2s',
+                        zIndex: 10,
+                    }}
+                    onMouseEnter={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.2)'
+                        e.currentTarget.style.color = '#fff'
+                    }}
+                    onMouseLeave={e => {
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+                        e.currentTarget.style.color = 'rgba(255,255,255,0.7)'
+                    }}
+                >
+                    ✕
+                </button>
+            )}
             <div style={{
                 fontSize: '0.65rem',
                 letterSpacing: '0.2em',

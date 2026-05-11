@@ -1451,6 +1451,7 @@ export default function WatchPlayer({
                                     visible={showEndCard}
                                     onNotifyClick={() => { setShowEndCard(false); setShowNotifyModal(true) }}
                                     onWatchNow={() => { window.location.href = ctaConfig.watchNowUrl || `/watch/${project.slug}` }}
+                                    onDismiss={() => { setShowEndCard(false); endCardDismissedRef.current = true }}
                                 />
                                 {localCta.modal && (
                                     <NotifyMeModal
