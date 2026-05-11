@@ -24,6 +24,13 @@ const RTL_LOCALES = ['ar', 'he', 'fa', 'ur'];
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://impactaistudio.com').replace(/\/$/, '')
 
+// Pre-render all supported locales at build time so ISR works on first hit.
+// Without this, [locale] is treated as a fully dynamic segment and every
+// locale+page combination requires an on-demand server render.
+export function generateStaticParams() {
+  return locales.map((locale) => ({ locale }));
+}
+
 export async function generateMetadata({
   params,
 }: {
