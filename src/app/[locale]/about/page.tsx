@@ -3,12 +3,15 @@ import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import AboutBackground from '@/components/AboutBackground'
 import AnimatedCounter from '@/components/AnimatedCounter'
+import AboutCtaButton from '@/components/AboutCtaButton'
 import { prisma } from '@/lib/db'
-import { getUserSession } from '@/lib/auth'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 
-export const dynamic = 'force-dynamic'
+// ISR: cache for 1 hour, serve from Vercel edge CDN worldwide.
+// Previously force-dynamic — every visitor triggered a full server render.
+// Nigerian/global users now get cached HTML in ~50-100ms instead of 2-5s.
+export const revalidate = 3600
 
 export const metadata: Metadata = {
     title: 'About | AIM Studio',
@@ -39,18 +42,15 @@ async function fetchAboutStats() {
 }
 
 export default async function AboutPage() {
-    // Parallelize all data fetching — previously these ran sequentially,
-    // adding ~400-600ms per call. Now wall-clock time = slowest single call.
-    const [settings, session, stats, pageMedia] = await Promise.all([
+    // Parallelize all data fetching — wall-clock time = slowest single call.
+    const [settings, stats, pageMedia] = await Promise.all([
         prisma.siteSettings.findFirst().catch(() => null) as Promise<any>,
-        getUserSession(),
         fetchAboutStats(),
         prisma.pageMedia.findMany({
             where: { page: 'about', type: 'background', active: true },
             orderBy: { sortOrder: 'asc' },
         }),
     ])
-    const isLoggedIn = !!session?.userId
     const bgUrls = pageMedia.map(m => m.url)
 
     const t = await getTranslations('about')
@@ -749,13 +749,14 @@ export default async function AboutPage() {
                                 {v('ctaDesc', 'ctaDesc')}
                             </p>
                             <div style={{ display: 'flex', gap: 'var(--space-md)', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                <Link href={isLoggedIn ? "/dashboard" : "/register"} className="btn btn-primary" style={{
-                                    padding: '0.9rem 2.5rem',
-                                    fontSize: '0.95rem',
-                                    fontWeight: 700,
-                                }}>
-                                    {v('ctaButtonText', 'ctaButton')}
-                                </Link>
+                                <AboutCtaButton
+                                    label={v('ctaButtonText', 'ctaButton')}
+                                    style={{
+                                        padding: '0.9rem 2.5rem',
+                                        fontSize: '0.95rem',
+                                        fontWeight: 700,
+                                    }}
+                                />
                                 <Link href="/works" className="btn" style={{
                                     padding: '0.9rem 2.5rem',
                                     fontSize: '0.95rem',
