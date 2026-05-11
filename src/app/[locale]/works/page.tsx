@@ -2,7 +2,6 @@ import Footer from '@/components/Footer'
 import { sanitizeBigInt } from '@/lib/serializer'
 import WorksPageClient from '@/components/WorksPageClient'
 import { prisma } from '@/lib/db'
-import { getUserSession } from '@/lib/auth'
 
 export const revalidate = 60
 
@@ -12,8 +11,10 @@ export const metadata = {
 }
 
 export default async function WorksPage() {
-    // Fetch projects + distinct genres + movie rolls + trailer access in parallel
-    const [projects, genreRows, rawRolls, session, trailerSettings] = await Promise.all([
+    // Fetch projects + distinct genres + movie rolls + trailer settings in parallel
+    // getUserSession() was removed — reading cookies forced dynamic rendering,
+    // making revalidate=60 useless. Trailer visibility is now handled client-side.
+    const [projects, genreRows, rawRolls, trailerSettings] = await Promise.all([
         prisma.project.findMany({
             where: { published: true },
             orderBy: { sortOrder: 'asc' },
@@ -34,17 +35,15 @@ export default async function WorksPage() {
             orderBy: { sortOrder: 'asc' },
             include: { projects: { orderBy: { sortOrder: 'asc' }, select: { projectId: true, sortOrder: true } } },
         }),
-        getUserSession(),
         prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true, worksPageData: true } }).catch(() => null),
     ])
 
-
-    const isLoggedIn = !!session?.userId
-    const showTrailer = (trailerSettings?.allowPublicTrailers !== false) || isLoggedIn
+    const allowPublicTrailers = trailerSettings?.allowPublicTrailers !== false
 
     const projectsWithCounts = projects.map(p => ({
         ...sanitizeBigInt(p),
-        trailerUrl: showTrailer ? p.trailerUrl : null,
+        // Always include trailerUrl — client handles visibility based on auth + settings
+        trailerUrl: allowPublicTrailers ? p.trailerUrl : null,
         episodeCount: p._count.episodes,
     }))
 

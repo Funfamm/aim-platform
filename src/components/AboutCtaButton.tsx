@@ -14,8 +14,8 @@ export default function AboutCtaButton({ label, style }: { label: string; style?
 
     useEffect(() => {
         fetch('/api/auth/me', { credentials: 'include' })
-            .then(r => r.json())
-            .then(data => { if (data?.userId) setHref('/dashboard') })
+            .then(r => { if (!r.ok) throw new Error(); return r.json() })
+            .then(data => { if (data?.user?.id) setHref('/dashboard') })
             .catch(() => { /* stay on /register */ })
     }, [])
 

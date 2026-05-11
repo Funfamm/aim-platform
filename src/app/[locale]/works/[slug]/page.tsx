@@ -3,11 +3,11 @@ import Footer from '@/components/Footer'
 import ProjectDetailClient from '@/components/ProjectDetailClient2'
 import CastShowcase from '@/components/CastShowcase'
 import { prisma } from '@/lib/db'
-import { getUserSession } from '@/lib/auth'
 import { cache } from 'react'
 
-// 1 hour — admin updates call revalidatePath() immediately, no need to regenerate every 60s.
-// Most visitors hit the pre-built cache and get the page instantly.
+// 1 hour — admin updates call revalidatePath() immediately.
+// getUserSession() was removed — reading cookies forced dynamic rendering,
+// making revalidate=3600 useless. Auth is handled client-side.
 export const revalidate = 3600
 
 // Cache project query to share between generateMetadata and page render
@@ -57,26 +57,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function ProjectDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params
 
-    // Run all 3 DB calls in parallel — previously sequential, costing ~150ms extra per ISR hit
-    const [project, session, siteSettings] = await Promise.all([
+    // Run DB calls in parallel — no getUserSession() so ISR actually caches
+    const [project, siteSettings] = await Promise.all([
         getProject(slug),
-        getUserSession(),
         prisma.siteSettings.findFirst({ select: { allowPublicTrailers: true } }).catch(() => null),
     ])
 
-    if (!project) notFound()
+    if (!project || !project.published) notFound()
 
-    const isLoggedIn = !!session?.userId
-
-    // Block direct access to unpublished projects — admins can preview
-    if (!project.published) {
-        const isAdmin = session?.role === 'admin' || session?.role === 'superadmin'
-        if (!isAdmin) notFound()
-    }
-
-    // Enforce trailer access — trailers are locked behind login (same as films)
+    // Trailer access: public trailers controlled by site setting.
+    // Logged-in users always see trailers — handled in ProjectDetailClient2 via /api/auth/me.
     const siteAllowTrailers = siteSettings?.allowPublicTrailers ?? true
-    const showTrailer = siteAllowTrailers || isLoggedIn
+    const showTrailer = siteAllowTrailers
 
     // Serialize dates for client component
     const hasTrailer = !!project.trailerUrl
@@ -131,10 +123,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             />
             <ProjectDetailClient
                 project={serializedProject}
-                isLoggedIn={isLoggedIn}
                 hasTrailer={hasTrailer}
-                currentUserId={session?.userId || null}
-                currentUserRole={session?.role || null}
             />
             {serializedProject.cast.length > 0 && (
                 <CastShowcase
