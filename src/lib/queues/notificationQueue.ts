@@ -47,6 +47,12 @@ function buildConnection() {
         maxRetriesPerRequest: null,
         // Required for Upstash: it doesn't support Redis READYCHECK command
         enableReadyCheck: false,
+        // Shorten TCP connect timeout from default 10s to 5s — on Vercel serverless,
+        // the connection often dies between invocations; fail fast instead of hanging.
+        connectTimeout: 5000,
+        // Don't connect until the first command — avoids spamming ETIMEDOUT on cold starts
+        // when the worker is created but no jobs are queued yet.
+        lazyConnect: true,
     }
 }
 
@@ -130,40 +136,46 @@ export function startNotificationWorker() {
 
     const connection = buildConnection()!
 
-    const worker = new Worker<NotificationJobPayload>(
-        'notifications',
-        async (job: Job<NotificationJobPayload>) => {
-            const { type, email, subject, html, notificationId, userId } = job.data
+    let worker: Worker<NotificationJobPayload>
+    try {
+        worker = new Worker<NotificationJobPayload>(
+            'notifications',
+            async (job: Job<NotificationJobPayload>) => {
+                const { type, email, subject, html, notificationId, userId } = job.data
 
-            // ── Email leg ─────────────────────────────────────────────────
-            if ((type === 'email' || type === 'both') && email && subject && html) {
-                const sent = await sendTransactionalEmail({ to: email, subject, html })
-                if (!sent) throw new Error(`Email delivery failed for job ${job.id}`)
-            }
-
-            // ── Redis Pub/Sub (real-time feed signal) ─────────────────────
-            // ── Upstash REST signal (real-time feed hint for polling clients) ──────
-            if (userId) {
-                try {
-                    const upstash = getUpstash()
-                    if (upstash) {
-                        await upstash.set(
-                            `notifications:signal:${userId}`,
-                            new Date().toISOString(),
-                            { ex: 30 },
-                        )
-                    }
-                } catch (pubErr) {
-                    logger.warn('notificationQueue', `Upstash signal failed: ${(pubErr as Error).message}`)
+                // ── Email leg ─────────────────────────────────────────────────
+                if ((type === 'email' || type === 'both') && email && subject && html) {
+                    const sent = await sendTransactionalEmail({ to: email, subject, html })
+                    if (!sent) throw new Error(`Email delivery failed for job ${job.id}`)
                 }
-            }
 
-            if (notificationId) {
-                logger.info('notificationQueue', `Job ${job.id} delivered notificationId=${notificationId}`)
-            }
-        },
-        { connection, concurrency: 5 }
-    )
+                // ── Upstash REST signal (real-time feed hint for polling clients) ──────
+                if (userId) {
+                    try {
+                        const upstash = getUpstash()
+                        if (upstash) {
+                            await upstash.set(
+                                `notifications:signal:${userId}`,
+                                new Date().toISOString(),
+                                { ex: 30 },
+                            )
+                        }
+                    } catch (pubErr) {
+                        logger.warn('notificationQueue', `Upstash signal failed: ${(pubErr as Error).message}`)
+                    }
+                }
+
+                if (notificationId) {
+                    logger.info('notificationQueue', `Job ${job.id} delivered notificationId=${notificationId}`)
+                }
+            },
+            { connection, concurrency: 5 }
+        )
+    } catch (err) {
+        logger.warn('notificationQueue', `Worker creation failed: ${(err as Error).message}`)
+        workerStarted = false
+        return
+    }
 
     worker.on('completed', (job) => {
         logger.info('notificationQueue', `Job ${job.id} completed (${job.data.type})`)
@@ -181,6 +193,17 @@ export function startNotificationWorker() {
                 await dlq.add('dlq', job.data).catch(() => {})
                 logger.warn('notificationQueue', `Job ${job.id} moved to DLQ after ${job.attemptsMade} attempts`)
             }
+        }
+    })
+
+    // Suppress ioredis ETIMEDOUT errors that spam Sentry on Vercel serverless.
+    // These are transient — the worker reconnects automatically on the next invocation.
+    worker.on('error', (err) => {
+        const msg = (err as Error).message || ''
+        if (msg.includes('ETIMEDOUT') || msg.includes('ECONNREFUSED') || msg.includes('ECONNRESET')) {
+            logger.warn('notificationQueue', `Redis connection error (transient): ${msg}`)
+        } else {
+            logger.error('notificationQueue', `Worker error: ${msg}`, { error: err })
         }
     })
 
