@@ -43,10 +43,21 @@ export async function GET(req: NextRequest) {
             const pages = m.page.split(',').map((p: string) => p.trim())
             return pages.includes(page)
         })
-        return NextResponse.json(filtered)
+        const res = NextResponse.json(filtered)
+        // Cache public media responses — these rarely change and are fetched
+        // on every page load. 5 min fresh + 1 hour stale-while-revalidate
+        // eliminates the DB round-trip on repeat visits.
+        if (!isAdmin) {
+            res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
+        }
+        return res
     }
 
-    return NextResponse.json(media)
+    const res = NextResponse.json(media)
+    if (!isAdmin) {
+        res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
+    }
+    return res
 }
 
 // POST: create new page media (admin)

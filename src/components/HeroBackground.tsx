@@ -69,33 +69,31 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     const videoBRef = useRef<HTMLVideoElement>(null)
     const videoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    // ── Fetch ALL media once (page changes only) ──
+    // ── Fetch ALL media for this page in a single request ──
+    // Previously fired 3 separate API calls (background, hero-image, hero-video)
+    // creating a ~600ms waterfall. Now one call, split client-side.
     useEffect(() => {
-        const imageFetches = [
-            fetch(`/api/admin/media?type=background&page=${page}`).then(r => r.json()).catch(() => []),
-            fetch(`/api/admin/media?type=hero-image&page=${page}`).then(r => r.json()).catch(() => []),
-        ]
-        Promise.all(imageFetches).then(([bgData, heroImgData]) => {
-            const combined = [
-                ...(Array.isArray(bgData) ? bgData : []),
-                ...(Array.isArray(heroImgData) ? heroImgData : []),
-            ]
-            rawImagesRef.current = combined.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-            // Read latest device state via ref — NOT the stale closure value
-            const filtered = rawImagesRef.current.filter(m => matchesTarget(m.target, isMobileRef.current))
-            setBgImages(filtered.map(m => m.url))
-            setCurrentBg(0)
-        })
-
-        fetch(`/api/admin/media?type=hero-video&page=${page}`)
+        fetch(`/api/admin/media?page=${page}`)
             .then(r => r.json())
-            .then((data: HeroVideo[]) => {
-                if (Array.isArray(data)) {
-                    rawVideosRef.current = data
-                    // Read latest device state via ref — NOT the stale closure value
-                    const filtered = data.filter(m => matchesTarget(m.target, isMobileRef.current))
-                    setVideos(filtered)
-                }
+            .then((data: { id: string; url: string; type: string; duration?: number; target?: string; sortOrder?: number }[]) => {
+                if (!Array.isArray(data)) return
+                const mobile = isMobileRef.current
+
+                // Split by type
+                const imageItems = data
+                    .filter(m => m.type === 'background' || m.type === 'hero-image')
+                    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+                rawImagesRef.current = imageItems
+                const filteredImages = imageItems.filter(m => matchesTarget(m.target, mobile))
+                setBgImages(filteredImages.map(m => m.url))
+                setCurrentBg(0)
+
+                const videoItems: HeroVideo[] = data
+                    .filter(m => m.type === 'hero-video')
+                    .map(m => ({ id: m.id, url: m.url, duration: m.duration || 10, target: m.target }))
+                rawVideosRef.current = videoItems
+                const filteredVideos = videoItems.filter(m => matchesTarget(m.target, mobile))
+                setVideos(filteredVideos)
             })
             .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
