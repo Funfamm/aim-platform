@@ -204,7 +204,8 @@ export function startNotificationWorker() {
             msg.includes('ETIMEDOUT') ||
             msg.includes('ECONNREFUSED') ||
             msg.includes('ECONNRESET') ||
-            msg.includes('Connection is closed')
+            msg.includes('Connection is closed') ||
+            msg.includes('socket disconnected')
         ) {
             logger.warn('notificationQueue', `Redis connection error (transient): ${msg}`)
         } else {
