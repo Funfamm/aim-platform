@@ -51,6 +51,17 @@ Sentry.init({
       /Loading chunk/i,
       /ResizeObserver loop/i,
       /Non-Error promise rejection/i,
+      // Facebook/Instagram In-App Browser noise:
+      // Android: WebView loses its native Java bridge on app switch / GC
+      // iOS: WebKit message handlers undefined in non-native context
+      /Java object is gone/i,
+      /postMessage.*native/i,
+      /webkit\.messageHandlers/i,
+      // React hydration mismatches (#418/#423) — caused by browser extensions
+      // and in-app browsers (Facebook, Instagram) injecting DOM elements
+      // before React hydrates. Not actionable.
+      /Minified React error #418/,
+      /Minified React error #423/,
     ]
     if (noisyPatterns.some((re) => re.test(msg))) return null
     return event
