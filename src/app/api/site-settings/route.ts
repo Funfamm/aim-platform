@@ -20,6 +20,7 @@ export async function GET() {
                 scriptCallsEnabled: true,
                 castingCallsEnabled: true,
                 trainingEnabled: true,
+                sponsorsPageEnabled: true,
                 requireLoginForDonate: true,
                 requireLoginForCasting: true,
                 requireLoginForSponsors: true,

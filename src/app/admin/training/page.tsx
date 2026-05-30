@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import AdminSidebar from '@/components/AdminSidebar'

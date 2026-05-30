@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
 
 import AdminSidebar from '@/components/AdminSidebar'
@@ -39,25 +38,6 @@ const EMPTY_ABOUT: AboutPageData = {
     ctaButtonText: '', ctaSecondaryText: '',
 }
 
-type WorksPageData = {
-    heroLabel: string; heroTitle: string; heroAccent: string; heroDesc: string; heroCta: string
-}
-const EMPTY_WORKS: WorksPageData = { heroLabel: '', heroTitle: '', heroAccent: '', heroDesc: '', heroCta: '' }
-
-type UpcomingPageData = {
-    heroLabel: string; heroTitle: string; heroAccent: string; heroDesc: string
-}
-const EMPTY_UPCOMING: UpcomingPageData = { heroLabel: '', heroTitle: '', heroAccent: '', heroDesc: '' }
-
-type FooterPageData = {
-    taglineOverride: string; brandSignature: string
-}
-const EMPTY_FOOTER: FooterPageData = { taglineOverride: '', brandSignature: '' }
-
-type JoinCtaData = {
-    eyebrow: string; title: string; accent: string; body: string; primaryLabel: string; secondaryLabel: string
-}
-const EMPTY_JOIN_CTA: JoinCtaData = { eyebrow: '', title: '', accent: '', body: '', primaryLabel: '', secondaryLabel: '' }
 
 
 type Settings = {
@@ -136,18 +116,6 @@ const AI_MODELS = [
     { value: 'gpt-4-turbo', label: '🟢 GPT-4 Turbo (OpenAI)' },
 ]
 
-const SIDEBAR_LINKS = [
-    { href: '/admin/analytics', label: '📊 Analytics' },
-    { href: '/admin/projects', label: '🎬 Projects' },
-    { href: '/admin/casting', label: '🎭 Casting' },
-    { href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Page Media' },
-    { href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },
-    { href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/settings', label: '⚙️ Settings', active: true },
-]
 
 /* ── Email / SMTP Tab Component ── */
 /* ── Translation Panel Component ── */

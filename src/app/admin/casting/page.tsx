@@ -39,20 +39,6 @@ const GENRES = [
 const ROLE_TYPES = ['lead', 'supporting', 'extra', 'voice']
 const STATUSES = ['open', 'closed', 'filled']
 
-const SIDEBAR_LINKS = [
-    { href: '/admin/analytics', label: '📊 Analytics' },
-    { href: '/admin/projects', label: '🎬 Projects' },
-    { href: '/admin/casting', label: '🎭 Casting', active: true },
-    { href: '/admin/applications', label: '📋 Applications' },
-    { href: '/admin/media', label: '🖼️ Page Media' },
-    { href: '/admin/sponsors', label: '🤝 Sponsors' },
-    { href: '/admin/donations', label: '💰 Donations' },
-    { href: '/admin/users', label: '👥 Users' },
-    { href: '/admin/scripts', label: '✍️ Scripts' },
-    { href: '/admin/training', label: '🎓 Training' },
-    { href: '/admin/settings', label: '⚙️ Settings' },
-]
-
 const statusConfig: Record<string, { label: string; className: string }> = {
     open:    { label: 'Open',    className: 'badge-green' },
     closed:  { label: 'Closed', className: 'badge-red' },

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import Link from 'next/link'
 import AdminSidebar from '@/components/AdminSidebar'
 import { locales, localeNames } from '@/i18n/routing'
 

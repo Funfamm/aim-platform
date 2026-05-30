@@ -75,6 +75,7 @@ export default function Navbar() {
         ...(sections.scripts ? [{ href: '/scripts', label: t('scripts') }] : []),
         ...(sections.training ? [{ href: '/training', label: t('training') }] : []),
         ...(sections.donations ? [{ href: '/donate', label: t('donate') }] : []),
+        ...(sections.sponsors ? [{ href: '/sponsors', label: t('sponsors') }] : []),
         { href: '/start-project', label: t('startProject') },
     ]
 
