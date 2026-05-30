@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import { useSiteSettings } from '@/context/SiteSettingsContext'
 import { useTranslations, useLocale } from 'next-intl'

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import Scene3D from '@/components/Scene3D'
 import HeroBackground from '@/components/HeroBackground'

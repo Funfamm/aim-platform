@@ -1,5 +1,5 @@
 import React from 'react';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import type { SearchResult } from '@/components/search/SearchContext';
 
 // ResultItem renders a single search result using the API response shape

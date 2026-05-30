@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import HeroBackground from '@/components/HeroBackground'
 import CastingRoleCard from '@/components/casting/CastingRoleCard'
 import EncouragementSection from '@/components/casting/EncouragementSection'

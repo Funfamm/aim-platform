@@ -109,7 +109,7 @@ export default function SearchBar() {
     }
 
     return (
-        <div ref={containerRef} role="combobox" aria-expanded={open} aria-haspopup="listbox" style={{ position: 'relative', width: '100%', marginBottom: '16px' }}>
+        <div ref={containerRef} role="combobox" aria-expanded={open} aria-haspopup="listbox" aria-controls="mobile-search-results" style={{ position: 'relative', width: '100%', marginBottom: '16px' }}>
             {/* Input */}
             <div style={{ position: 'relative' }}>
                 <svg
@@ -178,7 +178,7 @@ export default function SearchBar() {
 
             {/* Dropdown results */}
             {open && results.length > 0 && (
-                <div style={{
+                <div id="mobile-search-results" role="listbox" style={{
                     position: 'absolute', top: 'calc(100% + 6px)', left: 0, right: 0,
                     background: 'rgba(12,12,20,0.97)',
                     backdropFilter: 'blur(16px)',

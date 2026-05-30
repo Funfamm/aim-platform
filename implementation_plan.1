@@ -1,0 +1,142 @@
+# AIM Studio — Public Page Performance Audit & Optimization Plan
+
+## Summary
+
+After reading every relevant file, here is the full picture of what is causing slowness on public pages for 4G users, and the exact changes proposed.
+
+**No redesign. No schema changes. No db:push. No new packages. Admin panel is untouched.**
+
+---
+
+## Findings
+
+### What is already good
+- `globals.css` already disables `backdrop-filter` on mobile, kills the SVG noise on mobile, disables canvas `Scene3D` on mobile/reduced-motion
+- `next.config.ts` already strips heavy binaries from the deployment bundle
+- `HeroBackground` already batches 3 separate API calls into 1 (`/api/admin/media?page=X`)
+- `WorksPageClient` already code-splits `SearchBar`, `RollRow`, `HoverPreviewCard` with `dynamic()`
+- `[locale]/layout.tsx` already removed `force-dynamic` so ISR works
+- Next.js image optimizer is re-enabled with AVIF/WebP and proper `deviceSizes`
+- Google Fonts are self-hosted via `next/font/google` with `display: 'swap'`
+
+### Root causes of remaining slowness
+
+| # | Issue | Impact | File |
+|---|-------|--------|------|
+| 1 | `/api/site-settings` has **no Cache-Control header** — fetched by `SiteSettingsContext` on every page load, every user | 1 DB hit per visitor (100ms+ cold) | `src/app/api/site-settings/route.ts` |
+| 2 | `SiteSettingsContext` calls `fetchSettings()` immediately on mount but **also re-fetches** on every `storage` event — no dedup | Minor JS churn | `src/context/SiteSettingsContext.tsx` |
+| 3 | `HeroBackground` fires `fetch('/api/admin/media?page=...')` **without** `Cache-Control` on the client, and the API itself **only sets `s-maxage`** (CDN cache) but not `max-age` (browser cache) — every hard reload re-fetches from the server | ~200-400ms on 4G | `src/app/api/admin/media/route.ts` |
+| 4 | `WatchPlayer.tsx` is **2 057 lines / 118 KB** and is `import`ed statically in `ProjectDetailClient2.tsx` (line 10). It gets bundled into the project-detail page chunk even for users who never click the trailer. | +90–120 kB gzipped chunk on mobile | `src/components/ProjectDetailClient2.tsx` |
+| 5 | `ScrollReveal3D` sets `willChange: 'opacity, transform'` on **every desktop project card** — this promotes every card to a GPU layer at parse time, consuming VRAM even before the user scrolls | Jank on low-RAM phones | `src/components/ScrollReveal3D.tsx` |
+| 6 | `WorksPageClient.tsx` imports `Scene3D` **statically** (line 6) — it is only rendered on desktop but the code is in every bundle | ~10 KB wasted on mobile | `src/components/WorksPageClient.tsx` |
+| 7 | `globals.css` is **156 KB** — it is already well-structured but is served as a single file. It contains admin-specific styles (`.admin-*`) that are included on every public page. | ~30–40 KB CSS payload that could be split | `src/app/globals.css` |
+| 8 | `SponsorBannerSection.tsx` uses inline `<style>` for the shimmer keyframe on every render — minor but repeated DOM write | Negligible | `src/components/SponsorBannerSection.tsx` |
+
+---
+
+## Proposed Changes
+
+### 1. Add browser Cache-Control to `/api/site-settings`
+
+#### [MODIFY] [route.ts](file:///c:/Users/mxz/Desktop/my%20website/aim-platform/src/app/api/site-settings/route.ts)
+
+Add `Cache-Control: public, s-maxage=60, stale-while-revalidate=300` so the CDN caches it for 1 minute and browsers can use a stale copy for up to 5 minutes. The admin panel calls `clearSiteSettingsCache()` and `refresh()` after saving, so stale data will never persist after an admin update.
+
+---
+
+### 2. Add `max-age` (browser cache) to `/api/admin/media`
+
+#### [MODIFY] [route.ts](file:///c:/Users/mxz/Desktop/my%20website/aim-platform/src/app/api/admin/media/route.ts)
+
+Currently has `s-maxage=300, stale-while-revalidate=3600` (CDN-only). Add `max-age=60` so the browser can serve from its own cache for 60 seconds on soft navigations. The admin media manager already calls `revalidatePath` after uploads, so fresh data is never blocked.
+
+---
+
+### 3. Lazy-load `WatchPlayer` in `ProjectDetailClient2.tsx`
+
+#### [MODIFY] [ProjectDetailClient2.tsx](file:///c:/Users/mxz/Desktop/my%20website/aim-platform/src/components/ProjectDetailClient2.tsx)
+
+Replace the static import on line 10:
+```diff
+-import WatchPlayer from '@/components/WatchPlayer'
++import dynamic from 'next/dynamic'
++const WatchPlayer = dynamic(() => import('@/components/WatchPlayer'), { ssr: false })
+```
+
+`WatchPlayer` is never shown until the user clicks "Watch Trailer" (which calls `setIsTrailerVisible(true)` and then scrolls to the trailer section). It is also only rendered when `project.trailerUrl` is truthy. Lazy-loading removes ~90–120 kB from the initial page-load chunk for project detail pages on mobile.
+
+> [!IMPORTANT]
+> `WatchPlayer` is used in two places: `ProjectDetailClient2.tsx` (public, for trailers) and the dedicated `/watch` page. Only the `ProjectDetailClient2` import needs to be dynamic. The `/watch` page already renders `WatchPlayer` eagerly by design.
+
+---
+
+### 4. Remove `willChange` from `ScrollReveal3D` until intersection
+
+#### [MODIFY] [ScrollReveal3D.tsx](file:///c:/Users/mxz/Desktop/my%20website/aim-platform/src/components/ScrollReveal3D.tsx)
+
+`willChange: 'opacity, transform'` forces the browser to allocate a GPU compositing layer **immediately** for every card, before the user even scrolls. This is counterproductive on mobile. The fix: only set `willChange` at the moment of transition start, and clear it afterward.
+
+Change the inline style to:
+```diff
+- willChange: 'opacity, transform',
+```
+And add to the observer callback:
+```js
+el.style.willChange = 'opacity, transform'
+setTimeout(() => {
+    el.style.opacity = '1'
+    el.style.transform = 'none'
+    setTimeout(() => { el.style.willChange = 'auto' }, 900) // clear after animation ends
+}, delay)
+```
+
+---
+
+### 5. Code-split `Scene3D` in `WorksPageClient`
+
+#### [MODIFY] [WorksPageClient.tsx](file:///c:/Users/mxz/Desktop/my%20website/aim-platform/src/components/WorksPageClient.tsx)
+
+`Scene3D` is already guarded inside `Scene3D.tsx` (returns nothing on mobile). But the import on line 6 is static — the module code ships to mobile. Convert to dynamic:
+
+```diff
+-import Scene3D from '@/components/Scene3D'
++import dynamic from 'next/dynamic'
++const Scene3D = dynamic(() => import('@/components/Scene3D'), { ssr: false, loading: () => null })
+```
+
+`Scene3DClient.tsx` already does this for the homepage; `WorksPageClient` was missed.
+
+---
+
+### 6. Move shimmer keyframe from inline `<style>` to `globals.css`
+
+#### [MODIFY] [SponsorBannerSection.tsx](file:///c:/Users/mxz/Desktop/my%20website/aim-platform/src/components/SponsorBannerSection.tsx) + [globals.css](file:///c:/Users/mxz/Desktop/my%20website/aim-platform/src/app/globals.css)
+
+The `@keyframes sponsorShimmer` is injected inline every render. Move it to `globals.css` (already has a `@keyframes shimmer`). Minor but eliminates repeated style-injection on every mount.
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> **Q1: Can we add `max-age=60` to the site-settings API response?**
+> This means browsers will not re-check the API for 60 seconds. For admin users updating settings, this is fine because the admin panel clears `localStorage` and forces a re-fetch. But if a non-admin user's browser has cached the old settings for up to 60 seconds, they may see a stale navbar briefly. Is 60 seconds acceptable, or would you prefer `no-store` for logged-in users and `public` only for anonymous?
+
+> [!NOTE]
+> **Q2: CSS splitting** — `globals.css` is 156 KB and contains both public and admin styles. We could split it into `globals.css` (public, ~80 KB) and `admin.css` (admin-only, ~76 KB) and import `admin.css` only in the `/admin` layout. This is the highest-effort change and carries the most risk of breaking admin UI. Want to include it in this pass, or defer?
+
+---
+
+## Verification Plan
+
+### Automated
+- `npm run build` — confirm no TypeScript errors, bundle sizes shown in output
+- Check build output for chunk sizes: `WatchPlayer` should no longer appear in project-detail first-load chunks
+
+### Manual
+- Open `/works/[slug]` on a throttled 4G connection (Chrome DevTools → Network → Fast 4G)
+- Confirm `WatchPlayer` JS chunk loads **only after** clicking "Watch Trailer"
+- Confirm `/api/site-settings` response has `Cache-Control` header in Network tab
+- Confirm `/api/admin/media` response has updated `max-age` in Network tab
+- Confirm admin panel still loads, saves, and uploads correctly
+- Confirm video playback still works on the `/watch` page

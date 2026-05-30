@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import NextLink from 'next/link'
 import NextImage from 'next/image'
+import { Link } from '@/i18n/navigation'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -698,7 +699,7 @@ export default function Navbar() {
             </div>
             {/* Floating Admin Tab — visible only to admin users */}
             {user && ['admin', 'superadmin', 'ADMIN', 'SUPER_ADMIN', 'POWER_ADMIN'].includes(user.role) && (
-                <Link href="/admin" style={{
+                <NextLink href="/admin" style={{
                     position: 'fixed', bottom: '24px', right: '24px', zIndex: 9990,
                     display: 'flex', alignItems: 'center', gap: '8px',
                     padding: '10px 20px', borderRadius: '24px',
@@ -712,7 +713,7 @@ export default function Navbar() {
                     letterSpacing: '0.02em',
                 }}>
                     ⚙️ {t('adminPanel')}
-                </Link>
+                </NextLink>
             )}
             <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         </>

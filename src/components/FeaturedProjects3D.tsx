@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import ScrollReveal3D from './ScrollReveal3D'
 import CinematicPosterCard from './mobile/CinematicPosterCard'
 import { useTranslations, useLocale } from 'next-intl'
@@ -48,7 +48,7 @@ export default function FeaturedProjects3D({ projects, isMobileHint = false }: {
                         padding: '12px 16px 20px',
                     }}
                 >
-                    {projects.map((project, idx) => (
+                    {projects.map((project) => (
                         <div key={project.id} style={{ flexShrink: 0 }}>
                             <CinematicPosterCard
                                 project={project}

@@ -6,7 +6,7 @@ import AnimatedCounter from '@/components/AnimatedCounter'
 import AboutCtaButton from '@/components/AboutCtaButton'
 import { prisma } from '@/lib/db'
 import { getTranslations } from 'next-intl/server'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 
 // ISR: cache for 1 hour, serve from Vercel edge CDN worldwide.
 // Previously force-dynamic — every visitor triggered a full server render.

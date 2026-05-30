@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
 import NotifyMeButton from '@/components/scripts/NotifyMeButton'
