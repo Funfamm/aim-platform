@@ -37,12 +37,6 @@ interface Project {
     viewCount: number
 }
 
-interface HeroVideo {
-    id: string
-    url: string
-    duration: number
-}
-
 interface WorksPageClientProps {
     projects: Project[]
     completedCount: number
@@ -64,7 +58,7 @@ interface WorksPageClientProps {
 
 
 
-export default function WorksPageClient({ projects, completedCount, inProdCount, genres, rolls = [], overrides }: WorksPageClientProps) {
+export default function WorksPageClient({ projects, completedCount, inProdCount, rolls = [], overrides }: WorksPageClientProps) {
     const t = useTranslations('works')
     const locale = useLocale()
 

@@ -53,7 +53,6 @@ export default function FeaturedProjects3D({ projects, isMobileHint = false }: {
                             <CinematicPosterCard
                                 project={project}
                                 locale={locale}
-                                priority={idx < 2}
                             />
                         </div>
                     ))}

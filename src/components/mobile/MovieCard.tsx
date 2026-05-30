@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
@@ -101,15 +102,14 @@ export default function MovieCard({ project, locale, snapAlign, onHover, onHover
                     : 'linear-gradient(135deg, rgba(212,168,83,0.04), rgba(139,92,246,0.04))',
             }}>
                 {(project.mobileCoverImage || project.coverImage) && !imgError && (
-                    <img
+                    <NextImage
                         src={project.mobileCoverImage || project.coverImage!}
                         alt={loc.title}
-                        loading="lazy"
-                        decoding="async"
+                        fill
+                        sizes="(max-width: 768px) 50vw, 33vw"
                         onLoad={() => setImgLoaded(true)}
                         onError={() => setImgError(true)}
                         style={{
-                            width: '100%', height: '100%',
                             objectFit: 'cover',
                             opacity: imgLoaded ? 1 : 0,
                             transition: 'opacity 0.4s ease',

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { usePathname, useRouter } from '@/i18n/navigation'
 import { useAuth } from '@/components/AuthProvider'
 import { useSiteSettings } from '@/context/SiteSettingsContext';
@@ -161,11 +162,12 @@ export default function Navbar() {
                 <div className="navbar-inner">
                     <Link href="/" className="navbar-logo" prefetch={false}>
                         {logoUrl && (
-                            <img
+                            <NextImage
                                 src={logoUrl}
                                 alt="logo"
-                                style={{ height: '28px', width: 'auto', objectFit: 'contain', display: 'block' }}
-                                onError={() => { }}
+                                width={120}
+                                height={28}
+                                style={{ width: 'auto', height: '28px', objectFit: 'contain', display: 'block' }}
                             />
                         )}
                         <span className="logo-accent">{brandName.accent}</span>
@@ -696,7 +698,7 @@ export default function Navbar() {
             </div>
             {/* Floating Admin Tab — visible only to admin users */}
             {user && ['admin', 'superadmin', 'ADMIN', 'SUPER_ADMIN', 'POWER_ADMIN'].includes(user.role) && (
-                <a href="/admin" style={{
+                <Link href="/admin" style={{
                     position: 'fixed', bottom: '24px', right: '24px', zIndex: 9990,
                     display: 'flex', alignItems: 'center', gap: '8px',
                     padding: '10px 20px', borderRadius: '24px',
@@ -710,7 +712,7 @@ export default function Navbar() {
                     letterSpacing: '0.02em',
                 }}>
                     ⚙️ {t('adminPanel')}
-                </a>
+                </Link>
             )}
             <SearchOverlay isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
         </>

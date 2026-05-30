@@ -26,12 +26,6 @@ interface UpcomingProject {
     }[]
 }
 
-interface HeroVideo {
-    id: string
-    url: string
-    duration: number
-}
-
 export default function UpcomingProjects3D({ projects, overrides }: { projects: UpcomingProject[], overrides?: string | null }) {
     const t = useTranslations('upcomingHero')
     const locale = useLocale()

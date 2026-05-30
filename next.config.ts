@@ -99,6 +99,7 @@ const nextConfig: NextConfig = {
     // Next.js will now serve WebP/AVIF automatically at the correct srcset sizes,
     // eliminating raw PNG payloads (notify-bg-2.png was 6.2 MB unoptimized).
     formats: ['image/avif', 'image/webp'],
+    qualities: [75, 80, 85, 90],
     deviceSizes: [390, 430, 768, 1080, 1280, 1920],
     imageSizes: [64, 128, 180, 256, 384],
     remotePatterns: [

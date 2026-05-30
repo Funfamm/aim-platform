@@ -1,12 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import HeroBackground from '@/components/HeroBackground'
 import { useTranslations, useLocale } from 'next-intl'
 import { useIsMobile } from '@/hooks/useIsMobile'
-
-type HeroVideoItem = { id: string; url: string; duration: number; active: boolean }
 
 type CourseData = {
     id: string; title: string; slug: string; description: string; thumbnail: string | null

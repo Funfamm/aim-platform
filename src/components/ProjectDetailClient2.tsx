@@ -75,7 +75,7 @@ export default function ProjectDetailClient({ project, hasTrailer, currentUserId
     const locale = useLocale()
     const trailerRef = useRef<HTMLDivElement>(null)
     const videoRef = useRef<HTMLVideoElement>(null)
-    const [isTrailerVisible, setIsTrailerVisible] = useState(false)
+    const [, setIsTrailerVisible] = useState(false)
     const [user, setUser] = useState<{ id: string; name: string } | null>(null)
     const [checkingAuth, setCheckingAuth] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
@@ -768,12 +768,15 @@ export default function ProjectDetailClient({ project, hasTrailer, currentUserId
                                                     }}
                                                 >
                                                     {ep.thumbnail && (
-                                                        <img
+                                                        <NextImage
                                                             src={ep.thumbnail}
                                                             alt=""
+                                                            width={80}
+                                                            height={45}
                                                             style={{
-                                                                width: 80, height: 45, objectFit: 'cover',
-                                                                borderRadius: '6px', flexShrink: 0,
+                                                                objectFit: 'cover',
+                                                                borderRadius: '6px',
+                                                                flexShrink: 0,
                                                             }}
                                                         />
                                                     )}

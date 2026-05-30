@@ -1,4 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
+import { Link } from '@/i18n/navigation'
 import Footer from '@/components/Footer'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
@@ -192,9 +193,9 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                     <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
 
                         {/* Back button */}
-                        <a href="/scripts" className="back-btn d0" style={{ marginBottom: '16px' }}>
+                        <Link href="/scripts" className="back-btn d0" style={{ marginBottom: '16px' }}>
                             <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>←</span> {t('backToScripts')}
-                        </a>
+                        </Link>
 
                         {/* Project pill */}
                         {call.project && (
@@ -349,14 +350,14 @@ export default async function ScriptCallDetailPage({ params }: { params: Promise
                                             The deadline for this script call was <strong style={{ color: 'var(--text-secondary)' }}>{formattedDeadline}</strong>.
                                             Check back for upcoming calls.
                                         </p>
-                                        <a href="/scripts" style={{
+                                        <Link href="/scripts" style={{
                                             display: 'inline-block', marginTop: '22px',
                                             padding: '10px 28px', borderRadius: '99px',
                                             background: 'rgba(212,168,83,0.1)',
                                             border: '1px solid rgba(212,168,83,0.25)',
                                             color: 'var(--accent-gold)', fontWeight: 700,
                                             fontSize: '0.8rem', textDecoration: 'none',
-                                        }}>View Open Calls →</a>
+                                        }}>View Open Calls →</Link>
                                     </div>
                                 ) : (
                                     <div className="form-card d1">

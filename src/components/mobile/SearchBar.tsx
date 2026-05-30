@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import NextImage from 'next/image'
 import { useLocale, useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 
@@ -108,7 +109,7 @@ export default function SearchBar() {
     }
 
     return (
-        <div ref={containerRef} style={{ position: 'relative', width: '100%', marginBottom: '16px' }}>
+        <div ref={containerRef} role="combobox" aria-expanded={open} aria-haspopup="listbox" style={{ position: 'relative', width: '100%', marginBottom: '16px' }}>
             {/* Input */}
             <div style={{ position: 'relative' }}>
                 <svg
@@ -132,7 +133,6 @@ export default function SearchBar() {
                     onFocus={() => { if (results.length > 0) setOpen(true) }}
                     placeholder={t('searchPlaceholder')}
                     aria-label={t('searchPlaceholder')}
-                    aria-expanded={open}
                     aria-autocomplete="list"
                     style={{
                         width: '100%',
@@ -222,11 +222,12 @@ export default function SearchBar() {
                                     background: 'rgba(255,255,255,0.05)',
                                 }}>
                                     {result.coverImage && (
-                                        <img
+                                        <NextImage
                                             src={result.coverImage}
                                             alt=""
-                                            loading="lazy"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            width={42}
+                                            height={28}
+                                            style={{ objectFit: 'cover', width: '100%', height: '100%' }}
                                         />
                                     )}
                                 </div>

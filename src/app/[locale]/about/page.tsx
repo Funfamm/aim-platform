@@ -201,7 +201,7 @@ export default async function AboutPage() {
                                     fontWeight: 700,
                                     pointerEvents: 'none',
                                     userSelect: 'none',
-                                }}>"</div>
+                                }}>{'"'}</div>
 
                                 {/* Studio label */}
                                 <div style={{
@@ -487,7 +487,7 @@ export default async function AboutPage() {
                                     position: 'absolute', top: '-20px', left: '0',
                                     fontSize: '6rem', lineHeight: 1, color: 'rgba(212,168,83,0.12)',
                                     fontFamily: 'Georgia, serif', fontWeight: 700,
-                                }}>"</div>
+                                }}>{'"'}</div>
                                 <blockquote style={{
                                     fontSize: 'clamp(1rem, 2.5vw, 1.4rem)',
                                     fontWeight: 600,

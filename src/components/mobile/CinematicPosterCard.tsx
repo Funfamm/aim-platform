@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useState } from 'react'
 import { getLocalizedProject } from '@/lib/localize'
 import { useSiteSettings } from '@/context/SiteSettingsContext'
@@ -20,8 +21,6 @@ interface PosterProject {
 interface CinematicPosterCardProps {
     project: PosterProject
     locale: string
-    /** When true: sets loading=eager + fetchpriority=high (use for above-fold cards, i.e. index 0-1) */
-    priority?: boolean
 }
 
 /**
@@ -29,7 +28,7 @@ interface CinematicPosterCardProps {
  * Large, image-forward, minimal text — designed to make a strong first impression.
  * No badges, no genre tags, no action buttons. Just tap to explore.
  */
-export default function CinematicPosterCard({ project, locale, priority = false }: CinematicPosterCardProps) {
+export default function CinematicPosterCard({ project, locale }: CinematicPosterCardProps) {
     const [imgLoaded, setImgLoaded] = useState(false)
     const loc = getLocalizedProject(project, locale)
     const { settings } = useSiteSettings()
@@ -60,18 +59,13 @@ export default function CinematicPosterCard({ project, locale, priority = false 
                 background: '#0a0a12',
             }}>
                 {(project.mobileCoverImage || project.coverImage) && (
-                    <img
+                    <NextImage
                         src={project.mobileCoverImage || project.coverImage!}
                         alt={loc.title}
-                        loading="lazy"
-                        decoding="async"
+                        fill
                         sizes="180px"
                         onLoad={() => setImgLoaded(true)}
                         style={{
-                            position: 'absolute',
-                            inset: 0,
-                            width: '100%',
-                            height: '100%',
                             objectFit: 'cover',
                             opacity: imgLoaded ? 1 : 0,
                             transition: 'opacity 0.4s ease',

@@ -11,11 +11,6 @@ interface HeroVideo {
     target?: string  // 'all' | 'desktop' | 'mobile'
 }
 
-interface BgImage {
-    url: string
-    target?: string  // 'all' | 'desktop' | 'mobile'
-}
-
 interface HeroBackgroundProps {
     /** Which page to fetch media for (e.g. 'home', 'works', 'upcoming', 'casting', 'training', 'scripts') */
     page: string
@@ -96,7 +91,6 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                 setVideos(filteredVideos)
             })
             .catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]) // ← ONLY re-fetch when page changes, NOT when isMobileDevice changes
 
     // ── Re-filter already-fetched media when device type changes ──
@@ -145,6 +139,10 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     useEffect(() => {
         if (bgImages.length > 0) return // images take priority
         if (videos.length === 0) return
+        // Skip background video when the user has requested reduced data usage
+        const saveData = typeof navigator !== 'undefined' &&
+            !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData
+        if (saveData) return
 
         const videoA = videoARef.current
         if (!videoA) return

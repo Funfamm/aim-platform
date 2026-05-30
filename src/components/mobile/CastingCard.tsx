@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import NextImage from 'next/image'
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
@@ -64,16 +65,13 @@ export default function CastingCard({ project, locale }: CastingCardProps) {
                 overflow: 'hidden',
             }}>
                 {project.coverImage && (
-                    <img
+                    <NextImage
                         src={project.coverImage}
                         alt={loc.title}
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         onLoad={() => setImgLoaded(true)}
                         style={{
-                            position: 'absolute',
-                            inset: 0,
-                            width: '100%',
-                            height: '100%',
                             objectFit: 'cover',
                             opacity: imgLoaded ? 1 : 0,
                             transition: 'opacity 0.4s ease',

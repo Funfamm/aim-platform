@@ -17,7 +17,6 @@ export default function TiltCard3D({
     children,
     className = '',
     style,
-    href,
     intensity = 12,
     glare = true,
     scale = 1.04,

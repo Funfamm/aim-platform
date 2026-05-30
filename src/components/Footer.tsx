@@ -1,18 +1,13 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import Link from 'next/link'
 import SubscribeForm from './SubscribeForm'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSiteSettings } from '@/context/SiteSettingsContext'
 
-interface FooterSponsor {
-    id: string; name: string; logoUrl: string | null; website: string | null; tier: string
-}
-
 export default function Footer() {
     const { settings } = useSiteSettings()
-    const [footerSponsors, setFooterSponsors] = useState<FooterSponsor[]>([])
     const t = useTranslations('footer')
     const locale = useLocale()
 
@@ -36,15 +31,6 @@ export default function Footer() {
         }
         return { name, social, ...fpd }
     }, [settings, locale])
-
-    useEffect(() => {
-        fetch(`/api/sponsors?location=footer&locale=${locale}`)
-            .then(r => r.ok ? r.json() : [])
-            .then(data => {
-                if (Array.isArray(data)) setFooterSponsors(data)
-            })
-            .catch(() => { /* */ })
-    }, [locale])
 
     return (
         <footer className="footer" aria-label="Site footer">

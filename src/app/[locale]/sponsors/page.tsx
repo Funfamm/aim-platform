@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import nextDynamic from 'next/dynamic'
+import NextImage from 'next/image'
 import Footer from '@/components/Footer'
 const Scene3D = nextDynamic(() => import('@/components/Scene3D'))
 import CinematicBackground from '@/components/CinematicBackground'
@@ -331,10 +332,12 @@ export default async function SponsorsPage() {
                                                         {/* Body */}
                                                         <div className="sp-body">
                                                             {sponsor.logoUrl && (
-                                                                <img
+                                                                <NextImage
                                                                     src={sponsor.logoUrl}
                                                                     alt={sponsor.name}
-                                                                    style={{ maxHeight: cfg.logoH, maxWidth: '180px', objectFit: 'contain' }}
+                                                                    width={180}
+                                                                    height={52}
+                                                                    style={{ maxHeight: cfg.logoH, maxWidth: '180px', objectFit: 'contain', width: 'auto', height: 'auto' }}
                                                                 />
                                                             )}
                                                             <div style={{ fontSize: cfg.isPremium ? '1.05rem' : '0.9rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.01em' }}>

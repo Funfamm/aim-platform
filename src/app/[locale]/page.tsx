@@ -112,8 +112,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     }))
     .filter((roll: { projects: unknown[] }) => roll.projects.length > 0)
 
-  type Project = typeof featuredProjects[number]
-
   const t = await getTranslations('home')
 
   // Parse homePageData for admin CMS overrides

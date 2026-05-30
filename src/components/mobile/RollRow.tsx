@@ -7,7 +7,6 @@
  */
 
 import { useRef } from 'react'
-import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import MovieCard, { type ProjectCard } from './MovieCard'
 

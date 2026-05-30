@@ -2,19 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import Scene3D from '@/components/Scene3D'
 import HeroBackground from '@/components/HeroBackground'
 import CastingRoleCard from '@/components/casting/CastingRoleCard'
 import EncouragementSection from '@/components/casting/EncouragementSection'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 import { useIsMobile } from '@/hooks/useIsMobile'
-
-interface HeroVideoItem {
-    id: string
-    url: string
-    duration: number
-}
 
 interface CastingCall {
     id: string
