@@ -404,7 +404,7 @@ export default function RegisterPage() {
                             fontSize: '0.85rem', color: 'var(--text-tertiary)',
                         }}>
                             {t('alreadyHaveAccount')}{' '}
-                            <Link href={`/${locale}/login${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
+                            <Link href={`/login${redirectTo ? `?redirect=${encodeURIComponent(redirectTo)}` : ''}`} style={{ color: 'var(--accent-gold)', fontWeight: 600 }}>
                                 {t('signIn')}
                             </Link>
                         </div>
