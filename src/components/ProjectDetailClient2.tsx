@@ -6,11 +6,13 @@ import NextImage from 'next/image'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
 
+import dynamic from 'next/dynamic'
 import BackButton from '@/components/BackButton'
-import WatchPlayer from '@/components/WatchPlayer'
 import ShareButtons from '@/components/share/ShareButtons'
 import CommentSection from '@/components/comments/CommentSection'
 import { useIsMobile } from '@/hooks/useIsMobile'
+
+const WatchPlayer = dynamic(() => import('@/components/WatchPlayer'), { ssr: false })
 
 interface CastingCall {
     id: string
@@ -68,7 +70,7 @@ const statusLabelKeys: Record<string, string> = {
     upcoming: 'comingSoon',
 }
 
-export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, currentUserId, currentUserRole }: { project: ProjectData; isLoggedIn?: boolean; hasTrailer?: boolean; currentUserId?: string | null; currentUserRole?: string | null }) {
+export default function ProjectDetailClient({ project, hasTrailer, currentUserId, currentUserRole }: { project: ProjectData; hasTrailer?: boolean; currentUserId?: string | null; currentUserRole?: string | null }) {
     const t = useTranslations('projectDetail')
     const locale = useLocale()
     const trailerRef = useRef<HTMLDivElement>(null)
@@ -210,8 +212,6 @@ export default function ProjectDetailClient({ project, isLoggedIn, hasTrailer, c
             })
             .finally(() => setCheckingAuth(false))
     }
-
-    const isVideoFile = (url: string) => url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov')
 
     return (
         <>

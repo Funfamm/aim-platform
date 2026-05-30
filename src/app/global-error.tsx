@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect } from 'react'
+import Link from 'next/link'
 import * as Sentry from '@sentry/nextjs'
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -35,7 +36,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                 }}>
                     {/* Logo */}
                     <div style={{ marginBottom: '40px' }}>
-                        <a href="/" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                        <Link href="/" style={{ textDecoration: 'none', display: 'inline-block' }}>
                             <span style={{
                                 fontFamily: 'Inter, sans-serif', fontWeight: 800,
                                 fontSize: '1.6rem', letterSpacing: '-0.5px',
@@ -43,7 +44,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                                 <span style={{ color: '#d4a853' }}>AIM</span>
                                 <span style={{ color: '#e8e6e3' }}> Studio</span>
                             </span>
-                        </a>
+                        </Link>
                     </div>
 
                     {/* Icon */}
@@ -100,7 +101,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                         >
                             Try again
                         </button>
-                        <a
+                        <Link
                             href="/"
                             style={{
                                 padding: '12px 28px', borderRadius: '10px', cursor: 'pointer',
@@ -111,13 +112,13 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
                             }}
                         >
                             Go Home
-                        </a>
+                        </Link>
                     </div>
 
                     {/* Footer note */}
                     <p style={{ marginTop: '40px', fontSize: '0.75rem', color: '#4b5563' }}>
                         © {new Date().getFullYear()} AIM Studio · If this persists,{' '}
-                        <a href="/contact" style={{ color: '#d4a853', textDecoration: 'none' }}>contact support</a>
+                        <Link href="/contact" style={{ color: '#d4a853', textDecoration: 'none' }}>contact support</Link>
                     </p>
                 </div>
             </body>

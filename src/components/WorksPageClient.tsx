@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
 import HeroBackground from '@/components/HeroBackground'
 import Link from 'next/link'
-import Scene3D from '@/components/Scene3D'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
@@ -12,7 +11,8 @@ import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import dynamic from 'next/dynamic'
 import type { ProjectCard } from '@/components/mobile/MovieCard'
 
-// Mobile-only components — code-split so desktop never loads them
+// Code-split heavy/desktop-only components so mobile never downloads them
+const Scene3D          = dynamic(() => import('@/components/Scene3D'),                  { ssr: false, loading: () => null })
 const SearchBar        = dynamic(() => import('@/components/mobile/SearchBar'),         { ssr: false })
 const RollRow          = dynamic(() => import('@/components/mobile/RollRow'),            { ssr: false })
 const HoverPreviewCard = dynamic(() => import('@/components/desktop/HoverPreviewCard'), { ssr: false })

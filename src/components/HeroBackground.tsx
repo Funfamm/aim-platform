@@ -268,6 +268,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
             <video
                 ref={videoARef}
                 autoPlay muted playsInline loop
+                preload="none"
                 controlsList="nodownload"
                 onContextMenu={(e) => e.preventDefault()}
                 onCanPlay={() => setVideoReady(true)}
@@ -287,6 +288,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
             <video
                 ref={videoBRef}
                 autoPlay muted playsInline loop
+                preload="none"
                 controlsList="nodownload"
                 onContextMenu={(e) => e.preventDefault()}
                 style={{

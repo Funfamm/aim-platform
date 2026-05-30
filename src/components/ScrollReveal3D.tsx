@@ -30,9 +30,13 @@ export default function ScrollReveal3D({
         const observer = new IntersectionObserver(
             ([entry]) => {
                 if (entry.isIntersecting) {
+                    el.style.willChange = 'opacity, transform'
                     setTimeout(() => {
                         el.style.opacity = '1'
                         el.style.transform = 'none'
+                        // Clear willChange after the 0.8s transition so the GPU
+                        // layer is released and VRAM is freed.
+                        setTimeout(() => { el.style.willChange = 'auto' }, 900)
                     }, delay)
                     observer.unobserve(el)
                 }
@@ -65,7 +69,6 @@ export default function ScrollReveal3D({
                 opacity: 0,
                 transform: getInitialTransform(),
                 transition: `opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
-                willChange: 'opacity, transform',
             }}
         >
             {children}

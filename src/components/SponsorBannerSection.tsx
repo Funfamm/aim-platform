@@ -341,13 +341,6 @@ export default function SponsorBannerSection({ sponsors, overrides }: { sponsors
                 </div>
             </div>
 
-            <style>{`
-                @keyframes sponsorShimmer {
-                    0%   { background-position: 200% 0; opacity: 0; }
-                    15%  { opacity: 1; }
-                    100% { background-position: -50% 0; opacity: 0; }
-                }
-            `}</style>
         </section>
     )
 }

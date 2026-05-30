@@ -48,14 +48,14 @@ export async function GET(req: NextRequest) {
         // on every page load. 5 min fresh + 1 hour stale-while-revalidate
         // eliminates the DB round-trip on repeat visits.
         if (!isAdmin) {
-            res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
+            res.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=3600')
         }
         return res
     }
 
     const res = NextResponse.json(media)
     if (!isAdmin) {
-        res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=3600')
+        res.headers.set('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=3600')
     }
     return res
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from 'react'
+import { useState, useEffect, FormEvent } from 'react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import CinematicBackground from '@/components/CinematicBackground'
@@ -34,82 +34,6 @@ function StepProgress({ current }: { current: number }) {
                         }} />
                     )}
                 </div>
-            ))}
-        </div>
-    )
-}
-
-/* ── Animated Digit Input Boxes ── */
-function CodeInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-    const inputRefs = useRef<(HTMLInputElement | null)[]>([])
-    const digits = value.padEnd(6, '').split('').slice(0, 6)
-
-    useEffect(() => {
-        // Auto-focus first empty box
-        const firstEmpty = digits.findIndex(d => !d.trim())
-        if (firstEmpty >= 0 && inputRefs.current[firstEmpty]) {
-            inputRefs.current[firstEmpty]?.focus()
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    const handleKeyDown = (i: number, e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Backspace' && !digits[i] && i > 0) {
-            const newVal = value.split('')
-            newVal[i - 1] = ''
-            onChange(newVal.join('').replace(/\s/g, ''))
-            inputRefs.current[i - 1]?.focus()
-        }
-        if (e.key === 'ArrowLeft' && i > 0) inputRefs.current[i - 1]?.focus()
-        if (e.key === 'ArrowRight' && i < 5) inputRefs.current[i + 1]?.focus()
-    }
-
-    const handleInput = (i: number, char: string) => {
-        if (!/^\d$/.test(char)) return
-        const newDigits = [...digits]
-        newDigits[i] = char
-        const newVal = newDigits.join('').replace(/\s/g, '')
-        onChange(newVal)
-        if (i < 5) inputRefs.current[i + 1]?.focus()
-    }
-
-    const handlePaste = (e: React.ClipboardEvent) => {
-        e.preventDefault()
-        const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
-        if (pasted) {
-            onChange(pasted)
-            const nextIdx = Math.min(pasted.length, 5)
-            inputRefs.current[nextIdx]?.focus()
-        }
-    }
-
-    return (
-        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }} onPaste={handlePaste}>
-            {digits.map((digit, i) => (
-                <input
-                    key={i}
-                    ref={el => { inputRefs.current[i] = el }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit.trim()}
-                    onChange={(e) => handleInput(i, e.target.value.slice(-1))}
-                    onKeyDown={(e) => handleKeyDown(i, e)}
-                    onFocus={(e) => e.target.select()}
-                    autoComplete={i === 0 ? 'one-time-code' : 'off'}
-                    style={{
-                        width: '48px', height: '60px', textAlign: 'center',
-                        fontSize: '1.5rem', fontWeight: 800, fontFamily: "'Courier New', monospace",
-                        background: digit.trim() ? 'rgba(212,168,83,0.08)' : 'var(--bg-primary)',
-                        border: digit.trim() ? '2px solid rgba(212,168,83,0.5)' : '2px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-md)',
-                        color: digit.trim() ? 'var(--accent-gold)' : 'var(--text-primary)',
-                        outline: 'none',
-                        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
-                        boxShadow: digit.trim() ? '0 0 8px rgba(212,168,83,0.1)' : 'none',
-                        caretColor: 'var(--accent-gold)',
-                    }}
-                />
             ))}
         </div>
     )
