@@ -37,7 +37,7 @@ export async function GET() {
         // Cache publicly — these settings change rarely and are fetched on every page load.
         // 60s fresh + 5min stale-while-revalidate. Admin panel clears localStorage + calls
         // refresh() after saving, so stale data never persists for admin users.
-        res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
+        res.headers.set('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=60')
         return res
     } catch {
         return NextResponse.json({ siteName: 'AIM Studio', tagline: 'Creating Cinema with AI' })

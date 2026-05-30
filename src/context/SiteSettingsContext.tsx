@@ -24,6 +24,7 @@ interface SiteSettings {
 interface SiteSettingsContextValue {
   settings: SiteSettings;
   refresh: () => void;
+  updateSettings: (data: SiteSettings) => void;
 }
 
 // Stable defaults — match what an unconfigured server returns.
@@ -63,6 +64,7 @@ export function clearSiteSettingsCache() {
 const SiteSettingsContext = createContext<SiteSettingsContextValue>({
   settings: STABLE_DEFAULTS,
   refresh: () => {},
+  updateSettings: () => {},
 });
 
 export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
@@ -89,6 +91,11 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
     fetchSettings();
   }, [fetchSettings]);
 
+  const updateSettings = useCallback((data: SiteSettings) => {
+    setSettings(data);
+    writeCache(data);
+  }, []);
+
   useEffect(() => {
     // Apply cached settings after hydration so the UI reflects the last known
     // state without a flash, then fetch fresh data to stay up to date.
@@ -110,7 +117,7 @@ export const SiteSettingsProvider = ({ children }: { children: ReactNode }) => {
   }, [fetchSettings]);
 
   return (
-    <SiteSettingsContext.Provider value={{ settings, refresh }}>
+    <SiteSettingsContext.Provider value={{ settings, refresh, updateSettings }}>
       {children}
     </SiteSettingsContext.Provider>
   );

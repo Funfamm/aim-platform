@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSiteSettings } from '@/context/SiteSettingsContext'
 
 import AdminSidebar from '@/components/AdminSidebar'
 
@@ -959,6 +960,7 @@ function EmailPreviewGallery() {
 
 
 export default function AdminSettingsPage() {
+    const { updateSettings: updateSiteSettings } = useSiteSettings()
     const [tab, setTab] = useState<string>('general')
     const [settings, setSettings] = useState<Settings>({
         siteName: '', tagline: '', aboutText: '', studioStory: '', mission: '', aboutPageData: '', homePageData: '',
@@ -1170,13 +1172,27 @@ export default function AdminSettingsPage() {
             const res = await fetch('/api/admin/settings', {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
             })
+            const data = await res.json().catch(() => ({}))
             if (!res.ok) {
-                const errData = await res.json().catch(() => ({}))
-                throw new Error(errData.details || errData.error || `Save failed (${res.status})`)
+                throw new Error(data.details || data.error || `Save failed (${res.status})`)
             }
             setSaved(true); setDirty(false)
-            // Bust the SiteSettings cache so Navbar and other consumers reload
-            // the new brand name / logo / section visibility immediately
+            // Push fresh public settings into context immediately — Navbar rerenders without refresh.
+            // StorageEvent only fires in other tabs, not the current one, so we must update directly.
+            updateSiteSettings({
+                siteName: data.siteName,
+                logoUrl: data.logoUrl,
+                castingCallsEnabled: data.castingCallsEnabled,
+                scriptCallsEnabled: data.scriptCallsEnabled,
+                trainingEnabled: data.trainingEnabled,
+                donationsEnabled: data.donationsEnabled,
+                sponsorsPageEnabled: data.sponsorsPageEnabled,
+                allowPublicTrailers: data.allowPublicTrailers,
+                socialLinks: data.socialLinks,
+                footerPageData: data.footerPageData,
+                tagline: data.tagline,
+            })
+            // Also bust localStorage so other tabs/windows re-fetch on next load
             try { localStorage.removeItem('aim_site_settings_v1') } catch { /* */ }
             setTimeout(() => setSaved(false), 3000)
         } catch (err) { setError(err instanceof Error ? err.message : 'Failed to save settings') }
