@@ -12,7 +12,6 @@ import { SearchOverlay } from '@/components/search/SearchOverlay';
 import { useTranslations, useLocale } from 'next-intl';
 import { locales, localeNames, type Locale } from '@/i18n/routing'
 import { NotificationBell } from '@/components/NotificationBell'
-import { useNotifications } from '@/context/NotificationContext'
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false)
@@ -23,7 +22,6 @@ export default function Navbar() {
     const { settings } = useSiteSettings();
     const locale = useLocale();
     const tB = useTranslations()
-    const { unreadCount: navUnread } = useNotifications()
     const brandName = settings?.siteName ? (() => {
         const parts = settings.siteName.split(' ');
         return { accent: parts[0] || 'AIM', rest: parts.slice(1).join(' ') || 'Studio' };

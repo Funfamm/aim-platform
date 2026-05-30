@@ -13,7 +13,7 @@ interface FallbackNoticeProps {
  * Auto-dismissing 3-second toast shown when the user's preferred subtitle
  * language is not available for a title, and English has been loaded instead.
  */
-export default function FallbackNotice({ lang, langName }: FallbackNoticeProps) {
+export default function FallbackNotice({ langName }: FallbackNoticeProps) {
     const [visible, setVisible] = useState(true)
 
     useEffect(() => {

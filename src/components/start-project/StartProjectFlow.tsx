@@ -182,7 +182,7 @@ export default function StartProjectFlow() {
             if (formSaveTimer.current) clearTimeout(formSaveTimer.current)
             formSaveTimer.current = setTimeout(() => {
                 try {
-                    const { uploads, ...saveable } = next
+                    const { uploads: _uploads, ...saveable } = next
                     sessionStorage.setItem(DRAFT_KEY, JSON.stringify(saveable))
                     sessionStorage.setItem(STEP_KEY, String(stepIndex))
                 } catch { /* storage full or unavailable */ }

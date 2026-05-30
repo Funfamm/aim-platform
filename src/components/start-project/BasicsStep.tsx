@@ -10,8 +10,7 @@ import {
 import type { StartProjectFormData } from './StartProjectFlow'
 
 // ── Section state ───────────────────────────────────────────────────────────
-const SECTION_IDS = ['projectType', 'yourInfo', 'projectDetails', 'typeSpecific'] as const
-type SectionId = typeof SECTION_IDS[number]
+type SectionId = 'projectType' | 'yourInfo' | 'projectDetails' | 'typeSpecific'
 
 interface SectionState { unlocked: boolean; open: boolean }
 

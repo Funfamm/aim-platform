@@ -693,7 +693,7 @@ export default function CastShowcase({ cast, castingHref, projectTitle }: CastSh
                             paddingTop: '4px',
                         }}
                     >
-                        {gridCast.map((member, idx) => {
+                        {gridCast.map((member) => {
                             const resolved = resolve(member)
                             return (
                                 <div
