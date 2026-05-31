@@ -285,7 +285,7 @@ export default function SubscribePage() {
                                             className="btn btn-primary"
                                             style={{ width: '100%', padding: '0.8rem', fontWeight: 700, opacity: isDisabled ? 0.55 : 1, transition: 'opacity 0.2s' }}
                                         >
-                                            {status === 'sending' ? t('submitting') : isVerifying ? 'Verifying…' : t('submitBtn')}
+                                            {status === 'sending' ? t('submitting') : t('submitBtn')}
                                         </button>
 
                                         {/* Turnstile — invisible mode, auto-executes on render */}

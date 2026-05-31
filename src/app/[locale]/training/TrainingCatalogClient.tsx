@@ -33,6 +33,7 @@ const LEVEL_KEYS: Record<string, string> = {
 
 export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses: CourseData[]; isLoggedIn: boolean }) {
     const t = useTranslations('training')
+    const tc = useTranslations('casting')
     const locale = useLocale()
 
     /** Format raw minutes into '1h 30m', '45m', '2h', etc. */
@@ -300,36 +301,61 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                 <div style={{ background: 'var(--bg-primary)', paddingBottom: '5rem' }}>
 
                     {courses.length === 0 ? (
-                        /* ── Empty state ── */
-                        <section style={{ maxWidth: '640px', margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
+                        /* ── Premium empty state ── */
+                        <section style={{ maxWidth: '560px', margin: '0 auto', padding: '3rem 1.5rem 6rem' }}>
                             <div style={{
-                                borderRadius: '24px', padding: '4rem 3rem', textAlign: 'center',
-                                background: 'linear-gradient(135deg, rgba(212,168,83,0.06), rgba(168,85,247,0.04), rgba(59,130,246,0.04))',
-                                border: '1px solid rgba(212,168,83,0.14)',
-                                position: 'relative', overflow: 'hidden',
+                                borderRadius: '24px',
+                                padding: '3rem 2.5rem',
+                                textAlign: 'center',
+                                background: 'linear-gradient(135deg, rgba(212,168,83,0.06) 0%, rgba(13,15,20,0.6) 50%, rgba(59,130,246,0.04) 100%)',
+                                border: '1px solid rgba(212,168,83,0.15)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                backdropFilter: 'blur(24px)',
                             }}>
-                                <div style={{ position: 'absolute', top: '-60px', right: '-60px', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,83,0.08), transparent)', pointerEvents: 'none' }} />
-                                <div style={{ fontSize: '3.5rem', marginBottom: '20px', animation: 'float 4s ease-in-out infinite' }}>📚</div>
-                                <h2 style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '12px', fontFamily: 'var(--font-display)' }}>{t('coursesComingSoon')}</h2>
-                                <p style={{ color: 'var(--text-tertiary)', lineHeight: 1.8, fontSize: '0.9rem', maxWidth: '400px', margin: '0 auto 28px' }}>
+                                {/* Decorative radial glow */}
+                                <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,83,0.1), transparent)', pointerEvents: 'none' }} />
+                                <div style={{ fontSize: '3rem', marginBottom: '16px', animation: 'float 4s ease-in-out infinite' }}>📚</div>
+                                <div style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    padding: '4px 12px', borderRadius: '99px',
+                                    background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)',
+                                    fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em',
+                                    textTransform: 'uppercase' as const, color: 'var(--accent-gold)',
+                                    marginBottom: '16px',
+                                }}>
+                                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} />
+                                    {t('label')}
+                                </div>
+                                <h2 style={{
+                                    fontSize: '1.3rem', fontWeight: 800, marginBottom: '10px',
+                                    fontFamily: 'var(--font-display)', lineHeight: 1.2,
+                                }}>{t('coursesComingSoon')}</h2>
+                                <p style={{
+                                    color: 'var(--text-secondary)', fontSize: '0.88rem',
+                                    maxWidth: '360px', margin: '0 auto 24px',
+                                    lineHeight: 1.65,
+                                }}>
                                     {isLoggedIn ? t('noCoursesLoggedIn') : t('noCoursesGuest')}
                                 </p>
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap', marginBottom: isLoggedIn ? '0' : '28px' }}>
-                                    {[{ icon: '🎬', text: t('featFilmmaking') }, { icon: '🎭', text: t('featActing') }, { icon: '🤖', text: t('featAI') }].map(f => (
-                                        <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.6 }}>
-                                            <span style={{ fontSize: '1.3rem' }}>{f.icon}</span>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)' }}>{f.text}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                                {!isLoggedIn && (
-                                    <Link href="/register" style={{
-                                        display: 'inline-block', padding: '14px 36px', borderRadius: 'var(--radius-full)',
-                                        background: 'linear-gradient(135deg, var(--accent-gold), #e8c356)',
-                                        color: '#0a0a0a', fontWeight: 800, fontSize: '0.9rem', textDecoration: 'none',
-                                        boxShadow: '0 6px 24px rgba(212,168,83,0.3)',
-                                    }}>{t('createAccount')}</Link>
-                                )}
+                                <Link
+                                    href="/subscribe"
+                                    style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                        padding: '11px 28px',
+                                        background: 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
+                                        border: 'none', borderRadius: 'var(--radius-full)',
+                                        color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
+                                        letterSpacing: '0.02em', textDecoration: 'none',
+                                        boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
+                                        transition: 'box-shadow 0.2s, transform 0.2s',
+                                    }}
+                                >
+                                    🔔 {tc('notifyMeWhenOpen')}
+                                </Link>
+                                <p style={{ marginTop: '16px', fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                                    {tc('followSocial')}
+                                </p>
                             </div>
                         </section>
                     ) : (

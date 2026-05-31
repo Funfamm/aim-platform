@@ -206,7 +206,7 @@ export default function SubscribeForm() {
                         transition: 'opacity 0.2s',
                     }}
                 >
-                    {status === 'sending' ? '...' : isVerifying ? 'Verifying…' : t('subscribe')}
+                    {status === 'sending' ? '...' : t('subscribe')}
                 </button>
             </div>
 

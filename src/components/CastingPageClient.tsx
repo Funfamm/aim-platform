@@ -349,15 +349,62 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                         </div>
 
                         {Object.keys(grouped).length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: 'var(--space-4xl) 0' }}>
-                                <div style={{ fontSize: '3rem', marginBottom: 'var(--space-md)' }}>🎭</div>
-                                <h3 style={{ marginBottom: 'var(--space-sm)' }}>{t('stayTuned')}</h3>
-                                <p style={{ color: 'var(--text-tertiary)', fontSize: '0.95rem', maxWidth: '440px', margin: '0 auto', lineHeight: 1.6, textAlign: 'center' }}>
-                                    {t('noOpenCasting')}
-                                </p>
-                                <p style={{ color: 'var(--text-tertiary)', marginTop: 'var(--space-sm)', fontSize: '0.9rem', textAlign: 'center', margin: 'var(--space-sm) auto 0' }}>
-                                    {t('followSocial')}
-                                </p>
+                            <div style={{
+                                maxWidth: '520px', margin: '0 auto',
+                                padding: '48px 24px 64px',
+                            }}>
+                                <div style={{
+                                    borderRadius: '24px',
+                                    padding: '3rem 2.5rem',
+                                    textAlign: 'center',
+                                    background: 'linear-gradient(135deg, rgba(212,168,83,0.06) 0%, rgba(13,15,20,0.6) 50%, rgba(59,130,246,0.04) 100%)',
+                                    border: '1px solid rgba(212,168,83,0.15)',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    backdropFilter: 'blur(24px)',
+                                }}>
+                                    {/* Decorative radial glow */}
+                                    <div style={{ position: 'absolute', top: '-60px', left: '50%', transform: 'translateX(-50%)', width: '200px', height: '200px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(212,168,83,0.1), transparent)', pointerEvents: 'none' }} />
+                                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🎭</div>
+                                    <div style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                        padding: '4px 12px', borderRadius: '99px',
+                                        background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)',
+                                        fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.12em',
+                                        textTransform: 'uppercase' as const, color: 'var(--accent-gold)',
+                                        marginBottom: '16px',
+                                    }}>
+                                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-gold)', display: 'inline-block' }} />
+                                        {t('openRoles')}
+                                    </div>
+                                    <h3 style={{
+                                        fontSize: '1.3rem', fontWeight: 800, marginBottom: '10px',
+                                        fontFamily: 'var(--font-display)', lineHeight: 1.2,
+                                    }}>{t('stayTuned')}</h3>
+                                    <p style={{
+                                        color: 'var(--text-secondary)', fontSize: '0.88rem',
+                                        maxWidth: '360px', margin: '0 auto 24px',
+                                        lineHeight: 1.65,
+                                    }}>{t('noOpenCasting')}</p>
+                                    <Link
+                                        href="/subscribe"
+                                        style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                            padding: '11px 28px',
+                                            background: 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
+                                            border: 'none', borderRadius: 'var(--radius-full)',
+                                            color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
+                                            letterSpacing: '0.02em', textDecoration: 'none',
+                                            boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
+                                            transition: 'box-shadow 0.2s, transform 0.2s',
+                                        }}
+                                    >
+                                        🔔 {t('notifyMeWhenOpen')}
+                                    </Link>
+                                    <p style={{ marginTop: '16px', fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
+                                        {t('followSocial')}
+                                    </p>
+                                </div>
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2xl)' }}>

@@ -105,7 +105,8 @@
     "tbd": "TBD",
     "stayTuned": "Bleiben Sie Dran",
     "noOpenCasting": "Kein offenes Casting momentan.",
-    "followSocial": "Folgen Sie uns in sozialen Medien."
+    "followSocial": "Folgen Sie uns in sozialen Medien.",
+    "notifyMeWhenOpen": "Benachrichtigen wenn offen"
   },
   "works": {
     "label": "Unser Portfolio",

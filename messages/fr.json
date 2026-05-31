@@ -105,7 +105,8 @@
     "tbd": "À déterminer",
     "stayTuned": "Restez à l'écoute",
     "noOpenCasting": "Aucun casting ouvert pour le moment, mais de nouveaux rôles arrivent bientôt.",
-    "followSocial": "Suivez-nous sur les réseaux sociaux pour être le premier informé."
+    "followSocial": "Suivez-nous sur les réseaux sociaux pour être le premier informé.",
+    "notifyMeWhenOpen": "Me notifier quand ouvert"
   },
   "works": {
     "label": "Notre Portfolio",

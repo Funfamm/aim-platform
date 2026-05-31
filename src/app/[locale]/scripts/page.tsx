@@ -308,10 +308,11 @@ export default async function ScriptCallsPage() {
             <main style={{ minHeight: '100vh', position: 'relative', zIndex: 2 }}>
 
                 {/* ══ HERO — full-screen desktop | contained card on mobile ══ */}
+                {/* Desktop: minHeight so content below is reachable; overflow visible so fixed video isn't clipped.
+                    Mobile CSS overrides both with !important for the contained card layout. */}
                 <section className="scripts-hero-section" style={{
                     position: 'relative',
-                    height: '100dvh',
-                    overflow: 'hidden',
+                    minHeight: '100dvh',
                     zIndex: 1,
                     display: 'flex',
                     flexDirection: 'column',

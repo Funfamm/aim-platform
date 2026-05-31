@@ -105,7 +105,8 @@
     "tbd": "미정",
     "stayTuned": "기대하세요",
     "noOpenCasting": "현재 오픈 캐스팅이 없습니다.",
-    "followSocial": "SNS에서 팔로우하세요."
+    "followSocial": "SNS에서 팔로우하세요.",
+    "notifyMeWhenOpen": "오픈 시 알림 받기"
   },
   "works": {
     "label": "포트폴리오",

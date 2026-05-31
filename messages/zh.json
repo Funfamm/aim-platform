@@ -105,7 +105,8 @@
     "tbd": "待定",
     "stayTuned": "敬请期待",
     "noOpenCasting": "目前没有开放选角。",
-    "followSocial": "关注我们的社交媒体。"
+    "followSocial": "关注我们的社交媒体。",
+    "notifyMeWhenOpen": "开放时通知我"
   },
   "works": {
     "label": "我们的作品集",

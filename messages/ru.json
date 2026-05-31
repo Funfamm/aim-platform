@@ -105,7 +105,8 @@
     "tbd": "Уточняется",
     "stayTuned": "Следите",
     "noOpenCasting": "Нет открытых кастингов.",
-    "followSocial": "Подписывайтесь на нас."
+    "followSocial": "Подписывайтесь на нас.",
+    "notifyMeWhenOpen": "Уведомить при открытии"
   },
   "works": {
     "label": "Портфолио",
