@@ -16,6 +16,9 @@ interface HeroBackgroundProps {
     page: string
     /** Whether the current viewport is mobile */
     isMobile: boolean
+    /** When true, renders position:absolute instead of position:fixed so the media
+        is contained within a parent element (e.g. a mobile cinematic card) */
+    cardMode?: boolean
     /** Optional poster image shown before video loads */
     poster?: string
     /** Optional className for the outer container */
@@ -32,7 +35,8 @@ function matchesTarget(target: string | undefined, isMobile: boolean): boolean {
     return isMobile ? target === 'mobile' : target === 'desktop'
 }
 
-export default function HeroBackground({ page, isMobile, poster, className, onVideoChange, jumpToVideoRef }: HeroBackgroundProps) {
+export default function HeroBackground({ page, isMobile, cardMode = false, poster, className, onVideoChange, jumpToVideoRef }: HeroBackgroundProps) {
+    const pos = cardMode ? 'absolute' : 'fixed'
     // Detect mobile internally so the fetch effect always uses the correct
     // device state — avoids the timing gap where the prop was still `false`
     // on the first render while useIsMobile had not yet fired in the parent.
@@ -207,7 +211,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                     // overflow:hidden + maxWidth:100vw prevent the fixed layer from causing
                     // a horizontal scrollbar on mobile portrait viewports.
                     <div key={src} className={className} style={{
-                        position: 'fixed', inset: 0, zIndex: 0,
+                        position: pos, inset: 0, zIndex: 0,
                         maxWidth: '100vw', overflow: 'hidden',
                         opacity: currentBg === i ? 1 : 0,
                         transition: 'opacity 1.5s ease-in-out',
@@ -234,7 +238,7 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
                 ))}
                 {/* Dark overlay for text readability */}
                 <div style={{
-                    position: 'fixed', inset: 0, zIndex: 1,
+                    position: pos, inset: 0, zIndex: 1,
                     maxWidth: '100vw', overflow: 'hidden',
                     background: 'linear-gradient(to bottom, rgba(13,15,20,0.05) 0%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.55) 100%)',
                     pointerEvents: 'none',
@@ -246,9 +250,9 @@ export default function HeroBackground({ page, isMobile, poster, className, onVi
     // ═══ RENDER: VIDEOS (fallback) ═══
     return (
         <div className={className} style={{
-            position: 'fixed',
+            position: pos,
             top: 0, left: 0,
-            width: '100%', maxWidth: '100vw', height: '100dvh',
+            width: '100%', maxWidth: '100vw', height: cardMode ? '100%' : '100dvh',
             overflow: 'hidden',
             zIndex: 0,
             background: '#0d0f14',

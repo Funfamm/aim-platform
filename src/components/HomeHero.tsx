@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import HeroBackground from '@/components/HeroBackground'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface HomeHeroProps {
     completedCount: number
@@ -27,6 +28,7 @@ export default function HomeHero({
 }: HomeHeroProps) {
     const t = useTranslations('hero')
     const th = useTranslations('home')
+    const isMobile = useIsMobile(isMobileHint)
 
     const ROTATING_WORDS = useMemo(() => {
         if (rotatingWords && rotatingWords.length > 0) return rotatingWords
@@ -56,13 +58,214 @@ export default function HomeHero({
         return () => clearInterval(interval)
     }, [ROTATING_WORDS])
 
+    // ── Shared: rotating word span (used in both mobile and desktop layouts) ──
+    const renderRotatingWordsSpan = () => (
+        <span style={{
+            display: 'inline-grid',
+            verticalAlign: 'baseline',
+        }}>
+            {ROTATING_WORDS.map((word: string, i: number) => (
+                <span key={i} className={i === wordIdx && wordFade ? 'shimmer-gold-text' : ''} style={{
+                    gridRow: 1,
+                    gridColumn: 1,
+                    fontFamily: 'var(--font-serif)',
+                    fontStyle: 'italic',
+                    whiteSpace: 'nowrap',
+                    background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                    opacity: i === wordIdx && wordFade ? 1 : 0,
+                    transform: i === wordIdx && wordFade ? 'translateY(0)' : 'translateY(8px)',
+                    transition: 'opacity 0.4s ease, transform 0.4s ease',
+                }}>{word}</span>
+            ))}
+        </span>
+    )
+
+    // ── Shared: headline content (both layouts call this) ──
+    const renderHeadline = (fontSize: string) => {
+        const rawTitle = heroTitle || t('title')
+        const prefix = t('titleAccentPrefix')
+        if (rawTitle.includes('{accent}')) {
+            const parts = rawTitle.split('{accent}')
+            return (
+                <h1 style={{ fontSize, fontWeight: 800, lineHeight: 1.15, margin: 0 }}>
+                    {parts[0]}{renderRotatingWordsSpan()}{parts[1]}
+                </h1>
+            )
+        }
+        return (
+            <h1 style={{ fontSize, fontWeight: 800, lineHeight: 1.15, margin: 0 }}>
+                {rawTitle}
+                <br />
+                {prefix && <span style={{ fontWeight: 800, opacity: 1 }}>{prefix} </span>}
+                {renderRotatingWordsSpan()}
+            </h1>
+        )
+    }
+
+    // ── Video navigation dots ──
+    const renderVideoDots = () => videoDots.total > 1 ? (
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '6px',
+            marginTop: 'var(--space-md)',
+            width: '100%',
+        }}>
+            {Array.from({ length: videoDots.total }).map((_, i) => (
+                <button
+                    key={i}
+                    onClick={() => jumpToVideoRef.current?.(i)}
+                    style={{
+                        width: videoDots.currentIdx === i ? '28px' : '6px',
+                        height: '6px',
+                        borderRadius: 'var(--radius-full)',
+                        border: 'none',
+                        background: videoDots.currentIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        padding: 0,
+                    }}
+                    aria-label={`Play video ${i + 1}`}
+                />
+            ))}
+        </div>
+    ) : null
+
+    // ══════════════════════════════════════════════════════
+    // MOBILE — Contained cinematic card layout
+    // Card uses position:relative so HeroBackground renders
+    // absolute inside it instead of fixed over the viewport.
+    // ══════════════════════════════════════════════════════
+    if (isMobile) {
+        return (
+            <section
+                aria-label="Hero"
+                style={{
+                    position: 'relative',
+                    // Sits below the fixed navbar (~60px) with 4px gap, above the mobile tab bar (~80px)
+                    // Height = viewport - navbar clearance - bottom nav clearance
+                    height: 'calc(100dvh - 148px)',
+                    minHeight: '460px',
+                    maxHeight: '700px',
+                    marginTop: '64px',
+                    marginLeft: '12px',
+                    marginRight: '12px',
+                    marginBottom: '8px',
+                    borderRadius: '20px',
+                    overflow: 'hidden',
+                    background: '#0d0f14',
+                    zIndex: 0,
+                }}
+            >
+                {/* Media — absolute inside the card */}
+                <HeroBackground
+                    page="home"
+                    isMobile={true}
+                    cardMode={true}
+                    onVideoChange={handleVideoChange}
+                    jumpToVideoRef={jumpToVideoRef}
+                />
+
+                {/* Cinematic gradient — heavier at bottom for readability */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    zIndex: 2,
+                    background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.06) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)',
+                    pointerEvents: 'none',
+                }} />
+
+                {/* Hero content — bottom of card */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: 0, left: 0, right: 0,
+                    zIndex: 3,
+                    padding: '0 20px 20px',
+                }}>
+                    {/* Eyebrow / label */}
+                    <span className="text-label" style={{ display: 'block', marginBottom: '8px', fontSize: '0.65rem' }}>
+                        {heroLabel || t('label')}
+                    </span>
+
+                    {/* Headline with rotating word */}
+                    <div style={{ marginBottom: '10px' }}>
+                        {renderHeadline('clamp(1.75rem, 6.5vw, 2.2rem)')}
+                    </div>
+
+                    {/* Sub-headline — shorter on mobile */}
+                    <p style={{
+                        fontSize: '0.82rem',
+                        lineHeight: 1.55,
+                        color: 'var(--text-secondary)',
+                        marginBottom: '14px',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                    }}>
+                        {subHeadline || t('description')}
+                    </p>
+
+                    {/* CTA row */}
+                    <div className="hero-cta-row" style={{ display: 'flex', gap: '10px', marginBottom: '14px' }}>
+                        <Link href="/works" prefetch={false} className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.82rem', padding: '0.6rem 1rem' }}>
+                            {heroCta || t('cta')}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M5 12h14M12 5l7 7-7 7" />
+                            </svg>
+                        </Link>
+                        {castingEnabled && (
+                            <Link href="/casting" prefetch={false} className="btn btn-secondary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.82rem', padding: '0.6rem 1rem' }}>
+                                {heroCtaCasting || t('ctaCasting')}
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Stats pill — compact */}
+                    <div className="hero-stats-pill" style={{
+                        display: 'inline-flex',
+                        gap: 'var(--space-md)',
+                        padding: '0.45rem 1rem',
+                        background: 'rgba(255,255,255,0.06)',
+                        borderRadius: 'var(--radius-full)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        backdropFilter: 'blur(12px)',
+                        width: '100%',
+                        justifyContent: 'center',
+                    }}>
+                        <div>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{completedCount}</span>
+                            <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{th('films')}</span>
+                        </div>
+                        <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                        <div>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{upcomingCount}</span>
+                            <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{th('upcomingStat')}</span>
+                        </div>
+                        <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                        <div>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{openCastings}</span>
+                            <span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{th('castingStat')}</span>
+                        </div>
+                    </div>
+
+                    {/* Video navigation dots */}
+                    {renderVideoDots()}
+                </div>
+            </section>
+        )
+    }
+
+    // ══════════════════════════════════════════════════════
+    // DESKTOP — Original full-screen background layout
+    // Unchanged from previous implementation.
+    // ══════════════════════════════════════════════════════
     return (
         <>
             {/* ═══ BACKGROUND MEDIA (image or video, device-targeted) ═══ */}
-            {/* HeroBackground fetches ?type=background (images) and ?type=hero-video (videos).
-                Images take priority over videos. Device target ('mobile'/'desktop'/'all') is
-                enforced via matchesTarget(). isMobileHint passes the server UA result so the
-                first render uses the correct branch without a hydration swap. */}
             <HeroBackground
                 page="home"
                 isMobile={isMobileHint}
@@ -119,61 +322,9 @@ export default function HomeHero({
                         {heroLabel || t('label')}
                     </span>
 
-                    <h1 className="animate-fade-in-up" style={{
-                        fontSize: 'clamp(2.2rem, 5vw, 3.5rem)',
-                        marginBottom: 'var(--space-md)',
-                        fontWeight: 800,
-                        lineHeight: 1.15,
-                    }}>
-                        {(() => {
-                            const rawTitle = heroTitle || t('title');
-                            const prefix = t('titleAccentPrefix');
-
-                            const renderRotatingWordsSpan = () => (
-                                <span style={{
-                                    display: 'inline-grid',
-                                    verticalAlign: 'baseline',
-                                }}>
-                                    {ROTATING_WORDS.map((word: string, i: number) => (
-                                        <span key={i} className={i === wordIdx && wordFade ? 'shimmer-gold-text' : ''} style={{
-                                            gridRow: 1,
-                                            gridColumn: 1,
-                                            fontFamily: 'var(--font-serif)',
-                                            fontStyle: 'italic',
-                                            whiteSpace: 'nowrap',
-                                            background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
-                                            WebkitBackgroundClip: 'text',
-                                            WebkitTextFillColor: 'transparent',
-                                            backgroundClip: 'text',
-                                            opacity: i === wordIdx && wordFade ? 1 : 0,
-                                            transform: i === wordIdx && wordFade ? 'translateY(0)' : 'translateY(8px)',
-                                            transition: 'opacity 0.4s ease, transform 0.4s ease',
-                                        }}>{word}</span>
-                                    ))}
-                                </span>
-                            );
-
-                            if (rawTitle.includes('{accent}')) {
-                                const parts = rawTitle.split('{accent}');
-                                return (
-                                    <>
-                                        {parts[0]}
-                                        {renderRotatingWordsSpan()}
-                                        {parts[1]}
-                                    </>
-                                );
-                            }
-
-                            return (
-                                <>
-                                    {rawTitle}
-                                    <br />
-                                    {prefix && <span style={{ fontWeight: 800, opacity: 1 }}>{prefix} </span>}
-                                    {renderRotatingWordsSpan()}
-                                </>
-                            );
-                        })()}
-                    </h1>
+                    <div className="animate-fade-in-up" style={{ marginBottom: 'var(--space-md)' }}>
+                        {renderHeadline('clamp(2.2rem, 5vw, 3.5rem)')}
+                    </div>
 
                     {/* Sub-headline */}
                     <p className="animate-fade-in-up delay-2" style={{
@@ -227,33 +378,7 @@ export default function HomeHero({
                     </div>
 
                     {/* Video navigation dots — populated by HeroBackground via onVideoChange */}
-                    {videoDots.total > 1 && (
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            marginTop: 'var(--space-md)',
-                            width: '100%',
-                        }}>
-                            {Array.from({ length: videoDots.total }).map((_, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => jumpToVideoRef.current?.(i)}
-                                    style={{
-                                        width: videoDots.currentIdx === i ? '28px' : '6px',
-                                        height: '6px',
-                                        borderRadius: 'var(--radius-full)',
-                                        border: 'none',
-                                        background: videoDots.currentIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        padding: 0,
-                                    }}
-                                    aria-label={`Play video ${i + 1}`}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    {renderVideoDots()}
                 </div>
             </section>
         </>
