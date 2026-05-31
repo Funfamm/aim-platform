@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { revalidatePath } from 'next/cache'
 
 // GET: fetch media (optionally filtered)
 export async function GET(req: NextRequest) {
@@ -85,6 +86,9 @@ export async function POST(req: NextRequest) {
 
         const media = await prisma.pageMedia.create({ data: data as never })
 
+        // Bust Vercel edge cache so the change appears on the live site immediately
+        revalidatePath('/api/admin/media')
+
         return NextResponse.json(media, { status: 201 })
     } catch (err: unknown) {
         console.error('POST /api/admin/media error:', err)
@@ -106,6 +110,9 @@ export async function PUT(req: NextRequest) {
         data,
     })
 
+    // Bust Vercel edge cache so the change appears on the live site immediately
+    revalidatePath('/api/admin/media')
+
     return NextResponse.json(media)
 }
 
@@ -118,5 +125,9 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 })
 
     await prisma.pageMedia.delete({ where: { id } })
+
+    // Bust Vercel edge cache so the deletion is reflected immediately
+    revalidatePath('/api/admin/media')
+
     return NextResponse.json({ success: true })
 }

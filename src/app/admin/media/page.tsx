@@ -112,6 +112,35 @@ export default function AdminMediaPage() {
         return pageParts.includes(filterPage) || pageParts.includes('all')
     })
 
+    // ─── 4G safety: detect pages that have a desktop video but no mobile image fallback ──
+    const missingMobileFallbackPages = (() => {
+        const pagesWithDesktopVideo = new Set<string>()
+        const pagesWithMobileImage = new Set<string>()
+        for (const item of items) {
+            if (!item.active) continue
+            const itemPages = (item.page || '').split(',').map(s => s.trim())
+            const isVideo = item.type === 'video' || item.type === 'hero-video'
+            const isImage = !isVideo
+            for (const p of itemPages) {
+                if (isVideo && (item.target === 'desktop' || item.target === 'all')) {
+                    pagesWithDesktopVideo.add(p)
+                }
+                if (isImage && (item.target === 'mobile' || item.target === 'all')) {
+                    pagesWithMobileImage.add(p)
+                }
+            }
+        }
+        const missing: string[] = []
+        for (const p of pagesWithDesktopVideo) {
+            if (p === 'all') continue
+            if (!pagesWithMobileImage.has(p) && !pagesWithMobileImage.has('all')) {
+                const label = ALL_PAGES.find(ap => ap.value === p)?.short ?? p
+                missing.push(label)
+            }
+        }
+        return missing
+    })()
+
     // ─── Form helpers ─────────────────────────────────────────────────────────
 
     // Both hero-image and hero-video use multi-page assignment
@@ -448,6 +477,28 @@ export default function AdminMediaPage() {
                                 </div>
                             )}
 
+                            {/* ── 4G Safety Warnings ───────────────────────────────── */}
+                            {(form.type === 'video' || form.type === 'hero-video') && form.target === 'mobile' && (
+                                <div style={{
+                                    padding: '8px 12px', marginBottom: 'var(--space-sm)',
+                                    background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                                    borderRadius: 'var(--radius-md)', fontSize: '0.72rem', color: '#fbbf24', lineHeight: 1.5,
+                                }}>
+                                    ⚠️ <strong>Video assigned to Mobile.</strong> Mobile users may experience slow loading on 4G connections.
+                                    Recommended: assign video to <strong>Desktop</strong> and upload a separate mobile image fallback.
+                                </div>
+                            )}
+                            {(form.type === 'video' || form.type === 'hero-video') && form.target === 'all' && (
+                                <div style={{
+                                    padding: '8px 12px', marginBottom: 'var(--space-sm)',
+                                    background: 'rgba(59,130,246,0.06)', border: '1px solid rgba(59,130,246,0.15)',
+                                    borderRadius: 'var(--radius-md)', fontSize: '0.72rem', color: '#93c5fd', lineHeight: 1.5,
+                                }}>
+                                    ℹ️ <strong>Video assigned to Both.</strong> Mobile users will see image fallback instead of video
+                                    (4G protection is enabled). To ensure mobile users see a background, add a mobile image for this page.
+                                </div>
+                            )}
+
                             {/* Active toggle + submit */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', marginTop: 'var(--space-md)' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '0.78rem' }}>
@@ -583,9 +634,18 @@ export default function AdminMediaPage() {
                                         }}>{item.sortOrder}</span>
                                     </div>
 
-                                    {/* Device */}
+                                    {/* Device + 4G warning */}
                                     <div style={{ textAlign: 'center', fontSize: '0.7rem' }}>
-                                        {item.target === 'mobile' ? '📱' : item.target === 'desktop' ? '🖥️' : '🌐'}
+                                        <div>{item.target === 'mobile' ? '📱' : item.target === 'desktop' ? '🖥️' : '🌐'}</div>
+                                        {(item.type === 'video' || item.type === 'hero-video') && item.target !== 'desktop' && item.active && (
+                                            <span style={{
+                                                fontSize: '0.45rem', padding: '1px 4px',
+                                                borderRadius: 'var(--radius-full)',
+                                                background: 'rgba(245,158,11,0.1)', color: '#fbbf24',
+                                                border: '1px solid rgba(245,158,11,0.15)',
+                                                fontWeight: 700, textTransform: 'uppercase', whiteSpace: 'nowrap',
+                                            }}>⚠ 4G</span>
+                                        )}
                                     </div>
 
                                     {/* Actions */}
@@ -606,6 +666,19 @@ export default function AdminMediaPage() {
                     </div>
                 )}
 
+                {/* Missing mobile fallback warnings */}
+                {missingMobileFallbackPages.length > 0 && (
+                    <div style={{
+                        marginTop: 'var(--space-md)', padding: '8px 14px',
+                        background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.12)',
+                        borderRadius: 'var(--radius-md)', fontSize: '0.72rem', color: '#fbbf24', lineHeight: 1.6,
+                    }}>
+                        📱 <strong>No mobile image fallback found for:</strong>{' '}
+                        {missingMobileFallbackPages.join(', ')}.
+                        Mobile users on these pages will see a dark background because video autoplay is disabled on mobile.
+                    </div>
+                )}
+
                 {/* Info bar */}
                 <div style={{
                     marginTop: 'var(--space-lg)', padding: '8px 14px',
@@ -614,8 +687,12 @@ export default function AdminMediaPage() {
                 }}>
                     <strong style={{ color: 'var(--accent-gold)' }}>💡</strong>{' '}
                     Drag &amp; drop any image or video to upload · Hover video previews to play · Hidden items are preserved but not shown on the frontend ·{' '}
-                    Drag &amp; drop any image or video to upload · Hover video previews to play · Hidden items are preserved but not shown on the frontend ·{' '}
                     <strong>Hero Image</strong> and <strong>Hero Video</strong> display as full-screen backgrounds on the selected pages, with Hero Image taking priority over video when both are active.
+                    <br />
+                    <span style={{ color: 'rgba(147,197,253,0.7)' }}>
+                        📱 <strong>Mobile rule:</strong> Mobile users always see image fallback by default — background videos do not autoplay on mobile (4G protection).
+                        Desktop users see video when assigned. Save-Data and slow connections (2G/3G) also skip video.
+                    </span>
                 </div>
             </main>
         </div>

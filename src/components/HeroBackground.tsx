@@ -35,6 +35,26 @@ function matchesTarget(target: string | undefined, isMobile: boolean): boolean {
     return isMobile ? target === 'mobile' : target === 'desktop'
 }
 
+/**
+ * Determine whether background video should be skipped.
+ *
+ * Rules (product requirement — 4G safety):
+ *  1. Mobile always prefers image/poster fallback — no autoplay video.
+ *  2. Save-Data header = skip on any device.
+ *  3. Slow connections (2g, slow-2g, 3g) = skip even on desktop.
+ *  4. Desktop on fast connection = play normally.
+ */
+function shouldSkipVideo(isMobile: boolean): boolean {
+    if (typeof navigator === 'undefined') return isMobile
+    const conn = (navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string }
+    }).connection
+    if (conn?.saveData) return true
+    if (conn?.effectiveType && ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) return true
+    if (isMobile) return true // Mobile → image fallback by default
+    return false
+}
+
 export default function HeroBackground({ page, isMobile, cardMode = false, poster, className, onVideoChange, jumpToVideoRef }: HeroBackgroundProps) {
     const pos = cardMode ? 'absolute' : 'fixed'
     // Detect mobile internally so the fetch effect always uses the correct
@@ -143,10 +163,8 @@ export default function HeroBackground({ page, isMobile, cardMode = false, poste
     useEffect(() => {
         if (bgImages.length > 0) return // images take priority
         if (videos.length === 0) return
-        // Skip background video when the user has requested reduced data usage
-        const saveData = typeof navigator !== 'undefined' &&
-            !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData
-        if (saveData) return
+        // 4G safety: skip background video on mobile, Save-Data, or slow connections
+        if (shouldSkipVideo(isMobileDevice)) return
 
         const videoA = videoARef.current
         if (!videoA) return
@@ -171,13 +189,21 @@ export default function HeroBackground({ page, isMobile, cardMode = false, poste
     // Notify parent of video index changes
     useEffect(() => {
         if (bgImages.length === 0 && videos.length > 0) {
-            onVideoChange?.(currentIdx, videos.length)
+            // If video is being skipped (mobile/Save-Data/slow), tell parent
+            // there are 0 videos so it doesn't render navigation dots.
+            if (shouldSkipVideo(isMobileDevice)) {
+                onVideoChange?.(0, 0)
+            } else {
+                onVideoChange?.(currentIdx, videos.length)
+            }
         }
-    }, [currentIdx, videos.length, bgImages.length, onVideoChange])
+    }, [currentIdx, videos.length, bgImages.length, onVideoChange, isMobileDevice])
 
     // Expose jumpToVideo to parent
     const jumpToVideo = useCallback((idx: number) => {
         if (idx === currentIdx || bgImages.length > 0) return
+        // 4G safety: don't allow manual video loading when video is suppressed
+        if (shouldSkipVideo(isMobileDevice)) return
         setCurrentIdx(idx)
 
         setActiveSlot(prev => {
@@ -196,7 +222,7 @@ export default function HeroBackground({ page, isMobile, cardMode = false, poste
             if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
             videoTimerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
         }
-    }, [currentIdx, videos, crossfadeToNext, bgImages.length])
+    }, [currentIdx, videos, crossfadeToNext, bgImages.length, isMobileDevice])
 
     useEffect(() => {
         if (jumpToVideoRef) jumpToVideoRef.current = jumpToVideo

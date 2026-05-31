@@ -400,6 +400,10 @@ model Admin {
   createdAt DateTime @default(now())
 }
 
+/// @deprecated — Legacy model with 0 production rows as of 2026-04 audit.
+/// All hero video data now lives in PageMedia (type='hero-video').
+/// The admin Media Manager reads/writes PageMedia exclusively.
+/// Do NOT write new data here. Safe to remove in a future cleanup.
 model HeroVideo {
   id        String   @id @default(cuid())
   title     String   @default("")
