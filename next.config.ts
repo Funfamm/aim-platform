@@ -145,7 +145,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://*.amazonaws.com https://*.cloudinary.com https://*.unsplash.com https://lh3.googleusercontent.com https://*.r2.dev https://*.r2.cloudflarestorage.com",
               "font-src 'self' https://fonts.gstatic.com",
-              "connect-src 'self' blob: https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://fonts.googleapis.com https://fonts.gstatic.com wss://rtc.impactaistudio.com wss://*.livekit.cloud https://*.livekit.cloud https://unpkg.com https://cdn.jsdelivr.net https://huggingface.co https://cdn-lfs.huggingface.co",
+              "connect-src 'self' blob: https://accounts.google.com https://oauth2.googleapis.com https://*.sentry.io https://*.r2.dev https://*.r2.cloudflarestorage.com https://graph.microsoft.com https://www.paypal.com https://www.sandbox.paypal.com https://api.paypal.com https://fonts.googleapis.com https://fonts.gstatic.com wss://rtc.impactaistudio.com wss://*.livekit.cloud https://*.livekit.cloud https://unpkg.com https://cdn.jsdelivr.net https://huggingface.co https://cdn-lfs.huggingface.co https://challenges.cloudflare.com",
               "media-src 'self' blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://*.livekit.cloud",
               "worker-src 'self' blob:",
               "frame-ancestors 'self'",
