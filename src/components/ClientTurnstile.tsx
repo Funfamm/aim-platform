@@ -48,9 +48,16 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
             },
         }))
 
-        // Width check — runs once on mount, then on resize
+        // Width check — runs once on mount, then on resize.
+        // Uses a ref so the main effect doesn't re-run (and teardown/re-render
+        // the widget) every time the viewport width crosses 480px.
+        const isNarrowRef = useRef(false)
         useEffect(() => {
-            const checkWidth = () => setIsNarrow(window.innerWidth < 480)
+            const checkWidth = () => {
+                const narrow = window.innerWidth < 480
+                isNarrowRef.current = narrow
+                setIsNarrow(narrow)
+            }
             checkWidth()
             window.addEventListener('resize', checkWidth, { passive: true })
             return () => window.removeEventListener('resize', checkWidth)
@@ -58,6 +65,10 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
 
         useEffect(() => {
             if (!siteKey) return
+
+            // Reset error state on re-mount / navigation so a previous timeout
+            // doesn't permanently block the widget container from rendering.
+            setScriptFailed(false)
 
             let cancelled = false
             const timers: ReturnType<typeof setTimeout>[] = []
@@ -78,7 +89,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                     widgetIdRef.current = window.turnstile.render(containerRef.current, {
                         sitekey: siteKey,
                         theme: 'dark',
-                        size: isNarrow ? 'compact' : 'normal',
+                        size: isNarrowRef.current ? 'compact' : 'normal',
                         retry: 'auto',
                         'retry-interval': 5000,
                         callback: (token: string) => callbacks.current.onSuccess(token),
@@ -172,7 +183,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                 removeWidget()
                 callbacks.current.onSuccess('')
             }
-        }, [siteKey, isNarrow, pathname])
+        }, [siteKey, pathname])
         // pathname dep: re-renders widget on SPA navigation for components in persistent layouts
 
         if (!siteKey) return null
