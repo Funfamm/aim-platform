@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- temporary diagnostic page; all setState calls in effects are intentional live logging */
 'use client'
 
 import { useEffect, useRef, useState } from 'react'

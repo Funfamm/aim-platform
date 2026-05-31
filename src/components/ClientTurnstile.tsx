@@ -49,6 +49,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
         }))
 
         useEffect(() => {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setMounted(true)
             const checkWidth = () => setIsNarrow(window.innerWidth < 480)
             checkWidth()
