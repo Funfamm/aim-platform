@@ -1153,6 +1153,7 @@
     "notifyLoading": "Suscribiendo...",
     "notifyConfirmedTitle": "¡Estás en la lista!",
     "notifyConfirmedDesc": "Te notificaremos en cuanto esta convocatoria abra.",
+    "notifyAlreadyOnList": "Ya estás en la lista.",
     "comingSoonLabel": "Próximamente",
     "comingSoonBadge": "Próximamente",
     "backToScripts": "Volver a los guiones",

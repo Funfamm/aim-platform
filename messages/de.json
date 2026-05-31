@@ -1153,6 +1153,7 @@
     "notifyLoading": "Wird abonniert...",
     "notifyConfirmedTitle": "Du bist auf der Liste!",
     "notifyConfirmedDesc": "Wir benachrichtigen dich, sobald dieser Aufruf öffnet.",
+    "notifyAlreadyOnList": "Du bist bereits auf der Liste.",
     "comingSoonLabel": "Demnächst",
     "comingSoonBadge": "Demnächst",
     "backToScripts": "Zurück zu Drehbüchern",

@@ -1153,6 +1153,7 @@
     "notifyLoading": "Подписка...",
     "notifyConfirmedTitle": "Вы в списке!",
     "notifyConfirmedDesc": "Мы уведомим вас, как только этот конкурс откроется.",
+    "notifyAlreadyOnList": "Вы уже в списке.",
     "comingSoonLabel": "Скоро",
     "comingSoonBadge": "Скоро",
     "backToScripts": "Вернуться к сценариям",

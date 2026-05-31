@@ -1153,6 +1153,7 @@
     "notifyLoading": "구독 중...",
     "notifyConfirmedTitle": "목록에 등록되었습니다!",
     "notifyConfirmedDesc": "이 공고가 열리는 즉시 알려드리겠습니다.",
+    "notifyAlreadyOnList": "이미 목록에 등록되어 있습니다.",
     "comingSoonLabel": "곧 출시",
     "comingSoonBadge": "곧 출시",
     "backToScripts": "스크립트로 돌아가기",

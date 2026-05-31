@@ -1155,6 +1155,7 @@
     "notifyLoading": "جاري الاشتراك...",
     "notifyConfirmedTitle": "أنت في القائمة!",
     "notifyConfirmedDesc": "سنُخطرك فور فتح هذه الدعوة.",
+    "notifyAlreadyOnList": "أنت بالفعل في القائمة.",
     "comingSoonLabel": "قريباً",
     "comingSoonBadge": "قريباً",
     "backToScripts": "العودة إلى النصوص",

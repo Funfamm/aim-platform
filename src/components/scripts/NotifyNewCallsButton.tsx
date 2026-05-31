@@ -91,7 +91,7 @@ export default function NotifyNewCallsButton({
 
                     <span>
                         <span style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#10b981' }}>
-                            {alreadyOnList ? "You're already on the list." : t('notifyConfirmedTitle')}
+                            {alreadyOnList ? t('notifyAlreadyOnList') : t('notifyConfirmedTitle')}
                         </span>
                         {subscribed && (
                             <span style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(16,185,129,0.7)' }}>

@@ -1172,6 +1172,7 @@
     "notifyLoading": "Subscribing...",
     "notifyConfirmedTitle": "You're on the list!",
     "notifyConfirmedDesc": "We'll notify you the moment this call opens.",
+    "notifyAlreadyOnList": "You're already on the list.",
     "comingSoonLabel": "Coming Soon",
     "comingSoonBadge": "Coming Soon",
     "backToScripts": "Back to Scripts",

@@ -1153,6 +1153,7 @@
     "notifyLoading": "订阅中...",
     "notifyConfirmedTitle": "您已加入列表！",
     "notifyConfirmedDesc": "一旦此征集开放，我们会立即通知您。",
+    "notifyAlreadyOnList": "您已经在名单上了。",
     "comingSoonLabel": "即将推出",
     "comingSoonBadge": "即将推出",
     "backToScripts": "返回剧本列表",

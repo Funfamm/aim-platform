@@ -1153,6 +1153,7 @@
     "notifyLoading": "सदस्यता हो रही है...",
     "notifyConfirmedTitle": "आप सूची में हैं!",
     "notifyConfirmedDesc": "जैसे ही यह कॉल खुलेगी, हम आपको सूचित करेंगे।",
+    "notifyAlreadyOnList": "आप पहले से सूची में हैं।",
     "comingSoonLabel": "जल्द आ रहा है",
     "comingSoonBadge": "जल्द",
     "backToScripts": "स्क्रिप्ट पर वापस जाएं",

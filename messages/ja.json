@@ -1154,6 +1154,7 @@
     "notifyLoading": "登録中...",
     "notifyConfirmedTitle": "リストに登録されました！",
     "notifyConfirmedDesc": "このコールが開いたらすぐにお知らせします。",
+    "notifyAlreadyOnList": "すでにリストに登録されています。",
     "comingSoonLabel": "もうすぐ公開",
     "comingSoonBadge": "まもなく",
     "backToScripts": "スクリプトに戻る",

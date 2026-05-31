@@ -1153,6 +1153,7 @@
     "notifyLoading": "Abonnement...",
     "notifyConfirmedTitle": "Tu es sur la liste !",
     "notifyConfirmedDesc": "Nous te notifierons dès que cet appel sera ouvert.",
+    "notifyAlreadyOnList": "Tu es déjà sur la liste.",
     "comingSoonLabel": "Bientôt disponible",
     "comingSoonBadge": "Bientôt",
     "backToScripts": "Retour aux scripts",

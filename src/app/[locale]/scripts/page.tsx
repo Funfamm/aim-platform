@@ -306,11 +306,12 @@ export default async function ScriptCallsPage() {
                     .scripts-grid { grid-template-columns: 1fr !important; }
                 }
 
-                /* ── Below-hero section: solid bg covers fixed video on desktop ── */
+                /* ── Below-hero section: solid bg + z-index paints above fixed video ── */
                 .scripts-below-hero {
                     background: var(--bg-primary);
                     padding: 48px 16px 80px;
                     position: relative;
+                    z-index: 1;
                 }
                 /* Gradient fade from cinematic hero into solid content — desktop only */
                 .scripts-below-hero::before {
@@ -735,7 +736,10 @@ export default async function ScriptCallsPage() {
                     </div>
                 </section>
             </main>
-            <Footer />
+            {/* z-index:3 ensures Footer paints above the position:fixed cinematic video background */}
+            <div style={{ position: 'relative', zIndex: 3 }}>
+                <Footer />
+            </div>
         </>
     )
 }

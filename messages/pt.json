@@ -1153,6 +1153,7 @@
     "notifyLoading": "Inscrevendo...",
     "notifyConfirmedTitle": "Você está na lista!",
     "notifyConfirmedDesc": "Vamos te notificar assim que essa chamada abrir.",
+    "notifyAlreadyOnList": "Você já está na lista.",
     "comingSoonLabel": "Em breve",
     "comingSoonBadge": "Em breve",
     "backToScripts": "Voltar aos roteiros",
