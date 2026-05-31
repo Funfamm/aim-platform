@@ -187,7 +187,84 @@ export default async function ScriptCallsPage() {
                     filter: brightness(1.06);
                 }
 
-                /* ── Responsive ── */
+                /* ── Mobile hero card — same pattern as Works/Upcoming/Casting/Training ── */
+                @media (max-width: 767px) {
+                    .scripts-hero-section {
+                        /* Contained card — sits below navbar, above mobile tab bar */
+                        height: calc(100dvh - 148px) !important;
+                        min-height: 420px !important;
+                        max-height: 700px !important;
+                        margin-top: 64px !important;
+                        margin-left: 12px !important;
+                        margin-right: 12px !important;
+                        margin-bottom: 8px !important;
+                        border-radius: 20px !important;
+                        overflow: hidden !important;
+                        background: #0d0f14;
+                    }
+                    /* Cinematic gradient — heavier at bottom for readability */
+                    .scripts-hero-overlay {
+                        position: absolute !important;
+                        inset: 0 !important;
+                        z-index: 1 !important;
+                        background: linear-gradient(
+                            180deg,
+                            rgba(13,15,20,0.08) 0%,
+                            rgba(13,15,20,0.05) 25%,
+                            rgba(13,15,20,0.55) 60%,
+                            rgba(13,15,20,0.92) 85%,
+                            rgba(13,15,20,0.98) 100%
+                        ) !important;
+                        pointer-events: none !important;
+                    }
+                    /* Hero content — bottom of card */
+                    .scripts-hero-content {
+                        position: absolute !important;
+                        bottom: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        top: auto !important;
+                        z-index: 2 !important;
+                        justify-content: flex-end !important;
+                        padding: 0 20px 20px !important;
+                        gap: 10px !important;
+                        max-width: 100% !important;
+                        text-align: left !important;
+                        align-items: flex-start !important;
+                    }
+                    /* Compact text sizes for card layout */
+                    .scripts-hero-content h1 {
+                        font-size: clamp(1.7rem, 6vw, 2.2rem) !important;
+                        margin: 0 0 6px !important;
+                        letter-spacing: -0.01em !important;
+                    }
+                    .scripts-hero-content .script-stats-pill {
+                        padding: 0.45rem 1rem !important;
+                        gap: 12px !important;
+                        background: rgba(255,255,255,0.06) !important;
+                        border: 1px solid rgba(255,255,255,0.1) !important;
+                        width: 100% !important;
+                        justify-content: center !important;
+                    }
+                    .scripts-hero-content .stat-num {
+                        font-size: 1.1rem !important;
+                    }
+                    .scripts-hero-content .stat-label {
+                        font-size: 0.55rem !important;
+                    }
+                    .scripts-hero-content .btn-lg {
+                        width: 100% !important;
+                        justify-content: center !important;
+                        padding: 0.6rem 1rem !important;
+                        font-size: 0.82rem !important;
+                    }
+                    /* Hide desktop decorative elements inside card */
+                    .scripts-hero-section .script-hero-deco {
+                        display: none !important;
+                    }
+                }
+
+                /* ── Responsive (existing) ── */
                 @media (max-width: 640px) {
                     .scripts-grid { grid-template-columns: 1fr !important; }
                     .coming-grid  { grid-template-columns: 1fr !important; }
@@ -222,8 +299,8 @@ export default async function ScriptCallsPage() {
 
             <main style={{ minHeight: '100vh', position: 'relative', zIndex: 2 }}>
 
-                {/* ══ HERO — full-screen, casting-page style ══ */}
-                <section style={{
+                {/* ══ HERO — full-screen desktop | contained card on mobile ══ */}
+                <section className="scripts-hero-section" style={{
                     position: 'relative',
                     height: '100dvh',
                     overflow: 'hidden',
@@ -233,28 +310,30 @@ export default async function ScriptCallsPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                 }}>
-                    {/* Radial glow */}
-                    <div style={{
+                    {/* Mobile gradient overlay — stronger at bottom for readability */}
+                    <div className="scripts-hero-overlay" style={{ display: 'none' }} />
+                    {/* Radial glow — desktop only */}
+                    <div className="script-hero-deco" style={{
                         position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)',
                         width: '700px', height: '700px',
                         background: 'radial-gradient(circle, rgba(228,185,90,0.06), transparent 65%)',
                         pointerEvents: 'none',
                     }} />
 
-                    {/* Decorative corner frames */}
-                    <div style={{
+                    {/* Decorative corner frames — desktop only */}
+                    <div className="script-hero-deco" style={{
                         position: 'absolute', top: '80px', left: '20px', width: '60px', height: '60px',
                         borderTop: '2px solid rgba(228,185,90,0.2)', borderLeft: '2px solid rgba(228,185,90,0.2)',
                         pointerEvents: 'none',
                     }} />
-                    <div style={{
+                    <div className="script-hero-deco" style={{
                         position: 'absolute', top: '80px', right: '20px', width: '60px', height: '60px',
                         borderTop: '2px solid rgba(228,185,90,0.2)', borderRight: '2px solid rgba(228,185,90,0.2)',
                         pointerEvents: 'none',
                     }} />
 
                     {/* Content */}
-                    <div style={{
+                    <div className="scripts-hero-content" style={{
                         position: 'relative', zIndex: 1,
                         textAlign: 'center',
                         maxWidth: 'min(700px, 100%)',

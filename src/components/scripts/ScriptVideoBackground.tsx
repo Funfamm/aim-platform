@@ -18,6 +18,7 @@ export default function ScriptVideoBackground() {
         <HeroBackground
             page="scripts"
             isMobile={isMobile}
+            cardMode={isMobile}
         />
     )
 }
