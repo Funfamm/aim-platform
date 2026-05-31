@@ -25,7 +25,9 @@ declare global {
 const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
     ({ siteKey, onSuccess, onError, onExpire, label, labelStyle }, ref) => {
         const [mounted, setMounted] = useState(false)
+    console.log('[ClientTurnstile] init, mounted state false')
         const [isNarrow, setIsNarrow] = useState(false)
+    console.log('[ClientTurnstile] isNarrow init')
         const [scriptFailed, setScriptFailed] = useState(false)
         
         const containerRef = useRef<HTMLDivElement>(null)
@@ -46,6 +48,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
         }))
 
         useEffect(() => {
+            console.log('[ClientTurnstile] useEffect mount, setting mounted true')
             setMounted(true)
             const checkWidth = () => setIsNarrow(window.innerWidth < 480)
             checkWidth()
@@ -55,6 +58,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
 
         useEffect(() => {
             if (!mounted) return
+            console.log('[ClientTurnstile] effect after mount, initializing Turnstile')
 
             // 1. Ensure the Turnstile script is present exactly once
             let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null
@@ -65,17 +69,22 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                 script.async = true
                 script.defer = true
                 document.head.appendChild(script)
+                console.log('[ClientTurnstile] script injected')
+            } else {
+                console.log('[ClientTurnstile] script already exists')
             }
 
             // 2. Helper that resolves when the Turnstile API is ready
             const waitForTurnstile = (): Promise<void> => {
                 return new Promise((resolve) => {
                     if (window.turnstile && typeof window.turnstile.render === 'function') {
+                        console.log('[ClientTurnstile] turnstile already ready')
                         resolve()
                         return
                     }
                     const onLoad = () => {
                         if (window.turnstile && typeof window.turnstile.render === 'function') {
+                            console.log('[ClientTurnstile] turnstile loaded via script onload')
                             resolve()
                         } else {
                             // fallback: keep waiting
@@ -88,6 +97,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                     const poll = () => {
                         if (window.turnstile && typeof window.turnstile.render === 'function') {
                             script!.removeEventListener('load', onLoad)
+                            console.log('[ClientTurnstile] turnstile ready via poll')
                             resolve()
                         } else {
                             setTimeout(poll, 100)
@@ -108,6 +118,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                 }
                 if (containerRef.current && window.turnstile) {
                     try {
+                        console.log('[ClientTurnstile] rendering widget')
                         widgetIdRef.current = window.turnstile.render(containerRef.current, {
                             sitekey: siteKey,
                             theme: 'dark',
@@ -132,6 +143,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                                 if (callbacks.current.onError) callbacks.current.onError()
                             }
                         })
+                        console.log('[ClientTurnstile] widget rendered, id', widgetIdRef.current)
                     } catch (e) {
                         console.error('Turnstile render error:', e)
                         setScriptFailed(true)
@@ -153,6 +165,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                     widgetIdRef.current = null
                 }
                 callbacks.current.onSuccess('')
+                console.log('[ClientTurnstile] cleanup')
             }
         }, [mounted, siteKey, isNarrow])
 
