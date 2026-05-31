@@ -66,32 +66,34 @@ export async function POST(request: NextRequest) {
         // Honeypot: bots fill this hidden field; humans never see it
         if (website) return NextResponse.json({ success: true })
 
-        // ── Cloudflare Turnstile verification (mandatory when key is configured) ──
-        // The client-side widget is fail-closed — it only enables the submit button
-        // after receiving a valid token. A missing token here means the request was
-        // crafted programmatically, bypassing the UI entirely. Block it.
+        // ── Cloudflare Turnstile verification (mandatory — fail-closed) ───────────
+        // When TURNSTILE_SECRET_KEY is not set, subscriptions are blocked entirely.
+        // This prevents bots from subscribing while Turnstile is being configured.
+        // To enable subscriptions, add NEXT_PUBLIC_TURNSTILE_SITE_KEY and
+        // TURNSTILE_SECRET_KEY to your Vercel environment variables.
         const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
-        if (turnstileSecret) {
-            if (!turnstileToken) {
-                console.warn(`[subscribe] BLOCKED — no Turnstile token from IP ${ip}`)
-                return NextResponse.json({ error: 'Verification required. Please refresh and try again.' }, { status: 403 })
+        if (!turnstileSecret) {
+            console.error('[subscribe] BLOCKED — TURNSTILE_SECRET_KEY not configured. Add Cloudflare Turnstile env vars to enable subscriptions.')
+            return NextResponse.json({ error: 'Verification is temporarily unavailable. Please try again later.' }, { status: 503 })
+        }
+        if (!turnstileToken) {
+            console.warn(`[subscribe] BLOCKED — no Turnstile token from IP ${ip}`)
+            return NextResponse.json({ error: 'Verification required. Please refresh and try again.' }, { status: 403 })
+        }
+        try {
+            const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ secret: turnstileSecret, response: turnstileToken, remoteip: ip }),
+            })
+            const verifyData = await verifyRes.json() as { success: boolean }
+            if (!verifyData.success) {
+                console.warn(`[subscribe] BLOCKED — Turnstile verification failed from IP ${ip}`)
+                return NextResponse.json({ error: 'Bot verification failed. Please try again.' }, { status: 403 })
             }
-            try {
-                const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ secret: turnstileSecret, response: turnstileToken, remoteip: ip }),
-                })
-                const verifyData = await verifyRes.json() as { success: boolean }
-                if (!verifyData.success) {
-                    console.warn(`[subscribe] BLOCKED — Turnstile verification failed from IP ${ip}`)
-                    return NextResponse.json({ error: 'Bot verification failed. Please try again.' }, { status: 403 })
-                }
-            } catch (err) {
-                // Cloudflare API is unreachable — fail open rather than block real users
-                // This is the only fail-open path and requires Cloudflare to be fully down
-                console.error('[subscribe] Turnstile verify error (fail-open):', err)
-            }
+        } catch (err) {
+            // Cloudflare API is unreachable — fail open only when Cloudflare itself is down
+            console.error('[subscribe] Turnstile verify error (Cloudflare unreachable, fail-open):', err)
         }
 
         if (!email || typeof email !== 'string') {

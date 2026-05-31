@@ -25,6 +25,7 @@ export default function SubscribePage() {
     const [currentBg, setCurrentBg] = useState(0)
     const [token, setToken] = useState('')
     const [widgetError, setWidgetError] = useState(false)
+    const [honeypot, setHoneypot] = useState('')
     const loadedAtRef = useRef(0)
 
     // Capture mount time for time-delay bot check (was previously missing from this page)
@@ -54,6 +55,8 @@ export default function SubscribePage() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
+        // Client-side honeypot check — silently swallow if filled
+        if (honeypot) { setStatus('sent'); return }
         setStatus('sending')
         try {
             const res = await fetch('/api/subscribe', {
@@ -63,6 +66,7 @@ export default function SubscribePage() {
                     email,
                     name: name.trim() || undefined,
                     locale,
+                    website: honeypot,
                     loadedAt: loadedAtRef.current,
                     turnstileToken: token,
                 }),
@@ -161,6 +165,17 @@ export default function SubscribePage() {
                                     </div>
                                 ) : (
                                     <form onSubmit={handleSubmit}>
+                                        {/* Honeypot — hidden from real users, filled by bots */}
+                                        <input
+                                            name="website"
+                                            type="text"
+                                            value={honeypot}
+                                            onChange={e => setHoneypot(e.target.value)}
+                                            tabIndex={-1}
+                                            autoComplete="off"
+                                            aria-hidden="true"
+                                            style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+                                        />
                                         <input
                                             type="text" value={name} onChange={(e) => setName(e.target.value)}
                                             placeholder="Your name (optional — for a personalized welcome)"

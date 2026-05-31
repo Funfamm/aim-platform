@@ -59,6 +59,16 @@ export default function SubscribeForm() {
         }
     }
 
+    // When Turnstile site key is not configured, show a friendly error.
+    // The API is also fail-closed in this state, so we avoid a confusing UX.
+    if (!siteKeyConfigured) {
+        return (
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', lineHeight: 1.5, margin: 0 }}>
+                Subscriptions are temporarily unavailable. Please check back soon.
+            </p>
+        )
+    }
+
     if (status === 'pending') {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>

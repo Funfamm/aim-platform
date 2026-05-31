@@ -2,14 +2,15 @@
 
 import { useMemo } from 'react'
 import { Link } from '@/i18n/navigation'
-import SubscribeForm from './SubscribeForm'
 import { useTranslations, useLocale } from 'next-intl'
 import { useSiteSettings } from '@/context/SiteSettingsContext'
+import { useAuth } from '@/components/AuthProvider'
 
 export default function Footer() {
     const { settings } = useSiteSettings()
     const t = useTranslations('footer')
     const locale = useLocale()
+    const { user } = useAuth()
 
     // Derive brand data from context — no extra fetch needed.
     // SiteSettingsContext already fetches /api/site-settings at layout level.
@@ -81,14 +82,26 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    {/* Newsletter */}
-                    <div className="footer-col">
-                        <h4>{t('stayUpdated')}</h4>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)', lineHeight: 1.5 }}>
-                            {t('newsletterText')}
-                        </p>
-                        <SubscribeForm />
-                    </div>
+                    {/* Newsletter — CTA button only; form lives on /subscribe with full bot protection */}
+                    {!user && (
+                        <div className="footer-col">
+                            <h4>{t('stayUpdated')}</h4>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)', lineHeight: 1.5 }}>
+                                {t('newsletterText')}
+                            </p>
+                            <Link
+                                href="/subscribe"
+                                prefetch={false}
+                                className="btn btn-primary"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', padding: '0.55rem 1.2rem' }}
+                            >
+                                {t('getUpdates')}
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M5 12h14M12 5l7 7-7 7" />
+                                </svg>
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 <div className="footer-bottom">
