@@ -6,8 +6,12 @@ import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
 import { Turnstile } from '@marsidev/react-turnstile'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
+
+// How long to wait for Turnstile token before showing a retry error (ms)
+const VERIFICATION_TIMEOUT_MS = 15_000
 
 const DEFAULT_IMAGES = [
     '/images/notify-bg-1.png',
@@ -27,13 +31,30 @@ export default function SubscribePage() {
     const [widgetError, setWidgetError] = useState(false)
     const [honeypot, setHoneypot] = useState('')
     const loadedAtRef = useRef(0)
+    const turnstileRef = useRef<TurnstileInstance | null>(null)
+    const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    // Capture mount time for time-delay bot check (was previously missing from this page)
+    // Capture mount time for time-delay bot check
     useEffect(() => { loadedAtRef.current = Date.now() }, [])
 
     const siteKeyConfigured = !!SITE_KEY
     const isVerifying = siteKeyConfigured && !token && !widgetError
     const isDisabled = status === 'sending' || isVerifying || widgetError
+
+    // ── Verification timeout: if Turnstile hasn't called onSuccess within
+    // VERIFICATION_TIMEOUT_MS, surface a retry error instead of hanging forever.
+    useEffect(() => {
+        if (!siteKeyConfigured || token || widgetError) return
+        verifyTimeoutRef.current = setTimeout(() => {
+            if (!token) {
+                console.warn('[subscribe/page] Turnstile timeout — token not received within', VERIFICATION_TIMEOUT_MS, 'ms')
+                setWidgetError(true)
+            }
+        }, VERIFICATION_TIMEOUT_MS)
+        return () => {
+            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+        }
+    }, [siteKeyConfigured, token, widgetError])
 
     useEffect(() => {
         fetch('/api/admin/media?page=subscribe')
@@ -53,6 +74,17 @@ export default function SubscribePage() {
         return () => clearInterval(timer)
     }, [bgImages])
 
+    // Retry handler: resets the Turnstile widget and clears error state.
+    // Name/email are intentionally NOT cleared so the user doesn't have to retype.
+    const handleRetry = () => {
+        setWidgetError(false)
+        setToken('')
+        setStatus('idle')
+        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+        // Imperatively reset the Turnstile widget so it re-challenges
+        turnstileRef.current?.reset()
+    }
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
         // Client-side honeypot check — silently swallow if filled
@@ -71,9 +103,25 @@ export default function SubscribePage() {
                     turnstileToken: token,
                 }),
             })
-            if (res.ok) { setStatus('sent'); setEmail('') }
-            else setStatus('error')
-        } catch { setStatus('error') }
+            if (res.ok) {
+                setStatus('sent')
+                setEmail('')
+                // Don't clear name — welcome message uses it
+                // Reset widget token state after success
+                setToken('')
+                turnstileRef.current?.reset()
+            } else {
+                setStatus('error')
+                // Reset widget so user can retry without hard refresh
+                setToken('')
+                turnstileRef.current?.reset()
+            }
+        } catch {
+            setStatus('error')
+            // Reset widget so user can retry without hard refresh
+            setToken('')
+            turnstileRef.current?.reset()
+        }
     }
 
     return (
@@ -197,16 +245,40 @@ export default function SubscribePage() {
                                                 fontSize: '0.9rem', outline: 'none',
                                             }}
                                         />
+
+                                        {/* Submission error */}
                                         {status === 'error' && (
                                             <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: 'var(--space-sm)' }}>
                                                 {t('error')}
                                             </p>
                                         )}
+
+                                        {/* Turnstile widget error — actionable, with retry */}
                                         {widgetError && (
-                                            <p style={{ color: '#f59e0b', fontSize: '0.82rem', marginBottom: 'var(--space-sm)', lineHeight: 1.5 }}>
-                                                ⚠️ Verification failed. Please disable your ad blocker, refresh the page, or try a different browser.
-                                            </p>
+                                            <div style={{ marginBottom: 'var(--space-sm)', textAlign: 'left' }}>
+                                                <p style={{ color: '#f59e0b', fontSize: '0.82rem', marginBottom: '8px', lineHeight: 1.5 }}>
+                                                    ⚠️ Human verification could not be completed. Please try again. If it continues, allow verification scripts for this site or use another browser.
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={handleRetry}
+                                                    style={{
+                                                        background: 'rgba(245,158,11,0.12)',
+                                                        border: '1px solid rgba(245,158,11,0.4)',
+                                                        borderRadius: 'var(--radius-md)',
+                                                        color: '#f59e0b',
+                                                        fontSize: '0.78rem',
+                                                        fontWeight: 600,
+                                                        padding: '0.4rem 0.9rem',
+                                                        cursor: 'pointer',
+                                                        transition: 'background 0.2s',
+                                                    }}
+                                                >
+                                                    ↺ Retry verification
+                                                </button>
+                                            </div>
                                         )}
+
                                         <button
                                             type="submit"
                                             disabled={isDisabled}
@@ -219,11 +291,19 @@ export default function SubscribePage() {
                                         {/* Turnstile — invisible mode, auto-executes on render */}
                                         {siteKeyConfigured && (
                                             <Turnstile
+                                                ref={turnstileRef}
                                                 siteKey={SITE_KEY}
-                                                options={{ theme: 'dark', size: 'invisible', execution: 'render', retry: 'auto' }}
-                                                onSuccess={(tk) => { setToken(tk); setWidgetError(false) }}
+                                                options={{ theme: 'dark', size: 'invisible', execution: 'render', retry: 'auto', retryInterval: 5000 }}
+                                                onSuccess={(tk) => {
+                                                    if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                                                    setToken(tk)
+                                                    setWidgetError(false)
+                                                }}
                                                 onExpire={() => setToken('')}
-                                                onError={() => setWidgetError(true)}
+                                                onError={() => {
+                                                    if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                                                    setWidgetError(true)
+                                                }}
                                                 style={{ display: 'none' }}
                                             />
                                         )}

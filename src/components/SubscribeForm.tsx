@@ -3,8 +3,12 @@
 import { useState, useRef, useEffect, FormEvent } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
 import { Turnstile } from '@marsidev/react-turnstile'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
+
+// How long to wait for a Turnstile token before showing a retry error (ms)
+const VERIFICATION_TIMEOUT_MS = 15_000
 
 export default function SubscribeForm() {
     const t = useTranslations('footer')
@@ -14,9 +18,27 @@ export default function SubscribeForm() {
     const [token, setToken] = useState('')
     const [widgetError, setWidgetError] = useState(false)
     const loadedAtRef = useRef(0)
+    const turnstileRef = useRef<TurnstileInstance | null>(null)
+    const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Capture mount timestamp for time-delay bot check
     useEffect(() => { loadedAtRef.current = Date.now() }, [])
+
+    // ── Verification timeout: if Turnstile hasn't called onSuccess within
+    // VERIFICATION_TIMEOUT_MS, surface a retry error instead of hanging forever.
+    useEffect(() => {
+        if (!siteKeyConfigured || token || widgetError) return
+        verifyTimeoutRef.current = setTimeout(() => {
+            if (!token) {
+                console.warn('[SubscribeForm] Turnstile timeout — token not received within', VERIFICATION_TIMEOUT_MS, 'ms')
+                setWidgetError(true)
+            }
+        }, VERIFICATION_TIMEOUT_MS)
+        return () => {
+            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])  // run once on mount — siteKeyConfigured is stable (module-level constant)
 
     // Button is enabled only when:
     //  - not currently sending, AND
@@ -24,10 +46,19 @@ export default function SubscribeForm() {
     // Disabled states:
     //  - sending → show '...'
     //  - site key configured + no token + no widget error → show 'Verifying…'
-    //  - site key configured + widget error → show error message, button disabled
+    //  - site key configured + widget error → show retry option, button disabled
     const siteKeyConfigured = !!SITE_KEY
     const isVerifying = siteKeyConfigured && !token && !widgetError
     const isDisabled = status === 'sending' || isVerifying || widgetError
+
+    // Retry: reset Turnstile widget + clear error state. Email is intentionally kept.
+    const handleRetry = () => {
+        setWidgetError(false)
+        setToken('')
+        setStatus('idle')
+        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+        turnstileRef.current?.reset()
+    }
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
@@ -51,11 +82,20 @@ export default function SubscribeForm() {
                 const data = await res.json()
                 setStatus(data.welcomed ? 'sent' : data.pending ? 'pending' : 'sent')
                 setEmail('')
+                // Reset widget after success
+                setToken('')
+                turnstileRef.current?.reset()
             } else {
                 setStatus('error')
+                // Reset widget so user can retry without hard refresh
+                setToken('')
+                turnstileRef.current?.reset()
             }
         } catch {
             setStatus('error')
+            // Reset widget so user can retry without hard refresh
+            setToken('')
+            turnstileRef.current?.reset()
         }
     }
 
@@ -173,20 +213,46 @@ export default function SubscribeForm() {
             {/* Turnstile widget — invisible mode, renders below the input row */}
             {siteKeyConfigured && (
                 <Turnstile
+                    ref={turnstileRef}
                     siteKey={SITE_KEY}
-                    options={{ theme: 'dark', size: 'invisible', execution: 'render', retry: 'auto' }}
-                    onSuccess={(t) => { setToken(t); setWidgetError(false) }}
+                    options={{ theme: 'dark', size: 'invisible', execution: 'render', retry: 'auto', retryInterval: 5000 }}
+                    onSuccess={(tk) => {
+                        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                        setToken(tk)
+                        setWidgetError(false)
+                    }}
                     onExpire={() => setToken('')}
-                    onError={() => setWidgetError(true)}
+                    onError={() => {
+                        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                        setWidgetError(true)
+                    }}
                     style={{ display: 'none' }}
                 />
             )}
 
-            {/* Widget error — fail-closed with actionable message */}
+            {/* Widget error — improved message with retry, no hard refresh needed */}
             {widgetError && (
-                <p style={{ fontSize: '0.78rem', color: '#f59e0b', margin: 0, lineHeight: 1.5 }}>
-                    ⚠️ Verification failed. Please disable your ad blocker, refresh the page, or try a different browser.
-                </p>
+                <div>
+                    <p style={{ fontSize: '0.78rem', color: '#f59e0b', margin: '0 0 6px', lineHeight: 1.5 }}>
+                        ⚠️ Human verification could not be completed. Please try again. If it continues, allow verification scripts for this site or use another browser.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={handleRetry}
+                        style={{
+                            background: 'rgba(245,158,11,0.12)',
+                            border: '1px solid rgba(245,158,11,0.4)',
+                            borderRadius: 'var(--radius-md)',
+                            color: '#f59e0b',
+                            fontSize: '0.76rem',
+                            fontWeight: 600,
+                            padding: '0.35rem 0.8rem',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        ↺ Retry verification
+                    </button>
+                </div>
             )}
 
             {status === 'error' && (

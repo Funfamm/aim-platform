@@ -52,7 +52,8 @@ export async function POST(request: NextRequest) {
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
 
         if (isRateLimited(ip)) {
-            return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 })
+            console.warn(`[subscribe] RATE_LIMITED — IP ${ip}`)
+            return NextResponse.json({ error: 'Too many requests. Please try again later.', code: 'RATE_LIMITED' }, { status: 429 })
         }
 
         const { email, name, locale, website, loadedAt, turnstileToken } = await request.json()
@@ -64,7 +65,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Honeypot: bots fill this hidden field; humans never see it
-        if (website) return NextResponse.json({ success: true })
+        if (website) {
+            console.warn(`[subscribe] HONEYPOT_BLOCKED — IP ${ip}`)
+            return NextResponse.json({ success: true })
+        }
 
         // ── Cloudflare Turnstile verification (mandatory — fail-closed) ───────────
         // When TURNSTILE_SECRET_KEY is not set, subscriptions are blocked entirely.
@@ -73,12 +77,19 @@ export async function POST(request: NextRequest) {
         // TURNSTILE_SECRET_KEY to your Vercel environment variables.
         const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
         if (!turnstileSecret) {
-            console.error('[subscribe] BLOCKED — TURNSTILE_SECRET_KEY not configured. Add Cloudflare Turnstile env vars to enable subscriptions.')
-            return NextResponse.json({ error: 'Verification is temporarily unavailable. Please try again later.' }, { status: 503 })
+            // Secret key not configured — block all subscriptions. Do not expose reason to client.
+            console.error('[subscribe] VERIFICATION_UNAVAILABLE — TURNSTILE_SECRET_KEY not set. Add Cloudflare Turnstile env vars to Vercel to enable subscriptions.')
+            return NextResponse.json(
+                { error: 'Verification is temporarily unavailable. Please try again later.', code: 'VERIFICATION_UNAVAILABLE' },
+                { status: 503 }
+            )
         }
         if (!turnstileToken) {
-            console.warn(`[subscribe] BLOCKED — no Turnstile token from IP ${ip}`)
-            return NextResponse.json({ error: 'Verification required. Please refresh and try again.' }, { status: 403 })
+            console.warn(`[subscribe] VERIFICATION_MISSING — no token from IP ${ip}`)
+            return NextResponse.json(
+                { error: 'Human verification is required. Please try again.', code: 'VERIFICATION_MISSING' },
+                { status: 403 }
+            )
         }
         try {
             const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
@@ -86,10 +97,15 @@ export async function POST(request: NextRequest) {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({ secret: turnstileSecret, response: turnstileToken, remoteip: ip }),
             })
-            const verifyData = await verifyRes.json() as { success: boolean }
+            const verifyData = await verifyRes.json() as { success: boolean; 'error-codes'?: string[] }
             if (!verifyData.success) {
-                console.warn(`[subscribe] BLOCKED — Turnstile verification failed from IP ${ip}`)
-                return NextResponse.json({ error: 'Bot verification failed. Please try again.' }, { status: 403 })
+                // Log reason server-side only — never expose to client
+                const reasons = (verifyData['error-codes'] || []).join(', ')
+                console.warn(`[subscribe] VERIFICATION_FAILED — Turnstile rejected token from IP ${ip}${reasons ? ` (${reasons})` : ''}`)
+                return NextResponse.json(
+                    { error: 'Human verification failed. Please try again.', code: 'VERIFICATION_FAILED' },
+                    { status: 403 }
+                )
             }
         } catch (err) {
             // Cloudflare API is unreachable — fail open only when Cloudflare itself is down

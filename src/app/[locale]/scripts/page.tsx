@@ -109,7 +109,6 @@ export default async function ScriptCallsPage() {
 
     return (
         <>
-            <ScriptVideoBackground />
             <CinematicBackground variant="creative" />
 
             <style>{`
@@ -202,8 +201,17 @@ export default async function ScriptCallsPage() {
                         overflow: hidden !important;
                         background: #0d0f14;
                     }
+                    /* ScriptVideoBackground is a direct child — must fill the card */
+                    .scripts-hero-section > div:first-child {
+                        position: absolute !important;
+                        inset: 0 !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        z-index: 0 !important;
+                    }
                     /* Cinematic gradient — heavier at bottom for readability */
                     .scripts-hero-overlay {
+                        display: block !important;
                         position: absolute !important;
                         inset: 0 !important;
                         z-index: 1 !important;
@@ -310,7 +318,10 @@ export default async function ScriptCallsPage() {
                     alignItems: 'center',
                     justifyContent: 'center',
                 }}>
-                    {/* Mobile gradient overlay — stronger at bottom for readability */}
+                    {/* Background media — position:fixed on desktop (full-screen behind content),
+                        position:absolute on mobile (contained inside this card via overflow:hidden) */}
+                    <ScriptVideoBackground />
+                    {/* Mobile gradient overlay — display:none on desktop, block on mobile via CSS */}
                     <div className="scripts-hero-overlay" style={{ display: 'none' }} />
                     {/* Radial glow — desktop only */}
                     <div className="script-hero-deco" style={{
