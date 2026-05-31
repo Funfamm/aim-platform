@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { CtaModalCopy } from './NotifyMeEndCard'
-import ClientTurnstile from '@/components/ClientTurnstile'
-import type { TurnstileInstance } from '@marsidev/react-turnstile'
+import ClientTurnstile, { type ClientTurnstileHandle } from '@/components/ClientTurnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -49,7 +48,7 @@ export default function NotifyMeModal({
     const [verifyNeeded, setVerifyNeeded] = useState(false)
     const [animateIn, setAnimateIn] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
-    const turnstileRef = useRef<TurnstileInstance | null>(null)
+    const turnstileRef = useRef<ClientTurnstileHandle | null>(null)
 
     const siteKeyConfigured = !!SITE_KEY
 

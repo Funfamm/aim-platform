@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit, Inter, Playfair_Display } from 'next/font/google';
+import Script from 'next/script';
 import "./globals.css";
 import { getCachedSettings } from "@/lib/cached-settings";
 import { SearchProvider } from "@/components/search/SearchContext";
@@ -108,6 +109,12 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('/sw.js')})}`
           }}
+        />
+        {/* Turnstile loaded globally so window.turnstile is ready before users navigate to any form */}
+        <Script
+          id="cf-turnstile-script"
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
         />
       </body>
     </html>

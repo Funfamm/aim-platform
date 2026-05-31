@@ -5,8 +5,7 @@ import NextImage from 'next/image'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
-import ClientTurnstile from '@/components/ClientTurnstile'
-import type { TurnstileInstance } from '@marsidev/react-turnstile'
+import ClientTurnstile, { type ClientTurnstileHandle } from '@/components/ClientTurnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
@@ -29,7 +28,7 @@ export default function SubscribePage() {
     const [widgetError, setWidgetError] = useState(false)
     const [honeypot, setHoneypot] = useState('')
     const loadedAtRef = useRef(0)
-    const turnstileRef = useRef<TurnstileInstance | null>(null)
+    const turnstileRef = useRef<ClientTurnstileHandle | null>(null)
     const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const siteKeyConfigured = !!SITE_KEY

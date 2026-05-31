@@ -1,15 +1,18 @@
 'use client'
 
 import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
+import { usePathname } from 'next/navigation'
+
+export interface ClientTurnstileHandle {
+    reset: () => void
+}
 
 interface ClientTurnstileProps {
     siteKey: string
     onSuccess: (token: string) => void
     onError?: () => void
     onExpire?: () => void
-    /** Extra text shown above the widget */
     label?: string
-    /** Custom label styles */
     labelStyle?: React.CSSProperties
 }
 
@@ -22,18 +25,16 @@ declare global {
     }
 }
 
-const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
+const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
     ({ siteKey, onSuccess, onError, onExpire, label, labelStyle }, ref) => {
         const [mounted, setMounted] = useState(false)
-    console.log('[ClientTurnstile] init, mounted state false')
         const [isNarrow, setIsNarrow] = useState(false)
-    console.log('[ClientTurnstile] isNarrow init')
         const [scriptFailed, setScriptFailed] = useState(false)
-        
         const containerRef = useRef<HTMLDivElement>(null)
         const widgetIdRef = useRef<string | null>(null)
-        
-        // Use refs for callbacks to avoid re-running the effect on every parent render
+        const pathname = usePathname()
+
+        // Stable refs for callbacks — avoids re-running the render effect on every parent re-render
         const callbacks = useRef({ onSuccess, onError, onExpire })
         useEffect(() => {
             callbacks.current = { onSuccess, onError, onExpire }
@@ -44,11 +45,10 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                 if (widgetIdRef.current !== null && window.turnstile) {
                     window.turnstile.reset(widgetIdRef.current)
                 }
-            }
+            },
         }))
 
         useEffect(() => {
-            console.log('[ClientTurnstile] useEffect mount, setting mounted true')
             setMounted(true)
             const checkWidth = () => setIsNarrow(window.innerWidth < 480)
             checkWidth()
@@ -58,116 +58,91 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
 
         useEffect(() => {
             if (!mounted) return
-            console.log('[ClientTurnstile] effect after mount, initializing Turnstile')
 
-            // 1. Ensure the Turnstile script is present exactly once
-            let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null
-            if (!script) {
-                script = document.createElement('script')
+            // Ensure the script is injected exactly once globally
+            if (!document.getElementById(SCRIPT_ID)) {
+                const script = document.createElement('script')
                 script.id = SCRIPT_ID
                 script.src = SCRIPT_URL
                 script.async = true
                 script.defer = true
                 document.head.appendChild(script)
-                console.log('[ClientTurnstile] script injected')
-            } else {
-                console.log('[ClientTurnstile] script already exists')
             }
 
-            // 2. Helper that resolves when the Turnstile API is ready
-            const waitForTurnstile = (): Promise<void> => {
-                return new Promise((resolve) => {
-                    if (window.turnstile && typeof window.turnstile.render === 'function') {
-                        console.log('[ClientTurnstile] turnstile already ready')
-                        resolve()
-                        return
-                    }
-                    const onLoad = () => {
-                        if (window.turnstile && typeof window.turnstile.render === 'function') {
-                            console.log('[ClientTurnstile] turnstile loaded via script onload')
-                            resolve()
-                        } else {
-                            // fallback: keep waiting
-                            poll()
-                        }
-                    }
-                    // If the script element already fired load, the onload may not fire again
-                    script!.addEventListener('load', onLoad)
-                    // Poll as a safety net (in case load event missed)
-                    const poll = () => {
-                        if (window.turnstile && typeof window.turnstile.render === 'function') {
-                            script!.removeEventListener('load', onLoad)
-                            console.log('[ClientTurnstile] turnstile ready via poll')
-                            resolve()
-                        } else {
-                            setTimeout(poll, 100)
-                        }
-                    }
-                    poll()
-                })
-            }
+            let cancelled = false
+            const timers: ReturnType<typeof setTimeout>[] = []
 
-            // 3. Initialise widget once the API is ready
-            let attempts = 0
-            let pollTimer: NodeJS.Timeout
-            const initWidget = async () => {
-                try {
-                    await waitForTurnstile()
-                } catch {
-                    // Should never happen; fallback to polling below
-                }
-                if (containerRef.current && window.turnstile) {
-                    try {
-                        console.log('[ClientTurnstile] rendering widget')
-                        widgetIdRef.current = window.turnstile.render(containerRef.current, {
-                            sitekey: siteKey,
-                            theme: 'dark',
-                            size: isNarrow ? 'compact' : 'normal',
-                            retry: 'auto',
-                            'retry-interval': 5000,
-                            callback: (token: string) => callbacks.current.onSuccess(token),
-                            'error-callback': () => {
-                                callbacks.current.onSuccess('')
-                                if (callbacks.current.onError) callbacks.current.onError()
-                            },
-                            'expired-callback': () => {
-                                callbacks.current.onSuccess('')
-                                if (callbacks.current.onExpire) callbacks.current.onExpire()
-                            },
-                            'timeout-callback': () => {
-                                callbacks.current.onSuccess('')
-                                if (callbacks.current.onExpire) callbacks.current.onExpire()
-                            },
-                            'unsupported-callback': () => {
-                                callbacks.current.onSuccess('')
-                                if (callbacks.current.onError) callbacks.current.onError()
-                            }
-                        })
-                        console.log('[ClientTurnstile] widget rendered, id', widgetIdRef.current)
-                    } catch (e) {
-                        console.error('Turnstile render error:', e)
-                        setScriptFailed(true)
-                    }
-                } else if (attempts < 200) { // up to 20 s max wait
-                    attempts++
-                    pollTimer = setTimeout(initWidget, 100)
-                } else {
-                    setScriptFailed(true)
-                }
-            }
-
-            initWidget()
-
-            return () => {
-                clearTimeout(pollTimer)
+            const removeWidget = () => {
                 if (widgetIdRef.current !== null && window.turnstile) {
-                    window.turnstile.remove(widgetIdRef.current)
+                    try { window.turnstile.remove(widgetIdRef.current) } catch {}
                     widgetIdRef.current = null
                 }
-                callbacks.current.onSuccess('')
-                console.log('[ClientTurnstile] cleanup')
+                // Clear any stale iframe left in the container
+                if (containerRef.current) containerRef.current.innerHTML = ''
             }
-        }, [mounted, siteKey, isNarrow])
+
+            const renderWidget = () => {
+                if (cancelled || !containerRef.current || !window.turnstile) return
+                removeWidget()
+                try {
+                    widgetIdRef.current = window.turnstile.render(containerRef.current, {
+                        sitekey: siteKey,
+                        theme: 'dark',
+                        size: isNarrow ? 'compact' : 'normal',
+                        retry: 'auto',
+                        'retry-interval': 5000,
+                        callback: (token: string) => callbacks.current.onSuccess(token),
+                        'error-callback': () => {
+                            callbacks.current.onSuccess('')
+                            callbacks.current.onError?.()
+                        },
+                        'expired-callback': () => {
+                            callbacks.current.onSuccess('')
+                            callbacks.current.onExpire?.()
+                        },
+                        'timeout-callback': () => {
+                            callbacks.current.onSuccess('')
+                            callbacks.current.onExpire?.()
+                        },
+                        'unsupported-callback': () => {
+                            callbacks.current.onSuccess('')
+                            callbacks.current.onError?.()
+                        },
+                    })
+                } catch (e) {
+                    console.error('[Turnstile] render error:', e)
+                    if (!cancelled) setScriptFailed(true)
+                }
+            }
+
+            if (window.turnstile) {
+                renderWidget()
+            } else {
+                // Poll until the script loads, then render
+                const poll = () => {
+                    if (cancelled) return
+                    if (window.turnstile) {
+                        renderWidget()
+                        return
+                    }
+                    timers.push(setTimeout(poll, 100))
+                }
+                poll()
+                // Hard timeout — show error after 15 s if script never loads
+                timers.push(setTimeout(() => {
+                    if (!cancelled && !widgetIdRef.current) setScriptFailed(true)
+                }, 15000))
+            }
+
+            return () => {
+                cancelled = true
+                timers.forEach(clearTimeout)
+                removeWidget()
+                callbacks.current.onSuccess('')
+            }
+        }, [mounted, siteKey, isNarrow, pathname])
+        // pathname dep: re-runs on every SPA navigation — critical for components
+        // that live in persistent layouts (e.g. footer) and don't unmount between routes
 
         if (!mounted || !siteKey) return null
 
@@ -192,7 +167,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                         borderRadius: 'var(--radius-md)',
                         color: '#f59e0b',
                         fontSize: '0.8rem',
-                        lineHeight: 1.4
+                        lineHeight: 1.4,
                     }}>
                         Verification could not load. Please refresh or allow verification scripts for this site.
                     </div>
