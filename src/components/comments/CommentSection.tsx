@@ -9,13 +9,18 @@ interface CommentSectionProps {
     projectId: string
     projectSlug: string
     episodeId?: string | null
+    /** Optionally pre-seeded by caller (e.g. episode page reads session server-side).
+     *  When null/undefined the component self-fetches from /api/auth/me on mount.
+     *  This makes the component safe on ISR-cached pages where getUserSession()
+     *  is intentionally omitted to preserve revalidate=3600. */
     currentUserId?: string | null
     currentUserRole?: string | null
 }
 
 export default function CommentSection({
     projectId, projectSlug, episodeId,
-    currentUserId = null, currentUserRole = null,
+    currentUserId: initialUserId = null,
+    currentUserRole: initialUserRole = null,
 }: CommentSectionProps) {
     const t = useTranslations('comments')
     const locale = useLocale()
@@ -23,6 +28,25 @@ export default function CommentSection({
     const [loading, setLoading] = useState(true)
     const [nextCursor, setNextCursor] = useState<string | null>(null)
     const [loadingMore, setLoadingMore] = useState(false)
+
+    // Self-fetch auth state so this component works on ISR pages that
+    // deliberately omit server-side getUserSession() to preserve caching.
+    const [currentUserId, setCurrentUserId] = useState<string | null>(initialUserId)
+    const [currentUserRole, setCurrentUserRole] = useState<string | null>(initialUserRole)
+
+    useEffect(() => {
+        // If the parent already provided a userId, trust it.
+        if (initialUserId) return
+        fetch('/api/auth/me', { credentials: 'include' })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (data?.user?.id) {
+                    setCurrentUserId(data.user.id)
+                    setCurrentUserRole(data.user.role ?? null)
+                }
+            })
+            .catch(() => { /* non-critical — guest view is safe fallback */ })
+    }, [initialUserId])
 
     const fetchComments = useCallback(async (cursor?: string) => {
         const params = new URLSearchParams({ projectId })

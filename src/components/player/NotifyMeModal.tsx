@@ -240,7 +240,7 @@ export default function NotifyMeModal({
                             <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontWeight: 500 }}>
                                 Let us know you are human
                             </p>
-                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', minHeight: '65px', minWidth: '300px', overflow: 'visible' }}>
                                 <Turnstile
                                     ref={turnstileRef}
                                     siteKey={SITE_KEY}

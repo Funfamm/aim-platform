@@ -187,7 +187,7 @@ export default function SubscribeForm() {
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 8px', fontWeight: 500 }}>
                     Let us know you are human
                 </p>
-                <div style={{ minHeight: '65px', display: 'flex', alignItems: 'center' }}>
+                <div style={{ minHeight: '65px', minWidth: '300px', display: 'flex', alignItems: 'center', overflow: 'visible' }}>
                     <Turnstile
                         ref={turnstileRef}
                         siteKey={SITE_KEY}
