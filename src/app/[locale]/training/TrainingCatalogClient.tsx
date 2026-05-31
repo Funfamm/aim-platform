@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import HeroBackground from '@/components/HeroBackground'
 import { useTranslations, useLocale } from 'next-intl'
 import { useIsMobile } from '@/hooks/useIsMobile'
@@ -89,19 +89,49 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                 .filter-pill:hover { opacity: 0.9; }
             `}</style>
 
-            {/* ─── Hero background: images (priority, 6s rotation) or video fallback ─── */}
-            <HeroBackground
-                page="training"
-                isMobile={isMobile}
-            />
-
-            {/* ─── Fixed gradient overlay ─── */}
-            <div style={{
-                position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: 0, pointerEvents: 'none',
-                background: 'linear-gradient(180deg, rgba(13,15,20,0.3) 0%, rgba(13,15,20,0.1) 30%, rgba(13,15,20,0.25) 60%, rgba(13,15,20,0.85) 100%)',
-            }} />
-
-            {/* ─── HERO: full viewport ─── */}
+            {/* ─── HERO — mobile: contained card | desktop: full-screen fixed ─── */}
+            {isMobile ? (
+                /* ── Mobile cinematic card hero ── */
+                <section aria-label="Hero" style={{
+                    position: 'relative',
+                    height: 'calc(100dvh - 148px)',
+                    minHeight: '420px', maxHeight: '700px',
+                    marginTop: '64px', marginLeft: '12px', marginRight: '12px', marginBottom: '8px',
+                    borderRadius: '20px', overflow: 'hidden', background: '#0d0f14',
+                }}>
+                    <HeroBackground page="training" isMobile={true} cardMode={true} />
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                        background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.05) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '0 20px 20px' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '5px 14px', borderRadius: 'var(--radius-full)', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.25)', fontSize: '0.6rem', fontWeight: 700, color: 'var(--accent-gold)', letterSpacing: '0.1em', textTransform: 'uppercase' as const, marginBottom: '10px' }}>
+                            🎓 {t('label')}
+                        </div>
+                        <h1 style={{ fontSize: 'clamp(1.7rem, 6vw, 2.2rem)', fontWeight: 800, lineHeight: 1.15, margin: '0 0 10px' }}>
+                            {t('heroLine1')}{' '}
+                            <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic',
+                                background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                                {t('heroAccent')}
+                            </span>
+                        </h1>
+                        <a href="#courses" className="btn btn-primary" style={{ display: 'flex', justifyContent: 'center', fontSize: '0.82rem', padding: '0.6rem 1rem', marginBottom: '12px' }}>
+                            {t('courses')} →
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+                        </a>
+                        <div style={{ display: 'inline-flex', gap: '12px', padding: '0.45rem 1rem', background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', width: '100%', justifyContent: 'center' }}>
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{courses.length}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('courses')}</span></div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{totalLessons}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('lessons')}</span></div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{totalEnrollments}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('students')}</span></div>
+                        </div>
+                    </div>
+                </section>
+            ) : (
+                /* ── Desktop: full-screen fixed background + hero section (unchanged) ── */
+                <>
+                    <HeroBackground page="training" isMobile={isMobile} />
+                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100vh', zIndex: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(13,15,20,0.3) 0%, rgba(13,15,20,0.1) 30%, rgba(13,15,20,0.25) 60%, rgba(13,15,20,0.85) 100%)' }} />
             <section style={{ position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 1 }}>
                 <div style={{
                     position: 'absolute', inset: 0, zIndex: 1,
@@ -253,16 +283,18 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                     </div>
                 </div>
             </section>
+                </>
+            )}
 
-            {/* ─── CONTENT: overlaps and scrolls over video ─── */}
-            <div style={{ position: 'relative', zIndex: 1 }}>
+            {/* ─── CONTENT ─── */}
+            <div id="courses" style={{ position: 'relative', zIndex: 1 }}>
 
-                {/* Cinematic fade strip */}
-                <div style={{
+                {/* Fade strip — desktop only (on mobile the card already ends cleanly) */}
+                {!isMobile && <div style={{
                     height: '120px', marginTop: '-60px',
                     background: 'linear-gradient(180deg, transparent 0%, var(--bg-primary) 100%)',
                     pointerEvents: 'none',
-                }} />
+                }} />}
 
                 {/* The rest is solid */}
                 <div style={{ background: 'var(--bg-primary)', paddingBottom: '5rem' }}>

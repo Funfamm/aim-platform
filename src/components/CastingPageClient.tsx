@@ -75,25 +75,59 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
             opacity: mounted ? 1 : 0,
             transition: 'opacity 0.4s ease',
         }}>
-            {/* ═══ HERO BACKGROUND — images (priority) or videos (fallback), multi-image rotation ═══ */}
-            <HeroBackground
-                page="casting"
-                isMobile={isMobile}
-                onVideoChange={handleVideoChange}
-                jumpToVideoRef={jumpToVideoRef}
-            />
-
-            {/* ═══ SINGLE FIXED GRADIENT OVERLAY — covers the entire viewport over the background ═══ */}
-            <div style={{
-                position: 'fixed',
-                top: 0, left: 0,
-                width: '100%', height: '100dvh',
-                zIndex: 0,
-                background: 'linear-gradient(180deg, rgba(13,15,20,0.25) 0%, rgba(13,15,20,0.1) 25%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.5) 75%, rgba(13,15,20,0.8) 100%)',
-                pointerEvents: 'none',
-            }} />
-
-            {/* ═══ HERO CONTENT — scrolls away as user scrolls ═══ */}
+            {/* ═══ HERO — mobile: contained card | desktop: full-screen fixed ═══ */}
+            {isMobile ? (
+                /* ── Mobile cinematic card hero ── */
+                <section aria-label="Hero" style={{
+                    position: 'relative',
+                    height: 'calc(100dvh - 148px)',
+                    minHeight: '420px', maxHeight: '700px',
+                    marginTop: '64px', marginLeft: '12px', marginRight: '12px', marginBottom: '8px',
+                    borderRadius: '20px', overflow: 'hidden', background: '#0d0f14',
+                }}>
+                    <HeroBackground page="casting" isMobile={true} cardMode={true}
+                        onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                        background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.05) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '0 20px 20px' }}>
+                        <span className="text-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.62rem' }}>
+                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
+                            {t('label')}
+                        </span>
+                        <h1 style={{ fontSize: 'clamp(1.7rem, 6vw, 2.2rem)', fontWeight: 800, lineHeight: 1.15, margin: '0 0 10px' }}>
+                            {t('title', { accent: '' })}{' '}
+                            <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic',
+                                background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                                {t('accent')}
+                            </span>
+                        </h1>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
+                            <a href="#roles" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.82rem', padding: '0.6rem 1rem' }}>
+                                {t('cta')}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+                            </a>
+                        </div>
+                        <div style={{ display: 'inline-flex', gap: '12px', padding: '0.45rem 1rem', background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', width: '100%', justifyContent: 'center' }}>
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{castingCalls.length}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('openRoles')}</span></div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{Object.keys(castingCalls.reduce((acc, c) => ({ ...acc, [c.project.id]: true }), {} as Record<string, boolean>)).length}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('projects')}</span></div>
+                        </div>
+                        {videoCount > 1 && (
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
+                                {Array.from({ length: videoCount }, (_, i) => (
+                                    <button key={i} onClick={() => jumpToVideoRef.current?.(i)} aria-label={`Play video ${i + 1}`}
+                                        style={{ width: currentVideoIdx === i ? '24px' : '6px', height: '6px', borderRadius: 'var(--radius-full)', border: 'none', padding: 0, cursor: 'pointer', background: currentVideoIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)', transition: 'all 0.3s ease' }} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </section>
+            ) : (
+                /* ── Desktop: full-screen fixed background + hero section (unchanged) ── */
+                <>
+                    <HeroBackground page="casting" isMobile={isMobile} onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
+                    <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100dvh', zIndex: 0, background: 'linear-gradient(180deg, rgba(13,15,20,0.25) 0%, rgba(13,15,20,0.1) 25%, rgba(13,15,20,0.2) 50%, rgba(13,15,20,0.5) 75%, rgba(13,15,20,0.8) 100%)', pointerEvents: 'none' }} />
             <section className="casting-hero" style={{
                 position: 'relative',
                 height: '100dvh',
@@ -252,8 +286,10 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                     </div>
                 </div>
             </section>
+                </>
+            )}
 
-            {/* ═══ OPEN ROLES — scrolls over the video ═══ */}
+            {/* ═══ OPEN ROLES — scrolls over the video (desktop) or below card (mobile) ═══ */}
             <section id="roles" style={{
                 position: 'relative',
                 zIndex: 2,

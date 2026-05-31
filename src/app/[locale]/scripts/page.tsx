@@ -204,6 +204,16 @@ export default async function ScriptCallsPage() {
                         font-size: 0.58rem !important;
                         letter-spacing: 0.06em !important;
                     }
+                    /* Script card — better mobile padding and touch target */
+                    .script-card {
+                        border-radius: 16px !important;
+                    }
+                    .submit-btn {
+                        padding: 10px 20px !important;
+                        font-size: 0.78rem !important;
+                    }
+                    /* Hero — hide cinematic decorations that take space on small screens */
+                    .script-hero-deco { display: none !important; }
                 }
                 @media (min-width: 641px) and (max-width: 900px) {
                     .scripts-grid { grid-template-columns: 1fr !important; }

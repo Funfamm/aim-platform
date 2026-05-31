@@ -156,182 +156,115 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             {/* 3D Particle Background */}
             <Scene3D />
 
-            {/* ═══ HERO BACKGROUND — images (priority) or videos (fallback) ═══ */}
-            <HeroBackground
-                page="works"
-                isMobile={isMobile}
-                poster="/images/works-bg.png"
-                className="works-video-bg"
-                onVideoChange={handleVideoChange}
-                jumpToVideoRef={jumpToVideoRef}
-            />
-
-            {/* ═══ HERO CONTENT — scrolls away as user scrolls ═══ */}
-            <section style={{
-                position: 'relative',
-                height: '100dvh',
-                zIndex: 1,
-            }}>
-                {/* Content overlay — sits on top of the video */}
-                <div style={{
-                    position: 'absolute', inset: 0, zIndex: 1,
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    gap: 'var(--space-xl)',
-                    paddingTop: '120px', paddingBottom: 'var(--space-3xl)',
+            {/* ═══ HERO — mobile: contained card | desktop: full-screen fixed ═══ */}
+            {isMobile ? (
+                /* ── Mobile cinematic card hero ── */
+                <section aria-label="Hero" style={{
+                    position: 'relative',
+                    height: 'calc(100dvh - 148px)',
+                    minHeight: '420px', maxHeight: '700px',
+                    marginTop: '64px', marginLeft: '12px', marginRight: '12px', marginBottom: '8px',
+                    borderRadius: '20px', overflow: 'hidden', background: '#0d0f14',
                 }}>
-
-                    {/* Radial Glow */}
-                    <div style={{
-                        position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)',
-                        width: '700px', height: '700px',
-                        background: 'radial-gradient(circle, rgba(228,185,90,0.06), transparent 65%)',
-                        pointerEvents: 'none',
-                    }} />
-
-                    {/* Decorative corner frames */}
-                    <div style={{
-                        position: 'absolute', top: '80px', left: '20px', width: '60px', height: '60px',
-                        borderTop: '2px solid rgba(228,185,90,0.2)', borderLeft: '2px solid rgba(228,185,90,0.2)',
-                        pointerEvents: 'none',
-                    }} />
-                    <div style={{
-                        position: 'absolute', top: '80px', right: '20px', width: '60px', height: '60px',
-                        borderTop: '2px solid rgba(228,185,90,0.2)', borderRight: '2px solid rgba(228,185,90,0.2)',
-                        pointerEvents: 'none',
-                    }} />
-
-                    {/* Cinematic scan lines */}
-                    <div style={{
-                        position: 'absolute', top: '25%', left: 0, right: 0, height: '1px',
-                        background: 'linear-gradient(90deg, transparent 5%, rgba(228,185,90,0.05) 30%, rgba(228,185,90,0.05) 70%, transparent 95%)',
-                    }} />
-                    <div style={{
-                        position: 'absolute', top: '75%', left: 0, right: 0, height: '1px',
-                        background: 'linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent 95%)',
-                    }} />
-
-                    {/* Title & Subtitle */}
-                    <div style={{
-                        position: 'relative', zIndex: 1,
-                        textAlign: 'center',
-                        maxWidth: 'min(700px, 100%)',
-                        padding: '0 var(--space-md)',
-                        display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center',
-                    }}>
-                        <span className="text-label animate-fade-in-up" style={{
-                            display: 'inline-flex', alignItems: 'center', gap: '6px',
-                            marginBottom: 'var(--space-sm)',
-                        }}>
-                            <span style={{
-                                width: '6px', height: '6px', borderRadius: '50%',
-                                background: 'var(--accent-gold)',
-                                animation: 'pulse-gold 2s infinite',
-                            }} />
+                    <HeroBackground page="works" isMobile={true} cardMode={true}
+                        poster="/images/works-bg.png" className="works-video-bg"
+                        onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                        background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.05) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '0 20px 20px' }}>
+                        <span className="text-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.62rem' }}>
+                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
                             {wpd?.heroLabel || t('label')}
                         </span>
-
-                        <h1 className="animate-fade-in-up delay-1" style={{
-                            fontSize: 'clamp(2rem, 5vw, 3rem)',
-                            fontWeight: 800,
-                            textAlign: 'center',
-                            marginBottom: 'var(--space-sm)',
-                            lineHeight: 1.15,
-                        }}>
-
+                        <h1 style={{ fontSize: 'clamp(1.7rem, 6vw, 2.2rem)', fontWeight: 800, lineHeight: 1.15, margin: '0 0 8px' }}>
                             {wpd?.heroTitle || t('title')}{' '}
-                            <span style={{
-                                fontFamily: 'var(--font-serif)',
-                                fontStyle: 'italic',
+                            <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic',
                                 background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
-                                WebkitBackgroundClip: 'text',
-                                WebkitTextFillColor: 'transparent',
-                                backgroundClip: 'text',
-                            }}>{wpd?.heroAccent || t('titleAccent')}</span>
+                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                                {wpd?.heroAccent || t('titleAccent')}
+                            </span>
                         </h1>
-
-                        <p className="animate-fade-in-up delay-2" style={{
-                            fontSize: 'clamp(0.9rem, 1.5vw, 1.05rem)',
-                            lineHeight: 1.7,
-                            color: 'var(--text-secondary)',
-                            maxWidth: '480px',
-                            textAlign: 'center',
-                            marginBottom: 'var(--space-sm)',
-                        }}>{wpd?.heroDesc || t('description')}</p>
-
-                        {/* Compact stats pill */}
-                        <div className="hero-stats-pill animate-fade-in-up delay-2" style={{
-                            display: 'inline-flex',
-                            gap: 'var(--space-xl)',
-                            marginTop: 'var(--space-lg)',
-                            padding: '0.6rem 1.5rem',
-                            background: 'rgba(255,255,255,0.03)',
-                            borderRadius: 'var(--radius-full)',
-                            border: '1px solid var(--border-subtle)',
-                            backdropFilter: 'blur(12px)',
-                        }}>
-                            <div>
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{projects.length}</span>
-                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('all')}</span>
-                            </div>
-                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
-                            <div>
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{completedCount}</span>
-                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('completed')}</span>
-                            </div>
-                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
-                            <div>
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{inProdCount}</span>
-                                <span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('inProd')}</span>
-                            </div>
+                        <p style={{ fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--text-secondary)', margin: '0 0 12px',
+                            overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
+                            {wpd?.heroDesc || t('description')}
+                        </p>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
+                            <a href="#films-grid" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.82rem', padding: '0.6rem 1rem' }}>
+                                {wpd?.heroCta || t('watchNow')}
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+                            </a>
                         </div>
-                    </div>
-
-                    {/* CTA + Video Dots */}
-                    <div style={{
-                        position: 'relative', zIndex: 1,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center',
-                        gap: 'var(--space-md)',
-                    }}>
-                        <a href="#films-grid" className="btn btn-primary btn-lg animate-fade-in-up delay-3">
-                            {wpd?.heroCta || t('watchNow')}
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 5v14M5 12l7 7 7-7" />
-                            </svg>
-                        </a>
-
-
+                        <div style={{ display: 'inline-flex', gap: '12px', padding: '0.45rem 1rem', background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', width: '100%', justifyContent: 'center' }}>
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{projects.length}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('all')}</span></div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{completedCount}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('completed')}</span></div>
+                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{inProdCount}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('inProd')}</span></div>
+                        </div>
                         {videoCount > 1 && (
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
                                 {Array.from({ length: videoCount }, (_, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => jumpToVideoRef.current?.(i)}
-                                        style={{
-                                            width: currentIdx === i ? '28px' : '6px',
-                                            height: '6px',
-                                            borderRadius: 'var(--radius-full)',
-                                            border: 'none',
-                                            background: currentIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)',
-                                            cursor: 'pointer',
-                                            transition: 'all 0.3s ease',
-                                            padding: 0,
-                                        }}
-                                        aria-label={`Play video ${i + 1}`}
-                                    />
+                                    <button key={i} onClick={() => jumpToVideoRef.current?.(i)} aria-label={`Play video ${i + 1}`}
+                                        style={{ width: currentIdx === i ? '24px' : '6px', height: '6px', borderRadius: 'var(--radius-full)', border: 'none', padding: 0, cursor: 'pointer', background: currentIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)', transition: 'all 0.3s ease' }} />
                                 ))}
                             </div>
                         )}
                     </div>
-                </div>
-            </section>
+                </section>
+            ) : (
+                /* ── Desktop: full-screen fixed background + hero section (unchanged) ── */
+                <>
+                    <HeroBackground page="works" isMobile={isMobile} poster="/images/works-bg.png"
+                        className="works-video-bg" onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
+                    <section style={{ position: 'relative', height: '100dvh', zIndex: 1 }}>
+                        <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-xl)', paddingTop: '120px', paddingBottom: 'var(--space-3xl)' }}>
+                            <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '700px', height: '700px', background: 'radial-gradient(circle, rgba(228,185,90,0.06), transparent 65%)', pointerEvents: 'none' }} />
+                            <div style={{ position: 'absolute', top: '80px', left: '20px', width: '60px', height: '60px', borderTop: '2px solid rgba(228,185,90,0.2)', borderLeft: '2px solid rgba(228,185,90,0.2)', pointerEvents: 'none' }} />
+                            <div style={{ position: 'absolute', top: '80px', right: '20px', width: '60px', height: '60px', borderTop: '2px solid rgba(228,185,90,0.2)', borderRight: '2px solid rgba(228,185,90,0.2)', pointerEvents: 'none' }} />
+                            <div style={{ position: 'absolute', top: '25%', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent 5%, rgba(228,185,90,0.05) 30%, rgba(228,185,90,0.05) 70%, transparent 95%)' }} />
+                            <div style={{ position: 'absolute', top: '75%', left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent 5%, rgba(255,255,255,0.03) 30%, rgba(255,255,255,0.03) 70%, transparent 95%)' }} />
+                            <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 'min(700px, 100%)', padding: '0 var(--space-md)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                <span className="text-label animate-fade-in-up" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: 'var(--space-sm)' }}>
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-gold)', animation: 'pulse-gold 2s infinite' }} />
+                                    {wpd?.heroLabel || t('label')}
+                                </span>
+                                <h1 className="animate-fade-in-up delay-1" style={{ fontSize: 'clamp(2rem, 5vw, 3rem)', fontWeight: 800, textAlign: 'center', marginBottom: 'var(--space-sm)', lineHeight: 1.15 }}>
+                                    {wpd?.heroTitle || t('title')}{' '}
+                                    <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>{wpd?.heroAccent || t('titleAccent')}</span>
+                                </h1>
+                                <p className="animate-fade-in-up delay-2" style={{ fontSize: 'clamp(0.9rem, 1.5vw, 1.05rem)', lineHeight: 1.7, color: 'var(--text-secondary)', maxWidth: '480px', textAlign: 'center', marginBottom: 'var(--space-sm)' }}>{wpd?.heroDesc || t('description')}</p>
+                                <div className="hero-stats-pill animate-fade-in-up delay-2" style={{ display: 'inline-flex', gap: 'var(--space-xl)', marginTop: 'var(--space-lg)', padding: '0.6rem 1.5rem', background: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-full)', border: '1px solid var(--border-subtle)', backdropFilter: 'blur(12px)' }}>
+                                    <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{projects.length}</span><span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('all')}</span></div>
+                                    <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                                    <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)' }}>{completedCount}</span><span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('completed')}</span></div>
+                                    <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
+                                    <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{inProdCount}</span><span style={{ fontSize: '0.6rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '4px' }}>{t('inProd')}</span></div>
+                                </div>
+                            </div>
+                            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                <a href="#films-grid" className="btn btn-primary btn-lg animate-fade-in-up delay-3">
+                                    {wpd?.heroCta || t('watchNow')}
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
+                                </a>
+                                {videoCount > 1 && (
+                                    <div style={{ display: 'flex', justifyContent: 'center', gap: '6px' }}>
+                                        {Array.from({ length: videoCount }, (_, i) => (
+                                            <button key={i} onClick={() => jumpToVideoRef.current?.(i)} aria-label={`Play video ${i + 1}`}
+                                                style={{ width: currentIdx === i ? '28px' : '6px', height: '6px', borderRadius: 'var(--radius-full)', border: 'none', background: currentIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)', cursor: 'pointer', transition: 'all 0.3s ease', padding: 0 }} />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </section>
+                </>
+            )}
 
-            {/* ═══ PROJECTS GALLERY — scrolls over the video ═══ */}
+            {/* ═══ PROJECTS GALLERY — scrolls over the video (desktop) or below card (mobile) ═══ */}
             <section id="films-grid" style={{
                 position: 'relative',
                 zIndex: 2,
-                marginTop: '-30px',
+                marginTop: isMobile ? '0px' : '-30px',
             }}>
                 {/* Dark overlay behind cards — full-bleed, connects into footer */}
                 {/* NOTE: do NOT set both left AND right here — RTL mode overrides `left` to auto
