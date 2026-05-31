@@ -30,14 +30,28 @@ export default function SubscribePage() {
     const [honeypot, setHoneypot] = useState('')
     const loadedAtRef = useRef(0)
     const turnstileRef = useRef<TurnstileInstance | null>(null)
-
-    // Capture mount time for time-delay bot check
-    useEffect(() => { loadedAtRef.current = Date.now() }, [])
+    const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const siteKeyConfigured = !!SITE_KEY
     const [verifyNeeded, setVerifyNeeded] = useState(false)
     // Button is only disabled while actively submitting
     const isDisabled = status === 'sending'
+
+    // Capture mount time for time-delay bot check
+    useEffect(() => { loadedAtRef.current = Date.now() }, [])
+
+    // If the Turnstile script is blocked (ad blocker, CSP, domain not allowlisted),
+    // neither onSuccess nor onError fires. After 15 s with no token, surface the
+    // retry error so the user has a clear action instead of a dead empty space.
+    useEffect(() => {
+        if (!siteKeyConfigured || token || widgetError) return
+        verifyTimeoutRef.current = setTimeout(() => {
+            if (!token) setWidgetError(true)
+        }, 15_000)
+        return () => {
+            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+        }
+    }, [siteKeyConfigured, token, widgetError])
 
     useEffect(() => {
         fetch('/api/admin/media?page=subscribe')
@@ -60,6 +74,7 @@ export default function SubscribePage() {
     // Retry handler: resets the Turnstile widget and clears error state.
     // Name/email are intentionally NOT cleared so the user doesn't have to retype.
     const handleRetry = () => {
+        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
         setWidgetError(false)
         setVerifyNeeded(false)
         setToken('')
@@ -238,18 +253,27 @@ export default function SubscribePage() {
                                                 <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 10px', fontWeight: 500 }}>
                                                     Let us know you are human
                                                 </p>
-                                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                                {/* min-height keeps the widget area visible while the Cloudflare
+                                                    script loads — prevents a blank gap confusing the user */}
+                                                <div style={{
+                                                    display: 'flex', justifyContent: 'center',
+                                                    minHeight: '65px', alignItems: 'center',
+                                                }}>
                                                     <Turnstile
                                                         ref={turnstileRef}
                                                         siteKey={SITE_KEY}
                                                         options={{ theme: 'dark', size: 'normal', retry: 'auto', retryInterval: 5000 }}
                                                         onSuccess={(tk) => {
+                                                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
                                                             setToken(tk)
                                                             setWidgetError(false)
                                                             setVerifyNeeded(false)
                                                         }}
                                                         onExpire={() => setToken('')}
-                                                        onError={() => setWidgetError(true)}
+                                                        onError={() => {
+                                                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                                                            setWidgetError(true)
+                                                        }}
                                                     />
                                                 </div>
                                             </div>

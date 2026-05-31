@@ -17,15 +17,29 @@ export default function SubscribeForm() {
     const [verifyNeeded, setVerifyNeeded] = useState(false)
     const loadedAtRef = useRef(0)
     const turnstileRef = useRef<TurnstileInstance | null>(null)
-
-    // Capture mount timestamp for time-delay bot check
-    useEffect(() => { loadedAtRef.current = Date.now() }, [])
+    const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const siteKeyConfigured = !!SITE_KEY
     // Button is only disabled while actively submitting
     const isDisabled = status === 'sending'
 
+    // Capture mount timestamp for time-delay bot check
+    useEffect(() => { loadedAtRef.current = Date.now() }, [])
+
+    // Surface a retry error if the Turnstile script never loads (blocked script,
+    // domain not allowlisted, CSP) so the user isn't left with an invisible gap.
+    useEffect(() => {
+        if (!siteKeyConfigured || token || widgetError) return
+        verifyTimeoutRef.current = setTimeout(() => {
+            if (!token) setWidgetError(true)
+        }, 15_000)
+        return () => {
+            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+        }
+    }, [siteKeyConfigured, token, widgetError])
+
     const handleRetry = () => {
+        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
         setWidgetError(false)
         setVerifyNeeded(false)
         setToken('')
@@ -173,18 +187,24 @@ export default function SubscribeForm() {
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 8px', fontWeight: 500 }}>
                     Let us know you are human
                 </p>
-                <Turnstile
-                    ref={turnstileRef}
-                    siteKey={SITE_KEY}
-                    options={{ theme: 'dark', size: 'normal', retry: 'auto', retryInterval: 5000 }}
-                    onSuccess={(tk) => {
-                        setToken(tk)
-                        setWidgetError(false)
-                        setVerifyNeeded(false)
-                    }}
-                    onExpire={() => setToken('')}
-                    onError={() => setWidgetError(true)}
-                />
+                <div style={{ minHeight: '65px', display: 'flex', alignItems: 'center' }}>
+                    <Turnstile
+                        ref={turnstileRef}
+                        siteKey={SITE_KEY}
+                        options={{ theme: 'dark', size: 'normal', retry: 'auto', retryInterval: 5000 }}
+                        onSuccess={(tk) => {
+                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                            setToken(tk)
+                            setWidgetError(false)
+                            setVerifyNeeded(false)
+                        }}
+                        onExpire={() => setToken('')}
+                        onError={() => {
+                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                            setWidgetError(true)
+                        }}
+                    />
+                </div>
             </div>
 
             {/* Widget load error — with retry */}
