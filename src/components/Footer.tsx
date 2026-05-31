@@ -85,18 +85,63 @@ export default function Footer() {
                     {/* Newsletter — CTA button only; form lives on /subscribe with full bot protection */}
                     {!user && (
                         <div className="footer-col">
-                            <h4>{t('stayUpdated')}</h4>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)', lineHeight: 1.5 }}>
+                            {/* Eyebrow */}
+                            <span style={{
+                                display: 'block',
+                                fontSize: '0.6rem', fontWeight: 700,
+                                letterSpacing: '0.14em', textTransform: 'uppercase' as const,
+                                color: 'var(--accent-gold)',
+                                marginBottom: '8px',
+                            }}>
+                                {t('stayUpdated')}
+                            </span>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
                                 {t('newsletterText')}
                             </p>
                             <Link
                                 href="/subscribe"
                                 prefetch={false}
-                                className="btn btn-primary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', padding: '0.55rem 1.2rem' }}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '7px',
+                                    padding: '0.65rem 1.4rem',
+                                    borderRadius: '999px',
+                                    fontSize: '0.82rem',
+                                    fontWeight: 800,
+                                    letterSpacing: '0.03em',
+                                    textDecoration: 'none',
+                                    /* Explicit dark charcoal text — ensures contrast on all gold gradient stops */
+                                    color: '#0f1115',
+                                    background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold), var(--accent-gold-dark))',
+                                    boxShadow: '0 3px 14px rgba(212,168,83,0.35)',
+                                    transition: 'box-shadow 0.25s ease, transform 0.2s ease, filter 0.2s ease',
+                                    whiteSpace: 'nowrap' as const,
+                                }}
+                                onMouseEnter={e => {
+                                    const el = e.currentTarget as HTMLAnchorElement
+                                    el.style.boxShadow = '0 6px 22px rgba(212,168,83,0.55)'
+                                    el.style.transform = 'translateY(-2px)'
+                                    el.style.filter = 'brightness(1.06)'
+                                }}
+                                onMouseLeave={e => {
+                                    const el = e.currentTarget as HTMLAnchorElement
+                                    el.style.boxShadow = '0 3px 14px rgba(212,168,83,0.35)'
+                                    el.style.transform = 'translateY(0)'
+                                    el.style.filter = 'brightness(1)'
+                                }}
                             >
                                 {t('getUpdates')}
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <svg
+                                    width="13" height="13"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#0f1115"
+                                    strokeWidth="2.8"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    aria-hidden="true"
+                                >
                                     <path d="M5 12h14M12 5l7 7-7 7" />
                                 </svg>
                             </Link>
