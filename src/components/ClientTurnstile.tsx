@@ -56,8 +56,8 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
         useEffect(() => {
             if (!mounted) return
 
-            // 1. Inject script if missing
-            let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement
+            // 1. Ensure the Turnstile script is present exactly once
+            let script = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null
             if (!script) {
                 script = document.createElement('script')
                 script.id = SCRIPT_ID
@@ -67,12 +67,46 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                 document.head.appendChild(script)
             }
 
-            // 2. Poll for the global turnstile object
+            // 2. Helper that resolves when the Turnstile API is ready
+            const waitForTurnstile = (): Promise<void> => {
+                return new Promise((resolve) => {
+                    if (window.turnstile && typeof window.turnstile.render === 'function') {
+                        resolve()
+                        return
+                    }
+                    const onLoad = () => {
+                        if (window.turnstile && typeof window.turnstile.render === 'function') {
+                            resolve()
+                        } else {
+                            // fallback: keep waiting
+                            poll()
+                        }
+                    }
+                    // If the script element already fired load, the onload may not fire again
+                    script!.addEventListener('load', onLoad)
+                    // Poll as a safety net (in case load event missed)
+                    const poll = () => {
+                        if (window.turnstile && typeof window.turnstile.render === 'function') {
+                            script!.removeEventListener('load', onLoad)
+                            resolve()
+                        } else {
+                            setTimeout(poll, 100)
+                        }
+                    }
+                    poll()
+                })
+            }
+
+            // 3. Initialise widget once the API is ready
             let attempts = 0
             let pollTimer: NodeJS.Timeout
-            
-            const initWidget = () => {
-                if (window.turnstile && containerRef.current) {
+            const initWidget = async () => {
+                try {
+                    await waitForTurnstile()
+                } catch {
+                    // Should never happen; fallback to polling below
+                }
+                if (containerRef.current && window.turnstile) {
                     try {
                         widgetIdRef.current = window.turnstile.render(containerRef.current, {
                             sitekey: siteKey,
@@ -102,7 +136,7 @@ const ClientTurnstile = forwardRef<any, ClientTurnstileProps>(
                         console.error('Turnstile render error:', e)
                         setScriptFailed(true)
                     }
-                } else if (attempts < 50) { // 5s max wait
+                } else if (attempts < 200) { // up to 20 s max wait
                     attempts++
                     pollTimer = setTimeout(initWidget, 100)
                 } else {
