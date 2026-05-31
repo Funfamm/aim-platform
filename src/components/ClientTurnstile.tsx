@@ -18,6 +18,7 @@ interface ClientTurnstileProps {
 
 const SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
 const SCRIPT_ID = 'cf-turnstile-script'
+const SCRIPT_SRC_PREFIX = 'https://challenges.cloudflare.com/turnstile/v0/api.js'
 
 declare global {
     interface Window {
@@ -27,7 +28,6 @@ declare global {
 
 const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
     ({ siteKey, onSuccess, onError, onExpire, label, labelStyle }, ref) => {
-        const [mounted, setMounted] = useState(false)
         const [isNarrow, setIsNarrow] = useState(false)
         const [scriptFailed, setScriptFailed] = useState(false)
         const containerRef = useRef<HTMLDivElement>(null)
@@ -48,9 +48,8 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
             },
         }))
 
+        // Width check — runs once on mount, then on resize
         useEffect(() => {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setMounted(true)
             const checkWidth = () => setIsNarrow(window.innerWidth < 480)
             checkWidth()
             window.addEventListener('resize', checkWidth, { passive: true })
@@ -58,10 +57,14 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
         }, [])
 
         useEffect(() => {
-            if (!mounted) return
+            if (!siteKey) return
 
-            // Ensure the script is injected exactly once globally
-            if (!document.getElementById(SCRIPT_ID)) {
+            // Ensure the Turnstile script is in the page exactly once.
+            // Check by URL prefix as well as ID: next/script may not set the DOM id attribute.
+            if (
+                !document.getElementById(SCRIPT_ID) &&
+                !document.querySelector(`script[src^="${SCRIPT_SRC_PREFIX}"]`)
+            ) {
                 const script = document.createElement('script')
                 script.id = SCRIPT_ID
                 script.src = SCRIPT_URL
@@ -78,7 +81,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                     try { window.turnstile.remove(widgetIdRef.current) } catch {}
                     widgetIdRef.current = null
                 }
-                // Clear any stale iframe left in the container
+                // Clear stale Cloudflare iframe from a previous lifecycle
                 if (containerRef.current) containerRef.current.innerHTML = ''
             }
 
@@ -119,7 +122,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
             if (window.turnstile) {
                 renderWidget()
             } else {
-                // Poll until the script loads, then render
+                // Poll until the Cloudflare script finishes loading
                 const poll = () => {
                     if (cancelled) return
                     if (window.turnstile) {
@@ -129,7 +132,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                     timers.push(setTimeout(poll, 100))
                 }
                 poll()
-                // Hard timeout — show error after 15 s if script never loads
+                // Hard timeout — if script never loads, show error so user has a clear action
                 timers.push(setTimeout(() => {
                     if (!cancelled && !widgetIdRef.current) setScriptFailed(true)
                 }, 15000))
@@ -141,12 +144,14 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                 removeWidget()
                 callbacks.current.onSuccess('')
             }
-        }, [mounted, siteKey, isNarrow, pathname])
-        // pathname dep: re-runs on every SPA navigation — critical for components
-        // that live in persistent layouts (e.g. footer) and don't unmount between routes
+        }, [siteKey, isNarrow, pathname])
+        // pathname dep: re-renders widget on SPA navigation for components in persistent layouts
 
-        if (!mounted || !siteKey) return null
+        if (!siteKey) return null
 
+        // No `mounted` guard — effects are client-only, so the container is always safe
+        // to render. Removing the two-render cycle (null → div) eliminates the race window
+        // where containerRef.current was null when the effect first tried to call render().
         return (
             <div style={{ textAlign: 'left' }}>
                 {label && (
