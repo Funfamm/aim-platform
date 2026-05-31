@@ -2,24 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { CtaModalCopy } from './NotifyMeEndCard'
-import { Turnstile } from '@marsidev/react-turnstile'
+import ClientTurnstile from '@/components/ClientTurnstile'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
-
-// Cloudflare Turnstile 'normal' size needs ~300px minimum width.
-// On narrow phones the modal inner area is ~270-289px, which clips the widget.
-// Use 'compact' (~130px wide) on small viewports instead.
-function useIsNarrow(breakpoint = 480) {
-    const [narrow, setNarrow] = useState(false)
-    useEffect(() => {
-        const check = () => setNarrow(window.innerWidth < breakpoint)
-        check()
-        window.addEventListener('resize', check, { passive: true })
-        return () => window.removeEventListener('resize', check)
-    }, [breakpoint])
-    return narrow
-}
 
 export default function NotifyMeModal({
     copy,
@@ -40,7 +26,6 @@ export default function NotifyMeModal({
     // input and no Turnstile. If not logged in, the existing guest form is shown.
     const [authChecked, setAuthChecked] = useState(false)
     const [loggedInEmail, setLoggedInEmail] = useState<string | null>(null)
-    const isNarrow = useIsNarrow()
 
     useEffect(() => {
         if (!visible) return
@@ -369,30 +354,20 @@ export default function NotifyMeModal({
                             }}
                         />
 
-                        {/* Turnstile — visible widget, loads only when modal is open.
-                         *  Uses 'compact' on narrow viewports because Cloudflare's
-                         *  'normal' widget requires 300px min-width which overflows
-                         *  and gets clipped inside the modal on mobile phones. */}
+                        {/* Turnstile — client-only widget with SPA-safe lifecycle */}
                         {siteKeyConfigured && (
-                            <div style={{ textAlign: 'left' }}>
-                                <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontWeight: 500 }}>
-                                    Let us know you are human
-                                </p>
-                                <div style={{ display: 'flex', justifyContent: isNarrow ? 'flex-start' : 'center', minHeight: '65px', overflow: 'visible' }}>
-                                    <Turnstile
-                                        ref={turnstileRef}
-                                        siteKey={SITE_KEY}
-                                        options={{ theme: 'dark', size: isNarrow ? 'compact' : 'normal', retry: 'auto', retryInterval: 5000 }}
-                                        onSuccess={(tk) => {
-                                            setToken(tk)
-                                            setWidgetError(false)
-                                            setVerifyNeeded(false)
-                                        }}
-                                        onExpire={() => setToken('')}
-                                        onError={() => setWidgetError(true)}
-                                    />
-                                </div>
-                            </div>
+                            <ClientTurnstile
+                                ref={turnstileRef}
+                                siteKey={SITE_KEY}
+                                label="Let us know you are human"
+                                onSuccess={(tk) => {
+                                    setToken(tk)
+                                    setWidgetError(false)
+                                    setVerifyNeeded(false)
+                                }}
+                                onExpire={() => setToken('')}
+                                onError={() => setWidgetError(true)}
+                            />
                         )}
 
                         {/* Widget load error — with retry */}

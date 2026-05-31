@@ -5,7 +5,7 @@ import NextImage from 'next/image'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
-import { Turnstile } from '@marsidev/react-turnstile'
+import ClientTurnstile from '@/components/ClientTurnstile'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
@@ -247,35 +247,26 @@ export default function SubscribePage() {
                                             }}
                                         />
 
-                                        {/* Turnstile — visible widget, loads only when form is rendered */}
+                                        {/* Turnstile — client-only widget with SPA-safe lifecycle */}
                                         {siteKeyConfigured && (
                                             <div style={{ marginBottom: 'var(--space-sm)' }}>
-                                                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 10px', fontWeight: 500 }}>
-                                                    Let us know you are human
-                                                </p>
-                                                {/* min-height keeps the widget area visible while the Cloudflare
-                                                    script loads — prevents a blank gap confusing the user */}
-                                                <div style={{
-                                                    display: 'flex', justifyContent: 'center',
-                                                    minHeight: '65px', alignItems: 'center',
-                                                }}>
-                                                    <Turnstile
-                                                        ref={turnstileRef}
-                                                        siteKey={SITE_KEY}
-                                                        options={{ theme: 'dark', size: 'normal', retry: 'auto', retryInterval: 5000 }}
-                                                        onSuccess={(tk) => {
-                                                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-                                                            setToken(tk)
-                                                            setWidgetError(false)
-                                                            setVerifyNeeded(false)
-                                                        }}
-                                                        onExpire={() => setToken('')}
-                                                        onError={() => {
-                                                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-                                                            setWidgetError(true)
-                                                        }}
-                                                    />
-                                                </div>
+                                                <ClientTurnstile
+                                                    ref={turnstileRef}
+                                                    siteKey={SITE_KEY}
+                                                    label="Let us know you are human"
+                                                    labelStyle={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}
+                                                    onSuccess={(tk) => {
+                                                        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                                                        setToken(tk)
+                                                        setWidgetError(false)
+                                                        setVerifyNeeded(false)
+                                                    }}
+                                                    onExpire={() => setToken('')}
+                                                    onError={() => {
+                                                        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                                                        setWidgetError(true)
+                                                    }}
+                                                />
                                             </div>
                                         )}
 

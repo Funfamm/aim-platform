@@ -2,29 +2,14 @@
 
 import { useState, useRef, useEffect, FormEvent } from 'react'
 import { useTranslations, useLocale } from 'next-intl'
-import { Turnstile } from '@marsidev/react-turnstile'
+import ClientTurnstile from '@/components/ClientTurnstile'
 import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
-// Cloudflare Turnstile 'normal' size needs ~300px minimum width.
-// On narrow phones the form may be narrower, clipping the widget.
-// Use 'compact' (~130px) on small viewports instead.
-function useIsNarrow(breakpoint = 480) {
-    const [narrow, setNarrow] = useState(false)
-    useEffect(() => {
-        const check = () => setNarrow(window.innerWidth < breakpoint)
-        check()
-        window.addEventListener('resize', check, { passive: true })
-        return () => window.removeEventListener('resize', check)
-    }, [breakpoint])
-    return narrow
-}
-
 export default function SubscribeForm() {
     const t = useTranslations('footer')
     const locale = useLocale()
-    const isNarrow = useIsNarrow()
     const [email, setEmail] = useState('')
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'pending' | 'error'>('idle')
     const [token, setToken] = useState('')
@@ -197,32 +182,24 @@ export default function SubscribeForm() {
                 }}
             />
 
-            {/* Turnstile — visible widget, loads only when this form is rendered.
-             *  Uses 'compact' on narrow viewports: Cloudflare's 'normal' widget
-             *  requires ~300px min-width and clips on mobile screens. */}
-            <div>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 8px', fontWeight: 500 }}>
-                    Let us know you are human
-                </p>
-                <div style={{ minHeight: '65px', display: 'flex', alignItems: 'center', overflow: 'visible' }}>
-                    <Turnstile
-                        ref={turnstileRef}
-                        siteKey={SITE_KEY}
-                        options={{ theme: 'dark', size: isNarrow ? 'compact' : 'normal', retry: 'auto', retryInterval: 5000 }}
-                        onSuccess={(tk) => {
-                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-                            setToken(tk)
-                            setWidgetError(false)
-                            setVerifyNeeded(false)
-                        }}
-                        onExpire={() => setToken('')}
-                        onError={() => {
-                            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-                            setWidgetError(true)
-                        }}
-                    />
-                </div>
-            </div>
+            {/* Turnstile — client-only widget with SPA-safe lifecycle */}
+            <ClientTurnstile
+                ref={turnstileRef}
+                siteKey={SITE_KEY}
+                label="Let us know you are human"
+                labelStyle={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}
+                onSuccess={(tk) => {
+                    if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                    setToken(tk)
+                    setWidgetError(false)
+                    setVerifyNeeded(false)
+                }}
+                onExpire={() => setToken('')}
+                onError={() => {
+                    if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
+                    setWidgetError(true)
+                }}
+            />
 
             {/* Widget load error — with retry */}
             {widgetError && (
