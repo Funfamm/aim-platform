@@ -125,20 +125,32 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                 // Already loaded → resolve immediately
                 if (window.turnstile) return Promise.resolve()
 
-                // Check for an existing script tag
+                // Check for an existing script tag (ours or Next.js <Script>)
                 const existing =
                     document.getElementById(SCRIPT_ID) as HTMLScriptElement | null ??
                     document.querySelector(`script[src^="${SCRIPT_SRC_PREFIX}"]`) as HTMLScriptElement | null
 
-                // If the tag exists but never loaded (onerror fired, or script
-                // has been in DOM for > 10s without window.turnstile appearing),
-                // remove it so we can inject a fresh one.
-                if (existing && !window.turnstile) {
+                // If a tag exists but window.turnstile is still undefined, the
+                // script either failed (CSP, network) or is still loading.
+                // - Our tags have data-injectedAt: safe to remove if stale (>10s) or failed.
+                // - Next.js <Script> tags have neither attribute: fall through to the
+                //   age-unknown branch which conservatively waits before removing.
+                if (existing) {
+                    const hasOurMeta = !!existing.dataset.injectedAt
+                    const failed = existing.dataset.failed === 'true'
                     const age = Number(existing.dataset.injectedAt || 0)
-                    if (age && Date.now() - age > 10_000) {
+                    const isStale = hasOurMeta && age && Date.now() - age > 10_000
+
+                    if (failed || isStale) {
                         existing.remove()
-                    } else if (existing.dataset.failed === 'true') {
-                        existing.remove()
+                    } else if (!hasOurMeta) {
+                        // Next.js <Script> tag — no metadata. If the page has been
+                        // alive for a while and window.turnstile never appeared, the
+                        // script is dead. Remove and re-inject our own tracked version.
+                        // performance.now() > 10_000 means the page loaded > 10s ago.
+                        if (performance.now() > 10_000) {
+                            existing.remove()
+                        }
                     }
                 }
 
@@ -174,7 +186,16 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
             }
 
             ensureScript()
-                .then(() => { if (!cancelled) renderWidget() })
+                .then(() => {
+                    if (cancelled) return
+                    // setScriptFailed(false) above may have swapped the error div
+                    // back to the container div. React commits that re-render after
+                    // the effect, so containerRef.current may still be null right now.
+                    // Defer to the next frame to guarantee the DOM is updated.
+                    requestAnimationFrame(() => {
+                        if (!cancelled) renderWidget()
+                    })
+                })
                 .catch(() => { if (!cancelled) setScriptFailed(true) })
 
             return () => {
