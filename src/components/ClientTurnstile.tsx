@@ -59,20 +59,6 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
         useEffect(() => {
             if (!siteKey) return
 
-            // Ensure the Turnstile script is in the page exactly once.
-            // Check by URL prefix as well as ID: next/script may not set the DOM id attribute.
-            if (
-                !document.getElementById(SCRIPT_ID) &&
-                !document.querySelector(`script[src^="${SCRIPT_SRC_PREFIX}"]`)
-            ) {
-                const script = document.createElement('script')
-                script.id = SCRIPT_ID
-                script.src = SCRIPT_URL
-                script.async = true
-                script.defer = true
-                document.head.appendChild(script)
-            }
-
             let cancelled = false
             const timers: ReturnType<typeof setTimeout>[] = []
 
@@ -119,24 +105,66 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                 }
             }
 
-            if (window.turnstile) {
-                renderWidget()
-            } else {
-                // Poll until the Cloudflare script finishes loading
-                const poll = () => {
-                    if (cancelled) return
-                    if (window.turnstile) {
-                        renderWidget()
-                        return
+            // ── Script loading ──────────────────────────────────────────────
+            // Strategy: use a shared promise so multiple effect cycles don't
+            // inject duplicate scripts. If a previous script tag failed (e.g.
+            // CSP block before the fix was deployed), remove it and retry.
+
+            const ensureScript = (): Promise<void> => {
+                // Already loaded → resolve immediately
+                if (window.turnstile) return Promise.resolve()
+
+                // Check for an existing script tag
+                const existing =
+                    document.getElementById(SCRIPT_ID) as HTMLScriptElement | null ??
+                    document.querySelector(`script[src^="${SCRIPT_SRC_PREFIX}"]`) as HTMLScriptElement | null
+
+                // If the tag exists but never loaded (onerror fired, or script
+                // has been in DOM for > 10s without window.turnstile appearing),
+                // remove it so we can inject a fresh one.
+                if (existing && !window.turnstile) {
+                    const age = Number(existing.dataset.injectedAt || 0)
+                    if (age && Date.now() - age > 10_000) {
+                        existing.remove()
+                    } else if (existing.dataset.failed === 'true') {
+                        existing.remove()
                     }
-                    timers.push(setTimeout(poll, 100))
                 }
-                poll()
-                // Hard timeout — if script never loads, show error so user has a clear action
-                timers.push(setTimeout(() => {
-                    if (!cancelled && !widgetIdRef.current) setScriptFailed(true)
-                }, 15000))
+
+                // Re-check after possible removal
+                const scriptInDom =
+                    document.getElementById(SCRIPT_ID) ??
+                    document.querySelector(`script[src^="${SCRIPT_SRC_PREFIX}"]`)
+
+                if (!scriptInDom) {
+                    // Inject a fresh script tag
+                    const script = document.createElement('script')
+                    script.id = SCRIPT_ID
+                    script.src = SCRIPT_URL
+                    script.async = true
+                    script.defer = true
+                    script.dataset.injectedAt = String(Date.now())
+                    script.onerror = () => { script.dataset.failed = 'true' }
+                    document.head.appendChild(script)
+                }
+
+                // Wait for window.turnstile to appear
+                return new Promise<void>((resolve, reject) => {
+                    let elapsed = 0
+                    const check = () => {
+                        if (cancelled) { reject(new Error('cancelled')); return }
+                        if (window.turnstile) { resolve(); return }
+                        elapsed += 150
+                        if (elapsed > 15_000) { reject(new Error('timeout')); return }
+                        timers.push(setTimeout(check, 150))
+                    }
+                    check()
+                })
             }
+
+            ensureScript()
+                .then(() => { if (!cancelled) renderWidget() })
+                .catch(() => { if (!cancelled) setScriptFailed(true) })
 
             return () => {
                 cancelled = true
