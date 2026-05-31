@@ -1,21 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 interface NotifyMeButtonProps {
     scriptCallId: string
     initialSubscribed: boolean
+    isLoggedIn?: boolean
 }
 
-export default function NotifyMeButton({ scriptCallId, initialSubscribed }: NotifyMeButtonProps) {
+export default function NotifyMeButton({ scriptCallId, initialSubscribed, isLoggedIn = true }: NotifyMeButtonProps) {
     const t = useTranslations('scripts')
+    const locale = useLocale()
     const [subscribed, setSubscribed] = useState(initialSubscribed)
     const [loading, setLoading] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
 
     async function handleNotify() {
         if (subscribed) return
+
+        // Guests: redirect to locale-aware subscribe flow
+        if (!isLoggedIn) {
+            window.location.href = `/${locale}/subscribe`
+            return
+        }
+
         setLoading(true)
         try {
             const res = await fetch('/api/scripts/notify', {
@@ -58,7 +67,6 @@ export default function NotifyMeButton({ scriptCallId, initialSubscribed }: Noti
                     }
                 `}</style>
 
-                {/* Animated bell */}
                 <span style={{
                     fontSize: '1.1rem',
                     animation: showConfirm ? 'notifyRing 0.8s ease 0.2s' : 'none',
@@ -66,21 +74,14 @@ export default function NotifyMeButton({ scriptCallId, initialSubscribed }: Noti
                 }}>🔔</span>
 
                 <span style={{ flex: 1 }}>
-                    <span style={{
-                        display: 'block', fontWeight: 700, fontSize: '0.82rem',
-                        color: '#10b981',
-                    }}>
+                    <span style={{ display: 'block', fontWeight: 700, fontSize: '0.82rem', color: '#10b981' }}>
                         {t('notifyConfirmedTitle')}
                     </span>
-                    <span style={{
-                        display: 'block', fontSize: '0.7rem',
-                        color: 'rgba(16,185,129,0.7)',
-                    }}>
+                    <span style={{ display: 'block', fontSize: '0.7rem', color: 'rgba(16,185,129,0.7)' }}>
                         {t('notifyConfirmedDesc')}
                     </span>
                 </span>
 
-                {/* Checkmark */}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                     stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />

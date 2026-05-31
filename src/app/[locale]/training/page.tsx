@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import Footer from '@/components/Footer'
 import Link from 'next/link'
 import { prisma } from '@/lib/db'
@@ -17,8 +16,7 @@ export default async function TrainingPage() {
     const session = await getUserSession()
     const locale = await getLocale()
     const t = await getTranslations('trainingPaused')
-    if (!session) redirect(`/${locale}/login?redirect=/training`)
-    const isLoggedIn = true
+    const isLoggedIn = !!session
     let settings = null
     try { settings = await prisma.siteSettings.findFirst() } catch { /* schema drift */ }
 

@@ -3,16 +3,13 @@ import { prisma } from '@/lib/db'
 import crypto from 'crypto'
 
 // ── Rate-limit store (in-memory, per-instance) ──────────────────────────────
-// Tracks signup attempts per hashed IP. Resets naturally as entries expire.
-// For serverless (Vercel), each cold start gets a fresh map — acceptable
-// because the DB unique constraint is the ultimate dedup gate.
+// Resets on cold start — DB unique constraint is the ultimate dedup gate.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT_MAX = 5
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
 function isRateLimited(ipHash: string): boolean {
     const now = Date.now()
-    // Periodic cleanup: evict expired entries (at most once per minute)
     if (now - lastCleanup > 60_000) {
         lastCleanup = now
         for (const [key, entry] of rateLimitMap) {
@@ -29,6 +26,37 @@ function isRateLimited(ipHash: string): boolean {
 }
 let lastCleanup = Date.now()
 
+// ── Turnstile server-side verification ──────────────────────────────────────
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY || ''
+
+async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+    if (!TURNSTILE_SECRET) {
+        console.error('[notify-me] TURNSTILE_SECRET_KEY is not set — rejecting request')
+        return false
+    }
+    const body = new URLSearchParams({
+        secret: TURNSTILE_SECRET,
+        response: token,
+        remoteip: ip,
+    })
+    try {
+        const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: body.toString(),
+        })
+        const data = await res.json() as { success: boolean; 'error-codes'?: string[] }
+        if (!data.success) {
+            // Log error codes for diagnostics — never log the raw token
+            console.warn('[notify-me] Turnstile rejected — codes:', data['error-codes'] ?? [])
+        }
+        return data.success === true
+    } catch (err) {
+        console.error('[notify-me] Turnstile request failed:', err)
+        return false
+    }
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function hashIp(ip: string): string {
@@ -39,21 +67,25 @@ function normalizeEmail(raw: string): string {
     return raw.trim().toLowerCase()
 }
 
-/** Lenient email validation — accepts anything that looks roughly like an email */
 function isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 function generateUnsubscribeToken(): string {
-    return crypto.randomBytes(32).toString('hex') // 64-char hex
+    return crypto.randomBytes(32).toString('hex')
 }
 
 // ── POST /api/notify-me ─────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json()
-        const { signupTag, language, country } = body
+        const { signupTag, language, country, turnstileToken, website } = body
         const email = normalizeEmail(body.email || '')
+
+        // ── Honeypot ────────────────────────────────────────────────────
+        if (website) {
+            return NextResponse.json({ success: true })
+        }
 
         // ── Validate ────────────────────────────────────────────────────
         if (!email || !isValidEmail(email)) {
@@ -75,6 +107,21 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        // ── Turnstile verification ──────────────────────────────────────
+        if (!turnstileToken || typeof turnstileToken !== 'string') {
+            return NextResponse.json(
+                { error: 'Human verification could not be completed. Please try again. If it continues, allow verification scripts for this site or use another browser.' },
+                { status: 400 }
+            )
+        }
+        const turnstileOk = await verifyTurnstile(turnstileToken, ip)
+        if (!turnstileOk) {
+            return NextResponse.json(
+                { error: 'Human verification could not be completed. Please try again. If it continues, allow verification scripts for this site or use another browser.' },
+                { status: 403 }
+            )
+        }
+
         // ── Validate CTA is active ──────────────────────────────────────
         const cta = await prisma.ctaConfiguration.findUnique({
             where: { signupTag },
@@ -87,7 +134,7 @@ export async function POST(req: NextRequest) {
             )
         }
 
-        // ── Upsert signup (dedup on email + signupTag) ──────────────────
+        // ── Create signup (dedup on email + signupTag) ──────────────────
         const userAgent = req.headers.get('user-agent') || undefined
 
         try {

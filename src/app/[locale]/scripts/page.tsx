@@ -6,7 +6,6 @@ import NotifyNewCallsButton from '@/components/scripts/NotifyNewCallsButton'
 import ScriptVideoBackground from '@/components/scripts/ScriptVideoBackground'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
-import { redirect } from 'next/navigation'
 import { getLocale, getTranslations } from 'next-intl/server'
 
 export const dynamic = 'force-dynamic'
@@ -22,7 +21,7 @@ export async function generateMetadata() {
 export default async function ScriptCallsPage() {
     const session = await getUserSession()
     const locale = await getLocale()
-    if (!session) redirect(`/${locale}/login?redirect=/scripts`)
+    const isLoggedIn = !!session
 
     const t = await getTranslations('scripts')
 
@@ -87,9 +86,10 @@ export default async function ScriptCallsPage() {
         },
     }) : []
 
-    const userId = session.userId as string
+    const userId = session?.userId as string | undefined
+
     let subscribedIds = new Set<string>()
-    if (comingSoon.length > 0) {
+    if (session && comingSoon.length > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const subs = await (prisma as any).scriptCallNotify.findMany({
             where: { userId, scriptCallId: { in: comingSoon.map(c => c.id) } },
@@ -99,13 +99,15 @@ export default async function ScriptCallsPage() {
     }
 
     let alreadySubscribed = false
-    try {
-        const userEmail = (await prisma.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email
-        if (userEmail) {
-            const sub = await prisma.subscriber.findUnique({ where: { email: userEmail }, select: { active: true } })
-            alreadySubscribed = sub?.active === true
-        }
-    } catch { /* ignore */ }
+    if (session) {
+        try {
+            const userEmail = (await prisma.user.findUnique({ where: { id: userId! }, select: { email: true } }))?.email
+            if (userEmail) {
+                const sub = await prisma.subscriber.findUnique({ where: { email: userEmail }, select: { active: true } })
+                alreadySubscribed = sub?.active === true
+            }
+        } catch { /* ignore */ }
+    }
 
     return (
         <>
@@ -303,6 +305,26 @@ export default async function ScriptCallsPage() {
                 @media (min-width: 641px) and (max-width: 900px) {
                     .scripts-grid { grid-template-columns: 1fr !important; }
                 }
+
+                /* ── Below-hero section: solid bg covers fixed video on desktop ── */
+                .scripts-below-hero {
+                    background: var(--bg-primary);
+                    padding: 48px 16px 80px;
+                    position: relative;
+                }
+                /* Gradient fade from cinematic hero into solid content — desktop only */
+                .scripts-below-hero::before {
+                    content: '';
+                    position: absolute;
+                    top: -80px; left: 0; right: 0;
+                    height: 80px;
+                    background: linear-gradient(to bottom, transparent, var(--bg-primary));
+                    pointer-events: none;
+                }
+                @media (max-width: 767px) {
+                    .scripts-below-hero { padding: 24px 16px 60px; }
+                    .scripts-below-hero::before { display: none; }
+                }
             `}</style>
 
             <main style={{ minHeight: '100vh', position: 'relative', zIndex: 2 }}>
@@ -441,7 +463,7 @@ export default async function ScriptCallsPage() {
 
 
                 {/* ══ CALLS ══ */}
-                <section id="scripts" style={{ padding: '0 16px 80px', scrollMarginTop: '72px' }} className="script-calls">
+                <section id="scripts" className="script-calls scripts-below-hero" style={{ scrollMarginTop: '72px' }}>
                     <div style={{ maxWidth: '960px', margin: '0 auto' }}>
 
                         {!enabled ? (
@@ -455,7 +477,7 @@ export default async function ScriptCallsPage() {
                                 <p style={{ color: 'var(--text-secondary)', marginBottom: '20px', maxWidth: '400px', margin: '0 auto 20px', fontSize: '0.88rem', lineHeight: 1.6 }}>
                                     {t('closedDesc')}
                                 </p>
-                                <NotifyNewCallsButton initialSubscribed={alreadySubscribed} />
+                                <NotifyNewCallsButton initialSubscribed={alreadySubscribed} isLoggedIn={isLoggedIn} />
                             </div>
 
                         ) : calls.length === 0 ? (
@@ -469,7 +491,7 @@ export default async function ScriptCallsPage() {
                                 <p style={{ color: 'var(--text-secondary)', maxWidth: '380px', margin: '0 auto 20px', fontSize: '0.88rem', lineHeight: 1.6 }}>
                                     {t('noCallsDesc')}
                                 </p>
-                                <NotifyNewCallsButton initialSubscribed={alreadySubscribed} />
+                                <NotifyNewCallsButton initialSubscribed={alreadySubscribed} isLoggedIn={isLoggedIn} />
                             </div>
 
                         ) : (
@@ -702,6 +724,7 @@ export default async function ScriptCallsPage() {
                                             <NotifyMeButton
                                                 scriptCallId={call.id}
                                                 initialSubscribed={subscribedIds.has(call.id)}
+                                                isLoggedIn={isLoggedIn}
                                             />
                                         </div>
                                     ))}

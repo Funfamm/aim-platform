@@ -1,7 +1,6 @@
 import Footer from '@/components/Footer'
 import CastingPageClient from '@/components/CastingPageClient'
 import { prisma } from '@/lib/db'
-import { redirect } from 'next/navigation'
 import { getUserSession } from '@/lib/auth'
 import { getLocale, getTranslations } from 'next-intl/server'
 
@@ -25,10 +24,7 @@ export default async function CastingPage() {
     const t = await getTranslations('castingPaused')
 
     const session = await getUserSession();
-  // Enforce login for casting page
-    if (!session) {
-      redirect(`/${locale}/login`);
-    }
+    const isLoggedIn = !!session
     if (settings && settings.castingCallsEnabled === false) {
         return (
             <>
@@ -68,7 +64,7 @@ export default async function CastingPage() {
         take: 100,
     })
 
-    // Fetch user's applications with status
+    // Fetch user's applications with status (logged-in only)
     let appliedMap: Record<string, string> = {}
     if (session?.userId) {
         const userApplications = await prisma.application.findMany({
@@ -90,7 +86,7 @@ export default async function CastingPage() {
                 }
             `}</style>
             <div className="fadeIn">
-                <CastingPageClient castingCalls={castingCalls} appliedMap={appliedMap} />
+                <CastingPageClient castingCalls={castingCalls} appliedMap={appliedMap} isLoggedIn={isLoggedIn} />
                 <Footer />
             </div>
         </>

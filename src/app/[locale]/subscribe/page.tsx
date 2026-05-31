@@ -10,8 +10,6 @@ import type { TurnstileInstance } from '@marsidev/react-turnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
-// How long to wait for Turnstile token before showing a retry error (ms)
-const VERIFICATION_TIMEOUT_MS = 15_000
 
 const DEFAULT_IMAGES = [
     '/images/notify-bg-1.png',
@@ -32,29 +30,14 @@ export default function SubscribePage() {
     const [honeypot, setHoneypot] = useState('')
     const loadedAtRef = useRef(0)
     const turnstileRef = useRef<TurnstileInstance | null>(null)
-    const verifyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Capture mount time for time-delay bot check
     useEffect(() => { loadedAtRef.current = Date.now() }, [])
 
     const siteKeyConfigured = !!SITE_KEY
-    const isVerifying = siteKeyConfigured && !token && !widgetError
-    const isDisabled = status === 'sending' || isVerifying || widgetError
-
-    // ── Verification timeout: if Turnstile hasn't called onSuccess within
-    // VERIFICATION_TIMEOUT_MS, surface a retry error instead of hanging forever.
-    useEffect(() => {
-        if (!siteKeyConfigured || token || widgetError) return
-        verifyTimeoutRef.current = setTimeout(() => {
-            if (!token) {
-                console.warn('[subscribe/page] Turnstile timeout — token not received within', VERIFICATION_TIMEOUT_MS, 'ms')
-                setWidgetError(true)
-            }
-        }, VERIFICATION_TIMEOUT_MS)
-        return () => {
-            if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-        }
-    }, [siteKeyConfigured, token, widgetError])
+    const [verifyNeeded, setVerifyNeeded] = useState(false)
+    // Button is only disabled while actively submitting
+    const isDisabled = status === 'sending'
 
     useEffect(() => {
         fetch('/api/admin/media?page=subscribe')
@@ -78,17 +61,20 @@ export default function SubscribePage() {
     // Name/email are intentionally NOT cleared so the user doesn't have to retype.
     const handleRetry = () => {
         setWidgetError(false)
+        setVerifyNeeded(false)
         setToken('')
         setStatus('idle')
-        if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-        // Imperatively reset the Turnstile widget so it re-challenges
         turnstileRef.current?.reset()
     }
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault()
-        // Client-side honeypot check — silently swallow if filled
+        setVerifyNeeded(false)
         if (honeypot) { setStatus('sent'); return }
+        if (siteKeyConfigured && !token) {
+            setVerifyNeeded(true)
+            return
+        }
         setStatus('sending')
         try {
             const res = await fetch('/api/subscribe', {
@@ -246,6 +232,29 @@ export default function SubscribePage() {
                                             }}
                                         />
 
+                                        {/* Turnstile — visible widget, loads only when form is rendered */}
+                                        {siteKeyConfigured && (
+                                            <div style={{ marginBottom: 'var(--space-sm)' }}>
+                                                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 10px', fontWeight: 500 }}>
+                                                    Let us know you are human
+                                                </p>
+                                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                                    <Turnstile
+                                                        ref={turnstileRef}
+                                                        siteKey={SITE_KEY}
+                                                        options={{ theme: 'dark', size: 'normal', retry: 'auto', retryInterval: 5000 }}
+                                                        onSuccess={(tk) => {
+                                                            setToken(tk)
+                                                            setWidgetError(false)
+                                                            setVerifyNeeded(false)
+                                                        }}
+                                                        onExpire={() => setToken('')}
+                                                        onError={() => setWidgetError(true)}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {/* Submission error */}
                                         {status === 'error' && (
                                             <p style={{ color: '#ef4444', fontSize: '0.85rem', marginBottom: 'var(--space-sm)' }}>
@@ -279,34 +288,21 @@ export default function SubscribePage() {
                                             </div>
                                         )}
 
+                                        {/* Nudge when user submits without completing the widget */}
+                                        {verifyNeeded && !widgetError && (
+                                            <p style={{ fontSize: '0.82rem', color: '#f59e0b', marginBottom: 'var(--space-sm)', lineHeight: 1.5 }}>
+                                                ⚠️ Please complete human verification above before subscribing.
+                                            </p>
+                                        )}
+
                                         <button
                                             type="submit"
                                             disabled={isDisabled}
                                             className="btn btn-primary"
                                             style={{ width: '100%', padding: '0.8rem', fontWeight: 700, opacity: isDisabled ? 0.55 : 1, transition: 'opacity 0.2s' }}
                                         >
-                                            {status === 'sending' ? t('submitting') : t('submitBtn')}
+                                            {status === 'sending' ? 'Checking verification…' : t('submitBtn')}
                                         </button>
-
-                                        {/* Turnstile — invisible mode, auto-executes on render */}
-                                        {siteKeyConfigured && (
-                                            <Turnstile
-                                                ref={turnstileRef}
-                                                siteKey={SITE_KEY}
-                                                options={{ theme: 'dark', size: 'invisible', execution: 'render', retry: 'auto', retryInterval: 5000 }}
-                                                onSuccess={(tk) => {
-                                                    if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-                                                    setToken(tk)
-                                                    setWidgetError(false)
-                                                }}
-                                                onExpire={() => setToken('')}
-                                                onError={() => {
-                                                    if (verifyTimeoutRef.current) clearTimeout(verifyTimeoutRef.current)
-                                                    setWidgetError(true)
-                                                }}
-                                                style={{ display: 'none' }}
-                                            />
-                                        )}
                                     </form>
                                 )}
                             </div>

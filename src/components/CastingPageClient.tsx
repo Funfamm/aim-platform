@@ -35,7 +35,7 @@ interface CastingCall {
     translations: string | null
 }
 
-export default function CastingPageClient({ castingCalls, appliedMap = {} }: { castingCalls: CastingCall[]; appliedMap?: Record<string, string> }) {
+export default function CastingPageClient({ castingCalls, appliedMap = {}, isLoggedIn = false }: { castingCalls: CastingCall[]; appliedMap?: Record<string, string>; isLoggedIn?: boolean }) {
     // Hero background state — driven by HeroBackground via callbacks
     const [currentVideoIdx, setCurrentVideoIdx] = useState(0)
     const [videoCount, setVideoCount] = useState(0)
@@ -44,6 +44,30 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
     const isMobile = useIsMobile()
     const t = useTranslations('casting')
     const locale = useLocale()
+
+    // Logged-in casting notify-me state
+    const [castingNotified, setCastingNotified] = useState(false)
+    const [castingAlready, setCastingAlready] = useState(false)
+    const [castingNotifying, setCastingNotifying] = useState(false)
+
+    async function handleCastingNotify() {
+        if (castingNotified || castingAlready || castingNotifying) return
+        setCastingNotifying(true)
+        try {
+            const res = await fetch('/api/casting/notify-me', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ browsingLocale: locale }),
+            })
+            if (res.ok) {
+                const data = await res.json()
+                if (data.alreadySubscribed) setCastingAlready(true)
+                else setCastingNotified(true)
+            }
+        } catch { /* silent */ } finally {
+            setCastingNotifying(false)
+        }
+    }
 
     // Page-entry fade-in
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -386,21 +410,58 @@ export default function CastingPageClient({ castingCalls, appliedMap = {} }: { c
                                         maxWidth: '360px', margin: '0 auto 24px',
                                         lineHeight: 1.65,
                                     }}>{t('noOpenCasting')}</p>
-                                    <Link
-                                        href="/subscribe"
-                                        style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                            padding: '11px 28px',
-                                            background: 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
-                                            border: 'none', borderRadius: 'var(--radius-full)',
-                                            color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
-                                            letterSpacing: '0.02em', textDecoration: 'none',
-                                            boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
-                                            transition: 'box-shadow 0.2s, transform 0.2s',
-                                        }}
-                                    >
-                                        🔔 {t('notifyMeWhenOpen')}
-                                    </Link>
+                                    {isLoggedIn ? (
+                                        (castingNotified || castingAlready) ? (
+                                            <div style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '10px',
+                                                padding: '10px 22px',
+                                                background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))',
+                                                border: '1.5px solid rgba(16,185,129,0.3)',
+                                                borderRadius: 'var(--radius-full)',
+                                            }}>
+                                                <span style={{ fontSize: '1.1rem' }}>🔔</span>
+                                                <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#10b981' }}>
+                                                    {castingAlready ? "You're already on the list." : "You're on the list!"}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <button
+                                                onClick={handleCastingNotify}
+                                                disabled={castingNotifying}
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                                    padding: '11px 28px',
+                                                    background: castingNotifying
+                                                        ? 'rgba(212,168,83,0.5)'
+                                                        : 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
+                                                    border: 'none', borderRadius: 'var(--radius-full)',
+                                                    color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
+                                                    letterSpacing: '0.02em',
+                                                    boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
+                                                    cursor: castingNotifying ? 'wait' : 'pointer',
+                                                    transition: 'all 0.25s ease',
+                                                }}
+                                            >
+                                                🔔 {castingNotifying ? '…' : t('notifyMeWhenOpen')}
+                                            </button>
+                                        )
+                                    ) : (
+                                        <Link
+                                            href={`/${locale}/subscribe`}
+                                            style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                                padding: '11px 28px',
+                                                background: 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
+                                                border: 'none', borderRadius: 'var(--radius-full)',
+                                                color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
+                                                letterSpacing: '0.02em', textDecoration: 'none',
+                                                boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
+                                                transition: 'box-shadow 0.2s, transform 0.2s',
+                                            }}
+                                        >
+                                            🔔 {t('notifyMeWhenOpen')}
+                                        </Link>
+                                    )}
                                     <p style={{ marginTop: '16px', fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
                                         {t('followSocial')}
                                     </p>

@@ -6,10 +6,9 @@ import { subscribeConfirmationWithOverrides } from '@/lib/email-templates'
 import { t as et } from '@/lib/email-i18n'
 
 /**
- * POST /api/scripts/notify-new-calls
- * Subscribes the logged-in user to be notified when new script calls open.
- * Uses their account email — no email input needed from the frontend.
- * Idempotent — safe to call multiple times.
+ * POST /api/training/notify-me
+ * Subscribes the logged-in user to be notified when training courses launch.
+ * Uses their account email — no email input needed. Idempotent.
  */
 export async function POST(req: Request) {
     const session = await getUserSession()
@@ -17,15 +16,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // browsingLocale: the locale of the page the user was on when they clicked Notify Me.
-    // Used as second-priority fallback when no preferredLanguage is saved on the account.
     let browsingLocale = 'en'
     try {
         const body = await req.json()
         if (typeof body?.browsingLocale === 'string') browsingLocale = body.browsingLocale
     } catch { /* body may be empty */ }
 
-    // Get user's email + name + locale from their account
     const user = await prisma.user.findUnique({
         where: { id: session.userId as string },
         select: { email: true, name: true, preferredLanguage: true, receiveLocalizedEmails: true },
@@ -41,28 +37,26 @@ export async function POST(req: Request) {
         : (browsingLocale || 'en')
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
 
-    const existingSubscriber = await prisma.subscriber.findUnique({
+    const existing = await prisma.subscriber.findUnique({
         where: { email: user.email },
         select: { active: true },
     }).catch(() => null)
 
-    const isNew = !existingSubscriber
+    const isNew = !existing
 
-    // Upsert into newsletter subscriber list (idempotent)
     await prisma.subscriber.upsert({
         where: { email: user.email },
         update: { active: true },
-        create: { email: user.email, name: user.name || null },
+        create: { email: user.email, name: user.name || null, source: 'training_notify' },
     }).catch(() => null)
 
-    // Only send confirmation email if this is their first time subscribing
     if (isNew) {
         sendTransactionalEmail({
             to: user.email,
             subject: et('subscribe', locale, 'subject'),
             html: await subscribeConfirmationWithOverrides(user.name || undefined, siteUrl, locale),
-        }).catch(err => console.error('[notify-new-calls] email failed:', err))
+        }).catch(err => console.error('[training/notify-me] email failed:', err))
     }
 
-    return NextResponse.json({ subscribed: true })
+    return NextResponse.json({ subscribed: true, alreadySubscribed: !isNew })
 }

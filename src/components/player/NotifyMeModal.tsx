@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { CtaModalCopy } from './NotifyMeEndCard'
+import { Turnstile } from '@marsidev/react-turnstile'
+import type { TurnstileInstance } from '@marsidev/react-turnstile'
+
+const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
 
 export default function NotifyMeModal({
     copy,
@@ -19,8 +23,14 @@ export default function NotifyMeModal({
     const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-    const inputRef = useRef<HTMLInputElement>(null)
+    const [token, setToken] = useState('')
+    const [widgetError, setWidgetError] = useState(false)
+    const [verifyNeeded, setVerifyNeeded] = useState(false)
     const [animateIn, setAnimateIn] = useState(false)
+    const inputRef = useRef<HTMLInputElement>(null)
+    const turnstileRef = useRef<TurnstileInstance | null>(null)
+
+    const siteKeyConfigured = !!SITE_KEY
 
     useEffect(() => {
         if (visible) {
@@ -36,13 +46,35 @@ export default function NotifyMeModal({
 
     if (!visible) return null
 
+    const handleRetry = () => {
+        setWidgetError(false)
+        setVerifyNeeded(false)
+        setToken('')
+        turnstileRef.current?.reset()
+    }
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
+        setVerifyNeeded(false)
 
         const trimmed = email.trim()
         if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
             setError('Please enter a valid email address.')
+            return
+        }
+
+        // Honeypot check
+        const form = e.target as HTMLFormElement
+        const botField = (form.elements.namedItem('website') as HTMLInputElement)?.value
+        if (botField) {
+            onSuccess()
+            return
+        }
+
+        // Require Turnstile token before submitting
+        if (siteKeyConfigured && !token) {
+            setVerifyNeeded(true)
             return
         }
 
@@ -55,6 +87,8 @@ export default function NotifyMeModal({
                     email: trimmed,
                     signupTag,
                     language: document.documentElement.lang || 'en',
+                    turnstileToken: token,
+                    website: '',
                 }),
             })
 
@@ -62,13 +96,16 @@ export default function NotifyMeModal({
 
             if (!res.ok) {
                 setError(data.error || 'Something went wrong. Please try again.')
+                setToken('')
+                turnstileRef.current?.reset()
                 return
             }
 
-            // Success — whether new signup or already subscribed
             onSuccess()
         } catch {
             setError('Network error. Please check your connection.')
+            setToken('')
+            turnstileRef.current?.reset()
         } finally {
             setLoading(false)
         }
@@ -154,6 +191,16 @@ export default function NotifyMeModal({
 
                 {/* Email form */}
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* Honeypot — invisible to humans, filled by bots */}
+                    <input
+                        name="website"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        aria-hidden="true"
+                        style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', overflow: 'hidden' }}
+                    />
+
                     <input
                         ref={inputRef}
                         type="email"
@@ -187,6 +234,61 @@ export default function NotifyMeModal({
                         }}
                     />
 
+                    {/* Turnstile — visible widget, loads only when modal is open */}
+                    {siteKeyConfigured && (
+                        <div style={{ textAlign: 'left' }}>
+                            <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', fontWeight: 500 }}>
+                                Let us know you are human
+                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                <Turnstile
+                                    ref={turnstileRef}
+                                    siteKey={SITE_KEY}
+                                    options={{ theme: 'dark', size: 'normal', retry: 'auto', retryInterval: 5000 }}
+                                    onSuccess={(tk) => {
+                                        setToken(tk)
+                                        setWidgetError(false)
+                                        setVerifyNeeded(false)
+                                    }}
+                                    onExpire={() => setToken('')}
+                                    onError={() => setWidgetError(true)}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Widget load error — with retry */}
+                    {widgetError && (
+                        <div style={{ textAlign: 'left' }}>
+                            <p style={{ fontSize: '0.75rem', color: '#f59e0b', margin: '0 0 6px', lineHeight: 1.5 }}>
+                                ⚠️ Human verification could not be completed. Please try again. If it continues, allow verification scripts for this site or use another browser.
+                            </p>
+                            <button
+                                type="button"
+                                onClick={handleRetry}
+                                style={{
+                                    background: 'rgba(245,158,11,0.12)',
+                                    border: '1px solid rgba(245,158,11,0.4)',
+                                    borderRadius: '8px',
+                                    color: '#f59e0b',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 600,
+                                    padding: '0.3rem 0.7rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                ↺ Retry verification
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Nudge when user submits without completing the widget */}
+                    {verifyNeeded && !widgetError && (
+                        <p style={{ fontSize: '0.75rem', color: '#f59e0b', margin: 0, textAlign: 'left', lineHeight: 1.5 }}>
+                            ⚠️ Please complete human verification above before continuing.
+                        </p>
+                    )}
+
                     {error && (
                         <p style={{ fontSize: '0.78rem', color: 'rgba(255,80,80,0.9)', margin: 0 }}>
                             {error}
@@ -218,7 +320,7 @@ export default function NotifyMeModal({
                             e.currentTarget.style.transform = 'scale(1)'
                         }}
                     >
-                        {loading ? '...' : copy.buttonLabel}
+                        {loading ? 'Checking verification…' : copy.buttonLabel}
                     </button>
                 </form>
 

@@ -49,6 +49,30 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
     const isMobile = useIsMobile()
     const [activeFilter, setActiveFilter] = useState<string>('all')
 
+    // Logged-in training notify-me state
+    const [trainingNotified, setTrainingNotified] = useState(false)
+    const [trainingAlready, setTrainingAlready] = useState(false)
+    const [trainingNotifying, setTrainingNotifying] = useState(false)
+
+    async function handleTrainingNotify() {
+        if (trainingNotified || trainingAlready || trainingNotifying) return
+        setTrainingNotifying(true)
+        try {
+            const res = await fetch('/api/training/notify-me', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ browsingLocale: locale }),
+            })
+            if (res.ok) {
+                const data = await res.json()
+                if (data.alreadySubscribed) setTrainingAlready(true)
+                else setTrainingNotified(true)
+            }
+        } catch { /* silent */ } finally {
+            setTrainingNotifying(false)
+        }
+    }
+
     const tr = (translations: string | null, field: string, fallback: string) => {
         if (!translations || locale === 'en') return fallback
         try {
@@ -338,21 +362,58 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                                 }}>
                                     {isLoggedIn ? t('noCoursesLoggedIn') : t('noCoursesGuest')}
                                 </p>
-                                <Link
-                                    href="/subscribe"
-                                    style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '8px',
-                                        padding: '11px 28px',
-                                        background: 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
-                                        border: 'none', borderRadius: 'var(--radius-full)',
-                                        color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
-                                        letterSpacing: '0.02em', textDecoration: 'none',
-                                        boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
-                                        transition: 'box-shadow 0.2s, transform 0.2s',
-                                    }}
-                                >
-                                    🔔 {tc('notifyMeWhenOpen')}
-                                </Link>
+                                {isLoggedIn ? (
+                                    (trainingNotified || trainingAlready) ? (
+                                        <div style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '10px',
+                                            padding: '10px 22px',
+                                            background: 'linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05))',
+                                            border: '1.5px solid rgba(16,185,129,0.3)',
+                                            borderRadius: 'var(--radius-full)',
+                                        }}>
+                                            <span style={{ fontSize: '1.1rem' }}>🔔</span>
+                                            <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#10b981' }}>
+                                                {trainingAlready ? "You're already on the list." : "You're on the list!"}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={handleTrainingNotify}
+                                            disabled={trainingNotifying}
+                                            style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                                padding: '11px 28px',
+                                                background: trainingNotifying
+                                                    ? 'rgba(212,168,83,0.5)'
+                                                    : 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
+                                                border: 'none', borderRadius: 'var(--radius-full)',
+                                                color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
+                                                letterSpacing: '0.02em',
+                                                boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
+                                                cursor: trainingNotifying ? 'wait' : 'pointer',
+                                                transition: 'all 0.25s ease',
+                                            }}
+                                        >
+                                            🔔 {trainingNotifying ? '…' : tc('notifyMeWhenOpen')}
+                                        </button>
+                                    )
+                                ) : (
+                                    <Link
+                                        href={`/${locale}/subscribe`}
+                                        style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: '8px',
+                                            padding: '11px 28px',
+                                            background: 'linear-gradient(135deg, var(--accent-gold), #c4943a)',
+                                            border: 'none', borderRadius: 'var(--radius-full)',
+                                            color: '#0f1115', fontWeight: 700, fontSize: '0.88rem',
+                                            letterSpacing: '0.02em', textDecoration: 'none',
+                                            boxShadow: '0 4px 20px rgba(212,168,83,0.3)',
+                                            transition: 'box-shadow 0.2s, transform 0.2s',
+                                        }}
+                                    >
+                                        🔔 {tc('notifyMeWhenOpen')}
+                                    </Link>
+                                )}
                                 <p style={{ marginTop: '16px', fontSize: '0.72rem', color: 'var(--text-tertiary)', lineHeight: 1.5 }}>
                                     {tc('followSocial')}
                                 </p>

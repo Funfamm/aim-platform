@@ -1,31 +1,51 @@
 'use client'
 
 import { useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
-/**
- * Button that lets a logged-in user subscribe to be notified
- * when new script calls open — no email input needed, uses their account email.
- */
-export default function NotifyNewCallsButton({ initialSubscribed = false }: { initialSubscribed?: boolean }) {
+interface NotifyNewCallsButtonProps {
+    initialSubscribed?: boolean
+    isLoggedIn?: boolean
+    apiPath?: string
+}
+
+export default function NotifyNewCallsButton({
+    initialSubscribed = false,
+    isLoggedIn = true,
+    apiPath = '/api/scripts/notify-new-calls',
+}: NotifyNewCallsButtonProps) {
     const t = useTranslations('scripts')
+    const locale = useLocale()
     const [subscribed, setSubscribed] = useState(initialSubscribed)
+    const [alreadyOnList, setAlreadyOnList] = useState(false)
     const [loading, setLoading] = useState(false)
     const [showPop, setShowPop] = useState(false)
 
     async function handleClick() {
-        if (subscribed || loading) return
+        if (subscribed || alreadyOnList || loading) return
+
+        // Guests: redirect to locale-aware subscribe flow
+        if (!isLoggedIn) {
+            window.location.href = `/${locale}/subscribe`
+            return
+        }
+
         setLoading(true)
         try {
-            // Subscribe using the user's account email (session-based, no form needed)
-            const res = await fetch('/api/scripts/notify-new-calls', {
+            const res = await fetch(apiPath, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ browsingLocale: locale }),
             })
             if (res.ok) {
-                setSubscribed(true)
-                setShowPop(true)
-                setTimeout(() => setShowPop(false), 5000)
+                const data = await res.json()
+                if (data.alreadySubscribed) {
+                    setAlreadyOnList(true)
+                } else {
+                    setSubscribed(true)
+                    setShowPop(true)
+                    setTimeout(() => setShowPop(false), 5000)
+                }
             }
         } catch { /* silent */ } finally {
             setLoading(false)
@@ -53,7 +73,7 @@ export default function NotifyNewCallsButton({ initialSubscribed = false }: { in
                 }
             `}</style>
 
-            {subscribed ? (
+            {(subscribed || alreadyOnList) ? (
                 /* ── Confirmed state ── */
                 <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: '10px',
@@ -64,31 +84,22 @@ export default function NotifyNewCallsButton({ initialSubscribed = false }: { in
                     animation: showPop ? 'notifyPop 0.4s cubic-bezier(0.34,1.56,0.64,1)' : 'none',
                     cursor: 'default',
                 }}>
-                    {/* Animated bell */}
                     <span style={{
-                        fontSize: '1.1rem',
-                        display: 'inline-block',
+                        fontSize: '1.1rem', display: 'inline-block',
                         animation: showPop ? 'bellRing 0.8s ease 0.2s' : 'none',
                     }}>🔔</span>
 
                     <span>
-                        <span style={{
-                            display: 'block',
-                            fontWeight: 700, fontSize: '0.85rem',
-                            color: '#10b981',
-                        }}>
-                            {t('notifyConfirmedTitle')}
+                        <span style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', color: '#10b981' }}>
+                            {alreadyOnList ? "You're already on the list." : t('notifyConfirmedTitle')}
                         </span>
-                        <span style={{
-                            display: 'block',
-                            fontSize: '0.72rem',
-                            color: 'rgba(16,185,129,0.7)',
-                        }}>
-                            {t('notifyConfirmedDesc')}
-                        </span>
+                        {subscribed && (
+                            <span style={{ display: 'block', fontSize: '0.72rem', color: 'rgba(16,185,129,0.7)' }}>
+                                {t('notifyConfirmedDesc')}
+                            </span>
+                        )}
                     </span>
 
-                    {/* Animated checkmark */}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                         stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                         <polyline
