@@ -93,6 +93,17 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="AIM Studio" />
         {/* Android Chrome — full standalone mode */}
         <meta name="mobile-web-app-capable" content="yes" />
+        {/*
+          * Cloudflare Turnstile — preloaded globally so the widget script is
+          * always present on client-side navigation (Next.js SPA transitions).
+          * Without this, @marsidev/react-turnstile injects the script lazily
+          * on first mount, which can arrive after hydration on cached pages,
+          * requiring a hard refresh to render the widget.
+          * The 'compat=recaptcha' param is omitted deliberately — it only
+          * matters if migrating an existing reCAPTCHA integration.
+          */}
+        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
       </head>
       <body>
         <a href="#main-content" className="skip-to-content">
