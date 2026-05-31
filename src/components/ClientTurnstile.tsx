@@ -34,6 +34,16 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
         const widgetIdRef = useRef<string | null>(null)
         const pathname = usePathname()
 
+        // Reset scriptFailed when pathname changes ("derive state from props"
+        // pattern from React docs). Runs during render, before effects, so
+        // containerRef.current is guaranteed to point to the container div
+        // by the time the main effect fires — no requestAnimationFrame needed.
+        const [prevPathname, setPrevPathname] = useState(pathname)
+        if (pathname !== prevPathname) {
+            setPrevPathname(pathname)
+            if (scriptFailed) setScriptFailed(false)
+        }
+
         // Stable refs for callbacks — avoids re-running the render effect on every parent re-render
         const callbacks = useRef({ onSuccess, onError, onExpire })
         useEffect(() => {
@@ -65,10 +75,6 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
 
         useEffect(() => {
             if (!siteKey) return
-
-            // Reset error state on re-mount / navigation so a previous timeout
-            // doesn't permanently block the widget container from rendering.
-            setScriptFailed(false)
 
             let cancelled = false
             const timers: ReturnType<typeof setTimeout>[] = []
@@ -186,16 +192,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
             }
 
             ensureScript()
-                .then(() => {
-                    if (cancelled) return
-                    // setScriptFailed(false) above may have swapped the error div
-                    // back to the container div. React commits that re-render after
-                    // the effect, so containerRef.current may still be null right now.
-                    // Defer to the next frame to guarantee the DOM is updated.
-                    requestAnimationFrame(() => {
-                        if (!cancelled) renderWidget()
-                    })
-                })
+                .then(() => { if (!cancelled) renderWidget() })
                 .catch(() => { if (!cancelled) setScriptFailed(true) })
 
             return () => {
