@@ -1,7 +1,7 @@
 'use client'
 // Force rebuild 1
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
 import AdminSidebar from '@/components/AdminSidebar'
@@ -11,9 +11,10 @@ import FileUploader from '@/components/FileUploader'
 import { TOTAL_SUBTITLE_LANGS, SUBTITLE_TARGET_LANGS, LANGUAGE_NAMES, requiresTranslationGate, isBlockedStreamingUrl } from '@/config/subtitles'
 import PublishGateModal from '@/components/admin/PublishGateModal'
 import { transcribeVideo } from '@/lib/transcribe-client'
-import { runQC, formatQCSummary } from '@/lib/subtitle-qc'
+import { runQC, formatQCSummary, type QCResult } from '@/lib/subtitle-qc'
 import { uploadSubtitleFile } from '@/lib/subtitle-file-parser'
 import { readSSEStream } from '@/lib/sse-reader'
+import LangStatusGrid from '@/components/admin/LangStatusGrid'
 
 /* ── Types ── */
 type FormData = {
@@ -52,6 +53,18 @@ type FilmCastMember = {
 }
 type CastForm = { name: string; jobTitle: string; character: string; bio: string; photoUrl: string; instagramUrl: string }
 const EMPTY_CAST_FORM: CastForm = { name: '', jobTitle: 'Actor', character: '', bio: '', photoUrl: '', instagramUrl: '' }
+
+/* ── Review modal types (ported from projects list page) ── */
+type ReviewSegment = { start: number; end: number; text: string }
+type ReviewSubtitle = {
+    segments: ReviewSegment[]
+    translations: Record<string, ReviewSegment[]>
+    qcIssues: QCResult[]
+    translateStatus: string
+    transcribedWith: string | null
+    generatedWith: string | null
+    langStatus: Record<string, string> | null
+}
 
 const STATUSES = ['upcoming', 'in-production', 'completed']
 const GENRES = ['Action','Adventure','Animation','Biography','Comedy','Crime','Documentary','Drama','Fantasy','Historical','Horror','Musical','Mystery','Romance','Sci-Fi','Short Film','Thriller','War','Western']
@@ -151,6 +164,20 @@ export default function ProjectEditPage() {
     const [editorInitialLandscapePlacement, setEditorInitialLandscapePlacement] = useState<any>(null)
     const [editorUseSeparateMobile, setEditorUseSeparateMobile] = useState(false)
 
+    // ── Subtitle Review modal ──
+    const [reviewProjectId, setReviewProjectId] = useState<string | null>(null)
+    const [reviewMediaType, setReviewMediaType] = useState<string>('movie')
+    const [reviewEpisodeId, setReviewEpisodeId] = useState<string | null>(null)
+    const [reviewEpisodeLabel, setReviewEpisodeLabel] = useState<string>('')
+    const [reviewData, setReviewData] = useState<ReviewSubtitle | null>(null)
+    const [reviewLang, setReviewLang] = useState('en')
+    const [reviewLoading, setReviewLoading] = useState(false)
+    const [retryingLang, setRetryingLang] = useState<string | null>(null)
+    const reviewRequestRef = useRef(0)
+
+    // ── Per-track subtitle visibility ──
+    const [subtitleVisibility, setSubtitleVisibility] = useState<Record<string, boolean>>({})
+
     // Publish gate
 
     const [showPublishWarning, setShowPublishWarning] = useState(false)
@@ -239,8 +266,12 @@ export default function ProjectEditPage() {
                 const aqQs = episodeId ? `projectId=${projectId}&mediaType=episode&episodeId=${episodeId}` : `projectId=${projectId}&mediaType=${mediaType}`
                 fetch(`/api/admin/subtitles?${aqQs}`)
                     .then(r => r.ok ? r.json() : {})
-                    .then((res: { subtitle?: { status?: string; segments?: string; translations?: string; translateStatus?: string } }) => {
+                    .then((res: { subtitle?: { status?: string; segments?: string; translations?: string; translateStatus?: string; subtitlesPublic?: boolean } }) => {
                         if (res.subtitle?.status) setSubtitleApproval(prev => ({ ...prev, [key]: res.subtitle!.status! }))
+                        // Read per-track subtitle visibility
+                        if (res.subtitle?.subtitlesPublic !== undefined) {
+                            setSubtitleVisibility(s => ({ ...s, [key]: res.subtitle!.subtitlesPublic! }))
+                        }
                         // If the admin API confirms a subtitle exists with segments,
                         // make sure the UI reflects that even if the public API is gated
                         if (res.subtitle?.segments) {
@@ -768,6 +799,145 @@ export default function ProjectEditPage() {
         } catch {
             alert('Could not load subtitles. Try again.')
         }
+    }
+
+    /** Open the Subtitle Review modal (read-only status view) */
+    const openReview = async (mediaType: string = 'movie', episodeId?: string | null, episodeLabel?: string) => {
+        const requestId = ++reviewRequestRef.current
+        setReviewProjectId(projectId)
+        setReviewMediaType(mediaType)
+        setReviewEpisodeId(episodeId ?? null)
+        setReviewEpisodeLabel(episodeLabel ?? '')
+        setReviewLang('en')
+        setReviewData(null)
+        setReviewLoading(true)
+        setRetryingLang(null)
+        try {
+            const epQs = episodeId ? `&episodeId=${episodeId}` : ''
+            const res = await fetch(`/api/admin/subtitles?projectId=${projectId}&mediaType=${mediaType}${epQs}`)
+            const { subtitle } = await res.json()
+            if (requestId !== reviewRequestRef.current) return
+            if (subtitle) {
+                setReviewData({
+                    segments: JSON.parse(subtitle.segments || '[]'),
+                    translations: subtitle.translations ? JSON.parse(subtitle.translations) : {},
+                    qcIssues: subtitle.qcIssues ? JSON.parse(subtitle.qcIssues) : [],
+                    translateStatus: subtitle.translateStatus || 'pending',
+                    transcribedWith: subtitle.transcribedWith || null,
+                    generatedWith: subtitle.generatedWith || null,
+                    langStatus: subtitle.langStatus ?? null,
+                })
+            }
+        } catch { /* subtitle not found */ }
+        if (requestId === reviewRequestRef.current) setReviewLoading(false)
+    }
+
+    /** Retry a single failed/pending language via SSE */
+    const retryLang = async (lang: string) => {
+        if (!reviewProjectId || retryingLang === lang) return
+        setRetryingLang(lang)
+        try {
+            const res = await fetch('/api/admin/subtitles/retry-lang', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId: reviewProjectId, lang, mediaType: reviewMediaType }),
+            })
+            if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`)
+            setReviewData(prev => prev ? {
+                ...prev,
+                langStatus: { ...(prev.langStatus ?? {}), [lang]: 'processing' },
+            } : prev)
+            await readSSEStream<{ phase?: string; lang?: string }>(res.body.getReader(), async (data) => {
+                if (data.phase === 'done') {
+                    const epQs = reviewEpisodeId ? `&episodeId=${reviewEpisodeId}` : ''
+                    const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}&mediaType=${reviewMediaType}${epQs}`)
+                    const { subtitle } = await freshRes.json()
+                    if (subtitle) {
+                        setReviewData({
+                            segments: JSON.parse(subtitle.segments || '[]'),
+                            translations: subtitle.translations ? JSON.parse(subtitle.translations) : {},
+                            qcIssues: subtitle.qcIssues ? JSON.parse(subtitle.qcIssues) : [],
+                            translateStatus: subtitle.translateStatus || 'pending',
+                            transcribedWith: subtitle.transcribedWith || null,
+                            generatedWith: subtitle.generatedWith || null,
+                            langStatus: subtitle.langStatus ?? null,
+                        })
+                    }
+                } else if (data.phase === 'error') {
+                    setReviewData(prev => prev ? {
+                        ...prev,
+                        langStatus: { ...(prev.langStatus ?? {}), [lang]: 'failed' },
+                    } : prev)
+                }
+            })
+        } catch (err) {
+            setReviewData(prev => prev ? {
+                ...prev,
+                langStatus: { ...(prev.langStatus ?? {}), [lang]: 'failed' },
+            } : prev)
+            console.error('[retry-lang]', err)
+        }
+        setRetryingLang(null)
+    }
+
+    /** Delete subtitle content from the review modal — scoped by mediaType */
+    const handleDeleteSubtitle = async (deleteType: 'source' | 'translation', language?: string) => {
+        if (!reviewProjectId) return
+
+        const mediaLabel = reviewMediaType === 'trailer' ? 'Trailer' : reviewMediaType === 'episode' ? (reviewEpisodeLabel || 'Episode') : 'Movie'
+        const confirmMsg = deleteType === 'translation' && language
+            ? `Are you sure you want to delete ${mediaLabel} ${language.toUpperCase()} translation?\n\nThis cannot be undone.`
+            : `Are you sure you want to delete all ${mediaLabel} subtitles (source + translations)?\n\nThis cannot be undone.`
+        if (!confirm(confirmMsg)) return
+
+        try {
+            const res = await fetch('/api/admin/subtitles', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    projectId: reviewProjectId,
+                    mediaType: reviewMediaType,
+                    episodeId: reviewEpisodeId ?? undefined,
+                    deleteType,
+                    language,
+                }),
+            })
+            const d = await res.json()
+            if (!res.ok) throw new Error(d.error || 'Delete failed')
+
+            if (deleteType === 'source') {
+                const key = reviewEpisodeId ? sk(`ep:${reviewEpisodeId}`) : sk(reviewMediaType)
+                setTranslationCount(s => ({ ...s, [key]: 0 }))
+                setTranslateStatus(s => ({ ...s, [key]: 'pending' }))
+                setSubtitlePhase(s => ({ ...s, [key]: null }))
+                setSubtitleStatus(s => { const n = { ...s }; delete n[key]; return n })
+                setServerJobStatus(s => ({ ...s, [key]: 'idle' }))
+                closeReview()
+            } else {
+                const epQs = reviewEpisodeId ? `&episodeId=${reviewEpisodeId}` : ''
+                const freshRes = await fetch(`/api/admin/subtitles?projectId=${reviewProjectId}&mediaType=${reviewMediaType}${epQs}`)
+                const { subtitle } = await freshRes.json()
+                if (subtitle) {
+                    setReviewData({
+                        segments: JSON.parse(subtitle.segments || '[]'),
+                        translations: subtitle.translations ? JSON.parse(subtitle.translations) : {},
+                        qcIssues: subtitle.qcIssues ? JSON.parse(subtitle.qcIssues) : [],
+                        translateStatus: subtitle.translateStatus || 'pending',
+                        transcribedWith: subtitle.transcribedWith || null,
+                        generatedWith: subtitle.generatedWith || null,
+                        langStatus: subtitle.langStatus ?? null,
+                    })
+                }
+            }
+        } catch (err) {
+            alert(`Delete failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        }
+    }
+
+    const closeReview = () => {
+        setReviewProjectId(null)
+        setReviewData(null)
+        setReviewMediaType('movie')
     }
 
     const epLabelStyle: React.CSSProperties = {
@@ -1406,6 +1576,52 @@ export default function ProjectEditPage() {
                                             : count > 0 ? `${count} of ${TOTAL_SUBTITLE_LANGS} languages translated. Click CC to translate the remaining.`
                                             : 'Generate multi-language subtitles. Click Server Worker to transcribe, or upload an existing SRT/VTT.'}
                                     </div>
+                                    {/* Per-track subtitle visibility toggle */}
+                                    {(() => {
+                                        const isVisible = subtitleVisibility[stateKey] ?? false
+                                        const handleToggle = async () => {
+                                            const next = !isVisible
+                                            // Optimistic update
+                                            setSubtitleVisibility(s => ({ ...s, [stateKey]: next }))
+                                            try {
+                                                await fetch('/api/admin/subtitles/visibility', {
+                                                    method: 'PATCH',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({
+                                                        projectId,
+                                                        mediaType: activeMediaType === 'episode' ? 'episode' : activeMediaType,
+                                                        episodeId: activeEpisodeId ?? null,
+                                                        subtitlesPublic: next,
+                                                    }),
+                                                })
+                                            } catch {
+                                                // Revert on failure
+                                                setSubtitleVisibility(s => ({ ...s, [stateKey]: isVisible }))
+                                            }
+                                        }
+                                        return (
+                                            <button
+                                                type="button"
+                                                onClick={handleToggle}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: '8px',
+                                                    padding: '6px 14px', borderRadius: '8px', cursor: 'pointer',
+                                                    fontSize: '0.78rem', fontWeight: 700,
+                                                    background: isVisible ? 'rgba(52,211,153,0.1)' : 'rgba(255,255,255,0.04)',
+                                                    border: `1px solid ${isVisible ? 'rgba(52,211,153,0.35)' : 'rgba(255,255,255,0.1)'}`,
+                                                    color: isVisible ? '#34d399' : 'var(--text-tertiary)',
+                                                    transition: 'all 0.2s',
+                                                }}
+                                                title={isVisible ? 'Click to hide subtitles from users for this video' : 'Click to make subtitles visible to users for this video'}
+                                            >
+                                                <span style={{ fontSize: '1rem' }}>{isVisible ? '🌐' : '🔒'}</span>
+                                                {isVisible ? 'Subtitles visible to users' : 'Subtitles hidden from users'}
+                                                <span style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 400 }}>
+                                                    ({activeTab === 'movie' ? 'Movie' : activeTab === 'trailer' ? 'Trailer' : tabs.find(t => t.key === activeTab)?.label ?? 'Episode'})
+                                                </span>
+                                            </button>
+                                        )
+                                    })()}
                                     {/* Button row */}
                                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                                         {/* Server Worker */}
@@ -1489,8 +1705,8 @@ export default function ProjectEditPage() {
                                         })()}
                                         {/* Review Subtitles */}
                                         {(serverJobStatus[stateKey] === 'ready' || translateStatus[stateKey] === 'complete' || translateStatus[stateKey] === 'partial' || count > 0) && (
-                                            <button type="button" onClick={() => openSubtitleEditor(activeMediaUrl || null, activeMediaType, activeEpisodeId)}
-                                                title="Review and edit subtitles"
+                                            <button type="button" onClick={() => openReview(activeMediaType, activeEpisodeId, tabs.find(t => t.key === activeTab)?.label)}
+                                                title="Review subtitle status and translations"
                                                 style={{ fontSize: '0.72rem', fontWeight: 700, padding: '6px 14px', borderRadius: '8px',
                                                     background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.2)', color: 'var(--accent-gold)', cursor: 'pointer' }}>
                                                 🔍 Review Subtitles
@@ -1725,6 +1941,222 @@ export default function ProjectEditPage() {
                         setSubtitleApproval(prev => ({ ...prev, [edKey]: newStatus }))
                     }}
                 />
+            )}
+
+            {/* ── Subtitle Review modal ── */}
+            {reviewProjectId && (
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 1100, padding: 'var(--space-lg)', backdropFilter: 'blur(6px)',
+                    }}
+                    onClick={e => { if (e.target === e.currentTarget) closeReview() }}
+                >
+                    <div style={{
+                        background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)',
+                        borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '860px',
+                        maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                        boxShadow: '0 24px 80px rgba(0,0,0,0.6)',
+                    }}>
+                        {/* Header */}
+                        <div style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            padding: 'var(--space-lg) var(--space-xl)',
+                            borderBottom: '1px solid var(--border-subtle)',
+                        }}>
+                            <div>
+                                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '2px' }}>
+                                    🔍 {reviewMediaType === 'trailer' ? 'Trailer' : reviewMediaType === 'episode' ? (reviewEpisodeLabel || 'Episode') : 'Movie'} Subtitle Review
+                                </h2>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
+                                    {form.title}
+                                    <span style={{ padding: '1px 6px', marginLeft: '6px', fontSize: '0.6rem', fontWeight: 700, borderRadius: '4px', background: reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.12)' : reviewMediaType === 'episode' ? 'rgba(52,211,153,0.12)' : 'rgba(59,130,246,0.12)', border: `1px solid ${reviewMediaType === 'trailer' ? 'rgba(168,85,247,0.3)' : reviewMediaType === 'episode' ? 'rgba(52,211,153,0.3)' : 'rgba(59,130,246,0.3)'}`, color: reviewMediaType === 'trailer' ? '#c084fc' : reviewMediaType === 'episode' ? '#34d399' : '#60a5fa' }}>
+                                        {reviewMediaType === 'trailer' ? '🎬 Trailer' : reviewMediaType === 'episode' ? `📺 ${reviewEpisodeLabel || 'Episode'}` : '🎥 Movie'}
+                                    </span>
+                                    {reviewData && ` · ${reviewData.segments.length} segments`}
+                                    {reviewData?.transcribedWith && ` · ${reviewData.transcribedWith}`}
+                                </p>
+                            </div>
+                            <button
+                                onClick={closeReview}
+                                style={{ background: 'none', border: 'none', color: 'var(--text-tertiary)', fontSize: '1.2rem', cursor: 'pointer' }}
+                            >✕</button>
+                        </div>
+
+                        {reviewLoading && (
+                            <div style={{ padding: 'var(--space-2xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                                ⏳ Loading subtitle data...
+                            </div>
+                        )}
+
+                        {!reviewLoading && !reviewData && (
+                            <div style={{ padding: 'var(--space-2xl)', textAlign: 'center', color: 'var(--text-tertiary)' }}>
+                                No subtitles found for this project. Generate them first using the CC button.
+                            </div>
+                        )}
+
+                        {!reviewLoading && reviewData && (() => {
+                            const allLangs = ['en', ...Object.keys(reviewData.translations)]
+                            const previewSegs = reviewLang === 'en'
+                                ? reviewData.segments
+                                : (reviewData.translations[reviewLang] || [])
+                            const flaggedIds = new Set(reviewData.qcIssues.map(q => q.segmentIndex))
+
+                            return (
+                                <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+                                    {/* ── Panel 1: Language Status Grid ── */}
+                                    <LangStatusGrid
+                                        translations={reviewData.translations}
+                                        langStatus={reviewData.langStatus}
+                                        sourceSegmentCount={reviewData.segments.length}
+                                        retryingLang={retryingLang}
+                                        onRetry={retryLang}
+                                    />
+
+                                    {/* ── Panel 2: QC Report ── */}
+                                    {reviewData.qcIssues.length > 0 && (
+                                        <div style={{ padding: 'var(--space-md) var(--space-xl)', borderBottom: '1px solid var(--border-subtle)', background: 'rgba(245,158,11,0.04)' }}>
+                                            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#f59e0b', marginBottom: 'var(--space-sm)' }}>
+                                                ⚠️ QC Issues — {reviewData.qcIssues.length} / {reviewData.segments.length} segments flagged
+                                            </div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                                                {(Object.entries(
+                                                    reviewData.qcIssues.reduce<Record<string, number>>((acc, q) => {
+                                                        q.issues.forEach(i => { acc[i.type] = (acc[i.type] || 0) + 1 })
+                                                        return acc
+                                                    }, {})
+                                                )).map(([type, count]) => (
+                                                    <span key={type} style={{
+                                                        padding: '2px 8px', borderRadius: '10px', fontSize: '0.68rem',
+                                                        background: 'rgba(245,158,11,0.15)', color: '#f59e0b',
+                                                        border: '1px solid rgba(245,158,11,0.3)',
+                                                    }}>
+                                                        {count}× {type.replace(/-/g, ' ')}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* ── Panel 3: Language Switcher + Subtitle Preview ── */}
+                                    <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+                                        {/* Lang list */}
+                                        <div style={{
+                                            width: '140px', flexShrink: 0,
+                                            borderRight: '1px solid var(--border-subtle)',
+                                            overflowY: 'auto', padding: 'var(--space-sm)',
+                                        }}>
+                                            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-tertiary)', padding: '4px 8px', marginBottom: '2px' }}>
+                                                Preview
+                                            </div>
+                                            {allLangs.map(lang => (
+                                                <button
+                                                    key={lang}
+                                                    onClick={() => setReviewLang(lang)}
+                                                    style={{
+                                                        display: 'block', width: '100%', textAlign: 'left',
+                                                        padding: '6px 8px', borderRadius: '6px', border: 'none',
+                                                        background: reviewLang === lang ? 'var(--accent-gold-glow, rgba(212,168,83,0.15))' : 'transparent',
+                                                        color: reviewLang === lang ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                                        fontSize: '0.75rem', cursor: 'pointer',
+                                                        borderLeft: reviewLang === lang ? '2px solid var(--accent-gold)' : '2px solid transparent',
+                                                        transition: 'all 0.15s',
+                                                    }}
+                                                >
+                                                    {LANGUAGE_NAMES[lang] || lang}
+                                                    {lang === 'en' && <span style={{ fontSize: '0.6rem', opacity: 0.5, marginLeft: '4px' }}>src</span>}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        {/* Segment list */}
+                                        <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-sm) var(--space-md)' }}>
+                                            {previewSegs.length === 0 ? (
+                                                <div style={{ padding: 'var(--space-xl)', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.8rem' }}>
+                                                    No segments for {LANGUAGE_NAMES[reviewLang] || reviewLang}
+                                                </div>
+                                            ) : (
+                                                previewSegs.map((seg, i) => {
+                                                    const isFlagged = reviewLang === 'en' && flaggedIds.has(i)
+                                                    const flaggedSeg = isFlagged ? reviewData.qcIssues.find(q => q.segmentIndex === i) : null
+                                                    return (
+                                                        <div key={i} style={{
+                                                            display: 'flex', gap: 'var(--space-sm)', alignItems: 'flex-start',
+                                                            padding: '6px 8px', borderRadius: '6px', marginBottom: '2px',
+                                                            background: isFlagged ? 'rgba(245,158,11,0.07)' : 'transparent',
+                                                            border: isFlagged ? '1px solid rgba(245,158,11,0.2)' : '1px solid transparent',
+                                                        }}>
+                                                            <span style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', fontFamily: 'monospace', minWidth: '52px', paddingTop: '2px' }}>
+                                                                {`${Math.floor(seg.start / 60)}:${String(Math.floor(seg.start % 60)).padStart(2, '0')}`}
+                                                            </span>
+                                                            <div style={{ flex: 1 }}>
+                                                                <span style={{ fontSize: '0.8rem', color: isFlagged ? '#f59e0b' : 'var(--text-primary)', lineHeight: 1.5 }}>
+                                                                    {seg.text}
+                                                                </span>
+                                                                {flaggedSeg && (
+                                                                    <div style={{ marginTop: '2px' }}>
+                                                                        {flaggedSeg.issues.map((iss, j) => (
+                                                                            <span key={j} style={{
+                                                                                fontSize: '0.6rem', padding: '1px 6px',
+                                                                                borderRadius: '8px', marginRight: '4px',
+                                                                                background: 'rgba(245,158,11,0.15)',
+                                                                                color: '#f59e0b',
+                                                                            }}>
+                                                                                {iss.type}: {iss.detail}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Footer */}
+                                    <div style={{
+                                        padding: 'var(--space-md) var(--space-xl)',
+                                        borderTop: '1px solid var(--border-subtle)',
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap',
+                                    }}>
+                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', flex: 1, minWidth: 0 }}>
+                                            {reviewData.translateStatus === 'complete' ? '✅ All languages complete'
+                                                : Object.keys(reviewData.translations).length > 0 ? `⚠️ ${Object.keys(reviewData.translations).length} of ${TOTAL_SUBTITLE_LANGS - 1} translations complete`
+                                                : '📝 Source only — translations not yet generated'}
+                                            {reviewData.generatedWith && ` · AI: ${reviewData.generatedWith}`}
+                                        </span>
+                                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0 }}>
+                                            {/* Delete single translation track */}
+                                            {reviewLang !== 'en' && reviewData.translations[reviewLang] && (
+                                                <button
+                                                    onClick={() => handleDeleteSubtitle('translation', reviewLang)}
+                                                    style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 8px', borderRadius: '5px', cursor: 'pointer', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', transition: 'all 0.15s' }}
+                                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.18)' }}
+                                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.08)' }}
+                                                >
+                                                    🗑 Delete {reviewLang.toUpperCase()} Track
+                                                </button>
+                                            )}
+                                            {/* Delete entire subtitle record */}
+                                            <button
+                                                onClick={() => handleDeleteSubtitle('source')}
+                                                style={{ fontSize: '0.62rem', fontWeight: 700, padding: '3px 8px', borderRadius: '5px', cursor: 'pointer', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)', color: '#ef4444', transition: 'all 0.15s' }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)' }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.06)' }}
+                                            >
+                                                🗑 Delete All
+                                            </button>
+                                            <button onClick={closeReview} className="btn btn-ghost btn-sm">Close</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        })()}
+                    </div>
+                </div>
             )}
         </div>
     )
