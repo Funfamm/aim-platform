@@ -1609,6 +1609,7 @@ model ContentTranslation {
 
 /// Email-based notification signups from public end-card CTAs.
 /// Not tied to user accounts — anonymous email capture.
+/// Phase 0 (2026-06-01): extended with unified Notify Me tracking fields.
 model NotificationSignup {
   id               String    @id @default(cuid())
   email            String    // stored lowercase + trimmed
@@ -1623,11 +1624,27 @@ model NotificationSignup {
   unsubscribeToken String    @unique // 64-char hex via crypto.randomBytes(32)
   createdAt        DateTime  @default(now())
 
+  // ── Phase 0: unified Notify Me tracking ──────────────────────────────────
+  userId              String?   // User.id if signup came from a logged-in account
+  requestedBy         String?   // "guest" | "member" | "subscriber"
+  requestSource       String?   // "footer_cta" | "subscribe_page" | "player_end_card" | "page_cta"
+  sourceType          String?   // "general" | "work" | "casting" | "training" | "scripts"
+  sourceEntityId      String?   // castingCallId | courseId | scriptCallId | projectId
+  sourcePageUrl       String?   // full page URL at signup time
+  status              String    @default("active") // "active" | "notified" | "unsubscribed"
+  confirmationSentAt  DateTime? // when guest confirmation email was sent
+  confirmationInAppAt DateTime? // when in-app notification was created for logged-in user
+  finalNoticeSentAt   DateTime? // when the actual release/dispatch notice was sent
+
   @@unique([email, signupTag]) // one signup per email per CTA tag
   @@index([signupTag])
   @@index([email])
   @@index([createdAt])
   @@index([notifiedAt])
+  @@index([userId])
+  @@index([requestSource])
+  @@index([sourceType, sourceEntityId])
+  @@index([status])
 }
 
 /// Per-video CTA configuration — controls what end-card copy appears and when.
