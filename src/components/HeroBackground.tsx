@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import NextImage from 'next/image'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { useCanPlayVideo } from '@/hooks/useCanPlayVideo'
 
 interface HeroVideo {
     id: string
@@ -28,6 +29,11 @@ interface HeroBackgroundProps {
     onVideoChange?: (currentIdx: number, total: number) => void
     /** Expose jumpToVideo function to parent */
     jumpToVideoRef?: React.RefObject<((idx: number) => void) | null>
+    /** Page-level opt-in for mobile video.
+     *  Default is FALSE — mobile gets image-only fallback.
+     *  When TRUE, mobile video is allowed only if the connection is strong
+     *  (4g+, no Save-Data, device memory ≥4 GB). */
+    allowMobileVideo?: boolean
 }
 
 /** Filter media items by device target */
@@ -36,25 +42,8 @@ function matchesTarget(target: string | undefined, isMobile: boolean): boolean {
     return isMobile ? target === 'mobile' : target === 'desktop'
 }
 
-/**
- * Determine whether background video should be skipped.
- *
- * Rules (product requirement — 4G safety):
- *  1. Mobile always prefers image/poster fallback — no autoplay video.
- *  2. Save-Data header = skip on any device.
- *  3. Slow connections (2g, slow-2g, 3g) = skip even on desktop.
- *  4. Desktop on fast connection = play normally.
- */
-function shouldSkipVideo(isMobile: boolean): boolean {
-    if (typeof navigator === 'undefined') return isMobile
-    const conn = (navigator as Navigator & {
-        connection?: { saveData?: boolean; effectiveType?: string }
-    }).connection
-    if (conn?.saveData) return true
-    if (conn?.effectiveType && ['slow-2g', '2g', '3g'].includes(conn.effectiveType)) return true
-    if (isMobile) return true // Mobile → image fallback by default
-    return false
-}
+// Video gating moved to useCanPlayVideo hook — checks effectiveType,
+// saveData, and deviceMemory reactively. No longer hard-skips all mobile.
 
 /**
  * Safely call video.play() and suppress AbortError / NotAllowedError.
@@ -68,6 +57,7 @@ function safePlay(video: HTMLVideoElement): void {
 
 export default function HeroBackground({
     page, isMobile, cardMode = false, poster, className, onVideoChange, jumpToVideoRef,
+    allowMobileVideo = false,
 }: HeroBackgroundProps) {
     const pos = cardMode ? 'absolute' : 'fixed'
 
@@ -75,6 +65,16 @@ export default function HeroBackground({
     // device state — avoids the timing gap where the prop was still `false`
     // on the first render while useIsMobile had not yet fired in the parent.
     const isMobileDevice = useIsMobile(isMobile)
+
+    // Connection-quality video guard — checks effectiveType, saveData, deviceMemory.
+    // Returns true when the device/network can handle background video.
+    const canPlayVideo = useCanPlayVideo()
+
+    // Combined decision: skip video when:
+    //  - Connection/device too weak (canPlayVideo = false), OR
+    //  - On mobile AND the page has NOT opted in via allowMobileVideo.
+    // Desktop: only skips when canPlayVideo is false (saveData / slow connection).
+    const skipVideo = !canPlayVideo || (isMobileDevice && !allowMobileVideo)
 
     // Keep a ref that always reflects the latest isMobileDevice value.
     // The fetch effect's async .then() callback would otherwise capture a
@@ -194,8 +194,8 @@ export default function HeroBackground({
     useEffect(() => {
         if (bgImages.length > 0) return // images take priority
         if (videos.length === 0) return
-        // 4G safety: skip background video on mobile, Save-Data, or slow connections
-        if (shouldSkipVideo(isMobileDevice)) return
+        // 4G safety: skip background video on slow connections / Save-Data / low-memory
+        if (skipVideo) return
 
         const videoA = videoARef.current
         if (!videoA) return
@@ -215,26 +215,26 @@ export default function HeroBackground({
             if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [videos, bgImages])
+    }, [videos, bgImages, skipVideo])
 
     // Notify parent of video index changes
     useEffect(() => {
         if (bgImages.length === 0 && videos.length > 0) {
             // If video is being skipped (mobile/Save-Data/slow), tell parent
             // there are 0 videos so it doesn't render navigation dots.
-            if (shouldSkipVideo(isMobileDevice)) {
+            if (skipVideo) {
                 onVideoChange?.(0, 0)
             } else {
                 onVideoChange?.(currentIdx, videos.length)
             }
         }
-    }, [currentIdx, videos.length, bgImages.length, onVideoChange, isMobileDevice])
+    }, [currentIdx, videos.length, bgImages.length, onVideoChange, skipVideo])
 
     // Expose jumpToVideo to parent
     const jumpToVideo = useCallback((idx: number) => {
         if (idx === currentIdx || bgImages.length > 0) return
         // 4G safety: don't allow manual video loading when video is suppressed
-        if (shouldSkipVideo(isMobileDevice)) return
+        if (skipVideo) return
         setCurrentIdx(idx)
 
         setActiveSlot(prev => {
@@ -253,7 +253,7 @@ export default function HeroBackground({
             if (videoTimerRef.current) clearTimeout(videoTimerRef.current)
             videoTimerRef.current = setTimeout(() => crossfadeToNext(idx), durationMs)
         }
-    }, [currentIdx, videos, crossfadeToNext, bgImages.length, isMobileDevice])
+    }, [currentIdx, videos, crossfadeToNext, bgImages.length, skipVideo])
 
     useEffect(() => {
         if (jumpToVideoRef) jumpToVideoRef.current = jumpToVideo

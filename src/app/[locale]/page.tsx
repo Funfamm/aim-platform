@@ -5,6 +5,7 @@ import HomeHero from '@/components/HomeHero'
 import Scene3DClient from '@/components/Scene3DClient'
 const FeaturedProjects3D = dynamic(() => import('@/components/FeaturedProjects3D'))
 const RollRow = dynamic(() => import('@/components/mobile/RollRow'))
+const ContinueWatching = dynamic(() => import('@/components/ContinueWatching'), { ssr: false })
 import SponsorBannerSection from '@/components/SponsorBannerSection'
 import ThreeWaysIn from '@/components/ThreeWaysIn'
 import { prisma } from '@/lib/db'
@@ -150,6 +151,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}
       {/* background starts transparent so the hero fades in softly, then goes solid */}
       <div style={{ position: 'relative', zIndex: 2, background: 'linear-gradient(180deg, transparent 0px, var(--bg-primary) 220px)' }} tabIndex={0} role="region" aria-label="Page content">
+
+      {/* ═══ CONTINUE WATCHING — logged-in users with unfinished history ═══ */}
+      <ContinueWatching />
 
       {/* ═══ FEATURED WORKS ═══ */}
       <section className="section" style={{ position: 'relative', paddingBottom: 0 }}>

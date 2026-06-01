@@ -201,6 +201,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                         <section aria-label="Hero" style={mobileCardStyle}>
                             <HeroBackground page="works" isMobile={true} cardMode={true}
                                 poster="/images/works-bg.png" className="works-video-bg"
+                                allowMobileVideo={true}
                                 onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
                             <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
                                 background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.05) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)' }} />
@@ -228,7 +229,8 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                 /* ── Desktop: full-screen fixed background + hero section (unchanged) ── */
                 <>
                     <HeroBackground page="works" isMobile={isMobile} poster="/images/works-bg.png"
-                        className="works-video-bg" onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
+                        className="works-video-bg" allowMobileVideo={true}
+                        onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
                     <section style={{ position: 'relative', height: '100dvh', zIndex: 1 }}>
                         <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-xl)', paddingTop: '120px', paddingBottom: 'var(--space-3xl)' }}>
                             <div style={{ position: 'absolute', top: '15%', left: '50%', transform: 'translateX(-50%)', width: '700px', height: '700px', background: 'radial-gradient(circle, rgba(228,185,90,0.06), transparent 65%)', pointerEvents: 'none' }} />

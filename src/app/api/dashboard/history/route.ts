@@ -30,6 +30,14 @@ export async function GET(request: NextRequest) {
                     translations: true,
                 },
             },
+            episode: {
+                select: {
+                    id: true,
+                    title: true,
+                    number: true,
+                    season: true,
+                },
+            },
         },
     })
 
