@@ -313,7 +313,9 @@ export default function AdminNotificationCtas() {
                                     <td style={{ padding: '12px' }}>{typeBadge(cta.notificationType)}</td>
                                     <td style={{ padding: '12px' }}>{statusBadge(cta.status)}</td>
                                     <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: 'var(--accent-gold)' }}>
-                                        {cta.signupCount.toLocaleString()}
+                                        <Link href={`/admin/notifications/ctas/${cta.id}`} style={{ color: 'inherit', textDecoration: 'none' }} title="View signups">
+                                            {cta.signupCount.toLocaleString()}
+                                        </Link>
                                     </td>
                                     <td style={{ padding: '12px', textAlign: 'right', color: cta.signupsLast7Days > 0 ? '#48bb78' : 'var(--text-tertiary)' }}>
                                         {cta.signupsLast7Days > 0 ? `+${cta.signupsLast7Days}` : '—'}
@@ -325,6 +327,16 @@ export default function AdminNotificationCtas() {
                                     </td>
                                     <td style={{ padding: '12px', textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                            <Link
+                                                href={`/admin/notifications/ctas/${cta.id}`}
+                                                style={{
+                                                    padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 600,
+                                                    background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)',
+                                                    color: '#d4a853', textDecoration: 'none',
+                                                }}
+                                            >
+                                                View Signups
+                                            </Link>
                                             <Link
                                                 href={`/admin/notifications/ctas/${cta.id}`}
                                                 style={{
