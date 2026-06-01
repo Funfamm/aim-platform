@@ -134,6 +134,17 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         heroTitle={hpd.heroTitle || undefined}
         heroCta={hpd.heroCta || undefined}
         heroCtaCasting={hpd.heroCtaCasting || undefined}
+        featuredWorks={featuredProjects.map((p: any) => ({
+          title: p.title as string,
+          slug: p.slug as string,
+          genre: (p.genre as string | null) ?? null,
+          year: (p.year as string | null) ?? null,
+          status: p.status as string,
+          coverImage: (p.coverImage as string | null) ?? null,
+          trailerUrl: (p.trailerUrl as string | null) ?? null,
+          filmUrl: (p.filmUrl as string | null) ?? null,
+          translations: typeof p.translations === 'string' ? p.translations : null,
+        }))}
       />
 
       {/* ═══ All content below scrolls OVER the fixed hero video ═══ */}

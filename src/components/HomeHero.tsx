@@ -5,6 +5,8 @@ import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import HeroBackground from '@/components/HeroBackground'
 import { useIsMobile } from '@/hooks/useIsMobile'
+import MobileCardCarousel from '@/components/MobileCardCarousel'
+import MobileFeaturedWorkCard, { type FeaturedWorkItem } from '@/components/MobileFeaturedWorkCard'
 
 interface HomeHeroProps {
     completedCount: number
@@ -19,12 +21,15 @@ interface HomeHeroProps {
     heroCtaCasting?: string
     /** Server-detected mobile flag — prevents hydration flash in HeroBackground */
     isMobileHint?: boolean
+    /** Featured published works — shown as swipeable poster cards on mobile */
+    featuredWorks?: FeaturedWorkItem[]
 }
 
 export default function HomeHero({
     completedCount, upcomingCount, openCastings, castingEnabled,
     rotatingWords, subHeadline, heroLabel, heroTitle, heroCta, heroCtaCasting,
     isMobileHint = false,
+    featuredWorks = [],
 }: HomeHeroProps) {
     const t = useTranslations('hero')
     const th = useTranslations('home')
@@ -136,29 +141,49 @@ export default function HomeHero({
 
     // ══════════════════════════════════════════════════════
     // MOBILE — Contained cinematic card layout
-    // Card uses position:relative so HeroBackground renders
-    // absolute inside it instead of fixed over the viewport.
+    // When featuredWorks exist: swipeable poster carousel.
+    // Otherwise: existing branded hero with HeroBackground.
+    // Card uses position:relative so children render absolute inside it.
     // ══════════════════════════════════════════════════════
     if (isMobile) {
+        // Shared card geometry
+        const mobileCardStyle: React.CSSProperties = {
+            position: 'relative',
+            height: 'calc(100dvh - 148px)',
+            minHeight: '460px',
+            maxHeight: '700px',
+            marginTop: '64px',
+            marginLeft: '12px',
+            marginRight: '12px',
+            marginBottom: '8px',
+            borderRadius: '20px',
+            overflow: 'hidden',
+            background: '#0d0f14',
+            zIndex: 0,
+        }
+
+        // ── Featured works carousel ──────────────────────────────────────
+        if (featuredWorks.length > 0) {
+            return (
+                <section aria-label="Hero" style={mobileCardStyle}>
+                    <MobileCardCarousel autoRotateMs={5000}>
+                        {featuredWorks.map((work, i) => (
+                            <MobileFeaturedWorkCard
+                                key={work.slug}
+                                work={work}
+                                priority={i === 0}
+                            />
+                        ))}
+                    </MobileCardCarousel>
+                </section>
+            )
+        }
+
+        // ── Fallback: branded hero when no featured works ────────────────
         return (
             <section
                 aria-label="Hero"
-                style={{
-                    position: 'relative',
-                    // Sits below the fixed navbar (~60px) with 4px gap, above the mobile tab bar (~80px)
-                    // Height = viewport - navbar clearance - bottom nav clearance
-                    height: 'calc(100dvh - 148px)',
-                    minHeight: '460px',
-                    maxHeight: '700px',
-                    marginTop: '64px',
-                    marginLeft: '12px',
-                    marginRight: '12px',
-                    marginBottom: '8px',
-                    borderRadius: '20px',
-                    overflow: 'hidden',
-                    background: '#0d0f14',
-                    zIndex: 0,
-                }}
+                style={mobileCardStyle}
             >
                 {/* Media — absolute inside the card */}
                 <HeroBackground

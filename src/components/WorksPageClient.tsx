@@ -10,6 +10,8 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 import { useScrollRestoration } from '@/hooks/useScrollRestoration'
 import dynamic from 'next/dynamic'
 import type { ProjectCard } from '@/components/mobile/MovieCard'
+import MobileCardCarousel from '@/components/MobileCardCarousel'
+import MobileFeaturedWorkCard from '@/components/MobileFeaturedWorkCard'
 
 // Code-split heavy/desktop-only components so mobile never downloads them
 const Scene3D          = dynamic(() => import('@/components/Scene3D'),                  { ssr: false, loading: () => null })
@@ -158,59 +160,70 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
 
             {/* ═══ HERO — mobile: contained card | desktop: full-screen fixed ═══ */}
             {isMobile ? (
-                /* ── Mobile cinematic card hero ── */
-                <section aria-label="Hero" style={{
-                    position: 'relative',
-                    height: 'calc(100dvh - 148px)',
-                    minHeight: '420px', maxHeight: '700px',
-                    marginTop: '64px', marginLeft: '12px', marginRight: '12px', marginBottom: '8px',
-                    borderRadius: '20px', overflow: 'hidden', background: '#0d0f14',
-                }}>
-                    <HeroBackground page="works" isMobile={true} cardMode={true}
-                        poster="/images/works-bg.png" className="works-video-bg"
-                        onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
-                    <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
-                        background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.05) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)' }} />
-                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '0 20px 20px' }}>
-                        <span className="text-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.62rem' }}>
-                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
-                            {wpd?.heroLabel || t('label')}
-                        </span>
-                        <h1 style={{ fontSize: 'clamp(1.7rem, 6vw, 2.2rem)', fontWeight: 800, lineHeight: 1.15, margin: '0 0 8px' }}>
-                            {wpd?.heroTitle || t('title')}{' '}
-                            <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic',
-                                background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
-                                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
-                                {wpd?.heroAccent || t('titleAccent')}
-                            </span>
-                        </h1>
-                        <p style={{ fontSize: '0.8rem', lineHeight: 1.5, color: 'var(--text-secondary)', margin: '0 0 12px',
-                            overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}>
-                            {wpd?.heroDesc || t('description')}
-                        </p>
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '12px' }}>
-                            <a href="#films-grid" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', fontSize: '0.82rem', padding: '0.6rem 1rem' }}>
-                                {wpd?.heroCta || t('watchNow')}
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12l7 7 7-7" /></svg>
-                            </a>
-                        </div>
-                        <div style={{ display: 'inline-flex', gap: '12px', padding: '0.45rem 1rem', background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-full)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', width: '100%', justifyContent: 'center' }}>
-                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{projects.length}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('all')}</span></div>
-                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
-                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{completedCount}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('completed')}</span></div>
-                            <div style={{ width: '1px', background: 'var(--border-subtle)' }} />
-                            <div><span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-gold)' }}>{inProdCount}</span><span style={{ fontSize: '0.55rem', color: 'var(--text-tertiary)', textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginLeft: '3px' }}>{t('inProd')}</span></div>
-                        </div>
-                        {videoCount > 1 && (
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '10px' }}>
-                                {Array.from({ length: videoCount }, (_, i) => (
-                                    <button key={i} onClick={() => jumpToVideoRef.current?.(i)} aria-label={`Play video ${i + 1}`}
-                                        style={{ width: currentIdx === i ? '24px' : '6px', height: '6px', borderRadius: 'var(--radius-full)', border: 'none', padding: 0, cursor: 'pointer', background: currentIdx === i ? 'var(--accent-gold)' : 'rgba(255,255,255,0.25)', transition: 'all 0.3s ease' }} />
-                                ))}
+                /* ── Mobile: featured works poster carousel (falls back to branded hero) ── */
+                (() => {
+                    const heroProjects = projects.filter(p => p.featured).slice(0, 6)
+                    const carouselProjects = heroProjects.length > 0 ? heroProjects : projects.slice(0, 4)
+                    const mobileCardStyle: React.CSSProperties = {
+                        position: 'relative',
+                        height: 'calc(100dvh - 148px)',
+                        minHeight: '420px', maxHeight: '700px',
+                        marginTop: '64px', marginLeft: '12px', marginRight: '12px', marginBottom: '8px',
+                        borderRadius: '20px', overflow: 'hidden', background: '#0d0f14',
+                    }
+                    if (carouselProjects.length > 0) {
+                        return (
+                            <section aria-label="Hero" style={mobileCardStyle}>
+                                <MobileCardCarousel autoRotateMs={5000}>
+                                    {carouselProjects.map((project, i) => (
+                                        <MobileFeaturedWorkCard
+                                            key={project.id}
+                                            work={{
+                                                title: project.title,
+                                                slug: project.slug,
+                                                genre: project.genre,
+                                                year: project.year,
+                                                status: project.status,
+                                                coverImage: project.coverImage,
+                                                trailerUrl: project.trailerUrl,
+                                                filmUrl: project.filmUrl,
+                                                translations: project.translations,
+                                            }}
+                                            priority={i === 0}
+                                        />
+                                    ))}
+                                </MobileCardCarousel>
+                            </section>
+                        )
+                    }
+                    // Fallback: no projects at all — generic branded hero
+                    return (
+                        <section aria-label="Hero" style={mobileCardStyle}>
+                            <HeroBackground page="works" isMobile={true} cardMode={true}
+                                poster="/images/works-bg.png" className="works-video-bg"
+                                onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
+                            <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                                background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.05) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)' }} />
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '0 20px 20px' }}>
+                                <span className="text-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.62rem' }}>
+                                    <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
+                                    {wpd?.heroLabel || t('label')}
+                                </span>
+                                <h1 style={{ fontSize: 'clamp(1.7rem, 6vw, 2.2rem)', fontWeight: 800, lineHeight: 1.15, margin: '0 0 8px' }}>
+                                    {wpd?.heroTitle || t('title')}{' '}
+                                    <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic',
+                                        background: 'linear-gradient(135deg, var(--accent-gold-light), var(--accent-gold))',
+                                        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                                        {wpd?.heroAccent || t('titleAccent')}
+                                    </span>
+                                </h1>
+                                <a href="#films-grid" className="btn btn-primary" style={{ display: 'inline-flex', justifyContent: 'center', fontSize: '0.82rem', padding: '0.6rem 1rem' }}>
+                                    {wpd?.heroCta || t('watchNow')}
+                                </a>
                             </div>
-                        )}
-                    </div>
-                </section>
+                        </section>
+                    )
+                })()
             ) : (
                 /* ── Desktop: full-screen fixed background + hero section (unchanged) ── */
                 <>

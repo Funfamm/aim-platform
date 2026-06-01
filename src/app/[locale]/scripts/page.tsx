@@ -4,6 +4,7 @@ import CinematicBackground from '@/components/CinematicBackground'
 import NotifyMeButton from '@/components/scripts/NotifyMeButton'
 import NotifyNewCallsButton from '@/components/scripts/NotifyNewCallsButton'
 import ScriptVideoBackground from '@/components/scripts/ScriptVideoBackground'
+import ScriptsMobileHero from '@/components/scripts/ScriptsMobileHero'
 import { prisma } from '@/lib/db'
 import { getUserSession } from '@/lib/auth'
 import { getLocale, getTranslations } from 'next-intl/server'
@@ -464,6 +465,26 @@ export default async function ScriptCallsPage() {
                             </svg>
                         </a>
                     </div>
+
+                    {/* Mobile carousel overlay — renders only on mobile when open calls exist.
+                        Covers ScriptVideoBackground + content. Desktop: null. */}
+                    <ScriptsMobileHero
+                        calls={calls.map(c => ({
+                            id: c.id,
+                            title: c.title,
+                            description: c.description,
+                            genre: c.genre,
+                            targetLength: c.targetLength,
+                            deadline: c.deadline,
+                            project: c.project ? {
+                                title: c.project.title,
+                                coverImage: c.project.coverImage,
+                                translations: c.project.translations,
+                            } : null,
+                            _count: { submissions: c._count.submissions },
+                        }))}
+                        isLoggedIn={isLoggedIn}
+                    />
                 </section>
 
 
