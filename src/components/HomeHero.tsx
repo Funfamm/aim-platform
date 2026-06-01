@@ -165,6 +165,7 @@ export default function HomeHero({
                     page="home"
                     isMobile={true}
                     cardMode={true}
+                    poster="/images/hero-bg.png"
                     onVideoChange={handleVideoChange}
                     jumpToVideoRef={jumpToVideoRef}
                 />
@@ -269,6 +270,7 @@ export default function HomeHero({
             <HeroBackground
                 page="home"
                 isMobile={isMobileHint}
+                poster="/images/hero-bg.png"
                 onVideoChange={handleVideoChange}
                 jumpToVideoRef={jumpToVideoRef}
             />

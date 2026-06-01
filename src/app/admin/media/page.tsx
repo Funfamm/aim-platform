@@ -87,6 +87,7 @@ export default function AdminMediaPage() {
     const dragCounterRef                = useRef(0)
     const fileRef                       = useRef<HTMLInputElement>(null)
     const formRef                       = useRef<HTMLDivElement>(null)
+    const playPromisesRef               = useRef(new WeakMap<HTMLVideoElement, Promise<void>>())
 
     // ─── Data fetching ────────────────────────────────────────────────────────
 
@@ -583,9 +584,30 @@ export default function AdminMediaPage() {
                                     {/* Thumbnail */}
                                     <div style={{ width: '56px', height: '36px', borderRadius: '5px', overflow: 'hidden', background: '#0a0a0a', flexShrink: 0 }}>
                                         {isVid
-                                            ? <video src={item.url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                onMouseEnter={e => (e.target as HTMLVideoElement).play()}
-                                                onMouseLeave={e => { const el = e.target as HTMLVideoElement; el.pause(); el.currentTime = 0 }} />
+                                            ? <video
+                                                src={item.url} muted playsInline preload="none"
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                onMouseEnter={e => {
+                                                    const el = e.currentTarget
+                                                    const p = el.play()
+                                                    if (p) {
+                                                        // Suppress AbortError / NotAllowedError — expected on quick hover
+                                                        p.catch(() => {})
+                                                        playPromisesRef.current.set(el, p)
+                                                    }
+                                                }}
+                                                onMouseLeave={e => {
+                                                    const el = e.currentTarget
+                                                    const pending = playPromisesRef.current.get(el)
+                                                    if (pending) {
+                                                        // Await the pending play before pausing — prevents AbortError
+                                                        playPromisesRef.current.delete(el)
+                                                        pending.then(() => { el.pause(); el.currentTime = 0 }).catch(() => {})
+                                                    } else {
+                                                        el.pause(); el.currentTime = 0
+                                                    }
+                                                }}
+                                            />
                                             : <img src={item.url} alt={item.title || item.page} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         }
                                     </div>
