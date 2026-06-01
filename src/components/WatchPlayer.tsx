@@ -349,6 +349,52 @@ export default function WatchPlayer({
 
     /* ══════════ Effects ══════════ */
 
+    /* ── Progress sync: fix metadata race condition ──────────────────────────
+     * onLoadedMetadata (JSX) is attached during React's commit phase. When a
+     * video is served from browser cache it can fire loadedmetadata BEFORE the
+     * handler is attached, leaving totalDuration = 0 and the progress bar frozen.
+     *
+     * This effect runs whenever the video source changes. It:
+     *   1. Resets progress state (fixes stale values on episode switch).
+     *   2. Immediately reads video.duration if metadata is already loaded
+     *      (readyState ≥ 1) — catches the cached-video race condition.
+     *   3. Adds a durationchange listener as a belt-and-suspenders fallback
+     *      so any future duration update is never missed.
+     *
+     * The JSX onTimeUpdate / onLoadedMetadata handlers remain as the primary
+     * path — this effect only fills the gap they can miss. */
+    useEffect(() => {
+        const vid = videoRef.current
+        if (!vid) return
+
+        // Reset all progress state whenever the source changes
+        setCurrentTime(0)
+        setTotalDuration(0)
+        setBuffered(0)
+        setIsSeeking(false)
+        liveProgressRef.current = { currentTime: 0, totalDuration: 0 }
+
+        // If the browser already loaded metadata (fast/cached video), read it now
+        if (vid.readyState >= 1 && vid.duration > 0 && !isNaN(vid.duration)) {
+            setTotalDuration(vid.duration)
+            liveProgressRef.current.totalDuration = vid.duration
+        }
+
+        // durationchange fires whenever the browser resolves or updates duration —
+        // covers the case where readyState < 1 at effect time but metadata arrives
+        // before onLoadedMetadata's JSX handler is first attached.
+        const onDurationChange = () => {
+            const d = vid.duration
+            if (d > 0 && !isNaN(d)) {
+                setTotalDuration(d)
+                liveProgressRef.current.totalDuration = d
+            }
+        }
+
+        vid.addEventListener('durationchange', onDurationChange)
+        return () => vid.removeEventListener('durationchange', onDurationChange)
+    }, [currentVideoUrl]) // re-run whenever the active video source changes
+
     /* Detect mobile (touch device) and orientation.
      * IMPORTANT: do NOT use max-width for isMobile — a phone in landscape is
      * ~844px wide and would incorrectly be treated as a desktop, ignoring

@@ -3,6 +3,12 @@ import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 
+// When a media record changes, revalidate the public ISR pages that display it.
+// The root-layout purge covers every locale variant in one call.
+function revalidateMediaPages() {
+    revalidatePath('/', 'layout')
+}
+
 // GET: fetch media (optionally filtered)
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
@@ -86,8 +92,7 @@ export async function POST(req: NextRequest) {
 
         const media = await prisma.pageMedia.create({ data: data as never })
 
-        // Bust Vercel edge cache so the change appears on the live site immediately
-        revalidatePath('/api/admin/media')
+        revalidateMediaPages()
 
         return NextResponse.json(media, { status: 201 })
     } catch (err: unknown) {
@@ -110,8 +115,7 @@ export async function PUT(req: NextRequest) {
         data,
     })
 
-    // Bust Vercel edge cache so the change appears on the live site immediately
-    revalidatePath('/api/admin/media')
+    revalidateMediaPages()
 
     return NextResponse.json(media)
 }
@@ -126,8 +130,7 @@ export async function DELETE(req: NextRequest) {
 
     await prisma.pageMedia.delete({ where: { id } })
 
-    // Bust Vercel edge cache so the deletion is reflected immediately
-    revalidatePath('/api/admin/media')
+    revalidateMediaPages()
 
     return NextResponse.json({ success: true })
 }

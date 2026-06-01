@@ -307,9 +307,15 @@ export default function ProjectEditPage() {
                 method: 'PUT', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ rollIds: selectedRollIds }),
             }).catch(() => {})
-            // Stay on editor — show success banner
-            setSaveSuccess(true)
-            setTimeout(() => setSaveSuccess(false), 3000)
+            if (isNew) {
+                // Navigate to the real edit URL so the form loads the saved project
+                router.push(`/admin/projects/${saved.id}/edit`)
+            } else {
+                // Refresh server data so the admin sees saved values immediately
+                router.refresh()
+                setSaveSuccess(true)
+                setTimeout(() => setSaveSuccess(false), 3000)
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to save')
         } finally { setSaving(false) }
