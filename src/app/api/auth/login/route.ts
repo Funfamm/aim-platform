@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     if (blocked) return blocked
 
     try {
-        const { email, password, locale } = await request.json()
+        const { email, password, locale, redirectTo: rawRedirect } = await request.json()
 
         if (!email || !password) {
             return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
@@ -187,7 +187,14 @@ export async function POST(request: Request) {
             data: { loginMethod: 'credentials' },
         }).catch(() => {})
 
-        const redirectTo = (['admin', 'superadmin'].includes(user.role)) ? '/admin' : '/'
+        const isAdmin = ['admin', 'superadmin'].includes(user.role)
+
+        // Validate the requested redirect — must be a safe relative path that
+        // does not point into the admin area (prevents privilege escalation UX).
+        const rawPath = typeof rawRedirect === 'string' ? rawRedirect.trim() : ''
+        const safeRedirect = (rawPath.startsWith('/') && !rawPath.startsWith('//') && !rawPath.startsWith('/admin'))
+            ? rawPath
+            : null
 
         // If the user logged in from a non-English locale page and their
         // stored preferredLanguage differs, update it automatically.
@@ -207,12 +214,22 @@ export async function POST(request: Request) {
         // Return the active locale: browsing locale takes priority (user actively chose it)
         const activeLocale = browsingLocale || storedLocale
 
-        // ── Invite context redirect ────────────────────────────────────────────
-        // If the user arrived via an invite link and was sent to /login to
-        // authenticate, read the invite_ctx cookie and redirect them to the
-        // event path instead of the default dashboard.
-        const inviteCtx = await readInviteCookie().catch(() => null)
+        // ── Redirect priority ──────────────────────────────────────────────────
+        // 1. Explicit ?redirect param (validated safe path)
+        // 2. Admin → /admin
+        // 3. Invite context (event invite link)
+        // 4. Incomplete profile (no avatar) → /dashboard/profile
+        // 5. Default → /dashboard
+        const inviteCtx = (safeRedirect || isAdmin) ? null : await readInviteCookie().catch(() => null)
         const inviteRedirectTo = inviteCtx?.eventPath ?? null
+
+        const finalRedirect = (() => {
+            if (safeRedirect) return safeRedirect
+            if (isAdmin) return '/admin'
+            if (inviteRedirectTo) return inviteRedirectTo
+            if (!user.avatar) return '/dashboard/profile'
+            return '/dashboard'
+        })()
 
         return NextResponse.json({
             user: {
@@ -220,7 +237,7 @@ export async function POST(request: Request) {
                 avatar: user.avatar, bannerUrl: user.bannerUrl, role: user.role,
                 accentColor: user.accentColor, themeMode: user.themeMode,
             },
-            redirectTo: inviteRedirectTo ?? redirectTo,
+            redirectTo: finalRedirect,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             preferredLanguage: activeLocale,
         })
