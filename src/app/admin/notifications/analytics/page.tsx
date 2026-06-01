@@ -19,6 +19,11 @@ interface Analytics {
     languageDistribution: { language: string; count: number }[]
     countryDistribution: { country: string; count: number }[]
     signupsByType: { type: string; count: number }[]
+    // Phase 2 breakdowns
+    requestSourceDistribution?: { source: string; count: number }[]
+    sourceTypeDistribution?: { type: string; count: number }[]
+    requestedByDistribution?: { by: string; count: number }[]
+    statusDistribution?: { status: string; count: number }[]
 }
 
 export default function AdminNotificationAnalytics() {
@@ -151,6 +156,89 @@ export default function AdminNotificationAnalytics() {
                             </span>
                         ))}
                         {data.languageDistribution.length === 0 && (
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>No data yet</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Phase 2: New breakdowns */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
+                {/* By requestSource */}
+                <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>
+                        📍 By Request Source
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {(data.requestSourceDistribution || []).map(r => (
+                            <span key={r.source} style={{
+                                padding: '4px 12px', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 600,
+                                background: 'rgba(99,179,237,0.08)', border: '1px solid rgba(99,179,237,0.15)',
+                                color: 'var(--text-secondary)',
+                            }}>
+                                {r.source}: {r.count}
+                            </span>
+                        ))}
+                        {(!data.requestSourceDistribution || data.requestSourceDistribution.length === 0) && (
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>No data yet</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* By sourceType */}
+                <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>
+                        🏷️ By Source Type
+                    </h3>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                        {(data.sourceTypeDistribution || []).map(s => (
+                            <span key={s.type} style={{
+                                padding: '4px 12px', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 600,
+                                background: 'rgba(159,122,234,0.08)', border: '1px solid rgba(159,122,234,0.15)',
+                                color: 'var(--text-secondary)',
+                            }}>
+                                {s.type}: {s.count}
+                            </span>
+                        ))}
+                        {(!data.sourceTypeDistribution || data.sourceTypeDistribution.length === 0) && (
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>No data yet</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginTop: '24px' }}>
+                {/* By requestedBy */}
+                <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>
+                        👤 By Requested By
+                    </h3>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        {(data.requestedByDistribution || []).map(r => (
+                            <div key={r.by} style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)' }}>
+                                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: r.by === 'guest' ? '#63b3ed' : r.by === 'member' ? '#48bb78' : 'var(--accent-gold)' }}>{r.count}</div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>{r.by}</div>
+                            </div>
+                        ))}
+                        {(!data.requestedByDistribution || data.requestedByDistribution.length === 0) && (
+                            <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>No data yet</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* By status */}
+                <div style={{ padding: '20px', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)' }}>
+                    <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>
+                        📋 By Status
+                    </h3>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                        {(data.statusDistribution || []).map(s => (
+                            <div key={s.status} style={{ flex: 1, textAlign: 'center', padding: '12px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)' }}>
+                                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: s.status === 'active' ? '#48bb78' : s.status === 'notified' ? '#63b3ed' : 'var(--text-tertiary)' }}>{s.count}</div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginTop: '4px' }}>{s.status}</div>
+                            </div>
+                        ))}
+                        {(!data.statusDistribution || data.statusDistribution.length === 0) && (
                             <p style={{ color: 'var(--text-tertiary)', fontSize: '0.85rem' }}>No data yet</p>
                         )}
                     </div>

@@ -23,6 +23,11 @@ export async function GET() {
         countryDist,
         signupsByType,
         activeCtas,
+        // Phase 2: new breakdowns
+        requestSourceDist,
+        sourceTypeDist,
+        requestedByDist,
+        statusDist,
     ] = await Promise.all([
         // Total platform-wide signups
         prisma.notificationSignup.count(),
@@ -66,6 +71,31 @@ export async function GET() {
         }),
         // Active CTAs count
         prisma.ctaConfiguration.count({ where: { status: 'active' } }),
+        // ── Phase 2 breakdowns ─────────────────────────────────────────────
+        // By requestSource
+        prisma.notificationSignup.groupBy({
+            by: ['requestSource'],
+            _count: true,
+            orderBy: { _count: { requestSource: 'desc' } },
+        }),
+        // By sourceType
+        prisma.notificationSignup.groupBy({
+            by: ['sourceType'],
+            _count: true,
+            orderBy: { _count: { sourceType: 'desc' } },
+        }),
+        // By requestedBy
+        prisma.notificationSignup.groupBy({
+            by: ['requestedBy'],
+            _count: true,
+            orderBy: { _count: { requestedBy: 'desc' } },
+        }),
+        // By status
+        prisma.notificationSignup.groupBy({
+            by: ['status'],
+            _count: true,
+            orderBy: { _count: { status: 'desc' } },
+        }),
     ])
 
     // Resolve project titles for the top tags
@@ -109,5 +139,10 @@ export async function GET() {
         languageDistribution: languageDist.map(l => ({ language: l.language, count: l._count })),
         countryDistribution: countryDist.map(c => ({ country: c.country || 'Unknown', count: c._count })),
         signupsByType: signupsByType.map(t => ({ type: t.notificationType, count: t._count })),
+        // Phase 2 breakdowns
+        requestSourceDistribution: requestSourceDist.map(r => ({ source: r.requestSource || 'unknown', count: r._count })),
+        sourceTypeDistribution: sourceTypeDist.map(s => ({ type: s.sourceType || 'unknown', count: s._count })),
+        requestedByDistribution: requestedByDist.map(r => ({ by: r.requestedBy || 'unknown', count: r._count })),
+        statusDistribution: statusDist.map(s => ({ status: s.status, count: s._count })),
     })
 }

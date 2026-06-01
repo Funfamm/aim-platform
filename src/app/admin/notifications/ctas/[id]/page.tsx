@@ -8,6 +8,12 @@ import AdminSidebar from '@/components/AdminSidebar'
 interface SignupItem {
     id: string; email: string; language: string; country: string | null
     createdAt: string; notifiedAt: string | null
+    requestedBy: string | null; requestSource: string | null
+    sourceType: string | null; sourceEntityId: string | null
+    sourcePageUrl: string | null; status: string
+    userId: string | null
+    confirmationSentAt: string | null; confirmationInAppAt: string | null
+    finalNoticeSentAt: string | null
 }
 
 interface DistItem { language?: string; country?: string; count: number }
@@ -279,6 +285,9 @@ export default function AdminCtaDetail() {
                                     <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
                                         <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.7rem' }}>Email</th>
                                         <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.7rem' }}>Lang</th>
+                                        <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.7rem' }}>By</th>
+                                        <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.7rem' }}>Source</th>
+                                        <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.7rem' }}>Status</th>
                                         <th style={{ textAlign: 'left', padding: '8px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.7rem' }}>Date</th>
                                     </tr>
                                 </thead>
@@ -287,6 +296,17 @@ export default function AdminCtaDetail() {
                                         <tr key={s.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                                             <td style={{ padding: '8px 12px', color: 'var(--text-primary)' }}>{s.email}</td>
                                             <td style={{ padding: '8px 12px', color: 'var(--text-tertiary)' }}>{s.language}</td>
+                                            <td style={{ padding: '8px 12px', color: 'var(--text-tertiary)', fontSize: '0.72rem' }}>{s.requestedBy || '—'}</td>
+                                            <td style={{ padding: '8px 12px', color: 'var(--text-tertiary)', fontSize: '0.72rem' }}>{s.requestSource || '—'}</td>
+                                            <td style={{ padding: '8px 12px' }}>
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: '10px', fontSize: '0.68rem', fontWeight: 600,
+                                                    background: s.status === 'active' ? 'rgba(72,187,120,0.1)' : 'rgba(160,174,192,0.1)',
+                                                    color: s.status === 'active' ? '#48bb78' : '#a0aec0',
+                                                }}>
+                                                    {s.status}
+                                                </span>
+                                            </td>
                                             <td style={{ padding: '8px 12px', color: 'var(--text-tertiary)', whiteSpace: 'nowrap' }}>
                                                 {new Date(s.createdAt).toLocaleDateString()}
                                             </td>

@@ -17,12 +17,21 @@ interface CtaItem {
     project: CtaProject | null; signupCount: number; signupsLast7Days: number
 }
 
+interface NotifySource {
+    signupTag: string; label: string; total: number; last7Days: number
+    requestedBy: Record<string, number>; status: Record<string, number>
+}
+
 export default function AdminNotificationCtas() {
     const [ctas, setCtas] = useState<CtaItem[]>([])
     const [loading, setLoading] = useState(true)
     const [statusFilter, setStatusFilter] = useState('all')
     const [error, setError] = useState('')
     const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+    // ── Other Notify Me Sources ──
+    const [sources, setSources] = useState<NotifySource[]>([])
+    const [sourcesLoading, setSourcesLoading] = useState(true)
 
     // ── Create CTA state ──
     const [showCreate, setShowCreate] = useState(false)
@@ -45,6 +54,16 @@ export default function AdminNotificationCtas() {
     }, [statusFilter])
 
     useEffect(() => { fetchCtas() }, [fetchCtas])
+
+    // Fetch Other Notify Me Sources
+    useEffect(() => {
+        setSourcesLoading(true)
+        fetch('/api/admin/notify-sources')
+            .then(r => r.json())
+            .then(data => setSources(data.sources || []))
+            .catch(() => {})
+            .finally(() => setSourcesLoading(false))
+    }, [])
 
     // Fetch projects for the create form
     useEffect(() => {
@@ -338,6 +357,105 @@ export default function AdminNotificationCtas() {
                     </table>
                 </div>
             )}
+
+            {/* ── Other Notify Me Sources ─────────────────────────────────────── */}
+            <div style={{ marginTop: '48px' }}>
+                <h2 style={{ fontSize: '1.2rem', fontWeight: 800, margin: '0 0 4px', color: 'var(--text-primary)' }}>
+                    📬 Other Notify Me Sources
+                </h2>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', margin: '0 0 16px' }}>
+                    Notify Me signups from non-CTA sources (footer, subscribe page, casting, training, scripts)
+                </p>
+
+                {sourcesLoading ? (
+                    <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)' }}>Loading sources...</div>
+                ) : sources.length === 0 ? (
+                    <div style={{
+                        textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)',
+                        background: 'rgba(255,255,255,0.02)', borderRadius: '12px',
+                        border: '1px solid var(--border-subtle)',
+                    }}>
+                        No non-CTA Notify Me sources found yet.
+                    </div>
+                ) : (
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.75rem' }}>Source</th>
+                                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.75rem' }}>Tag</th>
+                                    <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.75rem' }}>Total</th>
+                                    <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.75rem' }}>Last 7d</th>
+                                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.75rem' }}>Requested By</th>
+                                    <th style={{ textAlign: 'left', padding: '10px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.75rem' }}>Status</th>
+                                    <th style={{ textAlign: 'right', padding: '10px 12px', color: 'var(--text-tertiary)', fontWeight: 600, fontSize: '0.75rem' }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sources.map(src => (
+                                    <tr key={src.signupTag} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.15s' }}
+                                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.02)' }}
+                                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                                    >
+                                        <td style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                            {src.label}
+                                        </td>
+                                        <td style={{ padding: '12px' }}>
+                                            <code style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', background: 'rgba(255,255,255,0.04)', padding: '2px 6px', borderRadius: '4px' }}>
+                                                {src.signupTag}
+                                            </code>
+                                        </td>
+                                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 700, color: 'var(--accent-gold)' }}>
+                                            {src.total.toLocaleString()}
+                                        </td>
+                                        <td style={{ padding: '12px', textAlign: 'right', color: src.last7Days > 0 ? '#48bb78' : 'var(--text-tertiary)' }}>
+                                            {src.last7Days > 0 ? `+${src.last7Days}` : '—'}
+                                        </td>
+                                        <td style={{ padding: '12px' }}>
+                                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                {Object.entries(src.requestedBy).map(([k, v]) => (
+                                                    <span key={k} style={{
+                                                        padding: '2px 8px', borderRadius: '10px', fontSize: '0.68rem', fontWeight: 600,
+                                                        background: k === 'guest' ? 'rgba(99,179,237,0.1)' : 'rgba(72,187,120,0.1)',
+                                                        color: k === 'guest' ? '#63b3ed' : '#48bb78',
+                                                    }}>
+                                                        {k}: {v}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px' }}>
+                                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                {Object.entries(src.status).map(([k, v]) => (
+                                                    <span key={k} style={{
+                                                        padding: '2px 8px', borderRadius: '10px', fontSize: '0.68rem', fontWeight: 600,
+                                                        background: k === 'active' ? 'rgba(72,187,120,0.1)' : 'rgba(160,174,192,0.1)',
+                                                        color: k === 'active' ? '#48bb78' : '#a0aec0',
+                                                    }}>
+                                                        {k}: {v}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '12px', textAlign: 'right' }}>
+                                            <Link
+                                                href={`/admin/notifications/sources/${encodeURIComponent(src.signupTag)}`}
+                                                style={{
+                                                    padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 600,
+                                                    background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-subtle)',
+                                                    color: 'var(--text-secondary)', textDecoration: 'none',
+                                                }}
+                                            >
+                                                View Signups
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
             </div>
             </main>
         </div>
