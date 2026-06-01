@@ -8,20 +8,41 @@ import AdminSidebar from '@/components/AdminSidebar'
 /* ── Types ── */
 type SocialLinks = { youtube: string; instagram: string; tiktok: string; x: string; imdb: string }
 
+// Text fields that can be edited per locale
+type AboutLocaleData = {
+    heroSubtitle?: string
+    manifestoP1?: string; manifestoP2?: string
+    philosophyQuote?: string; philosophyAuthor?: string; philosophyRole?: string
+    stat1Label?: string; stat2Label?: string; stat3Label?: string; stat4Label?: string
+    milestone1Title?: string; milestone1Desc?: string
+    milestone2Title?: string; milestone2Desc?: string
+    milestone3Title?: string; milestone3Desc?: string
+    value1Title?: string; value1Sub?: string; value1Desc?: string
+    value2Title?: string; value2Sub?: string; value2Desc?: string
+    value3Title?: string; value3Sub?: string; value3Desc?: string
+    ctaTitle?: string; ctaTitleAccent?: string; ctaDesc?: string
+    ctaButtonText?: string; ctaSecondaryText?: string
+}
+
 type AboutPageData = {
+    // Locale-independent (numbers + years stay at root level)
+    stat1Value: number; stat2Value: number; stat3Value: number; stat4Value: number
+    milestone1Year: string; milestone2Year: string; milestone3Year: string
+    // Legacy flat fields — kept for backwards compat; used as English-only fallback
     heroSubtitle: string
     manifestoP1: string; manifestoP2: string
     philosophyQuote: string; philosophyAuthor: string; philosophyRole: string
-    stat1Value: number; stat1Label: string; stat2Value: number; stat2Label: string
-    stat3Value: number; stat3Label: string; stat4Value: number; stat4Label: string
-    milestone1Year: string; milestone1Title: string; milestone1Desc: string
-    milestone2Year: string; milestone2Title: string; milestone2Desc: string
-    milestone3Year: string; milestone3Title: string; milestone3Desc: string
+    stat1Label: string; stat2Label: string; stat3Label: string; stat4Label: string
+    milestone1Title: string; milestone1Desc: string
+    milestone2Title: string; milestone2Desc: string
+    milestone3Title: string; milestone3Desc: string
     value1Title: string; value1Sub: string; value1Desc: string
     value2Title: string; value2Sub: string; value2Desc: string
     value3Title: string; value3Sub: string; value3Desc: string
     ctaTitle: string; ctaTitleAccent: string; ctaDesc: string
     ctaButtonText: string; ctaSecondaryText: string
+    // Per-locale translations (new)
+    translations?: Record<string, Partial<AboutLocaleData>>
 }
 
 const EMPTY_ABOUT: AboutPageData = {
@@ -997,6 +1018,8 @@ export default function AdminSettingsPage() {
     const [saved, setSaved] = useState(false)
     const [error, setError] = useState('')
     const [dirty, setDirty] = useState(false)
+    // Which locale the About & Mission editor is currently targeting
+    const [editLocale, setEditLocale] = useState('en')
 
     // Password change state
     const [newPassword, setNewPassword] = useState('')
@@ -1511,10 +1534,34 @@ export default function AdminSettingsPage() {
                             {tab === 'about' && (() => {
                                 let apd: AboutPageData = { ...EMPTY_ABOUT }
                                 try { if (settings.aboutPageData) apd = { ...EMPTY_ABOUT, ...JSON.parse(settings.aboutPageData) } } catch { /* */ }
-                                const ua = (key: keyof AboutPageData, val: string | number) => {
+
+                                // Write a text field into translations[editLocale] (never the root level)
+                                const ua = (key: string, val: string) => {
+                                    const next: AboutPageData = {
+                                        ...apd,
+                                        translations: {
+                                            ...(apd.translations || {}),
+                                            [editLocale]: {
+                                                ...((apd.translations || {})[editLocale] || {}),
+                                                [key]: val,
+                                            },
+                                        },
+                                    }
+                                    update('aboutPageData', JSON.stringify(next))
+                                }
+                                // Write a locale-independent root field (numbers, milestone years)
+                                const uaRoot = (key: keyof AboutPageData, val: string | number) => {
                                     const next = { ...apd, [key]: val }
                                     update('aboutPageData', JSON.stringify(next))
                                 }
+                                // Read locale text field: localized admin > English legacy > empty
+                                const getLoc = (key: string): string => {
+                                    const locVal = (apd.translations?.[editLocale] as Record<string, string> | undefined)?.[key]
+                                    if (locVal) return locVal
+                                    if (editLocale === 'en') return (apd[key as keyof AboutPageData] as string) ?? ''
+                                    return ''
+                                }
+
                                 const hintStyle = { fontSize: '0.6rem', color: 'var(--text-tertiary)', marginTop: '3px' } as const
                                 const sectionHeader = (emoji: string, title: string, desc: string) => (
                                     <>
@@ -1526,11 +1573,34 @@ export default function AdminSettingsPage() {
                                     <section className="admin-form-section">
                                         <h3 className="admin-form-section-title">📖 About Page Content</h3>
                                         <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
-                                            Edit every section of the About page. <strong style={{ color: 'var(--text-secondary)' }}>Leave fields empty to use locale translations.</strong>
+                                            Edit every section of the About page per locale. <strong style={{ color: 'var(--text-secondary)' }}>Leave fields empty to use the locale message file as fallback.</strong>
                                         </p>
 
-                                        {/* ── Mission & Story (existing fields) ── */}
-                                        {sectionHeader('🎯', 'Mission & Story', 'Core narrative shown in the Mission and Story cards.')}
+                                        {/* ── Locale Selector ── */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(212,168,83,0.05)', border: '1px solid rgba(212,168,83,0.14)', marginBottom: 'var(--space-lg)' }}>
+                                            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>Editing locale:</span>
+                                            <select value={editLocale} onChange={e => setEditLocale(e.target.value)} className="admin-input" style={{ width: 'auto', fontSize: '0.8rem', flex: 'none' }}>
+                                                <option value="en">English</option>
+                                                <option value="es">Espanol</option>
+                                                <option value="fr">Francais</option>
+                                                <option value="ar">Arabic</option>
+                                                <option value="zh">Chinese</option>
+                                                <option value="hi">Hindi</option>
+                                                <option value="pt">Portugues</option>
+                                                <option value="ru">Russian</option>
+                                                <option value="ja">Japanese</option>
+                                                <option value="de">Deutsch</option>
+                                                <option value="ko">Korean</option>
+                                            </select>
+                                            {editLocale !== 'en' && (
+                                                <span style={{ fontSize: '0.62rem', color: 'var(--accent-gold)', flex: 1 }}>
+                                                    Empty fields fall back to the {editLocale}.json translation file.
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* ── Mission & Story (global, not locale-specific) ── */}
+                                        {sectionHeader('🎯', 'Mission & Story', 'Core narrative cards. These are global English fields — use translation files for other locales.')}
                                         <div className="admin-form-stack">
                                             <div>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1551,43 +1621,43 @@ export default function AdminSettingsPage() {
                                         </div>
 
                                         {/* ── Manifesto Card ── */}
-                                        {sectionHeader('✍️', 'Manifesto Card', 'The bold brand statement card shown right below the hero. Two paragraphs.')}
+                                        {sectionHeader('✍️', 'Manifesto Card', 'The bold brand statement card. Editing locale: ' + editLocale.toUpperCase())}
                                         <div className="admin-form-stack">
                                             <div>
                                                 <label className="admin-label">Paragraph 1 <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(opening statement)</span></label>
-                                                <textarea className="admin-textarea" rows={3} value={apd.manifestoP1} onChange={e => ua('manifestoP1', e.target.value)}
+                                                <textarea className="admin-textarea" rows={3} value={getLoc('manifestoP1')} onChange={e => ua('manifestoP1', e.target.value)}
                                                     placeholder="AIM Studio tells stories about sacrifice, regret, and the people who refused to look away." />
                                                 <div style={hintStyle}>Short, punchy opening line. Displayed in large italic text.</div>
                                             </div>
                                             <div>
                                                 <label className="admin-label">Paragraph 2 <span style={{ color: 'var(--text-tertiary)', fontWeight: 400 }}>(the why)</span></label>
-                                                <textarea className="admin-textarea" rows={3} value={apd.manifestoP2} onChange={e => ua('manifestoP2', e.target.value)}
+                                                <textarea className="admin-textarea" rows={3} value={getLoc('manifestoP2')} onChange={e => ua('manifestoP2', e.target.value)}
                                                     placeholder="We make these films with AI - not because the technology is the point..." />
                                                 <div style={hintStyle}>Explains the studio's approach. Displayed below the opening line.</div>
                                             </div>
                                         </div>
 
                                         {/* ── Hero ── */}
-                                        {sectionHeader('🎬', 'Hero Section', 'The subtitle shown below the main heading.')}
+                                        {sectionHeader('🎬', 'Hero Section', 'The subtitle shown below the main heading. Editing locale: ' + editLocale.toUpperCase())}
                                         <div>
                                             <label className="admin-label">Hero Subtitle</label>
-                                            <textarea className="admin-textarea" rows={2} value={apd.heroSubtitle} onChange={e => ua('heroSubtitle', e.target.value)} placeholder="Leave empty to use translation" />
+                                            <textarea className="admin-textarea" rows={2} value={getLoc('heroSubtitle')} onChange={e => ua('heroSubtitle', e.target.value)} placeholder="Leave empty to use translation" />
                                             <div style={hintStyle}>Appears below the page title on the About page.</div>
                                         </div>
 
                                         {/* ── Stats ── */}
-                                        {sectionHeader('📊', 'Stats Bar', 'Four counters shown below the hero. Set value to 0 to use defaults.')}
+                                        {sectionHeader('📊', 'Stats Bar', 'Four counters. Values are global; labels can be localized per the selected locale.')}
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                                             {([['stat1', 'e.g. Productions', 12], ['stat2', 'e.g. Countries', 30], ['stat3', 'e.g. Members', 500], ['stat4', 'e.g. Active Projects', 8]] as const).map(([prefix, ph, def]) => (
                                                 <div key={prefix} style={{ padding: '10px 12px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)' }}>
                                                     <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
                                                         <div style={{ flex: '0 0 60px' }}>
                                                             <label className="admin-label" style={{ fontSize: '0.6rem' }}>Value</label>
-                                                            <input className="admin-input" type="number" value={apd[`${prefix}Value` as keyof AboutPageData] as number || ''} onChange={e => ua(`${prefix}Value` as keyof AboutPageData, parseInt(e.target.value) || 0)} placeholder={String(def)} style={{ fontSize: '0.78rem' }} />
+                                                            <input className="admin-input" type="number" value={apd[`${prefix}Value` as keyof AboutPageData] as number || ''} onChange={e => uaRoot(`${prefix}Value` as keyof AboutPageData, parseInt(e.target.value) || 0)} placeholder={String(def)} style={{ fontSize: '0.78rem' }} />
                                                         </div>
                                                         <div style={{ flex: 1 }}>
-                                                            <label className="admin-label" style={{ fontSize: '0.6rem' }}>Label</label>
-                                                            <input className="admin-input" value={apd[`${prefix}Label` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Label` as keyof AboutPageData, e.target.value)} placeholder={ph} style={{ fontSize: '0.78rem' }} />
+                                                            <label className="admin-label" style={{ fontSize: '0.6rem' }}>Label ({editLocale})</label>
+                                                            <input className="admin-input" value={getLoc(`${prefix}Label`)} onChange={e => ua(`${prefix}Label`, e.target.value)} placeholder={ph} style={{ fontSize: '0.78rem' }} />
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1595,93 +1665,93 @@ export default function AdminSettingsPage() {
                                         </div>
 
                                         {/* ── Philosophy ── */}
-                                        {sectionHeader('💡', 'Philosophy Quote', 'Inspirational quote displayed between sections.')}
+                                        {sectionHeader('💡', 'Philosophy Quote', 'Inspirational quote. Editing locale: ' + editLocale.toUpperCase())}
                                         <div className="admin-form-stack">
                                             <div>
                                                 <label className="admin-label">Quote</label>
-                                                <textarea className="admin-textarea" rows={2} value={apd.philosophyQuote} onChange={e => ua('philosophyQuote', e.target.value)} placeholder="Leave empty to use translation" />
+                                                <textarea className="admin-textarea" rows={2} value={getLoc('philosophyQuote')} onChange={e => ua('philosophyQuote', e.target.value)} placeholder="Leave empty to use translation" />
                                             </div>
                                             <div className="admin-form-grid">
                                                 <div>
                                                     <label className="admin-label">Author Name</label>
-                                                    <input className="admin-input" value={apd.philosophyAuthor} onChange={e => ua('philosophyAuthor', e.target.value)} placeholder="Leave empty to use translation" />
+                                                    <input className="admin-input" value={getLoc('philosophyAuthor')} onChange={e => ua('philosophyAuthor', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                                 <div>
                                                     <label className="admin-label">Author Role</label>
-                                                    <input className="admin-input" value={apd.philosophyRole} onChange={e => ua('philosophyRole', e.target.value)} placeholder="Leave empty to use translation" />
+                                                    <input className="admin-input" value={getLoc('philosophyRole')} onChange={e => ua('philosophyRole', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* ── Timeline ── */}
-                                        {sectionHeader('🗓️', 'Journey Timeline', 'Three milestones shown on the timeline.')}
+                                        {sectionHeader('🗓️', 'Journey Timeline', 'Milestone years are global; titles and descriptions are locale-specific.')}
                                         {([1, 2, 3] as const).map(n => (
                                             <div key={n} style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', marginBottom: '8px' }}>
                                                 <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Milestone {n}</div>
                                                 <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '6px', marginBottom: '6px' }}>
                                                     <div>
-                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Year</label>
-                                                        <input className="admin-input" value={apd[`milestone${n}Year` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Year` as keyof AboutPageData, e.target.value)} placeholder="2025" style={{ fontSize: '0.78rem' }} />
+                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Year (global)</label>
+                                                        <input className="admin-input" value={apd[`milestone${n}Year` as keyof AboutPageData] as string} onChange={e => uaRoot(`milestone${n}Year` as keyof AboutPageData, e.target.value)} placeholder="2025" style={{ fontSize: '0.78rem' }} />
                                                     </div>
                                                     <div>
-                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Title</label>
-                                                        <input className="admin-input" value={apd[`milestone${n}Title` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Title` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                        <label className="admin-label" style={{ fontSize: '0.58rem' }}>Title ({editLocale})</label>
+                                                        <input className="admin-input" value={getLoc(`milestone${n}Title`)} onChange={e => ua(`milestone${n}Title`, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Description</label>
-                                                    <textarea className="admin-textarea" rows={2} value={apd[`milestone${n}Desc` as keyof AboutPageData] as string} onChange={e => ua(`milestone${n}Desc` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                    <label className="admin-label" style={{ fontSize: '0.58rem' }}>Description ({editLocale})</label>
+                                                    <textarea className="admin-textarea" rows={2} value={getLoc(`milestone${n}Desc`)} onChange={e => ua(`milestone${n}Desc`, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                 </div>
                                             </div>
                                         ))}
 
                                         {/* ── Values ── */}
-                                        {sectionHeader('⭐', 'Value Cards', 'Three value cards displayed in a grid.')}
+                                        {sectionHeader('⭐', 'Value Cards', 'Three value cards. Editing locale: ' + editLocale.toUpperCase())}
                                         {([['value1', 'Showcase'], ['value2', 'Community'], ['value3', 'Open Doors']] as const).map(([prefix, defaultTitle]) => (
                                             <div key={prefix} style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', background: 'var(--bg-primary)', border: '1px solid var(--border-subtle)', marginBottom: '8px' }}>
                                                 <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--accent-gold)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{defaultTitle}</div>
                                                 <div className="admin-form-grid" style={{ marginBottom: '6px' }}>
                                                     <div>
                                                         <label className="admin-label" style={{ fontSize: '0.58rem' }}>Title</label>
-                                                        <input className="admin-input" value={apd[`${prefix}Title` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Title` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                        <input className="admin-input" value={getLoc(`${prefix}Title`)} onChange={e => ua(`${prefix}Title`, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                     </div>
                                                     <div>
                                                         <label className="admin-label" style={{ fontSize: '0.58rem' }}>Subtitle</label>
-                                                        <input className="admin-input" value={apd[`${prefix}Sub` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Sub` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                        <input className="admin-input" value={getLoc(`${prefix}Sub`)} onChange={e => ua(`${prefix}Sub`, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                     </div>
                                                 </div>
                                                 <div>
                                                     <label className="admin-label" style={{ fontSize: '0.58rem' }}>Description</label>
-                                                    <textarea className="admin-textarea" rows={2} value={apd[`${prefix}Desc` as keyof AboutPageData] as string} onChange={e => ua(`${prefix}Desc` as keyof AboutPageData, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
+                                                    <textarea className="admin-textarea" rows={2} value={getLoc(`${prefix}Desc`)} onChange={e => ua(`${prefix}Desc`, e.target.value)} placeholder="Leave empty to use translation" style={{ fontSize: '0.78rem' }} />
                                                 </div>
                                             </div>
                                         ))}
 
                                         {/* ── CTA ── */}
-                                        {sectionHeader('🚀', 'Call to Action', 'Bottom section with heading and buttons.')}
+                                        {sectionHeader('🚀', 'Call to Action', 'Bottom section. Editing locale: ' + editLocale.toUpperCase())}
                                         <div className="admin-form-stack">
                                             <div className="admin-form-grid">
                                                 <div>
                                                     <label className="admin-label">CTA Title</label>
-                                                    <input className="admin-input" value={apd.ctaTitle} onChange={e => ua('ctaTitle', e.target.value)} placeholder="Leave empty to use translation" />
+                                                    <input className="admin-input" value={getLoc('ctaTitle')} onChange={e => ua('ctaTitle', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                                 <div>
                                                     <label className="admin-label">Title Accent (gold text)</label>
-                                                    <input className="admin-input" value={apd.ctaTitleAccent} onChange={e => ua('ctaTitleAccent', e.target.value)} placeholder="Leave empty to use translation" />
+                                                    <input className="admin-input" value={getLoc('ctaTitleAccent')} onChange={e => ua('ctaTitleAccent', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                             </div>
                                             <div>
                                                 <label className="admin-label">CTA Description</label>
-                                                <textarea className="admin-textarea" rows={2} value={apd.ctaDesc} onChange={e => ua('ctaDesc', e.target.value)} placeholder="Leave empty to use translation" />
+                                                <textarea className="admin-textarea" rows={2} value={getLoc('ctaDesc')} onChange={e => ua('ctaDesc', e.target.value)} placeholder="Leave empty to use translation" />
                                             </div>
                                             <div className="admin-form-grid">
                                                 <div>
                                                     <label className="admin-label">Primary Button Text</label>
-                                                    <input className="admin-input" value={apd.ctaButtonText} onChange={e => ua('ctaButtonText', e.target.value)} placeholder="Leave empty to use translation" />
+                                                    <input className="admin-input" value={getLoc('ctaButtonText')} onChange={e => ua('ctaButtonText', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                                 <div>
                                                     <label className="admin-label">Secondary Button Text</label>
-                                                    <input className="admin-input" value={apd.ctaSecondaryText} onChange={e => ua('ctaSecondaryText', e.target.value)} placeholder="Leave empty to use translation" />
+                                                    <input className="admin-input" value={getLoc('ctaSecondaryText')} onChange={e => ua('ctaSecondaryText', e.target.value)} placeholder="Leave empty to use translation" />
                                                 </div>
                                             </div>
                                         </div>

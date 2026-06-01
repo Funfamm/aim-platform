@@ -5,7 +5,7 @@ import AboutBackground from '@/components/AboutBackground'
 import AnimatedCounter from '@/components/AnimatedCounter'
 import AboutCtaButton from '@/components/AboutCtaButton'
 import { prisma } from '@/lib/db'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 
 // ISR: cache for 1 hour, serve from Vercel edge CDN worldwide.
@@ -53,6 +53,7 @@ export default async function AboutPage() {
     ])
     const bgUrls = pageMedia.map(m => m.url)
 
+    const locale = await getLocale()
     const t = await getTranslations('about')
     const tHome = await getTranslations('home')
     const mission = settings?.mission || t('missionText' as any) || DEFAULT_MISSION
@@ -60,11 +61,21 @@ export default async function AboutPage() {
     const storyParagraphs = studioStory.split('\n').filter((p: string) => p.trim())
 
     // Parse admin overrides — fall back to translations when empty
-    let apd: Record<string, string | number> = {}
+    let apd: Record<string, unknown> = {}
     try { if ((settings as any)?.aboutPageData) apd = JSON.parse((settings as any).aboutPageData) } catch { /* */ }
-    const v = (dbKey: string, translationKey: string) => {
-        const dbVal = apd[dbKey]
-        if (dbVal !== undefined && dbVal !== '' && dbVal !== 0) return String(dbVal)
+    const apdTranslations = (apd.translations as Record<string, Record<string, string>> | undefined) ?? {}
+
+    // Resolve a text field:
+    //   1. Localized admin value for this locale (translations[locale][key])
+    //   2. Legacy root-level admin value — English only (backwards compat)
+    //   3. Message-file translation (t(translationKey))
+    const v = (dbKey: string, translationKey: string): string => {
+        const localized = apdTranslations[locale]?.[dbKey]
+        if (localized) return localized
+        if (locale === 'en') {
+            const legacyVal = apd[dbKey]
+            if (legacyVal !== undefined && legacyVal !== '' && legacyVal !== 0) return String(legacyVal)
+        }
         return t(translationKey)
     }
     const n = (dbKey: string, fallback: number) => {
@@ -209,7 +220,7 @@ export default async function AboutPage() {
                                     letterSpacing: '0.2em', textTransform: 'uppercase' as const,
                                     color: 'rgba(212,168,83,0.6)',
                                     marginBottom: 'var(--space-lg)',
-                                }}>AIM Studio — Brand Statement</div>
+                                }}>{t('manifestoLabel')}</div>
 
                                 {/* Paragraph 1 — large italic opening */}
                                 <p style={{
@@ -222,7 +233,7 @@ export default async function AboutPage() {
                                     marginBottom: 'var(--space-xl)',
                                     letterSpacing: '0.01em',
                                 }}>
-                                    {apd.manifestoP1 || 'AIM Studio tells stories about sacrifice, regret, and the people who refused to look away.'}
+                                    {v('manifestoP1', 'manifestoP1')}
                                 </p>
 
                                 {/* Thin gold divider */}
@@ -241,7 +252,7 @@ export default async function AboutPage() {
                                     maxWidth: '680px',
                                     margin: 0,
                                 }}>
-                                    {apd.manifestoP2 || 'We make these films with AI — not because the technology is the point, but because it\'s the only way a studio our size could tell stories this big. The tools are new. The feelings are old as anyone\'s family.'}
+                                    {v('manifestoP2', 'manifestoP2')}
                                 </p>
                             </div>
                         </ScrollReveal3D>
