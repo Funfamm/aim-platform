@@ -171,7 +171,7 @@ export default function CommentSection({
                         {t('joinPrompt')}
                     </span>
                     <a
-                        href={`/${locale}/register?redirect=/works/${projectSlug}&utm_source=comment_wall`}
+                        href={`/${locale}/login?redirect=/works/${projectSlug}&utm_source=comment_wall`}
                         style={{
                             padding: '8px 20px',
                             fontSize: '0.82rem',

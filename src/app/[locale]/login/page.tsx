@@ -22,7 +22,7 @@ export default function LoginPage() {
     const { refreshUser } = useAuth()
     const router = useRouter()
     const searchParams = useSearchParams()
-    const redirectTo = searchParams.get('redirect') || searchParams.get('next') || '/'
+    const redirectTo = searchParams.get('redirect') || searchParams.get('next') || '/dashboard'
 
     // If user is already authenticated (e.g. just came from Google OAuth),
     // redirect them away from the login page immediately.
@@ -72,7 +72,7 @@ export default function LoginPage() {
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, locale: currentLocale }),
+                body: JSON.stringify({ email, password, locale: currentLocale, redirectTo }),
             })
             const data = await res.json()
             if (res.ok) {

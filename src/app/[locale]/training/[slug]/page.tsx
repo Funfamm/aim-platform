@@ -405,7 +405,7 @@ export default function CourseDetailPage() {
             } else {
                 const data = await r.json()
                 if (data.error === 'Unauthorized') {
-                    window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`
+                    window.location.href = `/${locale}/login?redirect=${encodeURIComponent(window.location.pathname)}`
                 }
             }
         } catch { addToast('Failed to enroll', '#ef4444') }
@@ -713,7 +713,7 @@ export default function CourseDetailPage() {
             } else {
                 const data = await enrollRes.json()
                 if (data.error === 'Unauthorized') {
-                    window.location.href = `/${locale}/login?callbackUrl=${encodeURIComponent(window.location.pathname)}`
+                    window.location.href = `/${locale}/login?redirect=${encodeURIComponent(window.location.pathname)}`
                     return
                 }
             }
