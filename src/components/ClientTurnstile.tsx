@@ -96,6 +96,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                         sitekey: siteKey,
                         theme: 'dark',
                         size: isNarrowRef.current ? 'compact' : 'normal',
+                        appearance: 'interaction-required',
                         retry: 'auto',
                         'retry-interval': 5000,
                         callback: (token: string) => callbacks.current.onSuccess(token),
