@@ -47,6 +47,43 @@ async function getSubscriberMode(): Promise<'manual_approval' | 'double_opt_in'>
     }
 }
 
+// ── NotificationSignup dual-write ────────────────────────────────────────────
+// Fire-and-forget: Subscriber behavior is unaffected if this write fails.
+// Called after every path that sets Subscriber.active = true.
+function upsertNotificationSignup({
+    email,
+    userSource,
+    userLocale,
+    referer,
+    confirmationSentAt,
+}: {
+    email: string
+    userSource: string
+    userLocale: string
+    referer: string | null
+    confirmationSentAt: Date | null
+}) {
+    const signupTag     = userSource === 'footer' ? 'footer_cta'    : 'subscribe_general'
+    const requestSource = userSource === 'footer' ? 'footer_cta'    : 'subscribe_page'
+    void prisma.notificationSignup.upsert({
+        where:  { email_signupTag: { email, signupTag } },
+        create: {
+            email,
+            signupTag,
+            notificationType: 'general',
+            requestedBy:      'guest',
+            requestSource,
+            sourceType:       'general',
+            sourcePageUrl:    referer,
+            language:         userLocale,
+            status:           'active',
+            confirmationSentAt,
+            unsubscribeToken: crypto.randomBytes(32).toString('hex'),
+        },
+        update: {}, // no-op on duplicate
+    }).catch(err => console.error('[subscribe] NotificationSignup upsert failed:', err.message))
+}
+
 export async function POST(request: NextRequest) {
     try {
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
@@ -157,6 +194,7 @@ export async function POST(request: NextRequest) {
         const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
         const userLocale = locale || 'en'
         const country = request.headers.get('x-vercel-ip-country') || undefined
+        const referer  = request.headers.get('referer') || null
 
         // ── Determine subscribe mode ───────────────────────────────────────
         const subscriberMode = await getSubscriberMode()
@@ -169,8 +207,10 @@ export async function POST(request: NextRequest) {
             select: { active: true, confirmedAt: true },
         })
 
-        // Case 1: Already actively subscribed — return early, no spam
+        // Case 1: Already actively subscribed — no duplicate email, but ensure
+        // a NotificationSignup record exists for admin visibility.
         if (existing?.active === true) {
+            upsertNotificationSignup({ email: normalizedEmail, userSource, userLocale, referer, confirmationSentAt: null })
             return NextResponse.json({ success: true, alreadySubscribed: true })
         }
 
@@ -218,6 +258,7 @@ export async function POST(request: NextRequest) {
                 type: 'subscribe',
             }).catch(err => console.error('[subscribe] Reactivation confirmation email failed:', err))
 
+            upsertNotificationSignup({ email: normalizedEmail, userSource, userLocale, referer, confirmationSentAt: new Date() })
             console.info(`[subscribe] Reactivated: ${normalizedEmail} — source=${userSource}, locale=${userLocale}`)
             return NextResponse.json({ success: true, welcomed: true })
         }
@@ -265,6 +306,7 @@ export async function POST(request: NextRequest) {
                 type: 'subscribe',
             }).catch(err => console.error('[subscribe] Guest confirmation email failed:', err))
 
+            upsertNotificationSignup({ email: normalizedEmail, userSource, userLocale, referer, confirmationSentAt: new Date() })
             console.info(`[subscribe] Activated: ${normalizedEmail} — source=${userSource}, locale=${userLocale}, botScore=${botScore}${breakdownStr ? ` [${breakdownStr}]` : ''}`)
             return NextResponse.json({ success: true, welcomed: true })
         }
