@@ -53,10 +53,10 @@ const fmt = (s: number) => {
 const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 
 const DESCRIPTOR_LABELS: Record<string, string> = {
-    violence: 'Violence', strong_language: 'Strong Language', mild_language: 'Mild Language',
-    nudity: 'Nudity', sexual_content: 'Sexual Content', drug_use: 'Drug Use',
-    alcohol_use: 'Alcohol Use', smoking: 'Smoking', frightening_scenes: 'Frightening Scenes',
-    thematic_elements: 'Thematic Elements',
+    violence: 'violence', strong_language: 'strong language', mild_language: 'mild language',
+    nudity: 'nudity', sexual_content: 'sexual content', drug_use: 'drug use',
+    alcohol_use: 'alcohol use', smoking: 'smoking', frightening_scenes: 'frightening scenes',
+    thematic_elements: 'thematic elements',
 }
 
 /* ══════════════════════════ COMPONENT ══════════════════════════ */
@@ -195,16 +195,16 @@ export default function WatchPlayer({
     const [showNotifyConfirm, setShowNotifyConfirm] = useState(false)
     const endCardDismissedRef = useRef(false)
 
-    /* ── Content Advisory state ── */
+    /* ── Content Advisory state (auto-dismiss after ~5s) ── */
     const hasAdvisory = !!(project.contentRating || (project.contentDescriptors && project.contentDescriptors.length > 0))
-    const [advisoryDismissed, setAdvisoryDismissed] = useState(() => {
-        if (typeof window === 'undefined' || !hasAdvisory) return true
-        return sessionStorage.getItem(`advisory-${project.id}`) === '1'
-    })
-    const dismissAdvisory = useCallback(() => {
-        setAdvisoryDismissed(true)
-        try { sessionStorage.setItem(`advisory-${project.id}`, '1') } catch {}
-    }, [project.id])
+    const [advisoryVisible, setAdvisoryVisible] = useState(hasAdvisory)
+    const [advisoryFading, setAdvisoryFading] = useState(false)
+    useEffect(() => {
+        if (!hasAdvisory || !advisoryVisible) return
+        const stayTimer = setTimeout(() => setAdvisoryFading(true), 5000)
+        const hideTimer = setTimeout(() => setAdvisoryVisible(false), 5800)
+        return () => { clearTimeout(stayTimer); clearTimeout(hideTimer) }
+    }, [hasAdvisory, advisoryVisible])
 
     /* ── Player Timings — resolve with episode-level inheritance ── */
     const effectiveIntroStart = (activeEpisode?.introStartSeconds ?? project.introStartSeconds) ?? null
@@ -1503,45 +1503,45 @@ export default function WatchPlayer({
                         </div>
                     )}
 
-                    {/* ── Content Advisory Overlay ── */}
-                    {hasAdvisory && !advisoryDismissed && (
+                    {/* ── Content Advisory Inline Overlay ── */}
+                    {hasAdvisory && advisoryVisible && (
                         <div style={{
-                            position: 'absolute', inset: 0, zIndex: 60,
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+                            position: 'absolute', top: '72px', left: '16px', zIndex: 40,
+                            display: 'flex', flexDirection: 'row', gap: '10px',
+                            pointerEvents: 'none',
+                            opacity: advisoryFading ? 0 : 1,
+                            transition: 'opacity 0.8s ease-out',
+                            animation: 'advisoryFadeIn 0.4s ease-out',
                         }}>
+                            {/* Gold accent line */}
                             <div style={{
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
-                                maxWidth: '420px', padding: '32px', textAlign: 'center',
-                            }}>
+                                width: '3px', minHeight: '100%', borderRadius: '2px',
+                                background: 'linear-gradient(180deg, #d4a853 0%, #b8943f 100%)',
+                                flexShrink: 0,
+                            }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                 {project.contentRating && (
                                     <div style={{
-                                        fontSize: '2rem', fontWeight: 800, padding: '8px 24px',
-                                        border: '3px solid rgba(255,255,255,0.8)', borderRadius: '8px',
-                                        color: '#fff', letterSpacing: '0.05em',
+                                        fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.08em',
+                                        color: '#d4a853', textTransform: 'uppercase',
+                                        textShadow: '0 1px 4px rgba(0,0,0,0.7)',
                                     }}>
-                                        {project.contentRating}
+                                        RATED {project.contentRating}
                                     </div>
                                 )}
                                 {project.contentDescriptors && project.contentDescriptors.length > 0 && (
-                                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                                        <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>Contains: </span>
-                                        {project.contentDescriptors.map(k => DESCRIPTOR_LABELS[k] || k).join(', ')}
+                                    <div style={{
+                                        fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)',
+                                        textShadow: '0 1px 3px rgba(0,0,0,0.6)',
+                                        maxWidth: '280px', lineHeight: 1.4,
+                                    }}>
+                                        {project.contentDescriptors.map(k => DESCRIPTOR_LABELS[k] || k.replace(/_/g, ' ')).join(', ')}
                                     </div>
                                 )}
-                                <button onClick={dismissAdvisory} style={{
-                                    marginTop: '8px', padding: '10px 32px', fontSize: '0.95rem', fontWeight: 700,
-                                    borderRadius: '8px', border: 'none', cursor: 'pointer',
-                                    background: 'rgba(255,255,255,0.15)', color: '#fff',
-                                    backdropFilter: 'blur(4px)', transition: 'background 0.2s',
-                                }}
-                                onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
-                                onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}>
-                                    Continue Watching
-                                </button>
                             </div>
                         </div>
                     )}
+                    <style>{`@keyframes advisoryFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }`}</style>
 
                     {/* ── Skip Intro Button ── */}
                     {showSkipIntro && (
