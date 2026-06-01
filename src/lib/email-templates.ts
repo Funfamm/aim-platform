@@ -1567,3 +1567,92 @@ export function surveyInviteEmail(name: string | null, surveyUrl: string, locale
         ${paragraph(`— ${signature}`)}
     `, preheader, undefined, locale)
 }
+
+// ──────────────────────────────────────────────────────────────
+// Notify Me Dispatch Email (Phase 3)
+// ──────────────────────────────────────────────────────────────
+
+/**
+ * Build a source-aware Notify Me dispatch email.
+ *
+ * Used when admin sends an availability notice to users who signed up
+ * for a specific Notify Me source (casting, training, scripts, work, general).
+ *
+ * @param sourceType   - 'casting' | 'training' | 'scripts' | 'work' | 'general'
+ * @param adminMessage - Custom message from admin (optional extra context)
+ * @param actionUrl    - CTA button link (resolved source page)
+ * @param unsubscribeUrl - Unsubscribe link for the recipient
+ * @param locale       - Recipient's resolved language
+ * @param title        - Optional title for 'work' type (project name)
+ */
+export function notifyMeDispatchEmail(
+    sourceType: string,
+    adminMessage: string,
+    actionUrl: string,
+    unsubscribeUrl: string,
+    locale: string = 'en',
+    title?: string,
+): string {
+    const safeSourceType = ['casting', 'training', 'scripts', 'work', 'general'].includes(sourceType)
+        ? sourceType
+        : 'general'
+
+    // Resolve i18n strings with English fallback
+    let subject = emailT('notify_dispatch', locale, `subject_${safeSourceType}`)
+        || emailT('notify_dispatch', 'en', `subject_${safeSourceType}`)
+        || 'New AIM Studio update'
+    let body = emailT('notify_dispatch', locale, `body_${safeSourceType}`)
+        || emailT('notify_dispatch', 'en', `body_${safeSourceType}`)
+        || 'You asked to be notified about AIM Studio updates. A new update is now available.'
+    const btnText = emailT('notify_dispatch', locale, 'buttonText')
+        || emailT('notify_dispatch', 'en', 'buttonText')
+        || 'View Now →'
+    const footerText = emailT('notify_dispatch', locale, 'footer')
+        || emailT('notify_dispatch', 'en', 'footer')
+        || 'You received this email because you signed up for notifications on AIM Studio.'
+
+    // Substitute {title} placeholder for work-type emails
+    if (title) {
+        subject = subject.replace('{title}', title)
+        body = body.replace('{title}', title)
+    } else {
+        // Remove placeholder if no title
+        subject = subject.replace(' — {title}', '')
+        body = body.replace(' — {title}', '')
+    }
+
+    const unsubLink = `<p style="margin: 0; font-size: 11px; color: #6b7280; line-height: 1.6;">
+        <a href="${unsubscribeUrl}" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a>
+    </p>`
+
+    return emailWrapper(`
+        ${heading(subject)}
+        ${paragraph(body)}
+        ${adminMessage ? paragraph(adminMessage) : ''}
+        ${button(btnText, actionUrl)}
+        ${divider()}
+        ${unsubLink}
+    `, body, footerText, locale)
+}
+
+/**
+ * Get the localized dispatch email subject for a sourceType.
+ * Used by the preview and send endpoints.
+ */
+export function getDispatchSubject(sourceType: string, locale: string = 'en', title?: string): string {
+    const safeSourceType = ['casting', 'training', 'scripts', 'work', 'general'].includes(sourceType)
+        ? sourceType
+        : 'general'
+
+    let subject = emailT('notify_dispatch', locale, `subject_${safeSourceType}`)
+        || emailT('notify_dispatch', 'en', `subject_${safeSourceType}`)
+        || 'New AIM Studio update'
+
+    if (title) {
+        subject = subject.replace('{title}', title)
+    } else {
+        subject = subject.replace(' — {title}', '')
+    }
+
+    return subject
+}
