@@ -5,7 +5,7 @@ import HomeHero from '@/components/HomeHero'
 import Scene3DClient from '@/components/Scene3DClient'
 const FeaturedProjects3D = dynamic(() => import('@/components/FeaturedProjects3D'))
 const RollRow = dynamic(() => import('@/components/mobile/RollRow'))
-const ContinueWatching = dynamic(() => import('@/components/ContinueWatching'), { ssr: false })
+const ContinueWatching = dynamic(() => import('@/components/ContinueWatching'))
 import SponsorBannerSection from '@/components/SponsorBannerSection'
 import ThreeWaysIn from '@/components/ThreeWaysIn'
 import { prisma } from '@/lib/db'
