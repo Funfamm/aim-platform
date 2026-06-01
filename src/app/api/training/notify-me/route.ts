@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { sendTransactionalEmail } from '@/lib/email-router'
 import { subscribeConfirmationWithOverrides } from '@/lib/email-templates'
 import { t as et } from '@/lib/email-i18n'
+import crypto from 'crypto'
 
 /**
  * POST /api/training/notify-me
@@ -71,6 +72,29 @@ export async function POST(req: Request) {
             subject: et('subscribe', locale, 'subject'),
             html: await subscribeConfirmationWithOverrides(user.name || undefined, siteUrl, locale),
         }).catch(err => console.error('[training/notify-me] email failed:', err))
+    }
+
+    // ── NotificationSignup dual-write (admin visibility) ─────────────────────
+    if (!isSuppressed) {
+        const email = user.email.trim().toLowerCase()
+        void prisma.notificationSignup.upsert({
+            where:  { email_signupTag: { email, signupTag: 'training_general' } },
+            create: {
+                email,
+                signupTag:          'training_general',
+                notificationType:   'training',
+                requestedBy:        'member',
+                requestSource:      'page_cta',
+                sourceType:         'training',
+                sourcePageUrl:      req.headers.get('referer') || null,
+                language:           locale,
+                userId:             session.userId as string,
+                status:             'active',
+                confirmationSentAt: isNew ? new Date() : null,
+                unsubscribeToken:   crypto.randomBytes(32).toString('hex'),
+            },
+            update: {},
+        }).catch(err => console.error('[training/notify-me] NotificationSignup upsert failed:', err.message))
     }
 
     return NextResponse.json({ subscribed: true, alreadySubscribed: !isNew })

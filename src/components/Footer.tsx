@@ -99,7 +99,7 @@ export default function Footer() {
                                 {t('newsletterText')}
                             </p>
                             <Link
-                                href="/subscribe"
+                                href="/subscribe?source=footer"
                                 prefetch={false}
                                 style={{
                                     display: 'inline-flex',

@@ -137,28 +137,50 @@ export async function POST(req: NextRequest) {
             )
         }
 
+        // ── Suppression check — do not create active records for suppressed emails ─
+        const suppression = await prisma.emailSuppression.findFirst({
+            where: {
+                email,
+                removedAt: null,
+                OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+            },
+        })
+        if (suppression) {
+            console.info(`[notify-me] SUPPRESSED — ipHash=${ipHash} has active suppression (reason=${suppression.reason}), not creating record`)
+            return NextResponse.json({ success: true, alreadySubscribed: true })
+        }
+
         // ── Create signup (dedup on email + signupTag) ──────────────────
-        const userAgent = req.headers.get('user-agent') || undefined
+        const userAgent     = req.headers.get('user-agent') || undefined
+        const sourcePageUrl = req.headers.get('referer') || null
+        const userLocale    = language || 'en'
+        const siteUrl       = process.env.NEXT_PUBLIC_SITE_URL || ''
+        const workTitle     = cta.headlineRegular || signupTag.replace(/_/g, ' ')
 
         try {
             await prisma.notificationSignup.create({
                 data: {
                     email,
                     signupTag,
-                    notificationType: cta.notificationType,
-                    sourceVideoId: cta.videoId,
-                    language: language || 'en',
-                    country: country || null,
+                    notificationType:   cta.notificationType,
+                    sourceVideoId:      cta.videoId,
+                    language:           userLocale,
+                    country:            country || null,
                     ipHash,
                     userAgent,
-                    unsubscribeToken: generateUnsubscribeToken(),
+                    unsubscribeToken:   generateUnsubscribeToken(),
+                    // Phase 1 fields
+                    requestedBy:        'guest',
+                    requestSource:      'player_end_card',
+                    sourceType:         'work',
+                    sourceEntityId:     cta.videoId,
+                    sourcePageUrl,
+                    status:             'active',
+                    confirmationSentAt: new Date(),
                 },
             })
 
             // ── Send guest confirmation email ────────────────────────────
-            const userLocale = language || 'en'
-            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
-            const workTitle = cta.headlineRegular || signupTag.replace(/_/g, ' ')
             sendTransactionalEmail({
                 to: email,
                 subject: et('guestNotifyConfirm', userLocale, 'subject') || "You\u2019re on the list \uD83C\uDFAC",

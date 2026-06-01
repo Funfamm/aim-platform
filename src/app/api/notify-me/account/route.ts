@@ -45,22 +45,43 @@ export async function POST(req: NextRequest) {
         }
 
         // ── Create signup (dedup on email + signupTag unique constraint) ─
-        const email = user.email.trim().toLowerCase()
-        const language = user.preferredLanguage || 'en'
+        const email         = user.email.trim().toLowerCase()
+        const language      = user.preferredLanguage || 'en'
+        const sourcePageUrl = req.headers.get('referer') || null
 
         try {
             await prisma.notificationSignup.create({
                 data: {
                     email,
                     signupTag,
-                    notificationType: cta.notificationType,
-                    sourceVideoId: cta.videoId,
+                    notificationType:   cta.notificationType,
+                    sourceVideoId:      cta.videoId,
                     language,
-                    // No IP hash needed for authenticated users
-                    userAgent: req.headers.get('user-agent') || undefined,
-                    unsubscribeToken: generateUnsubscribeToken(),
+                    userAgent:          req.headers.get('user-agent') || undefined,
+                    unsubscribeToken:   generateUnsubscribeToken(),
+                    // Phase 1 fields
+                    userId:             session.userId as string,
+                    requestedBy:        'member',
+                    requestSource:      'player_end_card',
+                    sourceType:         'work',
+                    sourceEntityId:     cta.videoId,
+                    sourcePageUrl,
+                    status:             'active',
+                    confirmationInAppAt: new Date(),
                 },
             })
+
+            // ── In-app confirmation for logged-in users ───────────────────
+            void prisma.userNotification.create({
+                data: {
+                    userId:  session.userId as string,
+                    type:    'notify_me',
+                    title:   "You’re on the list!",
+                    message: `We’ll notify you about ${cta.headlineRegular || 'the upcoming release'}.`,
+                    link:    null,
+                },
+            }).catch(err => console.error('[notify-me/account] In-app notification failed:', err.message))
+
             return NextResponse.json({ success: true, alreadySubscribed: false })
         } catch (err: unknown) {
             // Prisma unique constraint violation = duplicate signup

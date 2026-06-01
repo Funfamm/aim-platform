@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import crypto from 'crypto'
 
 /**
  * POST /api/scripts/notify
@@ -39,13 +40,46 @@ export async function POST(request: NextRequest) {
     const { scriptCallId } = await request.json()
     if (!scriptCallId) return NextResponse.json({ error: 'Missing scriptCallId' }, { status: 400 })
 
-    // Upsert — idempotent
+    const userId = session.userId as string
+
+    // Run ScriptCallNotify upsert and user fetch in parallel
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma as any).scriptCallNotify.upsert({
-        where: { scriptCallId_userId: { scriptCallId, userId: session.userId as string } },
-        create: { scriptCallId, userId: session.userId as string },
-        update: {}, // already subscribed, no-op
-    })
+    const [, user] = await Promise.all([
+        (prisma as any).scriptCallNotify.upsert({
+            where:  { scriptCallId_userId: { scriptCallId, userId } },
+            create: { scriptCallId, userId },
+            update: {},
+        }),
+        prisma.user.findUnique({
+            where:  { id: userId },
+            select: { email: true, preferredLanguage: true },
+        }),
+    ])
+
+    // ── NotificationSignup dual-write (admin visibility) ─────────────────────
+    if (user?.email) {
+        const email      = user.email.trim().toLowerCase()
+        const signupTag  = `scripts_${scriptCallId}`
+        const sourcePageUrl = request.headers.get('referer') || null
+        void prisma.notificationSignup.upsert({
+            where:  { email_signupTag: { email, signupTag } },
+            create: {
+                email,
+                signupTag,
+                notificationType: 'scripts',
+                requestedBy:      'member',
+                requestSource:    'page_cta',
+                sourceType:       'scripts',
+                sourceEntityId:   scriptCallId,
+                sourcePageUrl,
+                language:         user.preferredLanguage || 'en',
+                userId,
+                status:           'active',
+                unsubscribeToken: crypto.randomBytes(32).toString('hex'),
+            },
+            update: {},
+        }).catch(err => console.error('[scripts/notify] NotificationSignup upsert failed:', err.message))
+    }
 
     return NextResponse.json({ subscribed: true })
 }
