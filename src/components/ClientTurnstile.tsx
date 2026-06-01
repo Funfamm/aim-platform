@@ -28,7 +28,7 @@ declare global {
 
 const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
     ({ siteKey, onSuccess, onError, onExpire, label, labelStyle }, ref) => {
-        const [isNarrow, setIsNarrow] = useState(false)
+
         const [scriptFailed, setScriptFailed] = useState(false)
         const containerRef = useRef<HTMLDivElement>(null)
         const widgetIdRef = useRef<string | null>(null)
@@ -58,20 +58,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
             },
         }))
 
-        // Width check — runs once on mount, then on resize.
-        // Uses a ref so the main effect doesn't re-run (and teardown/re-render
-        // the widget) every time the viewport width crosses 480px.
-        const isNarrowRef = useRef(false)
-        useEffect(() => {
-            const checkWidth = () => {
-                const narrow = window.innerWidth < 480
-                isNarrowRef.current = narrow
-                setIsNarrow(narrow)
-            }
-            checkWidth()
-            window.addEventListener('resize', checkWidth, { passive: true })
-            return () => window.removeEventListener('resize', checkWidth)
-        }, [])
+
 
         useEffect(() => {
             if (!siteKey) return
@@ -95,7 +82,7 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                     widgetIdRef.current = window.turnstile.render(containerRef.current, {
                         sitekey: siteKey,
                         theme: 'dark',
-                        size: isNarrowRef.current ? 'compact' : 'normal',
+                        size: 'normal',
                         retry: 'auto',
                         'retry-interval': 5000,
                         callback: (token: string) => callbacks.current.onSuccess(token),
@@ -237,8 +224,8 @@ const ClientTurnstile = forwardRef<ClientTurnstileHandle, ClientTurnstileProps>(
                 ) : (
                     <div style={{
                         display: 'flex',
-                        justifyContent: isNarrow ? 'flex-start' : 'center',
-                        minHeight: isNarrow ? '140px' : '65px',
+                        justifyContent: 'center',
+                        minHeight: '65px',
                         overflow: 'visible',
                     }}>
                         <div ref={containerRef} />
