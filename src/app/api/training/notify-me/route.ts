@@ -37,6 +37,7 @@ export async function POST(req: Request) {
         : (browsingLocale || 'en')
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
 
+    // ── Strict suppression check: do not reactivate suppressed/unsubscribed emails ──
     const existing = await prisma.subscriber.findUnique({
         where: { email: user.email },
         select: { active: true },
@@ -44,13 +45,27 @@ export async function POST(req: Request) {
 
     const isNew = !existing
 
+    const suppression = await prisma.emailSuppression.findFirst({
+        where: {
+            email: user.email.toLowerCase(),
+            removedAt: null,
+            OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+    })
+    const isSuppressed = !!suppression
+
+    if (isSuppressed) {
+        console.info(`[training/notify-me] SUPPRESSED — ${user.email} has active suppression (reason=${suppression!.reason}), not reactivating`)
+    }
+
     await prisma.subscriber.upsert({
         where: { email: user.email },
-        update: { active: true },
-        create: { email: user.email, name: user.name || null, source: 'training_notify' },
+        update: isSuppressed ? {} : { active: true },
+        create: { email: user.email, name: user.name || null, source: 'training_notify', active: !isSuppressed },
     }).catch(() => null)
 
-    if (isNew) {
+    // Send confirmation email only for new, non-suppressed subscribers
+    if (isNew && !isSuppressed) {
         sendTransactionalEmail({
             to: user.email,
             subject: et('subscribe', locale, 'subject'),

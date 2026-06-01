@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { sendTransactionalEmail } from '@/lib/email-router'
+import { guestNotifyConfirmationWithOverrides } from '@/lib/email-templates'
+import { t as et } from '@/lib/email-i18n'
 import crypto from 'crypto'
 
 // ── Rate-limit store (in-memory, per-instance) ──────────────────────────────
@@ -151,6 +154,18 @@ export async function POST(req: NextRequest) {
                     unsubscribeToken: generateUnsubscribeToken(),
                 },
             })
+
+            // ── Send guest confirmation email ────────────────────────────
+            const userLocale = language || 'en'
+            const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || ''
+            const workTitle = cta.headlineRegular || signupTag.replace(/_/g, ' ')
+            sendTransactionalEmail({
+                to: email,
+                subject: et('guestNotifyConfirm', userLocale, 'subject') || "You\u2019re on the list \uD83C\uDFAC",
+                html: await guestNotifyConfirmationWithOverrides(undefined, 'work', siteUrl, userLocale, workTitle),
+                type: 'notify_confirm',
+            }).catch(err => console.error('[notify-me] Confirmation email failed:', err))
+
             return NextResponse.json({ success: true, alreadySubscribed: false })
         } catch (err: unknown) {
             // Prisma unique constraint violation = duplicate signup

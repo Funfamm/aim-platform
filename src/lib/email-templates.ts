@@ -716,6 +716,65 @@ export async function subscribeWelcomeWithOverrides(name?: string, siteUrl?: str
         locale
     )
 }
+
+/** English fallback labels for guest notify confirmation sources */
+const SOURCE_LABELS_EN: Record<string, string> = {
+    general:  'AIM Studio updates',
+    footer:   'AIM Studio updates',
+    scripts:  'script open calls',
+    casting:  'casting opportunities',
+    training: 'training updates',
+    work:     'updates about {title}',
+    player_end_card: 'updates about {title}',
+}
+
+/**
+ * Guest Notify Me confirmation email — locale- and source-aware.
+ * Sent after a guest successfully subscribes or signs up for a
+ * Notify Me CTA, AFTER all security checks pass.
+ */
+export async function guestNotifyConfirmationWithOverrides(
+    name?: string,
+    source = 'general',
+    siteUrl?: string,
+    locale = 'en',
+    workTitle?: string,
+): Promise<string> {
+    // ── Resolve source label ─────────────────────────────────────────
+    const labelKey = `sourceLabel_${source}`
+    let requestLabel =
+        emailT('guestNotifyConfirm', locale, labelKey) ||
+        SOURCE_LABELS_EN[source] ||
+        SOURCE_LABELS_EN.general
+
+    // For work-specific sources, replace {title} with actual title
+    if ((source === 'work' || source === 'player_end_card') && workTitle) {
+        requestLabel = requestLabel.replace('{title}', workTitle)
+    } else if (requestLabel.includes('{title}')) {
+        // Fallback: strip the {title} placeholder if no title provided
+        requestLabel = requestLabel.replace('{title}', '').replace('  ', ' ').trim()
+    }
+
+    // ── Pull localised strings ───────────────────────────────────────
+    const h       = emailT('guestNotifyConfirm', locale, 'heading')    || "You\u2019re on the list \uD83C\uDFAC"
+    const bodyTpl = emailT('guestNotifyConfirm', locale, 'body')       || "You\u2019re on the list for {label}."
+    const sub     = emailT('guestNotifyConfirm', locale, 'subtext')    || "We\u2019ll notify you when there\u2019s an update."
+    const thx     = emailT('guestNotifyConfirm', locale, 'thanks')     || 'Thank you for staying connected with AIM Studio.'
+    const btnText = emailT('guestNotifyConfirm', locale, 'buttonText') || 'Visit AIM Studio'
+    const footer  = emailT('guestNotifyConfirm', locale, 'footer')     || undefined
+
+    const bodyStr = bodyTpl.replace('{label}', `<strong>${requestLabel}</strong>`)
+    const greeting = name ? `Hi ${name}, ` : ''
+
+    return emailWrapper(`
+        ${heading(h)}
+        ${subtext(`${greeting}${sub}`)}
+        ${paragraph(bodyStr)}
+        ${paragraph(thx)}
+        ${siteUrl ? `${divider()}${secondaryButton(btnText, siteUrl)}` : ''}
+    `, emailT('guestNotifyConfirm', locale, 'subject') || "You\u2019re on the list \uD83C\uDFAC", footer, locale)
+}
+
 export async function subscribeWelcomeBackWithOverrides(name?: string, siteUrl?: string, locale = 'en'): Promise<string> {
     const f = await mergeFields('subscribe', {
         heading:    emailT('subscribeWelcomeBack', locale, 'heading')    || 'Welcome Back! 🎬',

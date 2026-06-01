@@ -5,6 +5,7 @@ import NextImage from 'next/image'
 import Footer from '@/components/Footer'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
 import { useTranslations, useLocale } from 'next-intl'
+import { useSearchParams } from 'next/navigation'
 import ClientTurnstile, { type ClientTurnstileHandle } from '@/components/ClientTurnstile'
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ''
@@ -19,6 +20,8 @@ const DEFAULT_IMAGES = [
 export default function SubscribePage() {
     const t = useTranslations('subscribe')
     const locale = useLocale()
+    const searchParams = useSearchParams()
+    const source = searchParams.get('source') || 'general'
     const [email, setEmail] = useState('')
     const [name, setName] = useState('')
     const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
@@ -98,6 +101,7 @@ export default function SubscribePage() {
                     email,
                     name: name.trim() || undefined,
                     locale,
+                    source,
                     website: honeypot,
                     loadedAt: loadedAtRef.current,
                     turnstileToken: token,

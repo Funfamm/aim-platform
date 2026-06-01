@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { sendTransactionalEmail } from '@/lib/email-router'
 import { sendEmail } from '@/lib/mailer'
-import { subscribeWelcomeBackWithOverrides } from '@/lib/email-templates'
+import { guestNotifyConfirmationWithOverrides } from '@/lib/email-templates'
 import { subscribeConfirmation } from '@/lib/email-templates'
 import { t as et } from '@/lib/email-i18n'
 import { suppressEmail } from '@/lib/suppression'
@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Too many requests. Please try again later.', code: 'RATE_LIMITED' }, { status: 429 })
         }
 
-        const { email, name, locale, website, loadedAt, turnstileToken } = await request.json()
+        const { email, name, locale, source, website, loadedAt, turnstileToken } = await request.json()
+        const userSource = (typeof source === 'string' && source) ? source : 'general'
 
         // ── Time-delay check: bots submit in <500ms; real users take ≥2s ──────
         if (typeof loadedAt === 'number' && Date.now() - loadedAt < 2000) {
@@ -173,9 +174,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: true, alreadySubscribed: true })
         }
 
-        // Case 2: Was previously approved/confirmed, now inactive — reactivate
-        if (existing && existing.confirmedAt) {
-            // ── Suppression check: prevent re-subscribing addresses with permanent delivery issues ──
+        // Case 2: Existing inactive subscriber — reactivate only if not suppressed
+        if (existing && existing.active === false) {
+            // ── Strict suppression check: if ANY active suppression exists, do not reactivate ──
+            // This covers: unsubscribe, hard_bounce, complaint, manual, bot, and any other reason.
+            // Do not lift suppression. Do not send email. Return safe success to avoid leaking status.
             const suppression = await prisma.emailSuppression.findFirst({
                 where: {
                     email: normalizedEmail,
@@ -188,31 +191,34 @@ export async function POST(request: NextRequest) {
             })
 
             if (suppression) {
-                if (suppression.reason === 'hard_bounce' || suppression.reason === 'complaint') {
-                    return NextResponse.json({
-                        error: 'This email address has delivery issues. Please use a different email or contact support.',
-                        blocked: true,
-                    }, { status: 400 })
-                }
-                const { liftSuppression } = await import('@/lib/suppression')
-                await liftSuppression(normalizedEmail, 'system:resubscribe')
+                // Suppressed email attempted to re-subscribe — do not reactivate, do not send email
+                console.info(`[subscribe] SUPPRESSED_RESUBSCRIBE — ${normalizedEmail} has active suppression (reason=${suppression.reason}), not reactivating`)
+                return NextResponse.json({ success: true, alreadySubscribed: true })
             }
 
+            // No suppression — safe to reactivate
             await db.subscriber.update({
                 where: { email: normalizedEmail },
-                data: { active: true, ...(name ? { name } : {}), ...(country ? { country } : {}), locale: userLocale, confirmToken: null },
+                data: {
+                    active: true,
+                    confirmedAt: existing.confirmedAt || new Date(),
+                    locale: userLocale,
+                    confirmToken: null,
+                    tokenExpiresAt: null,
+                    ...(name ? { name } : {}),
+                    ...(country ? { country } : {}),
+                },
             })
 
-            // Only send welcome-back email in double_opt_in mode
-            if (subscriberMode === 'double_opt_in') {
-                sendTransactionalEmail({
-                    to: normalizedEmail,
-                    subject: et('subscribeWelcomeBack', userLocale, 'subject') || 'Welcome back to AIM Studio! 🎬',
-                    html: await subscribeWelcomeBackWithOverrides(name || undefined, siteUrl, userLocale),
-                    type: 'subscribe',
-                }).catch(err => console.error('[subscribe] Welcome-back email failed:', err))
-            }
+            // Send confirmation email for reactivation
+            sendTransactionalEmail({
+                to: normalizedEmail,
+                subject: et('guestNotifyConfirm', userLocale, 'subject') || "You\u2019re on the list \uD83C\uDFAC",
+                html: await guestNotifyConfirmationWithOverrides(name || undefined, userSource, siteUrl, userLocale),
+                type: 'subscribe',
+            }).catch(err => console.error('[subscribe] Reactivation confirmation email failed:', err))
 
+            console.info(`[subscribe] Reactivated: ${normalizedEmail} — source=${userSource}, locale=${userLocale}`)
             return NextResponse.json({ success: true, welcomed: true })
         }
 
@@ -231,43 +237,35 @@ export async function POST(request: NextRequest) {
         const breakdownStr = Object.entries(breakdown).map(([k, v]) => `${k}=${v}`).join(', ')
 
         if (subscriberMode === 'manual_approval') {
-            // ── MANUAL APPROVAL MODE ─────────────────────────────────────────
-            // Silent capture: write subscriber with active: false, NO token, NO email.
-            // Bot scoring is recorded for admin review — but we do NOT auto-suppress.
-            // Admin uses Bot Cleanup to review and delete suspects.
-            // High-score bots still land in the DB so admin can see the full picture.
+            // ── TURNSTILE-VERIFIED ACTIVATION ─────────────────────────────────
+            // Turnstile verification has passed at this point. Safe new subscribers
+            // are activated immediately. Bot scoring is still recorded for admin review.
 
-            if (existing && !existing.confirmedAt) {
-                // Pending (previously created) — refresh bot score + name/country
-                await db.subscriber.update({
-                    where: { email: normalizedEmail },
-                    data: {
-                        locale: userLocale,
-                        botScore,
-                        ...(name ? { name } : {}),
-                        ...(country ? { country } : {}),
-                    },
-                })
-            } else {
-                // Brand new subscriber — create as inactive, awaiting manual approval
-                await db.subscriber.create({
-                    data: {
-                        email: normalizedEmail,
-                        name: name || null,
-                        active: false,
-                        confirmedAt: null,
-                        confirmToken: null,
-                        tokenExpiresAt: null,
-                        locale: userLocale,
-                        botScore,
-                        ...(country ? { country } : {}),
-                    },
-                })
-            }
+            // Brand new subscriber — create as active (Turnstile-verified)
+            await db.subscriber.create({
+                data: {
+                    email: normalizedEmail,
+                    name: name || null,
+                    source: userSource,
+                    active: true,
+                    confirmedAt: new Date(),
+                    confirmToken: null,
+                    tokenExpiresAt: null,
+                    locale: userLocale,
+                    botScore,
+                    ...(country ? { country } : {}),
+                },
+            })
 
-            console.info(`[subscribe] Silent capture (manual_approval): ${normalizedEmail} — botScore=${botScore}${breakdownStr ? ` [${breakdownStr}]` : ''}`)
-            // Return `welcomed` so the UI skips the "check inbox" state and goes straight
-            // to the Create Account CTA — no email is sent in manual_approval mode.
+            // Send confirmation email in the subscriber's language (fire-and-forget)
+            sendTransactionalEmail({
+                to: normalizedEmail,
+                subject: et('guestNotifyConfirm', userLocale, 'subject') || "You\u2019re on the list \uD83C\uDFAC",
+                html: await guestNotifyConfirmationWithOverrides(name || undefined, userSource, siteUrl, userLocale),
+                type: 'subscribe',
+            }).catch(err => console.error('[subscribe] Guest confirmation email failed:', err))
+
+            console.info(`[subscribe] Activated: ${normalizedEmail} — source=${userSource}, locale=${userLocale}, botScore=${botScore}${breakdownStr ? ` [${breakdownStr}]` : ''}`)
             return NextResponse.json({ success: true, welcomed: true })
         }
 
