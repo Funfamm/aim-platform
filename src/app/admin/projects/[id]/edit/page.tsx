@@ -22,6 +22,10 @@ type FormData = {
     featured: boolean; published: boolean; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
+    // Mobile media (merged from inline modal)
+    mobileCoverImage: string; mobileGallery: string
+    // Publishing controls (merged from inline modal)
+    subtitlesPublic: boolean; publishAt: string
     // Content Advisory
     contentRating: string; contentDescriptors: string[]
     // Player Timings
@@ -34,9 +38,20 @@ const EMPTY_FORM: FormData = {
     featured: false, published: false, coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
+    mobileCoverImage: '', mobileGallery: '',
+    subtitlesPublic: false, publishAt: '',
     contentRating: '', contentDescriptors: [],
     introStartSeconds: '', introEndSeconds: '', creditsStartSeconds: '',
 }
+
+/* ── Cast management types (merged from projects list modal) ── */
+type FilmCastMember = {
+    id: string; name: string; jobTitle: string; character: string | null
+    bio: string | null; photoUrl: string | null; instagramUrl: string | null
+    bioTranslations: string | null; sortOrder: number
+}
+type CastForm = { name: string; jobTitle: string; character: string; bio: string; photoUrl: string; instagramUrl: string }
+const EMPTY_CAST_FORM: CastForm = { name: '', jobTitle: 'Actor', character: '', bio: '', photoUrl: '', instagramUrl: '' }
 
 const STATUSES = ['upcoming', 'in-production', 'completed']
 const GENRES = ['Action','Adventure','Animation','Biography','Comedy','Crime','Documentary','Drama','Fantasy','Historical','Horror','Musical','Mystery','Romance','Sci-Fi','Short Film','Thriller','War','Western']
@@ -106,6 +121,24 @@ export default function ProjectEditPage() {
     const [saveSuccess, setSaveSuccess] = useState(false)
     const [subGenerating, setSubGenerating] = useState(false)
 
+    // Publishing (merged from inline modal)
+    const [wasPublished, setWasPublished] = useState(false)
+    const [resending, setResending] = useState(false)
+    const [notifyGroups, setNotifyGroups] = useState<{ subscribers: boolean; members: boolean; cast: boolean }>({
+        subscribers: false, members: false, cast: false,
+    })
+
+    // Cast management (merged from inline modal)
+    const [castMembers, setCastMembers] = useState<FilmCastMember[]>([])
+    const [castForm, setCastForm] = useState<CastForm>(EMPTY_CAST_FORM)
+    const [castLoading, setCastLoading] = useState(false)
+    const [castSaving, setCastSaving] = useState(false)
+    const [castError, setCastError] = useState('')
+    const [translatingCastId, setTranslatingCastId] = useState<string | null>(null)
+
+    // Delete project
+    const [isDeleting, setIsDeleting] = useState(false)
+
     // ── Subtitle Editor modal ──
     const [editorProjectId, setEditorProjectId] = useState<string | null>(null)
     const [editorEpisodeId, setEditorEpisodeId] = useState<string | null>(null)
@@ -138,6 +171,7 @@ export default function ProjectEditPage() {
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({
         basic: true, status: true, media: true, advisory: false, timings: false,
         episodes: false, sponsor: false, gallery: false, subtitles: false, rolls: false,
+        cast: false, danger: false,
     })
 
     const toggleSection = (key: string) => setOpenSections(s => ({ ...s, [key]: !s[key] }))
@@ -155,7 +189,8 @@ export default function ProjectEditPage() {
             fetch('/api/admin/movie-rolls').then(r => r.ok ? r.json() : []),
             fetch(`/api/admin/projects/${projectId}/rolls`).then(r => r.ok ? r.json() : []),
             fetch(`/api/admin/subtitles?projectId=${projectId}`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
-        ]).then(([projects, rolls, assignedIds, subData]) => {
+            fetch(`/api/admin/cast?projectId=${projectId}`).then(r => r.ok ? r.json() : { cast: [] }).catch(() => ({ cast: [] })),
+        ]).then(([projects, rolls, assignedIds, subData, castData]) => {
             const p = (projects as any[]).find((x: any) => x.id === projectId)
             if (!p) { router.push('/admin/projects'); return }
             setForm({
@@ -167,13 +202,19 @@ export default function ProjectEditPage() {
                 filmUrl: p.filmUrl || '', projectType: p.projectType || 'movie',
                 gallery: p.gallery || '', credits: p.credits || '',
                 sponsorData: p.sponsorData || '',
+                mobileCoverImage: p.mobileCoverImage || '',
+                mobileGallery: p.mobileGallery || '',
+                subtitlesPublic: p.subtitlesPublic ?? false,
+                publishAt: p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : '',
                 contentRating: p.contentRating || '',
                 contentDescriptors: Array.isArray(p.contentDescriptors) ? p.contentDescriptors : [],
                 introStartSeconds: p.introStartSeconds != null ? String(p.introStartSeconds) : '',
                 introEndSeconds: p.introEndSeconds != null ? String(p.introEndSeconds) : '',
                 creditsStartSeconds: p.creditsStartSeconds != null ? String(p.creditsStartSeconds) : '',
             })
+            setWasPublished(p.published ?? false)
             setOriginalTitle(p.title)
+            setCastMembers((castData as any).cast || [])
             setAllRolls(rolls)
             setSelectedRollIds(assignedIds)
             const sd = subData as Record<string, any>
@@ -292,6 +333,11 @@ export default function ProjectEditPage() {
             const payload = {
                 ...form,
                 slug: form.slug || slugify(form.title),
+                publishAt: form.publishAt ? new Date(form.publishAt).toISOString() : null,
+                notifyGroups: form.published ? notifyGroups : undefined,
+                publishNotifyGroups: form.publishAt && !form.published
+                    ? JSON.stringify(notifyGroups)
+                    : undefined,
                 contentRating: form.contentRating || null,
                 introStartSeconds: form.introStartSeconds !== '' ? Number(form.introStartSeconds) : null,
                 introEndSeconds: form.introEndSeconds !== '' ? Number(form.introEndSeconds) : null,
@@ -382,6 +428,87 @@ export default function ProjectEditPage() {
             if (!res.ok) throw new Error('Failed to delete')
             setEpisodes(prev => prev.filter((_, i) => i !== idx))
         } catch { setError('Failed to delete episode') }
+    }
+
+    // ── Cast management handlers (merged from projects list modal) ──
+
+    const handleAddCastMember = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!castForm.name.trim() || !castForm.jobTitle.trim()) {
+            setCastError('Name and Job Title are required')
+            return
+        }
+        if (isNew) { setCastError('Save the project first, then add cast members'); return }
+        setCastSaving(true); setCastError('')
+        try {
+            const res = await fetch('/api/admin/cast', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ projectId, ...castForm, sortOrder: castMembers.length }),
+            })
+            if (!res.ok) throw new Error()
+            const { member } = await res.json()
+            setCastMembers(prev => [...prev, member])
+            setCastForm(EMPTY_CAST_FORM)
+        } catch { setCastError('Failed to add member') }
+        setCastSaving(false)
+    }
+
+    const handleDeleteCastMember = async (id: string) => {
+        if (!confirm('Remove this cast member?')) return
+        try {
+            await fetch(`/api/admin/cast/${id}`, { method: 'DELETE' })
+            setCastMembers(prev => prev.filter(m => m.id !== id))
+        } catch { alert('Failed to delete cast member') }
+    }
+
+    const handleTranslateCastMember = async (m: FilmCastMember) => {
+        if (!m.bio && !m.character) {
+            alert('Add a bio or character name first before translating.')
+            return
+        }
+        setTranslatingCastId(m.id)
+        try {
+            const res = await fetch(`/api/admin/cast/${m.id}/translate`, { method: 'POST' })
+            if (!res.ok) throw new Error()
+            const { member } = await res.json()
+            setCastMembers(prev => prev.map(c => c.id === m.id ? { ...c, bioTranslations: member.bioTranslations } : c))
+        } catch { alert('Translation failed — check API key or try again.') }
+        setTranslatingCastId(null)
+    }
+
+    // ── Delete project handler ──
+
+    const handleDeleteProject = async () => {
+        if (isNew) return
+        if (!confirm(`Permanently delete "${form.title || 'this project'}"? This will also remove all its casting calls and applications. This cannot be undone.`)) return
+        if (!confirm(`Second confirmation: delete "${form.title}"?`)) return
+        setIsDeleting(true)
+        try {
+            const res = await fetch(`/api/admin/projects/${projectId}`, { method: 'DELETE' })
+            if (!res.ok) throw new Error('Failed to delete project')
+            router.push('/admin/projects')
+        } catch { alert('Failed to delete project. Please try again.'); setIsDeleting(false) }
+    }
+
+    // ── Resend notifications handler ──
+
+    const handleResend = async () => {
+        if (!confirm('Re-send publish notifications to the selected audience groups? This will send emails NOW.')) return
+        setResending(true)
+        try {
+            const res = await fetch(`/api/admin/projects/${projectId}/resend`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ notifyGroups }),
+            })
+            if (res.ok) {
+                alert('Notifications queued for the selected audience.')
+            } else {
+                alert('Failed to send notifications. Please try again.')
+            }
+        } catch { alert('Network error. Please try again.') }
+        setResending(false)
     }
 
     // ── Unified subtitle handlers (matches projects list page pattern) ──
@@ -794,7 +921,7 @@ export default function ProjectEditPage() {
                                         </select>
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: 'var(--space-xl)', paddingTop: 'var(--space-sm)' }}>
+                                <div style={{ display: 'flex', gap: 'var(--space-xl)', paddingTop: 'var(--space-sm)', flexWrap: 'wrap' }}>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
                                         <input type="checkbox" checked={form.featured} onChange={e => updateField('featured', e.target.checked)} />
                                         ⭐ Featured
@@ -803,7 +930,82 @@ export default function ProjectEditPage() {
                                         <input type="checkbox" checked={form.published} onChange={e => updateField('published', e.target.checked)} />
                                         🌐 Published
                                     </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                        <input type="checkbox" checked={form.subtitlesPublic} onChange={e => updateField('subtitlesPublic', e.target.checked)} />
+                                        🗨️ Subtitles Public
+                                    </label>
                                 </div>
+
+                                {/* Scheduled Publish */}
+                                <div>
+                                    <label className="form-label">Schedule Publish At</label>
+                                    <input className="form-input" type="datetime-local"
+                                        value={form.publishAt}
+                                        onChange={e => updateField('publishAt', e.target.value)} />
+                                    <p style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)', marginTop: '3px' }}>
+                                        Optional. Leave blank to publish immediately when Published is checked. A scheduled time will publish automatically.
+                                    </p>
+                                </div>
+
+                                {/* Notification audience */}
+                                {!isNew && (
+                                    <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 'var(--space-md)' }}>
+                                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                            📣 Notification Audience
+                                        </div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-sm)' }}>
+                                            {wasPublished
+                                                ? 'Project is already published. Select groups and use Re-send to notify additional users.'
+                                                : form.publishAt
+                                                    ? 'Who gets notified when the scheduled publish fires.'
+                                                    : 'Who gets the email on first publish. Does not fire on re-saves.'}
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            {([
+                                                { key: 'subscribers' as const, icon: '📬', label: 'Newsletter Subscribers', desc: 'Signed-up subscribers (not members).' },
+                                                { key: 'members' as const, icon: '👥', label: 'Registered Members', desc: 'Logged-in users with notifications enabled.' },
+                                                { key: 'cast' as const, icon: '🎭', label: 'Cast Members', desc: 'Users who applied to casting on this project.' },
+                                            ]).map(group => (
+                                                <label key={group.key} style={{
+                                                    display: 'flex', alignItems: 'flex-start', gap: '8px', cursor: 'pointer',
+                                                    padding: '7px 10px', borderRadius: 'var(--radius-md)',
+                                                    background: notifyGroups[group.key] ? 'rgba(192,132,252,0.06)' : 'transparent',
+                                                    border: `1px solid ${notifyGroups[group.key] ? 'rgba(192,132,252,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                                                    transition: 'all 0.15s',
+                                                }}>
+                                                    <input type="checkbox" checked={notifyGroups[group.key]}
+                                                        onChange={e => setNotifyGroups(prev => ({ ...prev, [group.key]: e.target.checked }))}
+                                                        style={{ width: '14px', height: '14px', accentColor: '#c084fc', marginTop: '2px', flexShrink: 0 }} />
+                                                    <div>
+                                                        <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{group.icon} {group.label}</div>
+                                                        <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>{group.desc}</div>
+                                                    </div>
+                                                </label>
+                                            ))}
+                                        </div>
+
+                                        {/* Resend button — only for already-published projects */}
+                                        {wasPublished && (
+                                            <button
+                                                type="button"
+                                                disabled={resending || (!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast)}
+                                                onClick={handleResend}
+                                                style={{
+                                                    marginTop: '10px', fontSize: '0.78rem', fontWeight: 700,
+                                                    padding: '8px 16px', borderRadius: 'var(--radius-md)',
+                                                    background: (!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast)
+                                                        ? 'rgba(255,255,255,0.04)' : 'rgba(192,132,252,0.12)',
+                                                    border: `1px solid ${(!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast) ? 'rgba(255,255,255,0.06)' : 'rgba(192,132,252,0.3)'}`,
+                                                    color: (!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast) ? 'var(--text-tertiary)' : '#c084fc',
+                                                    cursor: resending || (!notifyGroups.subscribers && !notifyGroups.members && !notifyGroups.cast) ? 'not-allowed' : 'pointer',
+                                                    opacity: resending ? 0.6 : 1,
+                                                }}
+                                            >
+                                                {resending ? '⏳ Sending...' : '📩 Re-send Notifications'}
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -820,6 +1022,17 @@ export default function ProjectEditPage() {
                                         currentUrl={form.coverImage}
                                         onUpload={(url) => updateField('coverImage', url)}
                                         label="Cover Image"
+                                    />
+                                </div>
+
+                                {/* Mobile Cover Image */}
+                                <div>
+                                    <label className="form-label">Mobile Cover Image <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', fontWeight: 400 }}>(portrait-optimised, overrides desktop poster on mobile)</span></label>
+                                    <FileUploader
+                                        category="projects" accept="image/*"
+                                        currentUrl={form.mobileCoverImage}
+                                        onUpload={(url) => updateField('mobileCoverImage', url)}
+                                        label="Mobile Cover Image"
                                     />
                                 </div>
 
@@ -967,6 +1180,12 @@ export default function ProjectEditPage() {
                                     <label className="form-label" htmlFor="gallery">Gallery Media <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(images &amp; videos — one URL per line)</span></label>
                                     <textarea className="form-input" rows={3} value={form.gallery} onChange={e => updateField('gallery', e.target.value)}
                                         placeholder={"https://cdn.example.com/still-1.jpg\nhttps://cdn.example.com/bts-clip.mp4\nhttps://cdn.example.com/still-2.jpg"}
+                                        style={{ fontFamily: 'monospace', fontSize: '0.82rem' }} />
+                                </div>
+                                <div>
+                                    <label className="form-label">Mobile Gallery <span style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>(portrait images for mobile — one URL per line)</span></label>
+                                    <textarea className="form-input" rows={2} value={form.mobileGallery} onChange={e => updateField('mobileGallery', e.target.value)}
+                                        placeholder={"https://cdn.example.com/mobile-still-1.jpg\nhttps://cdn.example.com/mobile-still-2.jpg"}
                                         style={{ fontFamily: 'monospace', fontSize: '0.82rem' }} />
                                 </div>
                                 <div>
@@ -1338,6 +1557,112 @@ export default function ProjectEditPage() {
                             </div>
                         )}
                     </div>
+
+                    {/* ══ CAST MANAGEMENT ══ */}
+                    {!isNew && (
+                        <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+                            <SectionHeader id="cast" emoji="🎭" title={`Cast & Crew (${castMembers.length})`} />
+                            {openSections.cast && (
+                                <div style={{ paddingTop: 'var(--space-sm)' }}>
+                                    {castLoading ? (
+                                        <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Loading cast…</p>
+                                    ) : (
+                                        <>
+                                            {castMembers.length === 0 && (
+                                                <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)' }}>No cast members yet.</p>
+                                            )}
+                                            {castMembers.map(m => (
+                                                <div key={m.id} style={{
+                                                    display: 'flex', alignItems: 'center', gap: '10px',
+                                                    padding: '8px 10px', borderRadius: 'var(--radius-md)',
+                                                    background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)',
+                                                    marginBottom: '6px',
+                                                }}>
+                                                    {m.photoUrl && (
+                                                        <img src={m.photoUrl} alt={m.name}
+                                                            style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                                                    )}
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{m.name}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>
+                                                            {m.jobTitle}{m.character ? ` — ${m.character}` : ''}
+                                                        </div>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '4px', flexShrink: 0 }}>
+                                                        <button type="button"
+                                                            onClick={() => handleTranslateCastMember(m)}
+                                                            disabled={translatingCastId === m.id}
+                                                            style={{ fontSize: '0.65rem', padding: '4px 8px', borderRadius: '6px',
+                                                                background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)',
+                                                                color: '#818cf8', cursor: 'pointer' }}>
+                                                            {translatingCastId === m.id ? '⏳' : '🌍 Translate'}
+                                                        </button>
+                                                        <button type="button"
+                                                            onClick={() => handleDeleteCastMember(m.id)}
+                                                            style={{ fontSize: '0.65rem', padding: '4px 8px', borderRadius: '6px',
+                                                                background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.15)',
+                                                                color: 'var(--error)', cursor: 'pointer' }}>
+                                                            ✕
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            {/* Add cast member form */}
+                                            <form onSubmit={handleAddCastMember} style={{ marginTop: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                                                    Add Cast Member
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                    <input className="form-input" placeholder="Name *" value={castForm.name} onChange={e => setCastForm(f => ({ ...f, name: e.target.value }))} style={{ fontSize: '0.82rem' }} />
+                                                    <select className="form-input" value={castForm.jobTitle} onChange={e => setCastForm(f => ({ ...f, jobTitle: e.target.value }))} style={{ fontSize: '0.82rem' }}>
+                                                        {['Actor','Director','Producer','Writer','Composer','Cinematographer','Editor','Sound','VFX','Extra'].map(j => <option key={j} value={j}>{j}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                    <input className="form-input" placeholder="Character name" value={castForm.character} onChange={e => setCastForm(f => ({ ...f, character: e.target.value }))} style={{ fontSize: '0.82rem' }} />
+                                                    <input className="form-input" placeholder="Photo URL" value={castForm.photoUrl} onChange={e => setCastForm(f => ({ ...f, photoUrl: e.target.value }))} style={{ fontSize: '0.82rem' }} />
+                                                </div>
+                                                <input className="form-input" placeholder="Instagram URL" value={castForm.instagramUrl} onChange={e => setCastForm(f => ({ ...f, instagramUrl: e.target.value }))} style={{ fontSize: '0.82rem' }} />
+                                                <textarea className="form-input" rows={2} placeholder="Short bio (optional — supports auto-translation)" value={castForm.bio} onChange={e => setCastForm(f => ({ ...f, bio: e.target.value }))} style={{ fontSize: '0.82rem' }} />
+                                                {castError && <p style={{ fontSize: '0.75rem', color: 'var(--error)' }}>{castError}</p>}
+                                                <button type="submit" disabled={castSaving} className="btn btn-primary btn-sm" style={{ alignSelf: 'flex-start' }}>
+                                                    {castSaving ? 'Adding…' : '+ Add Member'}
+                                                </button>
+                                            </form>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* ══ DANGER ZONE ══ */}
+                    {!isNew && (
+                        <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)', border: '1px solid rgba(239,68,68,0.12)' }}>
+                            <SectionHeader id="danger" emoji="⚠️" title="Danger Zone" />
+                            {openSections.danger && (
+                                <div style={{ paddingTop: 'var(--space-sm)' }}>
+                                    <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)', lineHeight: 1.6 }}>
+                                        Permanently delete this project. All casting calls, applications, subtitles, and episode data will be removed. This cannot be undone.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        disabled={isDeleting}
+                                        onClick={handleDeleteProject}
+                                        style={{
+                                            fontSize: '0.82rem', fontWeight: 700, padding: '8px 18px',
+                                            borderRadius: 'var(--radius-md)', cursor: isDeleting ? 'not-allowed' : 'pointer',
+                                            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                                            color: 'var(--error)', opacity: isDeleting ? 0.6 : 1,
+                                        }}
+                                    >
+                                        {isDeleting ? 'Deleting…' : `🗑 Delete "${form.title || 'Project'}"`}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* ══ STICKY SAVE BAR ══ */}
                     {saveSuccess && (

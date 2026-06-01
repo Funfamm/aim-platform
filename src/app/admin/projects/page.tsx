@@ -1317,14 +1317,13 @@ export default function AdminProjectsPage() {
                                                 >
                                                     🎭 Cast
                                                 </button>
-                                                <button onClick={() => openEdit(project)} className="btn btn-ghost btn-sm">Edit</button>
                                                 <a
                                                     href={`/admin/projects/${project.id}/edit`}
                                                     className="btn btn-ghost btn-sm"
-                                                    title="Open full editor (episodes, gallery, rolls)"
-                                                    style={{ fontSize: '0.7rem', color: 'var(--accent-gold)', border: '1px solid rgba(228,185,90,0.3)' }}
+                                                    title="Open project editor"
+                                                    style={{ fontSize: '0.7rem' }}
                                                 >
-                                                    📂 Full Edit
+                                                    Edit
                                                 </a>
                                                 <button
                                                     onClick={() => handleDelete(project.id, project.title)}
