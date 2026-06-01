@@ -195,16 +195,25 @@ export default function WatchPlayer({
     const [showNotifyConfirm, setShowNotifyConfirm] = useState(false)
     const endCardDismissedRef = useRef(false)
 
-    /* ── Content Advisory state (auto-dismiss after ~5s) ── */
+    /* ── Content Advisory state (shows 2s after first play, auto-dismiss) ── */
     const hasAdvisory = !!(project.contentRating || (project.contentDescriptors && project.contentDescriptors.length > 0))
-    const [advisoryVisible, setAdvisoryVisible] = useState(hasAdvisory)
+    const [advisoryVisible, setAdvisoryVisible] = useState(false)
     const [advisoryFading, setAdvisoryFading] = useState(false)
+    const advisoryShownRef = useRef(false)
+    // Trigger advisory 2s after first play starts
     useEffect(() => {
-        if (!hasAdvisory || !advisoryVisible) return
+        if (!hasAdvisory || advisoryShownRef.current || !isPlaying) return
+        advisoryShownRef.current = true
+        const showTimer = setTimeout(() => setAdvisoryVisible(true), 2000)
+        return () => clearTimeout(showTimer)
+    }, [hasAdvisory, isPlaying])
+    // Auto-fade advisory after display
+    useEffect(() => {
+        if (!advisoryVisible) return
         const stayTimer = setTimeout(() => setAdvisoryFading(true), 5000)
         const hideTimer = setTimeout(() => setAdvisoryVisible(false), 5800)
         return () => { clearTimeout(stayTimer); clearTimeout(hideTimer) }
-    }, [hasAdvisory, advisoryVisible])
+    }, [advisoryVisible])
 
     /* ── Player Timings — resolve with episode-level inheritance ── */
     const effectiveIntroStart = (activeEpisode?.introStartSeconds ?? project.introStartSeconds) ?? null
@@ -215,33 +224,35 @@ export default function WatchPlayer({
     const creditsTriggeredRef = useRef(false)
 
     /* ── Up Next auto-play state ── */
+    const UP_NEXT_SECS = 6
     const [showUpNext, setShowUpNext] = useState(false)
-    const [upNextCountdown, setUpNextCountdown] = useState(8)
+    const [upNextProgress, setUpNextProgress] = useState(0) // 0→1 over 6s
     const upNextTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+    const upNextCancelledRef = useRef(false) // true = Watch Credits clicked
+    const upNextShownForEpRef = useRef<string | null>(null) // prevent re-show
     const nextEpisode = useMemo(() => {
         if (!isSeries || !activeEpisode) return null
         const idx = project.episodes.findIndex(e => e.id === activeEpisode.id)
         return idx >= 0 && idx < project.episodes.length - 1 ? project.episodes[idx + 1] : null
     }, [isSeries, activeEpisode, project.episodes])
 
-    // Up Next countdown timer
+    // Up Next smooth progress (60fps via interval)
     useEffect(() => {
         if (!showUpNext) {
             if (upNextTimerRef.current) { clearInterval(upNextTimerRef.current); upNextTimerRef.current = null }
             return
         }
-        setUpNextCountdown(8)
+        setUpNextProgress(0)
+        const startTime = Date.now()
         upNextTimerRef.current = setInterval(() => {
-            setUpNextCountdown(prev => {
-                if (prev <= 1) {
-                    // Auto-play next
-                    setShowUpNext(false)
-                    if (nextEpisode) playEpisode(nextEpisode)
-                    return 0
-                }
-                return prev - 1
-            })
-        }, 1000)
+            const elapsed = (Date.now() - startTime) / 1000
+            const pct = Math.min(elapsed / UP_NEXT_SECS, 1)
+            setUpNextProgress(pct)
+            if (pct >= 1) {
+                setShowUpNext(false)
+                if (nextEpisode) playEpisode(nextEpisode)
+            }
+        }, 50)
         return () => { if (upNextTimerRef.current) clearInterval(upNextTimerRef.current) }
     }, [showUpNext]) // eslint-disable-line react-hooks/exhaustive-deps
     /* T4-E: Track-level subtitle placement from the backend (desktop) */
@@ -826,6 +837,8 @@ export default function WatchPlayer({
         setIsPlaying(true)
         setCcEnabled(false); setCcSegments([]); setActiveTrackUrl(null)
         creditsTriggeredRef.current = false // reset credits trigger for new episode
+        upNextCancelledRef.current = false // allow Up Next for the new episode
+        upNextShownForEpRef.current = null
     }
 
     /* ══════════ Video event handlers ══════════ */
@@ -848,6 +861,15 @@ export default function WatchPlayer({
             if ((creditsTrigger || nearEndTrigger) && !showEndCard && !showNotifyModal && !showNotifyConfirm) {
                 setShowEndCard(true)
                 if (creditsTrigger) creditsTriggeredRef.current = true
+            }
+        }
+        // ── Up Next trigger: 6 seconds before episode ends ──
+        if (isSeries && nextEpisode && !isLastEpisode && !upNextCancelledRef.current
+            && vid.duration > 0 && upNextShownForEpRef.current !== activeEpisode?.id) {
+            const secsLeft = vid.duration - vid.currentTime
+            if (secsLeft <= UP_NEXT_SECS && secsLeft > 0 && !showUpNext) {
+                setShowUpNext(true)
+                upNextShownForEpRef.current = activeEpisode?.id || null
             }
         }
     }
@@ -884,7 +906,7 @@ export default function WatchPlayer({
     return (
         <div className="aim-watch-wrapper" style={{ minHeight: '100vh', background: 'var(--bg-primary)', paddingTop: '80px' }}>
             <style>{`
-                @keyframes upNextFadeIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes upNextFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
                 .aim-player-container { font-family: inherit; padding: 0 var(--space-lg); }
                 .aim-ctrl-btn {
                     background: none; border: none; color: white;
@@ -1213,9 +1235,10 @@ export default function WatchPlayer({
                             onPause={() => setIsPlaying(false)}
                             onEnded={() => {
                                 setIsPlaying(false); sendSessionEnd()
-                                // For series: auto-play next episode (unless it's the last)
-                                if (isSeries && nextEpisode && !isLastEpisode) {
+                                // For series: if Up Next wasn't shown yet (very short episode), trigger it now
+                                if (isSeries && nextEpisode && !isLastEpisode && !showUpNext && !upNextCancelledRef.current) {
                                     setShowUpNext(true)
+                                    upNextShownForEpRef.current = activeEpisode?.id || null
                                     return
                                 }
                                 // Show end-card on video end if CTA is active and not dismissed
@@ -1387,119 +1410,79 @@ export default function WatchPlayer({
                         />
                     )}
 
-                    {/* ── Up Next auto-play overlay ── */}
+                    {/* ── Up Next: compact bottom-right buttons ── */}
                     {showUpNext && nextEpisode && (
                         <div
                             style={{
-                                position: 'absolute', inset: 0, zIndex: 19,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: 'rgba(0,0,0,0.85)',
-                                backdropFilter: 'blur(8px)',
-                                WebkitBackdropFilter: 'blur(8px)',
+                                position: 'absolute', bottom: '72px', right: '16px', zIndex: 19,
+                                display: 'flex', gap: '10px', alignItems: 'center',
                                 animation: 'upNextFadeIn 0.4s ease',
                             }}
                         >
-                            <div style={{ textAlign: 'center', maxWidth: '400px', padding: '0 20px' }}>
-                                {/* Countdown ring */}
-                                <div style={{ position: 'relative', width: '72px', height: '72px', margin: '0 auto 20px' }}>
-                                    <svg width="72" height="72" viewBox="0 0 72 72" style={{ transform: 'rotate(-90deg)' }}>
-                                        <circle cx="36" cy="36" r="32" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                                        <circle
-                                            cx="36" cy="36" r="32" fill="none"
-                                            stroke="var(--accent-gold, #d4a853)" strokeWidth="3"
-                                            strokeLinecap="round"
-                                            strokeDasharray={2 * Math.PI * 32}
-                                            strokeDashoffset={2 * Math.PI * 32 * (1 - upNextCountdown / 8)}
-                                            style={{ transition: 'stroke-dashoffset 1s linear' }}
-                                        />
-                                    </svg>
-                                    <div style={{
-                                        position: 'absolute', inset: 0,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '1.4rem', fontWeight: 800, color: '#fff',
-                                        fontFamily: 'var(--font-display, inherit)',
-                                    }}>
-                                        {upNextCountdown}
-                                    </div>
-                                </div>
+                            {/* Watch Credits */}
+                            <button
+                                onClick={() => {
+                                    setShowUpNext(false)
+                                    upNextCancelledRef.current = true
+                                }}
+                                style={{
+                                    padding: '10px 20px', borderRadius: '4px',
+                                    border: '1px solid rgba(255,255,255,0.25)',
+                                    background: 'rgba(60,60,60,0.85)',
+                                    color: '#fff', fontSize: '0.9rem',
+                                    fontWeight: 700, cursor: 'pointer',
+                                    backdropFilter: 'blur(4px)',
+                                    transition: 'background 0.15s',
+                                    whiteSpace: 'nowrap',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(80,80,80,0.9)' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(60,60,60,0.85)' }}
+                            >
+                                Watch Credits
+                            </button>
 
-                                {/* Label */}
+                            {/* Next Episode — with progress fill */}
+                            <button
+                                onClick={() => {
+                                    setShowUpNext(false)
+                                    playEpisode(nextEpisode)
+                                }}
+                                style={{
+                                    position: 'relative', overflow: 'hidden',
+                                    display: 'flex', alignItems: 'center', gap: '0',
+                                    padding: '0', borderRadius: '4px',
+                                    border: 'none', cursor: 'pointer',
+                                    background: '#e5e5e5',
+                                    color: '#000', fontSize: '0.9rem',
+                                    fontWeight: 700,
+                                    transition: 'transform 0.1s',
+                                    whiteSpace: 'nowrap',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)' }}
+                                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
+                            >
+                                {/* Progress fill bar */}
                                 <div style={{
-                                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.15em',
-                                    textTransform: 'uppercase' as const, color: 'rgba(212,168,83,0.9)',
-                                    marginBottom: '8px',
+                                    position: 'absolute', top: 0, left: 0, bottom: 0,
+                                    width: `${upNextProgress * 100}%`,
+                                    background: 'rgba(255,255,255,0.3)',
+                                    transition: 'width 0.08s linear',
+                                }} />
+                                {/* Play icon block */}
+                                <div style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    padding: '10px 10px 10px 14px',
+                                    background: 'rgba(0,0,0,0.12)',
+                                    position: 'relative', zIndex: 1,
                                 }}>
-                                    {tPlayer('upNext') || 'Up Next'}
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#000">
+                                        <polygon points="6,4 20,12 6,20" />
+                                    </svg>
                                 </div>
-
-                                {/* Episode title */}
-                                <h3 style={{
-                                    fontSize: 'clamp(1rem, 3vw, 1.3rem)',
-                                    fontWeight: 800, color: '#fff',
-                                    margin: '0 0 6px',
-                                    fontFamily: 'var(--font-display, inherit)',
-                                }}>
-                                    {`S${nextEpisode.season}E${nextEpisode.number}`} · {getLocalizedEp(nextEpisode).title}
-                                </h3>
-
-                                {/* Episode description */}
-                                {getLocalizedEp(nextEpisode).description && (
-                                    <p style={{
-                                        fontSize: '0.8rem', color: 'rgba(255,255,255,0.5)',
-                                        lineHeight: 1.5, margin: '0 0 24px',
-                                        display: '-webkit-box', WebkitLineClamp: 2,
-                                        WebkitBoxOrient: 'vertical' as const, overflow: 'hidden',
-                                    }}>
-                                        {getLocalizedEp(nextEpisode).description}
-                                    </p>
-                                )}
-
-                                {/* Action buttons */}
-                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
-                                    {/* Play Now */}
-                                    <button
-                                        onClick={() => {
-                                            setShowUpNext(false)
-                                            playEpisode(nextEpisode)
-                                        }}
-                                        style={{
-                                            padding: '10px 24px', borderRadius: '10px',
-                                            border: 'none', cursor: 'pointer',
-                                            background: 'linear-gradient(135deg, #d4a853, #c49a3a)',
-                                            color: '#000', fontSize: '0.85rem', fontWeight: 800,
-                                            transition: 'transform 0.15s, box-shadow 0.2s',
-                                            boxShadow: '0 4px 16px rgba(212,168,83,0.3)',
-                                        }}
-                                        onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)' }}
-                                        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-                                    >
-                                        ▶ {tPlayer('playNow') || 'Play Now'}
-                                    </button>
-
-                                    {/* Cancel */}
-                                    <button
-                                        onClick={() => setShowUpNext(false)}
-                                        style={{
-                                            padding: '10px 24px', borderRadius: '10px',
-                                            border: '1px solid rgba(255,255,255,0.15)',
-                                            background: 'rgba(255,255,255,0.06)',
-                                            color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem',
-                                            fontWeight: 700, cursor: 'pointer',
-                                            transition: 'all 0.2s',
-                                        }}
-                                        onMouseEnter={e => {
-                                            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
-                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'
-                                        }}
-                                        onMouseLeave={e => {
-                                            e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
-                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'
-                                        }}
-                                    >
-                                        {tPlayer('cancel') || 'Cancel'}
-                                    </button>
-                                </div>
-                            </div>
+                                <span style={{ padding: '10px 18px 10px 10px', position: 'relative', zIndex: 1 }}>
+                                    Next Episode
+                                </span>
+                            </button>
                         </div>
                     )}
 
