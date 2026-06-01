@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aim-studio-v3'
+const CACHE_NAME = 'aim-studio-v4'
 const OFFLINE_URL = '/offline'
 
 // Assets to pre-cache on install
