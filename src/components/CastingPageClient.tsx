@@ -36,7 +36,7 @@ interface CastingCall {
     translations: string | null
 }
 
-export default function CastingPageClient({ castingCalls, appliedMap = {}, isLoggedIn = false }: { castingCalls: CastingCall[]; appliedMap?: Record<string, string>; isLoggedIn?: boolean }) {
+export default function CastingPageClient({ castingCalls, appliedMap = {}, isLoggedIn = false, notifySubscribed = false }: { castingCalls: CastingCall[]; appliedMap?: Record<string, string>; isLoggedIn?: boolean; notifySubscribed?: boolean }) {
     // Hero background state — driven by HeroBackground via callbacks
     const [currentVideoIdx, setCurrentVideoIdx] = useState(0)
     const [videoCount, setVideoCount] = useState(0)
@@ -389,6 +389,7 @@ export default function CastingPageClient({ castingCalls, appliedMap = {}, isLog
                                         lineHeight: 1.65,
                                     }}>{t('noOpenCasting')}</p>
                                     <NotifyNewCallsButton
+                                        initialSubscribed={notifySubscribed}
                                         isLoggedIn={isLoggedIn}
                                         apiPath="/api/casting/notify-me"
                                     />

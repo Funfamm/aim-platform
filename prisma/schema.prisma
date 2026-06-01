@@ -95,6 +95,13 @@ model Project {
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
   country             String?
+  // Content Advisory
+  contentRating       String?        // G, PG, PG-13, R, TV-Y, TV-Y7, TV-G, TV-PG, TV-14, TV-MA
+  contentDescriptors  String[]       @default([]) // ["violence","strong_language",...]
+  // Player Timings (seconds)
+  introStartSeconds   Int?           // Skip Intro button appears at this time
+  introEndSeconds     Int?           // Skip Intro seeks to this time
+  creditsStartSeconds Int?           // Credits/end-card behavior starts here
   ownerId             String?
   castingCalls        CastingCall[]
   cast                FilmCast[]
@@ -212,6 +219,12 @@ model Episode {
   description  String?
   thumbnail    String?
   translations String?        // JSON: Record<locale, {title, description}>
+  // Player Timings override (seconds) — null = inherit from Project
+  introStartSeconds   Int?
+  introEndSeconds     Int?
+  creditsStartSeconds Int?
+  // Optional display-order override — null = use season + episode number
+  sortOrder           Int?
   createdAt    DateTime       @default(now())
   project      Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
   comments     Comment[]

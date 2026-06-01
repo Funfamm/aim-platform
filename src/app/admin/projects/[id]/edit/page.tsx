@@ -22,6 +22,10 @@ type FormData = {
     featured: boolean; published: boolean; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
+    // Content Advisory
+    contentRating: string; contentDescriptors: string[]
+    // Player Timings
+    introStartSeconds: string; introEndSeconds: string; creditsStartSeconds: string
 }
 
 const EMPTY_FORM: FormData = {
@@ -30,10 +34,25 @@ const EMPTY_FORM: FormData = {
     featured: false, published: false, coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
+    contentRating: '', contentDescriptors: [],
+    introStartSeconds: '', introEndSeconds: '', creditsStartSeconds: '',
 }
 
 const STATUSES = ['upcoming', 'in-production', 'completed']
 const GENRES = ['Action','Adventure','Animation','Biography','Comedy','Crime','Documentary','Drama','Fantasy','Historical','Horror','Musical','Mystery','Romance','Sci-Fi','Short Film','Thriller','War','Western']
+const CONTENT_RATINGS = ['G','PG','PG-13','R','TV-Y','TV-Y7','TV-G','TV-PG','TV-14','TV-MA']
+const CONTENT_DESCRIPTORS = [
+    { key: 'violence', label: 'Violence' },
+    { key: 'strong_language', label: 'Strong Language' },
+    { key: 'mild_language', label: 'Mild Language' },
+    { key: 'nudity', label: 'Nudity' },
+    { key: 'sexual_content', label: 'Sexual Content' },
+    { key: 'drug_use', label: 'Drug Use' },
+    { key: 'alcohol_use', label: 'Alcohol Use' },
+    { key: 'smoking', label: 'Smoking' },
+    { key: 'frightening_scenes', label: 'Frightening Scenes' },
+    { key: 'thematic_elements', label: 'Thematic Elements' },
+]
 
 function slugify(text: string) {
     return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
@@ -108,14 +127,17 @@ export default function ProjectEditPage() {
         id?: string; title: string; number: number; season: number
         videoUrl: string; duration: string; description: string
         thumbnail: string; published: boolean; _dirty?: boolean; _new?: boolean
+        // Player Timings override + sort order
+        introStartSeconds: string; introEndSeconds: string; creditsStartSeconds: string
+        sortOrder: string
     }
     const [episodes, setEpisodes] = useState<EpisodeRow[]>([])
     const [episodeSaving, setEpisodeSaving] = useState<string | null>(null)
 
     // Section collapse state
     const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-        basic: true, status: true, media: true, episodes: false, sponsor: false,
-        gallery: false, subtitles: false, rolls: false,
+        basic: true, status: true, media: true, advisory: false, timings: false,
+        episodes: false, sponsor: false, gallery: false, subtitles: false, rolls: false,
     })
 
     const toggleSection = (key: string) => setOpenSections(s => ({ ...s, [key]: !s[key] }))
@@ -145,6 +167,11 @@ export default function ProjectEditPage() {
                 filmUrl: p.filmUrl || '', projectType: p.projectType || 'movie',
                 gallery: p.gallery || '', credits: p.credits || '',
                 sponsorData: p.sponsorData || '',
+                contentRating: p.contentRating || '',
+                contentDescriptors: Array.isArray(p.contentDescriptors) ? p.contentDescriptors : [],
+                introStartSeconds: p.introStartSeconds != null ? String(p.introStartSeconds) : '',
+                introEndSeconds: p.introEndSeconds != null ? String(p.introEndSeconds) : '',
+                creditsStartSeconds: p.creditsStartSeconds != null ? String(p.creditsStartSeconds) : '',
             })
             setOriginalTitle(p.title)
             setAllRolls(rolls)
@@ -208,6 +235,10 @@ export default function ProjectEditPage() {
                             videoUrl: e.videoUrl || '', duration: e.duration || '',
                             description: e.description || '', thumbnail: e.thumbnail || '',
                             published: e.published ?? false,
+                            introStartSeconds: e.introStartSeconds != null ? String(e.introStartSeconds) : '',
+                            introEndSeconds: e.introEndSeconds != null ? String(e.introEndSeconds) : '',
+                            creditsStartSeconds: e.creditsStartSeconds != null ? String(e.creditsStartSeconds) : '',
+                            sortOrder: e.sortOrder != null ? String(e.sortOrder) : '',
                         })))
                         // Check subtitle status for each episode with video
                         eps.forEach((e: any) => { if (e.id && e.videoUrl) checkSubtitle('episode', e.id) })
@@ -248,9 +279,24 @@ export default function ProjectEditPage() {
             setError('🎬 This project must be assigned to at least one Movie Roll before saving.')
             setRollError(true); return
         }
+        // Validate player timings
+        const iS = form.introStartSeconds !== '' ? Number(form.introStartSeconds) : null
+        const iE = form.introEndSeconds !== '' ? Number(form.introEndSeconds) : null
+        const cS = form.creditsStartSeconds !== '' ? Number(form.creditsStartSeconds) : null
+        if (iS !== null && (isNaN(iS) || iS < 0)) { setError('Intro Start must be a non-negative number.'); return }
+        if (iE !== null && (isNaN(iE) || iE < 0)) { setError('Intro End must be a non-negative number.'); return }
+        if (cS !== null && (isNaN(cS) || cS <= 0)) { setError('Credits Start must be greater than 0.'); return }
+        if (iS !== null && iE !== null && iE <= iS) { setError('Intro End must be greater than Intro Start.'); return }
         setSaving(true); setError(''); setRollError(false)
         try {
-            const payload = { ...form, slug: form.slug || slugify(form.title) }
+            const payload = {
+                ...form,
+                slug: form.slug || slugify(form.title),
+                contentRating: form.contentRating || null,
+                introStartSeconds: form.introStartSeconds !== '' ? Number(form.introStartSeconds) : null,
+                introEndSeconds: form.introEndSeconds !== '' ? Number(form.introEndSeconds) : null,
+                creditsStartSeconds: form.creditsStartSeconds !== '' ? Number(form.creditsStartSeconds) : null,
+            }
             const url = isNew ? '/api/admin/projects' : `/api/admin/projects/${projectId}`
             const method = isNew ? 'POST' : 'PUT'
             const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
@@ -282,6 +328,7 @@ export default function ProjectEditPage() {
             title: '', number: maxNum + 1, season: 1,
             videoUrl: '', duration: '', description: '',
             thumbnail: '', published: false, _new: true, _dirty: true,
+            introStartSeconds: '', introEndSeconds: '', creditsStartSeconds: '', sortOrder: '',
         }])
     }
 
@@ -298,6 +345,10 @@ export default function ProjectEditPage() {
                 videoUrl: ep.videoUrl || null, duration: ep.duration || null,
                 description: ep.description || null, thumbnail: ep.thumbnail || null,
                 published: ep.published,
+                introStartSeconds: ep.introStartSeconds !== '' ? Number(ep.introStartSeconds) : null,
+                introEndSeconds: ep.introEndSeconds !== '' ? Number(ep.introEndSeconds) : null,
+                creditsStartSeconds: ep.creditsStartSeconds !== '' ? Number(ep.creditsStartSeconds) : null,
+                sortOrder: ep.sortOrder !== '' ? Number(ep.sortOrder) : null,
             }
             const isCreate = !ep.id
             const res = await fetch('/api/admin/episodes', {
@@ -795,6 +846,90 @@ export default function ProjectEditPage() {
                         )}
                     </div>
 
+                    {/* ══ CONTENT ADVISORY ══ */}
+                    <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+                        <SectionHeader id="advisory" emoji="🛡️" title="Content Advisory" />
+                        {openSections.advisory && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
+                                <div>
+                                    <label className="form-label">Content Rating</label>
+                                    <select className="form-input" value={form.contentRating}
+                                        onChange={e => updateField('contentRating', e.target.value)}>
+                                        <option value="">Not Rated / Not Set</option>
+                                        {CONTENT_RATINGS.map(r => <option key={r} value={r}>{r}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="form-label">Content Descriptors</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '6px' }}>
+                                        {CONTENT_DESCRIPTORS.map(d => {
+                                            const checked = form.contentDescriptors.includes(d.key)
+                                            return (
+                                                <label key={d.key} style={{
+                                                    display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer',
+                                                    fontSize: '0.78rem', padding: '4px 8px', borderRadius: '6px',
+                                                    background: checked ? 'rgba(212,168,83,0.1)' : 'transparent',
+                                                    border: checked ? '1px solid rgba(212,168,83,0.3)' : '1px solid transparent',
+                                                    transition: 'all 0.15s',
+                                                }}>
+                                                    <input type="checkbox" checked={checked}
+                                                        onChange={() => {
+                                                            const next = checked
+                                                                ? form.contentDescriptors.filter(k => k !== d.key)
+                                                                : [...form.contentDescriptors, d.key]
+                                                            setForm(f => ({ ...f, contentDescriptors: next }))
+                                                        }} />
+                                                    {d.label}
+                                                </label>
+                                            )
+                                        })}
+                                    </div>
+                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>
+                                        Checked items appear in the content warning shown to viewers before they watch.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ══ PLAYER TIMINGS ══ */}
+                    <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
+                        <SectionHeader id="timings" emoji="⏱️" title="Player Timings" />
+                        {openSections.timings && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', paddingTop: 'var(--space-sm)' }}>
+                                <p style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', margin: 0 }}>
+                                    All values in seconds. Leave blank to disable. For Series, these apply to every episode unless an episode-level override exists.
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'var(--space-md)' }}>
+                                    <div>
+                                        <label className="form-label">Intro Start (s)</label>
+                                        <input className="form-input" type="number" min={0} step={1}
+                                            value={form.introStartSeconds}
+                                            onChange={e => updateField('introStartSeconds', e.target.value)}
+                                            placeholder="e.g. 30" />
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Intro End (s)</label>
+                                        <input className="form-input" type="number" min={0} step={1}
+                                            value={form.introEndSeconds}
+                                            onChange={e => updateField('introEndSeconds', e.target.value)}
+                                            placeholder="e.g. 105" />
+                                        <p style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                            Skip Intro seeks here
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Credits Start (s)</label>
+                                        <input className="form-input" type="number" min={1} step={1}
+                                            value={form.creditsStartSeconds}
+                                            onChange={e => updateField('creditsStartSeconds', e.target.value)}
+                                            placeholder="e.g. 2520" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
                     {/* ══ SPONSOR ══ */}
                     <div className="glass-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
                         <SectionHeader id="sponsor" emoji="🤝" title="Project Sponsor" />
@@ -902,6 +1037,37 @@ export default function ProjectEditPage() {
                                                     <input className="form-input" value={ep.description}
                                                         onChange={e => updateEpisode(idx, 'description', e.target.value)}
                                                         placeholder="Short description" style={{ fontSize: '0.78rem', padding: '6px 8px' }} />
+                                                </div>
+                                            </div>
+                                            {/* Episode-level timing overrides + sort order */}
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 80px', gap: '6px', marginBottom: '8px' }}>
+                                                <div>
+                                                    <label style={epLabelStyle}>Intro Start (s)</label>
+                                                    <input className="form-input" type="number" min={0} step={1}
+                                                        value={ep.introStartSeconds}
+                                                        onChange={e => updateEpisode(idx, 'introStartSeconds', e.target.value)}
+                                                        placeholder="inherit" style={{ fontSize: '0.72rem', padding: '4px 6px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={epLabelStyle}>Intro End (s)</label>
+                                                    <input className="form-input" type="number" min={0} step={1}
+                                                        value={ep.introEndSeconds}
+                                                        onChange={e => updateEpisode(idx, 'introEndSeconds', e.target.value)}
+                                                        placeholder="inherit" style={{ fontSize: '0.72rem', padding: '4px 6px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={epLabelStyle}>Credits (s)</label>
+                                                    <input className="form-input" type="number" min={1} step={1}
+                                                        value={ep.creditsStartSeconds}
+                                                        onChange={e => updateEpisode(idx, 'creditsStartSeconds', e.target.value)}
+                                                        placeholder="inherit" style={{ fontSize: '0.72rem', padding: '4px 6px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={epLabelStyle}>Sort #</label>
+                                                    <input className="form-input" type="number" step={1}
+                                                        value={ep.sortOrder}
+                                                        onChange={e => updateEpisode(idx, 'sortOrder', e.target.value)}
+                                                        placeholder="auto" style={{ fontSize: '0.72rem', padding: '4px 6px' }} />
                                                 </div>
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

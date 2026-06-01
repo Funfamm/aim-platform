@@ -32,7 +32,7 @@ const LEVEL_KEYS: Record<string, string> = {
     beginner: 'levelBeginner', intermediate: 'levelIntermediate', advanced: 'levelAdvanced', all: 'levelAll',
 }
 
-export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses: CourseData[]; isLoggedIn: boolean }) {
+export default function TrainingCatalogClient({ courses, isLoggedIn, notifySubscribed = false }: { courses: CourseData[]; isLoggedIn: boolean; notifySubscribed?: boolean }) {
     const t = useTranslations('training')
     const tc = useTranslations('casting')
     const locale = useLocale()
@@ -341,6 +341,7 @@ export default function TrainingCatalogClient({ courses, isLoggedIn }: { courses
                                     {isLoggedIn ? t('noCoursesLoggedIn') : t('noCoursesGuest')}
                                 </p>
                                 <NotifyNewCallsButton
+                                    initialSubscribed={notifySubscribed}
                                     isLoggedIn={isLoggedIn}
                                     apiPath="/api/training/notify-me"
                                 />

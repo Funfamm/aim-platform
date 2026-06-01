@@ -37,7 +37,8 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json()
-        const { projectId, title, number, season, videoUrl, duration, description, thumbnail, published } = body
+        const { projectId, title, number, season, videoUrl, duration, description, thumbnail, published,
+            introStartSeconds, introEndSeconds, creditsStartSeconds, sortOrder } = body
 
         if (!projectId || !title || number === undefined) {
             return NextResponse.json({ error: 'projectId, title, and number are required' }, { status: 400 })
@@ -54,6 +55,10 @@ export async function POST(req: Request) {
                 description: description || null,
                 thumbnail: thumbnail || null,
                 published: published ?? false,
+                introStartSeconds: introStartSeconds ?? null,
+                introEndSeconds: introEndSeconds ?? null,
+                creditsStartSeconds: creditsStartSeconds ?? null,
+                sortOrder: sortOrder ?? null,
             },
         })
 
@@ -98,6 +103,10 @@ export async function PUT(req: Request) {
         if (fields.description !== undefined) data.description = fields.description || null
         if (fields.thumbnail !== undefined) data.thumbnail = fields.thumbnail || null
         if (fields.published !== undefined) data.published = Boolean(fields.published)
+        if ('introStartSeconds' in fields) data.introStartSeconds = fields.introStartSeconds
+        if ('introEndSeconds' in fields) data.introEndSeconds = fields.introEndSeconds
+        if ('creditsStartSeconds' in fields) data.creditsStartSeconds = fields.creditsStartSeconds
+        if ('sortOrder' in fields) data.sortOrder = fields.sortOrder
 
         const episode = await prisma.episode.update({
             where: { id },

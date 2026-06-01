@@ -19,6 +19,11 @@ interface Episode {
     season: number; videoUrl: string | null; duration: string | null
     description?: string | null; thumbnail?: string | null
     translations?: string | null
+    // Player timing overrides (null = inherit from project)
+    introStartSeconds?: number | null
+    introEndSeconds?: number | null
+    creditsStartSeconds?: number | null
+    sortOrder?: number | null
 }
 export interface WatchProject {
     id: string; title: string; slug: string; tagline: string
@@ -27,6 +32,13 @@ export interface WatchProject {
     filmUrl: string | null; trailerUrl: string | null
     projectType: string; status: string; episodes: Episode[]
     translations?: string | null
+    // Content Advisory
+    contentRating?: string | null
+    contentDescriptors?: string[]
+    // Player Timings
+    introStartSeconds?: number | null
+    introEndSeconds?: number | null
+    creditsStartSeconds?: number | null
 }
 
 /* ─────────────────────────── Helpers ─────────────────────────── */
@@ -39,6 +51,13 @@ const fmt = (s: number) => {
         : `${m}:${String(sec).padStart(2, '0')}`
 }
 const SPEEDS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
+
+const DESCRIPTOR_LABELS: Record<string, string> = {
+    violence: 'Violence', strong_language: 'Strong Language', mild_language: 'Mild Language',
+    nudity: 'Nudity', sexual_content: 'Sexual Content', drug_use: 'Drug Use',
+    alcohol_use: 'Alcohol Use', smoking: 'Smoking', frightening_scenes: 'Frightening Scenes',
+    thematic_elements: 'Thematic Elements',
+}
 
 /* ══════════════════════════ COMPONENT ══════════════════════════ */
 export default function WatchPlayer({
@@ -175,6 +194,25 @@ export default function WatchPlayer({
     const [showNotifyModal, setShowNotifyModal] = useState(false)
     const [showNotifyConfirm, setShowNotifyConfirm] = useState(false)
     const endCardDismissedRef = useRef(false)
+
+    /* ── Content Advisory state ── */
+    const hasAdvisory = !!(project.contentRating || (project.contentDescriptors && project.contentDescriptors.length > 0))
+    const [advisoryDismissed, setAdvisoryDismissed] = useState(() => {
+        if (typeof window === 'undefined' || !hasAdvisory) return true
+        return sessionStorage.getItem(`advisory-${project.id}`) === '1'
+    })
+    const dismissAdvisory = useCallback(() => {
+        setAdvisoryDismissed(true)
+        try { sessionStorage.setItem(`advisory-${project.id}`, '1') } catch {}
+    }, [project.id])
+
+    /* ── Player Timings — resolve with episode-level inheritance ── */
+    const effectiveIntroStart = (activeEpisode?.introStartSeconds ?? project.introStartSeconds) ?? null
+    const effectiveIntroEnd = (activeEpisode?.introEndSeconds ?? project.introEndSeconds) ?? null
+    const effectiveCreditsStart = (activeEpisode?.creditsStartSeconds ?? project.creditsStartSeconds) ?? null
+    const hasSkipIntro = effectiveIntroStart !== null && effectiveIntroEnd !== null && effectiveIntroEnd > effectiveIntroStart
+    const showSkipIntro = hasSkipIntro && currentTime >= effectiveIntroStart! && currentTime < effectiveIntroEnd!
+    const creditsTriggeredRef = useRef(false)
 
     /* ── Up Next auto-play state ── */
     const [showUpNext, setShowUpNext] = useState(false)
@@ -461,13 +499,32 @@ export default function WatchPlayer({
     useEffect(() => {
         fetch(`/api/notify-me/cta/${project.id}`)
             .then(r => r.json())
-            .then(data => {
+            .then(async (data) => {
                 if (data.cta) {
                     // Suppress if the user already subscribed to this specific CTA
                     // (keyed by signupTag — a new CTA from admin has a new tag, so it shows again)
                     const alreadyDone = typeof window !== 'undefined'
                         && localStorage.getItem(`nm_done_${data.cta.signupTag}`) === '1'
-                    if (!alreadyDone) setCtaConfig(data.cta)
+                    if (alreadyDone) return
+
+                    // For logged-in users: also check server-side subscription status
+                    // (persists across devices/browsers unlike localStorage)
+                    if (data.cta.signupTag) {
+                        try {
+                            const statusRes = await fetch(`/api/notify-me/status?signupTag=${encodeURIComponent(data.cta.signupTag)}`)
+                            if (statusRes.ok) {
+                                const statusData = await statusRes.json()
+                                if (statusData.subscribed) {
+                                    // Sync localStorage so future checks are instant
+                                    try { localStorage.setItem(`nm_done_${data.cta.signupTag}`, '1') } catch { /* private browsing */ }
+                                    return // suppress CTA
+                                }
+                            }
+                            // 401 = guest/not logged in → fall through to show CTA normally
+                        } catch { /* network error — show CTA as fallback */ }
+                    }
+
+                    setCtaConfig(data.cta)
                 }
             })
             .catch(() => {})
@@ -768,6 +825,7 @@ export default function WatchPlayer({
         vid.play().catch(() => {})
         setIsPlaying(true)
         setCcEnabled(false); setCcSegments([]); setActiveTrackUrl(null)
+        creditsTriggeredRef.current = false // reset credits trigger for new episode
     }
 
     /* ══════════ Video event handlers ══════════ */
@@ -784,8 +842,12 @@ export default function WatchPlayer({
         // For series, only show on the last episode
         if (ctaConfig && !endCardDismissedRef.current && vid.duration > 0 && isLastEpisode) {
             const secsLeft = vid.duration - vid.currentTime
-            if (secsLeft <= ctaConfig.triggerSecondsFromEnd && secsLeft >= 0) {
-                if (!showEndCard && !showNotifyModal && !showNotifyConfirm) setShowEndCard(true)
+            // Credits start override: trigger end-card at creditsStartSeconds
+            const creditsTrigger = effectiveCreditsStart !== null && vid.currentTime >= effectiveCreditsStart && !creditsTriggeredRef.current
+            const nearEndTrigger = secsLeft <= ctaConfig.triggerSecondsFromEnd && secsLeft >= 0
+            if ((creditsTrigger || nearEndTrigger) && !showEndCard && !showNotifyModal && !showNotifyConfirm) {
+                setShowEndCard(true)
+                if (creditsTrigger) creditsTriggeredRef.current = true
             }
         }
     }
@@ -1439,6 +1501,70 @@ export default function WatchPlayer({
                                 </div>
                             </div>
                         </div>
+                    )}
+
+                    {/* ── Content Advisory Overlay ── */}
+                    {hasAdvisory && !advisoryDismissed && (
+                        <div style={{
+                            position: 'absolute', inset: 0, zIndex: 60,
+                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                            background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)',
+                        }}>
+                            <div style={{
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                                maxWidth: '420px', padding: '32px', textAlign: 'center',
+                            }}>
+                                {project.contentRating && (
+                                    <div style={{
+                                        fontSize: '2rem', fontWeight: 800, padding: '8px 24px',
+                                        border: '3px solid rgba(255,255,255,0.8)', borderRadius: '8px',
+                                        color: '#fff', letterSpacing: '0.05em',
+                                    }}>
+                                        {project.contentRating}
+                                    </div>
+                                )}
+                                {project.contentDescriptors && project.contentDescriptors.length > 0 && (
+                                    <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', lineHeight: 1.6 }}>
+                                        <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>Contains: </span>
+                                        {project.contentDescriptors.map(k => DESCRIPTOR_LABELS[k] || k).join(', ')}
+                                    </div>
+                                )}
+                                <button onClick={dismissAdvisory} style={{
+                                    marginTop: '8px', padding: '10px 32px', fontSize: '0.95rem', fontWeight: 700,
+                                    borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                    background: 'rgba(255,255,255,0.15)', color: '#fff',
+                                    backdropFilter: 'blur(4px)', transition: 'background 0.2s',
+                                }}
+                                onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.25)')}
+                                onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}>
+                                    Continue Watching
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Skip Intro Button ── */}
+                    {showSkipIntro && (
+                        <button
+                            onClick={() => {
+                                const vid = videoRef.current
+                                if (vid && effectiveIntroEnd !== null) {
+                                    vid.currentTime = effectiveIntroEnd
+                                }
+                            }}
+                            style={{
+                                position: 'absolute', bottom: '80px', right: '24px', zIndex: 55,
+                                padding: '8px 20px', fontSize: '0.88rem', fontWeight: 700,
+                                borderRadius: '6px', border: '1px solid rgba(255,255,255,0.3)',
+                                background: 'rgba(0,0,0,0.65)', color: '#fff', cursor: 'pointer',
+                                backdropFilter: 'blur(4px)', transition: 'all 0.2s',
+                                letterSpacing: '0.02em',
+                            }}
+                            onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.2)' }}
+                            onMouseOut={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.65)' }}
+                        >
+                            Skip Intro ▶▶
+                        </button>
                     )}
 
                     {/* ── Notify Me End-Card Overlay (locale-aware) ── */}

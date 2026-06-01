@@ -74,6 +74,21 @@ export default async function CastingPage() {
         appliedMap = Object.fromEntries(userApplications.map(a => [a.castingCallId, a.status]))
     }
 
+    // Check if logged-in user is already subscribed to casting_general Notify Me
+    let notifySubscribed = false
+    if (session?.userId) {
+        try {
+            const userEmail = (await prisma.user.findUnique({ where: { id: session.userId as string }, select: { email: true } }))?.email
+            if (userEmail) {
+                const ns = await prisma.notificationSignup.findUnique({
+                    where: { email_signupTag: { email: userEmail.trim().toLowerCase(), signupTag: 'casting_general' } },
+                    select: { status: true },
+                })
+                notifySubscribed = ns?.status === 'active'
+            }
+        } catch { /* ignore */ }
+    }
+
     return (
         <>
             <style>{`
@@ -86,9 +101,10 @@ export default async function CastingPage() {
                 }
             `}</style>
             <div className="fadeIn">
-                <CastingPageClient castingCalls={castingCalls} appliedMap={appliedMap} isLoggedIn={isLoggedIn} />
+                <CastingPageClient castingCalls={castingCalls} appliedMap={appliedMap} isLoggedIn={isLoggedIn} notifySubscribed={notifySubscribed} />
                 <Footer />
             </div>
         </>
+
     )
 }

@@ -88,6 +88,11 @@ export default async function EpisodePage({ params }: { params: Promise<{ slug: 
             status: true,
             published: true,
             translations: true,
+            contentRating: true,
+            contentDescriptors: true,
+            introStartSeconds: true,
+            introEndSeconds: true,
+            creditsStartSeconds: true,
             episodes: {
                 where: { published: true },
                 orderBy: [{ season: 'asc' }, { number: 'asc' }],

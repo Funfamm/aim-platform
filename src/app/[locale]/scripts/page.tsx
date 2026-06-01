@@ -103,11 +103,15 @@ export default async function ScriptCallsPage() {
         try {
             const userEmail = (await prisma.user.findUnique({ where: { id: userId! }, select: { email: true } }))?.email
             if (userEmail) {
-                const sub = await prisma.subscriber.findUnique({ where: { email: userEmail }, select: { active: true } })
-                alreadySubscribed = sub?.active === true
+                const ns = await prisma.notificationSignup.findUnique({
+                    where: { email_signupTag: { email: userEmail.trim().toLowerCase(), signupTag: 'scripts_general' } },
+                    select: { status: true },
+                })
+                alreadySubscribed = ns?.status === 'active'
             }
         } catch { /* ignore */ }
     }
+
 
     return (
         <>

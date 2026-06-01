@@ -432,6 +432,14 @@ export default function AdminCtaDetail() {
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>
                             📨 Send Notice Preview
                         </h3>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', margin: '4px 0' }}>
+                            {dispatchPreview.label || dispatchPreview.signupTag}
+                        </div>
+                        {dispatchPreview.workTitle && (
+                            <div style={{ fontSize: '0.78rem', color: 'var(--accent-gold)', margin: '2px 0 4px' }}>
+                                🎬 {dispatchPreview.workTitle}
+                            </div>
+                        )}
                         <code style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)' }}>{dispatchPreview.signupTag}</code>
 
                         {dispatchPreview.totalEligible === 0 ? (

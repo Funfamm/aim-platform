@@ -46,6 +46,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 ...(body.gallery !== undefined && { gallery: body.gallery || null }),
                 ...(body.credits !== undefined && { credits: body.credits || null }),
                 ...(body.sponsorData !== undefined && { sponsorData: body.sponsorData || null }),
+                // Content Advisory
+                ...(body.contentRating !== undefined && { contentRating: body.contentRating || null }),
+                ...(body.contentDescriptors !== undefined && { contentDescriptors: body.contentDescriptors ?? [] }),
+                // Player Timings
+                ...('introStartSeconds' in body && { introStartSeconds: body.introStartSeconds }),
+                ...('introEndSeconds' in body && { introEndSeconds: body.introEndSeconds }),
+                ...('creditsStartSeconds' in body && { creditsStartSeconds: body.creditsStartSeconds }),
             },
             include: {
                 _count: { select: { castingCalls: true } },

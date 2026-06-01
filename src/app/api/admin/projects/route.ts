@@ -17,6 +17,8 @@ export async function GET() {
             trailerUrl: true, filmUrl: true, projectType: true,
             gallery: true, credits: true, sponsorData: true,
             viewCount: true,
+            contentRating: true, contentDescriptors: true,
+            introStartSeconds: true, introEndSeconds: true, creditsStartSeconds: true,
             _count: { select: { castingCalls: true } },
         },
     })
@@ -70,6 +72,11 @@ export async function POST(req: Request) {
             gallery: body.gallery || null,
             credits: body.credits || null,
             sponsorData: body.sponsorData || null,
+            contentRating: body.contentRating || null,
+            contentDescriptors: body.contentDescriptors ?? [],
+            introStartSeconds: body.introStartSeconds ?? null,
+            introEndSeconds: body.introEndSeconds ?? null,
+            creditsStartSeconds: body.creditsStartSeconds ?? null,
         },
         include: {
             _count: { select: { castingCalls: true } },

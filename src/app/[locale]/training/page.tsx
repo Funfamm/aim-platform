@@ -58,9 +58,24 @@ export default async function TrainingPage() {
     // Serialize for client component
     const serialized = JSON.parse(JSON.stringify(courses))
 
+    // Check if logged-in user is already subscribed to training_general Notify Me
+    let notifySubscribed = false
+    if (session?.userId) {
+        try {
+            const userEmail = (await prisma.user.findUnique({ where: { id: session.userId as string }, select: { email: true } }))?.email
+            if (userEmail) {
+                const ns = await prisma.notificationSignup.findUnique({
+                    where: { email_signupTag: { email: userEmail.trim().toLowerCase(), signupTag: 'training_general' } },
+                    select: { status: true },
+                })
+                notifySubscribed = ns?.status === 'active'
+            }
+        } catch { /* ignore */ }
+    }
+
     return (
         <>
-<TrainingCatalogClient courses={serialized} isLoggedIn={isLoggedIn} />
+<TrainingCatalogClient courses={serialized} isLoggedIn={isLoggedIn} notifySubscribed={notifySubscribed} />
             <Footer />
         </>
     )
