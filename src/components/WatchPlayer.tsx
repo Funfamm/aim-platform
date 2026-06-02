@@ -126,6 +126,8 @@ export default function WatchPlayer({
     /* ── Refs ── */
     const videoRef    = useRef<HTMLVideoElement>(null)
     const containerRef = useRef<HTMLDivElement>(null)
+    const langMenuRef = useRef<HTMLDivElement>(null)
+    const ccBtnRef    = useRef<HTMLButtonElement>(null)
     const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
     const prevTrackUrl = useRef<string | null>(null)
     const resumeDismissedRef = useRef(false)
@@ -806,12 +808,33 @@ export default function WatchPlayer({
     }
 
     const toggleCC = () => {
-        // Always open/close the language menu — it handles all states:
-        //  • ccAvailable empty → shows "No subtitles available"
-        //  • ccAvailable populated → shows language list + Off
         setShowLangMenu(prev => !prev)
         setShowSpeedMenu(false)
     }
+
+    const handleLangMenuKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Escape') {
+            setShowLangMenu(false)
+            ccBtnRef.current?.focus()
+            return
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault()
+            const btns = Array.from(langMenuRef.current?.querySelectorAll<HTMLButtonElement>('button') ?? [])
+            const idx = btns.indexOf(document.activeElement as HTMLButtonElement)
+            const next = e.key === 'ArrowDown'
+                ? (idx + 1) % btns.length
+                : (idx - 1 + btns.length) % btns.length
+            btns[next]?.focus()
+        }
+    }, [])
+
+    // Focus first item when desktop menu opens
+    useEffect(() => {
+        if (showLangMenu && !isMobile) {
+            langMenuRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+        }
+    }, [showLangMenu, isMobile])
 
     const loadSubtitles = useCallback(async (lang: string) => {
         const epId = activeEpisode?.id || ''
@@ -1825,10 +1848,11 @@ export default function WatchPlayer({
                                         )}
                                     </div>
 
-                                    {/* CC Button */}
-                                    {ccChecked && (
+                                    {/* CC Button — only shown when admin has enabled subtitles */}
+                                    {ccChecked && ccAvailable.length > 0 && (
                                         <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
                                             <button
+                                                ref={ccBtnRef}
                                                 className="aim-ctrl-btn"
                                                 onClick={() => { setShowLangMenu(prev => !prev); setShowSpeedMenu(false) }}
                                                 title={ccEnabled ? `Subtitles on (${LANGUAGE_NAMES[ccLang] || ccLang})` : 'Subtitles'}
@@ -1857,23 +1881,25 @@ export default function WatchPlayer({
                                             {/* ── Language picker: dropdown on desktop, full-screen overlay on mobile (both orientations) ── */}
                                             {showLangMenu && !isMobile && (
                                                 /* Desktop dropdown — insetInlineEnd so it never clips off-screen in RTL */
-                                                <div style={{
-                                                    position: 'absolute', bottom: '110%', right: 0, insetInlineEnd: 0,
-                                                    zIndex: 20,
-                                                    marginBottom: '6px', background: 'rgba(13,15,20,0.97)',
-                                                    border: '1px solid rgba(212,168,83,0.3)',
-                                                    borderRadius: '8px', padding: '4px',
-                                                    minWidth: '160px', backdropFilter: 'blur(10px)',
-                                                    boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-                                                    animation: 'aimFadeIn 0.15s ease',
-                                                    direction: 'ltr',
-                                                }}>
+                                                <div
+                                                    ref={langMenuRef}
+                                                    role="menu"
+                                                    onKeyDown={handleLangMenuKeyDown}
+                                                    style={{
+                                                        position: 'absolute', bottom: '110%', right: 0, insetInlineEnd: 0,
+                                                        zIndex: 20,
+                                                        marginBottom: '6px', background: 'rgba(13,15,20,0.97)',
+                                                        border: '1px solid rgba(212,168,83,0.3)',
+                                                        borderRadius: '8px', padding: '4px',
+                                                        minWidth: '160px', backdropFilter: 'blur(10px)',
+                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                                                        animation: 'aimFadeIn 0.15s ease',
+                                                        direction: 'ltr',
+                                                    }}>
                                                     <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '6px 10px 4px' }}>{tPlayer('subtitles')}</div>
-                                                    {ccAvailable.length === 0 && (
-                                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', padding: '6px 10px' }}>{tPlayer('noSubtitles')}</div>
-                                                    )}
                                                     {ccAvailable.map(lang => (
                                                         <button key={lang}
+                                                            role="menuitem"
                                                             onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
                                                             style={{
                                                                 display: 'block', width: '100%', padding: '6px 10px', textAlign: 'start',
@@ -1886,6 +1912,7 @@ export default function WatchPlayer({
                                                     ))}
                                                     <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '4px 6px' }} />
                                                     <button
+                                                        role="menuitem"
                                                         onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
                                                         style={{
                                                             display: 'block', width: '100%', padding: '6px 10px', textAlign: 'start',
@@ -1921,9 +1948,6 @@ export default function WatchPlayer({
                                                     }}
                                                 >
                                                     <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '6px 10px 4px' }}>{tPlayer('subtitles')}</div>
-                                                    {ccAvailable.length === 0 && (
-                                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', padding: '6px 10px' }}>{tPlayer('noSubtitles')}</div>
-                                                    )}
                                                     {ccAvailable.map(lang => (
                                                         <button key={lang}
                                                             onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
