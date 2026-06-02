@@ -74,7 +74,8 @@
     "castingStat": "Casting",
     "limitlessDesc": "Aucune frontière, aucun obstacle. L'IA libère la narration à une échelle autrefois réservée aux grands studios.",
     "cinematicDesc": "Chaque plan est intentionnel, chaque coupe est précise. Notre pipeline IA offre une qualité cinématographique à une vitesse inégalée.",
-    "curatedCollections": "Collections Sélectionnées"
+    "curatedCollections": "Collections Sélectionnées",
+    "continueWatching": "Continuer à Regarder"
   },
   "casting": {
     "label": "Casting Ouvert",

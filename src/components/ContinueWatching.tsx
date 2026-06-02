@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
 import { useIsMobile } from '@/hooks/useIsMobile'
 
@@ -50,6 +50,7 @@ export default function ContinueWatching() {
     const [loaded, setLoaded] = useState(false)
     const locale = useLocale()
     const isMobile = useIsMobile(false)
+    const t = useTranslations('home')
     const cardWidth = isMobile ? 160 : 185
 
     useEffect(() => {
@@ -102,7 +103,7 @@ export default function ContinueWatching() {
                         margin: 0, letterSpacing: '-0.01em',
                     }}>
                         <span style={{ marginRight: '6px' }}>▶</span>
-                        Continue Watching
+                        {t('continueWatching')}
                     </h2>
                     <span style={{
                         fontSize: '0.58rem', fontWeight: 700,

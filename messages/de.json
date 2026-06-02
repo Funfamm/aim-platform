@@ -74,7 +74,8 @@
     "castingStat": "Casting",
     "limitlessDesc": "Keine Grenzen, keine Hüter. KI entfesselt das Geschichtenerzählen in einem Umfang, der einst großen Studios vorbehalten war.",
     "cinematicDesc": "Jedes Bild ist bewusst, jeder Schnitt präzise. Unsere KI-Pipeline liefert kinematografische Qualität in beispielloser Geschwindigkeit.",
-    "curatedCollections": "Kuratierte Sammlungen"
+    "curatedCollections": "Kuratierte Sammlungen",
+    "continueWatching": "Weiterschauen"
   },
   "casting": {
     "label": "Offenes Casting",

@@ -57,7 +57,8 @@
     "castingStat": "キャスティング",
     "limitlessDesc": "境界なし、門番なし。AIはかつて大手スタジオだけが持てた規模と深さでストーリーテリングを解放します。",
     "cinematicDesc": "すべてのフレームは意図的で、すべてのカットは精密です。AIパイプラインが前例のない速度で映画品質を提供します。",
-    "curatedCollections": "キュレーションコレクション"
+    "curatedCollections": "キュレーションコレクション",
+    "continueWatching": "視聴を続ける"
   },
   "casting": {
     "label": "キャスティング",

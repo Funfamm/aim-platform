@@ -74,7 +74,8 @@
     "castingStat": "캐스팅",
     "limitlessDesc": "경계도, 장벽도 없습니다. AI는 대형 스튜디오만이 가능하던 규모와 깊이로 스토리텔링을 해방합니다.",
     "cinematicDesc": "모든 프레임은 의도적이고, 모든 컷은 정확합니다. AI 파이프라인이 전례 없는 속도로 영화적 품질을 제공합니다.",
-    "curatedCollections": "큐레이션 컬렉션"
+    "curatedCollections": "큐레이션 컬렉션",
+    "continueWatching": "이어서 보기"
   },
   "casting": {
     "label": "캐스팅 오픈",

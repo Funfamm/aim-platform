@@ -74,7 +74,8 @@
     "castingStat": "Casting",
     "limitlessDesc": "Sin límites, sin barreras. La IA libera la narración a una escala reservada antes solo para grandes estudios.",
     "cinematicDesc": "Cada fotograma es intencional, cada corte es preciso. Nuestro pipeline de IA entrega calidad cinematográfica a una velocidad sin precedentes.",
-    "curatedCollections": "Colecciones Seleccionadas"
+    "curatedCollections": "Colecciones Seleccionadas",
+    "continueWatching": "Seguir Viendo"
   },
   "casting": {
     "label": "Casting Abierto",

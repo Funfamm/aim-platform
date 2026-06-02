@@ -1022,7 +1022,8 @@ export default function WatchPlayer({
                         width: 100%;
                         background: #000;
                         aspect-ratio: 16 / 9;
-                        overflow: hidden;
+                        overflow-x: clip;
+                        overflow-y: visible;
                     }
                     .aim-sticky-player-zone.is-playing .aim-pseudo-fs-shell {
                         border-radius: 0 !important;
