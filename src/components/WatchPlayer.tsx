@@ -588,7 +588,7 @@ export default function WatchPlayer({
         document.body.classList.add('aim-player-fs')
         setIsPseudoFS(true)
         // Try landscape lock (best-effort)
-        try { (screen.orientation as any)?.lock?.('landscape') } catch { /* no-op */ }
+        try { (screen.orientation as any)?.lock?.('landscape')?.catch?.(() => {}) } catch { /* no-op */ }
     }, [])
 
     const disablePseudoFS = useCallback(() => {
@@ -1858,7 +1858,8 @@ export default function WatchPlayer({
                                             {showLangMenu && !isMobile && (
                                                 /* Desktop dropdown — insetInlineEnd so it never clips off-screen in RTL */
                                                 <div style={{
-                                                    position: 'absolute', bottom: '110%', insetInlineEnd: 0,
+                                                    position: 'absolute', bottom: '110%', right: 0, insetInlineEnd: 0,
+                                                    zIndex: 20,
                                                     marginBottom: '6px', background: 'rgba(13,15,20,0.97)',
                                                     border: '1px solid rgba(212,168,83,0.3)',
                                                     borderRadius: '8px', padding: '4px',
@@ -1903,7 +1904,7 @@ export default function WatchPlayer({
                                                         bottom: '50px', /* sits above the controls bar */
                                                         right: 0,
                                                         width: isLandscape ? '220px' : '200px',
-                                                        maxHeight: '40%',
+                                                        maxHeight: '220px',
                                                         overflowY: 'auto',
                                                         background: 'rgba(13,15,20,0.97)',
                                                         border: '1px solid rgba(212,168,83,0.3)',
