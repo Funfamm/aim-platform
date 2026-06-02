@@ -3,6 +3,7 @@ import { segmentsToVtt, getVttUrl } from '@/lib/vtt-storage'
 import { findSubtitle } from '@/lib/subtitle-repo'
 import { getUserSession } from '@/lib/auth'
 import { hasAdminRole } from '@/lib/roles'
+import { prisma } from '@/lib/db'
 
 // GET /api/subtitles/[projectId]?lang=es&episodeId=xxx
 export async function GET(
@@ -16,15 +17,28 @@ export async function GET(
     const mediaType = searchParams.get('mediaType') || 'movie'
     const format = searchParams.get('format') || 'json'
 
-    // ── Repository lookup — no direct Prisma dependency (DIP) ─────────────────
-    const subtitle = await findSubtitle(projectId, episodeId, mediaType)
+    // ── Both gates in parallel — no serial waterfall ───────────────────────────
+    const [subtitle, project] = await Promise.all([
+        findSubtitle(projectId, episodeId, mediaType),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (prisma as any).project.findUnique({
+            where: { id: projectId },
+            select: { subtitlesPublic: true },
+        }),
+    ])
 
     if (!subtitle) {
         return NextResponse.json({ segments: null, available: [] })
     }
 
-    // ── Per-track visibility gate: each movie/trailer/episode controls its own ─
-    if (!subtitle.subtitlesPublic) {
+    // ── Dual-gate visibility check ─────────────────────────────────────────────
+    // Project.subtitlesPublic: the master on/off switch saved via the project form.
+    // FilmSubtitle.subtitlesPublic: the per-track toggle from the subtitle panel.
+    // BOTH must be true for public access. Admins bypass for preview purposes.
+    const projectGate = (project as { subtitlesPublic: boolean } | null)?.subtitlesPublic ?? false
+    const trackGate = subtitle.subtitlesPublic
+
+    if (!projectGate || !trackGate) {
         // Admins can always preview even when hidden from public
         const session = await getUserSession()
         if (!session?.userId || !hasAdminRole(session.role)) {
@@ -98,6 +112,8 @@ export async function GET(
         language: lang,
         originalLanguage: subtitle.language,
         available: [...new Set(available)],
+        // Visibility is admin-controlled — no public CDN cache so enable/disable
+        // takes effect immediately for all users.
         status: subtitle.status,
         translateStatus: subtitle.translateStatus,
         // T4-E: Desktop placement metadata for the public player
@@ -139,7 +155,9 @@ export async function GET(
         },
     }, {
         headers: {
-            'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+            // private: browser may cache for this user only, no CDN.
+            // Admin can enable/disable at any time; each page load must re-validate.
+            'Cache-Control': 'private, no-cache',
         },
     })
 }
