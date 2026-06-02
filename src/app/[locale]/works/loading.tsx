@@ -17,7 +17,7 @@ export default function Loading() {
                 }
             `}} />
             {/* Mobile: mimic the Works hero carousel card exactly */}
-            <main id="main-content">
+            <main id="main-content" style={{ background: '#0d0f14' }}>
                 <div style={{
                     /* Match WorksPageClient mobile card:
                        marginTop: 64px, marginLeft/Right: 12px, marginBottom: 8px,

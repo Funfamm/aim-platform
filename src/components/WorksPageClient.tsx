@@ -168,6 +168,15 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             // Desktop: gentle 0.15s entrance fade (no PageTransition crossfade).
             opacity: (isMobile || mounted) ? 1 : 0,
             transition: isMobile ? 'none' : 'opacity 0.15s ease',
+            // Mobile containment: opaque background prevents any layer
+            // (e.g. desktop HeroBackground at position:fixed, z-index:0)
+            // from bleeding through during the useIsMobile hydration window.
+            // isolation creates a stacking context so internal z-index values
+            // don't escape the Works page container.
+            ...(isMobile ? {
+                background: 'var(--bg-primary, #0d0f14)',
+                isolation: 'isolate' as const,
+            } : {}),
         }}>
             {/* 3D Particle Background */}
             <Scene3D />
@@ -181,6 +190,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             <style>{`
                 @media (hover: none) and (pointer: coarse) {
                     .wpc-desktop-only { display: none !important; }
+                    /* Opaque containment from first paint — prevents project cards
+                       from flashing through transparent layers before JS hydrates
+                       and useIsMobile() resolves. */
+                    #main-content {
+                        background: var(--bg-primary, #0d0f14) !important;
+                        isolation: isolate;
+                    }
                 }
             `}</style>
 
@@ -322,7 +338,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                     left: '50%',
                     width: '100dvw',
                     transform: 'translateX(-50%)',
-                    background: 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
+                    // Mobile: start fully opaque so project cards never flash through
+                    // the transparent gap at the top of the overlay during first paint.
+                    // Desktop: keep the cinematic transparent→dark gradient for the
+                    // scroll-over-hero parallax effect.
+                    background: isMobile
+                        ? 'linear-gradient(180deg, rgba(13,15,20,0.97) 0%, var(--bg-primary) 15%)'
+                        : 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
                     pointerEvents: 'none',
                     zIndex: 0,
                 }} />
