@@ -570,8 +570,10 @@ export default function WatchPlayer({
     const resetControlsTimer = useCallback(() => {
         setShowControls(true)
         if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current)
+        // Don't auto-hide while a dropdown menu (CC / speed) is open
+        if (showLangMenu || showSpeedMenu) return
         controlsTimerRef.current = setTimeout(() => { if (isPlaying) setShowControls(false) }, 3000)
-    }, [isPlaying])
+    }, [isPlaying, showLangMenu, showSpeedMenu])
 
     useEffect(() => {
         resetControlsTimer()
@@ -1620,9 +1622,9 @@ export default function WatchPlayer({
                                 position: 'absolute', bottom: 0, left: 0, right: 0,
                                 background: 'linear-gradient(transparent, rgba(0,0,0,0.9))',
                                 padding: 'var(--space-2xl) var(--space-md) var(--space-sm)',
-                                opacity: (showControls && !showEndCard && !showNotifyModal && !showNotifyConfirm) ? 1 : 0,
+                                opacity: ((showControls || showLangMenu || showSpeedMenu) && !showEndCard && !showNotifyModal && !showNotifyConfirm) ? 1 : 0,
                                 transition: 'opacity 0.3s',
-                                pointerEvents: (showControls && !showEndCard && !showNotifyModal && !showNotifyConfirm) ? 'auto' : 'none',
+                                pointerEvents: ((showControls || showLangMenu || showSpeedMenu) && !showEndCard && !showNotifyModal && !showNotifyConfirm) ? 'auto' : 'none',
                                 zIndex: 10,
                                 borderRadius: isFullscreen ? 0 : '0 0 var(--radius-xl) var(--radius-xl)',
                             }}
