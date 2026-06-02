@@ -66,6 +66,10 @@ export default function AdminCtaDetail() {
     const [dispatchResult, setDispatchResult] = useState<any>(null)
     const [dispatchMessage, setDispatchMessage] = useState('')
 
+    // Collapsible copy sections — collapsed by default so Send Notice is the focus
+    const [openSections, setOpenSections] = useState({ endCard: false, modal: false, confirmation: false, postRelease: false, behavior: false })
+    const toggleSection = (k: keyof typeof openSections) => setOpenSections(prev => ({ ...prev, [k]: !prev[k] }))
+
     const openDispatchPreview = async () => {
         if (!cta) return
         setDispatchLoading(true)
@@ -196,70 +200,85 @@ export default function AdminCtaDetail() {
         <div className="admin-layout">
             <AdminSidebar />
             <main className="admin-main">
-            <div style={{ maxWidth: '1100px' }}>
-            {/* Header */}
-            <div style={{ marginBottom: 'var(--space-xl)' }}>
-                <Link href="/admin/notifications/ctas" style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', textDecoration: 'none' }}>
-                    ← Back to CTAs
-                </Link>
-                <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '8px 0 4px', color: 'var(--text-primary)' }}>
-                    {project?.title || 'Unknown'} — {(cta.notificationType as string) === 'release' ? '🔔 Release' : '🔁 More'} CTA
-                </h1>
-                <code style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{cta.signupTag as string}</code>
+            <div style={{ maxWidth: '1200px' }}>
+            {/* Header — Send Notice always visible here */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', marginBottom: 'var(--space-xl)', flexWrap: 'wrap' }}>
+                <div>
+                    <Link href="/admin/notifications/ctas" style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', textDecoration: 'none' }}>
+                        ← Back to CTAs
+                    </Link>
+                    <h1 style={{ fontSize: '1.3rem', fontWeight: 800, margin: '8px 0 4px', color: 'var(--text-primary)' }}>
+                        {project?.title || 'Unknown'} — {(cta.notificationType as string) === 'release' ? '🔔 Release' : '🔁 More'} CTA
+                    </h1>
+                    <code style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)' }}>{cta.signupTag as string}</code>
+                </div>
+                {/* Send Notice — pinned to header so it's always visible */}
+                <button
+                    onClick={openDispatchPreview}
+                    disabled={dispatchLoading}
+                    style={{
+                        padding: '10px 22px', borderRadius: '10px', fontSize: '0.88rem', fontWeight: 700,
+                        background: 'rgba(212,168,83,0.18)', border: '1px solid rgba(212,168,83,0.4)',
+                        color: '#d4a853', cursor: dispatchLoading ? 'wait' : 'pointer',
+                        whiteSpace: 'nowrap', flexShrink: 0, marginTop: '4px',
+                    }}
+                >
+                    {dispatchLoading ? '⏳ Loading…' : '📨 Send Notice'}
+                </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-                {/* Left: Copy Editor */}
-                <div>
-                    <div style={{
-                        padding: '20px', borderRadius: '12px',
-                        background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)',
-                    }}>
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 16px', color: 'var(--text-primary)' }}>
-                            End-Card Copy
-                        </h3>
-                        <CopyField label="Eyebrow" field="eyebrow" value={editFields.eyebrow || ''} onChange={handleFieldChange} />
-                        <CopyField label="Headline (Regular)" field="headlineRegular" value={editFields.headlineRegular || ''} onChange={handleFieldChange} />
-                        <CopyField label="Headline (Italic)" field="headlineItalic" value={editFields.headlineItalic || ''} onChange={handleFieldChange} />
-                        <CopyField label="Subtext" field="subtext" value={editFields.subtext || ''} onChange={handleFieldChange} />
-                        <CopyField label="Button Label" field="buttonLabel" value={editFields.buttonLabel || ''} onChange={handleFieldChange} />
-                        <CopyField label="Footnote" field="footnote" value={editFields.footnote || ''} onChange={handleFieldChange} />
+            <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: '24px', alignItems: 'start' }}>
+                {/* Left: Collapsible Copy Editor */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
 
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
-                            Modal Copy
-                        </h3>
-                        <CopyField label="Modal Headline" field="modalHeadline" value={editFields.modalHeadline || ''} onChange={handleFieldChange} />
-                        <CopyField label="Modal Subtext" field="modalSubtext" value={editFields.modalSubtext || ''} onChange={handleFieldChange} />
-                        <CopyField label="Modal Button" field="modalButtonLabel" value={editFields.modalButtonLabel || ''} onChange={handleFieldChange} />
-
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
-                            Confirmation Copy
-                        </h3>
-                        <CopyField label="Headline" field="confirmationHeadline" value={editFields.confirmationHeadline || ''} onChange={handleFieldChange} />
-                        <CopyField label="Subtext" field="confirmationSubtext" value={editFields.confirmationSubtext || ''} onChange={handleFieldChange} />
-
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
-                            Post-Release &quot;Now Playing&quot; Copy
-                        </h3>
-                        <CopyField label="Released Eyebrow" field="releasedEyebrow" value={editFields.releasedEyebrow || ''} onChange={handleFieldChange} />
-                        <CopyField label="Released Headline" field="releasedHeadline" value={editFields.releasedHeadline || ''} onChange={handleFieldChange} />
-                        <CopyField label="Released Subtext" field="releasedSubtext" value={editFields.releasedSubtext || ''} onChange={handleFieldChange} />
-                        <CopyField label="Released Button" field="releasedButtonLabel" value={editFields.releasedButtonLabel || ''} onChange={handleFieldChange} />
-
-                        <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '20px 0 12px', color: 'var(--text-primary)' }}>
-                            Behavior
-                        </h3>
-                        <CopyField label="Trigger (seconds from end)" field="triggerSecondsFromEnd" value={editFields.triggerSecondsFromEnd || ''} onChange={handleFieldChange} />
-
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginTop: '16px' }}>
-                            <button onClick={saveCopy} disabled={saving} style={{
-                                padding: '8px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem',
-                                background: 'var(--accent-gold)', border: 'none', color: '#000', cursor: 'pointer',
-                            }}>
-                                {saving ? 'Saving...' : 'Save Changes'}
+                    {/* Section helper */}
+                    {([
+                        { key: 'endCard', label: 'End-Card Copy', fields: [
+                            { label: 'Eyebrow', field: 'eyebrow' }, { label: 'Headline (Regular)', field: 'headlineRegular' },
+                            { label: 'Headline (Italic)', field: 'headlineItalic' }, { label: 'Subtext', field: 'subtext' },
+                            { label: 'Button Label', field: 'buttonLabel' }, { label: 'Footnote', field: 'footnote' },
+                        ]},
+                        { key: 'modal', label: 'Modal Copy', fields: [
+                            { label: 'Modal Headline', field: 'modalHeadline' }, { label: 'Modal Subtext', field: 'modalSubtext' },
+                            { label: 'Modal Button', field: 'modalButtonLabel' },
+                        ]},
+                        { key: 'confirmation', label: 'Confirmation Copy', fields: [
+                            { label: 'Headline', field: 'confirmationHeadline' }, { label: 'Subtext', field: 'confirmationSubtext' },
+                        ]},
+                        { key: 'postRelease', label: 'Post-Release "Now Playing" Copy', fields: [
+                            { label: 'Released Eyebrow', field: 'releasedEyebrow' }, { label: 'Released Headline', field: 'releasedHeadline' },
+                            { label: 'Released Subtext', field: 'releasedSubtext' }, { label: 'Released Button', field: 'releasedButtonLabel' },
+                        ]},
+                        { key: 'behavior', label: 'Behavior', fields: [
+                            { label: 'Trigger (seconds from end)', field: 'triggerSecondsFromEnd' },
+                        ]},
+                    ] as { key: keyof typeof openSections; label: string; fields: { label: string; field: string }[] }[]).map(section => (
+                        <div key={section.key} style={{ borderRadius: '10px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
+                            <button type="button"
+                                onClick={() => toggleSection(section.key)}
+                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>{section.label}</span>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', transition: 'transform 0.15s', display: 'inline-block', transform: openSections[section.key] ? 'rotate(180deg)' : 'none' }}>▾</span>
                             </button>
-                            {saveMsg && <span style={{ fontSize: '0.8rem', color: saveMsg === 'Saved!' ? '#48bb78' : 'rgba(255,80,80,0.9)' }}>{saveMsg}</span>}
+                            {openSections[section.key] && (
+                                <div style={{ padding: '0 16px 16px' }}>
+                                    {section.fields.map(f => (
+                                        <CopyField key={f.field} label={f.label} field={f.field} value={editFields[f.field] || ''} onChange={handleFieldChange} />
+                                    ))}
+                                </div>
+                            )}
                         </div>
+                    ))}
+
+                    {/* Save */}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', padding: '4px 0' }}>
+                        <button onClick={saveCopy} disabled={saving} style={{
+                            padding: '8px 20px', borderRadius: '8px', fontWeight: 700, fontSize: '0.85rem',
+                            background: 'var(--accent-gold)', border: 'none', color: '#000', cursor: 'pointer',
+                        }}>
+                            {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                        {saveMsg && <span style={{ fontSize: '0.8rem', color: saveMsg === 'Saved!' ? '#48bb78' : 'rgba(255,80,80,0.9)' }}>{saveMsg}</span>}
                     </div>
                 </div>
 
@@ -394,29 +413,6 @@ export default function AdminCtaDetail() {
                     )}
                 </div>
 
-            {/* ── Send Notice Section ──────────────────────────────── */}
-            <div style={{
-                marginTop: '32px', padding: '20px', borderRadius: '12px',
-                background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-subtle)',
-            }}>
-                <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 12px' }}>
-                    📨 Send Notice
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', margin: '0 0 16px' }}>
-                    Send an availability notice to all active, unnotified signups for this CTA.
-                </p>
-                <button
-                    onClick={openDispatchPreview}
-                    disabled={dispatchLoading}
-                    style={{
-                        padding: '8px 20px', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 600,
-                        background: 'rgba(212,168,83,0.15)', border: '1px solid rgba(212,168,83,0.3)',
-                        color: '#d4a853', cursor: dispatchLoading ? 'wait' : 'pointer',
-                    }}
-                >
-                    {dispatchLoading ? 'Loading preview…' : 'Send Notice'}
-                </button>
-            </div>
 
             {/* ── Dispatch Modal ───────────────────────────────────── */}
             {showDispatch && dispatchPreview && (
