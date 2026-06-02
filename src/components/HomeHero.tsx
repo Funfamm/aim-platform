@@ -5,8 +5,7 @@ import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import HeroBackground from '@/components/HeroBackground'
 import { useIsMobile } from '@/hooks/useIsMobile'
-import MobileCardCarousel from '@/components/MobileCardCarousel'
-import MobileFeaturedWorkCard, { type FeaturedWorkItem } from '@/components/MobileFeaturedWorkCard'
+import { type FeaturedWorkItem } from '@/components/MobileFeaturedWorkCard'
 
 interface HomeHeroProps {
     completedCount: number
@@ -39,13 +38,6 @@ export default function HomeHero({
         if (rotatingWords && rotatingWords.length > 0) return rotatingWords
         return [t('word1'), t('word2'), t('word3'), t('word4'), t('word5')]
     }, [rotatingWords, t])
-
-    // Cover URLs for homepage-featured projects — injected into the desktop hero rotation
-    const featuredCovers = useMemo(
-        () => featuredWorks.filter(w => w.coverImage).map(w => w.coverImage as string),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
 
     const [wordIdx, setWordIdx] = useState(0)
     const [wordFade, setWordFade] = useState(true)
@@ -148,7 +140,7 @@ export default function HomeHero({
 
     // ══════════════════════════════════════════════════════
     // MOBILE — Contained cinematic card layout
-    // When featuredWorks exist: swipeable poster carousel.
+    // Mobile hero always uses Media Manager HeroBackground.
     // Otherwise: existing branded hero with HeroBackground.
     // Card uses position:relative so children render absolute inside it.
     // ══════════════════════════════════════════════════════
@@ -169,26 +161,7 @@ export default function HomeHero({
             zIndex: 0,
         }
 
-        // ── Featured works carousel ──────────────────────────────────────
-        if (featuredWorks.length > 0) {
-            return (
-                // Carousel: project covers fill the card — no extra HeroBackground fetch
-                // to avoid a secondary fade-in animation inside the already-animating card.
-                <section aria-label="Hero" style={mobileCardStyle}>
-                    <MobileCardCarousel autoRotateMs={5000}>
-                        {featuredWorks.map((work, i) => (
-                            <MobileFeaturedWorkCard
-                                key={work.slug}
-                                work={work}
-                                priority={i === 0}
-                            />
-                        ))}
-                    </MobileCardCarousel>
-                </section>
-            )
-        }
-
-        // ── Fallback: branded hero when no featured works ────────────────
+        // ── Mobile hero: Media Manager only (featured projects show as cards below) ──
         return (
             <section
                 aria-label="Hero"
@@ -312,7 +285,6 @@ export default function HomeHero({
                 page="home"
                 isMobile={isMobileHint}
                 poster="/images/hero-bg.png"
-                extraImages={featuredCovers}
                 onVideoChange={handleVideoChange}
                 jumpToVideoRef={jumpToVideoRef}
                 className="hh-desktop-only"

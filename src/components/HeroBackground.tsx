@@ -359,6 +359,17 @@ export default function HeroBackground({
             {/* All images remain in DOM simultaneously; only currentBg is visible. */}
             {/* imgVisible starts false → images mount at opacity:0 → RAF fires →  */}
             {/* imgVisible becomes true → CSS transition 0→1 (0.8s) fires smoothly. */}
+            {/* Zoom keyframe: subtle cinematic scale 1.0→1.05 over 12s.             */}
+            {/* prefers-reduced-motion: animation is disabled via CSS.               */}
+            <style>{`
+                @keyframes heroBgZoom {
+                    from { transform: scale(1.0); }
+                    to   { transform: scale(1.05); }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .hbg-img-inner { animation: none !important; }
+                }
+            `}</style>
             {bgImages.map((src, i) => (
                 <div key={src} style={{
                     position: 'absolute', inset: 0,
@@ -367,20 +378,32 @@ export default function HeroBackground({
                     opacity: imgVisible && currentBg === i ? 1 : 0,
                     transition: 'opacity 0.8s ease-in-out',
                 }}>
-                    <NextImage
-                        src={src}
-                        alt=""
-                        fill
-                        priority={i === 0}
-                        loading={i === 0 ? undefined : 'eager'}
-                        sizes="100vw"
-                        quality={80}
+                    {/* Inner wrapper carries the zoom — isolated from opacity so they don't compound */}
+                    <div
+                        className="hbg-img-inner"
                         style={{
-                            objectFit: 'cover',
-                            objectPosition: isMobile ? 'center top' : 'center center',
-                            filter: 'brightness(0.85)',
+                            position: 'absolute', inset: 0,
+                            animation: imgVisible && currentBg === i
+                                ? 'heroBgZoom 12s ease-in-out forwards'
+                                : 'none',
+                            willChange: 'transform',
                         }}
-                    />
+                    >
+                        <NextImage
+                            src={src}
+                            alt=""
+                            fill
+                            priority={i === 0}
+                            loading={i === 0 ? undefined : 'eager'}
+                            sizes="100vw"
+                            quality={80}
+                            style={{
+                                objectFit: 'cover',
+                                objectPosition: isMobile ? 'center top' : 'center center',
+                                filter: 'brightness(0.85)',
+                            }}
+                        />
+                    </div>
                 </div>
             ))}
 

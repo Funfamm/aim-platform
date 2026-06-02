@@ -15,6 +15,8 @@ export interface FeaturedWorkItem {
     trailerUrl: string | null
     filmUrl: string | null
     translations: string | null
+    /** Open casting calls — drives "View Casting Role" CTA when present */
+    castingCalls?: { id: string }[]
 }
 
 interface Props {
@@ -24,12 +26,13 @@ interface Props {
 }
 
 /**
- * Single featured-work poster card for the mobile hero carousel.
- * Fills its positioned parent with a cover image, cinematic gradient,
- * title/genre, and a context-aware CTA:
- *   • Watch Now   — full film available
- *   • Watch Trailer — only trailer available
- *   • Details     — upcoming or no media
+ * Single featured-work poster card for the mobile Works page hero carousel.
+ *
+ * CTA priority (highest → lowest):
+ *   1. Open casting call → View Casting Role  → /casting/{id}/apply
+ *   2. Full film          → Watch Now          → /works/{slug}/watch
+ *   3. Trailer only       → Watch Trailer      → /works/{slug}#trailer
+ *   4. Fallback           → Details            → /works/{slug}
  */
 export default function MobileFeaturedWorkCard({ work, priority = false }: Props) {
     const t = useTranslations('works')
@@ -40,41 +43,74 @@ export default function MobileFeaturedWorkCard({ work, priority = false }: Props
         ? loc.genre.split(',').map((g: string) => g.trim()).filter(Boolean).join(' · ')
         : null
 
-    // CTA href and label — priority: film > trailer > detail page
-    const ctaHref = work.filmUrl
-        ? `/works/${work.slug}#watch`
-        : work.trailerUrl
-        ? `/works/${work.slug}#trailer`
-        : `/works/${work.slug}`
+    // ── CTA resolution ─────────────────────────────────────────────────────
+    const openCasting = work.castingCalls?.find(c => c.id)
+    let ctaHref: string
+    let ctaLabel: string
+    let ctaGold: boolean
 
-    const ctaLabel = work.filmUrl
-        ? t('watchNow')
-        : work.trailerUrl
-        ? t('watchTrailer')
-        : t('viewDetails')
-
-    const ctaGold = !!work.filmUrl
+    if (openCasting) {
+        ctaHref  = `/casting/${openCasting.id}/apply`
+        ctaLabel = t('viewCastingRole') ?? 'View Casting Role'
+        ctaGold  = false
+    } else if (work.filmUrl) {
+        ctaHref  = `/works/${work.slug}/watch`
+        ctaLabel = t('watchNow')
+        ctaGold  = true
+    } else if (work.trailerUrl) {
+        ctaHref  = `/works/${work.slug}#trailer`
+        ctaLabel = t('watchTrailer')
+        ctaGold  = false
+    } else {
+        ctaHref  = `/works/${work.slug}`
+        ctaLabel = t('viewDetails')
+        ctaGold  = false
+    }
 
     return (
         <>
-            {/* Cover image or dark fallback */}
-            {work.coverImage ? (
-                <Image
-                    src={work.coverImage}
-                    alt={loc.title}
-                    fill
-                    sizes="100vw"
-                    priority={priority}
-                    style={{ objectFit: 'cover', objectPosition: 'center top' }}
-                />
-            ) : (
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'linear-gradient(135deg, #1a1d26, #0d0f14)',
-                }} />
-            )}
+            {/*
+              * Zoom animation: slow cinematic scale 1.0 → 1.04 on the poster.
+              * Isolated to an inner wrapper so opacity on the parent doesn't compound.
+              * prefers-reduced-motion: disabled via CSS.
+              */}
+            <style>{`
+                @keyframes mfwcZoom {
+                    from { transform: scale(1.0); }
+                    to   { transform: scale(1.04); }
+                }
+                @media (prefers-reduced-motion: reduce) {
+                    .mfwc-zoom { animation: none !important; }
+                }
+            `}</style>
 
-            {/* Cinematic gradient overlay — heavier at bottom for readability */}
+            {/* Cover image with zoom wrapper */}
+            <div
+                className="mfwc-zoom"
+                style={{
+                    position: 'absolute', inset: 0,
+                    animation: 'mfwcZoom 10s ease-in-out forwards',
+                    willChange: 'transform',
+                }}
+            >
+                {work.coverImage ? (
+                    <Image
+                        src={work.coverImage}
+                        alt={loc.title}
+                        fill
+                        sizes="100vw"
+                        priority={priority}
+                        style={{ objectFit: 'cover', objectPosition: 'center top' }}
+                    />
+                ) : (
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(135deg, #1a1d26, #0d0f14)',
+                    }} />
+                )}
+            </div>
+
+            {/* Cinematic gradient overlay */}
             <div style={{
                 position: 'absolute', inset: 0,
                 background: 'linear-gradient(180deg, rgba(13,15,20,0.04) 0%, rgba(13,15,20,0.08) 30%, rgba(13,15,20,0.62) 58%, rgba(13,15,20,0.93) 80%, rgba(13,15,20,0.98) 100%)',
@@ -85,7 +121,7 @@ export default function MobileFeaturedWorkCard({ work, priority = false }: Props
             <div style={{
                 position: 'absolute',
                 bottom: 0, left: 0, right: 0,
-                padding: '0 20px 36px', // 36 px bottom clears the dot row
+                padding: '0 20px 36px',
                 zIndex: 2,
             }}>
                 {genre && (

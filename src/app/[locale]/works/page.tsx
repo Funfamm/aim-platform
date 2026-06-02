@@ -18,7 +18,11 @@ export default async function WorksPage() {
         prisma.project.findMany({
             where: { published: true },
             orderBy: { sortOrder: 'asc' },
-            include: { _count: { select: { episodes: { where: { published: true } } } } },
+            include: {
+                _count: { select: { episodes: { where: { published: true } } } },
+                // Only open casting calls — used by mobile Works poster CTA
+                castingCalls: { where: { status: 'open' }, select: { id: true } },
+            },
         }),
         prisma.project.findMany({
             where:    { genre: { not: null }, published: true },
@@ -45,6 +49,7 @@ export default async function WorksPage() {
         // Always include trailerUrl — client handles visibility based on auth + settings
         trailerUrl: allowPublicTrailers ? p.trailerUrl : null,
         episodeCount: p._count.episodes,
+        castingCalls: p.castingCalls,
     }))
 
     const genres = genreRows
