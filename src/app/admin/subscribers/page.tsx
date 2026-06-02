@@ -31,6 +31,22 @@ interface Conversion {
     conversionRate: number; subscriberOnly: number; userOnly: number
     overlap: number; newConversionsThisMonth: number
 }
+interface AddUserFound {
+    user: { id: string; name: string | null; email: string; role: string; loginMethod: string | null; googleId: string | null; preferredLanguage: string; createdAt: string }
+    isSuppressed: boolean
+    suppression: { reason: string; createdAt: string } | null
+    subscriber: { id: string; active: boolean; confirmedAt: string | null; suppressedAt: string | null; suppressReason: string | null; source: string | null } | null
+    notificationSignups: { id: string; signupTag: string; notificationType: string; sourceType: string | null; status: string; createdAt: string }[]
+    ctaTags: { signupTag: string; notificationType: string }[]
+}
+
+const KNOWN_SYSTEM_TAGS = [
+    { signupTag: 'subscribe_general', notificationType: 'more' },
+    { signupTag: 'footer_cta', notificationType: 'more' },
+    { signupTag: 'casting_general', notificationType: 'more' },
+    { signupTag: 'training_general', notificationType: 'more' },
+    { signupTag: 'scripts_general', notificationType: 'more' },
+]
 
 export default function AdminSubscribersPage() {
     const [subscribers, setSubscribers] = useState<Subscriber[]>([])
@@ -59,6 +75,20 @@ export default function AdminSubscribersPage() {
     const [botDeleting, setBotDeleting]         = useState(false)
     const [botScoreFilter, setBotScoreFilter]   = useState(60) // threshold for bulk deselect
     const [autoDeleting, setAutoDeleting]       = useState(false)
+
+    // ── Add Existing User to List panel ──
+    const [addOpen, setAddOpen]             = useState(false)
+    const [addEmail, setAddEmail]           = useState('')
+    const [addSearching, setAddSearching]   = useState(false)
+    const [addFound, setAddFound]           = useState<AddUserFound | null>(null)
+    const [addNotFound, setAddNotFound]     = useState(false)
+    const [addListType, setAddListType]     = useState<'subscriber' | 'notification'>('subscriber')
+    const [addSignupTag, setAddSignupTag]   = useState('')
+    const [addCustomTag, setAddCustomTag]   = useState('')
+    const [addSourceType, setAddSourceType] = useState('general')
+    const [addNotifType, setAddNotifType]   = useState('more')
+    const [addResult, setAddResult]         = useState<{ code: string; message?: string; error?: string } | null>(null)
+    const [addLoading, setAddLoading]       = useState(false)
 
     const showToast = (msg: string) => {
         setToast(msg)
@@ -360,6 +390,53 @@ export default function AdminSubscribersPage() {
         setCampaignSending(false)
     }
 
+    const searchExistingUser = async () => {
+        const email = addEmail.toLowerCase().trim()
+        if (!email) return
+        setAddSearching(true)
+        setAddFound(null)
+        setAddNotFound(false)
+        setAddResult(null)
+        try {
+            const res = await fetch(`/api/admin/users/find-by-email?email=${encodeURIComponent(email)}`)
+            const data = await res.json()
+            if (!res.ok || !data.found) { setAddNotFound(true); return }
+            setAddFound(data as AddUserFound)
+            // Pre-select notif type from first available CTA tag if any
+            if (data.ctaTags?.length > 0) {
+                setAddSignupTag(data.ctaTags[0].signupTag)
+                setAddNotifType(data.ctaTags[0].notificationType || 'more')
+            } else if (KNOWN_SYSTEM_TAGS.length > 0) {
+                setAddSignupTag(KNOWN_SYSTEM_TAGS[0].signupTag)
+                setAddNotifType(KNOWN_SYSTEM_TAGS[0].notificationType)
+            }
+        } catch { setAddNotFound(true) }
+        finally { setAddSearching(false) }
+    }
+
+    const confirmAddToList = async () => {
+        if (!addFound) return
+        setAddLoading(true)
+        setAddResult(null)
+        const effectiveTag = addSignupTag === '__custom__' ? addCustomTag.trim() : addSignupTag
+        try {
+            const res = await fetch('/api/admin/users/add-to-list', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: addFound.user.email,
+                    listType: addListType,
+                    signupTag: effectiveTag,
+                    sourceType: addSourceType,
+                    notificationType: addNotifType,
+                }),
+            })
+            const data = await res.json()
+            setAddResult(data)
+        } catch { setAddResult({ code: 'error', error: 'Network error.' }) }
+        finally { setAddLoading(false) }
+    }
+
     const labelStyle: React.CSSProperties = {
         fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase',
         letterSpacing: '0.08em', color: 'var(--text-tertiary)', marginBottom: '4px', display: 'block',
@@ -446,6 +523,187 @@ export default function AdminSubscribersPage() {
                         {toast}
                     </div>
                 )}
+
+                {/* ── Add Existing User to List ── */}
+                <div className="admin-card" style={{ padding: 'var(--space-lg)', marginBottom: 'var(--space-md)', border: '1px solid rgba(59,130,246,0.22)', background: 'rgba(59,130,246,0.03)' }}>
+                    <button type="button" onClick={() => { setAddOpen(o => !o); setAddFound(null); setAddNotFound(false); setAddResult(null) }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'left', padding: 0 }}>
+                        <span style={{ fontSize: '1rem' }}>{addOpen ? '▾' : '▸'}</span>
+                        <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>👤 Add Existing User to List</span>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', marginLeft: '4px' }}>Manually enrol a Google-login user without creating duplicates</span>
+                    </button>
+
+                    {addOpen && (
+                        <div style={{ marginTop: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+
+                            {/* Step 1 — Email search */}
+                            <div>
+                                <label style={labelStyle}>Step 1 — Search by email</label>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <input style={{ ...inputStyle, maxWidth: '340px' }}
+                                        type="email" placeholder="user@example.com"
+                                        value={addEmail}
+                                        onChange={e => { setAddEmail(e.target.value); setAddFound(null); setAddNotFound(false); setAddResult(null) }}
+                                        onKeyDown={e => e.key === 'Enter' && searchExistingUser()}
+                                    />
+                                    <button type="button" onClick={searchExistingUser} disabled={addSearching || !addEmail.trim()}
+                                        style={{ padding: '8px 16px', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer', background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', color: '#3b82f6', opacity: (addSearching || !addEmail.trim()) ? 0.5 : 1 }}>
+                                        {addSearching ? '⏳ Searching…' : '🔍 Search'}
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Not found */}
+                            {addNotFound && (
+                                <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.82rem', color: '#ef4444' }}>
+                                    ❌ No user found with that email. This tool only works for existing users — do not create a new account from here.
+                                </div>
+                            )}
+
+                            {/* User found — summary */}
+                            {addFound && (
+                                <>
+                                    <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', marginBottom: '6px' }}>✅ User found</div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '6px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Name:</span> {addFound.user.name || '—'}</div>
+                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Email:</span> {addFound.user.email}</div>
+                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Login:</span> {addFound.user.googleId ? '🔵 Google' : addFound.user.loginMethod || 'email'}</div>
+                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Role:</span> {addFound.user.role}</div>
+                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Joined:</span> {new Date(addFound.user.createdAt).toLocaleDateString()}</div>
+                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Language:</span> {addFound.user.preferredLanguage}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Suppression warning */}
+                                    {addFound.isSuppressed && (
+                                        <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.82rem', color: '#ef4444' }}>
+                                            ⛔ <strong>Email is suppressed</strong> ({addFound.suppression?.reason}). Cannot add to any active list without lifting suppression first.
+                                        </div>
+                                    )}
+
+                                    {/* Existing memberships summary */}
+                                    {(addFound.subscriber || addFound.notificationSignups.length > 0) && (
+                                        <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)', fontSize: '0.78rem' }}>
+                                            <div style={{ fontWeight: 600, marginBottom: '4px', color: 'var(--text-secondary)' }}>Existing memberships:</div>
+                                            {addFound.subscriber && (
+                                                <div>• Newsletter: <span style={{ color: addFound.subscriber.active ? '#34d399' : '#f87171' }}>{addFound.subscriber.active ? 'active' : addFound.subscriber.suppressedAt ? 'suppressed' : 'inactive'}</span> (source: {addFound.subscriber.source || '—'})</div>
+                                            )}
+                                            {addFound.notificationSignups.map(ns => (
+                                                <div key={ns.id}>• {ns.signupTag} — <span style={{ color: ns.status === 'active' ? '#34d399' : '#94a3b8' }}>{ns.status}</span></div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {!addFound.isSuppressed && (
+                                        <>
+                                            {/* Step 2 — Target selection */}
+                                            <div>
+                                                <label style={labelStyle}>Step 2 — Select target list</label>
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    {(['subscriber', 'notification'] as const).map(lt => (
+                                                        <button key={lt} type="button" onClick={() => { setAddListType(lt); setAddResult(null) }}
+                                                            style={{ padding: '7px 16px', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', border: '1px solid', transition: 'all 0.15s',
+                                                                background: addListType === lt ? 'rgba(59,130,246,0.15)' : 'transparent',
+                                                                borderColor: addListType === lt ? 'rgba(59,130,246,0.5)' : 'var(--border-subtle)',
+                                                                color: addListType === lt ? '#3b82f6' : 'var(--text-secondary)',
+                                                            }}>
+                                                            {lt === 'subscriber' ? '📬 Newsletter / General Updates' : '🔔 Notify Me / CTA Source'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Notification-specific fields */}
+                                            {addListType === 'notification' && (() => {
+                                                const ctaOptions = [
+                                                    ...KNOWN_SYSTEM_TAGS.filter(s => !addFound.ctaTags.some(c => c.signupTag === s.signupTag)),
+                                                    ...addFound.ctaTags,
+                                                ]
+                                                return (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                                                        <div>
+                                                            <label style={labelStyle}>SignupTag</label>
+                                                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                                                <select style={{ ...selectStyle, minWidth: '240px' }}
+                                                                    value={addSignupTag}
+                                                                    onChange={e => {
+                                                                        setAddSignupTag(e.target.value)
+                                                                        setAddResult(null)
+                                                                        const match = ctaOptions.find(c => c.signupTag === e.target.value)
+                                                                        if (match) setAddNotifType(match.notificationType)
+                                                                    }}>
+                                                                    <optgroup label="System tags">
+                                                                        {KNOWN_SYSTEM_TAGS.map(s => <option key={s.signupTag} value={s.signupTag}>{s.signupTag}</option>)}
+                                                                    </optgroup>
+                                                                    {addFound.ctaTags.length > 0 && (
+                                                                        <optgroup label="CTA configurations">
+                                                                            {addFound.ctaTags.map(c => <option key={c.signupTag} value={c.signupTag}>{c.signupTag}</option>)}
+                                                                        </optgroup>
+                                                                    )}
+                                                                    <optgroup label="Custom">
+                                                                        <option value="__custom__">✏️ Custom tag…</option>
+                                                                    </optgroup>
+                                                                </select>
+                                                                {addSignupTag === '__custom__' && (
+                                                                    <input style={{ ...inputStyle, maxWidth: '220px' }}
+                                                                        placeholder="e.g. scripts_abc123"
+                                                                        value={addCustomTag}
+                                                                        onChange={e => { setAddCustomTag(e.target.value); setAddResult(null) }}
+                                                                    />
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+                                                            <div>
+                                                                <label style={labelStyle}>Source Type</label>
+                                                                <select style={selectStyle} value={addSourceType} onChange={e => setAddSourceType(e.target.value)}>
+                                                                    {['general', 'work', 'casting', 'training', 'scripts'].map(t => <option key={t} value={t}>{t}</option>)}
+                                                                </select>
+                                                            </div>
+                                                            <div>
+                                                                <label style={labelStyle}>Notification Type</label>
+                                                                <select style={selectStyle} value={addNotifType} onChange={e => setAddNotifType(e.target.value)}>
+                                                                    <option value="more">more</option>
+                                                                    <option value="release">release</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })()}
+
+                                            {/* Result banner */}
+                                            {addResult && (
+                                                <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', fontWeight: 500,
+                                                    background: addResult.code === 'added' ? 'rgba(52,211,153,0.08)' : addResult.code === 'already_subscribed' || addResult.code === 'already_on_list' ? 'rgba(245,158,11,0.08)' : 'rgba(239,68,68,0.08)',
+                                                    border: `1px solid ${addResult.code === 'added' ? 'rgba(52,211,153,0.25)' : addResult.code === 'already_subscribed' || addResult.code === 'already_on_list' ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)'}`,
+                                                    color: addResult.code === 'added' ? '#34d399' : addResult.code === 'already_subscribed' || addResult.code === 'already_on_list' ? '#f59e0b' : '#ef4444',
+                                                }}>
+                                                    {addResult.code === 'added' ? '✅' : addResult.code === 'already_subscribed' || addResult.code === 'already_on_list' ? '⚠️' : '❌'}{' '}
+                                                    {addResult.message || addResult.error}
+                                                </div>
+                                            )}
+
+                                            {/* Confirm button */}
+                                            {addResult?.code !== 'added' && (
+                                                <div>
+                                                    <button type="button" onClick={confirmAddToList} disabled={addLoading || (addListType === 'notification' && !addSignupTag && !addCustomTag.trim())}
+                                                        style={{ padding: '9px 20px', borderRadius: 'var(--radius-md)', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
+                                                            background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.4)', color: '#3b82f6',
+                                                            opacity: (addLoading || (addListType === 'notification' && !addSignupTag && !addCustomTag.trim())) ? 0.5 : 1,
+                                                        }}>
+                                                        {addLoading ? '⏳ Adding…' : `✅ Confirm Add to ${addListType === 'subscriber' ? 'Newsletter' : addSignupTag || addCustomTag || 'list'}`}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
 
                 {/* ── Overview Dashboard ── */}
                 <div className="admin-card" style={{ marginBottom: 'var(--space-md)', overflow: 'hidden' }}>
