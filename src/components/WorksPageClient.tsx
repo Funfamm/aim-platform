@@ -160,12 +160,28 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             <Scene3D />
 
             {/* ═══ HERO — mobile: contained card | desktop: full-screen fixed ═══ */}
+            {/*
+              * CSS guard: .wpc-desktop-only is hidden on touch devices via the media
+              * query below. This prevents the desktop HeroBackground (position:fixed)
+              * from flashing during the useIsMobile() hydration window on mobile.
+              */}
+            <style>{`
+                @media (hover: none) and (pointer: coarse) {
+                    .wpc-desktop-only { display: none !important; }
+                }
+            `}</style>
+
             {isMobile ? (
-                /* ── Mobile: featured works poster carousel (falls back to branded hero) ── */
+                /* ── Mobile: admin background + carousel/fallback in one unified card ──
+                 * HeroBackground always renders inside the card so the admin-assigned
+                 * works-page media (images/videos) is always present as an ambient
+                 * layer. In the carousel path the project covers sit on top of it
+                 * (zIndex 6+), so they complement rather than replace the background.
+                 * In the fallback path the same background fills the card with text. */
                 (() => {
                     const heroProjects = projects.filter(p => p.featured).slice(0, 6)
                     const carouselProjects = heroProjects.length > 0 ? heroProjects : projects.slice(0, 4)
-                    const mobileCardStyle: React.CSSProperties = {
+                    const cardStyle: React.CSSProperties = {
                         position: 'relative',
                         height: 'calc(100dvh - 148px)',
                         minHeight: '420px', maxHeight: '700px',
@@ -174,39 +190,49 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                     }
                     if (carouselProjects.length > 0) {
                         return (
-                            <section aria-label="Hero" style={mobileCardStyle}>
-                                <MobileCardCarousel autoRotateMs={5000}>
-                                    {carouselProjects.map((project, i) => (
-                                        <MobileFeaturedWorkCard
-                                            key={project.id}
-                                            work={{
-                                                title: project.title,
-                                                slug: project.slug,
-                                                genre: project.genre,
-                                                year: project.year,
-                                                status: project.status,
-                                                coverImage: project.coverImage,
-                                                trailerUrl: project.trailerUrl,
-                                                filmUrl: project.filmUrl,
-                                                translations: project.translations,
-                                            }}
-                                            priority={i === 0}
-                                        />
-                                    ))}
-                                </MobileCardCarousel>
+                            <section aria-label="Hero" style={cardStyle}>
+                                {/* Admin ambient background — always visible, coexists with project covers */}
+                                <HeroBackground page="works" isMobile={true} cardMode={true}
+                                    poster="/images/works-bg.png" className="works-video-bg"
+                                    allowMobileVideo={false} />
+                                {/* Subtle scrim so project images read clearly over the admin bg */}
+                                <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                                    background: 'rgba(13,15,20,0.42)' }} />
+                                {/* Carousel on top */}
+                                <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
+                                    <MobileCardCarousel autoRotateMs={5000}>
+                                        {carouselProjects.map((project, i) => (
+                                            <MobileFeaturedWorkCard
+                                                key={project.id}
+                                                work={{
+                                                    title: project.title,
+                                                    slug: project.slug,
+                                                    genre: project.genre,
+                                                    year: project.year,
+                                                    status: project.status,
+                                                    coverImage: project.coverImage,
+                                                    trailerUrl: project.trailerUrl,
+                                                    filmUrl: project.filmUrl,
+                                                    translations: project.translations,
+                                                }}
+                                                priority={i === 0}
+                                            />
+                                        ))}
+                                    </MobileCardCarousel>
+                                </div>
                             </section>
                         )
                     }
-                    // Fallback: no projects at all — generic branded hero
+                    // Fallback: no projects — branded hero with admin background
                     return (
-                        <section aria-label="Hero" style={mobileCardStyle}>
+                        <section aria-label="Hero" style={cardStyle}>
                             <HeroBackground page="works" isMobile={true} cardMode={true}
                                 poster="/images/works-bg.png" className="works-video-bg"
                                 allowMobileVideo={true}
                                 onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
-                            <div style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
+                            <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
                                 background: 'linear-gradient(180deg, rgba(13,15,20,0.08) 0%, rgba(13,15,20,0.05) 30%, rgba(13,15,20,0.55) 60%, rgba(13,15,20,0.92) 85%, rgba(13,15,20,0.98) 100%)' }} />
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 3, padding: '0 20px 20px' }}>
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 6, padding: '0 20px 20px' }}>
                                 <span className="text-label" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', marginBottom: '8px', fontSize: '0.62rem' }}>
                                     <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--accent-gold)' }} />
                                     {wpd?.heroLabel || t('label')}
@@ -227,8 +253,9 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                     )
                 })()
             ) : (
-                /* ── Desktop: full-screen fixed background + hero section (unchanged) ── */
-                <>
+                /* ── Desktop: full-screen fixed background + hero section ── */
+                /* wpc-desktop-only: CSS hides this on touch devices (see style above) */
+                <div className="wpc-desktop-only">
                     <HeroBackground page="works" isMobile={isMobile} poster="/images/works-bg.png"
                         className="works-video-bg" allowMobileVideo={true}
                         onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
@@ -273,7 +300,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                             </div>
                         </div>
                     </section>
-                </>
+                </div>
             )}
 
             {/* ═══ PROJECTS GALLERY — scrolls over the video (desktop) or below card (mobile) ═══ */}

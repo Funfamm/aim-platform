@@ -166,15 +166,31 @@ export default function HomeHero({
         if (featuredWorks.length > 0) {
             return (
                 <section aria-label="Hero" style={mobileCardStyle}>
-                    <MobileCardCarousel autoRotateMs={5000}>
-                        {featuredWorks.map((work, i) => (
-                            <MobileFeaturedWorkCard
-                                key={work.slug}
-                                work={work}
-                                priority={i === 0}
-                            />
-                        ))}
-                    </MobileCardCarousel>
+                    {/* Admin ambient background — coexists with project covers */}
+                    <HeroBackground
+                        page="home"
+                        isMobile={true}
+                        cardMode={true}
+                        poster="/images/hero-bg.png"
+                        allowMobileVideo={false}
+                    />
+                    {/* Scrim so project images read clearly over the admin background */}
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+                        background: 'rgba(13,15,20,0.42)',
+                    }} />
+                    {/* Carousel on top */}
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
+                        <MobileCardCarousel autoRotateMs={5000}>
+                            {featuredWorks.map((work, i) => (
+                                <MobileFeaturedWorkCard
+                                    key={work.slug}
+                                    work={work}
+                                    priority={i === 0}
+                                />
+                            ))}
+                        </MobileCardCarousel>
+                    </div>
                 </section>
             )
         }
@@ -286,22 +302,31 @@ export default function HomeHero({
     }
 
     // ══════════════════════════════════════════════════════
-    // DESKTOP — Original full-screen background layout
-    // Unchanged from previous implementation.
+    // DESKTOP — Original full-screen background layout.
+    // hh-desktop-only hides these elements on touch devices
+    // via CSS so the fixed background never flashes on mobile
+    // during the useIsMobile() hydration window.
     // ══════════════════════════════════════════════════════
     return (
         <>
-            {/* ═══ BACKGROUND MEDIA (image or video, device-targeted) ═══ */}
+            <style>{`
+                @media (hover: none) and (pointer: coarse) {
+                    .hh-desktop-only { display: none !important; }
+                }
+            `}</style>
+            {/* ═══ BACKGROUND MEDIA — hidden on touch screens via CSS ═══ */}
             <HeroBackground
                 page="home"
                 isMobile={isMobileHint}
                 poster="/images/hero-bg.png"
                 onVideoChange={handleVideoChange}
                 jumpToVideoRef={jumpToVideoRef}
+                className="hh-desktop-only"
             />
 
             {/* ═══ FIXED GRADIENT OVERLAY — covers the viewport over the media ═══ */}
-            <div style={{
+            {/* ═══ FIXED GRADIENT OVERLAY — hidden on touch screens ═══ */}
+            <div className="hh-desktop-only" style={{
                 position: 'fixed',
                 inset: 0,
                 zIndex: 0,
@@ -310,8 +335,8 @@ export default function HomeHero({
                 pointerEvents: 'none',
             }} />
 
-            {/* ═══ HERO CONTENT — scrolls away as user scrolls ═══ */}
-            <section style={{
+            {/* ═══ HERO CONTENT — hidden on touch screens (mobile uses card path above) ═══ */}
+            <section className="hh-desktop-only" style={{
                 position: 'relative',
                 minHeight: '100dvh',
                 display: 'flex',
