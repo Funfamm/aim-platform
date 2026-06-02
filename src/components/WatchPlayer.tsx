@@ -514,10 +514,11 @@ export default function WatchPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [project.id, activeEpisode, userPreferredLang])
 
-    /* Resume playback fetch */
+    /* Resume playback fetch — works for both movies and series episodes */
     useEffect(() => {
-        if (isSeries) return
-        fetch(`/api/watch/progress?projectId=${project.id}`)
+        const epId = activeEpisode?.id
+        const qs = `projectId=${project.id}${epId ? `&episodeId=${epId}` : ''}`
+        fetch(`/api/watch/progress?${qs}`)
             .then(r => r.json())
             .then((data: { completePct: number | null }) => {
                 if (data.completePct && data.completePct > 0.01) {
@@ -528,7 +529,7 @@ export default function WatchPlayer({
             })
             .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [project.id])
+    }, [project.id, activeEpisode?.id])
 
     /* Fetch Notify Me CTA config for this video */
     useEffect(() => {

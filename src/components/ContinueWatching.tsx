@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { useLocale } from 'next-intl'
 import { getLocalizedProject } from '@/lib/localize'
+import { useIsMobile } from '@/hooks/useIsMobile'
 
 interface HistoryItem {
     id: string
@@ -27,6 +28,7 @@ interface HistoryItem {
         title: string
         number: number
         season: number
+        thumbnail: string | null
     } | null
 }
 
@@ -47,9 +49,11 @@ export default function ContinueWatching() {
     const [items, setItems] = useState<HistoryItem[]>([])
     const [loaded, setLoaded] = useState(false)
     const locale = useLocale()
+    const isMobile = useIsMobile(false)
+    const cardWidth = isMobile ? 160 : 185
 
     useEffect(() => {
-        fetch('/api/dashboard/history?limit=8')
+        fetch('/api/dashboard/history?limit=20')
             .then(r => r.ok ? r.json() : null)
             .then(data => {
                 if (!data?.history) return
@@ -58,7 +62,16 @@ export default function ContinueWatching() {
                 const unfinished = history.filter(h =>
                     h.progress > 0.01 && h.progress < 0.95 && h.project
                 )
-                setItems(unfinished)
+                // Deduplicate by projectId — for series with multiple episode
+                // records, keep only the most recently watched unfinished episode.
+                // The API already sorts by watchedAt desc, so first-seen wins.
+                const seen = new Set<string>()
+                const deduped = unfinished.filter(h => {
+                    if (seen.has(h.projectId)) return false
+                    seen.add(h.projectId)
+                    return true
+                })
+                setItems(deduped.slice(0, 8))
             })
             .catch(() => {})
             .finally(() => setLoaded(true))
@@ -134,7 +147,7 @@ export default function ContinueWatching() {
                                 href={href}
                                 style={{
                                     flexShrink: 0,
-                                    width: '160px',
+                                    width: `${cardWidth}px`,
                                     scrollSnapAlign: 'start',
                                     textDecoration: 'none',
                                     color: 'inherit',
@@ -155,18 +168,18 @@ export default function ContinueWatching() {
                                     e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
                                 }}
                             >
-                                {/* Poster */}
+                                {/* Poster — prefer episode thumbnail for series */}
                                 <div style={{
                                     position: 'relative',
                                     aspectRatio: '16/10',
                                     background: 'var(--bg-tertiary)',
                                 }}>
-                                    {item.project.coverImage ? (
+                                    {(item.episode?.thumbnail || item.project.coverImage) ? (
                                         <Image
-                                            src={item.project.coverImage}
+                                            src={item.episode?.thumbnail || item.project.coverImage!}
                                             alt={loc.title}
                                             fill
-                                            sizes="160px"
+                                            sizes={`${cardWidth}px`}
                                             style={{ objectFit: 'cover' }}
                                         />
                                     ) : (

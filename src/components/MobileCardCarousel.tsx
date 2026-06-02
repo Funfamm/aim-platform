@@ -48,7 +48,7 @@ export default function MobileCardCarousel({ children, autoRotateMs = 5000 }: Mo
     const pauseRotation = useCallback(() => {
         isPausedRef.current = true
         if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current)
-        pauseTimerRef.current = setTimeout(() => { isPausedRef.current = false }, 8000)
+        pauseTimerRef.current = setTimeout(() => { isPausedRef.current = false }, 3000)
     }, [])
 
     // Jump to a specific slide (dot click)
