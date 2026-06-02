@@ -197,6 +197,13 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                         background: var(--bg-primary, #0d0f14) !important;
                         isolation: isolate;
                     }
+                    /* Force the films-grid overlay to use the opaque mobile
+                       gradient from first paint on touch devices, so project
+                       cards never flash through the transparent desktop gradient
+                       during the useIsMobile() hydration window. */
+                    .wpc-films-overlay {
+                        background: linear-gradient(180deg, rgba(13,15,20,0.97) 0%, var(--bg-primary) 15%) !important;
+                    }
                 }
             `}</style>
 
@@ -332,7 +339,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                     Use only left:50% + width:100dvw + translateX(-50%) to centre in both directions.
                     dvw (dynamic viewport width) re-evaluates after orientation change on mobile;
                     plain vw can be stale and keep landscape width after rotating back to portrait. */}
-                <div style={{
+                <div className="wpc-films-overlay" style={{
                     position: 'absolute',
                     top: 0, bottom: 0,
                     left: '50%',
@@ -342,6 +349,9 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                     // the transparent gap at the top of the overlay during first paint.
                     // Desktop: keep the cinematic transparent→dark gradient for the
                     // scroll-over-hero parallax effect.
+                    // NOTE: On touch devices, the CSS media query in the <style> block
+                    // above overrides this to the mobile gradient from first paint,
+                    // before useIsMobile() resolves — preventing the hydration flash.
                     background: isMobile
                         ? 'linear-gradient(180deg, rgba(13,15,20,0.97) 0%, var(--bg-primary) 15%)'
                         : 'linear-gradient(180deg, transparent 0%, rgba(13,15,20,0.7) 6%, rgba(13,15,20,0.92) 15%, rgba(13,15,20,0.97) 30%, var(--bg-primary) 50%)',
