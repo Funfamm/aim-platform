@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Link } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
@@ -38,6 +39,15 @@ export default function MobileFeaturedWorkCard({ work, priority = false }: Props
     const t = useTranslations('works')
     const locale = useLocale()
     const loc = getLocalizedProject(work, locale)
+
+    // Gate the zoom animation — wait one animation frame after mount so the
+    // scale(1.0)→scale(1.04) doesn't fire during the navigation transition.
+    // Without this, the card visually "snaps" as the route change settles.
+    const [animReady, setAnimReady] = useState(false)
+    useEffect(() => {
+        const id = requestAnimationFrame(() => setAnimReady(true))
+        return () => cancelAnimationFrame(id)
+    }, [])
 
     const genre = loc.genre
         ? loc.genre.split(',').map((g: string) => g.trim()).filter(Boolean).join(' · ')
@@ -89,7 +99,8 @@ export default function MobileFeaturedWorkCard({ work, priority = false }: Props
                 className="mfwc-zoom"
                 style={{
                     position: 'absolute', inset: 0,
-                    animation: 'mfwcZoom 10s ease-in-out forwards',
+                    animation: animReady ? 'mfwcZoom 10s ease-in-out forwards' : 'none',
+                    transform: animReady ? undefined : 'scale(1)',
                     willChange: 'transform',
                 }}
             >

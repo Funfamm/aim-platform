@@ -57,7 +57,21 @@ export default function PageTransition({ children }: { children: React.ReactNode
         // should feel instant — no crossfade, just swap.
         const authRoutes = ['/login', '/register', '/verify-email', '/forgot-password']
         const isAuthTransition = authRoutes.some(r => pathname.includes(r) || prevPathname.current.includes(r))
-        if (isAuthTransition) {
+
+        // Home & Works are primary tab-bar destinations on mobile.
+        // The crossfade exit phase exposes the loading spinner on a blank
+        // background, creating the sharp flash users see. Instant-swap
+        // makes these feel like native tab switches instead.
+        // Strip locale prefix (e.g. /zh, /pt) so matching works for all locales.
+        const stripLocale = (p: string) => p.replace(/^\/[a-z]{2}(?:[-_][A-Za-z]{2,4})?(?=\/|$)/, '') || '/'
+        const mainTabRoutes = ['/', '/works']
+        const isMainTabTransition = mainTabRoutes.some(r => {
+            const current = stripLocale(pathname)
+            const prev = stripLocale(prevPathname.current)
+            return current === r || prev === r
+        })
+
+        if (isAuthTransition || isMainTabTransition) {
             prevPathname.current = pathname
             setDisplayChildren(children)
             return

@@ -163,8 +163,11 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
 
     return (
         <main id="main-content" style={{
-            opacity: mounted ? 1 : 0,
-            transition: 'opacity 0.15s ease',
+            // Mobile: render immediately — PageTransition handles the visual
+            // entrance; adding a second opacity fade creates a double-flash.
+            // Desktop: gentle 0.15s entrance fade (no PageTransition crossfade).
+            opacity: (isMobile || mounted) ? 1 : 0,
+            transition: isMobile ? 'none' : 'opacity 0.15s ease',
         }}>
             {/* 3D Particle Background */}
             <Scene3D />
