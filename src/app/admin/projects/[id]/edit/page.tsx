@@ -28,7 +28,7 @@ type FormData = {
     // Publishing controls (merged from inline modal)
     subtitlesPublic: boolean; publishAt: string
     // Content Advisory
-    contentRating: string; contentDescriptors: string[]
+    contentRating: string; contentDescriptors: string[]; advisoryDisplaySeconds: string
     // Player Timings
     introStartSeconds: string; introEndSeconds: string; creditsStartSeconds: string
 }
@@ -41,7 +41,7 @@ const EMPTY_FORM: FormData = {
     gallery: '', credits: '', sponsorData: '',
     mobileCoverImage: '', mobileGallery: '',
     subtitlesPublic: false, publishAt: '',
-    contentRating: '', contentDescriptors: [],
+    contentRating: '', contentDescriptors: [], advisoryDisplaySeconds: '',
     introStartSeconds: '', introEndSeconds: '', creditsStartSeconds: '',
 }
 
@@ -235,6 +235,7 @@ export default function ProjectEditPage() {
                 publishAt: p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : '',
                 contentRating: p.contentRating || '',
                 contentDescriptors: Array.isArray(p.contentDescriptors) ? p.contentDescriptors : [],
+                advisoryDisplaySeconds: p.advisoryDisplaySeconds != null ? String(p.advisoryDisplaySeconds) : '',
                 introStartSeconds: p.introStartSeconds != null ? String(p.introStartSeconds) : '',
                 introEndSeconds: p.introEndSeconds != null ? String(p.introEndSeconds) : '',
                 creditsStartSeconds: p.creditsStartSeconds != null ? String(p.creditsStartSeconds) : '',
@@ -370,6 +371,7 @@ export default function ProjectEditPage() {
                     ? JSON.stringify(notifyGroups)
                     : undefined,
                 contentRating: form.contentRating || null,
+                advisoryDisplaySeconds: form.advisoryDisplaySeconds !== '' ? Number(form.advisoryDisplaySeconds) : null,
                 introStartSeconds: form.introStartSeconds !== '' ? Number(form.introStartSeconds) : null,
                 introEndSeconds: form.introEndSeconds !== '' ? Number(form.introEndSeconds) : null,
                 creditsStartSeconds: form.creditsStartSeconds !== '' ? Number(form.creditsStartSeconds) : null,
@@ -1275,6 +1277,16 @@ export default function ProjectEditPage() {
                                     </div>
                                     <p style={{ fontSize: '0.7rem', color: 'var(--text-tertiary)', marginTop: '6px' }}>
                                         Checked items appear in the content warning shown to viewers before they watch.
+                                    </p>
+                                </div>
+                                <div style={{ maxWidth: '200px' }}>
+                                    <label className="form-label">Advisory Display Duration (s)</label>
+                                    <input className="form-input" type="number" min={1} max={30} step={1}
+                                        value={form.advisoryDisplaySeconds}
+                                        onChange={e => updateField('advisoryDisplaySeconds', e.target.value)}
+                                        placeholder="Default: 5" />
+                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
+                                        Seconds the overlay stays on screen before fading out.
                                     </p>
                                 </div>
                             </div>

@@ -72,6 +72,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 // Content Advisory
                 ...(body.contentRating !== undefined && { contentRating: body.contentRating || null }),
                 ...(body.contentDescriptors !== undefined && { contentDescriptors: body.contentDescriptors ?? [] }),
+                ...('advisoryDisplaySeconds' in body && { advisoryDisplaySeconds: body.advisoryDisplaySeconds }),
                 // Player Timings
                 ...('introStartSeconds' in body && { introStartSeconds: body.introStartSeconds }),
                 ...('introEndSeconds' in body && { introEndSeconds: body.introEndSeconds }),

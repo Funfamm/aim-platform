@@ -34,6 +34,7 @@ export interface WatchProject {
     // Content Advisory
     contentRating?: string | null
     contentDescriptors?: string[]
+    advisoryDisplaySeconds?: number | null
     // Player Timings
     introStartSeconds?: number | null
     introEndSeconds?: number | null
@@ -208,13 +209,14 @@ export default function WatchPlayer({
         const showTimer = setTimeout(() => setAdvisoryVisible(true), 2000)
         return () => clearTimeout(showTimer)
     }, [hasAdvisory, isPlaying])
-    // Auto-fade advisory after display
+    // Auto-fade advisory after display (admin-configurable duration, default 5s)
+    const advisoryDurationMs = (project.advisoryDisplaySeconds ?? 5) * 1000
     useEffect(() => {
         if (!advisoryVisible) return
-        const stayTimer = setTimeout(() => setAdvisoryFading(true), 5000)
-        const hideTimer = setTimeout(() => setAdvisoryVisible(false), 5800)
+        const stayTimer = setTimeout(() => setAdvisoryFading(true), advisoryDurationMs)
+        const hideTimer = setTimeout(() => setAdvisoryVisible(false), advisoryDurationMs + 800)
         return () => { clearTimeout(stayTimer); clearTimeout(hideTimer) }
-    }, [advisoryVisible])
+    }, [advisoryVisible, advisoryDurationMs])
 
     /* ── Player Timings — resolve with episode-level inheritance ── */
     const effectiveIntroStart = (activeEpisode?.introStartSeconds ?? project.introStartSeconds) ?? null
@@ -1536,34 +1538,43 @@ export default function WatchPlayer({
                         <div style={{
                             position: 'absolute', top: '72px', left: '16px', zIndex: 40,
                             display: 'flex', flexDirection: 'row', gap: '10px',
+                            alignItems: 'stretch',
                             pointerEvents: 'none',
                             opacity: advisoryFading ? 0 : 1,
                             transition: 'opacity 0.8s ease-out',
                             animation: 'advisoryFadeIn 0.4s ease-out',
+                            background: 'rgba(0,0,0,0.62)',
+                            backdropFilter: 'blur(8px)',
+                            WebkitBackdropFilter: 'blur(8px)',
+                            borderRadius: '8px',
+                            padding: '10px 14px 10px 0',
+                            border: '1px solid rgba(212,168,83,0.25)',
+                            boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
                         }}>
                             {/* Gold accent line */}
                             <div style={{
-                                width: '3px', minHeight: '100%', borderRadius: '2px',
+                                width: '3px', borderRadius: '0 2px 2px 0',
                                 background: 'linear-gradient(180deg, #d4a853 0%, #b8943f 100%)',
-                                flexShrink: 0,
+                                flexShrink: 0, marginRight: '10px',
                             }} />
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                                 {project.contentRating && (
                                     <div style={{
-                                        fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.08em',
-                                        color: '#d4a853', textTransform: 'uppercase',
-                                        textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                                        fontSize: '0.8rem', fontWeight: 800, letterSpacing: '0.1em',
+                                        color: '#e8b84b', textTransform: 'uppercase',
+                                        textShadow: '0 1px 6px rgba(0,0,0,0.9)',
                                     }}>
-                                        RATED {project.contentRating}
+                                        🛡️ Rated {project.contentRating}
                                     </div>
                                 )}
                                 {project.contentDescriptors && project.contentDescriptors.length > 0 && (
                                     <div style={{
-                                        fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)',
-                                        textShadow: '0 1px 3px rgba(0,0,0,0.6)',
-                                        maxWidth: '280px', lineHeight: 1.4,
+                                        fontSize: '0.74rem', fontWeight: 500,
+                                        color: 'rgba(255,255,255,0.92)',
+                                        textShadow: '0 1px 4px rgba(0,0,0,0.9)',
+                                        maxWidth: '300px', lineHeight: 1.45,
                                     }}>
-                                        {project.contentDescriptors.map(k => DESCRIPTOR_LABELS[k] || k.replace(/_/g, ' ')).join(', ')}
+                                        {project.contentDescriptors.map(k => DESCRIPTOR_LABELS[k] || k.replace(/_/g, ' ')).join(' · ')}
                                     </div>
                                 )}
                             </div>
