@@ -39,7 +39,10 @@ export default function MobileCardCarousel({ children, autoRotateMs = 5000 }: Mo
             if (!strip) return
             const current = Math.round(strip.scrollLeft / strip.clientWidth)
             const next = (current + 1) % count
-            strip.scrollTo({ left: next * strip.clientWidth, behavior: 'smooth' })
+            // Wrap last→first: use instant scroll so the user doesn't see
+            // a fast rewind across all slides. Normal advances use smooth.
+            const behavior = next === 0 ? 'instant' : 'smooth'
+            strip.scrollTo({ left: next * strip.clientWidth, behavior: behavior as ScrollBehavior })
         }, autoRotateMs)
         return () => clearInterval(interval)
     }, [autoRotateMs, count])
