@@ -24,14 +24,11 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'signupTag required for notification' }, { status: 400 })
     }
 
-    // User must already exist — never create one
+    // Look up user — nullable; non-users can still be added to subscriber/notification lists
     const user = await p.user.findUnique({
         where: { email },
         select: { id: true, name: true, preferredLanguage: true },
     })
-    if (!user) {
-        return NextResponse.json({ code: 'user_not_found', error: 'No user found with that email.' }, { status: 404 })
-    }
 
     // Global suppression check — applies to both list types
     const suppression = await p.emailSuppression.findUnique({
@@ -71,9 +68,9 @@ export async function POST(request: NextRequest) {
         await p.subscriber.create({
             data: {
                 email,
-                name: user.name ?? null,
+                name: user?.name ?? null,
                 source: 'admin_manual_add',
-                locale: user.preferredLanguage || 'en',
+                locale: user?.preferredLanguage || 'en',
                 active: true,
                 confirmedAt: new Date(),
             },
@@ -95,9 +92,9 @@ export async function POST(request: NextRequest) {
             email,
             signupTag,
             notificationType,
-            userId: user.id,
-            language: user.preferredLanguage || 'en',
-            requestedBy: 'member',
+            userId: user?.id ?? null,
+            language: user?.preferredLanguage || 'en',
+            requestedBy: user ? 'member' : 'guest',
             requestSource: 'admin_manual_add',
             sourceType,
             status: 'active',

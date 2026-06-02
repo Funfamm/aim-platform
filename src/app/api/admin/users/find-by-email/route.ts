@@ -40,13 +40,12 @@ export async function GET(request: NextRequest) {
         }),
     ])
 
-    if (!user) return NextResponse.json({ found: false })
-
     const isSuppressed = !!(suppression && !suppression.removedAt)
 
+    // Always return full context — UI can add non-users to subscriber/notification lists
     return NextResponse.json({
-        found: true,
-        user,
+        found: !!user,
+        user: user ?? null,
         isSuppressed,
         suppression: isSuppressed ? { reason: suppression.reason, createdAt: suppression.createdAt } : null,
         subscriber: subscriber ?? null,

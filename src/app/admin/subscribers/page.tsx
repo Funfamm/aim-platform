@@ -32,7 +32,8 @@ interface Conversion {
     overlap: number; newConversionsThisMonth: number
 }
 interface AddUserFound {
-    user: { id: string; name: string | null; email: string; role: string; loginMethod: string | null; googleId: string | null; preferredLanguage: string; createdAt: string }
+    found: boolean
+    user: { id: string; name: string | null; email: string; role: string; loginMethod: string | null; googleId: string | null; preferredLanguage: string; createdAt: string } | null
     isSuppressed: boolean
     suppression: { reason: string; createdAt: string } | null
     subscriber: { id: string; active: boolean; confirmedAt: string | null; suppressedAt: string | null; suppressReason: string | null; source: string | null } | null
@@ -399,14 +400,14 @@ export default function AdminSubscribersPage() {
         setAddResult(null)
         try {
             const res = await fetch(`/api/admin/users/find-by-email?email=${encodeURIComponent(email)}`)
+            if (!res.ok) { setAddNotFound(true); return }
             const data = await res.json()
-            if (!res.ok || !data.found) { setAddNotFound(true); return }
             setAddFound(data as AddUserFound)
-            // Pre-select notif type from first available CTA tag if any
+            // Pre-select first available signup tag
             if (data.ctaTags?.length > 0) {
                 setAddSignupTag(data.ctaTags[0].signupTag)
                 setAddNotifType(data.ctaTags[0].notificationType || 'more')
-            } else if (KNOWN_SYSTEM_TAGS.length > 0) {
+            } else {
                 setAddSignupTag(KNOWN_SYSTEM_TAGS[0].signupTag)
                 setAddNotifType(KNOWN_SYSTEM_TAGS[0].notificationType)
             }
@@ -419,12 +420,13 @@ export default function AdminSubscribersPage() {
         setAddLoading(true)
         setAddResult(null)
         const effectiveTag = addSignupTag === '__custom__' ? addCustomTag.trim() : addSignupTag
+        const emailToUse = addFound.user?.email ?? addEmail.toLowerCase().trim()
         try {
             const res = await fetch('/api/admin/users/add-to-list', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    email: addFound.user.email,
+                    email: emailToUse,
                     listType: addListType,
                     signupTag: effectiveTag,
                     sourceType: addSourceType,
@@ -553,27 +555,36 @@ export default function AdminSubscribersPage() {
                                 </div>
                             </div>
 
-                            {/* Not found */}
+                            {/* Network/unexpected error */}
                             {addNotFound && (
                                 <div style={{ padding: '10px 14px', borderRadius: 'var(--radius-md)', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.82rem', color: '#ef4444' }}>
-                                    ❌ No user found with that email. This tool only works for existing users — do not create a new account from here.
+                                    ❌ Search failed — check the email address and try again.
                                 </div>
                             )}
 
-                            {/* User found — summary */}
+                            {/* Result — user found OR guest (email only) */}
                             {addFound && (
                                 <>
-                                    <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
-                                        <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', marginBottom: '6px' }}>✅ User found</div>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '6px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Name:</span> {addFound.user.name || '—'}</div>
-                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Email:</span> {addFound.user.email}</div>
-                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Login:</span> {addFound.user.googleId ? '🔵 Google' : addFound.user.loginMethod || 'email'}</div>
-                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Role:</span> {addFound.user.role}</div>
-                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Joined:</span> {new Date(addFound.user.createdAt).toLocaleDateString()}</div>
-                                            <div><span style={{ color: 'var(--text-tertiary)' }}>Language:</span> {addFound.user.preferredLanguage}</div>
+                                    {addFound.found ? (
+                                        <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(52,211,153,0.06)', border: '1px solid rgba(52,211,153,0.2)' }}>
+                                            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)', marginBottom: '6px' }}>✅ Registered user found</div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '6px', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                                <div><span style={{ color: 'var(--text-tertiary)' }}>Name:</span> {addFound.user?.name || '—'}</div>
+                                                <div><span style={{ color: 'var(--text-tertiary)' }}>Email:</span> {addFound.user?.email}</div>
+                                                <div><span style={{ color: 'var(--text-tertiary)' }}>Login:</span> {addFound.user?.googleId ? '🔵 Google' : addFound.user?.loginMethod || 'email'}</div>
+                                                <div><span style={{ color: 'var(--text-tertiary)' }}>Role:</span> {addFound.user?.role}</div>
+                                                <div><span style={{ color: 'var(--text-tertiary)' }}>Joined:</span> {addFound.user ? new Date(addFound.user.createdAt).toLocaleDateString() : '—'}</div>
+                                                <div><span style={{ color: 'var(--text-tertiary)' }}>Language:</span> {addFound.user?.preferredLanguage}</div>
+                                            </div>
                                         </div>
-                                    </div>
+                                    ) : (
+                                        <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-md)', background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.22)' }}>
+                                            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#f59e0b', marginBottom: '4px' }}>⚠️ No user account — email only</div>
+                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                                <strong>{addEmail.toLowerCase().trim()}</strong> is not registered in the User table. You can still add this email to a list — it will be stored as a guest/subscriber record without a linked account.
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Suppression warning */}
                                     {addFound.isSuppressed && (
