@@ -60,6 +60,7 @@ export async function POST(req: Request) {
             year: body.year || null,
             duration: body.duration || null,
             featured: body.featured ?? false,
+            featuredWorks: body.featuredWorks ?? false,
             published: body.published ?? false,
             subtitlesPublic: body.subtitlesPublic ?? false,
             sortOrder: (maxOrder._max.sortOrder || 0) + 1,

@@ -36,6 +36,7 @@ interface Project {
     translations: string | null
     // Required by ProjectCard / HoverPreviewCard:
     featured: boolean
+    featuredWorks: boolean
     viewCount: number
 }
 
@@ -344,6 +345,47 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                             </p>
 
                         </div>
+
+                        {/* ── Featured on Works Page spotlight ── */}
+                        {(() => {
+                            const spotlightProjects = projects.filter(p => p.featuredWorks)
+                            if (!isMobile && spotlightProjects.length > 0) return (
+                                <div style={{ marginBottom: 'var(--space-3xl)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: 'var(--space-lg)' }}>
+                                        <div style={{ width: '3px', height: '18px', borderRadius: '2px', background: 'linear-gradient(180deg, var(--accent-gold-light), var(--accent-gold))' }} />
+                                        <span style={{ fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)' }}>Featured</span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(spotlightProjects.length, 3)}, 1fr)`, gap: 'var(--space-lg)' }}>
+                                        {spotlightProjects.map(project => {
+                                            const loc = getLocalizedProject(project, locale)
+                                            return (
+                                                <Link key={project.id} href={`/works/${project.slug}`}
+                                                    style={{ textDecoration: 'none', display: 'block', position: 'relative', aspectRatio: '16/9', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid rgba(212,168,83,0.25)', boxShadow: '0 0 0 1px rgba(212,168,83,0.08), 0 8px 32px rgba(0,0,0,0.4)' }}>
+                                                    <div style={{
+                                                        position: 'absolute', inset: 0,
+                                                        backgroundImage: project.coverImage ? `url(${project.coverImage})` : 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-secondary))',
+                                                        backgroundSize: 'cover', backgroundPosition: 'center',
+                                                    }} />
+                                                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 35%, rgba(0,0,0,0.85) 100%)' }} />
+                                                    <div style={{ position: 'absolute', top: '10px', left: '10px', display: 'flex', gap: '5px' }}>
+                                                        <span style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#000', background: 'var(--accent-gold)', padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>Featured</span>
+                                                        {project.status === 'completed' && <span style={{ fontSize: '0.55rem', fontWeight: 700, color: '#34d399', background: 'rgba(52,211,153,0.15)', border: '1px solid rgba(52,211,153,0.3)', padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>Completed</span>}
+                                                        {project.status === 'in-production' && <span style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--accent-gold)', background: 'rgba(212,168,83,0.12)', border: '1px solid rgba(212,168,83,0.25)', padding: '2px 8px', borderRadius: 'var(--radius-full)' }}>In Production</span>}
+                                                    </div>
+                                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '14px 16px' }}>
+                                                        {loc.genre && <p style={{ fontSize: '0.55rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase' as const, color: 'var(--accent-gold)', margin: '0 0 4px' }}>{loc.genre.split(',').map((g: string) => g.trim()).filter(Boolean).slice(0, 2).join(' · ')}</p>}
+                                                        <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: '0 0 3px', color: '#fff', lineHeight: 1.2 }}>{loc.title}</h3>
+                                                        {loc.tagline && <p style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', margin: 0, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{loc.tagline}</p>}
+                                                    </div>
+                                                </Link>
+                                            )
+                                        })}
+                                    </div>
+                                    <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(212,168,83,0.2) 30%, rgba(212,168,83,0.2) 70%, transparent)', marginTop: 'var(--space-3xl)' }} />
+                                </div>
+                            )
+                            return null
+                        })()}
 
                         {projects.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: 'var(--space-4xl) 0' }}>

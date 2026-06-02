@@ -51,6 +51,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 ...(body.year !== undefined && { year: body.year || null }),
                 ...(body.duration !== undefined && { duration: body.duration || null }),
                 ...(body.featured !== undefined && { featured: body.featured }),
+                ...(body.featuredWorks !== undefined && { featuredWorks: body.featuredWorks }),
                 ...(body.published !== undefined && { published: body.published }),
                 ...(body.subtitlesPublic !== undefined && { subtitlesPublic: body.subtitlesPublic }),
                 // Clear publishAt when manually publishing

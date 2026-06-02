@@ -19,7 +19,7 @@ import { readSSEStream } from '@/lib/sse-reader'
 type Project = {
     id: string; title: string; slug: string; tagline: string; description: string
     status: string; genre: string | null; year: string | null; duration: string | null
-    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null; mobileCoverImage: string | null; mobileGallery: string | null
+    featured: boolean; featuredWorks: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string | null; sortOrder: number; coverImage: string | null; mobileCoverImage: string | null; mobileGallery: string | null
     trailerUrl: string | null; filmUrl: string | null; projectType: string
     gallery: string | null; credits: string | null; sponsorData: string | null
     viewCount: number
@@ -29,7 +29,7 @@ type Project = {
 type FormData = {
     title: string; slug: string; tagline: string; description: string
     status: string; genre: string; year: string; duration: string
-    featured: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string; coverImage: string; mobileCoverImage: string; mobileGallery: string
+    featured: boolean; featuredWorks: boolean; published: boolean; subtitlesPublic: boolean; publishAt: string; coverImage: string; mobileCoverImage: string; mobileGallery: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
 }
@@ -37,7 +37,7 @@ type FormData = {
 const EMPTY_FORM: FormData = {
     title: '', slug: '', tagline: '', description: '',
     status: 'upcoming', genre: '', year: '', duration: '',
-    featured: false, published: false, subtitlesPublic: false, publishAt: '', coverImage: '', mobileCoverImage: '', mobileGallery: '',
+    featured: false, featuredWorks: false, published: false, subtitlesPublic: false, publishAt: '', coverImage: '', mobileCoverImage: '', mobileGallery: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
 }
@@ -312,6 +312,7 @@ export default function AdminProjectsPage() {
             year: p.year || '',
             duration: p.duration || '',
             featured: p.featured,
+            featuredWorks: p.featuredWorks ?? false,
             published: p.published ?? false,
             subtitlesPublic: p.subtitlesPublic ?? false,
             publishAt: p.publishAt ? new Date(p.publishAt).toISOString().slice(0, 16) : '',
@@ -1245,7 +1246,8 @@ export default function AdminProjectsPage() {
                                         <div style={{ position: 'absolute', top: 'var(--space-md)', right: 'var(--space-md)', display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                                             <span className={`badge ${status.className}`}>{status.label}</span>
                                             {project.published && <span className="badge badge-purple">🌐 Published</span>}
-                                            {project.featured && <span className="badge badge-gold">★ Featured</span>}
+                                            {project.featured && <span className="badge badge-gold">🏠 Home</span>}
+                                            {project.featuredWorks && <span className="badge badge-gold">📋 Works</span>}
                                             {isTrending && <span className="badge badge-gold">🔥 Trending</span>}
                                         </div>
                                     </div>
@@ -1443,7 +1445,13 @@ export default function AdminProjectsPage() {
                                             <input type="checkbox" checked={form.featured}
                                                 onChange={e => updateField('featured', e.target.checked)}
                                                 style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }} />
-                                            ★ Featured on homepage
+                                            🏠 Feature on Homepage
+                                        </label>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                                            <input type="checkbox" checked={form.featuredWorks}
+                                                onChange={e => updateField('featuredWorks', e.target.checked)}
+                                                style={{ width: '18px', height: '18px', accentColor: 'var(--accent-gold)' }} />
+                                            📋 Feature on Works Page
                                         </label>
                                         <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', cursor: 'pointer', fontSize: '0.88rem', color: form.published ? '#c084fc' : 'var(--text-secondary)', fontWeight: form.published ? 700 : 400, transition: 'all 0.2s' }}>
                                             <input type="checkbox" checked={form.published}

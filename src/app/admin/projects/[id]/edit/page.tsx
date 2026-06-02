@@ -20,7 +20,7 @@ import LangStatusGrid from '@/components/admin/LangStatusGrid'
 type FormData = {
     title: string; slug: string; tagline: string; description: string
     status: string; genre: string; year: string; duration: string
-    featured: boolean; published: boolean; coverImage: string
+    featured: boolean; featuredWorks: boolean; published: boolean; coverImage: string
     trailerUrl: string; filmUrl: string; projectType: string
     gallery: string; credits: string; sponsorData: string
     // Mobile media (merged from inline modal)
@@ -36,7 +36,7 @@ type FormData = {
 const EMPTY_FORM: FormData = {
     title: '', slug: '', tagline: '', description: '',
     status: 'upcoming', genre: '', year: '', duration: '',
-    featured: false, published: false, coverImage: '',
+    featured: false, featuredWorks: false, published: false, coverImage: '',
     trailerUrl: '', filmUrl: '', projectType: 'movie',
     gallery: '', credits: '', sponsorData: '',
     mobileCoverImage: '', mobileGallery: '',
@@ -224,7 +224,7 @@ export default function ProjectEditPage() {
                 title: p.title, slug: p.slug, tagline: p.tagline || '',
                 description: p.description, status: p.status,
                 genre: p.genre || '', year: p.year || '', duration: p.duration || '',
-                featured: p.featured, published: p.published ?? false,
+                featured: p.featured, featuredWorks: p.featuredWorks ?? false, published: p.published ?? false,
                 coverImage: p.coverImage || '', trailerUrl: p.trailerUrl || '',
                 filmUrl: p.filmUrl || '', projectType: p.projectType || 'movie',
                 gallery: p.gallery || '', credits: p.credits || '',
@@ -1096,7 +1096,11 @@ export default function ProjectEditPage() {
                                 <div style={{ display: 'flex', gap: 'var(--space-xl)', paddingTop: 'var(--space-sm)', flexWrap: 'wrap' }}>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
                                         <input type="checkbox" checked={form.featured} onChange={e => updateField('featured', e.target.checked)} />
-                                        ⭐ Featured
+                                        🏠 Feature on Homepage
+                                    </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                        <input type="checkbox" checked={form.featuredWorks} onChange={e => updateField('featuredWorks', e.target.checked)} />
+                                        📋 Feature on Works Page
                                     </label>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.85rem' }}>
                                         <input type="checkbox" checked={form.published} onChange={e => updateField('published', e.target.checked)} />
