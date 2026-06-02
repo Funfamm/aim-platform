@@ -40,6 +40,13 @@ export default function HomeHero({
         return [t('word1'), t('word2'), t('word3'), t('word4'), t('word5')]
     }, [rotatingWords, t])
 
+    // Cover URLs for homepage-featured projects — injected into the desktop hero rotation
+    const featuredCovers = useMemo(
+        () => featuredWorks.filter(w => w.coverImage).map(w => w.coverImage as string),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
     const [wordIdx, setWordIdx] = useState(0)
     const [wordFade, setWordFade] = useState(true)
 
@@ -305,6 +312,7 @@ export default function HomeHero({
                 page="home"
                 isMobile={isMobileHint}
                 poster="/images/hero-bg.png"
+                extraImages={featuredCovers}
                 onVideoChange={handleVideoChange}
                 jumpToVideoRef={jumpToVideoRef}
                 className="hh-desktop-only"

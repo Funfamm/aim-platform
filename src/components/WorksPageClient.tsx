@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useSyncExternalStore } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, useSyncExternalStore } from 'react'
 import HeroBackground from '@/components/HeroBackground'
 import { Link } from '@/i18n/navigation'
 import ScrollReveal3D from '@/components/ScrollReveal3D'
@@ -82,6 +82,15 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
     useScrollRestoration('works')
 
     // FIXED_ROWS removed — mobile shows only admin-curated rolls
+
+    // ── Featured project cover URLs for the desktop hero rotation ───────────
+    // Projects from server props are stable — useMemo with empty deps is safe here.
+    // featuredWorks covers appear at the front of HeroBackground's image slideshow.
+    const featuredWorkCovers = useMemo(
+        () => projects.filter(p => p.featuredWorks && p.coverImage).map(p => p.coverImage as string),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
 
     // ── Desktop hover card state ─────────────────────────────────────────────
     const [hoverProject, setHoverProject] = useState<Project | null>(null)
@@ -173,7 +182,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
 
             {isMobile ? (
                 (() => {
-                    const heroProjects = projects.filter(p => p.featured).slice(0, 6)
+                    const heroProjects = projects.filter(p => p.featuredWorks).slice(0, 6)
                     const carouselProjects = heroProjects.length > 0 ? heroProjects : projects.slice(0, 4)
                     const cardStyle: React.CSSProperties = {
                         position: 'relative',
@@ -244,6 +253,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                 <div className="wpc-desktop-only">
                     <HeroBackground page="works" isMobile={isMobile} poster="/images/works-bg.png"
                         className="works-video-bg" allowMobileVideo={true}
+                        extraImages={featuredWorkCovers}
                         onVideoChange={handleVideoChange} jumpToVideoRef={jumpToVideoRef} />
                     <section style={{ position: 'relative', height: '100dvh', zIndex: 1 }}>
                         <div style={{ position: 'absolute', inset: 0, zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-xl)', paddingTop: '120px', paddingBottom: 'var(--space-3xl)' }}>

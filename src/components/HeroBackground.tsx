@@ -34,6 +34,9 @@ interface HeroBackgroundProps {
      *  When TRUE, mobile video is allowed only if the connection is strong
      *  (4g+, no Save-Data, device memory ≥4 GB). */
     allowMobileVideo?: boolean
+    /** Extra image URLs (e.g. featured project covers) injected at the front
+     *  of the image rotation alongside admin-assigned Media Manager images. */
+    extraImages?: string[]
 }
 
 /** Filter media items by device target */
@@ -57,7 +60,7 @@ function safePlay(video: HTMLVideoElement): void {
 
 export default function HeroBackground({
     page, isMobile, cardMode = false, poster, className, onVideoChange, jumpToVideoRef,
-    allowMobileVideo = false,
+    allowMobileVideo = false, extraImages,
 }: HeroBackgroundProps) {
     const pos = cardMode ? 'absolute' : 'fixed'
 
@@ -95,6 +98,22 @@ export default function HeroBackground({
     // Raw (unfiltered) media stored so we can re-filter without re-fetching
     const rawImagesRef = useRef<{ url: string; target?: string; sortOrder?: number }[]>([])
     const rawVideosRef = useRef<HeroVideo[]>([])
+    // Stable ref for caller-injected covers (featured project posters)
+    const extraImagesRef = useRef<string[]>([])
+    // Keep ref in sync — use a joined string as dep key so array identity changes
+    // don't trigger unnecessary re-renders when the URLs haven't actually changed
+    const extraImagesKey = (extraImages ?? []).filter(Boolean).join('|')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useEffect(() => {
+        extraImagesRef.current = (extraImages ?? []).filter(Boolean)
+        // If raw API images are already loaded, rebuild the list immediately
+        if (rawImagesRef.current.length > 0) {
+            const filtered = rawImagesRef.current.filter(m => matchesTarget(m.target, isMobileDevice))
+            setBgImages([...extraImagesRef.current, ...filtered.map(m => m.url)])
+            setCurrentBg(0)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [extraImagesKey])
 
     // ── Video state ──
     const [videos, setVideos] = useState<HeroVideo[]>([])
@@ -121,7 +140,8 @@ export default function HeroBackground({
                     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
                 rawImagesRef.current = imageItems
                 const filteredImages = imageItems.filter(m => matchesTarget(m.target, mobile))
-                setBgImages(filteredImages.map(m => m.url))
+                // Featured project covers lead the rotation; admin images follow
+                setBgImages([...extraImagesRef.current, ...filteredImages.map(m => m.url)])
                 setCurrentBg(0)
 
                 const videoItems: HeroVideo[] = data
@@ -138,7 +158,7 @@ export default function HeroBackground({
     useEffect(() => {
         if (rawImagesRef.current.length > 0) {
             const filtered = rawImagesRef.current.filter(m => matchesTarget(m.target, isMobileDevice))
-            setBgImages(filtered.map(m => m.url))
+            setBgImages([...extraImagesRef.current, ...filtered.map(m => m.url)])
             setCurrentBg(0)
         }
         if (rawVideosRef.current.length > 0) {
