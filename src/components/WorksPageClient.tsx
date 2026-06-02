@@ -154,7 +154,7 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
     return (
         <main id="main-content" style={{
             opacity: mounted ? 1 : 0,
-            transition: 'opacity 0.4s ease',
+            transition: 'opacity 0.15s ease',
         }}>
             {/* 3D Particle Background */}
             <Scene3D />
@@ -172,12 +172,6 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
             `}</style>
 
             {isMobile ? (
-                /* ── Mobile: admin background + carousel/fallback in one unified card ──
-                 * HeroBackground always renders inside the card so the admin-assigned
-                 * works-page media (images/videos) is always present as an ambient
-                 * layer. In the carousel path the project covers sit on top of it
-                 * (zIndex 6+), so they complement rather than replace the background.
-                 * In the fallback path the same background fills the card with text. */
                 (() => {
                     const heroProjects = projects.filter(p => p.featured).slice(0, 6)
                     const carouselProjects = heroProjects.length > 0 ? heroProjects : projects.slice(0, 4)
@@ -190,36 +184,28 @@ export default function WorksPageClient({ projects, completedCount, inProdCount,
                     }
                     if (carouselProjects.length > 0) {
                         return (
+                            // Carousel: project covers fill the card — no extra HeroBackground fetch
+                            // so no secondary fade-in animation fires inside an already-animating card.
                             <section aria-label="Hero" style={cardStyle}>
-                                {/* Admin ambient background — always visible, coexists with project covers */}
-                                <HeroBackground page="works" isMobile={true} cardMode={true}
-                                    poster="/images/works-bg.png" className="works-video-bg"
-                                    allowMobileVideo={false} />
-                                {/* Subtle scrim so project images read clearly over the admin bg */}
-                                <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
-                                    background: 'rgba(13,15,20,0.42)' }} />
-                                {/* Carousel on top */}
-                                <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
-                                    <MobileCardCarousel autoRotateMs={5000}>
-                                        {carouselProjects.map((project, i) => (
-                                            <MobileFeaturedWorkCard
-                                                key={project.id}
-                                                work={{
-                                                    title: project.title,
-                                                    slug: project.slug,
-                                                    genre: project.genre,
-                                                    year: project.year,
-                                                    status: project.status,
-                                                    coverImage: project.coverImage,
-                                                    trailerUrl: project.trailerUrl,
-                                                    filmUrl: project.filmUrl,
-                                                    translations: project.translations,
-                                                }}
-                                                priority={i === 0}
-                                            />
-                                        ))}
-                                    </MobileCardCarousel>
-                                </div>
+                                <MobileCardCarousel autoRotateMs={5000}>
+                                    {carouselProjects.map((project, i) => (
+                                        <MobileFeaturedWorkCard
+                                            key={project.id}
+                                            work={{
+                                                title: project.title,
+                                                slug: project.slug,
+                                                genre: project.genre,
+                                                year: project.year,
+                                                status: project.status,
+                                                coverImage: project.coverImage,
+                                                trailerUrl: project.trailerUrl,
+                                                filmUrl: project.filmUrl,
+                                                translations: project.translations,
+                                            }}
+                                            priority={i === 0}
+                                        />
+                                    ))}
+                                </MobileCardCarousel>
                             </section>
                         )
                     }

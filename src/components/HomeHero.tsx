@@ -165,32 +165,18 @@ export default function HomeHero({
         // ── Featured works carousel ──────────────────────────────────────
         if (featuredWorks.length > 0) {
             return (
+                // Carousel: project covers fill the card — no extra HeroBackground fetch
+                // to avoid a secondary fade-in animation inside the already-animating card.
                 <section aria-label="Hero" style={mobileCardStyle}>
-                    {/* Admin ambient background — coexists with project covers */}
-                    <HeroBackground
-                        page="home"
-                        isMobile={true}
-                        cardMode={true}
-                        poster="/images/hero-bg.png"
-                        allowMobileVideo={false}
-                    />
-                    {/* Scrim so project images read clearly over the admin background */}
-                    <div style={{
-                        position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
-                        background: 'rgba(13,15,20,0.42)',
-                    }} />
-                    {/* Carousel on top */}
-                    <div style={{ position: 'absolute', inset: 0, zIndex: 6 }}>
-                        <MobileCardCarousel autoRotateMs={5000}>
-                            {featuredWorks.map((work, i) => (
-                                <MobileFeaturedWorkCard
-                                    key={work.slug}
-                                    work={work}
-                                    priority={i === 0}
-                                />
-                            ))}
-                        </MobileCardCarousel>
-                    </div>
+                    <MobileCardCarousel autoRotateMs={5000}>
+                        {featuredWorks.map((work, i) => (
+                            <MobileFeaturedWorkCard
+                                key={work.slug}
+                                work={work}
+                                priority={i === 0}
+                            />
+                        ))}
+                    </MobileCardCarousel>
                 </section>
             )
         }
