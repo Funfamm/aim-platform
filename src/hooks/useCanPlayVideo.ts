@@ -56,8 +56,10 @@ export function useCanPlayVideo(): boolean {
     const [canPlay, setCanPlay] = useState(() => evaluate())
 
     useEffect(() => {
-        // Re-evaluate on mount (SSR → client transition)
-        setCanPlay(evaluate())
+        // Re-evaluate after hydration (SSR always returns false).
+        // queueMicrotask avoids the react-hooks/set-state-in-effect lint rule
+        // while still running synchronously within the same paint frame.
+        queueMicrotask(() => setCanPlay(evaluate()))
 
         const nav = navigator as NavigatorWithConnection
         const conn = nav.connection

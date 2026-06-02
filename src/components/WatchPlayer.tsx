@@ -3,7 +3,6 @@
 import {
     useState, useRef, useEffect, useCallback, useMemo,
 } from 'react'
-import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 import type { TranscriptSegment } from '@/lib/transcribe-client'
@@ -427,29 +426,8 @@ export default function WatchPlayer({
         }
     }, [updateVideoRect])
 
-    /* Lock body scroll when lang overlay/sheet is open (any mobile orientation) */
-    useEffect(() => {
-        if (showLangMenu) {
-            const prev = document.body.style.overflow
-            document.body.style.overflow = 'hidden'
-            return () => { document.body.style.overflow = prev }
-        }
-    }, [showLangMenu])
-
-    /* Auto-pause video when CC language overlay opens; resume on close */
-    const wasPlayingBeforeLangMenu = useRef(false)
-    useEffect(() => {
-        const vid = videoRef.current
-        if (!vid) return
-        if (showLangMenu && isMobile) {
-            wasPlayingBeforeLangMenu.current = !vid.paused
-            if (!vid.paused) { vid.pause(); setIsPlaying(false) }
-        } else if (!showLangMenu && isMobile && wasPlayingBeforeLangMenu.current) {
-            vid.play().catch(() => {}); setIsPlaying(true)
-            wasPlayingBeforeLangMenu.current = false
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [showLangMenu, isMobile])
+    /* Body scroll lock and auto-pause REMOVED — CC menu is now a compact
+     * in-player sheet that doesn't need either. Video continues playing. */
 
     /* Cleanup blob URLs */
     useEffect(() => {
@@ -825,17 +803,11 @@ export default function WatchPlayer({
     }
 
     const toggleCC = () => {
-        if (!ccEnabled && ccAvailable.length > 0) {
-            if (ccSegments.length > 0) {
-                setCcEnabled(true)
-            } else {
-                loadSubtitles(ccLang || 'en')
-            }
-        } else if (ccEnabled && ccAvailable.length > 1) {
-            setShowLangMenu(prev => !prev)
-        } else {
-            setCcEnabled(false); setCcStatusText('')
-        }
+        // Always open/close the language menu — it handles all states:
+        //  • ccAvailable empty → shows "No subtitles available"
+        //  • ccAvailable populated → shows language list + Off
+        setShowLangMenu(prev => !prev)
+        setShowSpeedMenu(false)
     }
 
     const loadSubtitles = useCallback(async (lang: string) => {
@@ -1918,135 +1890,66 @@ export default function WatchPlayer({
                                                         }}>{tPlayer('subtitlesOff')}</button>
                                                 </div>
                                             )}
-                                            {/* Mobile: full-screen overlay (portrait + landscape) — pauses video, 2-column grid */}
-                                            {showLangMenu && isMobile && typeof document !== 'undefined' && createPortal(
-                                                <>
-                                                    {/* Blurred backdrop — covers entire screen */}
-                                                    <div
-                                                        onClick={() => setShowLangMenu(false)}
-                                                        style={{
-                                                            position: 'fixed', inset: 0,
-                                                            background: 'rgba(0,0,0,0.75)',
-                                                            backdropFilter: 'blur(12px)',
-                                                            WebkitBackdropFilter: 'blur(12px)',
-                                                            zIndex: 9999998,
-                                                            animation: 'aimOverlayIn 0.2s ease',
-                                                        }}
-                                                    />
-                                                    {/* Overlay content — centered, scrollable */}
-                                                    <div
-                                                        onClick={() => setShowLangMenu(false)}
-                                                        style={{
-                                                            position: 'fixed', inset: 0,
-                                                            zIndex: 9999999,
-                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                            padding: 'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
-                                                            animation: 'aimOverlayIn 0.25s ease',
-                                                        }}
-                                                    >
-                                                        <div
-                                                            onClick={e => e.stopPropagation()}
+                                            {/* Mobile: compact bottom sheet inside the player — video keeps playing */}
+                                            {showLangMenu && isMobile && (
+                                                <div
+                                                    onClick={e => e.stopPropagation()}
+                                                    style={{
+                                                        position: 'absolute',
+                                                        bottom: '50px', /* sits above the controls bar */
+                                                        right: 0,
+                                                        width: isLandscape ? '220px' : '200px',
+                                                        maxHeight: '40%',
+                                                        overflowY: 'auto',
+                                                        background: 'rgba(13,15,20,0.97)',
+                                                        border: '1px solid rgba(212,168,83,0.3)',
+                                                        borderRadius: '10px',
+                                                        padding: '4px',
+                                                        backdropFilter: 'blur(10px)',
+                                                        WebkitBackdropFilter: 'blur(10px)',
+                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+                                                        animation: 'aimFadeIn 0.15s ease',
+                                                        zIndex: 10,
+                                                        direction: 'ltr',
+                                                        scrollbarWidth: 'none',
+                                                        msOverflowStyle: 'none',
+                                                    }}
+                                                >
+                                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', padding: '6px 10px 4px' }}>{tPlayer('subtitles')}</div>
+                                                    {ccAvailable.length === 0 && (
+                                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', padding: '6px 10px' }}>{tPlayer('noSubtitles')}</div>
+                                                    )}
+                                                    {ccAvailable.map(lang => (
+                                                        <button key={lang}
+                                                            onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
                                                             style={{
-                                                                width: isLandscape ? '95%' : '90%',
-                                                                maxWidth: isLandscape ? '600px' : '440px',
-                                                                maxHeight: isLandscape ? '90dvh' : '80dvh',
-                                                                overflowY: 'auto',
-                                                                background: 'rgba(13,15,20,0.95)',
-                                                                border: '1px solid rgba(212,168,83,0.25)',
-                                                                borderRadius: isLandscape ? '12px' : '16px',
-                                                                padding: isLandscape ? '12px 16px' : '20px',
-                                                                boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
-                                                            }}
-                                                        >
-                                                            {/* Header */}
-                                                            <div style={{
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                marginBottom: isLandscape ? '8px' : '16px',
-                                                                paddingBottom: isLandscape ? '8px' : '12px',
-                                                                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                                                display: 'block', width: '100%',
+                                                                minHeight: '44px', /* tap-friendly */
+                                                                padding: '8px 10px', textAlign: 'start',
+                                                                background: ccLang === lang && ccEnabled ? 'rgba(212,168,83,0.15)' : 'transparent',
+                                                                border: 'none', borderRadius: '6px',
+                                                                fontSize: '0.82rem', cursor: 'pointer',
+                                                                color: ccLang === lang && ccEnabled ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                                                                fontFamily: 'inherit',
+                                                                WebkitTapHighlightColor: 'transparent',
                                                             }}>
-                                                                <div style={{
-                                                                    fontSize: isLandscape ? '0.75rem' : '0.82rem', fontWeight: 700,
-                                                                    textTransform: 'uppercase', letterSpacing: '0.1em',
-                                                                    color: 'var(--accent-gold)',
-                                                                }}>{tPlayer('subtitles')}</div>
-                                                                <button
-                                                                    onClick={() => setShowLangMenu(false)}
-                                                                    style={{
-                                                                        background: 'rgba(255,255,255,0.08)', border: 'none',
-                                                                        borderRadius: '50%',
-                                                                        width: isLandscape ? '28px' : '32px',
-                                                                        height: isLandscape ? '28px' : '32px',
-                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                        cursor: 'pointer', color: 'var(--text-secondary)',
-                                                                        WebkitTapHighlightColor: 'transparent',
-                                                                    }}
-                                                                >
-                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                                        <line x1="18" y1="6" x2="6" y2="18" />
-                                                                        <line x1="6" y1="6" x2="18" y2="18" />
-                                                                    </svg>
-                                                                </button>
-                                                            </div>
-                                                            {/* Language grid: 3-col in landscape, 2-col in portrait */}
-                                                            <div style={{
-                                                                display: 'grid',
-                                                                gridTemplateColumns: isLandscape
-                                                                    ? 'repeat(3, 1fr)'
-                                                                    : (ccAvailable.length > 4 ? 'repeat(2, 1fr)' : '1fr'),
-                                                                gap: isLandscape ? '4px' : '6px',
-                                                            }}>
-                                                                {ccAvailable.map((lang, i) => (
-                                                                    <button key={lang}
-                                                                        onClick={() => { loadSubtitles(lang); setShowLangMenu(false) }}
-                                                                        style={{
-                                                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                            minHeight: isLandscape ? '40px' : '48px',
-                                                                            padding: isLandscape ? '6px 12px' : '10px 14px',
-                                                                            background: ccLang === lang && ccEnabled
-                                                                                ? 'rgba(212,168,83,0.15)' : 'rgba(255,255,255,0.04)',
-                                                                            border: ccLang === lang && ccEnabled
-                                                                                ? '1px solid rgba(212,168,83,0.35)' : '1px solid rgba(255,255,255,0.06)',
-                                                                            borderRadius: isLandscape ? '8px' : '10px',
-                                                                            fontSize: isLandscape ? '0.8rem' : '0.9rem', cursor: 'pointer',
-                                                                            color: ccLang === lang && ccEnabled
-                                                                                ? 'var(--accent-gold)' : 'var(--text-secondary)',
-                                                                            fontFamily: 'inherit',
-                                                                            WebkitTapHighlightColor: 'transparent',
-                                                                            animation: `aimOverlayItemIn 0.2s ease ${i * 0.03}s both`,
-                                                                        }}
-                                                                    >
-                                                                        <span>{LANGUAGE_NAMES[lang] || lang}</span>
-                                                                        {ccLang === lang && ccEnabled && (
-                                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                                                <polyline points="20 6 9 17 4 12" />
-                                                                            </svg>
-                                                                        )}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                            {/* Turn off button */}
-                                                            <div style={{ height: '1px', background: 'rgba(255,255,255,0.07)', margin: isLandscape ? '8px 0' : '12px 0' }} />
-                                                            <button
-                                                                onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
-                                                                style={{
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                    width: '100%', minHeight: isLandscape ? '40px' : '48px',
-                                                                    padding: isLandscape ? '6px 14px' : '10px 14px',
-                                                                    background: !ccEnabled ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)',
-                                                                    border: '1px solid rgba(255,255,255,0.08)',
-                                                                    borderRadius: isLandscape ? '8px' : '10px',
-                                                                    fontSize: isLandscape ? '0.8rem' : '0.9rem', cursor: 'pointer',
-                                                                    color: 'var(--text-tertiary)', fontFamily: 'inherit',
-                                                                    WebkitTapHighlightColor: 'transparent',
-                                                                }}
-                                                            >
-                                                                {tPlayer('subtitlesOff')}
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </>,
-                                                document.body
+                                                            {LANGUAGE_NAMES[lang] || lang} {ccLang === lang && ccEnabled && '✓'}
+                                                        </button>
+                                                    ))}
+                                                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '4px 6px' }} />
+                                                    <button
+                                                        onClick={() => { setCcEnabled(false); setShowLangMenu(false) }}
+                                                        style={{
+                                                            display: 'block', width: '100%',
+                                                            minHeight: '44px', /* tap-friendly */
+                                                            padding: '8px 10px', textAlign: 'start',
+                                                            background: !ccEnabled ? 'rgba(255,255,255,0.06)' : 'transparent',
+                                                            border: 'none', borderRadius: '6px',
+                                                            fontSize: '0.82rem', cursor: 'pointer',
+                                                            color: 'var(--text-tertiary)', fontFamily: 'inherit',
+                                                            WebkitTapHighlightColor: 'transparent',
+                                                        }}>{tPlayer('subtitlesOff')}</button>
+                                                </div>
                                             )}
                                         </div>
                                     )}
