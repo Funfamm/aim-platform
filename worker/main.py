@@ -339,20 +339,26 @@ async def _download_and_transcribe(video_url: str, language: str, tmp_dir: str) 
     audio_path = Path(tmp_dir) / f"audio.{audio_ext}"
     log.info(f'"Extracting audio as {audio_ext}"')
 
+    if not video_path.exists() or video_path.stat().st_size == 0:
+        raise RuntimeError("Downloaded video file is missing or empty")
+
     def _run_ffmpeg():
         if use_groq:
-            cmd = ["ffmpeg", "-y", "-i", str(video_path),
+            cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", str(video_path),
                    "-vn", "-acodec", "libmp3lame", "-ab", "64k", "-ar", "16000", "-ac", "1",
                    str(audio_path)]
         else:
-            cmd = ["ffmpeg", "-y", "-i", str(video_path),
+            cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error", "-i", str(video_path),
                    "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
                    str(audio_path)]
-        return subprocess.run(cmd, capture_output=True, timeout=600)
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
     ffmpeg_result = await asyncio.to_thread(_run_ffmpeg)
     if ffmpeg_result.returncode != 0:
-        raise RuntimeError(f"ffmpeg failed: {ffmpeg_result.stderr.decode()[:500]}")
+        raise RuntimeError(f"ffmpeg failed: {(ffmpeg_result.stderr or ffmpeg_result.stdout)[:500]}")
+
+    if not audio_path.exists() or audio_path.stat().st_size == 0:
+        raise RuntimeError("FFmpeg produced no output audio file")
 
     # Transcribe — Groq cloud (primary) or local faster-whisper (fallback)
     lang_arg = None if language in ("auto", "") else language
