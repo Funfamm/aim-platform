@@ -32,6 +32,7 @@ import hashlib
 import hmac
 import logging
 import os
+import shutil
 import subprocess
 import tempfile
 import time
@@ -70,6 +71,8 @@ R2_PUBLIC_URL = os.environ.get("R2_PUBLIC_URL", "").rstrip("/")
 WHISPER_MODEL_SIZE = os.environ.get("WHISPER_MODEL", "base")
 MAX_FILE_SIZE_MB = int(os.environ.get("MAX_FILE_SIZE_MB", "2000"))
 VERCEL_BYPASS_SECRET = os.environ.get("VERCEL_BYPASS_SECRET", "").strip()
+# Bearer token used by AIM Studio Lite's /transcribe compatibility endpoint
+TRANSCRIPTION_SECRET = os.environ.get("TRANSCRIPTION_SECRET", "").strip()
 # ── Groq (cloud Whisper — primary engine when configured) ─────────────────────
 # Support multiple keys: GROQ_API_KEYS=key1,key2,key3
 # Falls back to GROQ_API_KEY (single) if GROQ_API_KEYS not set.
@@ -307,6 +310,86 @@ async def transcribe_with_groq(audio_path: Path, language: str | None) -> tuple[
 
 # ── Core transcription task ───────────────────────────────────────────────────
 
+async def _download_and_transcribe(video_url: str, language: str, tmp_dir: str) -> tuple[list[dict], str]:
+    """Download a video, extract audio, and run transcription.
+
+    Shared by both /generate (async callback) and /transcribe (sync response).
+    Returns (segments, detected_language). Temp files are written into tmp_dir;
+    the caller is responsible for cleanup.
+    """
+    video_path = Path(tmp_dir) / "video.mp4"
+
+    # Download video (streaming, size-limited)
+    max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
+    downloaded = 0
+    async with httpx.AsyncClient(timeout=300, follow_redirects=True) as client:
+        async with client.stream("GET", video_url) as resp:
+            resp.raise_for_status()
+            with open(video_path, "wb") as f:
+                async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
+                    downloaded += len(chunk)
+                    if downloaded > max_bytes:
+                        raise ValueError(f"Video exceeds {MAX_FILE_SIZE_MB} MB limit")
+                    f.write(chunk)
+    log.info(f'"Video downloaded: {downloaded / 1e6:.1f} MB"')
+
+    # Extract audio (MP3 for Groq, WAV for local faster-whisper)
+    use_groq = bool(GROQ_API_KEY)
+    audio_ext = "mp3" if use_groq else "wav"
+    audio_path = Path(tmp_dir) / f"audio.{audio_ext}"
+    log.info(f'"Extracting audio as {audio_ext}"')
+
+    def _run_ffmpeg():
+        if use_groq:
+            cmd = ["ffmpeg", "-y", "-i", str(video_path),
+                   "-vn", "-acodec", "libmp3lame", "-ab", "64k", "-ar", "16000", "-ac", "1",
+                   str(audio_path)]
+        else:
+            cmd = ["ffmpeg", "-y", "-i", str(video_path),
+                   "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
+                   str(audio_path)]
+        return subprocess.run(cmd, capture_output=True, timeout=600)
+
+    ffmpeg_result = await asyncio.to_thread(_run_ffmpeg)
+    if ffmpeg_result.returncode != 0:
+        raise RuntimeError(f"ffmpeg failed: {ffmpeg_result.stderr.decode()[:500]}")
+
+    # Transcribe — Groq cloud (primary) or local faster-whisper (fallback)
+    lang_arg = None if language in ("auto", "") else language
+    log.info(f'"transcriptionStarted engine={"groq" if use_groq else "local"} lang={lang_arg}"')
+
+    if use_groq:
+        log.info(f'"Using Groq {GROQ_MODEL}"')
+        segments, detected_lang = await transcribe_with_groq(audio_path, lang_arg)
+    else:
+        log.info(f'"Using local faster-whisper ({WHISPER_MODEL_SIZE})"')
+        if _whisper_model is None:
+            raise RuntimeError("Whisper model not loaded")
+
+        def _run_whisper():
+            segs, inf = _whisper_model.transcribe(
+                str(audio_path), language=lang_arg, vad_filter=True
+            )
+            return list(segs), inf
+
+        whisper_segs_list, info = await asyncio.to_thread(_run_whisper)
+        detected_lang = info.language
+        segments = [
+            {"start": round(s.start, 3), "end": round(s.end, 3), "text": s.text}
+            for s in whisper_segs_list
+        ]
+
+    log.info(
+        f'"transcriptionSucceeded=true detectedLanguage={detected_lang}'
+        f' segmentCount={len(segments)}'
+        f' firstSegment={repr(segments[0]["text"][:60]) if segments else "(empty)"}"'
+    )
+    if not segments:
+        log.warning('"WARNING: segmentCount=0 — no speech detected"')
+
+    return segments, detected_lang
+
+
 async def _guarded_transcription(job_id: str, project_id: str, video_url: str, language: str, media_type: str = "movie") -> None:
     """Wrapper that enforces the concurrency semaphore.
     If a job is already running, this awaits until it finishes before starting.
@@ -322,87 +405,15 @@ async def run_transcription(job_id: str, project_id: str, video_url: str, langua
 
     start_time = time.monotonic()
     tmp_dir = tempfile.mkdtemp(prefix="aim_subtitle_")
-    video_path = Path(tmp_dir) / "video.mp4"
-    audio_path = Path(tmp_dir) / "audio.wav"
 
     try:
         # 1. Notify Vercel: job is now processing
         await send_callback({"jobId": job_id, "workerRunId": f"local-{job_id[:8]}"})
 
-        # 2. Download video (streaming, size-limited)
-        log.info(f'"Downloading video for job {job_id}"')
-        max_bytes = MAX_FILE_SIZE_MB * 1024 * 1024
-        downloaded = 0
-        async with httpx.AsyncClient(timeout=300, follow_redirects=True) as client:
-            async with client.stream("GET", video_url) as resp:
-                resp.raise_for_status()
-                with open(video_path, "wb") as f:
-                    async for chunk in resp.aiter_bytes(chunk_size=1024 * 1024):
-                        downloaded += len(chunk)
-                        if downloaded > max_bytes:
-                            raise ValueError(f"Video exceeds {MAX_FILE_SIZE_MB} MB limit")
-                        f.write(chunk)
-        log.info(f'"Video downloaded: {downloaded / 1e6:.1f} MB"')
-
-        # 3. Extract audio (MP3 for Groq upload efficiency, WAV for local model)
-        use_groq = bool(GROQ_API_KEY)
-        audio_ext = "mp3" if use_groq else "wav"
-        audio_path = Path(tmp_dir) / f"audio.{audio_ext}"
-        log.info(f'"Extracting audio as {audio_ext} for job {job_id}"')
-
-        def _run_ffmpeg():
-            if use_groq:
-                # MP3 64k mono — ~8x smaller than WAV, accepted by Groq
-                cmd = ["ffmpeg", "-y", "-i", str(video_path),
-                       "-vn", "-acodec", "libmp3lame", "-ab", "64k", "-ar", "16000", "-ac", "1",
-                       str(audio_path)]
-            else:
-                # PCM WAV required by faster-whisper
-                cmd = ["ffmpeg", "-y", "-i", str(video_path),
-                       "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1",
-                       str(audio_path)]
-            return subprocess.run(cmd, capture_output=True, timeout=600)
-
-        ffmpeg_result = await asyncio.to_thread(_run_ffmpeg)
-        if ffmpeg_result.returncode != 0:
-            raise RuntimeError(f"ffmpeg failed: {ffmpeg_result.stderr.decode()[:500]}")
-
-        # 4. Transcribe — Groq cloud (primary) or local faster-whisper (fallback)
-        lang_arg = None if language in ("auto", "") else language
-        log.info(f'"[debug] transcriptionStarted jobId={job_id} engine={"groq" if use_groq else "local"} lang_arg={lang_arg}"')
-
-        if use_groq:
-            log.info(f'"Using Groq {GROQ_MODEL} for job {job_id}"')
-            segments, detected_lang = await transcribe_with_groq(audio_path, lang_arg)
-        else:
-            log.info(f'"Using local faster-whisper ({WHISPER_MODEL_SIZE}) for job {job_id}"')
-            if _whisper_model is None:
-                raise RuntimeError("Whisper model not loaded")
-
-            def _run_whisper():
-                segs, inf = _whisper_model.transcribe(
-                    str(audio_path), language=lang_arg, vad_filter=True
-                )
-                return list(segs), inf
-
-            whisper_segs_list, info = await asyncio.to_thread(_run_whisper)
-            detected_lang = info.language
-            segments = [
-                {"start": round(s.start, 3), "end": round(s.end, 3), "text": s.text}
-                for s in whisper_segs_list
-            ]
-
-        # Critical instrumentation — matches Step 1 log format
-        log.info(
-            f'"[debug] transcriptionSucceeded=true"'
-            f'" detectedLanguage={detected_lang}"'
-            f'" segmentCount={len(segments)}"'
-            f'" firstSegment={repr(segments[0]["text"][:60]) if segments else "(empty)"}"'
-        )
-        log.info(f'"Transcribed {len(segments)} segments in language={detected_lang}"')
-
-        if not segments:
-            log.warning(f'"[debug] WARNING: segmentCount=0 — Whisper returned no segments for job {job_id}"')
+        # 2–4. Download video, extract audio, transcribe
+        log.info(f'"Downloading and transcribing video for job {job_id}"')
+        segments, detected_lang = await _download_and_transcribe(video_url, language, tmp_dir)
+        log.info(f'"Transcribed {len(segments)} segments language={detected_lang} job={job_id}"')
 
         # 5. Build VTT and SRT
         vtt_content = build_vtt(segments)
@@ -434,16 +445,7 @@ async def run_transcription(job_id: str, project_id: str, video_url: str, langua
         await send_callback({"jobId": job_id, "error": str(exc)[:500], "mediaType": media_type})
 
     finally:
-        # 8. Clean up temp files
-        for p in [audio_path, video_path]:
-            try:
-                p.unlink(missing_ok=True)
-            except Exception:
-                pass
-        try:
-            Path(tmp_dir).rmdir()
-        except Exception:
-            pass
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
 
 # ── FastAPI routes ─────────────────────────────────────────────────────────────
@@ -461,6 +463,41 @@ async def health():
         "model": model,
         "model_loaded": GROQ_API_KEY != "" or _whisper_model is not None,
     }
+
+
+@app.post("/transcribe")
+async def transcribe_sync(request: Request):
+    """Synchronous transcription endpoint for AIM Studio Lite.
+    Bearer auth via TRANSCRIPTION_SECRET. Returns { segments } directly.
+    """
+    auth = request.headers.get("authorization", "")
+    if TRANSCRIPTION_SECRET and auth != f"Bearer {TRANSCRIPTION_SECRET}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    body = await request.json()
+    video_url = body.get("url")
+    language = body.get("language", "en")
+    work_id = body.get("workId", "")
+
+    if not video_url:
+        raise HTTPException(status_code=400, detail="url is required")
+
+    tmp_dir = tempfile.mkdtemp(prefix="aim_transcribe_")
+    try:
+        async with _transcription_sem:
+            segments, detected_lang = await _download_and_transcribe(video_url, language, tmp_dir)
+    except (httpx.HTTPStatusError, ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    log.info(f'"[/transcribe] workId={work_id} lang={detected_lang} segments={len(segments)}"')
+    return JSONResponse({
+        "segments": [
+            {"start": float(s["start"]), "end": float(s["end"]), "text": str(s["text"]).strip()}
+            for s in segments
+        ]
+    })
 
 
 @app.post("/generate")
