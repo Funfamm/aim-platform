@@ -488,6 +488,12 @@ async def transcribe_sync(request: Request):
     if not video_url:
         raise HTTPException(status_code=400, detail="url is required")
 
+    if ".m3u8" in video_url.lower():
+        raise HTTPException(
+            status_code=400,
+            detail="HLS playlists are not supported for transcription. Send the original MP4 master source.",
+        )
+
     tmp_dir = tempfile.mkdtemp(prefix="aim_transcribe_")
     try:
         async with _transcription_sem:
