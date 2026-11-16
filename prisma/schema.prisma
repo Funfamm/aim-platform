@@ -1705,3 +1705,31 @@ model CtaConfiguration {
   @@index([videoId])
   @@index([status])
 }
+
+// ── Client website briefs ────────────────────────────────────────────────────
+// A prospective web-design client fills in a brief at /brief/<token> without an
+// account. The token is the only key, so it must stay unguessable.
+model ClientBrief {
+  id          String    @id @default(cuid())
+  token       String    @unique
+  club        String
+  contactName String?
+  email       String?
+  phone       String?
+  answers     Json      @default("{}")
+  status      String    @default("not_started") // not_started | in_progress | submitted
+  submittedAt DateTime?
+  lastSeenAt  DateTime?
+  adminNotes  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([status])
+}
+
+// Single-row rate card used to price client briefs (id is always "default").
+model ClientBriefConfig {
+  id        String   @id @default("default")
+  rates     Json
+  updatedAt DateTime @updatedAt
+}

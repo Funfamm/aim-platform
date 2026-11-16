@@ -40,6 +40,12 @@ export function middleware(request: NextRequest) {
     return applySecurityHeaders(response);
   }
 
+  // Client website briefs: standalone pages outside [locale], no site chrome
+  if (pathname === '/brief' || pathname.startsWith('/brief/')) {
+    const response = NextResponse.next();
+    return applySecurityHeaders(response);
+  }
+
   // All other routes: next-intl locale routing + security headers.
   // Two cookies were blocking Vercel edge caching:
   //   1. csrf_token — moved to lazy /api/csrf fetch in AuthProvider

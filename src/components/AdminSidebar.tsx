@@ -23,6 +23,7 @@ const NAV_ITEMS = [
     { href: '/admin/donations', label: '💰 Donations' },
     { href: '/admin/comments', label: '💬 Comments' },
     { href: '/admin/project-requests', label: '📋 Project Requests' },
+    { href: '/admin/client-briefs', label: '🧾 Client Briefs' },
     { href: '/admin/users', label: '👥 Users' },
     { href: '/admin/audit', label: '🛡️ Audit Log' },
     { href: '/admin/subscribers', label: '📬 Subscribers' },
