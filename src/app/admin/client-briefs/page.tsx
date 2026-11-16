@@ -144,7 +144,8 @@ export default function ClientBriefsPage() {
                     </section>
                 </div>
 
-                <RatesEditor rates={rates} onSaved={r => { setRates(r); setToast('Rates saved') }} />
+                {/* keyed on the saved rates so the draft resets when they change */}
+                <RatesEditor key={JSON.stringify(rates)} rates={rates} onSaved={r => { setRates(r); setToast('Rates saved') }} />
 
                 {toast && <div style={{ position: 'fixed', bottom: 24, right: 24, padding: '12px 18px', borderRadius: 10, background: 'var(--bg-card-hover)', border: '1px solid var(--accent-gold)', fontSize: '0.85rem', zIndex: 50 }}>{toast}</div>}
                 <style>{`@media (max-width: 900px) { .cb-grid { grid-template-columns: 1fr !important; } }`}</style>
@@ -154,8 +155,10 @@ export default function ClientBriefsPage() {
 }
 
 function Detail({ brief, rates, onCopy, onChange, onDeleted }: { brief: Brief; rates: Rates; onCopy: (t: string) => void; onChange: () => void; onDeleted: () => void }) {
-    const a = brief.answers || {}
+    const a = useMemo(() => brief.answers || {}, [brief.answers])
     const q = useMemo(() => estimate(a, rates), [a, rates])
+    // mark the first line of each group so the table can print a group header
+    const lines = q.lines.map((l, i) => ({ ...l, head: i === 0 || q.lines[i - 1].group !== l.group }))
     const [notes, setNotes] = useState(brief.adminNotes || '')
     const [notesState, setNotesState] = useState('')
     const [armed, setArmed] = useState(false)
@@ -181,7 +184,6 @@ function Detail({ brief, rates, onCopy, onChange, onDeleted }: { brief: Brief; r
         return lines.join('\n')
     }
 
-    let group = ''
     return (
         <div style={{ display: 'grid', gap: 16 }}>
             <div style={card}>
@@ -217,10 +219,9 @@ function Detail({ brief, rates, onCopy, onChange, onDeleted }: { brief: Brief; r
                 </p>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                     <tbody>
-                        {q.lines.map((l, i) => {
-                            const head = l.group !== group; group = l.group
+                        {lines.map((l, i) => {
                             return [
-                                head && <tr key={'g' + i}><td colSpan={2} style={{ padding: '14px 0 6px', fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{l.group}</td></tr>,
+                                l.head && <tr key={'g' + i}><td colSpan={2} style={{ padding: '14px 0 6px', fontSize: '0.7rem', letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>{l.group}</td></tr>,
                                 <tr key={i}><td style={{ padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>{l.label}</td>
                                     <td style={{ padding: '7px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{money(l.amount)}</td></tr>,
                             ]
@@ -267,7 +268,6 @@ function Detail({ brief, rates, onCopy, onChange, onDeleted }: { brief: Brief; r
 function RatesEditor({ rates, onSaved }: { rates: Rates; onSaved: (r: Rates) => void }) {
     const [draft, setDraft] = useState<Rates>(rates)
     const [state, setState] = useState('')
-    useEffect(() => setDraft(rates), [rates])
     const featureQ = question('features')
     const features = featureQ && featureQ.t === 'groups' ? featureQ.groups.flatMap(([, items]) => items) : []
     const save = async () => {

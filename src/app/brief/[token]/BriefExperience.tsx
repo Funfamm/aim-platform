@@ -330,10 +330,10 @@ function Scoreboard({ club, step, save, demo, onJump }: { club: string; step: nu
     const shownRef = useRef(target)
     useEffect(() => {
         const from = shownRef.current, t0 = performance.now()
-        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { shownRef.current = target; setShown(target); return }
+        const dur = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 1 : 700
         let raf = 0
         const tick = (now: number) => {
-            const k = Math.min(1, (now - t0) / 700)
+            const k = Math.min(1, (now - t0) / dur)
             const v = Math.round(from + (target - from) * (1 - (1 - k) ** 3))
             shownRef.current = v; setShown(v)
             if (k < 1) raf = requestAnimationFrame(tick)
